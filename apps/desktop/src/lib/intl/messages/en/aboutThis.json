@@ -2,35 +2,42 @@
   "aboutThis.dialog.title": "About “{name}”",
   "@aboutThis.dialog.title": {
     "description": "Title of the \"Tell me about this\" card, a dialog that lists what Cmdr knows about one file or folder: where it came from, what it is, what it belongs to, and what removing it would mean. {name} is the item's file or folder name, exactly as it appears in the file list.",
-    "placeholders": { "name": { "description": "The file or folder name, for example \"report.pdf\"." } }
+    "placeholders": { "name": { "description": "The file or folder name, for example \"report.pdf\"." } },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.dialog.close": "Close",
   "@aboutThis.dialog.close": {
-    "description": "Button at the bottom right of the \"Tell me about this\" card. Closes it; nothing else happens."
+    "description": "Button at the bottom right of the \"Tell me about this\" card. Closes it; nothing else happens.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.open": "Open",
   "@aboutThis.action.open": {
-    "description": "Button in the footer of the \"Tell me about this\" card. Opens the file in the app the system opens it with (the card's \"Opens with\" row names it), the same as pressing Enter on it in the file list; the card closes first. Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card. Opens the file in the app the system opens it with (the card's \"Opens with\" row names it), the same as pressing Enter on it in the file list; the card closes first. Short control label.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.openTooltip": "Opens it with {app}, as Enter does.",
   "@aboutThis.action.openTooltip": {
     "description": "Tooltip on the \"Open\" button of the \"Tell me about this\" card: which app opens the item, and that it's the same as pressing Enter on it in the file list.",
-    "placeholders": { "app": { "description": "The app's name, for example \"Preview\"." } }
+    "placeholders": { "app": { "description": "The app's name, for example \"Preview\"." } },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@aboutThis.action.showInFileManager": {
-    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and shows the item in the system's file manager. Each branch names its own: \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. Use the same words as commands.fileShowInFileManager.label. Short control label. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”)."
+    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and shows the item in the system's file manager. Each branch names its own: \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language; the Linux branch says file manager, generically. Use the same words as commands.fileShowInFileManager.label. Short control label. The `linuxGnome` branch names GNOME’s file manager, Files, and the `linuxKde` branch KDE’s, Dolphin: use the names those desktops give them in your language (GNOME translates “Files”, KDE keeps “Dolphin”).",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.downloadPage": "Download page",
   "@aboutThis.action.downloadPage": {
-    "description": "Button in the footer of the \"Tell me about this\" card, shown for a downloaded file. Opens the web page the file was recorded as downloaded from, in the browser. Its tooltip (shown on hover and on keyboard focus) names the site, and the card's \"Downloaded\" row above names it too. A noun phrase on a button, like a link's text. Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card, shown for a downloaded file. Opens the web page the file was recorded as downloaded from, in the browser. Its tooltip (shown on hover and on keyboard focus) names the site, and the card's \"Downloaded\" row above names it too. A noun phrase on a button, like a link's text. Short control label.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.downloadPageTooltip": "Opens {host} in your browser: the page this was recorded as downloaded from.",
   "@aboutThis.action.downloadPageTooltip": {
     "description": "Tooltip on the \"Download page\" button of the \"Tell me about this\" card, shown on hover and on keyboard focus, so the person sees which site opens before pressing. \"Recorded\": the download record is the file's own claim, not something Cmdr checked.",
     "placeholders": {
       "host": { "description": "The website's host name, for example \"github.com\". Never translated." }
-    }
+    },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.revealOwner": "Show {app}",
   "@aboutThis.action.revealOwner": {
@@ -48,15 +55,18 @@
   },
   "aboutThis.action.trash": "{platform, select, windows {Move to the Recycle Bin…} other {Move to trash…}}",
   "@aboutThis.action.trash": {
-    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything moves. The ellipsis says a question follows. Use the same words as fileOperations.delete.trashSwitch, plus the ellipsis. Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card. Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything moves. The ellipsis says a question follows. Use the same words as fileOperations.delete.trashSwitch, plus the ellipsis. Short control label.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.delete": "Delete…",
   "@aboutThis.action.delete": {
-    "description": "Button in the footer of the \"Tell me about this\" card, on a drive with no trash (a phone, a server). Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything is deleted. The ellipsis says a question follows. Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card, on a drive with no trash (a phone, a server). Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything is deleted. The ellipsis says a question follows. Short control label.",
+    "screenshot": "tell-me-about-this-remote.png"
   },
   "aboutThis.action.more": "More",
   "@aboutThis.action.more": {
-    "description": "Button in the footer of the \"Tell me about this\" card that opens a short menu with the rest of the card's actions (the ones that don't fit beside the others). Short control label."
+    "description": "Button in the footer of the \"Tell me about this\" card that opens a short menu with the rest of the card's actions (the ones that don't fit beside the others). Short control label.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.action.moreMenu": "More actions",
   "@aboutThis.action.moreMenu": {
@@ -64,52 +74,63 @@
   },
   "aboutThis.dialog.lookingUp": "Looking this up",
   "@aboutThis.dialog.lookingUp": {
-    "description": "Screen-reader text on a row of the \"Tell me about this\" card whose answer hasn't arrived yet (it shows a gray placeholder bar). Short, no closing period."
+    "description": "Screen-reader text on a row of the \"Tell me about this\" card whose answer hasn't arrived yet (it shows a gray placeholder bar). Short, no closing period.",
+    "screenshot": "tell-me-about-this-still-filling.png"
   },
   "aboutThis.section.origin": "Where it came from",
   "@aboutThis.section.origin": {
-    "description": "Section heading on the \"Tell me about this\" card: where the item came from (a download record, or a copy or move Cmdr made). Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card: where the item came from (a download record, or a copy or move Cmdr made). Sentence case.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.section.nature": "What it is",
   "@aboutThis.section.nature": {
-    "description": "Section heading on the \"Tell me about this\" card: what the item is (its size and dates, what its contents really are, its code signature). Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card: what the item is (its size and dates, what its contents really are, its code signature). Sentence case.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.section.use": "How it’s used",
   "@aboutThis.section.use": {
-    "description": "Section heading on the \"Tell me about this\" card: how the item is used (when it was last opened, the app that opens it, how important a folder is). Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card: how the item is used (when it was last opened, the app that opens it, how important a folder is). Sentence case.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.section.context": "Where it sits",
   "@aboutThis.section.context": {
-    "description": "Section heading on the \"Tell me about this\" card: what the item belongs to (the app that owns it, the git repository around it). Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card: what the item belongs to (the app that owns it, the git repository around it). Sentence case.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.section.contents": "What’s inside",
   "@aboutThis.section.contents": {
-    "description": "Section heading on the \"Tell me about this\" card for a folder: what the folder holds. Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card for a folder: what the folder holds. Sentence case.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.section.removal": "What removing it means",
   "@aboutThis.section.removal": {
-    "description": "Section heading on the \"Tell me about this\" card, always the last one: what deleting the item would mean (for example \"Git can't bring it back\"). It describes consequences only; it never says deleting is safe. Sentence case."
+    "description": "Section heading on the \"Tell me about this\" card, always the last one: what deleting the item would mean (for example \"Git can't bring it back\"). It describes consequences only; it never says deleting is safe. Sentence case.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.section.nothingOnRecord": "Nothing on record",
   "@aboutThis.section.nothingOnRecord": {
-    "description": "The one muted line a section of the \"Tell me about this\" card shows when none of its rows had anything recorded (for example no download record and no copy by Cmdr). Ordinary, not a warning. No closing period."
+    "description": "The one muted line a section of the \"Tell me about this\" card shows when none of its rows had anything recorded (for example no download record and no copy by Cmdr). Ordinary, not a warning. No closing period.",
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.volumeNote.identityOnly": "On {volume}, Cmdr can see the name, size, and dates.",
   "@aboutThis.volumeNote.identityOnly": {
     "description": "Note at the top of the \"Tell me about this\" card when the item sits on a drive or server that only reports names, sizes, and dates (a phone, a network share). Said once instead of on every row.",
     "placeholders": {
       "volume": { "description": "The drive's or server's name, for example \"Naspolya\" or \"Pixel 8\"." }
-    }
+    },
+    "screenshot": "tell-me-about-this-remote.png"
   },
   "aboutThis.volumeNote.someFacts": "On {volume}, Cmdr can see only some of this.",
   "@aboutThis.volumeNote.someFacts": {
     "description": "Note at the top of the \"Tell me about this\" card when the item's drive or server answers some questions but not all of them. Said once instead of on every row.",
-    "placeholders": { "volume": { "description": "The drive's or server's name, for example \"Naspolya\"." } }
+    "placeholders": { "volume": { "description": "The drive's or server's name, for example \"Naspolya\"." } },
+    "screenshot": "tell-me-about-this-share-file.png"
   },
   "aboutThis.volumeNote.unreachable": "{volume} stopped answering, so Cmdr can’t tell more right now.",
   "@aboutThis.volumeNote.unreachable": {
     "description": "Note at the top of the \"Tell me about this\" card when the item's drive or server stopped responding while Cmdr was looking. Said once; the rows below it stay short.",
-    "placeholders": { "volume": { "description": "The drive's or server's name, for example \"Naspolya\"." } }
+    "placeholders": { "volume": { "description": "The drive's or server's name, for example \"Naspolya\"." } },
+    "screenshot": "tell-me-about-this-stopped-answering.png"
   },
   "aboutThis.unavailable.unknownVolume": "Cmdr doesn’t know the drive this item is on anymore.",
   "@aboutThis.unavailable.unknownVolume": {
@@ -125,7 +146,8 @@
   },
   "aboutThis.unavailable.notFound": "This item isn’t there anymore. It may have been moved or removed.",
   "@aboutThis.unavailable.notFound": {
-    "description": "The whole body of the \"Tell me about this\" card when the file or folder no longer exists at its place."
+    "description": "The whole body of the \"Tell me about this\" card when the file or folder no longer exists at its place.",
+    "screenshot": "tell-me-about-this-unavailable.png"
   },
   "aboutThis.unavailable.permissionDenied": "{platform, select, macos {macOS didn’t let Cmdr look at this item.} windows {Windows didn’t let Cmdr look at this item.} other {The system didn’t let Cmdr look at this item.}}",
   "@aboutThis.unavailable.permissionDenied": {
@@ -141,27 +163,33 @@
   },
   "aboutThis.label.download": "Downloaded",
   "@aboutThis.label.download": {
-    "description": "Row label on the \"Tell me about this\" card, left of what the operating system recorded about where the item was downloaded from. A past participle, like a form label."
+    "description": "Row label on the \"Tell me about this\" card, left of what the operating system recorded about where the item was downloaded from. A past participle, like a form label.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.cmdrOperation": "Cmdr’s history",
   "@aboutThis.label.cmdrOperation": {
-    "description": "Row label on the \"Tell me about this\" card, left of the copy, move, or extraction Cmdr itself made that put the item where it is."
+    "description": "Row label on the \"Tell me about this\" card, left of the copy, move, or extraction Cmdr itself made that put the item where it is.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.size": "Size",
   "@aboutThis.label.size": {
-    "description": "Row label on the \"Tell me about this\" card, left of the item's size."
+    "description": "Row label on the \"Tell me about this\" card, left of the item's size.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.created": "Created",
   "@aboutThis.label.created": {
-    "description": "Row label on the \"Tell me about this\" card, left of the date the item was created."
+    "description": "Row label on the \"Tell me about this\" card, left of the date the item was created.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.modified": "Modified",
   "@aboutThis.label.modified": {
-    "description": "Row label on the \"Tell me about this\" card, left of the date the item last changed."
+    "description": "Row label on the \"Tell me about this\" card, left of the date the item last changed.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.otherNames": "Other names",
   "@aboutThis.label.otherNames": {
-    "description": "Row label on the \"Tell me about this\" card, left of how many other names (hard links) point to the same file contents."
+    "description": "Row label on the \"Tell me about this\" card, left of how many other names (hard links) point to the same file contents.",
+    "screenshot": "tell-me-about-this-more-consequences.png"
   },
   "aboutThis.label.pointsTo": "Points to",
   "@aboutThis.label.pointsTo": {
@@ -169,55 +197,68 @@
   },
   "aboutThis.label.realType": "Kind",
   "@aboutThis.label.realType": {
-    "description": "Row label on the \"Tell me about this\" card, left of what the file's contents really are (for example \"Disk image\"), as Cmdr read them from its first bytes."
+    "description": "Row label on the \"Tell me about this\" card, left of what the file's contents really are (for example \"Disk image\"), as Cmdr read them from its first bytes.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.bundle": "Bundle",
   "@aboutThis.label.bundle": {
-    "description": "Row label on the \"Tell me about this\" card for an app or package, left of the name, version, and identifier the app's own description file states."
+    "description": "Row label on the \"Tell me about this\" card for an app or package, left of the name, version, and identifier the app's own description file states.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.label.signature": "Signature",
   "@aboutThis.label.signature": {
-    "description": "Row label on the \"Tell me about this\" card, left of the code signature an app or program carries (who signed it)."
+    "description": "Row label on the \"Tell me about this\" card, left of the code signature an app or program carries (who signed it).",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.lastOpened": "Last opened",
   "@aboutThis.label.lastOpened": {
-    "description": "Row label on the \"Tell me about this\" card, left of the date the system recorded the item as last opened."
+    "description": "Row label on the \"Tell me about this\" card, left of the date the system recorded the item as last opened.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.defaultApp": "Opens with",
   "@aboutThis.label.defaultApp": {
-    "description": "Row label on the \"Tell me about this\" card, left of the app that opens the file by default."
+    "description": "Row label on the \"Tell me about this\" card, left of the app that opens the file by default.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.label.importance": "Importance",
   "@aboutThis.label.importance": {
-    "description": "Row label on the \"Tell me about this\" card for a folder, left of how important Cmdr's drive index scores the folder (high, medium, low)."
+    "description": "Row label on the \"Tell me about this\" card for a folder, left of how important Cmdr's drive index scores the folder (high, medium, low).",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.label.owner": "Belongs to",
   "@aboutThis.label.owner": {
-    "description": "Row label on the \"Tell me about this\" card, left of the app or installer the item belongs to."
+    "description": "Row label on the \"Tell me about this\" card, left of the app or installer the item belongs to.",
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.label.git": "Git",
   "@aboutThis.label.git": {
-    "description": "Row label on the \"Tell me about this\" card, left of the git repository the item sits in and its state there. \"Git\" is the version-control tool's name; keep it."
+    "description": "Row label on the \"Tell me about this\" card, left of the git repository the item sits in and its state there. \"Git\" is the version-control tool's name; keep it.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.label.contents": "Contents",
   "@aboutThis.label.contents": {
-    "description": "Row label on the \"Tell me about this\" card for a folder, left of how many items sit directly in it."
+    "description": "Row label on the \"Tell me about this\" card for a folder, left of how many items sit directly in it.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.label.appData": "Its data in your Library",
   "@aboutThis.label.appData": {
-    "description": "Row label on the \"Tell me about this\" card for an app, left of the folders in the user's Library folder that are named after the app and stay behind if the app is removed. \"Library\" is the macOS folder of that name."
+    "description": "Row label on the \"Tell me about this\" card for an app, left of the folders in the user's Library folder that are named after the app and stay behind if the app is removed. \"Library\" is the macOS folder of that name.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.label.biggest": "Biggest inside",
   "@aboutThis.label.biggest": {
-    "description": "Row label on the \"Tell me about this\" card for a folder, left of the largest items sitting directly in it (files and folders), biggest first."
+    "description": "Row label on the \"Tell me about this\" card for a folder, left of the largest items sitting directly in it (files and folders), biggest first.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.label.largestFiles": "Largest files",
   "@aboutThis.label.largestFiles": {
-    "description": "Row label on the \"Tell me about this\" card for a folder, left of the largest files anywhere inside it, at any depth."
+    "description": "Row label on the \"Tell me about this\" card for a folder, left of the largest files anywhere inside it, at any depth.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.label.unchanged": "Untouched",
   "@aboutThis.label.unchanged": {
-    "description": "Row label on the \"Tell me about this\" card for a folder, left of how much of it hasn't changed in a year. Short: one or two words."
+    "description": "Row label on the \"Tell me about this\" card for a folder, left of how much of it hasn't changed in a year. Short: one or two words.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.unknown.noRecord": "Nothing on record",
   "@aboutThis.unknown.noRecord": {
@@ -225,7 +266,8 @@
   },
   "aboutThis.unknown.notInStatus": "No changes Cmdr can see",
   "@aboutThis.unknown.notInStatus": {
-    "description": "Muted one-line answer on the Git row of the \"Tell me about this\" card when git's list of changes doesn't name the item: it may be committed with no changes, or ignored. Ordinary, not a warning. No closing period."
+    "description": "Muted one-line answer on the Git row of the \"Tell me about this\" card when git's list of changes doesn't name the item: it may be committed with no changes, or ignored. Ordinary, not a warning. No closing period.",
+    "screenshot": "tell-me-about-this-node-modules.png"
   },
   "aboutThis.unknown.noInstalledAppMatches": "No app Cmdr knows of",
   "@aboutThis.unknown.noInstalledAppMatches": {
@@ -237,31 +279,38 @@
   },
   "aboutThis.unknown.libraryNameMatchesNoApp": "No installed app has this folder’s name.",
   "@aboutThis.unknown.libraryNameMatchesNoApp": {
-    "description": "Answer on the \"Belongs to\" row of the \"Tell me about this\" card for a folder in the macOS Library folder that is named like an app, when no installed app has that name. It doesn't claim the folder is left over."
+    "description": "Answer on the \"Belongs to\" row of the \"Tell me about this\" card for a folder in the macOS Library folder that is named like an app, when no installed app has that name. It doesn't claim the folder is left over.",
+    "screenshot": "tell-me-about-this-notable-b.png"
   },
   "aboutThis.unknown.notIndexed": "Not indexed yet",
   "@aboutThis.unknown.notIndexed": {
-    "description": "Muted answer on a \"Tell me about this\" card row (a folder's size, what's inside, its importance, an app's data) when Cmdr's drive index hasn't scanned the place yet, or indexing is off. Also the one muted line of a section whose every row has that answer. An ordinary state, not a problem. Short, no closing period."
+    "description": "Muted answer on a \"Tell me about this\" card row (a folder's size, what's inside, its importance, an app's data) when Cmdr's drive index hasn't scanned the place yet, or indexing is off. Also the one muted line of a section whose every row has that answer. An ordinary state, not a problem. Short, no closing period.",
+    "screenshot": "tell-me-about-this-not-indexed-folder.png"
   },
   "aboutThis.unknown.timedOut": "Cmdr didn’t get an answer in time.",
   "@aboutThis.unknown.timedOut": {
-    "description": "Answer on a \"Tell me about this\" card row when looking up that one fact took too long (about a second) and Cmdr stopped waiting."
+    "description": "Answer on a \"Tell me about this\" card row when looking up that one fact took too long (about a second) and Cmdr stopped waiting.",
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.unknown.unreachable": "The drive stopped answering.",
   "@aboutThis.unknown.unreachable": {
-    "description": "Answer on a \"Tell me about this\" card row when the item's drive or server stopped responding."
+    "description": "Answer on a \"Tell me about this\" card row when the item's drive or server stopped responding.",
+    "screenshot": "tell-me-about-this-notable-b.png"
   },
   "aboutThis.unknown.permissionDenied": "{platform, select, macos {macOS didn’t let Cmdr read this.} windows {Windows didn’t let Cmdr read this.} other {The system didn’t let Cmdr read this.}}",
   "@aboutThis.unknown.permissionDenied": {
-    "description": "Answer on a \"Tell me about this\" card row when the operating system refused Cmdr access to that fact. The branches name the user's operating system."
+    "description": "Answer on a \"Tell me about this\" card row when the operating system refused Cmdr access to that fact. The branches name the user's operating system.",
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.unknown.protected": "This is a private place, so Cmdr doesn’t look inside.",
   "@aboutThis.unknown.protected": {
-    "description": "Answer on a \"Tell me about this\" card row when the item sits somewhere Cmdr deliberately doesn't read (for example a folder of keys or passwords)."
+    "description": "Answer on a \"Tell me about this\" card row when the item sits somewhere Cmdr deliberately doesn't read (for example a folder of keys or passwords).",
+    "screenshot": "tell-me-about-this-notable-b.png"
   },
   "aboutThis.unknown.nodeChangedSince": "Cmdr has a record for this name, and the file has been replaced since.",
   "@aboutThis.unknown.nodeChangedSince": {
-    "description": "Answer on the \"Cmdr's history\" row of the \"Tell me about this\" card when Cmdr's log has a copy or move to this name, but the file there now is a different one (it was saved over or replaced), so the record doesn't apply to it."
+    "description": "Answer on the \"Cmdr's history\" row of the \"Tell me about this\" card when Cmdr's log has a copy or move to this name, but the file there now is a different one (it was saved over or replaced), so the record doesn't apply to it.",
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.unknown.ambiguous": "Several could fit, so Cmdr doesn’t pick one.",
   "@aboutThis.unknown.ambiguous": {
@@ -269,11 +318,13 @@
   },
   "aboutThis.unknown.unparseable": "There’s a record, and Cmdr can’t read it.",
   "@aboutThis.unknown.unparseable": {
-    "description": "Answer on a \"Tell me about this\" card row when the operating system or a tool kept a record of this fact in a form Cmdr can't read."
+    "description": "Answer on a \"Tell me about this\" card row when the operating system or a tool kept a record of this fact in a form Cmdr can't read.",
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.unknown.refusedInBackground": "Cmdr doesn’t reach this drive on its own.",
   "@aboutThis.unknown.refusedInBackground": {
-    "description": "Answer on a \"Tell me about this\" card row when the item is on a network or device drive and Cmdr was asked about it without the user doing anything, so it didn't connect."
+    "description": "Answer on a \"Tell me about this\" card row when the item is on a network or device drive and Cmdr was asked about it without the user doing anything, so it didn't connect.",
+    "screenshot": "tell-me-about-this-notable-b.png"
   },
   "aboutThis.notApplicable.noCodeSigningOnThisOs": "This system doesn’t sign programs",
   "@aboutThis.notApplicable.noCodeSigningOnThisOs": {
@@ -293,7 +344,8 @@
   },
   "aboutThis.download.noRecord": "No download record",
   "@aboutThis.download.noRecord": {
-    "description": "Muted one-line answer on the \"Downloaded\" row of the \"Tell me about this\" card when the system recorded no download for the item (most files a person made themselves). Ordinary, not a warning. No closing period."
+    "description": "Muted one-line answer on the \"Downloaded\" row of the \"Tell me about this\" card when the system recorded no download for the item (most files a person made themselves). Ordinary, not a warning. No closing period.",
+    "screenshot": "tell-me-about-this-still-filling.png"
   },
   "aboutThis.download.fromSite": "{platform, select, macos {macOS recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.} other {Your browser recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.}}",
   "@aboutThis.download.fromSite": {
@@ -303,7 +355,8 @@
       "app": { "description": "The app that downloaded it, for example \"Chrome\" or \"Safari\"." },
       "hasApp": { "description": "\"yes\" when the record names the app." },
       "hasDate": { "description": "\"yes\" when the record has a date." }
-    }
+    },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.download.fromAddress": "{platform, select, macos {macOS recorded this as downloaded from the address {address}.} other {Your browser recorded this as downloaded from the address {address}.}}",
   "@aboutThis.download.fromAddress": {
@@ -313,15 +366,18 @@
   "aboutThis.download.linkedFrom": "The record also names a page on {host}.",
   "@aboutThis.download.linkedFrom": {
     "description": "Second line on the \"Downloaded\" row of the \"Tell me about this\" card when the download record names the page the download link was on, at a different website than the file itself (browsers record both).",
-    "placeholders": { "host": { "description": "The page's website name, for example \"github.com\"." } }
+    "placeholders": { "host": { "description": "The page's website name, for example \"github.com\"." } },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.download.copyLink": "Copy the download link",
   "@aboutThis.download.copyLink": {
-    "description": "Accessible name and hover hint of the copy button beside the download source on the \"Tell me about this\" card. It copies the whole recorded web address, of which the card shows only the website name."
+    "description": "Accessible name and hover hint of the copy button beside the download source on the \"Tell me about this\" card. It copies the whole recorded web address, of which the card shows only the website name.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.download.copyPageLink": "Copy the page’s link",
   "@aboutThis.download.copyPageLink": {
-    "description": "Accessible name and hover hint of the copy button beside the line naming the page the download link was on, on the \"Tell me about this\" card. It copies that page's whole recorded web address."
+    "description": "Accessible name and hover hint of the copy button beside the line naming the page the download link was on, on the \"Tell me about this\" card. It copies that page's whole recorded web address.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.download.mail": "macOS recorded this as a Mail attachment{hasSender, select, yes {, from {sender}} other {}}.",
   "@aboutThis.download.mail": {
@@ -339,7 +395,8 @@
   "aboutThis.download.airDrop": "macOS recorded this as received over AirDrop from {sender}.",
   "@aboutThis.download.airDrop": {
     "description": "Answer on the \"Downloaded\" row of the \"Tell me about this\" card when macOS recorded the file as received over AirDrop. \"AirDrop\" is Apple's feature name. It says what was recorded, not that Cmdr checked it.",
-    "placeholders": { "sender": { "description": "The sending person's or device's name, as recorded." } }
+    "placeholders": { "sender": { "description": "The sending person's or device's name, as recorded." } },
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.download.inlineData": "{platform, select, macos {macOS recorded a source that holds the data itself, which Cmdr doesn’t show.} other {The browser recorded a source that holds the data itself, which Cmdr doesn’t show.}}",
   "@aboutThis.download.inlineData": {
@@ -361,11 +418,13 @@
       "app": { "description": "The app that downloaded it, for example \"Chrome\"." },
       "hasApp": { "description": "\"yes\" when the record names the app." },
       "hasDate": { "description": "\"yes\" when the record has a date." }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.cmdrOperation.noRecord": "No copy or move by Cmdr on record",
   "@aboutThis.cmdrOperation.noRecord": {
-    "description": "Muted one-line answer on the \"Cmdr's history\" row of the \"Tell me about this\" card when Cmdr's own log has no copy, move, or extraction that put this very file here. Ordinary, not a warning. No closing period."
+    "description": "Muted one-line answer on the \"Cmdr's history\" row of the \"Tell me about this\" card when Cmdr's own log has no copy, move, or extraction that put this very file here. Ordinary, not a warning. No closing period.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.cmdrOperation.done": "{who, select, you {You} askCmdr {Ask Cmdr} other {An AI client}} {kind, select, copy {copied this here} move {moved this here} rename {gave this its name} create {created this} extract {extracted this here} compress {made this archive} other {moved this here when deleting it}} with Cmdr on <date></date>.",
   "@aboutThis.cmdrOperation.done": {
@@ -375,7 +434,8 @@
         "description": "Who started it: the user (\"you\"), Cmdr's assistant (\"askCmdr\"), or another AI app."
       },
       "kind": { "description": "What the operation did: copy, move, rename, create, extract, compress, or trash." }
-    }
+    },
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.cmdrOperation.datesChanged": "It’s the same item, though its dates have changed since.",
   "@aboutThis.cmdrOperation.datesChanged": {
@@ -387,11 +447,13 @@
     "placeholders": {
       "volume": { "description": "The drive's or server's name, for example \"Naspolya\"." },
       "hasVolume": { "description": "\"yes\" when the source was on another drive." }
-    }
+    },
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.cmdrOperation.copySource": "Copy where it came from",
   "@aboutThis.cmdrOperation.copySource": {
-    "description": "Accessible name and hover hint of the copy button beside the original path on the \"Cmdr's history\" row. It copies the full path."
+    "description": "Accessible name and hover hint of the copy button beside the original path on the \"Cmdr's history\" row. It copies the full path.",
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.identity.onDisk": "<size></size> on disk",
   "@aboutThis.identity.onDisk": {
@@ -403,7 +465,8 @@
     "placeholders": {
       "count": { "description": "How many other names, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-more-consequences.png"
   },
   "aboutThis.identity.copyLinkTarget": "Copy where it points",
   "@aboutThis.identity.copyLinkTarget": {
@@ -412,7 +475,8 @@
   "aboutThis.realType.matches": "{kind}, checked against its contents",
   "@aboutThis.realType.matches": {
     "description": "Answer on the \"Kind\" row of the \"Tell me about this\" card when Cmdr read the file's first bytes and they confirm what its extension says. It says Cmdr looked, unlike the answer for a file Cmdr couldn't read. No closing period.",
-    "placeholders": { "kind": { "description": "The kind of file, for example \"Disk image\" or \"PDF\"." } }
+    "placeholders": { "kind": { "description": "The kind of file, for example \"Disk image\" or \"PDF\"." } },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.realType.mismatch": "The contents say {kind}, while the name ends in .{extension}.",
   "@aboutThis.realType.mismatch": {
@@ -420,12 +484,14 @@
     "placeholders": {
       "kind": { "description": "What the contents really are, for example \"Mac program\"." },
       "extension": { "description": "The file's extension without the dot, for example \"jpg\"." }
-    }
+    },
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.realType.unread": "{kind}, as its name says",
   "@aboutThis.realType.unread": {
     "description": "Answer on the \"Kind\" row of the \"Tell me about this\" card when Cmdr didn't read the file's contents (it's on a network drive or phone, stored online only, or the system refused the read), so the kind is only what the file's extension claims. Worded as a claim, never as checked. No closing period.",
-    "placeholders": { "kind": { "description": "The kind the extension claims, for example \"Zip archive\"." } }
+    "placeholders": { "kind": { "description": "The kind the extension claims, for example \"Zip archive\"." } },
+    "screenshot": "tell-me-about-this-stopped-answering.png"
   },
   "aboutThis.realType.byName": "{kind}, going by its name",
   "@aboutThis.realType.byName": {
@@ -438,7 +504,8 @@
   },
   "aboutThis.kind.diskImage": "Disk image",
   "@aboutThis.kind.diskImage": {
-    "description": "A kind of file on the \"Tell me about this\" card: a macOS disk image (.dmg)."
+    "description": "A kind of file on the \"Tell me about this\" card: a macOS disk image (.dmg).",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.kind.installerPackage": "Installer package",
   "@aboutThis.kind.installerPackage": {
@@ -446,7 +513,8 @@
   },
   "aboutThis.kind.machO": "Mac program",
   "@aboutThis.kind.machO": {
-    "description": "A kind of file on the \"Tell me about this\" card: a program that runs on macOS."
+    "description": "A kind of file on the \"Tell me about this\" card: a program that runs on macOS.",
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.kind.elf": "Linux program",
   "@aboutThis.kind.elf": {
@@ -462,17 +530,23 @@
   },
   "aboutThis.kind.script": "Script",
   "@aboutThis.kind.script": {
-    "description": "A kind of file on the \"Tell me about this\" card: a script a program runs, such as a shell script."
+    "description": "A kind of file on the \"Tell me about this\" card: a script a program runs, such as a shell script.",
+    "screenshot": "tell-me-about-this-disguised-name.png"
   },
   "aboutThis.kind.archive": "Archive",
   "@aboutThis.kind.archive": {
-    "description": "A kind of file on the \"Tell me about this\" card: an archive such as a zip file."
+    "description": "A kind of file on the \"Tell me about this\" card: an archive such as a zip file.",
+    "screenshot": "tell-me-about-this-share-file.png"
   },
   "aboutThis.kind.pdf": "PDF",
-  "@aboutThis.kind.pdf": { "description": "A kind of file on the \"Tell me about this\" card: a PDF document." },
+  "@aboutThis.kind.pdf": {
+    "description": "A kind of file on the \"Tell me about this\" card: a PDF document.",
+    "screenshot": "tell-me-about-this-stopped-answering.png"
+  },
   "aboutThis.kind.image": "Image",
   "@aboutThis.kind.image": {
-    "description": "A kind of file on the \"Tell me about this\" card: a photo or other image."
+    "description": "A kind of file on the \"Tell me about this\" card: a photo or other image.",
+    "screenshot": "tell-me-about-this-remote.png"
   },
   "aboutThis.kind.video": "Video",
   "@aboutThis.kind.video": { "description": "A kind of file on the \"Tell me about this\" card: a video." },
@@ -484,13 +558,15 @@
   "@aboutThis.kind.font": { "description": "A kind of file on the \"Tell me about this\" card: a font." },
   "aboutThis.kind.document": "Document",
   "@aboutThis.kind.document": {
-    "description": "A kind of file on the \"Tell me about this\" card: an office document or an e-book."
+    "description": "A kind of file on the \"Tell me about this\" card: an office document or an e-book.",
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.kind.database": "Database",
   "@aboutThis.kind.database": { "description": "A kind of file on the \"Tell me about this\" card: a database file." },
   "aboutThis.kind.text": "Text",
   "@aboutThis.kind.text": {
-    "description": "A kind of file on the \"Tell me about this\" card: plain text, web pages included."
+    "description": "A kind of file on the \"Tell me about this\" card: plain text, web pages included.",
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.kind.other": "A known format",
   "@aboutThis.kind.other": {
@@ -511,7 +587,8 @@
   },
   "aboutThis.what.folder": "Folder",
   "@aboutThis.what.folder": {
-    "description": "What an item is, at the start of the one-line summary at the top of the \"Tell me about this\" card: a folder."
+    "description": "What an item is, at the start of the one-line summary at the top of the \"Tell me about this\" card: a folder.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.what.app": "{hasVersion, select, yes {App, version {version}} other {App}}",
   "@aboutThis.what.app": {
@@ -519,7 +596,8 @@
     "placeholders": {
       "version": { "description": "The version as the app states it, for example \"4.41.97\"." },
       "hasVersion": { "description": "\"yes\" when the app states a version." }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.what.package": "Package",
   "@aboutThis.what.package": {
@@ -531,7 +609,8 @@
   },
   "aboutThis.what.archiveEntry": "Item in an archive",
   "@aboutThis.what.archiveEntry": {
-    "description": "What an item is, at the start of the one-line summary at the top of the \"Tell me about this\" card: a file or folder inside a zip or other archive."
+    "description": "What an item is, at the start of the one-line summary at the top of the \"Tell me about this\" card: a file or folder inside a zip or other archive.",
+    "screenshot": "tell-me-about-this-archive-entry.png"
   },
   "aboutThis.headline.plain": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}",
   "@aboutThis.headline.plain": {
@@ -539,7 +618,8 @@
     "placeholders": {
       "what": { "description": "What the item is, for example \"PDF\" or \"Folder\"." },
       "sizeShown": { "description": "\"exact\", \"atLeast\" (the real size may be larger), or none." }
-    }
+    },
+    "screenshot": "tell-me-about-this-still-filling.png"
   },
   "aboutThis.headline.downloadedFrom": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, recorded as downloaded{hasApp, select, yes { with {app}} other {}} from {host}{hasDate, select, yes { on <date></date>} other {}}",
   "@aboutThis.headline.downloadedFrom": {
@@ -551,7 +631,8 @@
       "app": { "description": "The app that downloaded it, for example \"Chrome\"." },
       "hasApp": { "description": "\"yes\" when the record names the app." },
       "hasDate": { "description": "\"yes\" when the record has a date." }
-    }
+    },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.headline.putHereByCmdr": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, {kind, select, copy {copied here} move {moved here} rename {renamed} create {created} extract {extracted here} compress {compressed} other {moved here when deleted}} with Cmdr{hasVolume, select, yes { from {volume}} other {}} on <date></date>",
   "@aboutThis.headline.putHereByCmdr": {
@@ -580,7 +661,8 @@
       "what": { "description": "What the item is, for example \"Image\"." },
       "sizeShown": { "description": "\"exact\", \"atLeast\", or none." },
       "hasDate": { "description": "\"yes\" when the record has a date." }
-    }
+    },
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.headline.dataOfApp": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, {certainty, select, probable {probably {app}’s data} other {{app}’s data}}",
   "@aboutThis.headline.dataOfApp": {
@@ -627,7 +709,8 @@
     "placeholders": {
       "what": { "description": "What the item is, for example \"Pages document\"." },
       "sizeShown": { "description": "\"exact\", \"atLeast\", or none." }
-    }
+    },
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.bundle.named": "{hasVersion, select, yes {{name}, version {version}} other {{name}}}",
   "@aboutThis.bundle.named": {
@@ -636,7 +719,8 @@
       "name": { "description": "The app's own name, for example \"Slack\"." },
       "version": { "description": "Its version, for example \"4.41.97\"." },
       "hasVersion": { "description": "\"yes\" when it states a version." }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.bundle.unnamed": "{hasVersion, select, yes {No name stated, version {version}} other {No name or version stated}}",
   "@aboutThis.bundle.unnamed": {
@@ -648,7 +732,8 @@
   },
   "aboutThis.signature.unsigned": "Not signed",
   "@aboutThis.signature.unsigned": {
-    "description": "Answer on the Signature row of the \"Tell me about this\" card when the program carries no code signature. No closing period."
+    "description": "Answer on the Signature row of the \"Tell me about this\" card when the program carries no code signature. No closing period.",
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.signature.adHoc": "Signed without a developer’s identity, like a local build",
   "@aboutThis.signature.adHoc": {
@@ -661,7 +746,8 @@
       "org": { "description": "The developer's name from the certificate, for example \"Slack Technologies, Inc.\"." },
       "team": { "description": "Apple's team id for that developer, for example \"BQR82RBBHL\"." },
       "matches": { "description": "\"yes\" when the program matched its signature." }
-    }
+    },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.signature.appStore": "{matches, select, yes {Signed by the Mac App Store} other {Carries the Mac App Store’s signature}}",
   "@aboutThis.signature.appStore": {
@@ -691,15 +777,18 @@
   },
   "aboutThis.signature.ticketPresent": "A notarization ticket is stapled to it.",
   "@aboutThis.signature.ticketPresent": {
-    "description": "Line on the Signature row of the \"Tell me about this\" card: the app carries Apple's notarization ticket (Apple scanned it before release). \"Notarization\" is Apple's term."
+    "description": "Line on the Signature row of the \"Tell me about this\" card: the app carries Apple's notarization ticket (Apple scanned it before release). \"Notarization\" is Apple's term.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.signature.ticketAbsent": "No notarization ticket is stapled to it. macOS can also check with Apple online.",
   "@aboutThis.signature.ticketAbsent": {
-    "description": "Line on the Signature row of the \"Tell me about this\" card when the app carries no notarization ticket. The second sentence says that this alone doesn't mean it was never notarized."
+    "description": "Line on the Signature row of the \"Tell me about this\" card when the app carries no notarization ticket. The second sentence says that this alone doesn't mean it was never notarized.",
+    "screenshot": "tell-me-about-this-mismatch.png"
   },
   "aboutThis.lastOpened.noRecord": "No last-opened record",
   "@aboutThis.lastOpened.noRecord": {
-    "description": "Muted one-line answer on the \"Last opened\" row of the \"Tell me about this\" card when the system has no record of the item being opened. It doesn't mean it was never opened. No closing period."
+    "description": "Muted one-line answer on the \"Last opened\" row of the \"Tell me about this\" card when the system has no record of the item being opened. It doesn't mean it was never opened. No closing period.",
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.lastOpened.known": "<date></date>{hasCount, select, yes {, {count, plural, one {opened once} other {opened {countText} times}}} other {}}",
   "@aboutThis.lastOpened.known": {
@@ -708,16 +797,19 @@
       "count": { "description": "How many times, as a number." },
       "countText": { "description": "The same number, already formatted." },
       "hasCount": { "description": "\"yes\" when a count is recorded." }
-    }
+    },
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.importance.notScored": "Cmdr hasn’t scored how much this folder matters yet",
   "@aboutThis.importance.notScored": {
-    "description": "Muted answer on the \"Importance\" row of the \"Tell me about this\" card when Cmdr's importance ranking hasn't scored the folder yet (it scores folders apart from the drive index, so a folder can be indexed and still unscored). Also the one line of the \"How it's used\" section when that's its only row. An ordinary state. No closing period."
+    "description": "Muted answer on the \"Importance\" row of the \"Tell me about this\" card when Cmdr's importance ranking hasn't scored the folder yet (it scores folders apart from the drive index, so a folder can be indexed and still unscored). Also the one line of the \"How it's used\" section when that's its only row. An ordinary state. No closing period.",
+    "screenshot": "tell-me-about-this-not-indexed-folder.png"
   },
   "aboutThis.importance.band": "{band, select, high {High} medium {Medium} low {Low} other {Not ranked}}",
   "@aboutThis.importance.band": {
     "description": "Answer on the \"Importance\" row of the \"Tell me about this\" card: how important Cmdr's drive index scores the folder. \"Not ranked\" is for folders the ranking leaves out on purpose (caches, build output, hidden, system, and temporary folders, app data in the Library); it never says the contents don't matter.",
-    "placeholders": { "band": { "description": "high, medium, low, or floored (left out of the ranking)." } }
+    "placeholders": { "band": { "description": "high, medium, low, or floored (left out of the ranking)." } },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.because": "Because of {reasons}",
   "@aboutThis.importance.because": {
@@ -726,19 +818,23 @@
       "reasons": {
         "description": "A list joined with commas and \"and\", for example \"recent changes and your visits\"."
       }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.reason.projectMarker": "a project file in it",
   "@aboutThis.importance.reason.projectMarker": {
-    "description": "One reason in the \"Because of …\" list on the Importance row: the folder holds a project file (a package.json, a Cargo.toml). Lowercase, joins a list."
+    "description": "One reason in the \"Because of …\" list on the Importance row: the folder holds a project file (a package.json, a Cargo.toml). Lowercase, joins a list.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.reason.mtimeRecency": "recent changes",
   "@aboutThis.importance.reason.mtimeRecency": {
-    "description": "One reason in the \"Because of …\" list on the Importance row: files in it changed recently. Lowercase, joins a list."
+    "description": "One reason in the \"Because of …\" list on the Importance row: files in it changed recently. Lowercase, joins a list.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.reason.visitActivity": "your visits in Cmdr",
   "@aboutThis.importance.reason.visitActivity": {
-    "description": "One reason in the \"Because of …\" list on the Importance row: the user often opens this folder in Cmdr. Lowercase, joins a list."
+    "description": "One reason in the \"Because of …\" list on the Importance row: the user often opens this folder in Cmdr. Lowercase, joins a list.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.reason.lastUsed": "recent use",
   "@aboutThis.importance.reason.lastUsed": {
@@ -758,7 +854,8 @@
   },
   "aboutThis.importance.floor.nameDenylisted": "Cmdr doesn’t rank folders whose name marks generated files",
   "@aboutThis.importance.floor.nameDenylisted": {
-    "description": "Muted line on the \"Importance\" row of the \"Tell me about this\" card, under \"Not ranked\": Cmdr's folder ranking leaves this folder out because its name (like \"node_modules\" or \"cache\") marks files a tool generates. It describes Cmdr's ranking, never whether the folder's contents matter. No closing period."
+    "description": "Muted line on the \"Importance\" row of the \"Tell me about this\" card, under \"Not ranked\": Cmdr's folder ranking leaves this folder out because its name (like \"node_modules\" or \"cache\") marks files a tool generates. It describes Cmdr's ranking, never whether the folder's contents matter. No closing period.",
+    "screenshot": "tell-me-about-this-node-modules.png"
   },
   "aboutThis.importance.floor.hiddenOrSystem": "Cmdr doesn’t rank hidden, system, or temporary folders",
   "@aboutThis.importance.floor.hiddenOrSystem": {
@@ -782,7 +879,8 @@
     "placeholders": {
       "count": { "description": "How many times, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.importance.stale": "Scored before the latest changes",
   "@aboutThis.importance.stale": {
@@ -839,7 +937,8 @@
     "description": "Answer on the \"Belongs to\" row of the \"Tell me about this\" card for one of the folders the operating system creates and expects (the home folder, Downloads, Applications, and so on). No closing period.",
     "placeholders": {
       "folder": { "description": "Which folder, already worded, for example \"Your Downloads folder\"." }
-    }
+    },
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.standardFolder.home": "{platform, select, windows {Your user folder} other {Your home folder}}",
   "@aboutThis.standardFolder.home": {
@@ -855,7 +954,8 @@
   },
   "aboutThis.standardFolder.downloads": "Your Downloads folder",
   "@aboutThis.standardFolder.downloads": {
-    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the Downloads folder in the home folder. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\". Use the name Finder shows for this folder in your language."
+    "description": "One of the folders the operating system creates, as the \"Tell me about this\" card names it: the Downloads folder in the home folder. Starts a sentence and is followed by a comma, as in \"Your Downloads folder, set up by the system\". Use the name Finder shows for this folder in your language.",
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.standardFolder.movies": "Your Movies folder",
   "@aboutThis.standardFolder.movies": {
@@ -912,7 +1012,8 @@
   },
   "aboutThis.owner.ambiguous": "Several installed apps could own this, so Cmdr doesn’t pick one.",
   "@aboutThis.owner.ambiguous": {
-    "description": "Answer on the \"Belongs to\" row of the \"Tell me about this\" card when several apps match the folder's name (a vendor folder like \"Google\" or \"Microsoft\")."
+    "description": "Answer on the \"Belongs to\" row of the \"Tell me about this\" card when several apps match the folder's name (a vendor folder like \"Google\" or \"Microsoft\").",
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.git.repo": "In <repo></repo>{hasBranch, select, yes {, on {branch}} other {, with no branch checked out}}",
   "@aboutThis.git.repo": {
@@ -920,11 +1021,13 @@
     "placeholders": {
       "branch": { "description": "The branch's name, for example \"main\"." },
       "hasBranch": { "description": "\"yes\" when a branch is checked out." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.git.copyRepo": "Copy the repository’s path",
   "@aboutThis.git.copyRepo": {
-    "description": "Accessible name and hover hint of the copy button beside the repository's folder on the Git row. It copies the full path."
+    "description": "Accessible name and hover hint of the copy button beside the repository's folder on the Git row. It copies the full path.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.git.clean": "Committed, with no changes",
   "@aboutThis.git.clean": {
@@ -932,11 +1035,13 @@
   },
   "aboutThis.git.modified": "Has changes no commit has",
   "@aboutThis.git.modified": {
-    "description": "Second line on the Git row of the \"Tell me about this\" card: the item has changes that aren't committed. No closing period."
+    "description": "Second line on the Git row of the \"Tell me about this\" card: the item has changes that aren't committed. No closing period.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.git.untracked": "Git doesn’t track it",
   "@aboutThis.git.untracked": {
-    "description": "Second line on the Git row of the \"Tell me about this\" card: the item is new to git, which doesn't keep a copy of it. No closing period."
+    "description": "Second line on the Git row of the \"Tell me about this\" card: the item is new to git, which doesn't keep a copy of it. No closing period.",
+    "screenshot": "tell-me-about-this-more-consequences.png"
   },
   "aboutThis.git.ignored": "Git ignores it",
   "@aboutThis.git.ignored": {
@@ -951,7 +1056,8 @@
       "filesText": { "description": "The same number, already formatted." },
       "folders": { "description": "How many folders, as a number." },
       "foldersText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.folderSize.stale": "From the drive index’s last pass, so it may have changed since",
   "@aboutThis.folderSize.stale": {
@@ -974,7 +1080,8 @@
       "kinds": {
         "description": "A list joined with commas and \"and\", for example \"5 folders, 4 images, and 3 documents\"."
       }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.childKind.folder": "{count, plural, one {{countText} folder} other {{countText} folders}}",
   "@aboutThis.childKind.folder": {
@@ -982,7 +1089,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.childKind.image": "{count, plural, one {{countText} image} other {{countText} images}}",
   "@aboutThis.childKind.image": {
@@ -990,7 +1098,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.childKind.video": "{count, plural, one {{countText} video} other {{countText} videos}}",
   "@aboutThis.childKind.video": {
@@ -998,7 +1107,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.childKind.audio": "{count, plural, one {{countText} sound file} other {{countText} sound files}}",
   "@aboutThis.childKind.audio": {
@@ -1014,7 +1124,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.childKind.archive": "{count, plural, one {{countText} archive or disk image} other {{countText} archives or disk images}}",
   "@aboutThis.childKind.archive": {
@@ -1022,7 +1133,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.childKind.code": "{count, plural, one {{countText} code file} other {{countText} code files}}",
   "@aboutThis.childKind.code": {
@@ -1030,7 +1142,8 @@
     "placeholders": {
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.childKind.app": "{count, plural, one {{countText} app or program} other {{countText} apps or programs}}",
   "@aboutThis.childKind.app": {
@@ -1050,7 +1163,8 @@
   },
   "aboutThis.folderClass.dependencies": "Installed packages a package manager put here",
   "@aboutThis.folderClass.dependencies": {
-    "description": "Muted line on the Contents row of the \"Tell me about this\" card, saying the folder is installed packages (like node_modules). Cmdr knows it from the folder's name and the project file beside it. No closing period."
+    "description": "Muted line on the Contents row of the \"Tell me about this\" card, saying the folder is installed packages (like node_modules). Cmdr knows it from the folder's name and the project file beside it. No closing period.",
+    "screenshot": "tell-me-about-this-node-modules.png"
   },
   "aboutThis.folderClass.buildOutput": "Output a build tool wrote",
   "@aboutThis.folderClass.buildOutput": {
@@ -1066,7 +1180,8 @@
   },
   "aboutThis.contents.atLeastSize": "at least <size></size>",
   "@aboutThis.contents.atLeastSize": {
-    "description": "A size on the \"Tell me about this\" card that may be larger, because Cmdr's index hasn't listed all of the folder yet. <size></size> becomes the size, like \"2.1 GB\"."
+    "description": "A size on the \"Tell me about this\" card that may be larger, because Cmdr's index hasn't listed all of the folder yet. <size></size> becomes the size, like \"2.1 GB\".",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.contents.noSize": "Not sized yet",
   "@aboutThis.contents.noSize": {
@@ -1077,14 +1192,16 @@
     "description": "Muted text after a file's name in the \"Largest files\" list of the \"Tell me about this\" card: the folder it sits in, inside the folder the card is about. No closing period.",
     "placeholders": {
       "path": { "description": "The folder, relative to the folder the card is about, like \"photos/2024\"." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.contents.goTo": "Go to {name}",
   "@aboutThis.contents.goTo": {
     "description": "Tooltip on one entry in a list on the \"Tell me about this\" card: pressing it closes the card and shows that file or folder in the file list.",
     "placeholders": {
       "name": { "description": "The file or folder name." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.contents.notLoaded": "Cmdr lists these once Search has loaded this drive",
   "@aboutThis.contents.notLoaded": {
@@ -1096,7 +1213,8 @@
     "placeholders": {
       "atLeast": { "description": "\"yes\" when the share may be larger." },
       "percent": { "description": "The share, already formatted, like \"38%\"." }
-    }
+    },
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.appData.summary": "{count, plural, =0 {None that Cmdr’s index knows of} one {{atLeast, select, yes {At least <size></size> in one folder} other {<size></size> in one folder}}} other {{atLeast, select, yes {At least <size></size> in {countText} folders} other {<size></size> in {countText} folders}}}}",
   "@aboutThis.appData.summary": {
@@ -1105,7 +1223,8 @@
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." },
       "atLeast": { "description": "\"yes\" when the total may be larger." }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.appData.notLookedIn": "Cmdr’s index hasn’t listed {places} yet, so there may be more",
   "@aboutThis.appData.notLookedIn": {
@@ -1114,19 +1233,23 @@
       "places": {
         "description": "A list of Library folder names joined with commas and \"and\", like \"Caches and Logs\"."
       }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.caches": "Caches",
   "@aboutThis.ownerPlace.caches": {
-    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it."
+    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.containers": "Containers",
   "@aboutThis.ownerPlace.containers": {
-    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it."
+    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.groupContainers": "Group Containers",
   "@aboutThis.ownerPlace.groupContainers": {
-    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it."
+    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.applicationSupport": "Application Support",
   "@aboutThis.ownerPlace.applicationSupport": {
@@ -1142,11 +1265,13 @@
   },
   "aboutThis.ownerPlace.savedState": "Saved Application State",
   "@aboutThis.ownerPlace.savedState": {
-    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it."
+    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.logs": "Logs",
   "@aboutThis.ownerPlace.logs": {
-    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it."
+    "description": "The Library folder an app's data sits in, shown muted beside it in the \"Its data in your Library\" list of the \"Tell me about this\" card. The folder's real name inside the macOS Library folder; keep it as the system names it.",
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.ownerPlace.webData": "HTTPStorages",
   "@aboutThis.ownerPlace.webData": {
@@ -1162,7 +1287,8 @@
   },
   "aboutThis.removal.standardFolder.personal": "It’s one of your standard folders: the system and your apps expect to find it, and everything inside it goes with it.",
   "@aboutThis.removal.standardFolder.personal": {
-    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for a standard folder in the home folder (Desktop, Documents, Downloads, Movies, Music, Pictures, or Public), a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it."
+    "description": "One consequence under \"What removing it means\" on the \"Tell me about this\" card, for a standard folder in the home folder (Desktop, Documents, Downloads, Movies, Music, Pictures, or Public), a folder the operating system creates and expects. Never reassuring: it says what the folder holds and what expects it.",
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "aboutThis.removal.standardFolder.homeLibrary": "It holds the settings and data your apps keep for you, and they can stop working or start over without it.",
   "@aboutThis.removal.standardFolder.homeLibrary": {
@@ -1194,11 +1320,13 @@
   },
   "aboutThis.removal.uncommittedWork": "It has changes no commit holds, so git can’t bring those back.",
   "@aboutThis.removal.uncommittedWork": {
-    "description": "One line under \"What removing it means\" on the \"Tell me about this\" card: the item has uncommitted changes in git. A consequence, never advice."
+    "description": "One line under \"What removing it means\" on the \"Tell me about this\" card: the item has uncommitted changes in git. A consequence, never advice.",
+    "screenshot": "tell-me-about-this-folder.png"
   },
   "aboutThis.removal.untrackedNotInGit": "Git doesn’t track it, so git can’t bring it back.",
   "@aboutThis.removal.untrackedNotInGit": {
-    "description": "One line under \"What removing it means\": the item is in a git repository but git keeps no copy of it. A consequence, never advice."
+    "description": "One line under \"What removing it means\": the item is in a git repository but git keeps no copy of it. A consequence, never advice.",
+    "screenshot": "tell-me-about-this-more-consequences.png"
   },
   "aboutThis.removal.ignoredByGit": "Git ignores it, so git can’t bring it back.",
   "@aboutThis.removal.ignoredByGit": {
@@ -1206,7 +1334,8 @@
   },
   "aboutThis.removal.userDocument": "Nothing Cmdr knows of made this or could make it again.",
   "@aboutThis.removal.userDocument": {
-    "description": "One line under \"What removing it means\": no app, installer, or tool Cmdr knows of created the item or could recreate it, so it's likely the person's own. A consequence, never advice."
+    "description": "One line under \"What removing it means\": no app, installer, or tool Cmdr knows of created the item or could recreate it, so it's likely the person's own. A consequence, never advice.",
+    "screenshot": "tell-me-about-this-plain-document.png"
   },
   "aboutThis.removal.removesApp": "This removes the app. Cmdr can’t tell yet how much of its data stays in your Library.",
   "@aboutThis.removal.removesApp": {
@@ -1219,7 +1348,8 @@
       "count": { "description": "How many, as a number." },
       "countText": { "description": "The same number, already formatted." },
       "atLeast": { "description": "\"yes\" when the total may be larger." }
-    }
+    },
+    "screenshot": "tell-me-about-this-app.png"
   },
   "aboutThis.removal.appData": "{certainty, select, probable {It’s probably {app}’s data, and {app} may lose what it keeps here.} other {It’s {app}’s data, and {app} may lose what it keeps here.}}",
   "@aboutThis.removal.appData": {
@@ -1250,7 +1380,8 @@
   "aboutThis.removal.recordedDownload": "{platform, select, macos {macOS recorded this as downloaded from {host}. Cmdr can’t tell whether the site still has it.} other {Your browser recorded this as downloaded from {host}. Cmdr can’t tell whether the site still has it.}}",
   "@aboutThis.removal.recordedDownload": {
     "description": "One line under \"What removing it means\" for a downloaded file. It says only what was recorded; it never promises the file can be downloaded again.",
-    "placeholders": { "host": { "description": "The website's name, for example \"github.com\"." } }
+    "placeholders": { "host": { "description": "The website's name, for example \"github.com\"." } },
+    "screenshot": "tell-me-about-this-downloaded.png"
   },
   "aboutThis.removal.gitCanRestore": "Git can restore it from the last commit.",
   "@aboutThis.removal.gitCanRestore": {
@@ -1258,7 +1389,8 @@
   },
   "aboutThis.removal.rebuildablePackageManager": "A package manager can fetch this again, which takes time and a network.",
   "@aboutThis.removal.rebuildablePackageManager": {
-    "description": "One line under \"What removing it means\" for installed dependencies (like node_modules): a package manager can download them again. A consequence, never advice."
+    "description": "One line under \"What removing it means\" for installed dependencies (like node_modules): a package manager can download them again. A consequence, never advice.",
+    "screenshot": "tell-me-about-this-node-modules.png"
   },
   "aboutThis.removal.rebuildableBuildTool": "A build tool can make this again, which takes time.",
   "@aboutThis.removal.rebuildableBuildTool": {
@@ -1286,7 +1418,8 @@
   },
   "aboutThis.removal.cantTell": "Cmdr can’t tell what depends on this.",
   "@aboutThis.removal.cantTell": {
-    "description": "One line under \"What removing it means\" when Cmdr doesn't know enough to say. An honest answer, never a warning or advice."
+    "description": "One line under \"What removing it means\" when Cmdr doesn't know enough to say. An honest answer, never a warning or advice.",
+    "screenshot": "tell-me-about-this-still-filling.png"
   },
   "aboutThis.removal.more": "{count, plural, one {One more} other {{countText} more}}",
   "@aboutThis.removal.more": {
@@ -1294,7 +1427,8 @@
     "placeholders": {
       "count": { "description": "How many more, as a number." },
       "countText": { "description": "The same number, already formatted." }
-    }
+    },
+    "screenshot": "tell-me-about-this-more-consequences.png"
   },
   "aboutThis.removal.less": "Show fewer",
   "@aboutThis.removal.less": {
@@ -1302,11 +1436,13 @@
   },
   "aboutThis.label.gitSnapshot": "Git history",
   "@aboutThis.label.gitSnapshot": {
-    "description": "Row label on the \"Tell me about this\" card for an item inside git's history view (a file as it was in a branch, tag, commit, or stash entry), not a file on the disk. Short, sentence case."
+    "description": "Row label on the \"Tell me about this\" card for an item inside git's history view (a file as it was in a branch, tag, commit, or stash entry), not a file on the disk. Short, sentence case.",
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.unknown.volumeStoppedAnswering": "No answer from the drive",
   "@aboutThis.unknown.volumeStoppedAnswering": {
-    "description": "Muted one-line answer on a \"Tell me about this\" card row when the item's drive or server stopped answering while the card was gathering. A note at the top of the card already says so in a full sentence, so this stays short. No closing period."
+    "description": "Muted one-line answer on a \"Tell me about this\" card row when the item's drive or server stopped answering while the card was gathering. A note at the top of the card already says so in a full sentence, so this stays short. No closing period.",
+    "screenshot": "tell-me-about-this-stopped-answering.png"
   },
   "aboutThis.unknown.notFound": "It isn’t there anymore.",
   "@aboutThis.unknown.notFound": {
@@ -1317,14 +1453,16 @@
     "description": "First line of the \"Where it came from\" row on the \"Tell me about this\" card for a file inside a zip or other archive: the file has no download record of its own, so the row names the archive it sits in.",
     "placeholders": {
       "archive": { "description": "The archive's filename, exactly as it appears in the file list (\"Photos.zip\")." }
-    }
+    },
+    "screenshot": "tell-me-about-this-archive-entry.png"
   },
   "aboutThis.download.archiveRecord": "{platform, select, macos {What macOS recorded about the archive:} other {What your browser recorded about the archive:}}",
   "@aboutThis.download.archiveRecord": {
     "description": "Quiet line on the \"Tell me about this\" card for a file inside an archive, right above the archive's own download record (where the archive was downloaded from). Makes clear the lines that follow are about the archive, not the file inside it.",
     "placeholders": {
       "platform": { "description": "The OS Cmdr runs on: macos or other." }
-    }
+    },
+    "screenshot": "tell-me-about-this-archive-entry.png"
   },
   "aboutThis.gitSnapshot.from": "{kind, select, branch {As the branch {name} has it in <repo></repo>} tag {As the tag {name} has it in <repo></repo>} commit {As commit {name} has it in <repo></repo>} other {As stash entry {name} has it in <repo></repo>}}",
   "@aboutThis.gitSnapshot.from": {
@@ -1334,15 +1472,18 @@
       "name": {
         "description": "The branch or tag name, a commit's short id (\"1a2b3c4\"), or the stash entry's number."
       }
-    }
+    },
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.gitSnapshot.lastChanged": "Last changed by a commit on <date></date>",
   "@aboutThis.gitSnapshot.lastChanged": {
-    "description": "Quiet second line of the \"Git history\" row on the \"Tell me about this\" card: when a commit last changed this file in that branch or commit. <date></date> becomes a date. No closing period."
+    "description": "Quiet second line of the \"Git history\" row on the \"Tell me about this\" card: when a commit last changed this file in that branch or commit. <date></date> becomes a date. No closing period.",
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.gitSnapshot.copyCommit": "Copy the commit’s id",
   "@aboutThis.gitSnapshot.copyCommit": {
-    "description": "Tooltip and screen-reader label of the copy button beside a commit on the \"Tell me about this\" card. Copies the commit's full id."
+    "description": "Tooltip and screen-reader label of the copy button beside a commit on the \"Tell me about this\" card. Copies the commit's full id.",
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.headline.insideArchive": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, inside {archive}",
   "@aboutThis.headline.insideArchive": {
@@ -1351,7 +1492,8 @@
       "what": { "description": "What the item is, already worded (\"Image\", \"Folder\", \"Item in an archive\")." },
       "sizeShown": { "description": "Whether a size follows: exact, atLeast, or other (no size)." },
       "archive": { "description": "The archive's filename, exactly as it appears in the file list." }
-    }
+    },
+    "screenshot": "tell-me-about-this-archive-entry.png"
   },
   "aboutThis.headline.fromGitHistory": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, {kind, select, branch {as the branch {name} has it} tag {as the tag {name} has it} commit {as commit {name} has it} other {as stash entry {name} has it}}",
   "@aboutThis.headline.fromGitHistory": {
@@ -1361,7 +1503,8 @@
       "sizeShown": { "description": "Whether a size follows: exact, atLeast, or other (no size)." },
       "kind": { "description": "branch, tag, commit, or other (a stash entry)." },
       "name": { "description": "The branch or tag name, a commit's short id, or the stash entry's number." }
-    }
+    },
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.removal.holdsRepoHistory": "It holds the repository’s whole history. Removing it leaves the files but drops every commit that isn’t pushed somewhere else, and Cmdr can’t tell what’s pushed.",
   "@aboutThis.removal.holdsRepoHistory": {
@@ -1369,52 +1512,64 @@
   },
   "aboutThis.removal.inGitHistory": "This is git’s record of it at that point in history, not a file on the disk, so there’s nothing to remove here.",
   "@aboutThis.removal.inGitHistory": {
-    "description": "The line under \"What removing it means\" on the \"Tell me about this\" card for a file inside git's history view (a past version kept by git). A fact, never advice."
+    "description": "The line under \"What removing it means\" on the \"Tell me about this\" card for a file inside git's history view (a past version kept by git). A fact, never advice.",
+    "screenshot": "tell-me-about-this-git-snapshot.png"
   },
   "aboutThis.verdict.label": "AI wrote this",
   "@aboutThis.verdict.label": {
-    "description": "Heading of the AI take's block on the \"Tell me about this\" card. The \"AI take\" is two or three sentences an AI model writes about the item from the facts the card lists, shown in its own block, set apart from the facts, right above \"What removing it means\". It says plainly that the text below was written by an AI, not by Cmdr, so nobody mistakes it for one of Cmdr's own facts. Short label, sentence case."
+    "description": "Heading of the AI take's block on the \"Tell me about this\" card. The \"AI take\" is two or three sentences an AI model writes about the item from the facts the card lists, shown in its own block, set apart from the facts, right above \"What removing it means\". It says plainly that the text below was written by an AI, not by Cmdr, so nobody mistakes it for one of Cmdr's own facts. Short label, sentence case.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.verdict.trust.oftenWrong": "This model, or a similar one, often got its take wrong when Cmdr tested it. Check it against the card’s facts, or switch to a stronger model.",
   "@aboutThis.verdict.trust.oftenWrong": {
-    "description": "Red warning line inside the AI take's block on the \"Tell me about this\" card, shown when the AI model writing the take is one Cmdr tested for this feature (or one like it, for example a smaller or older model of the same family, or the small on-device model) and found that its write-ups often say things that aren't right. The \"take\" is the two or three sentences the AI writes about the file. A link after it opens Settings to change the model (aboutThis.verdict.trust.changeModel). Plain words, no blame on the person."
+    "description": "Red warning line inside the AI take's block on the \"Tell me about this\" card, shown when the AI model writing the take is one Cmdr tested for this feature (or one like it, for example a smaller or older model of the same family, or the small on-device model) and found that its write-ups often say things that aren't right. The \"take\" is the two or three sentences the AI writes about the file. A link after it opens Settings to change the model (aboutThis.verdict.trust.changeModel). Plain words, no blame on the person.",
+    "screenshot": "tell-me-about-this-verdict-often-wrong.png"
   },
   "aboutThis.verdict.trust.changeModel": "Change the model",
   "@aboutThis.verdict.trust.changeModel": {
-    "description": "Link after the red warning in the AI take's block on the \"Tell me about this\" card (aboutThis.verdict.trust.oftenWrong). Opens Settings > AI, where the person picks which AI model Cmdr uses. Short link text."
+    "description": "Link after the red warning in the AI take's block on the \"Tell me about this\" card (aboutThis.verdict.trust.oftenWrong). Opens Settings > AI, where the person picks which AI model Cmdr uses. Short link text.",
+    "screenshot": "tell-me-about-this-verdict-often-wrong.png"
   },
   "aboutThis.verdict.trust.untested": "Cmdr hasn’t tested this model for these takes, so it can’t say whether to trust this one.",
   "@aboutThis.verdict.trust.untested": {
-    "description": "Yellow warning line inside the AI take's block on the \"Tell me about this\" card, shown when the AI model writing the take is one Cmdr never tested for this feature, so Cmdr can't say whether its two or three sentences about the file can be trusted. No link. Plain words."
+    "description": "Yellow warning line inside the AI take's block on the \"Tell me about this\" card, shown when the AI model writing the take is one Cmdr never tested for this feature, so Cmdr can't say whether its two or three sentences about the file can be trusted. No link. Plain words.",
+    "screenshot": "tell-me-about-this-verdict-untested.png"
   },
   "aboutThis.verdict.writing": "Writing a short take…",
   "@aboutThis.verdict.writing": {
-    "description": "Quiet placeholder in the AI take's block on the \"Tell me about this\" card while the AI hasn't written anything yet (the facts may still be landing, or the request is on its way). The \"AI take\" is two or three sentences an AI model writes about the item from the facts the card lists, shown in its own block, set apart from the facts, right above \"What removing it means\". Ends with an ellipsis."
+    "description": "Quiet placeholder in the AI take's block on the \"Tell me about this\" card while the AI hasn't written anything yet (the facts may still be landing, or the request is on its way). The \"AI take\" is two or three sentences an AI model writes about the item from the facts the card lists, shown in its own block, set apart from the facts, right above \"What removing it means\". Ends with an ellipsis.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.verdict.stop": "Stop",
   "@aboutThis.verdict.stop": {
-    "description": "Button in the AI take's block on the \"Tell me about this\" card, shown while the AI is writing. Stops the AI take alone; the card and its facts stay, and the text written so far stays too. Short control label."
+    "description": "Button in the AI take's block on the \"Tell me about this\" card, shown while the AI is writing. Stops the AI take alone; the card and its facts stay, and the text written so far stays too. Short control label.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.verdict.stopTooltip": "Stops the AI take. The facts and what it wrote so far stay.",
   "@aboutThis.verdict.stopTooltip": {
-    "description": "Tooltip on the Stop button of the AI take on the \"Tell me about this\" card."
+    "description": "Tooltip on the Stop button of the AI take on the \"Tell me about this\" card.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.verdict.stopped": "Stopped",
   "@aboutThis.verdict.stopped": {
-    "description": "Quiet mark after the text of the AI take on the \"Tell me about this\" card when the person stopped it (or cloud AI was turned off) before the AI finished. The text so far stays. One word."
+    "description": "Quiet mark after the text of the AI take on the \"Tell me about this\" card when the person stopped it (or cloud AI was turned off) before the AI finished. The text so far stays. One word.",
+    "screenshot": "tell-me-about-this-verdict-stopped.png"
   },
   "aboutThis.verdict.fromEarlier": "From earlier",
   "@aboutThis.verdict.fromEarlier": {
-    "description": "Quiet tag beside the AI take's heading on the \"Tell me about this\" card when the take was written earlier in this session for the same, unchanged item, so Cmdr showed it again without asking the AI. Short."
+    "description": "Quiet tag beside the AI take's heading on the \"Tell me about this\" card when the take was written earlier in this session for the same, unchanged item, so Cmdr showed it again without asking the AI. Short.",
+    "screenshot": "tell-me-about-this-verdict-from-earlier.png"
   },
   "aboutThis.verdict.announcement": "AI wrote this: {text}",
   "@aboutThis.verdict.announcement": {
     "description": "Read aloud once by screen readers when the AI take on the \"Tell me about this\" card is complete. Not shown on screen.",
-    "placeholders": { "text": { "description": "The AI's two or three sentences, as written." } }
+    "placeholders": { "text": { "description": "The AI's two or three sentences, as written." } },
+    "screenshot": "tell-me-about-this-verdict-done.png"
   },
   "aboutThis.verdict.given.none": "From the card’s facts. Cmdr didn’t look inside.",
   "@aboutThis.verdict.given.none": {
-    "description": "Line under the AI take's heading on the \"Tell me about this\" card, shown from the moment the request goes out, saying what the AI was given: only the facts the card lists, nothing from inside the item (a folder, an item on a server, or a file whose contents gave nothing to read)."
+    "description": "Line under the AI take's heading on the \"Tell me about this\" card, shown from the moment the request goes out, saying what the AI was given: only the facts the card lists, nothing from inside the item (a folder, an item on a server, or a file whose contents gave nothing to read).",
+    "screenshot": "tell-me-about-this-verdict-going-out.png"
   },
   "aboutThis.verdict.given.firstLines": "From the card’s facts and its first lines.",
   "@aboutThis.verdict.given.firstLines": {
@@ -1426,7 +1581,8 @@
   },
   "aboutThis.verdict.given.entryNames": "From the card’s facts and the names of the first files inside.",
   "@aboutThis.verdict.given.entryNames": {
-    "description": "Line under the AI take's heading on the \"Tell me about this\" card, shown from the moment the request goes out, saying what the AI was given: the facts the card lists plus the names of the first files inside the archive (a zip, for example). Not their contents."
+    "description": "Line under the AI take's heading on the \"Tell me about this\" card, shown from the moment the request goes out, saying what the AI was given: the facts the card lists plus the names of the first files inside the archive (a zip, for example). Not their contents.",
+    "screenshot": "tell-me-about-this-verdict-long.png"
   },
   "aboutThis.verdict.given.cameraDetails": "From the card’s facts and the photo’s camera details, without its location.",
   "@aboutThis.verdict.given.cameraDetails": {
@@ -1446,7 +1602,8 @@
   },
   "aboutThis.verdict.problem.unreachable": "Cmdr couldn’t reach your AI provider.",
   "@aboutThis.verdict.problem.unreachable": {
-    "description": "Quiet line in the AI take's block on the \"Tell me about this\" card when the AI provider didn't answer (offline, or it timed out). Never uses the words \"error\" or \"failed\"."
+    "description": "Quiet line in the AI take's block on the \"Tell me about this\" card when the AI provider didn't answer (offline, or it timed out). Never uses the words \"error\" or \"failed\".",
+    "screenshot": "tell-me-about-this-verdict-unreachable.png"
   },
   "aboutThis.verdict.problem.overloaded": "Your AI provider is busy right now.",
   "@aboutThis.verdict.problem.overloaded": {
@@ -1458,7 +1615,8 @@
   },
   "aboutThis.verdict.problem.noAnswer": "The AI didn’t write anything this time.",
   "@aboutThis.verdict.problem.noAnswer": {
-    "description": "Quiet line in the AI take's block on the \"Tell me about this\" card when the AI's answer came back empty. Never uses the words \"error\" or \"failed\"."
+    "description": "Quiet line in the AI take's block on the \"Tell me about this\" card when the AI's answer came back empty. Never uses the words \"error\" or \"failed\".",
+    "screenshot": "tell-me-about-this-verdict-no-answer.png"
   },
   "aboutThis.verdict.problem.other": "Your AI provider couldn’t answer this time.",
   "@aboutThis.verdict.problem.other": {
@@ -1466,50 +1624,61 @@
   },
   "aboutThis.verdict.unavailable.noCloudConsent": "Allow cloud AI for a deeper read of each item.",
   "@aboutThis.verdict.unavailable.noCloudConsent": {
-    "description": "Small hint line under the buttons of the \"Tell me about this\" card when cloud AI is picked but not allowed yet (or was allowed under older wording of what it sends, so it needs allowing again). The \"deeper read\" is a short take an AI writes about the file or folder, beside the facts Cmdr found itself. A link after it opens Settings at the full list of what cloud AI gets; the card never allows it in one click. The person can close the line with its ×."
+    "description": "Small hint line under the buttons of the \"Tell me about this\" card when cloud AI is picked but not allowed yet (or was allowed under older wording of what it sends, so it needs allowing again). The \"deeper read\" is a short take an AI writes about the file or folder, beside the facts Cmdr found itself. A link after it opens Settings at the full list of what cloud AI gets; the card never allows it in one click. The person can close the line with its ×.",
+    "screenshot": "tell-me-about-this-verdict-no-consent.png"
   },
   "aboutThis.verdict.unavailable.notConfigured": "Add your AI provider’s key for a deeper read of each item.",
   "@aboutThis.verdict.unavailable.notConfigured": {
-    "description": "Small hint line under the buttons of the \"Tell me about this\" card when a cloud AI provider is picked but has no key or address set up. The \"deeper read\" is a short take an AI writes about the file or folder, beside the facts Cmdr found itself. A link after it opens Settings > AI. The person can close the line with its ×."
+    "description": "Small hint line under the buttons of the \"Tell me about this\" card when a cloud AI provider is picked but has no key or address set up. The \"deeper read\" is a short take an AI writes about the file or folder, beside the facts Cmdr found itself. A link after it opens Settings > AI. The person can close the line with its ×.",
+    "screenshot": "tell-me-about-this-verdict-not-configured.png"
   },
   "aboutThis.verdict.unavailable.notReady": "The local AI model isn’t running, so there’s no AI take this time.",
   "@aboutThis.verdict.unavailable.notReady": {
-    "description": "One quiet line on the \"Tell me about this\" card, in place of the AI take, when the on-device AI model's server isn't running. The card never starts it."
+    "description": "One quiet line on the \"Tell me about this\" card, in place of the AI take, when the on-device AI model's server isn't running. The card never starts it.",
+    "screenshot": "tell-me-about-this-verdict-not-ready.png"
   },
   "aboutThis.verdict.unavailable.tooManyRequests": "That’s a lot of AI takes in a minute. Try again in a moment.",
   "@aboutThis.verdict.unavailable.tooManyRequests": {
-    "description": "One quiet line on the \"Tell me about this\" card, in place of the AI take, when many cards were opened within a minute and Cmdr held back to keep the cost down."
+    "description": "One quiet line on the \"Tell me about this\" card, in place of the AI take, when many cards were opened within a minute and Cmdr held back to keep the cost down.",
+    "screenshot": "tell-me-about-this-verdict-too-many.png"
   },
   "aboutThis.verdict.unavailable.openAiSettings": "Open AI settings",
   "@aboutThis.verdict.unavailable.openAiSettings": {
-    "description": "Link beside a hint about the AI take on the \"Tell me about this\" card (cloud AI needs allowing, no key set up, or AI is off). Opens Settings > AI. Short link text."
+    "description": "Link beside a hint about the AI take on the \"Tell me about this\" card (cloud AI needs allowing, no key set up, or AI is off). Opens Settings > AI. Short link text.",
+    "screenshot": "tell-me-about-this-verdict-no-consent.png"
   },
   "aboutThis.verdict.aiOffHint": "Turn on AI for a deeper read of each item.",
   "@aboutThis.verdict.aiOffHint": {
-    "description": "Small hint line under the buttons of the \"Tell me about this\" card when AI is turned off in Settings: the card shows only Cmdr's own facts. The \"deeper read\" is a short take an AI writes about the file or folder, in its own column beside the facts. A link after it opens Settings > AI. The person can close the line with its ×."
+    "description": "Small hint line under the buttons of the \"Tell me about this\" card when AI is turned off in Settings: the card shows only Cmdr's own facts. The \"deeper read\" is a short take an AI writes about the file or folder, in its own column beside the facts. A link after it opens Settings > AI. The person can close the line with its ×.",
+    "screenshot": "tell-me-about-this-verdict-ai-off.png"
   },
   "aboutThis.verdict.column": "AI take",
   "@aboutThis.verdict.column": {
-    "description": "Screen-reader name of the right-hand column of the \"Tell me about this\" card, which holds the short take an AI wrote about the file or folder (or one line saying why there's none this time). Not shown on screen. A noun phrase."
+    "description": "Screen-reader name of the right-hand column of the \"Tell me about this\" card, which holds the short take an AI wrote about the file or folder (or one line saying why there's none this time). Not shown on screen. A noun phrase.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.verdict.hint.dismiss": "Hide this hint",
   "@aboutThis.verdict.hint.dismiss": {
-    "description": "Screen-reader label of the small × button at the end of the AI hint line on the \"Tell me about this\" card (aboutThis.verdict.aiOffHint and its siblings). Pressing it hides the line for good on every card."
+    "description": "Screen-reader label of the small × button at the end of the AI hint line on the \"Tell me about this\" card (aboutThis.verdict.aiOffHint and its siblings). Pressing it hides the line for good on every card.",
+    "screenshot": "tell-me-about-this-verdict-no-consent.png"
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Hide this hint. You can bring it back in Settings > Advanced.} linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Hide this hint. You can bring it back in Settings > Advanced.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
     "description": "Tooltip of the small × button at the end of the AI hint line on the \"Tell me about this\" card. \"Settings > Advanced\" names the Settings page whose \"Hints and warnings\" group has the switch that brings the line back; use the page names the app uses in this language. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
-    }
+    },
+    "screenshot": "tell-me-about-this-verdict-no-consent.png"
   },
   "aboutThis.action.continueInAskCmdr": "Continue in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {
-    "description": "Button (or a row behind \"More\") in the footer of the \"Tell me about this\" card, shown while Ask Cmdr is on. Closes the card and opens Ask Cmdr, the app's AI chat panel, on a new chat with this item attached and a short question typed in but not sent. \"Ask Cmdr\" is the feature's name and stays verbatim. Short control label."
+    "description": "Button (or a row behind \"More\") in the footer of the \"Tell me about this\" card, shown while Ask Cmdr is on. Closes the card and opens Ask Cmdr, the app's AI chat panel, on a new chat with this item attached and a short question typed in but not sent. \"Ask Cmdr\" is the feature's name and stays verbatim. Short control label.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.action.continueInAskCmdrTooltip": "Opens a new Ask Cmdr chat about this item. Nothing is sent until you send it.",
   "@aboutThis.action.continueInAskCmdrTooltip": {
-    "description": "Tooltip on the \"Continue in Ask Cmdr\" button of the \"Tell me about this\" card. \"Ask Cmdr\" is the feature's name and stays verbatim."
+    "description": "Tooltip on the \"Continue in Ask Cmdr\" button of the \"Tell me about this\" card. \"Ask Cmdr\" is the feature's name and stays verbatim.",
+    "screenshot": "tell-me-about-this-verdict-waiting.png"
   },
   "aboutThis.continueInAskCmdr.draft": "Tell me more about this.",
   "@aboutThis.continueInAskCmdr.draft": {
@@ -1517,11 +1686,13 @@
   },
   "aboutThis.label.name": "Name",
   "@aboutThis.label.name": {
-    "description": "Row label on the \"Tell me about this\" card, in \"What it is\", shown only when the item's name hides a character that changes the order text shows in, or characters that display as nothing. Short label."
+    "description": "Row label on the \"Tell me about this\" card, in \"What it is\", shown only when the item's name hides a character that changes the order text shows in, or characters that display as nothing. Short label.",
+    "screenshot": "tell-me-about-this-disguised-name.png"
   },
   "aboutThis.identity.nameHidReordering": "Its name hides a character that flips the text’s direction, so in other apps it can seem to end differently. Cmdr shows it without that character.",
   "@aboutThis.identity.nameHidReordering": {
-    "description": "The \"Name\" row on the \"Tell me about this\" card, shown only when the item's real name holds an invisible character that reverses the order the text shows in (a Unicode direction override), a trick that makes a program look like, say, a PDF in some apps. Cmdr dropped the character everywhere it shows the name, so the title and rows show its real ending. Plain words, no jargon like \"Unicode\" or \"bidi\"."
+    "description": "The \"Name\" row on the \"Tell me about this\" card, shown only when the item's real name holds an invisible character that reverses the order the text shows in (a Unicode direction override), a trick that makes a program look like, say, a PDF in some apps. Cmdr dropped the character everywhere it shows the name, so the title and rows show its real ending. Plain words, no jargon like \"Unicode\" or \"bidi\".",
+    "screenshot": "tell-me-about-this-disguised-name.png"
   },
   "aboutThis.identity.nameHidInvisible": "Its name holds characters you can’t see, so it can look like another name or carry hidden text. Cmdr shows it without them.",
   "@aboutThis.identity.nameHidInvisible": {
@@ -1529,7 +1700,8 @@
   },
   "aboutThis.label.imageContents": "What it shows",
   "@aboutThis.label.imageContents": {
-    "description": "Row label on the \"Tell me about this\" card for a picture: what Cmdr's on-device image index recognized in it (labels and text). Short, sentence case."
+    "description": "Row label on the \"Tell me about this\" card for a picture: what Cmdr's on-device image index recognized in it (labels and text). Short, sentence case.",
+    "screenshot": "tell-me-about-this-picture-shows.png"
   },
   "aboutThis.imageContents.tags": "Tagged as {tags}",
   "@aboutThis.imageContents.tags": {
@@ -1538,34 +1710,41 @@
       "tags": {
         "description": "A list of labels joined with commas and \"and\", for example \"beach, sand, and sky\". The labels come from the system and stay in English."
       }
-    }
+    },
+    "screenshot": "tell-me-about-this-picture-shows.png"
   },
   "aboutThis.imageContents.textHeading": "Text in it:",
   "@aboutThis.imageContents.textHeading": {
-    "description": "Muted lead-in on the \"What it shows\" row of the \"Tell me about this\" card, right above the first lines of text Cmdr's image index recognized in the picture (on a sign, a screenshot, a receipt)."
+    "description": "Muted lead-in on the \"What it shows\" row of the \"Tell me about this\" card, right above the first lines of text Cmdr's image index recognized in the picture (on a sign, a screenshot, a receipt).",
+    "screenshot": "tell-me-about-this-picture-shows.png"
   },
   "aboutThis.imageContents.textLine": "“{text}”",
   "@aboutThis.imageContents.textLine": {
     "description": "One line of text Cmdr's image index recognized in a picture, quoted, on the \"What it shows\" row of the \"Tell me about this\" card. Use the language's own quotation marks.",
     "placeholders": {
       "text": { "description": "The recognized text, exactly as the picture shows it. It can be in any language." }
-    }
+    },
+    "screenshot": "tell-me-about-this-picture-shows.png"
   },
   "aboutThis.imageContents.moreText": "And more text",
   "@aboutThis.imageContents.moreText": {
-    "description": "Muted line under the quoted lines on the \"What it shows\" row of the \"Tell me about this\" card, when the picture holds more recognized text than the card shows. No closing period."
+    "description": "Muted line under the quoted lines on the \"What it shows\" row of the \"Tell me about this\" card, when the picture holds more recognized text than the card shows. No closing period.",
+    "screenshot": "tell-me-about-this-picture-shows.png"
   },
   "aboutThis.imageContents.nothing": "No tags or text found",
   "@aboutThis.imageContents.nothing": {
-    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when Cmdr's image index looked at the picture and found no confident label and no text. An ordinary state. No closing period."
+    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when Cmdr's image index looked at the picture and found no confident label and no text. An ordinary state. No closing period.",
+    "screenshot": "tell-me-about-this-picture-nothing-found.png"
   },
   "aboutThis.imageContents.notIndexed": "Not in Cmdr’s image index",
   "@aboutThis.imageContents.notIndexed": {
-    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when Cmdr's image index has nothing on this picture: it hasn't reached it yet, or it's in a folder left out of image search. An ordinary state, not a problem. No closing period."
+    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when Cmdr's image index has nothing on this picture: it hasn't reached it yet, or it's in a folder left out of image search. An ordinary state, not a problem. No closing period.",
+    "screenshot": "tell-me-about-this-picture-not-indexed.png"
   },
   "aboutThis.imageContents.indexingOff": "Image indexing is off",
   "@aboutThis.imageContents.indexingOff": {
-    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when the person turned image indexing off in Settings, so Cmdr has nothing stored about what pictures show. An ordinary state. No closing period."
+    "description": "Muted answer on the \"What it shows\" row of the \"Tell me about this\" card when the person turned image indexing off in Settings, so Cmdr has nothing stored about what pictures show. An ordinary state. No closing period.",
+    "screenshot": "tell-me-about-this-picture-indexing-off.png"
   },
   "aboutThis.unknown.indexingOff": "Its index is turned off",
   "@aboutThis.unknown.indexingOff": {

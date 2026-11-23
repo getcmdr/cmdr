@@ -2121,7 +2121,8 @@
       "maxLength": "the longest a name may be in that unit, formatted (e.g. 255)",
       "max": "the same maximum as a number; drives the plural of the unit",
       "unit": "\"bytes\" when the drive counts bytes, anything else when it counts characters"
-    }
+    },
+    "screenshot": "mkdir-confirmation-too-long.png"
   },
   "fileOperations.validation.pathLength": "Full path is too long ({length}/{maxLength} {unit, select, bytes {{max, plural, one {byte} other {bytes}}} other {{max, plural, one {character} other {characters}}}})",
   "@fileOperations.validation.pathLength": {

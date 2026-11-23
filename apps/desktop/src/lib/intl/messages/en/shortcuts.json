@@ -68,8 +68,7 @@
   "shortcuts.scope.tellMeAbout": "Tell me about this",
   "@shortcuts.scope.tellMeAbout": {
     "description": "Group heading in the Keyboard shortcuts list for keys that work inside the \"Tell me about this\" card (the dialog that lists what Cmdr knows about one file or folder, with a short AI take beside it). A short section title; match commands.fileTellMeAbout.label.",
-    "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshot": "settings-keyboard-shortcuts.png"
   },
   "shortcuts.scope.askCmdr": "Ask Cmdr",
   "@shortcuts.scope.askCmdr": {

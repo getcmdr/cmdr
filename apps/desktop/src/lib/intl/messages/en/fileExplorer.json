@@ -98,8 +98,7 @@
       "countText": "how many names match, already formatted for display",
       "count": "the same number (drives the singular/plural form and the no-match wording)",
       "pattern": "the characters the user typed to filter the list"
-    },
-    "screenshot": "quick-filter-mode.png"
+    }
   },
   "fileExplorer.pane.filterCleared": "{count, plural, =0 {Filter cleared} one {Filter cleared, {countText} name} other {Filter cleared, {countText} names}}",
   "@fileExplorer.pane.filterCleared": {

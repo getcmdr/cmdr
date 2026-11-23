@@ -2929,8 +2929,7 @@
   "errors.write.folderHoldsUnlistedItems.suggestion": "Remove those items in your storage provider’s console or another S3 tool, then try again.",
   "@errors.write.folderHoldsUnlistedItems.title": {
     "description": "Title of the error dialog when Cmdr was asked to delete (or move away) a folder in cloud object storage (S3) that shows as empty in Cmdr, yet still holds items. Plain text. \"Hidden\" means Cmdr can't show them, NOT that they carry a hidden-file flag: their names are spelled in a way no file path can address (for example with a doubled slash, `photos//a.jpg`), so Cmdr leaves them out of every listing.",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-folder_holds_unlisted_items.png"
   },
   "@errors.write.folderHoldsUnlistedItems.message": {
     "description": "Body of the same dialog. Plain text. Explains why a folder that looks empty can't be deleted: the cloud storage still keeps items in it whose names Cmdr can't show (names with a doubled slash or a lone dot as one part, which no file path can address). Cmdr leaves those items alone, so the folder stays. \"The storage\" means the cloud storage service (for example Amazon S3).",
@@ -2939,21 +2938,18 @@
         "description": "The full path of the folder, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-folder_holds_unlisted_items.png"
   },
   "@errors.write.folderHoldsUnlistedItems.suggestion": {
     "description": "Recovery suggestion for the same dialog. Plain text. \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console). \"Another S3 tool\" means any other program that talks to S3-compatible storage (for example the AWS command-line tool), which can name those items where Cmdr can't. Keep \"S3\" as is.",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-folder_holds_unlisted_items.png"
   },
   "errors.write.cantTellIfSameFile.title": "This might be the file you’re copying",
   "errors.write.cantTellIfSameFile.message": "This drive doesn’t say whether {path} is the very file you’re copying, reached another way. Replacing it could have erased your original, so Cmdr stopped the copy here and left that file as it was.",
   "errors.write.cantTellIfSameFile.suggestion": "If you’re sure they’re two different files, delete the one at the destination and copy again. Or copy to another folder, or keep both files under different names.",
   "@errors.write.cantTellIfSameFile.title": {
     "description": "Title of the error dialog when a copy was about to replace an existing file, but the system couldn't say whether that file and the one being copied are the same file reached two ways (for example through a link or a network share). Plain text.",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-cant_tell_if_same_file.png"
   },
   "@errors.write.cantTellIfSameFile.message": {
     "description": "Body of the same dialog. Plain text. Explains that the drive (often a network share) gives no way to tell two files apart, so Cmdr stopped the whole copy at this file instead of replacing it: if the two were really one file reached by two paths, replacing it would have destroyed the original. Files copied before this one stay copied.",
@@ -2962,13 +2958,11 @@
         "description": "The full path of the existing file the copy would have replaced, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-cant_tell_if_same_file.png"
   },
   "@errors.write.cantTellIfSameFile.suggestion": {
     "description": "Recovery suggestion for the same dialog. Plain text. Three ways forward: delete the existing file by hand first when the person knows it's a different file, copy into a different folder, or keep both files (the copy's option that gives the new file a different name).",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-cant_tell_if_same_file.png"
   },
   "errors.write.mountedVolumeInside.title": "A mounted drive is in the way",
   "errors.write.mountedVolumeInside.message.delete": "A drive or server is mounted at {mountPoint}, and deleting there would erase everything on it. Cmdr stopped before deleting anything.",
@@ -3164,8 +3158,7 @@
   "errors.write.linksNotSupported.suggestion": "{platform, select, macos {Copy to a drive formatted as APFS or Mac OS Extended, or leave the link out of what you copy.} windows {Cmdr can’t make links on Windows yet. Leave the link out of what you copy, or copy the item it points to.} other {Copy to a drive with a Linux file system like ext4, or leave the link out of what you copy.}}",
   "@errors.write.linksNotSupported.title": {
     "description": "Title of the copy/move error dialog when the destination (some network shares, or any drive on Windows, where Cmdr makes no links yet) can’t store a symbolic link that was part of the copy. \"Links\" means symbolic links (shortcuts that point to another file or folder). Plain text.",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-links_not_supported.png"
   },
   "@errors.write.linksNotSupported.message": {
     "description": "Body of the copy/move error dialog when the destination's file system can't store a symbolic link. \"Symbolic links\" are shortcuts that point to another file or folder; use the platform's usual term. \"Nothing there changed\" reassures that whatever already sat at that path (a file the copy was going to replace) is untouched. \"Cmdr\" is the product name. Plain text.",
@@ -3174,13 +3167,11 @@
         "description": "The full path where the link would have been copied, inserted verbatim. Do not translate or reformat it."
       }
     },
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-links_not_supported.png"
   },
   "@errors.write.linksNotSupported.suggestion": {
     "description": "Recovery suggestion when the destination can't store a symbolic link: copy to a drive whose file system holds links (APFS or Mac OS Extended on a Mac, a Linux file system like ext4 elsewhere), or leave the link out. On Windows, Cmdr can't create links at all yet, so it suggests leaving the link out or copying the item it points to. \"APFS\", \"Mac OS Extended\", and \"ext4\" are file system names; don't translate them. \"Cmdr\" is the product name. Plain text.",
-    "screenshot": "error-message-example.png",
-    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+    "screenshot": "transfer-error-links_not_supported.png"
   },
   "errors.write.newDataKeptAt.title": "Your new file is under a different name",
   "errors.write.newDataKeptAt.message": "The new {path} is written and complete, but the destination wouldn’t let it take that name, and the file it was replacing is already gone. The new one is at {keptAt}.",

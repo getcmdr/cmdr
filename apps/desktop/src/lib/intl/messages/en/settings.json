@@ -378,12 +378,12 @@
   "settings.appearance.showFunctionKeyBar.label": "Show function key bar",
   "@settings.appearance.showFunctionKeyBar.label": {
     "description": "Label for the toggle that shows the row of F-key command buttons at the bottom of the window. In Settings > Appearance > Zoom and density.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-zoom.png"
   },
   "settings.appearance.showFunctionKeyBar.description": "Show the row of F-key command buttons (Rename, View, Copy, and so on) at the bottom of the window.",
   "@settings.appearance.showFunctionKeyBar.description": {
     "description": "Help text for the function-key-bar toggle. \"F-key\" means a keyboard function key (F1-F12). \"Rename\", \"View\", and \"Copy\" are Cmdr command names; translate them consistently with those commands elsewhere.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-zoom.png"
   },
   "settings.appearance.showFunctionKeyBar.keywords": "function, key, bar, shortcut, buttons, bottom, toolbar",
   "@settings.appearance.showFunctionKeyBar.keywords": {
@@ -467,12 +467,12 @@
   "settings.listing.spaceCalculatesFolderSize.label": "Calculate folder size with Space",
   "@settings.listing.spaceCalculatesFolderSize.label": {
     "description": "Settings > Behavior > Navigation & file ops switch: pressing the Space key to select a folder also calculates the folder's total size, like Total Commander. \"Space\" is the key name.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.listing.spaceCalculatesFolderSize.description": "When Space selects a folder whose size isn’t known yet, Cmdr adds up its contents and shows the total. Esc stops the calculation.",
   "@settings.listing.spaceCalculatesFolderSize.description": {
     "description": "Help text for the Space-calculates-folder-size switch. Esc is the key name.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.listing.spaceCalculatesFolderSize.keywords": "space, size, folder, folders, directory, calculate, count, select",
   "@settings.listing.spaceCalculatesFolderSize.keywords": {
@@ -643,7 +643,8 @@
   },
   "settings.fileOperations.skipConfirmation.summary": "A bit risky: one keypress acts at once. Deleting permanently still asks.",
   "@settings.fileOperations.skipConfirmation.summary": {
-    "description": "Short line under the skip-confirmation switch. \"A bit risky\" is a gentle, friendly caution, not an alarm: keep the tone light. Says that one keypress copies, moves, or deletes right away, but deleting permanently (skipping the trash) still asks first."
+    "description": "Short line under the skip-confirmation switch. \"A bit risky\" is a gentle, friendly caution, not an alarm: keep the tone light. Says that one keypress copies, moves, or deletes right away, but deleting permanently (skipping the trash) still asks first.",
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileOperations.skipConfirmation.keywords": "{platform, select, windows {confirm, confirmation, dialog, ask, copy, move, recycle bin, delete, skip, clicks} other {confirm, confirmation, dialog, ask, copy, move, trash, delete, skip, clicks}}",
   "@settings.fileOperations.skipConfirmation.keywords": {
@@ -910,7 +911,8 @@
   },
   "settings.mediaIndex.enabled.summary": "{platform, select, macos {Makes the text in your images searchable. It never leaves your Mac.} windows {Makes the text in your images searchable. It never leaves your PC.} other {Makes the text in your images searchable. It never leaves your computer.}}",
   "@settings.mediaIndex.enabled.summary": {
-    "description": "Short line under the “Index image contents” switch. Says what it does and reassures the user it is on-device: the text read from images is never uploaded. \"OCR\" is not used in the copy on purpose; keep it plain. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux."
+    "description": "Short line under the “Index image contents” switch. Says what it does and reassures the user it is on-device: the text read from images is never uploaded. \"OCR\" is not used in the copy on purpose; keep it plain. The machine is “your Mac” on macOS, “your PC” on Windows, and “your computer” on Linux.",
+    "screenshot": "settings-indexing-image-indexing.png"
   },
   "settings.mediaIndex.enabled.keywords": "image, photo, text, search, index, picture, screenshot, content",
   "@settings.mediaIndex.enabled.keywords": {
@@ -1423,7 +1425,8 @@
   },
   "settings.search.autoApply.summary": "Runs name and regex searches as you type. AI searches wait for Enter.",
   "@settings.search.autoApply.summary": {
-    "description": "Short line under the auto-apply-searches switch. \"name\" searches match filenames; \"regex\" = regular-expression search, keep the term or use the locale’s standard equivalent. \"AI\" = artificial intelligence. \"Enter\" is the keyboard key name; use the locale’s key name."
+    "description": "Short line under the auto-apply-searches switch. \"name\" searches match filenames; \"regex\" = regular-expression search, keep the term or use the locale’s standard equivalent. \"AI\" = artificial intelligence. \"Enter\" is the keyboard key name; use the locale’s key name.",
+    "screenshot": "settings-behavior-search.png"
   },
   "settings.search.autoApply.keywords": "search, auto, apply, live, debounce, filename, instant",
   "@settings.search.autoApply.keywords": {
@@ -1552,7 +1555,8 @@
   },
   "settings.network.enabled.summary": "Finds SMB servers on your network. Mounted shares work either way.",
   "@settings.network.enabled.summary": {
-    "description": "Short line under the enable-networking switch. \"SMB\" is a protocol name (keep it). \"Mounted shares\" = network folders already attached to the system, which Cmdr can read and write whether this is on or off."
+    "description": "Short line under the enable-networking switch. \"SMB\" is a protocol name (keep it). \"Mounted shares\" = network folders already attached to the system, which Cmdr can read and write whether this is on or off.",
+    "screenshot": "settings-file-systems-smb.png"
   },
   "settings.network.enabled.keywords": "network, enable, enabled, discovery, local, permission",
   "@settings.network.enabled.keywords": {
@@ -1596,7 +1600,8 @@
   },
   "settings.network.requireSmbEncryption.summary": "Shares that can’t encrypt won’t open, and guests need to sign in.",
   "@settings.network.requireSmbEncryption.summary": {
-    "description": "Short line under the “Always require SMB encryption” switch. Says the consequences of turning it on: a share whose connection can’t be encrypted won’t open, and guest connections (made without signing in to an account) can’t be encrypted, so the user has to sign in."
+    "description": "Short line under the “Always require SMB encryption” switch. Says the consequences of turning it on: a share whose connection can’t be encrypted won’t open, and guest connections (made without signing in to an account) can’t be encrypted, so the user has to sign in.",
+    "screenshot": "settings-file-systems-smb.png"
   },
   "settings.network.requireSmbEncryption.keywords": "encrypt, encrypted, encryption, security, privacy, secure",
   "@settings.network.requireSmbEncryption.keywords": {
@@ -1643,11 +1648,13 @@
   },
   "settings.network.timeout.label": "Network timeout",
   "@settings.network.timeout.label": {
-    "description": "Label for a number field, in seconds: how long Cmdr waits for a network share to answer before giving up. In Settings > File systems > SMB/Network shares, card “Performance and timeouts”."
+    "description": "Label for a number field, in seconds: how long Cmdr waits for a network share to answer before giving up. In Settings > File systems > SMB/Network shares, card “Performance and timeouts”.",
+    "screenshot": "settings-file-systems-smb.png"
   },
   "settings.network.timeout.description": "How long Cmdr waits for a network share before giving up. 15 seconds suits typical local networks; try 45 for VPNs or high-latency connections.",
   "@settings.network.timeout.description": {
-    "description": "Help text behind the ⓘ next to the “Network timeout” field. The two numbers are recommended values in seconds; keep them as they are. “VPN” = virtual private network (keep the abbreviation or use your language’s standard form). “Cmdr” is the product name; keep it."
+    "description": "Help text behind the ⓘ next to the “Network timeout” field. The two numbers are recommended values in seconds; keep them as they are. “VPN” = virtual private network (keep the abbreviation or use your language’s standard form). “Cmdr” is the product name; keep it.",
+    "screenshot": "settings-file-systems-smb.png"
   },
   "settings.network.timeout.keywords": "timeout, wait, slow, seconds, connection, latency, vpn",
   "@settings.network.timeout.keywords": {
@@ -1679,7 +1686,8 @@
   },
   "settings.fileOperations.mtpEnabled.summary": "On your phone, set the USB connection to “File transfer” or similar.",
   "@settings.fileOperations.mtpEnabled.summary": {
-    "description": "Short line under the MTP switch (Android phones, Kindles, and cameras). The setup step the user must do on the phone. “File transfer” is an on-phone Android menu label quoted as an example; use the wording Android shows in your language, and note it varies by device. \"USB\" is a connector name; keep it."
+    "description": "Short line under the MTP switch (Android phones, Kindles, and cameras). The setup step the user must do on the phone. “File transfer” is an on-phone Android menu label quoted as an example; use the wording Android shows in your language, and note it varies by device. \"USB\" is a connector name; keep it.",
+    "screenshot": "settings-file-systems-mtp.png"
   },
   "settings.fileOperations.mtpEnabled.keywords": "device, phone, mobile",
   "@settings.fileOperations.mtpEnabled.keywords": {
@@ -1822,7 +1830,8 @@
   },
   "settings.developer.mcpPort.summary": "{platform, select, macos {Leave at 0 to let your Mac pick a free port.} windows {Leave at 0 to let your PC pick a free port.} other {Leave at 0 to let your computer pick a free port.}}",
   "@settings.developer.mcpPort.summary": {
-    "description": "Short line under the MCP server’s Port field. \"0\" is a literal value meaning “pick one for me”; keep the digit. \"port\" is the networking term. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux."
+    "description": "Short line under the MCP server’s Port field. \"0\" is a literal value meaning “pick one for me”; keep the digit. \"port\" is the networking term. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux.",
+    "screenshot": "settings-ai-mcp-server.png"
   },
   "settings.developer.mcpPort.keywords": "port, network, ephemeral",
   "@settings.developer.mcpPort.keywords": {
@@ -1916,7 +1925,8 @@
   },
   "settings.updates.crashReports.summary": "Never includes filenames or personal data.",
   "@settings.updates.crashReports.summary": {
-    "description": "Short line under the crash-reports switch, in a privacy-reassuring voice. The subject is the report Cmdr sends: it never includes filenames or personal data."
+    "description": "Short line under the crash-reports switch, in a privacy-reassuring voice. The subject is the report Cmdr sends: it never includes filenames or personal data.",
+    "screenshot": "settings-updates.png"
   },
   "settings.updates.crashReports.keywords": "crash, report, privacy, telemetry, bug, error",
   "@settings.updates.crashReports.keywords": {
@@ -1934,7 +1944,8 @@
   },
   "settings.updates.errorReports.summary": "Sends us a small log snippet when something goes wrong, so we can fix bugs faster.",
   "@settings.updates.errorReports.summary": {
-    "description": "Short line under the error-reports switch. \"us\" / \"we\" = the Cmdr team. \"log snippet\" = a short excerpt of the diagnostic log."
+    "description": "Short line under the error-reports switch. \"us\" / \"we\" = the Cmdr team. \"log snippet\" = a short excerpt of the diagnostic log.",
+    "screenshot": "settings-updates.png"
   },
   "settings.updates.errorReports.keywords": "error, report, auto, send, privacy, telemetry, bug, log, snippet, diagnostics",
   "@settings.updates.errorReports.keywords": {
@@ -2036,7 +2047,8 @@
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Keeps the index from taking the room your own files need.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {
-    "description": "Short line under the “Pause indexing when free space is below (%)” label (Settings > Advanced). Says why indexing pauses: so the drive index doesn’t use up the free space the user’s own files need."
+    "description": "Short line under the “Pause indexing when free space is below (%)” label (Settings > Advanced). Says why indexing pauses: so the drive index doesn’t use up the free space the user’s own files need.",
+    "screenshot": "settings-advanced.png"
   },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, space, full, free, index, indexing, pause, storage, threshold, percent, low",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
@@ -2213,22 +2225,22 @@
   "settings.fileExplorer.typeToJump.mode.label": "When you type in a pane",
   "@settings.fileExplorer.typeToJump.mode.label": {
     "description": "Settings > Behavior > Navigation & file ops label for the choice of what typing letters in a file pane does: jump the cursor to a matching file, or filter the list down to matching files.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileExplorer.typeToJump.mode.description": "{platform, select, macos {Jump moves the cursor to the best match. Filter shows only the files and folders whose names contain what you type, like Total Commander’s quick filter; Delete (⌫) edits it and Esc clears it.} other {Jump moves the cursor to the best match. Filter shows only the files and folders whose names contain what you type, like Total Commander’s quick filter; Backspace edits it and Esc clears it.}}",
   "@settings.fileExplorer.typeToJump.mode.description": {
     "description": "Help text for the type-in-pane mode setting. \"Total Commander\" is a product name (keep as-is). \"quick filter\" is Total Commander's name for the feature. Delete (⌫), Backspace, and Esc are key names: use your language's standard name for each key (on macOS, VoiceOver's key names), and keep the ⌫ glyph. One key, named per OS: a Mac keyboard prints Delete (⌫) where a PC keyboard prints Backspace. The option names Jump and Filter must match the badge prefixes fileExplorer.typeToJump.prefix and fileExplorer.quickFilter.prefix.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileExplorer.typeToJump.mode.opt.jump": "Jump",
   "@settings.fileExplorer.typeToJump.mode.opt.jump": {
     "description": "Option in the type-in-pane mode toggle: typing moves the cursor to the best-matching file. Short verb.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileExplorer.typeToJump.mode.opt.filter": "Filter",
   "@settings.fileExplorer.typeToJump.mode.opt.filter": {
     "description": "Option in the type-in-pane mode toggle: typing narrows the list to matching files. Short verb.",
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.fileExplorer.typeToJump.mode.keywords": "type, jump, filter, quick filter, quick search, narrow, keystroke",
   "@settings.fileExplorer.typeToJump.mode.keywords": {
@@ -2274,7 +2286,8 @@
   },
   "settings.advanced.maxLogStorageMb.summary": "Set to 0 to keep no logs, but then error reports can’t be sent.",
   "@settings.advanced.maxLogStorageMb.summary": {
-    "description": "Short line under the max-log-storage label (Settings > Advanced). \"0\" is a literal value the user types to turn log storage off; keep the digit. Warns that without logs Cmdr can’t send error reports."
+    "description": "Short line under the max-log-storage label (Settings > Advanced). \"0\" is a literal value the user types to turn log storage off; keep the digit. Warns that without logs Cmdr can’t send error reports.",
+    "screenshot": "settings-advanced.png"
   },
   "settings.advanced.maxLogStorageMb.keywords": "log, storage, disk, cap, rotation, error, report, privacy",
   "@settings.advanced.maxLogStorageMb.keywords": {
@@ -2329,7 +2342,8 @@
   },
   "settings.advanced.logLlmCalls.summary": "Saves every AI request and response locally, file paths included.",
   "@settings.advanced.logLlmCalls.summary": {
-    "description": "Short line under the “Log AI model calls” label (Settings > Advanced). Says the switch saves every request to and response from the AI provider on this machine, and warns that the saved files include file paths. “AI” = artificial intelligence."
+    "description": "Short line under the “Log AI model calls” label (Settings > Advanced). Says the switch saves every request to and response from the AI provider on this machine, and warns that the saved files include file paths. “AI” = artificial intelligence.",
+    "screenshot": "settings-advanced.png"
   },
   "settings.advanced.logLlmCalls.keywords": "ai, log, debug, request, response, prompt",
   "@settings.advanced.logLlmCalls.keywords": {
@@ -2842,11 +2856,13 @@
   },
   "settings.aboutThis.aiHintDismissed.label": "Suppress the AI hint on “Tell me about this”",
   "@settings.aboutThis.aiHintDismissed.label": {
-    "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the small line under the buttons of the “Tell me about this” card saying that turning on AI adds a deeper read of each item (aboutThis.verdict.aiOffHint). It stays until closed with its ×. On means the user closed the line and it won’t show again; turning it off makes the line show again. Use the same name for “Tell me about this” as the command does in this language."
+    "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the small line under the buttons of the “Tell me about this” card saying that turning on AI adds a deeper read of each item (aboutThis.verdict.aiOffHint). It stays until closed with its ×. On means the user closed the line and it won’t show again; turning it off makes the line show again. Use the same name for “Tell me about this” as the command does in this language.",
+    "screenshot": "settings-advanced.png"
   },
   "settings.aboutThis.aiHintDismissed.description": "With AI off, or not set up yet, the “Tell me about this” card shows a line under its buttons saying AI adds a deeper read. Closing the line with its × turns this on. Turn this off to see the line again.",
   "@settings.aboutThis.aiHintDismissed.description": {
-    "description": "Help text for the “Suppress the AI hint on “Tell me about this”” switch (settings.aboutThis.aiHintDismissed.label). The “deeper read” is a short take an AI writes about the file or folder on that card."
+    "description": "Help text for the “Suppress the AI hint on “Tell me about this”” switch (settings.aboutThis.aiHintDismissed.label). The “deeper read” is a short take an AI writes about the file or folder on that card.",
+    "screenshot": "settings-advanced.png"
   },
   "settings.aboutThis.aiHintDismissed.keywords": "tip, hint, file info, card, deeper read, explain",
   "@settings.aboutThis.aiHintDismissed.keywords": {
@@ -2942,8 +2958,7 @@
   "settings.askCmdr.provider.none": "Turn on an AI provider in <providerLink>AI › Provider</providerLink> to start chatting.",
   "@settings.askCmdr.provider.none": {
     "description": "Hint shown in Settings > AI > Ask Cmdr when no AI provider is on. <providerLink> wraps a link that opens Settings > AI > Provider. The › is a right-pointing angle separating the settings path.",
-    "screenshot": "settings-ai-ask-cmdr.png",
-    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
+    "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.label": "Ask Cmdr model",
   "@settings.askCmdr.interactiveModel.label": {
@@ -2958,7 +2973,8 @@
   "settings.askCmdr.interactiveModel.placeholder": "Same as Cmdr’s AI",
   "@settings.askCmdr.interactiveModel.placeholder": {
     "description": "First option of the Ask Cmdr model dropdown when Cmdr doesn’t know which model its AI uses: the chat follows the model set in AI > Provider. The apostrophe is U+2019.",
-    "screenshot": "settings-ai-ask-cmdr.png"
+    "screenshot": "settings-ai-ask-cmdr.png",
+    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
   },
   "settings.askCmdr.interactiveModel.sameAs": "Same as Cmdr’s AI ({model})",
   "@settings.askCmdr.interactiveModel.sameAs": {
@@ -2966,8 +2982,7 @@
     "placeholders": {
       "model": "The model id Cmdr’s AI uses, for example claude-opus-5-5."
     },
-    "screenshot": "settings-ai-ask-cmdr.png",
-    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
+    "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.interactiveModel.localNote": "Local AI runs one model, so the chat uses that one.",
   "@settings.askCmdr.interactiveModel.localNote": {
@@ -3047,8 +3062,7 @@
   "settings.askCmdr.proactive.summary": "Cmdr starts a chat with a suggestion. Nothing runs until you approve.",
   "@settings.askCmdr.proactive.summary": {
     "description": "Short line under the switch that lets Ask Cmdr start conversations. Says what happens when it’s on and reassures the reader that a suggestion is only ever a proposal. The second sentence matches the Suggested ops dialog’s wording, so keep the two consistent. \"Cmdr\" is the app name, keep it.",
-    "screenshot": "settings-ai-ask-cmdr.png",
-    "screenshotNote": "Settings > AI > Ask Cmdr, pictured here. Your string belongs to a state this screenshot doesn’t show (off, or asking you to review changed wording), a confirmation or empty state in one of its panels, or a note under one of its controls."
+    "screenshot": "settings-ai-ask-cmdr.png"
   },
   "settings.askCmdr.proactive.keywords": "proactive, suggestions, automatic, notice, watch, wake, ai",
   "@settings.askCmdr.proactive.keywords": {
@@ -3204,7 +3218,8 @@
   },
   "settings.operationLog.enabled.summary": "While this is off, Cmdr doesn’t record new changes, so you can’t undo them.",
   "@settings.operationLog.enabled.summary": {
-    "description": "Short line under the switch that turns the operation log on or off (settings.operationLog.enabled.label). It must say plainly that undo stops working for new file changes while the switch is off. \"Cmdr\" is the app name, keep it."
+    "description": "Short line under the switch that turns the operation log on or off (settings.operationLog.enabled.label). It must say plainly that undo stops working for new file changes while the switch is off. \"Cmdr\" is the app name, keep it.",
+    "screenshot": "settings-behavior-navigation-and-file-ops.png"
   },
   "settings.operationLog.enabled.keywords": "operation, log, history, record, recording, undo, journal, privacy, turn off",
   "@settings.operationLog.enabled.keywords": {
@@ -3386,7 +3401,8 @@
     "description": "Accessible name (read by screen readers, never shown) for the small ⓘ glyph after a setting’s name in Settings. Hovering or focusing the glyph shows a longer explanation of that setting. Use your language’s usual quotation marks around the name.",
     "placeholders": {
       "setting": "the setting’s name the glyph sits beside, already translated (for example \"Show hidden files\")"
-    }
+    },
+    "screenshot": "settings-appearance.png"
   },
   "settings.control.resetToDefault": "Reset to default",
   "@settings.control.resetToDefault": {
@@ -3782,7 +3798,8 @@
   },
   "settings.appearance.card.sorting": "Sorting",
   "@settings.appearance.card.sorting": {
-    "description": "Heading of the sorting card (whether folders come before files, and how those folders sort) in Settings > Appearance > Listing. A noun, as in the order things are listed in, not a verb."
+    "description": "Heading of the sorting card (whether folders come before files, and how those folders sort) in Settings > Appearance > Listing. A noun, as in the order things are listed in, not a verb.",
+    "screenshot": "settings-appearance-listing.png"
   },
   "settings.appearance.card.briefMode": "Brief mode",
   "@settings.appearance.card.briefMode": {
@@ -3892,7 +3909,8 @@
   },
   "settings.securityLog.enabled.summary": "{platform, select, macos {A small local record of security events. It never leaves your Mac.} windows {A small local record of security events. It never leaves your PC.} other {A small local record of security events. It never leaves your computer.}}",
   "@settings.securityLog.enabled.summary": {
-    "description": "Short line under the “Record security events” switch. Reassures that the record is a small file that stays on this machine. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux."
+    "description": "Short line under the “Record security events” switch. Reassures that the record is a small file that stays on this machine. Each branch names the machine in its OS’s word: Mac on macOS, PC on Windows, computer on Linux.",
+    "screenshot": "settings-updates.png"
   },
   "settings.securityLog.enabled.keywords": "security, log, audit, record, events, access, privacy",
   "@settings.securityLog.enabled.keywords": {
