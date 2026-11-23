@@ -1385,6 +1385,10 @@ write that later lands on it; a pending-write registration and the writer it's m
 caller anchors without knowing which dialect it holds, and it never asks `is_absolute`, so a scheme-shaped MTP root
 works the same.
 
+The tail hangs off a `/`-spelled root by text with a `/`, POSIX's `Path::join` spelling, on every host: Windows' join
+put a `\` into a remote root (`sftp://…/srv\photos`), which `to_remote_path` refuses. A native root that holds a `\`
+keeps `Path::join`. `ListedFolder`'s bridge-folder join follows the same rule.
+
 Its typed twin, `volume::anchor_at_root(&AppPath, wire: &str)`, keeps the three rules and answers a canonical
 `AppPathBuf`: a trailing `/` and `.` names go, "already under the root" is `is_on_volume` (a UNC server and share match
 without case), `/` alone separates (so a remote name's `\` stays a name; a drive root refuses it, `Backslash`), and a

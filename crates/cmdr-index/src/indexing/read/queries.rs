@@ -783,13 +783,7 @@ mod tests {
     /// disk that `root`'s index owns, so it must stay on `root` and keep its sizes.
     #[test]
     fn a_registered_folder_that_is_not_a_mount_point_stays_on_root() {
-        // On the boot volume of every host: `/` here, the system drive on Windows, where a
-        // POSIX `/Users/…` lies off the boot volume and rightly routes elsewhere.
-        let cloud_root = format!(
-            "{}Users/statustest/Library/CloudStorage/Dropbox",
-            cmdr_fs::mount_layout::boot_volume_root()
-        );
-        let cloud_root = cloud_root.as_str();
+        let cloud_root = &format!("{}Users/statustest/Dropbox", cmdr_fs::mount_layout::boot_volume_root());
         let provider = FakeVolumeProvider::shared();
         provider.register(
             "cloud-dropbox",

@@ -149,7 +149,7 @@ impl<'a> ListedFolder<'a> {
 /// alone (`rel/dir`, a remote root) joins with `/` too, and one still spelled natively (it
 /// holds a `\`) keeps `Path::join`'s `\`.
 fn bridge_join_text(dir: &str, name: &str) -> String {
-    let native = cfg!(windows) && dir.contains('\\');
+    let native = platform::HOST_FLAVOR == super::PathFlavor::Windows && dir.contains('\\');
     let ends_in_separator = dir.ends_with('/') || (native && dir.ends_with('\\'));
     if dir.is_empty() || ends_in_separator {
         format!("{dir}{name}")
