@@ -400,12 +400,15 @@ struct PauseOnFirstScanTick {
     fired: AtomicBool,
     scanned: std::sync::Mutex<Vec<usize>>,
     complete: AtomicBool,
+    /// The failure the operation ended in, so a cell names it instead of timing out.
+    failed: std::sync::Mutex<Option<String>>,
 }
 
 impl PauseOnFirstScanTick {
     fn new(engine: Operations) -> Self {
         Self {
             engine,
+            failed: std::sync::Mutex::new(None),
             fired: AtomicBool::new(false),
             scanned: std::sync::Mutex::new(Vec::new()),
             complete: AtomicBool::new(false),
@@ -435,7 +438,9 @@ impl OperationEventSink for PauseOnFirstScanTick {
         self.complete.store(true, Ordering::SeqCst);
     }
     fn emit_cancelled(&self, _event: super::types::WriteCancelledEvent) {}
-    fn emit_error(&self, _event: super::types::WriteErrorEvent) {}
+    fn emit_error(&self, event: super::types::WriteErrorEvent) {
+        *self.failed.lock().expect("the failure slot") = Some(format!("{event:?}"));
+    }
     fn emit_conflict(&self, _event: crate::ArmedConflict) {}
     fn emit_conflict_resolved(&self, _event: super::types::WriteConflictResolvedEvent) {}
     fn emit_source_item_done(&self, _event: super::types::WriteSourceItemDoneEvent) {}
@@ -504,9 +509,14 @@ async fn an_operations_own_scan_parks_too() {
 
     engine.resume_operation(&op_id);
     wait_until_async(WAIT, "the resumed copy to finish", || {
-        sink.complete.load(Ordering::SeqCst)
+        sink.complete.load(Ordering::SeqCst) || sink.failed.lock().expect("the failure slot").is_some()
     })
     .await;
+    assert_eq!(
+        *sink.failed.lock().expect("the failure slot"),
+        None,
+        "the resumed copy failed"
+    );
     let copied: Vec<PathBuf> = std::fs::read_dir(dir.join("dst"))
         .expect("dst readable")
         .filter_map(|e| e.ok().map(|e| e.path()))

@@ -4,7 +4,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppPathBuf, Namer, NotAnAppPath, PathFlavor};
+use cmdr_fs::app_path::{AppPathBuf, Namer, NotAnAppPath, PathFlavor, PathKind};
 use cmdr_fs::volume::AnchorRefusal;
 use std::path::Path;
 
@@ -46,19 +46,24 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
         Cow::Borrowed(dest_path)
     };
     let root = dest_volume.root();
-    let typed = match cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)) {
-        // A local volume's destination may come as the OS spells it (a native `C:\x\dst` an
-        // agent or a suite hands over): read as outside text a machine handed over
-        // (`from_external_text`: on Windows `\` separates too) and anchored again, as the
-        // `std::path` anchor took it. On macOS and Linux that's the text the anchor above
-        // read, so it answers nothing new there.
-        Err(refused) if dest_volume.local_path().is_some() => {
-            match AppPathBuf::from_external_text(&expanded, PathFlavor::HOST, Namer::HOST) {
-                Ok(native) => cmdr_fs::volume::anchor_at_root(root, native.as_str()),
-                Err(_) => Err(refused),
-            }
-        }
-        anchored => anchored,
+    // A local volume's destination the OS spells as a drive or UNC path (`C:\x\dst`, from an
+    // agent or a suite; Windows only, as no POSIX reading yields one) is outside text a
+    // machine handed over (`from_external_text`: `\` separates too). Off the volume it's
+    // still that place, as `Path::join`'s absolute-wins took it (a suite's `/`-rooted local
+    // volume on Windows).
+    let native = if dest_volume.local_path().is_some() {
+        AppPathBuf::from_external_text(&expanded, PathFlavor::HOST, Namer::HOST)
+            .ok()
+            .filter(|path| matches!(path.kind(), PathKind::Drive | PathKind::Unc))
+    } else {
+        None
+    };
+    let typed = match native {
+        Some(native) => match cmdr_fs::volume::anchor_at_root(root, native.as_str()) {
+            Err(AnchorRefusal::OffVolume) => Ok(native),
+            anchored => anchored,
+        },
+        None => cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)),
     };
     match typed {
         // A root or text the typed anchor has no reading for (a volume rooted at a native
