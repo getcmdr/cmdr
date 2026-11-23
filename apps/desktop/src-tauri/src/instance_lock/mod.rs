@@ -17,7 +17,10 @@
 //! The pid we write beside it (`.instance.pid`) is diagnostics only: it names the holder in the
 //! refusal line. Nothing branches on it, and unreadable or garbage content is treated as "unknown
 //! holder". It lives in a file of its own because `LockFileEx` is mandatory on Windows: another
-//! handle can't even read a locked file, so a pid inside the lock file named no holder there.
+//! handle can't even read a locked file, so a pid inside the lock file named no holder there. A
+//! file of its own can outlive its holder (a crash), so it carries the process's start time too,
+//! and a refusal names the pid only while that process still runs with that start time; the
+//! holder removes it on release.
 //!
 //! The claim runs BEFORE the logger is installed (`lib.rs`), so a refused instance never opens the
 //! shared log files: it used to append to `cmdr.log`, and near 50 MB it could rotate the running
@@ -64,7 +67,23 @@ const RETRY_INTERVAL: Duration = Duration::from_millis(50);
 /// Dropping a `File` closes the descriptor, and closing it releases the kernel lock. So the
 /// handles must outlive everything that touches the dirs, which in practice means "forever":
 /// a second Cmdr could otherwise walk in mid-session and start writing the same index.
-static HELD_LOCKS: OnceLock<Vec<File>> = OnceLock::new();
+static HELD_LOCKS: OnceLock<Vec<HeldLock>> = OnceLock::new();
+
+/// One held lock: the locked file, plus the pid stamp beside it, which goes before the lock does.
+#[derive(Debug)]
+struct HeldLock {
+    _file: File,
+    pid_file: PathBuf,
+}
+
+impl Drop for HeldLock {
+    fn drop(&mut self) {
+        // Runs before `_file` closes, so no claimant ever reads our stamp over an unheld lock.
+        // Best-effort: a stamp left behind (a crash, or this failing) is caught on read, by the
+        // start-time check in `read_holder_pid`.
+        let _ = std::fs::remove_file(&self.pid_file);
+    }
+}
 
 /// Catalog key for the alert title shown when another instance owns the data dir.
 ///
@@ -131,12 +150,27 @@ enum AcquireError {
     Io(std::io::Error),
 }
 
-/// Pure core: read a pid out of the lock file's contents.
+/// Pure core: read `(pid, start)` out of a pid stamp, `start` being the process's start time in
+/// whole seconds since the epoch, as `sysinfo` reports it.
 ///
-/// Anything that isn't a plain positive integer is "unknown holder". The file is diagnostics, so a
-/// truncated or half-written value must never turn into a wrong claim in the log.
-fn parse_holder_pid(contents: &str) -> Option<u32> {
-    contents.trim().parse::<u32>().ok().filter(|&pid| pid > 0)
+/// Anything else is "unknown holder", an older build's bare pid included (it can't be checked).
+/// The file is diagnostics, so a truncated or half-written value must never turn into a wrong
+/// claim in the log.
+fn parse_holder_stamp(contents: &str) -> Option<(u32, u64)> {
+    let mut parts = contents.trim().split(' ');
+    let pid = parts.next()?.parse::<u32>().ok().filter(|&pid| pid > 0)?;
+    let start = parts.next()?.parse::<u64>().ok()?;
+    parts.next().is_none().then_some((pid, start))
+}
+
+/// When process `pid` started, in whole seconds since the epoch, or `None` when no such process
+/// runs (or the OS won't say).
+fn process_start_secs(pid: u32) -> Option<u64> {
+    use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+    let pid = Pid::from_u32(pid);
+    let mut sys = System::new().ok()?;
+    sys.refresh_processes_specifics(ProcessesToUpdate::Some(&[pid]), true, ProcessRefreshKind::nothing());
+    sys.process(pid).map(sysinfo::Process::start_time)
 }
 
 /// Pure core: how we name the holder in the refusal line.
@@ -151,8 +185,11 @@ fn holder_description(holder_pid: Option<u32>) -> String {
 /// leaves a refused second instance naming "an unknown process". Nothing to log it to yet (module
 /// docs).
 fn write_pid(dir: &Path) {
+    let pid = std::process::id();
+    let stamp = process_start_secs(pid).map(|start| format!("{pid} {start}"));
     // Best-effort: the pid is diagnostics only, and the logger isn't up yet to report a failure.
-    let _ = std::fs::write(pid_path(dir), std::process::id().to_string());
+    // With no start time to vouch for it, the stamp is emptied rather than left to an older holder.
+    let _ = std::fs::write(pid_path(dir), stamp.unwrap_or_default());
 }
 
 /// One line to stderr, for the stretch of startup before the logger exists. Best-effort: a closed
@@ -162,16 +199,18 @@ fn to_stderr(line: impl fmt::Display) {
     let _ = writeln!(std::io::stderr(), "{line}");
 }
 
-/// Best-effort: who holds the lock right now, per the file's contents.
+/// Best-effort: who holds the lock right now, per the stamp beside it. ❗ Only a stamp whose
+/// process is still running with the start time it recorded names anyone: a stamp that outlived
+/// its process (a crash, a failed write, an older build's bare pid) would otherwise name a
+/// stranger who reused the pid.
 fn read_holder_pid(dir: &Path) -> Option<u32> {
-    std::fs::read_to_string(pid_path(dir))
-        .ok()
-        .as_deref()
-        .and_then(parse_holder_pid)
+    let contents = std::fs::read_to_string(pid_path(dir)).ok()?;
+    let (pid, start) = parse_holder_stamp(&contents)?;
+    (process_start_secs(pid)? == start).then_some(pid)
 }
 
 /// Takes the lock in `dir` (creating the dir if needed), retrying until `deadline`.
-fn acquire_until(dir: &Path, deadline: Instant) -> Result<File, AcquireError> {
+fn acquire_until(dir: &Path, deadline: Instant) -> Result<HeldLock, AcquireError> {
     std::fs::create_dir_all(dir).map_err(AcquireError::Io)?;
     let path = lock_path(dir);
     let file = OpenOptions::new()
@@ -186,7 +225,10 @@ fn acquire_until(dir: &Path, deadline: Instant) -> Result<File, AcquireError> {
         match file.try_lock() {
             Ok(()) => {
                 write_pid(dir);
-                return Ok(file);
+                return Ok(HeldLock {
+                    _file: file,
+                    pid_file: pid_path(dir),
+                });
             }
             Err(std::fs::TryLockError::WouldBlock) => {
                 if Instant::now() >= deadline {
@@ -288,7 +330,7 @@ impl fmt::Display for Refusal {
 /// Takes every target's lock within one `window`, in order. The first busy one refuses the
 /// claim, and the locks taken so far drop with the returned error. An I/O problem on one dir
 /// runs that dir unlocked and keeps going.
-fn claim_within(targets: Vec<Target>, window: Duration) -> Result<(Vec<File>, Claim), Refusal> {
+fn claim_within(targets: Vec<Target>, window: Duration) -> Result<(Vec<HeldLock>, Claim), Refusal> {
     let deadline = Instant::now() + window;
     let mut files = Vec::new();
     let mut locked: Vec<PathBuf> = Vec::new();
@@ -627,14 +669,48 @@ mod tests {
     }
 
     #[test]
-    fn holder_pid_parses_only_plain_positive_integers() {
-        assert_eq!(parse_holder_pid("1234"), Some(1234));
-        assert_eq!(parse_holder_pid(" 1234\n"), Some(1234));
-        assert_eq!(parse_holder_pid("0"), None);
-        assert_eq!(parse_holder_pid(""), None);
-        assert_eq!(parse_holder_pid("12 34"), None);
-        assert_eq!(parse_holder_pid("pid=1234"), None);
-        assert_eq!(parse_holder_pid("-1"), None);
+    fn a_stamp_parses_only_as_a_positive_pid_and_a_start_time() {
+        assert_eq!(parse_holder_stamp("1234 1700000000"), Some((1234, 1_700_000_000)));
+        assert_eq!(parse_holder_stamp(" 1234 1700000000\n"), Some((1234, 1_700_000_000)));
+        assert_eq!(
+            parse_holder_stamp("1234"),
+            None,
+            "an older build's bare pid can't be checked"
+        );
+        assert_eq!(parse_holder_stamp("0 1700000000"), None);
+        assert_eq!(parse_holder_stamp(""), None);
+        assert_eq!(parse_holder_stamp("1234 1700000000 9"), None);
+        assert_eq!(parse_holder_stamp("pid=1234 1"), None);
+        assert_eq!(parse_holder_stamp("-1 1700000000"), None);
+    }
+
+    /// ❗ A refusal never names the wrong process: a stamp that outlived its holder, whose pid now
+    /// belongs to someone else or to no one, reads as unknown.
+    #[test]
+    fn a_stamp_that_outlived_its_process_names_no_one() {
+        let dir = tempfile::tempdir().expect("create temp dir");
+        let ours = std::process::id();
+        let started = process_start_secs(ours).expect("this process has a start time");
+        let stamp = |contents: String| std::fs::write(pid_path(dir.path()), contents).expect("write the stamp");
+
+        stamp(format!("{ours} {started}"));
+        assert_eq!(read_holder_pid(dir.path()), Some(ours), "a live holder is named");
+        stamp(format!("{ours} {}", started - 1));
+        assert_eq!(read_holder_pid(dir.path()), None, "the pid was reused since");
+        stamp(format!("{ours}"));
+        assert_eq!(read_holder_pid(dir.path()), None, "an older build's bare pid");
+        stamp(format!("{} {started}", u32::MAX - 1));
+        assert_eq!(read_holder_pid(dir.path()), None, "no such process");
+    }
+
+    /// Releasing a lock takes its stamp with it, so the next holder's refusals start clean.
+    #[test]
+    fn releasing_the_lock_removes_its_stamp() {
+        let dir = tempfile::tempdir().expect("create temp dir");
+        let held = acquire_until(dir.path(), Instant::now()).expect("acquire");
+        assert!(pid_path(dir.path()).exists(), "the holder stamps itself");
+        drop(held);
+        assert!(!pid_path(dir.path()).exists(), "and the stamp goes with the lock");
     }
 
     #[test]
