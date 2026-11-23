@@ -74,11 +74,17 @@ impl super::super::Operations {
             path: source.display().to_string(),
         })?;
 
+        // Journaled under the drive holding it, as the batch trash is (#1433): `root` on a
+        // Mac, `D:`'s own volume on Windows.
+        if let Some((volume_id, root)) = crate::local_start::one_local_side(self.host().volumes(), source) {
+            scope.journal_local_sides((&volume_id, &root), (&volume_id, &root));
+        }
+
         // Enumerate BEFORE the move (buffered, persisted only on success).
         let buffered = if source_meta.is_dir() {
             Some(super::super::journal_search::enumerate_subtree_for_search(
                 scope.host().index(),
-                "root",
+                scope.local_ids_for(source, None).0,
                 source,
                 super::super::journal_search::SEARCH_LEAF_CAP,
             ))
@@ -107,11 +113,12 @@ impl super::super::Operations {
                     super::super::journal::mtime_secs(&source_meta),
                 );
                 if let Some(buffered) = &buffered {
+                    let (source_volume, trash_volume) = scope.local_ids_for(source, in_trash.as_deref());
                     super::super::journal_search::persist_and_note(
                         &scope,
-                        cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                        source_volume,
                         source,
-                        cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                        trash_volume,
                         in_trash.as_deref(),
                         buffered,
                     );
@@ -267,7 +274,8 @@ pub(crate) fn trash_files_with_progress(
         let buffered_leaves = if source_meta.is_dir() {
             Some(super::super::journal_search::enumerate_subtree_for_search(
                 state.scope().host().index(),
-                "root",
+                // The index of the drive holding it: `root` on a Mac, `D:`'s own on Windows.
+                state.scope().local_ids_for(source, None).0,
                 source,
                 super::super::journal_search::SEARCH_LEAF_CAP,
             ))
@@ -309,11 +317,12 @@ pub(crate) fn trash_files_with_progress(
                 // is rebased onto the in-trash location; coverage downgrades are
                 // noted worst-wins.
                 if let Some(buffered) = &buffered_leaves {
+                    let (source_volume, trash_volume) = state.scope().local_ids_for(source, in_trash.as_deref());
                     super::super::journal_search::persist_and_note(
                         state.scope(),
-                        cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                        source_volume,
                         source,
-                        cmdr_fs::volume::DEFAULT_VOLUME_ID,
+                        trash_volume,
                         in_trash.as_deref(),
                         buffered,
                     );

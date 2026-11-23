@@ -84,6 +84,44 @@ async fn undoing_a_trash_leaves_a_stranger_folder_that_took_the_name_in_the_tras
     assert_eq!(items[0].rollback_skip_reason, Some(SkipReason::Drift));
 }
 
+/// Windows' shape (#1433): a trash on `D:` journals its rows under `D:`'s own volume, and
+/// the undo reads each row's volume, so it takes the file out of `D:`'s Recycle Bin and
+/// puts it back on `D:`, leaving the system drive (`root`) alone.
+#[tokio::test]
+async fn undoing_a_trash_on_a_second_drive_brings_the_file_back_on_that_drive() {
+    const IN_BIN: &str = "/$RECYCLE.BIN/S-1-5-21-test/$R1.txt";
+    const ON_D: &str = "/w1123/dst/test_file_2.txt";
+    let rig = Rig::new();
+    let system = Arc::new(InMemoryVolume::new("C"));
+    let second = Arc::new(InMemoryVolume::new("D"));
+    put(&second, IN_BIN, b"mine").await;
+    let recorded = identity_at(&second, IN_BIN).await;
+    rig.register("root", system.clone());
+    rig.register("drive-2", second.clone());
+    rig.seed(
+        "op",
+        OpKind::Trash,
+        "drive-2",
+        None,
+        RollbackState::Rollbackable,
+        vec![JournalItem {
+            dest_identity: Some(recorded),
+            ..file_unit(0, "drive-2", ON_D, "drive-2", IN_BIN, 4)
+        }],
+    );
+
+    let report = rig.rollback("op").await;
+
+    assert_eq!((report.reversed, report.skipped), (1, 0), "{report:?}");
+    assert_eq!(
+        read(&second, ON_D).await,
+        b"mine",
+        "back where it was, on the second drive"
+    );
+    assert!(!exists(&second, IN_BIN).await, "and out of that drive's Recycle Bin");
+    assert!(!exists(&system, ON_D).await, "nothing lands on the system drive");
+}
+
 /// A file gets the same check, since a size and date can match by chance.
 #[tokio::test]
 async fn undoing_a_trash_leaves_a_stranger_file_of_the_same_size_and_date() {

@@ -527,7 +527,7 @@ impl Operations {
 /// `source`, with that root. `None` while `root`'s own root holds `source`, so on a Mac
 /// (`root` is `/`) every row keeps naming `root`; on Windows `root` is the system drive
 /// alone, and a trash on `D:` journaled under it filed `D:`'s rows under `C:` (#1433).
-fn one_local_side(volumes: &dyn OperationVolumes, source: &Path) -> Option<(String, PathBuf)> {
+pub(crate) fn one_local_side(volumes: &dyn OperationVolumes, source: &Path) -> Option<(String, PathBuf)> {
     let local_root = volumes.get(cmdr_fs::volume::DEFAULT_VOLUME_ID);
     if local_root.is_some_and(|root| source.starts_with(root.root().as_str())) {
         return None;

@@ -292,13 +292,15 @@ pub(super) fn record_trashed(
     let dest_identity = in_trash
         .and_then(|path| std::fs::symlink_metadata(path).ok())
         .and_then(|metadata| NodeIdentity::of(&metadata));
+    // Under the op's own volume, as the header names it: `root` on a Mac, the drive on
+    // Windows' `D:` (#1433). An undo reads each row's volume id.
     record_row(
         scope,
         entry_type,
         RowRole::RollbackUnit,
-        DEFAULT_VOLUME_ID,
+        scope.local_ids_for(source, in_trash).0,
         source,
-        in_trash.map(|d| (DEFAULT_VOLUME_ID, d)),
+        in_trash.map(|d| (scope.local_ids_for(source, Some(d)).1, d)),
         size,
         mtime,
         false,
