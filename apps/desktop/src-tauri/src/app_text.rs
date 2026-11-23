@@ -10,7 +10,6 @@
 use std::path::{Path, PathBuf};
 
 use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor};
-
 /// `text` as an app path, with this host's flavor, normalized (a trailing `/` and `.` names
 /// dropped).
 ///
@@ -87,22 +86,16 @@ pub(crate) fn native_plain(text: &str) -> Option<PathBuf> {
     path.to_native_plain().or_else(|_| path.to_native()).ok()
 }
 
-/// The app text for a path the OS reported (a `realpath`, a resolved link), with this host's
-/// flavor: the one way an OS answer becomes app text. ❌ Never `to_string_lossy` of one: on
-/// Windows `std::fs::canonicalize` answers the verbatim `\\?\C:\…`, which no index row, mount
-/// root, or pane path spells (#1430). `None` for a device path, and for a name that isn't
-/// Unicode text while escapes aren't live: the caller keeps the text it had.
+/// The app text for a path the OS reported (a `realpath`, a resolved link), through
+/// `AppPathBuf::from_native_unicode`: the one way an OS answer becomes app text. ❌ Never
+/// `to_string_lossy` of one: on Windows `std::fs::canonicalize` answers the verbatim
+/// `\\?\C:\…`, which no index row, mount root, or pane path spells (#1430). `None` for a device
+/// path, and for a name that isn't Unicode text while escapes aren't live: the caller keeps the
+/// text it had.
 pub(crate) fn of_native(native: &Path) -> Option<String> {
-    of_native_as(native, PathFlavor::HOST)
-}
-
-/// [`of_native`] read with `flavor`'s grammar, so a test on any host pins the Windows reading.
-pub(crate) fn of_native_as(native: &Path, flavor: PathFlavor) -> Option<String> {
-    let app = AppPathBuf::from_native_as(native, flavor).ok()?;
-    if !ESCAPES_LIVE && app.as_str().chars().any(cmdr_fs::app_path::is_escape) {
-        return None;
-    }
-    Some(app.as_str().to_owned())
+    AppPathBuf::from_native_unicode(native)
+        .ok()
+        .map(|app| app.as_str().to_owned())
 }
 
 /// App text `text` with every link resolved (`realpath`), as app text ([`of_native`]). `None`

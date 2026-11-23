@@ -26,12 +26,18 @@ fn text_that_names_no_place_reads_as_nothing() {
 
 /// Regression (#1430): Windows' `realpath` (`std::fs::canonicalize`) answers the verbatim
 /// `\\?\C:\…`, and its lossy text reached the index as a scope no row matched, so a search of
-/// the current folder found nothing. A native answer comes back as the app path it names, in
-/// either flavor, on every host.
+/// the current folder found nothing. The crossing [`super::of_native`] takes reads a native
+/// answer back as the app path it names: pinned here in either flavor, on every host.
 #[test]
 fn a_native_answer_reads_back_as_its_app_path_in_either_flavor() {
-    use cmdr_fs::app_path::PathFlavor;
+    use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
     use std::path::Path;
+
+    let of_native_as = |native: &Path, flavor| {
+        AppPathBuf::from_native_as(native, flavor)
+            .ok()
+            .map(|app| app.as_str().to_owned())
+    };
 
     let windows = [
         (r"\\?\C:\Users\test_user_1\src", "C:/Users/test_user_1/src"),
@@ -41,18 +47,18 @@ fn a_native_answer_reads_back_as_its_app_path_in_either_flavor() {
     ];
     for (native, app) in windows {
         assert_eq!(
-            super::of_native_as(Path::new(native), PathFlavor::Windows).as_deref(),
+            of_native_as(Path::new(native), PathFlavor::Windows).as_deref(),
             Some(app),
             "{native}"
         );
     }
     assert_eq!(
-        super::of_native_as(Path::new("/private/tmp/x"), PathFlavor::Posix).as_deref(),
+        of_native_as(Path::new("/private/tmp/x"), PathFlavor::Posix).as_deref(),
         Some("/private/tmp/x")
     );
     // A device path names no app path: the caller keeps what it had.
     assert_eq!(
-        super::of_native_as(Path::new(r"\\?\Volume{1234}\x"), PathFlavor::Windows),
+        of_native_as(Path::new(r"\\?\Volume{1234}\x"), PathFlavor::Windows),
         None
     );
 }
