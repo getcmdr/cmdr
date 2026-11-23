@@ -1916,9 +1916,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **Left**: the four items above. `seam_path` still crosses at 14 production sites the meter doesn't count (it's a
     named helper over `legacy_unchecked`, counted once in `wire_paths.rs`).
 - **Seventh pass done** (2026-11-23, branch `worktree-agent-a4b43c8f78683cd81`; one agent, no helpers): the walkers read
-  their children typed, and every transfer's destination anchors typed. 10f's hazards 76 → 61 (the list's 11 walker and
-  destination sites, `resolve_dest_path`, and three `seam_path` crossings); bridge calls 917 → 908 (`cmdr-operations`
-  459 → 450), `appTextToPath` 42 → 34, `pathFromBareText` 272 → 269; no entry grew.
+  their children typed, and every transfer's destination anchors typed. 10f's hazards 76 → 62 (the list's 11 walker and
+  destination sites, `resolve_dest_path`, and three `seam_path` crossings gone, the anchor's `seam_path` fallback new);
+  bridge calls 917 → 908 (`cmdr-operations` 459 → 450), `appTextToPath` 42 → 34, `pathFromBareText` 272 → 269; no entry
+  grew.
   - **A listed child's path is read typed**: `AppPath::from_listed_row` (`cmdr-fs`) is the walk's door for a row's own
     `FileEntry.path` (an MTP twin's path isn't its folder plus its name), the bridge's value byte for byte for canonical
     text while escapes aren't live, `from_normalized`'s once they are. Through
@@ -1931,8 +1932,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
     escape-range code points spelled as the bridge spelled them; `resolve_destination`, the compress start, the
     rename-as-move, and the conflict scan anchor on the drive first and ask the route question with the typed value. A
     local volume's destination the OS spells (`C:\x\dst`, an agent's or a suite's) reads as machine-handed outside text
-    (`from_external_text`) and anchors again, as the `std::path` anchor took it. The rename-merge's case-folded sibling
-    joins through `ListedName` (it was a raw `Path::join` of a listed name).
+    (`from_external_text`) and anchors again, as the `std::path` anchor took it; a root or text no typed reading answers
+    (a suite's in-memory volume rooted at a native `C:\x`) keeps the `std::path` anchor through `seam_path`, a `..` and
+    another volume's path excepted. The rename-merge's case-folded sibling joins through `ListedName` (it was a raw
+    `Path::join` of a listed name).
   - **Behavior changes** (input no pane or row sends): a destination holding a `..` or naming another volume refuses as
     `DestinationNotFound` (the app resolves a box's `..` first, `commands/wire_path.rs::transfer_destination`); the
     conflict scan anchors before its route question, as the start does (#1369's shape); a trailing-`/` trim keeps the
@@ -1947,7 +1950,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `CreatedPaths`), then `native_join_refuses`' deletion (L, one cascade); the drivers' sources and destination
     (`copy_volumes_with_progress` / `move_volumes_with_progress` and ~110 test call sites, L); the create,
     rename-validity, and conflict-preflight-sources entry points, `leaf_validation` / `target_names` / `transfer_leaves`
-    (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 10 `seam_path` crossings.
+    (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 11 `seam_path` crossings.
 
 ### 10b. `cmdr-index`
 
@@ -2534,16 +2537,19 @@ included; the hidden couplings it found are why waves B and C differ from round 
       `paths/app_text.rs:89` (the door the 8 above route through), `lifecycle/phases/stitch.rs:94`, and
       `watch/event_loop/live.rs:140`.
     - **The `seam_path` crossings** (a named helper over `legacy_unchecked`, counted once in `wire_paths.rs`), 14 at the
-      snapshot, 10 left: `in_flight_sweep.rs:287, 404`, `create.rs:55, 71`, `archive_edit/engine.rs:104`,
-      `create_numbered.rs:44`, `conflict_preflight.rs:195` (the sources), and `rename/bulk/by_move.rs:84, 85, 214`. A
-      `std::path` value the engine made from a typed path round-trips losslessly on macOS and Linux, but on Windows a
-      POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as text and `seam_path`
-      re-escapes it as literal: a mangled name. 9 of the 10 are new here (`create.rs:55` is on the list).
-    - **Corrected hazard count: 61** (26 on the list, 26 off it, 9 `seam_path`); 76 at the snapshot (37, 27, 12), 15
+      snapshot, 11 left: `in_flight_sweep.rs:287, 404`, `create.rs:55, 71`, `archive_edit/engine.rs:104`,
+      `create_numbered.rs:44`, `conflict_preflight.rs:195` (the sources), `rename/bulk/by_move.rs:84, 85, 214`, and
+      `routing/destination.rs`'s fallback for a root or text the typed anchor has no reading for (Windows suites'
+      native-rooted volumes). A `std::path` value the engine made from a typed path round-trips losslessly on macOS and
+      Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as
+      text and `seam_path` re-escapes it as literal: a mangled name. 10 of the 11 are new here (`create.rs:55` is on the
+      list).
+    - **Corrected hazard count: 62** (26 on the list, 26 off it, 10 `seam_path`); 76 at the snapshot (37, 27, 12), 15
       gone with 10a's seventh pass: `resolve_dest_path` (off the list), the 11 walker and destination sites, and the
-      `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`. The
-      demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no
-      hazard. A regex can't make this list complete; the type-level gate (§ "Keeping it that way") is what can.
+      `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`, one new
+      (the anchor's fallback). The demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`,
+      `tree.rs:129`) reach no OS, so no hazard. A regex can't make this list complete; the type-level gate (§ "Keeping
+      it that way") is what can.
   - **27 sites need an exemption**, and the check has no directive for one today: env vars (`cmdr-adb`, the `cmdr-index`
     benches, the SFTP fixture's key dir), xattr key names (`cmdr-archive`, `cmdr-smb`, `cmdr-fs` caps tests), the SQLite
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,

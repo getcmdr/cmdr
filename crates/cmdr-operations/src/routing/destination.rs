@@ -4,8 +4,9 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::{AppPathBuf, Namer, PathFlavor};
+use cmdr_fs::app_path::{AppPathBuf, Namer, NotAnAppPath, PathFlavor};
 use cmdr_fs::volume::AnchorRefusal;
+use std::path::Path;
 
 use cmdr_fs::volume::{RoutedKind, Volume};
 
@@ -45,7 +46,7 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
         Cow::Borrowed(dest_path)
     };
     let root = dest_volume.root();
-    match cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)) {
+    let typed = match cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)) {
         // A local volume's destination may come as the OS spells it (a native `C:\x\dst` an
         // agent or a suite hands over): read as outside text a machine handed over
         // (`from_external_text`: on Windows `\` separates too) and anchored again, as the
@@ -58,6 +59,17 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
             }
         }
         anchored => anchored,
+    };
+    match typed {
+        // A root or text the typed anchor has no reading for (a volume rooted at a native
+        // `C:\x` on Windows, which no backend but a suite's in-memory one is): the
+        // `std::path` anchor's place, as it always was, through the engine's named crossing.
+        // Goes with the bridge. ❌ Never for a `..` or another volume's path: those refuse.
+        Err(AnchorRefusal::NotAppPath(why)) if why != NotAnAppPath::DotName => {
+            let anchored = cmdr_fs::volume::root_anchored(&super::std_root(root), Path::new(expanded.as_ref()));
+            Ok(crate::wire_paths::seam_path(&anchored).into_owned())
+        }
+        typed => typed,
     }
 }
 

@@ -235,7 +235,7 @@ impl crate::Operations {
 /// A volume's root as the `Path` this module's `std::path` arithmetic and the native
 /// checks take: the sources and the destination still arrive as `PathBuf`s, so a root
 /// crosses here to meet them, losslessly. The module's one crossing into `std::path`.
-fn std_root(root: &AppPath) -> Cow<'_, Path> {
+pub(super) fn std_root(root: &AppPath) -> Cow<'_, Path> {
     root.as_std_legacy()
 }
 
