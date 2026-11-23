@@ -269,6 +269,29 @@ one. When one still can't be read, Cmdr says so (`apps/desktop/src-tauri/src/sta
 - **Recorded.** Each recovery writes one typed `state_file_recovered` line to the security event log, naming the store
   and never a path.
 
+## Files only the user can open
+
+Every file Cmdr writes that holds a secret or someone's private data, and that isn't in the OS secret store, is created
+through ONE primitive, `cmdr_fs::private_file` (`create_new` / `write_atomically`), so a new one can't forget the step.
+It makes the file private to the current user at the call that creates it: mode `0600` on Unix, and on Windows a
+protected DACL with one entry, full access for the user's SID, owned by that SID. What this protects against: other
+accounts reading through a loose or relocated folder (`CMDR_DATA_DIR`, a redirected `AppData`). It's no barrier to an
+administrator, who on Windows reads it through the backup privilege, unaudited by default. Mechanism and why the DACL
+holds nothing else: `crates/cmdr-fs/DETAILS.md` § "Private files". The files:
+
+- **`mcp.token`** (the MCP bearer token) and **`mcp.port`**, in the data dir
+  (`apps/desktop/src-tauri/src/mcp/port_file.rs`).
+- **`secrets.json`**, the plain secret store of dev and E2E builds, and **`credentials.enc`**, Linux's encrypted
+  fallback (`apps/desktop/src-tauri/src/secrets/CLAUDE.md`).
+- **The error-report preview** (`report-preview/<ERR-id>.txt`) and a **saved error report**
+  (`error-report-<timestamp>.zip`), the same redacted bundle.
+- **The Multi-Rename Results file**, the user's file names (`crates/cmdr-multi-rename/src/names_file.rs`).
+- **Linux's `smbclient -A` auth file**, an SMB password for one share listing.
+
+Not covered, on purpose: `tauri-mcp.port` (a port, written by the dev wrapper, not the app) and the instance lock's pid
+file. Everything else in the data dir relies on the folder: `~/Library` is `700` on macOS; on Windows the profile's
+`AppData` keeps other standard users out but lets `SYSTEM` and `Administrators` read (#1425).
+
 ## Secret scanning (GitGuardian)
 
 GitGuardian watches the repo and opens an incident per suspected secret. Two independent surfaces, configured

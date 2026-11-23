@@ -1,14 +1,14 @@
 //! Plain JSON file backend for dev mode.
 //!
 //! Stores secrets as an unencrypted JSON file for convenience during development.
-//! File permissions are set to 0600 on Unix systems.
+//! The file is private to the current user from its first byte (`cmdr_fs::private_file`: 0600 on
+//! Unix, an owner-only DACL on Windows).
 
 use super::{SecretStore, SecretStoreError};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 /// Mutex for serializing file access across threads.
@@ -51,7 +51,7 @@ fn read_store(path: &PathBuf) -> Result<StoreContents, SecretStoreError> {
     })
 }
 
-fn write_store(path: &PathBuf, contents: &StoreContents) -> Result<(), SecretStoreError> {
+fn write_store(path: &Path, contents: &StoreContents) -> Result<(), SecretStoreError> {
     let parent = path
         .parent()
         .ok_or_else(|| SecretStoreError::Other("Secret path has no parent directory".into()))?;
@@ -61,38 +61,12 @@ fn write_store(path: &PathBuf, contents: &StoreContents) -> Result<(), SecretSto
     let json = serde_json::to_string_pretty(contents)
         .map_err(|e| SecretStoreError::Other(format!("Could not serialize secrets: {}", e)))?;
 
-    // Atomic write: create a temp file in the same dir with the final
-    // permissions baked in (no umask window), fsync the bytes, then
-    // atomically rename into place. A crash between `write` and `rename`
-    // leaves the original file intact; pre-fix `std::fs::write` truncated
-    // first and the next launch silently dropped every stored secret.
-    let temp_name = format!(".secrets.json.cmdr-tmp-{}", uuid::Uuid::new_v4());
-    let temp_path = parent.join(temp_name);
-
-    let mut open_opts = std::fs::OpenOptions::new();
-    open_opts.write(true).create_new(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        open_opts.mode(0o600);
-    }
-
-    let mut file = open_opts
-        .open(&temp_path)
-        .map_err(|e| SecretStoreError::Other(format!("Could not create secret temp file: {}", e)))?;
-
-    if let Err(e) = file.write_all(json.as_bytes()).and_then(|_| file.sync_all()) {
-        let _ = std::fs::remove_file(&temp_path);
-        return Err(SecretStoreError::Other(format!("Could not write secret file: {}", e)));
-    }
-    drop(file);
-
-    std::fs::rename(&temp_path, path).map_err(|e| {
-        let _ = std::fs::remove_file(&temp_path);
-        SecretStoreError::Other(format!("Could not finalize secret file: {}", e))
-    })?;
-
-    Ok(())
+    // Atomic and owner-only from the first byte (0o600 on unix, an owner-only DACL on Windows): a
+    // fresh temp, fsynced, renamed into place. A crash before the rename leaves the original file
+    // intact; pre-fix `std::fs::write` truncated first and the next launch silently dropped every
+    // stored secret.
+    cmdr_fs::private_file::write_atomically(path, json.as_bytes())
+        .map_err(|e| SecretStoreError::Other(format!("Could not write secret file: {}", e)))
 }
 
 impl SecretStore for PlainFileStore {
@@ -204,7 +178,11 @@ mod tests {
             .collect();
         assert!(leftover_temps.is_empty(), "atomic write must clean up its temp file");
 
-        #[cfg(unix)]
+        assert!(
+            cmdr_fs::private_file::is_private_to_current_user(&dir.join("secrets.json")).unwrap(),
+            "secrets file must be owner-only from creation"
+        );
+        #[cfg(unix)] // POSIX modes.
         {
             use std::os::unix::fs::PermissionsExt;
             let mode = std::fs::metadata(dir.join("secrets.json"))

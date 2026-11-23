@@ -10,9 +10,8 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
   `InMemoryVolume`, `host/` (read `src/volume/host/CLAUDE.md` before writing a backend), and `connection.rs`'s four
   remote types, whose header says which answers what; ❗ confusing any two is a bug.
 - `app_path/`: the typed app path, its arithmetic, the lossless escape, and the native crossings.
-- Around it: `entry.rs` + `icons/`, `sqlite_util.rs`, `staging.rs`, `metadata/`, `archive_format.rs`, `firmlinks.rs`,
-  `attr_buf.rs` (macOS: THE `getattrlistbulk` record decoder), and a dozen small leaves. Per-module responsibilities:
-  DETAILS § Module map.
+- Around it: `entry.rs` + `icons/`, `sqlite_util.rs`, `staging.rs`, `metadata/`, `private_file/`, `attr_buf.rs` (macOS:
+  THE `getattrlistbulk` decoder), and leaves: DETAILS § Module map.
 
 ## Must-knows
 
@@ -42,12 +41,12 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
 - **Nothing here produces user-facing prose**: errors carry typed reasons and structured params, the frontend renders
   every word, and `FileEntry.git_meta` / `restic_meta` state FACTS, ❌ never a sentence. DETAILS § The one place prose
   is produced here.
-- **A test needing a removable volume uses `testing::disk_images` (macOS)**, ❌ never its own `hdiutil` / `diskutil`
-  call. DETAILS § "`testing::disk_images`".
-- **Log a user value as `LogPrivate`, a path-carrying error as `LogError(&e)`.** ❌ Never a `String` of either, and ❌
-  no marking `Display`. DETAILS § "Marked log values".
-- **The global allocator is decided here** (`process_memory/allocator.rs`). Gate allocator code on the `cmdr_mimalloc`
-  cfg, ❌ never `feature = "mimalloc"` (false on Linux). DETAILS § Which global allocator.
+- **A removable-volume test uses `testing::disk_images` (macOS)**, ❌ never its own `hdiutil` / `diskutil`.
+- **A secret-holding file comes from `private_file`**, ❌ never `OpenOptions` + a mode (Windows ignores modes).
+- **Log a user value as `LogPrivate`, a path-carrying error as `LogError(&e)`.** ❌ Never a `String` of either, ❌ no
+  marking `Display`.
+- **The global allocator is decided here** (`process_memory/allocator.rs`). Gate its code on the `cmdr_mimalloc` cfg, ❌
+  never `feature = "mimalloc"` (false on Linux).
 - **A stat-and-listing backend implements three small traits, ❌ never its own copy of the walk**: `ScanSource`,
   `MakesDirectories`, `PatchSource` (DETAILS § Bodies a backend gets for free). `secret_store.rs` is a backend's only
   door to the credential store.

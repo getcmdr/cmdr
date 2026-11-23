@@ -78,6 +78,7 @@ pub mod os_error;
 pub mod path_hash;
 pub mod path_locations;
 pub mod pluralize;
+pub mod private_file;
 pub mod process_cpu;
 pub mod process_memory;
 pub mod restic_meta;

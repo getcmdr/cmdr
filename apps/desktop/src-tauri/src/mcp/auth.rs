@@ -198,7 +198,7 @@ impl From<TokenRejection> for crate::security_log::McpRejection {
 /// Validate the per-instance bearer token for the entire MCP HTTP surface. macOS doesn't
 /// isolate loopback between processes, so `validate_origin` (browser-CSRF defense) is no
 /// barrier to a process that can set any header. The token lives in
-/// `<data_dir>/mcp.token` at 0o600, so reading it requires the user's filesystem access.
+/// `<data_dir>/mcp.token`, owner-only, so reading it requires the user's filesystem access.
 ///
 /// Reads `Authorization: Bearer <token>`, compares against the stored token in constant
 /// time, and rejects on any miss. Fails closed if the server somehow has no token set
@@ -245,7 +245,7 @@ fn check_token(headers: &HeaderMap) -> Result<(), TokenRejection> {
 /// Build the response returned when an ordinary JSON-RPC request arrives without a valid
 /// bearer token. The message tells the caller exactly where to get the token — both the
 /// `CMDR_MCP_TOKEN` env var and the resolved `<data_dir>/mcp.token` path. That's safe: the
-/// secret is the file's 0o600 contents (and the env value), not the path, which is already
+/// secret is the owner-only file's contents (and the env value), not the path, which is already
 /// discoverable. We never echo the token itself. One uniform message for missing-vs-wrong
 /// token avoids making the response an oracle.
 ///

@@ -11,7 +11,7 @@
 
 use crate::error_reporter::{self, BundleRequest, FLOW_A_BUNDLE_CAP_MB};
 use serde::Serialize;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, RwLock};
 
@@ -110,20 +110,13 @@ pub fn bundle_as_text(zip_bytes: &[u8]) -> Result<String, String> {
     Ok(sections.join("\n"))
 }
 
-/// Writes `text` to `<dir>/<id>.txt`, owner-only, through a temp and a rename: a viewer already
-/// showing an earlier look at this report never reads a half-written file.
+/// Writes `text` to `<dir>/<id>.txt`, owner-only (`cmdr_fs::private_file`), through a temp and a
+/// rename: a viewer already showing an earlier look at this report never reads a half-written
+/// file.
 pub fn write_preview_file(dir: &Path, id: &str, text: &str) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
     let path = dir.join(format!("{id}.txt"));
-    let temp = dir.join(format!(".{id}.txt.tmp"));
-    let mut options = std::fs::OpenOptions::new();
-    options.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
-    let mut file = options.open(&temp)?;
-    file.write_all(text.as_bytes())?;
-    file.sync_all()?;
-    std::fs::rename(&temp, &path)?;
+    cmdr_fs::private_file::write_atomically(&path, text.as_bytes())?;
     Ok(path)
 }
 
@@ -192,14 +185,17 @@ mod tests {
         assert_eq!(std::fs::read_dir(&preview_dir).expect("list").count(), 1);
     }
 
-    #[cfg(unix)]
     #[test]
     fn the_preview_is_readable_by_its_owner_only() {
-        use std::os::unix::fs::PermissionsExt;
         let dir = TestDir::new("report_preview_mode");
         let path = write_preview_file(&dir.join("report-preview"), "ERR-AB23X", "logs").expect("write");
-        let mode = std::fs::metadata(&path).expect("stat").permissions().mode();
-        assert_eq!(mode & 0o777, 0o600);
+        assert!(cmdr_fs::private_file::is_private_to_current_user(&path).expect("read its access"));
+        #[cfg(unix)] // POSIX modes.
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&path).expect("stat").permissions().mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
     }
 
     #[test]

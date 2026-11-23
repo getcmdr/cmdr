@@ -1129,3 +1129,14 @@ mod streaming_tests {
         );
     }
 }
+
+/// The saved report holds what the preview shows, so it's the user's alone the same way (#1425).
+#[test]
+fn a_saved_report_is_readable_by_its_owner_only() {
+    let dir = TestDir::new("error_report_saved_owner_only");
+    let at: Timestamp = "2027-01-15T08:00:00Z".parse().expect("a timestamp");
+    let path = write_saved_bundle(&dir, at, b"zip bytes").expect("write");
+    assert_eq!(path, dir.join("error-report-20270115T080000Z.zip"));
+    assert_eq!(std::fs::read(&path).expect("read back"), b"zip bytes");
+    assert!(cmdr_fs::private_file::is_private_to_current_user(&path).expect("read its access"));
+}

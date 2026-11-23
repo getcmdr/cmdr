@@ -631,8 +631,14 @@ pub fn save_bundle_to_disk<R: tauri::Runtime>(
     bundle: &BuiltBundle,
 ) -> Result<std::path::PathBuf, String> {
     let dir = config::resolved_app_data_dir(app)?;
-    let path = dir.join(report_file_name(Timestamp::now()));
-    std::fs::write(&path, &bundle.zip_bytes).map_err(|e| format!("write report bundle: {e}"))?;
+    write_saved_bundle(&dir, Timestamp::now(), &bundle.zip_bytes).map_err(|e| format!("write report bundle: {e}"))
+}
+
+/// Writes `zip_bytes` to `<dir>/error-report-<timestamp>.zip`, owner-only like the preview of the
+/// same bundle (`cmdr_fs::private_file`).
+fn write_saved_bundle(dir: &std::path::Path, at: Timestamp, zip_bytes: &[u8]) -> std::io::Result<std::path::PathBuf> {
+    let path = dir.join(report_file_name(at));
+    cmdr_fs::private_file::write_atomically(&path, zip_bytes)?;
     Ok(path)
 }
 

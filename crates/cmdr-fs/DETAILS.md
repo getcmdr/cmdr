@@ -68,6 +68,9 @@ the next section.
   its retirement, re-exported from it.
 - `metadata/`: what a copy puts on the item it wrote beyond the bytes, and clearing what makes Cmdr's own items refuse a
   rename or an unlink. § "`metadata`: what a copy keeps, and when it goes on".
+- `private_file/`: files only the current user can open, private from the call that creates them (`create_new`,
+  `write_atomically`, and `is_private_to_current_user` for tests). The OS split is `src/private_file/platform/`. §
+  "Private files".
 - `durable/`: making written files durable without a sync or a device barrier per file. `sync_to_drive` /
   `sync_dir_to_drive` hand an item to its drive (a plain `fsync` on macOS), `DeviceBarriers` runs a pass on an interval
   and at the close (`flush`) that syncs the files written since the last one (`note_written`, on a local volume on
@@ -359,8 +362,9 @@ allows:
   nothing yet (`platform/windows.rs`).
 - **Platform seams with a Windows arm** (`docs/guides/platform-seams.md`): `metadata/platform/`, `durable/platform/`,
   `file_identity/platform/`, `os_error/platform/`, `entry/platform/` (owner names), `file_provider/platform/` (the
-  domain marker), `name_fold/platform/` (`normalize_for_comparison`), and `mapped_file_faults/platform/`. Which Windows
-  arms are still honest stubs, and the task that owns each: `docs/specs/windows-port-plan.md` § "Windows build state".
+  domain marker), `name_fold/platform/` (`normalize_for_comparison`), `private_file/platform/` (the owner-only DACL),
+  and `mapped_file_faults/platform/`. Which Windows arms are still honest stubs, and the task that owns each:
+  `docs/specs/windows-port-plan.md` § "Windows build state".
 - **SQLite builds for the browser too**: `rusqlite` is an ordinary dependency, and on `wasm32-unknown-unknown` it links
   `sqlite-wasm-rs`, which compiles `sqlite3.c` with the pinned conda LLVM clang the wasm build script installs
   (`scripts/build-listing-wasm/toolchain.go`); Apple's clang can't target wasm32. `sqlite_util` is the same code there.
@@ -829,6 +833,46 @@ leftover by. Bytes are the only count needed: a UTF-16 unit never costs fewer UT
 per-file matcher (an archive edit reaping its own builds) asks `temp_sibling_prefix` for the mint's fitted prefix.
 Consequence: a final name past the destination's limit fails at the LANDING rename instead of the temp's create, so
 landing errors must keep a refused name typed (`NameTooLong` / `InvalidName`), never a generic IO failure.
+
+## Private files
+
+`private_file` is the one way Cmdr creates a file only the current user can open. Its callers, and what each holds:
+`docs/security.md` § "Files only the user can open".
+
+- **Private at creation.** Unix passes mode `0600` to an `O_CREAT | O_EXCL` open (the umask can only remove bits).
+  Windows calls `CreateFileW` with `CREATE_NEW` and a `SECURITY_ATTRIBUTES` built from the SDDL
+  `O:<me>D:P(A;;FA;;;<me>)`, where `<me>` is the process token's user SID (`TokenUser`). `std`'s `OpenOptions` can't
+  carry a descriptor, so a create-then-`SetSecurityInfo` would leave a window with the folder's inherited ACL; this has
+  none.
+- **Only a NEW file.** On both OSes a create that opens an existing file keeps that file's access and ignores the one
+  asked for (`CREATE_ALWAYS` / `O_TRUNC` on a leftover with a loose ACL or mode would reuse it), so `create_new` refuses
+  anything at the name, and `write_atomically` writes a fresh `.cmdr-tmp-<uuid>` sibling (`staging::temp_sibling_path`)
+  and renames it over the target. A same-volume rename keeps the file's own security descriptor, and the protected DACL
+  keeps the destination folder's inheritable entries out. `FILE_FLAG_OPEN_REPARSE_POINT` / `O_EXCL` make a link at the
+  name count as taken, so a planted link can't redirect the create.
+- **Decision: the DACL holds the user alone, no `SYSTEM`, no `Administrators`.** Why: nothing Cmdr runs needs another
+  entry (the app, `scripts/mcp-call.sh`, and the E2E harness all run as the user), so there's no reason to grant one. ❗
+  This is NOT a barrier against an administrator: an elevated admin reads the file with `SeBackupPrivilege` and
+  `FILE_FLAG_BACKUP_SEMANTICS` without changing it, and Windows audits that only when the privilege-use audit policy is
+  on, which it isn't by default. An admin owns the machine; nothing in a user's files is safe from one. The real gain is
+  against a loose or relocated folder (next bullet). Backup tools read through the same privilege, so backups keep
+  working. Owner is set explicitly to the user SID too: an elevated admin's default owner can be `Administrators`.
+- **Why not rely on the folder.** The default profile ACL on `%APPDATA%` / `%LOCALAPPDATA%` grants the user, `SYSTEM`,
+  and `BUILTIN\Administrators` full control, inherited by every file, and no other standard user anything; so in
+  practice only admins could read an inherited file, and they can read this one too (above). But `CMDR_DATA_DIR`, a
+  redirected `AppData`, or a roaming-profile policy can put the folder anywhere, and then an inherited file is as open
+  as that folder: that's what the explicit DACL closes. The Windows test grants `Everyone` on the folder and asserts the
+  file still carries exactly one entry. (Default profile ACL from Windows 10/11 as commonly documented; to re-verify on
+  the builder with `icacls`.)
+- **Crashed writes.** A crash between the temp's create and its rename leaves `<name>.cmdr-tmp-<uuid>` holding the
+  secret, private but never cleaned by anything else, so `write_atomically` first removes the regular files named like
+  that file's temps (`staging::temp_sibling_prefix`). Every caller rewrites its file on the next start or save. The
+  cost: two writers of the same file at once would remove each other's temp and one rename fails, which no caller does.
+- **What it doesn't cover.** The folder: a principal with delete-child or write on the folder can still replace or
+  delete the file (Administrators can on a profile folder). An administrator (above). macOS ACLs: mode `0600` doesn't
+  stop an inheritable ACE on the parent folder, and `is_private_to_current_user` reads mode bits only (tracked
+  separately). And the path length: `CreateFileW` gets the path as given, without `std`'s `\\?\` long-path handling,
+  which is fine for the data and cache dirs these files live in.
 
 ## `volume::ids`: why an ID is a digest and not a rendering
 

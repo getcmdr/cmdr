@@ -32,7 +32,7 @@ use super::port_file::{remove_port_file, write_port_file, write_secret_file};
 pub const PORT_FILE_NAME: &str = "mcp.port";
 
 /// Filename written under `<data_dir>` holding the per-instance bearer token. Written
-/// 0o600 (owner-only): an attacker who can read it already has the user's filesystem
+/// owner-only: an attacker who can read it already has the user's filesystem
 /// access, so the token is a real gate against local non-Cmdr processes that bind the
 /// loopback. See `mcp/CLAUDE.md` § "Why localhost only?".
 pub const TOKEN_FILE_NAME: &str = "mcp.token";
@@ -305,7 +305,7 @@ fn serve_on<R: Runtime + 'static>(app: AppHandle<R>, listener: tokio::net::TcpLi
     };
     set_mcp_token(Some(token.clone()));
 
-    // Write the token file 0o600 (owner-only). Unlike the port, the token has no in-process
+    // Write the token file owner-only. Unlike the port, the token has no in-process
     // fallback for external readers, so a write failure means external clients (CLI, E2E)
     // can't authenticate — but it's still non-fatal for the server: it's logged and the
     // in-process token (read via `get_mcp_token` IPC) keeps the FE-driven E2E path working.

@@ -14,8 +14,7 @@ use cocoon::Cocoon;
 use log::warn;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::os::unix::fs::OpenOptionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 /// Mutex for serializing file access across threads.
@@ -85,7 +84,7 @@ impl EncryptedFileStore {
 
 /// The machine id at `path` as a cocoon password: the fallback where there is none (absent or
 /// blank), an error where it can't be read right now.
-fn machine_key(path: &std::path::Path) -> Result<Vec<u8>, SecretStoreError> {
+fn machine_key(path: &Path) -> Result<Vec<u8>, SecretStoreError> {
     match std::fs::read_to_string(path) {
         Ok(id) if !id.trim().is_empty() => Ok(id.trim().as_bytes().to_vec()),
         Ok(_) => Ok(FALLBACK_PASSWORD.to_vec()),
@@ -158,8 +157,7 @@ fn read_store(path: &PathBuf, password: &[u8]) -> Result<StoreContents, ReadFail
     })
 }
 
-fn write_store(path: &PathBuf, password: &[u8], contents: &StoreContents) -> Result<(), SecretStoreError> {
-    use std::io::Write;
+fn write_store(path: &Path, password: &[u8], contents: &StoreContents) -> Result<(), SecretStoreError> {
     let parent = path
         .parent()
         .ok_or_else(|| SecretStoreError::Other("Credential path has no parent directory".into()))?;
@@ -173,33 +171,11 @@ fn write_store(path: &PathBuf, password: &[u8], contents: &StoreContents) -> Res
         .wrap(&json)
         .map_err(|e| SecretStoreError::Other(format!("Could not encrypt secrets: {:?}", e)))?;
 
-    // Atomic write: temp file with final permissions baked in, fsync, rename.
-    // Pre-fix a crash mid-write truncated the file and the next launch
+    // Atomic and owner-only from the first byte (`cmdr_fs::private_file`): a fresh 0o600 temp,
+    // fsynced, renamed into place. Pre-fix a crash mid-write truncated the file and the next launch
     // silently dropped every stored credential.
-    let temp_name = format!(".credentials.enc.cmdr-tmp-{}", uuid::Uuid::new_v4());
-    let temp_path = parent.join(temp_name);
-
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(&temp_path)
-        .map_err(|e| SecretStoreError::Other(format!("Could not create credential temp file: {}", e)))?;
-
-    if let Err(e) = file.write_all(&encrypted).and_then(|_| file.sync_all()) {
-        let _ = std::fs::remove_file(&temp_path);
-        return Err(SecretStoreError::Other(format!(
-            "Could not write credential file: {}",
-            e
-        )));
-    }
-    drop(file);
-
-    std::fs::rename(&temp_path, path).map_err(|e| {
-        let _ = std::fs::remove_file(&temp_path);
-        SecretStoreError::Other(format!("Could not finalize credential file: {}", e))
-    })?;
-    Ok(())
+    cmdr_fs::private_file::write_atomically(path, &encrypted)
+        .map_err(|e| SecretStoreError::Other(format!("Could not write credential file: {}", e)))
 }
 
 impl EncryptedFileStore {
