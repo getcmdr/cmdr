@@ -114,7 +114,7 @@ pub(super) fn inspect_with_find() -> Value {
             InspectRow {
                 volume_id: None,
                 row: FileRow::NoVolumeAtPath {
-                    path: "/Volumes/testshare/documents/tax.pdf".into(),
+                    path: super::on_host("/Volumes/testshare/documents/tax.pdf"),
                 },
             },
         ],

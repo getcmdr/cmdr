@@ -60,9 +60,11 @@ pub(crate) use query::{format_size, parse_size, summarize_query_for_diagnostics}
 pub(crate) use zone::{format_local_date, format_local_datetime, summarize_query};
 
 /// This machine's home folder, as the search core takes it: a value, so the core
-/// never reads it ambiently and a test can pass its own.
+/// never reads it ambiently and a test can pass its own. Its app path (`C:/Users/…` on
+/// Windows), the spelling the index's rows and a scope's other paths are in: the native
+/// `C:\Users\…` made `~/Docs` read `C:\Users\…/Docs`, which matched no row there.
 pub(crate) fn host_home_dir() -> Option<String> {
-    dirs::home_dir().map(|home| home.to_string_lossy().into_owned())
+    cmdr_fs::tilde::home_folder()
 }
 
 /// Parse a scope string (`~/projects, !node_modules`) with `~` expanded against

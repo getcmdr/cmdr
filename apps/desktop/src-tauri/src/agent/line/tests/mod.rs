@@ -15,7 +15,13 @@ use crate::agent::llm::types::{AgentToolCall, AgentToolResult, ToolId};
 /// `rest` under a home folder spelled as this host's app paths are: `C:/Users/u…` on Windows,
 /// where `/Users/u` is no place the panes can go.
 fn u(rest: &str) -> String {
-    format!("{}/Users/u{rest}", if cfg!(windows) { "C:" } else { "" })
+    on_host(&format!("/Users/u{rest}"))
+}
+
+/// An absolute POSIX-shaped `path` spelled as this host's app paths are: on the `C:` drive on
+/// Windows, where a bare `/…` is no place to go.
+fn on_host(path: &str) -> String {
+    format!("{}{path}", if cfg!(windows) { "C:" } else { "" })
 }
 
 /// This host's filesystem root as an app path.

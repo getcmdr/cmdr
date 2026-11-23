@@ -122,7 +122,7 @@ fn inspect_shows_a_row_per_find_hit_and_each_paths_status() {
     assert_eq!(shown.rows[5].status, Some(ToolPreviewRowStatus::NoVolumeAtPath));
     assert_eq!(
         shown.rows[5].path.as_deref(),
-        Some("/Volumes/testshare/documents/tax.pdf")
+        Some(super::on_host("/Volumes/testshare/documents/tax.pdf").as_str())
     );
     assert_eq!((shown.rows_given_to_model, shown.total), (Some(5), Some(6)));
 }

@@ -158,6 +158,8 @@ async fn an_offset_past_the_cap_is_refused_before_anything_is_read() {
     assert!(problem.message.contains("subfolder"), "the refusal names the next move");
 }
 
+// `gate_local`'s link walk starts at `/`, so on Windows it places no `C:/…` folder (#1411).
+#[cfg(unix)]
 #[tokio::test]
 async fn a_live_read_lists_a_real_folder_through_its_volume() {
     let dir = TestDir::new("live-real-read");
