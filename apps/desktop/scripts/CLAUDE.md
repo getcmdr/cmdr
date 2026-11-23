@@ -1,6 +1,6 @@
 # Desktop build / dev scripts
 
-Composition layer for `pnpm dev` and `pnpm build`. Owns the instance-isolation primitive (`CMDR_INSTANCE_ID`) at the
+Composition layer for `pnpm dev` / `pnpm build`. Owns the instance-isolation primitive (`CMDR_INSTANCE_ID`) at the
 launch boundary and the llama-server fetch.
 
 ## Module map
@@ -28,10 +28,9 @@ launch boundary and the llama-server fetch.
   manifest"
 - **`marketing-shots.ts`** / **`marketing-clips.ts`**: the brand stills and the website clips, both launched through
   `marketing-launch.ts`; `docs/guides/screenshots.md`, `docs/guides/product-clips.md`
-- **`capture-runtime.ts`**: launch primitives for both capture orchestrators (`ensureE2eBinary`), plus
-  `createTrackedArtifactGuard` (only a green run keeps its rewrite of tracked artifacts; DETAILS § "The capture guard").
-  `capture-countdown.ts`: the self-calibrating estimate behind the specs' orange hands-off countdown (DETAILS § "The
-  pre-capture countdown")
+- **`capture-runtime.ts`**: launch primitives for both capture orchestrators, plus `createTrackedArtifactGuard` (DETAILS
+  § "The capture guard"). `capture-countdown.ts`: the self-calibrating estimate behind the specs' orange hands-off
+  countdown (DETAILS § "The pre-capture countdown"). `screenshot-store.ts`: where translator PNGs live
 - **`e2e-linux.sh`** + its sourced `e2e-linux-fixtures.sh` (fixture stacks): Linux Docker E2E
 
 Wrapper architecture, decisions, instance-isolation reference: `DETAILS.md`, `docs/tooling/instance-isolation.md`.

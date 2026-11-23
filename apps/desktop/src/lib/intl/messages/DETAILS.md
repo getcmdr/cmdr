@@ -215,6 +215,12 @@ What's where, and what's tracked:
 - `screenshots/*.png`: the captured images. **Gitignored and regenerable** (`screenshots/.gitignore`): they're large and
   re-render byte-for-byte on every run. A checkout without them degrades gracefully (the `@key` descriptions are the
   primary translator aid). Don't commit PNGs.
+- **The main clone's `screenshots/` folder is the machine's one image store**, so the images outlive the worktree that
+  took them (`apps/desktop/scripts/screenshot-store.ts`). A capture that finishes green copies its PNGs there (a no-op
+  in the main clone itself), and a new worktree starts with a copy of it (`scripts/worktree-hooks/post-create`).
+  **Why:** a recapture run in a worktree once landed its report and couplings while its images went with the removed
+  worktree, so 67 couplings named PNGs that existed nowhere. Publish only on green, the same rule that keeps the run's
+  rewrite of the tracked report, so the store never holds half a run.
 - `screenshots/capture-report.json`: **tracked.** The surface → keys map the driver records; the coupler's input and the
   freshness check's source of truth. The spec writes it (and `capture-skipped.json`) with plain `JSON.stringify`, so
   `i18n-capture.ts` runs `oxfmt` over both once a run finishes green; without that every capture leaves the next

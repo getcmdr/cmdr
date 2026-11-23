@@ -3,7 +3,9 @@
 # exists, during its background warming, while `.warming-worktree` still blocks
 # the check runner. Contract: `CLAUDE.md` here.
 #
-# Cmdr: seeds the new worktree's Linux target volume (the `clippy-linux` and
+# Cmdr: copies the translator screenshots in from the main clone's store
+# (gitignored PNGs, `apps/desktop/scripts/screenshot-store.ts`), then seeds the
+# new worktree's Linux target volume (the `clippy-linux` and
 # `rust-tests-linux` lanes' build cache) with a copy-on-write clone of the main
 # clone's, so its first Linux run starts warm. No main-clone volume, no Docker,
 # or no Go: one line (or none) and exit 0.
@@ -13,6 +15,14 @@ set -uo pipefail
 # Absolute before the `cd` below, which would otherwise re-root a relative path.
 worktree="$(cd "$1" && pwd)" && main_clone="$(cd "$2" && pwd)" || exit 2
 check_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../check" && pwd)"
+
+# APFS clones, so ~300 images cost nothing; a plain copy where the volume can't clone.
+shots="apps/desktop/src/lib/intl/messages/screenshots"
+if compgen -G "$main_clone/$shots/*.png" >/dev/null && [ -d "$worktree/$shots" ]; then
+  cp -c "$main_clone/$shots/"*.png "$worktree/$shots/" 2>/dev/null \
+    || cp "$main_clone/$shots/"*.png "$worktree/$shots/" \
+    || echo "screenshots: couldn't copy the translator images in"
+fi
 
 command -v go >/dev/null 2>&1 || { echo "linux cache: no Go on PATH, so no seed"; exit 0; }
 cd "$check_dir" && exec go run ./linux-cache seed "$worktree" "$main_clone"
