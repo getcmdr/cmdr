@@ -105,38 +105,48 @@ describe('renderCoverageReport', () => {
 })
 
 describe('buildSurfaceReview', () => {
-  it('flags a surface whose every key another surface also has', () => {
-    const review = buildSurfaceReview({
-      broad: { screenshot: 'broad.png', keys: ['a.one', 'a.two'] },
-      narrow: { screenshot: 'narrow.png', keys: ['a.one', 'a.two', 'a.three'] },
-      alone: { screenshot: 'alone.png', keys: ['b.only'] },
-    })
+  it("flags a surface whose image is no key's screenshot", () => {
+    const review = buildSurfaceReview(
+      {
+        broad: { screenshot: 'broad.png', keys: ['a.one', 'a.two'] },
+        narrow: { screenshot: 'narrow.png', keys: ['a.one', 'a.two', 'a.three'] },
+        alone: { screenshot: 'alone.png', keys: ['b.only'] },
+      },
+      new Set(['narrow.png', 'alone.png']),
+    )
     expect(review.surfaces).toBe(3)
-    expect(review.redundant.map((r) => r.surface)).toEqual(['broad'])
-    expect(review.redundant[0]).toEqual({ surface: 'broad', screenshot: 'broad.png', keys: 2 })
+    expect(review.redundant).toEqual([{ surface: 'broad', screenshot: 'broad.png', keys: 2 }])
   })
 
-  it('does not flag a surface that owns even one key alone', () => {
-    const review = buildSurfaceReview({
-      a: { screenshot: 'a.png', keys: ['x.shared', 'x.mine'] },
-      b: { screenshot: 'b.png', keys: ['x.shared'] },
-    })
-    expect(review.redundant.map((r) => r.surface)).toEqual(['b'])
+  it('keeps a surface whose keys all render elsewhere when it is the image that shows one of them', () => {
+    // Regression: "no unique key" listed the open menu over a dialog that had only looked its
+    // rows up, which is exactly the picture the OCR check couples those rows to.
+    const review = buildSurfaceReview(
+      {
+        dialog: { screenshot: 'dialog.png', keys: ['x.title', 'x.menuRow'] },
+        'dialog-menu': { screenshot: 'menu.png', keys: ['x.menuRow'] },
+      },
+      new Set(['dialog.png', 'menu.png']),
+    )
+    expect(review.redundant).toEqual([])
   })
 
   it('leaves a keyless surface out of the redundant list rather than calling it redundant', () => {
     // A surface that recorded nothing is a staging problem to investigate, not a
-    // duplicate to prune, and saying "it adds no unique key" would be misleading.
-    const review = buildSurfaceReview({ empty: { screenshot: 'empty.png', keys: [] } })
+    // duplicate to prune, and saying it's no key's image would be misleading.
+    const review = buildSurfaceReview({ empty: { screenshot: 'empty.png', keys: [] } }, new Set())
     expect(review.redundant).toEqual([])
   })
 
   it('reports the surfaces captured at a reduced UI zoom', () => {
-    const review = buildSurfaceReview({
-      tall: { screenshot: 'tall.png', keys: ['a.one'], uiZoom: 80 },
-      normal: { screenshot: 'normal.png', keys: ['a.two'], uiZoom: 100 },
-      unset: { screenshot: 'unset.png', keys: ['a.three'] },
-    })
+    const review = buildSurfaceReview(
+      {
+        tall: { screenshot: 'tall.png', keys: ['a.one'], uiZoom: 80 },
+        normal: { screenshot: 'normal.png', keys: ['a.two'], uiZoom: 100 },
+        unset: { screenshot: 'unset.png', keys: ['a.three'] },
+      },
+      new Set(['tall.png', 'normal.png', 'unset.png']),
+    )
     expect(review.reducedZoom).toEqual([{ surface: 'tall', screenshot: 'tall.png', uiZoom: 80 }])
   })
 })
@@ -144,24 +154,29 @@ describe('buildSurfaceReview', () => {
 describe('renderSurfaceReview', () => {
   it('reads as a suggestion, not a delete order', () => {
     const md = renderSurfaceReview(
-      buildSurfaceReview({
-        broad: { screenshot: 'broad.png', keys: ['a.one'] },
-        narrow: { screenshot: 'narrow.png', keys: ['a.one', 'a.two'] },
-      }),
+      buildSurfaceReview(
+        {
+          broad: { screenshot: 'broad.png', keys: ['a.one'] },
+          narrow: { screenshot: 'narrow.png', keys: ['a.one', 'a.two'] },
+        },
+        new Set(['narrow.png']),
+      ),
     )
-    expect(md).toContain('`broad` (1 key, none unique)')
+    expect(md).toContain('`broad` (1 key, each coupled elsewhere)')
     expect(md).toContain('NOT an automatic delete')
   })
 
   it('says plainly when nothing needs attention', () => {
-    const md = renderSurfaceReview(buildSurfaceReview({ only: { screenshot: 'only.png', keys: ['a.one'] } }))
-    expect(md).toContain('Every captured surface is the only source of at least one key.')
+    const md = renderSurfaceReview(
+      buildSurfaceReview({ only: { screenshot: 'only.png', keys: ['a.one'] } }, new Set(['only.png'])),
+    )
+    expect(md).toContain("Every captured surface is at least one key's screenshot.")
     expect(md).toContain('Every surface fit the display at 100% zoom')
   })
 
   it('warns that a reduced-zoom image shows smaller text than a user sees', () => {
     const md = renderSurfaceReview(
-      buildSurfaceReview({ tall: { screenshot: 'tall.png', keys: ['a.one'], uiZoom: 75 } }),
+      buildSurfaceReview({ tall: { screenshot: 'tall.png', keys: ['a.one'], uiZoom: 75 } }, new Set(['tall.png'])),
     )
     expect(md).toContain('`tall`: captured at 75% zoom')
     expect(md).toContain('smaller')

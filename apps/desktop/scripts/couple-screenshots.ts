@@ -715,7 +715,11 @@ function main() {
   const coveragePath = join(messagesRoot, 'screenshots', 'coverage-report.md')
   // The per-key table, then the per-SURFACE review (redundant surfaces, reduced
   // zoom). One tracked artifact, so a reviewer reads both in the same diff.
-  writeFileSync(coveragePath, renderCoverageReport(coverage) + '\n' + renderSurfaceReview(buildSurfaceReview(report)))
+  const coupledScreenshots = new Set([...byKey.values()].map((coupling) => coupling.screenshot))
+  writeFileSync(
+    coveragePath,
+    renderCoverageReport(coverage) + '\n' + renderSurfaceReview(buildSurfaceReview(report, coupledScreenshots)),
+  )
   console.log(
     `Wrote coverage report: ${String(coverage.direct)} direct + ${String(coverage.representative)} representative ` +
       `/ ${String(coverage.total)} keys → ${coveragePath}`,

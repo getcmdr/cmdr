@@ -164,11 +164,11 @@ export function renderCoverageReport(report: CoverageReport): string {
   return lines.join('\n')
 }
 
-/** A captured surface that resolved no key some other captured surface didn't. */
+/** A captured surface whose image no key is coupled to. */
 export interface RedundantSurface {
   surface: string
   screenshot: string
-  /** How many keys it recorded (all of them shared with other surfaces). */
+  /** How many keys it recorded (each of them coupled to another surface's image). */
   keys: number
 }
 
@@ -191,21 +191,25 @@ export interface SurfaceReview {
  * Pure: reviews the capture report itself, rather than the catalog.
  *
  * Two things a human wants to know after a run and can't see from the coverage
- * table. First, which surfaces contributed NO unique key: the surface set grows
+ * table. First, which surfaces are no key's screenshot: the surface set grows
  * every time a dialog does, and nothing shrinks it, so without this the pruning
  * only happens when someone thinks to look. Second, which surfaces the driver
  * had to shrink the UI to photograph, since those images show text smaller than a
  * user sees it.
+ *
+ * Redundant means no coupling points at the image, judged on the couplings the
+ * coupler just wrote. **Why not "no unique key"**: a surface whose keys all also
+ * render elsewhere can still be the one image that SHOWS them (a menu opened over
+ * a dialog that only looked its rows up), and listing it invited pruning the
+ * picture the OCR check had picked. An image nothing points at is one a
+ * translator never sees.
+ * @param coupledScreenshots every image some key's `@key.screenshot` names.
  */
-export function buildSurfaceReview(report: CaptureReport): SurfaceReview {
-  const surfaceCount = new Map<string, number>()
-  for (const { keys } of Object.values(report)) {
-    for (const key of new Set(keys)) surfaceCount.set(key, (surfaceCount.get(key) ?? 0) + 1)
-  }
+export function buildSurfaceReview(report: CaptureReport, coupledScreenshots: ReadonlySet<string>): SurfaceReview {
   const redundant: RedundantSurface[] = []
   const reducedZoom: ReducedZoomSurface[] = []
   for (const [surface, entry] of Object.entries(report)) {
-    if (entry.keys.length > 0 && entry.keys.every((key) => (surfaceCount.get(key) ?? 0) > 1)) {
+    if (entry.keys.length > 0 && !coupledScreenshots.has(entry.screenshot)) {
       redundant.push({ surface, screenshot: entry.screenshot, keys: entry.keys.length })
     }
     if (entry.uiZoom !== undefined && entry.uiZoom !== 100) {
@@ -229,21 +233,20 @@ export function renderSurfaceReview(review: SurfaceReview): string {
       'true as the UI changes.',
   )
   lines.push('')
-  lines.push(`### No unique keys (${String(review.redundant.length)})`)
+  lines.push(`### No key's screenshot (${String(review.redundant.length)})`)
   lines.push('')
   if (review.redundant.length === 0) {
-    lines.push('Every captured surface is the only source of at least one key.')
+    lines.push("Every captured surface is at least one key's screenshot.")
   } else {
     lines.push(
-      'Every key on these surfaces also renders on another captured surface, so dropping one costs no coverage: ' +
-        'its keys would simply couple to whichever surface keeps them. Worth considering, NOT an automatic delete. ' +
-        'A surface can be the clearest picture of a key several surfaces share, and being the clearest is reason ' +
-        'enough to keep it. To drop one, remove its staging (or add it to `DROPPED_GALLERY_STATES` for a gallery ' +
-        'state) in `test/e2e-playwright/`.',
+      'No key is coupled to these images: every key they recorded is coupled to another surface, so no ' +
+        'translator sees them and dropping one costs no coverage. Worth considering, NOT an automatic delete. ' +
+        'To drop one, remove its staging (or add it to `DROPPED_GALLERY_STATES` for a gallery state) in ' +
+        '`test/e2e-playwright/`.',
     )
     lines.push('')
     for (const { surface, keys } of [...review.redundant].sort((a, b) => b.keys - a.keys)) {
-      lines.push(`- \`${surface}\` (${String(keys)} key${keys === 1 ? '' : 's'}, none unique)`)
+      lines.push(`- \`${surface}\` (${String(keys)} key${keys === 1 ? '' : 's'}, each coupled elsewhere)`)
     }
   }
   lines.push('')

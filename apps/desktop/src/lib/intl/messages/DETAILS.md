@@ -229,7 +229,7 @@ What's where, and what's tracked:
   captured screenshot) vs **representative** (a stand-in, see below) vs **uncoupled** (no screenshot yet). Direct and
   representative are counted separately so a stand-in is never mistaken for a precise capture. Coverage is partial until
   the driver covers the full inventory. Its "Surfaces to review" tail is per-SURFACE rather than per-key: which surfaces
-  contributed no unique key (candidates to prune, see § Keeping the surface set honest) and which were captured at a
+  are no key's screenshot (candidates to prune, see § Keeping the surface set honest) and which were captured at a
   reduced UI zoom (their text is smaller than a user sees). The coupler runs `oxfmt` over it before finishing: it's
   rendered from scratch, and its reflowed prose and padded tables are the formatter's call, so without that step every
   regeneration hands the next `pnpm check` a format failure in a file nobody hand-edited.
@@ -321,14 +321,17 @@ Two things happen between "the surface is ready" and "the PNG is on disk", both 
 ### Keeping the surface set honest
 
 The set only ever grows on its own: a new dialog adds a gallery row, which adds a surface. Nothing removes one, so every
-run reports the surfaces that resolved no key another captured surface also has (`coverage-report.md` § Surfaces to
-review). Dropping one costs no coverage; its keys simply couple to whichever surface keeps them.
+run reports the surfaces whose image no coupling names (`buildSurfaceReview`, `coverage-report.md` § Surfaces to
+review). No translator sees those images, and dropping one costs no coverage: each of its keys already couples to
+another surface.
 
-It's a suggestion, not a verdict. A surface that adds no unique key can still be the clearest picture of a key several
-surfaces share, and being the clearest is reason enough to keep it. To act on it: remove the surface's staging in
-`test/e2e-playwright/`, or add a gallery state to `DROPPED_GALLERY_STATES` in `i18n-capture-gallery.ts` with the surface
-that covers it. The gallery's own novel-keys rule can't catch these, because each one WAS novel when it ran and only a
-later surface made it redundant — run order alone would decide which of an overlapping pair survives.
+**Why "no key's screenshot" and not "no unique key"**: with OCR-verified coupling, a surface whose keys all render
+elsewhere can still be the one image that SHOWS them (the open menu over a dialog that only looked its rows up), and the
+old rule listed exactly those pictures for pruning. It's still a suggestion, not a verdict. To act on it: remove the
+surface's staging in `test/e2e-playwright/`, or add a gallery state to `DROPPED_GALLERY_STATES` in
+`i18n-capture-gallery.ts` with the surface that covers it. The gallery's own novel-keys rule can't catch these, because
+each one WAS novel when it ran and only a later surface made it redundant — run order alone would decide which of an
+overlapping pair survives.
 
 ### OCR-verified coupling
 
