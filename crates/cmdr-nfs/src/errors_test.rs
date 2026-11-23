@@ -18,7 +18,8 @@ fn the_path_carrying_statuses_carry_the_path_and_never_server_text() {
     assert!(matches!(status(10001), VolumeError::NotFound(p) if p == PATH));
     assert!(matches!(
         status(13),
-        VolumeError::PermissionDenied { path, raw_os_error: Some(libc::EACCES) } if path == PATH
+        VolumeError::PermissionDenied { path, raw_os_error }
+            if path == PATH && raw_os_error.is_some() && raw_os_error == OsErrorClass::AccessDenied.host_code()
     ));
     assert!(matches!(
         status(1),
@@ -32,13 +33,24 @@ fn the_path_carrying_statuses_carry_the_path_and_never_server_text() {
 
 #[test]
 fn the_errno_shaped_statuses_carry_their_errno() {
+    // Each carries the HOST's code for its class (Windows' 145 for "not empty",
+    // where the CRT's `libc::ENOTEMPTY` is 41), the code a local refusal of the
+    // same kind carries.
     let errno = |number| status(number).raw_os_error();
-    assert_eq!(errno(66), Some(libc::ENOTEMPTY));
-    assert_eq!(errno(10008), Some(libc::EAGAIN));
-    assert_eq!(errno(5), Some(libc::EIO));
-    assert_eq!(errno(18), Some(libc::EXDEV));
-    assert_eq!(errno(22), Some(libc::EINVAL));
-    assert_eq!(errno(27), Some(libc::EFBIG));
+    for (number, class) in [
+        (66, OsErrorClass::NotEmpty),
+        (10008, OsErrorClass::WouldBlock),
+        (5, OsErrorClass::Io),
+        (18, OsErrorClass::CrossDevice),
+        (22, OsErrorClass::InvalidArgument),
+        (27, OsErrorClass::FileTooLarge),
+    ] {
+        assert_eq!(errno(number), class.host_code(), "{number}: {class:?}");
+    }
+    #[cfg(unix)]
+    for (number, errno_here) in [(66, libc::ENOTEMPTY), (10008, libc::EAGAIN), (5, libc::EIO)] {
+        assert_eq!(errno(number), Some(errno_here), "{number}");
+    }
 }
 
 #[test]
@@ -78,5 +90,7 @@ fn a_lost_connection_is_a_transport_fault_and_a_refusal_is_not() {
     ));
     assert_eq!(refused.transport_fault(), None);
     let garbage = map_call_error(&CallError::Decode(XdrError::Truncated { needed: 8, left: 2 }), PATH);
+    assert_eq!(garbage.raw_os_error(), OsErrorClass::BadMessage.host_code());
+    #[cfg(unix)]
     assert_eq!(garbage.raw_os_error(), Some(libc::EBADMSG));
 }

@@ -41,6 +41,11 @@ fn an_unlisted_device_errno_arrives_as_its_linux_class() {
     for (errno, class) in cases {
         let err = volume_error_from_errno(errno, "/x");
         assert!(matches!(err, VolumeError::IoError { .. }), "{errno}: {err:?}");
+        // The class rides as the host's code for it. Windows has none for `Stale`, so
+        // there that one arrives classless, ❌ never as the device's raw number.
+        let expected = class.host_code().map(|_| class);
+        assert_eq!(err.os_class(), expected, "device errno {errno}");
+        #[cfg(unix)]
         assert_eq!(err.os_class(), Some(class), "device errno {errno}");
     }
 }

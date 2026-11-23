@@ -179,13 +179,13 @@ async fn delete_removes_a_file_an_empty_folder_and_a_link_but_never_recurses() {
     let refused = volume.delete(&at(&volume, "/full")).await;
 
     assert!(!fake.exists("/file.txt") && !fake.exists("/empty") && !fake.exists("/link"));
+    // The host's own code for "not empty" (`ENOTEMPTY`, Windows' 145), so the
+    // transfer layer classifies it as it would a local refusal.
     assert!(
         matches!(
             refused,
-            Err(VolumeError::IoError {
-                raw_os_error: Some(libc::ENOTEMPTY),
-                ..
-            })
+            Err(VolumeError::IoError { raw_os_error, .. })
+                if raw_os_error.is_some() && raw_os_error == cmdr_fs::os_error::OsErrorClass::NotEmpty.host_code()
         ),
         "{refused:?}"
     );

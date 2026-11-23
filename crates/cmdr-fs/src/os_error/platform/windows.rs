@@ -6,20 +6,23 @@
 
 use super::super::OsErrorClass;
 
-const WIN32: [(i32, OsErrorClass); 41] = [
-    (2, OsErrorClass::NotFound),            // ERROR_FILE_NOT_FOUND
-    (3, OsErrorClass::NotFound),            // ERROR_PATH_NOT_FOUND
-    (5, OsErrorClass::AccessDenied),        // ERROR_ACCESS_DENIED
-    (8, OsErrorClass::OutOfMemory),         // ERROR_NOT_ENOUGH_MEMORY
-    (14, OsErrorClass::OutOfMemory),        // ERROR_OUTOFMEMORY
-    (17, OsErrorClass::CrossDevice),        // ERROR_NOT_SAME_DEVICE
-    (19, OsErrorClass::ReadOnlyFilesystem), // ERROR_WRITE_PROTECT
-    (21, OsErrorClass::NoDevice),           // ERROR_NOT_READY
-    (23, OsErrorClass::Io),                 // ERROR_CRC
-    (32, OsErrorClass::InUseByAnotherApp),  // ERROR_SHARING_VIOLATION
-    (33, OsErrorClass::InUseByAnotherApp),  // ERROR_LOCK_VIOLATION
-    (39, OsErrorClass::NoSpace),            // ERROR_HANDLE_DISK_FULL
-    (50, OsErrorClass::Unsupported),        // ERROR_NOT_SUPPORTED
+/// `ERROR_BUSY`, `ERROR_DISK_QUOTA_EXCEEDED`, and `ERROR_CANT_RESOLVE_FILENAME` (a link
+/// loop) give those classes a host code, so a class another OS's error carries (an Android
+/// phone's `EBUSY` through ADB) survives on a Windows host instead of turning classless.
+const WIN32: [(i32, OsErrorClass); 44] = [
+    (2, OsErrorClass::NotFound),               // ERROR_FILE_NOT_FOUND
+    (3, OsErrorClass::NotFound),               // ERROR_PATH_NOT_FOUND
+    (5, OsErrorClass::AccessDenied),           // ERROR_ACCESS_DENIED
+    (8, OsErrorClass::OutOfMemory),            // ERROR_NOT_ENOUGH_MEMORY
+    (14, OsErrorClass::OutOfMemory),           // ERROR_OUTOFMEMORY
+    (17, OsErrorClass::CrossDevice),           // ERROR_NOT_SAME_DEVICE
+    (19, OsErrorClass::ReadOnlyFilesystem),    // ERROR_WRITE_PROTECT
+    (21, OsErrorClass::NoDevice),              // ERROR_NOT_READY
+    (23, OsErrorClass::Io),                    // ERROR_CRC
+    (32, OsErrorClass::InUseByAnotherApp),     // ERROR_SHARING_VIOLATION
+    (33, OsErrorClass::InUseByAnotherApp),     // ERROR_LOCK_VIOLATION
+    (39, OsErrorClass::NoSpace),               // ERROR_HANDLE_DISK_FULL
+    (50, OsErrorClass::Unsupported),           // ERROR_NOT_SUPPORTED
     // ERROR_INVALID_FUNCTION: what a filesystem answers for an operation it doesn't do (a share's
     // folder flush, verified on Windows 10 22H2 against `\\localhost\C$`, 2026-11-22). After 50,
     // so `Unsupported`'s own code stays ERROR_NOT_SUPPORTED.
@@ -34,6 +37,7 @@ const WIN32: [(i32, OsErrorClass); 41] = [
     (121, OsErrorClass::TimedOut),             // ERROR_SEM_TIMEOUT
     (123, OsErrorClass::InvalidArgument),      // ERROR_INVALID_NAME
     (145, OsErrorClass::NotEmpty),             // ERROR_DIR_NOT_EMPTY
+    (170, OsErrorClass::Busy),                 // ERROR_BUSY
     (183, OsErrorClass::AlreadyExists),        // ERROR_ALREADY_EXISTS
     (206, OsErrorClass::NameTooLong),          // ERROR_FILENAME_EXCED_RANGE
     (267, OsErrorClass::NotADirectory),        // ERROR_DIRECTORY
@@ -43,6 +47,8 @@ const WIN32: [(i32, OsErrorClass); 41] = [
     (1231, OsErrorClass::NetworkUnreachable),  // ERROR_NETWORK_UNREACHABLE
     (1232, OsErrorClass::HostUnreachable),     // ERROR_HOST_UNREACHABLE
     (1236, OsErrorClass::ConnectionAborted),   // ERROR_CONNECTION_ABORTED
+    (1295, OsErrorClass::QuotaExceeded),       // ERROR_DISK_QUOTA_EXCEEDED
+    (1921, OsErrorClass::LinkLoop),            // ERROR_CANT_RESOLVE_FILENAME
     (10050, OsErrorClass::NetworkDown),        // WSAENETDOWN
     (10051, OsErrorClass::NetworkUnreachable), // WSAENETUNREACH
     (10053, OsErrorClass::ConnectionAborted),  // WSAECONNABORTED
