@@ -84,6 +84,44 @@ fn the_two_cut_rules_fingerprint_differently() {
     );
 }
 
+/// The table a Windows machine reads: each drive's root, and `D:` mounted again at a
+/// folder on `C:` (`mountvol`), all NTFS.
+fn windows_rows() -> Vec<MountPoint> {
+    vec![
+        row("C:/", "C:/", "NTFS"),
+        row("D:/", "D:/", "NTFS"),
+        row("C:/Users/test_user_1/dmount/", "D:/", "NTFS"),
+    ]
+}
+
+/// Regression (#1431): on Windows a folder mount of another drive is that drive, with
+/// its own index. Cut there, or a cover walk below it wrote `D:`'s files into `C:`'s
+/// index at paths `C:` doesn't have. A drive's own root is a tree of its own, never a
+/// mount inside one (`C:/` cut would cut all of `C:`). Asked with the rule as a value,
+/// so it holds on every host.
+#[test]
+fn windows_cuts_a_folder_mount_but_no_drive_root() {
+    let set = BootTreeMounts::from_mount_table_cut(BootTreeCut::Every, windows_rows(), |_| false);
+    assert_eq!(paths(&set), vec!["C:/Users/test_user_1/dmount"]);
+    assert!(set.covering("C:/Users/test_user_1/dmount/w1123/same").is_some());
+    assert!(set.covering("C:/Users/test_user_1/src").is_none());
+}
+
+/// Windows' rule is [`BootTreeCut::Every`]: an NTFS folder mount is a local disk, which
+/// the Linux rule would walk into.
+#[test]
+fn windows_takes_the_every_mount_rule() {
+    assert_eq!(BootTreeCut::for_os("windows"), BootTreeCut::Every);
+    assert_eq!(BootTreeCut::for_os("macos"), BootTreeCut::Every);
+    assert_eq!(BootTreeCut::for_os("linux"), BootTreeCut::NotALocalDisk);
+    let linux = BootTreeMounts::from_mount_table_cut(BootTreeCut::NotALocalDisk, windows_rows(), |_| false);
+    assert!(
+        paths(&linux).is_empty(),
+        "the Linux rule never cut it: {:?}",
+        paths(&linux)
+    );
+}
+
 fn paths(set: &BootTreeMounts) -> Vec<&str> {
     set.mounts.iter().map(|mount| mount.path.as_str()).collect()
 }

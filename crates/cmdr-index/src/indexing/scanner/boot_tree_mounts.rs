@@ -62,19 +62,31 @@ impl BootTreeMounts {
     /// (`/Volumes/X`), and either way it's not this set's job.
     ///
     /// Which of the rest it stops at is [`BOOT_TREE_CUT`]'s call: every one on
-    /// macOS, only the ones that aren't a local disk on Linux.
+    /// macOS and Windows, only the ones that aren't a local disk on Linux.
     pub(in crate::indexing) fn from_mount_table(
+        mount_points: impl IntoIterator<Item = MountPoint>,
+        already_excluded: impl Fn(&str) -> bool,
+    ) -> Self {
+        Self::from_mount_table_cut(BOOT_TREE_CUT, mount_points, already_excluded)
+    }
+
+    /// [`Self::from_mount_table`] under `cut`, so a test pins each platform's rule on
+    /// every host.
+    pub(super) fn from_mount_table_cut(
+        cut: BootTreeCut,
         mount_points: impl IntoIterator<Item = MountPoint>,
         already_excluded: impl Fn(&str) -> bool,
     ) -> Self {
         let mut mounts: Vec<BootTreeMount> = mount_points
             .into_iter()
-            .filter(|mount| BOOT_TREE_CUT.cuts(mount))
+            .filter(|mount| cut.cuts(mount))
             .filter_map(|mount| {
                 let raw = native_text(&mount.path);
                 let trimmed = raw.trim_end_matches('/');
-                if trimmed.is_empty() {
-                    return None; // `/`, the boot disk itself
+                // `/`, the boot disk itself, and a Windows drive's root (`C:`, `D:`): a
+                // tree of its own, ❌ never a mount inside one, or `C:` would cut all of `C:`.
+                if trimmed.is_empty() || is_drive_root(trimmed) {
+                    return None;
                 }
                 let path = firmlinks::normalize_path(trimmed);
                 if path == "/" || already_excluded(&path) {
@@ -107,7 +119,7 @@ impl BootTreeMounts {
 /// Which filesystems mounted inside its tree the boot-disk index stops at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum BootTreeCut {
-    /// Every one (macOS): a mount is its own drive, with its own index.
+    /// Every one (macOS, Windows): a mount is its own drive, with its own index.
     Every,
     /// Only the ones that aren't a known local disk (Linux): an NFS or CIFS share,
     /// FUSE, sshfs. A local one stays the boot disk's, because cutting it would cut
@@ -136,12 +148,28 @@ impl BootTreeCut {
     }
 }
 
+impl BootTreeCut {
+    /// The rule for `os` (`std::env::consts::OS`). Windows cuts every mount too: each
+    /// drive has its own index, and a folder mount of `D:` inside `C:` (`mountvol`) is
+    /// `D:`, an NTFS local disk the Linux rule would walk into, writing `D:`'s files into
+    /// `C:`'s index at paths `C:` doesn't have (#1431).
+    pub(super) const fn for_os(os: &str) -> Self {
+        if matches!(os.as_bytes(), b"macos" | b"windows") {
+            Self::Every
+        } else {
+            Self::NotALocalDisk
+        }
+    }
+}
+
 /// This platform's [`BootTreeCut`].
-pub(super) const BOOT_TREE_CUT: BootTreeCut = if cfg!(target_os = "macos") {
-    BootTreeCut::Every
-} else {
-    BootTreeCut::NotALocalDisk
-};
+pub(super) const BOOT_TREE_CUT: BootTreeCut = BootTreeCut::for_os(std::env::consts::OS);
+
+/// Whether `path` (no trailing `/`) is a bare drive root, `C:`.
+fn is_drive_root(path: &str) -> bool {
+    let bytes = path.as_bytes();
+    bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
 
 /// What the cache holds between reads.
 struct Cached {
