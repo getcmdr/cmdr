@@ -12,9 +12,11 @@
 //! this event is what raises the toast.
 
 use std::net::SocketAddr;
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+#[cfg(unix)] // POSIX modes: the owner-only checks run where files carry one.
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+
+use cmdr_fs::file_identity::{FileId, Follow};
 
 use serde_json::{Value, json};
 use tauri::Manager;
@@ -163,7 +165,7 @@ fn free_port() -> u16 {
         .port()
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // POSIX modes.
 fn mode_of(path: &Path) -> u32 {
     std::fs::metadata(path)
         .expect("the file should exist")
@@ -232,7 +234,6 @@ async fn every_bind_mode_listens_on_loopback_only() {
     }
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
     let data_dir = isolate_secrets();
@@ -249,8 +250,11 @@ fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
         assert_eq!(token.len(), 32, "a fresh random token, with no trailing newline");
         assert!(serves_with_token(port, &token).await);
 
-        assert_eq!(mode_of(&dir.join(PORT_FILE_NAME)), 0o600);
-        assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
+        #[cfg(unix)] // POSIX modes: Windows files carry ACLs, not 0600.
+        {
+            assert_eq!(mode_of(&dir.join(PORT_FILE_NAME)), 0o600);
+            assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
+        }
         assert_eq!(
             std::fs::read_to_string(dir.join(PORT_FILE_NAME)).expect("the port file"),
             format!("{port}\n")
@@ -265,7 +269,6 @@ fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
     });
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_discovery_files_are_replaced_atomically_and_never_inherit_a_loose_mode() {
     let data_dir = isolate_secrets();
@@ -277,20 +280,18 @@ fn the_discovery_files_are_replaced_atomically_and_never_inherit_a_loose_mode() 
         for name in [PORT_FILE_NAME, TOKEN_FILE_NAME] {
             let path = dir.join(name);
             std::fs::write(&path, "stale").expect("seed a leftover");
+            #[cfg(unix)] // POSIX modes.
             std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).expect("loosen it");
-            stale.push((path.clone(), std::fs::metadata(&path).expect("seeded").ino()));
+            stale.push((path.clone(), FileId::at(&path, Follow::NotLinks).expect("seeded")));
         }
 
         start_mcp_server(app.handle().clone(), McpConfig { enabled: true, port: 0 })
             .await
             .expect("the server should start");
 
-        for (path, stale_inode) in stale {
-            assert_ne!(
-                std::fs::metadata(&path).expect("written").ino(),
-                stale_inode,
-                "{path:?}"
-            );
+        for (path, stale_node) in stale {
+            assert_ne!(FileId::at(&path, Follow::NotLinks), Some(stale_node), "{path:?}");
+            #[cfg(unix)] // POSIX modes.
             assert_eq!(mode_of(&path), 0o600, "{path:?}");
         }
         let leftovers: Vec<_> = std::fs::read_dir(dir)
@@ -431,7 +432,6 @@ fn an_interactive_rebind_binds_the_new_port_before_it_retires_the_old_server() {
     });
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_token_env_var_pins_the_token_across_restarts() {
     let data_dir = isolate_secrets();
@@ -445,6 +445,7 @@ fn the_token_env_var_pins_the_token_across_restarts() {
             .await
             .expect("the server should start");
         assert_eq!(token_on_disk(dir), "pinned-by-env", "trimmed");
+        #[cfg(unix)] // POSIX modes.
         assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
         assert!(serves_with_token(port_on_disk(dir), "pinned-by-env").await);
 

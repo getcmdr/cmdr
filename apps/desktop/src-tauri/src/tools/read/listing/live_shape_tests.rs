@@ -11,7 +11,7 @@ use tokio_util::sync::CancellationToken;
 use super::live::{GatePolicy, LIVE_ENTRY_CAP, LIVE_READ, build_live_list_dir};
 use super::*;
 use crate::location::resolve::{IndexSources, VolumeFact, VolumeFacts, resolve};
-use crate::test_support::TestDir;
+use crate::test_support::{TestDir, native_app_path};
 use crate::tools::resources::volumes::VolumeKind;
 
 fn entry(name: &str, is_directory: bool, size: Option<u64>) -> FileEntry {
@@ -158,20 +158,20 @@ async fn an_offset_past_the_cap_is_refused_before_anything_is_read() {
     assert!(problem.message.contains("subfolder"), "the refusal names the next move");
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn a_live_read_lists_a_real_folder_through_its_volume() {
     let dir = TestDir::new("live-real-read");
     let folder = dir.join("documents");
     std::fs::create_dir_all(folder.join("2024")).expect("dirs");
     std::fs::write(folder.join("receipt.pdf"), b"%PDF").expect("file");
-    let root = dir.to_string_lossy().into_owned();
+    let root = native_app_path(&dir).as_str().to_string();
+    let folder_text = native_app_path(&folder).as_str().to_string();
     let facts = facts_for(&root);
     let resolved = resolve(
         &facts,
         &LocationInput {
             volume_id: Some("lan".to_string()),
-            path: folder.to_string_lossy().into_owned(),
+            path: folder_text.clone(),
         },
     )
     .expect("resolves");
@@ -201,17 +201,13 @@ async fn a_live_read_lists_a_real_folder_through_its_volume() {
         .filter_map(|c| c["name"].as_str())
         .collect();
     assert_eq!(names, ["2024", "receipt.pdf"]);
-    assert_eq!(
-        answer["location"],
-        json!({ "volumeId": "lan", "path": folder.to_string_lossy() })
-    );
+    assert_eq!(answer["location"], json!({ "volumeId": "lan", "path": folder_text }));
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn a_missing_folder_read_live_is_a_typed_miss_not_an_empty_listing() {
     let dir = TestDir::new("live-real-missing");
-    let root = dir.to_string_lossy().into_owned();
+    let root = native_app_path(&dir).as_str().to_string();
     let facts = facts_for(&root);
     let path = format!("{root}/gone");
     let resolved = resolve(

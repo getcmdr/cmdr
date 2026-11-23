@@ -287,9 +287,11 @@ fn a_report_selects_every_open_virtual_listing_for_the_repo() {
 /// matched no listing at all, and a `git branch` never reached the open
 /// `branches/` pane (caught by `git-portal.spec.ts`, 2026-09-05). A symlink to
 /// the fixture reproduces it wherever the suite runs.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_listing_reached_through_a_symlink_is_still_the_repos() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     use crate::file_system::volume::DEFAULT_VOLUME_ID;
     use cmdr_listing::testing::TestListing;
 
@@ -300,7 +302,7 @@ fn a_listing_reached_through_a_symlink_is_still_the_repos() {
 
     let elsewhere = temp_dir("wiring", "symlinked_spelling_link");
     let link = elsewhere.join("repo");
-    std::os::unix::fs::symlink(&root, &link).expect("symlink the repo");
+    cmdr_fs::testing::symlink(&root, &link).expect("symlink the repo");
     assert_ne!(
         link, root,
         "the two spellings have to differ for this to assert anything"

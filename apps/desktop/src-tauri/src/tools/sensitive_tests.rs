@@ -136,17 +136,19 @@ fn ordinary_paths_with_alarming_names_stay_readable() {
     }
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_protected_folder_is_refused_by_the_gate() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = TestDir::new("gate-symlink");
     let ssh = dir.join(".ssh");
     std::fs::create_dir(&ssh).unwrap();
     std::fs::write(ssh.join("id_rsa"), "key").unwrap();
     let file_link = dir.join("innocent.txt");
-    std::os::unix::fs::symlink(ssh.join("id_rsa"), &file_link).unwrap();
+    cmdr_fs::testing::symlink(ssh.join("id_rsa"), &file_link).unwrap();
     let folder_link = dir.join("innocent");
-    std::os::unix::fs::symlink(&ssh, &folder_link).unwrap();
+    cmdr_fs::testing::symlink(&ssh, &folder_link).unwrap();
 
     let file_link = file_link.to_str().unwrap();
     assert_eq!(classify(file_link), None, "the name alone gives nothing away");
@@ -172,16 +174,18 @@ fn a_plain_file_passes_the_gate() {
 
 /// A custom `CMDR_DATA_DIR` has no telling component, so only the check against the real dir
 /// catches it, through a symlink too.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_custom_data_dir_is_caught_by_the_gate_alone() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = TestDir::new("gate-data-dir");
     let data = dir.join("elsewhere");
     std::fs::create_dir(&data).unwrap();
     let token = data.join("mcp.token");
     std::fs::write(&token, "secret").unwrap();
     let link = dir.join("link.txt");
-    std::os::unix::fs::symlink(&token, &link).unwrap();
+    cmdr_fs::testing::symlink(&token, &link).unwrap();
 
     assert_eq!(classify(token.to_str().unwrap()), None);
     assert_eq!(

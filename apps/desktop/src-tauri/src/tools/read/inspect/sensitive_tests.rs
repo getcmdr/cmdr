@@ -134,14 +134,16 @@ async fn a_private_key_in_a_plain_folder_is_logged_with_its_reason() {
     );
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_protected_folder_is_refused_with_no_read() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = TestDir::new("inspect-symlink");
     std::fs::create_dir(dir.join(".ssh")).unwrap();
     write(&dir, ".ssh/id_rsa", "ordinary words");
     let link = dir.join("notes.txt");
-    std::os::unix::fs::symlink(dir.join(".ssh/id_rsa"), &link).unwrap();
+    cmdr_fs::testing::symlink(dir.join(".ssh/id_rsa"), &link).unwrap();
 
     assert_refused(&inspect(&link, &window(1, 200)), Protected::Credentials);
 }
@@ -170,19 +172,11 @@ fn an_archive_path_is_refused_before_it_materializes() {
     assert_refused(&row, Protected::Credentials);
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_key_inside_an_archive_entry_refuses_the_entry() {
     let dir = TestDir::new("inspect-archive-key");
     let zip = write(&dir, "foo.zip", build_zip(&[stored("backup.txt", key(3).into_bytes())]));
-    get_volume_manager().register_if_absent(
-        "root",
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
-    );
+    crate::test_support::ensure_scratch_root_volume();
 
     assert_refused(
         &inspect(&zip.join("backup.txt"), &window(1, 200)),

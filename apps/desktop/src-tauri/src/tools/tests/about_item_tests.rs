@@ -36,16 +36,8 @@ const ON_A_WAKE: Caller = Caller::Agent {
 };
 
 /// The boot disk, as the app registers it, so the resolver places a scratch path.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn ensure_root_volume() {
-    get_volume_manager().register_if_absent(
-        "root",
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
-    );
+    crate::test_support::ensure_scratch_root_volume();
 }
 
 async fn about(caller: Caller, params: Value) -> Result<Value, crate::tools::ToolError> {
@@ -54,12 +46,11 @@ async fn about(caller: Caller, params: Value) -> Result<Value, crate::tools::Too
 }
 
 fn path_of(path: &Path) -> Value {
-    json!({ "path": path.to_string_lossy() })
+    json!({ "path": crate::test_support::native_app_path(path).as_str() })
 }
 
 /// The agent on a turn the user started gets the card's facts, with where each
 /// comes from.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn the_agent_on_a_user_turn_gets_the_facts() {
     ensure_root_volume();
@@ -69,7 +60,10 @@ async fn the_agent_on_a_user_turn_gets_the_facts() {
 
     let answer = about(ON_A_USER_TURN, path_of(&file)).await.expect("it answers");
 
-    assert_eq!(answer["location"]["path"], file.to_string_lossy().as_ref());
+    assert_eq!(
+        answer["location"]["path"],
+        crate::test_support::native_app_path(&file).as_str()
+    );
     assert_eq!(answer["about"]["target"], "file");
     let identity = &answer["about"]["identity"];
     assert_eq!(identity["state"], "known", "{answer:#}");
@@ -98,7 +92,6 @@ async fn an_outside_client_off_direct_mode_is_refused() {
 }
 
 /// In direct mode it answers, and the read lands in the security log by tool.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn a_direct_client_gets_it_and_the_read_is_logged_by_tool() {
     ensure_root_volume();

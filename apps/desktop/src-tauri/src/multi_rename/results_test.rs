@@ -99,7 +99,6 @@ async fn an_edit_read_back_after_the_preview_shown_never_sneaks_into_its_rename(
 /// Results with nowhere to write (here a folder squats on the file's name; a host
 /// with no cache folder answers the same) is a typed refusal the sheet words, and
 /// the sheet goes on: it previews, reads back nothing, and renames.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn results_with_nowhere_to_write_is_refused_and_the_sheet_goes_on() {
     let (dir, listing) = folder("multi-rename-results-nowhere", &["a.txt"]);
@@ -110,7 +109,10 @@ async fn results_with_nowhere_to_write_is_refused_and_the_sheet_goes_on() {
     let results_dir = path.parent().expect("the file sits in a folder");
     std::fs::create_dir_all(results_dir.parent().expect("the cache folder")).expect("the cache folder");
     // Private, as Results makes it, so the squatter below is what refuses.
+    #[cfg(unix)] // A POSIX 0700 mode.
     let _ = std::os::unix::fs::DirBuilderExt::mode(&mut std::fs::DirBuilder::new(), 0o700).create(results_dir);
+    #[cfg(not(unix))]
+    let _ = std::fs::create_dir(results_dir);
     std::fs::create_dir(&path).expect("a folder at the Results file's name");
     let preview = app_multi_rename()
         .preview(&session.session_id, &keep_names())

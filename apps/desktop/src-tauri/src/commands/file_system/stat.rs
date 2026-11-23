@@ -187,31 +187,33 @@ mod tests {
     /// and the kind has to come from the volume that serves it. Without this the
     /// portal's rows report an unknown kind, which is what an archive-only
     /// recovery branch left them with.
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn a_path_in_a_repos_history_recovers_its_kind_from_the_portal() {
-        use crate::file_system::volume::manager::get_volume_manager;
         use cmdr_git::test_fixtures::{Fixture, cleanup, temp_dir};
-        use cmdr_local::LocalVolume;
-        use std::sync::Arc;
-
         let dir = temp_dir("stat_kinds", "snapshot");
         let mut fixture = Fixture::init(dir.clone());
         fixture.commit_file("README.md", b"hello\n", "initial");
         fixture.commit_file("scripts/run.sh", b"#!/bin/sh\n", "a script in a folder");
 
         // `stat` resolves against the default volume, so the repo has to be on it.
-        get_volume_manager().register_if_absent(
-            crate::file_system::volume::DEFAULT_VOLUME_ID,
-            Arc::new(LocalVolume::local_folder("Root", "/", crate::volume_host::host())),
-        );
+        crate::test_support::ensure_scratch_root_volume();
         crate::file_system::git::wiring::set_virtual_portal_enabled(true);
 
-        let canonical = fs::canonicalize(&dir).expect("canonical repo root");
+        // macOS resolves the scratch folder's `/var` link; Windows' canonical form is a verbatim
+        // `\\?\` path no pane shows, and its scratch folder is already spelled long.
+        let canonical = if cfg!(windows) {
+            dir.clone()
+        } else {
+            fs::canonicalize(&dir).expect("canonical repo root")
+        };
         let snapshot = canonical.join(".git/branches/main");
         let result = stat_paths_kinds(vec![
-            snapshot.join("README.md").to_string_lossy().into_owned(),
-            snapshot.join("scripts").to_string_lossy().into_owned(),
+            crate::test_support::native_app_path(snapshot.join("README.md"))
+                .as_str()
+                .to_string(),
+            crate::test_support::native_app_path(snapshot.join("scripts"))
+                .as_str()
+                .to_string(),
         ])
         .await;
 

@@ -436,22 +436,14 @@ async fn the_agent_reads_the_logs_through_use_tool() {
 
 /// "What is this folder?": the agent reaches the deferred `about_item` either way, through a real turn,
 /// and reads the card's facts with where each one comes from.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn the_agent_looks_up_what_a_folder_is_either_way() {
-    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
-        "root",
-        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
-    );
+    crate::test_support::ensure_scratch_root_volume();
     let dir = crate::test_support::TestDir::new("agent-looks-up-a-folder");
     let folder = dir.join("node_modules");
     std::fs::create_dir(&folder).expect("make the folder");
 
-    let params = json!({ "path": folder.to_string_lossy() });
+    let params = json!({ "path": crate::test_support::native_app_path(&folder).as_str() });
     for call in both_ways(&ToolId::AboutItem, &params) {
         let answer = FakeFrontend::new().call(call.clone(), TurnOrigin::Text).await;
         assert_eq!(answer["about"]["target"], "folder", "{call:?}: {answer}");

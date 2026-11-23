@@ -425,7 +425,7 @@ fn dial(error: smb2::Error, slowest_attempt: std::time::Duration) -> FailedDial 
 /// switching it off and on fixed it at once. So this Mac refusing the route is
 /// read from three things together, and ❌ never from the errno alone: a server
 /// that's off, or a router that gave up on it, says `EHOSTUNREACH` too.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // A POSIX errno through `from_raw_os_error`; Windows reads a raw code as a Win32 error.
 #[test]
 fn a_route_this_mac_refused_is_told_apart_from_a_server_that_isnt_there() {
     use std::io::ErrorKind as Io;
@@ -560,7 +560,7 @@ fn a_refused_route_reaches_connect_directly_as_a_network_answer() {
 
 /// The log line is where the next report gets read, so it names the io kind and,
 /// where the error carries one, the raw errno: EHOSTUNREACH at a glance.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // A POSIX errno through `from_raw_os_error`; Windows reads a raw code as a Win32 error.
 #[test]
 fn the_log_detail_names_the_io_kind_and_errno() {
     let bare = smb2::Error::Io(std::io::Error::from_raw_os_error(libc::EHOSTUNREACH));

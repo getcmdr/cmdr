@@ -3,7 +3,7 @@
 //! doesn't read costs only that entry, with a copy of the whole file kept.
 
 use std::fs;
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // POSIX modes, for the unreadable-list cell and the copy reader.
 use std::os::unix::fs::PermissionsExt;
 
 use super::*;
@@ -43,24 +43,23 @@ const S3: &str = r#"{
   ]
 }"#;
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // `geteuid`, for the unreadable-list cell.
 fn running_as_root() -> bool {
     // SAFETY: (test) `geteuid` takes no arguments, shares no memory, and can't fail.
     unsafe { libc::geteuid() == 0 }
 }
 
 /// The one copy beside `path`, read back whatever its mode.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn the_copy(path: &Path) -> Vec<u8> {
     let kept = testing::kept_copies(path);
     assert_eq!(kept.len(), 1, "one copy of {path:?}: {kept:?}");
+    #[cfg(unix)] // A POSIX mode: an unreadable cell's copy keeps its 0000.
     fs::set_permissions(&kept[0], fs::Permissions::from_mode(0o644)).expect("read the copy");
     fs::read(&kept[0]).expect("read the copy")
 }
 
 /// Reads each list as `read::<T>` would at launch, then saves what came back, as the next
 /// connect would.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 fn read_then_save(dir: &TestDir, prepare: impl Fn(&Path)) {
     let sftp = dir.join("known-sftp-servers.json");
     let webdav = dir.join("webdav_known_servers.json");
@@ -82,7 +81,7 @@ fn read_then_save(dir: &TestDir, prepare: impl Fn(&Path)) {
     assert_eq!(the_copy(&s3), S3.as_bytes());
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // A POSIX 0000 mode makes the file unreadable; Windows needs an ACL for that.
 #[test]
 fn an_unreadable_list_survives_the_next_save() {
     if running_as_root() {
@@ -100,7 +99,6 @@ fn an_unreadable_list_survives_the_next_save() {
     );
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_list_that_doesnt_parse_survives_the_next_save() {
     let _notices = testing::capture_recoveries();
@@ -117,7 +115,6 @@ fn a_list_that_doesnt_parse_survives_the_next_save() {
 
 /// One entry from a newer build, or with a typo, costs that entry only: the rest read, and the
 /// whole file is copied aside before the next save drops it.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn one_entry_that_doesnt_read_keeps_the_rest_and_a_copy() {
     let notices = testing::capture_recoveries();

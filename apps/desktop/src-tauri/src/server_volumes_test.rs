@@ -176,7 +176,6 @@ async fn listing_a_saved_server_nobody_connected_says_it_is_not_connected() {
 /// ❗ A copy onto a SAVED server nobody connected is refused as not connected yet,
 /// ❌ never the untyped "Destination volume not found": a transfer doesn't dial,
 /// and the way through is opening the server, which that wording hides.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_copy_onto_a_saved_server_nobody_connected_is_refused_as_not_connected() {
     use crate::file_system::volume::manager::get_volume_manager;

@@ -644,14 +644,16 @@ fn note_pending_write_suppresses_matching_event() {
 /// path on a network mount blocked a New Folder on a busy NAS for 12 s
 /// (ERR-AREUV). The observable trace of "no resolving": a path reached
 /// through a symlink OUTSIDE the root isn't registered under the root.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn note_pending_write_never_resolves_the_path() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let td = unhidden_tempdir();
     let root = td.path().join("Downloads");
     fs::create_dir(&root).unwrap();
     let alias = td.path().join("alias");
-    std::os::unix::fs::symlink(&root, &alias).unwrap();
+    cmdr_fs::testing::symlink(&root, &alias).unwrap();
     let (sink, _rx) = ChannelSink::new();
     let watcher = DownloadsWatcher::scripted_at(root.clone(), sink);
 

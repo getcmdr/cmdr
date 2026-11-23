@@ -673,13 +673,15 @@ mod media {
         );
     }
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn a_symlink_to_a_protected_file_reads_nothing() {
+        if cmdr_fs::testing::skip_without_symlinks() {
+            return;
+        }
         let (dir, _, _listing) = folder("mcp-rename-gate-link", &[]);
         std::fs::create_dir(dir.join(".ssh")).unwrap();
         std::fs::write(dir.join(".ssh/song.mp3"), b"x").unwrap();
-        std::os::unix::fs::symlink(dir.join(".ssh/song.mp3"), dir.join("song.mp3")).unwrap();
+        cmdr_fs::testing::symlink(dir.join(".ssh/song.mp3"), dir.join("song.mp3")).unwrap();
         let entries = list_directory_core(&dir, &crate::listing_host::backends::AppListings).unwrap();
         let wanted = vec!["song.mp3".to_string()];
         let calls = Calls::default();
@@ -746,16 +748,18 @@ mod media {
     }
 
     /// A folder's worth of refusals is no sign the volume is dying: the rest still read.
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn refused_rows_do_not_make_the_loader_give_up_on_the_volume() {
+        if cmdr_fs::testing::skip_without_symlinks() {
+            return;
+        }
         let (dir, _, _listing) = folder("mcp-rename-gate-many", &["photo.jpg"]);
         std::fs::create_dir(dir.join(".ssh")).unwrap();
         let mut wanted = Vec::new();
         for n in 0..6 {
             let name = format!("link{n}.jpg");
             std::fs::write(dir.join(".ssh").join(&name), b"x").unwrap();
-            std::os::unix::fs::symlink(dir.join(".ssh").join(&name), dir.join(&name)).unwrap();
+            cmdr_fs::testing::symlink(dir.join(".ssh").join(&name), dir.join(&name)).unwrap();
             wanted.push(name);
         }
         wanted.push("photo.jpg".to_string());

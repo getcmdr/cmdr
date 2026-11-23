@@ -295,7 +295,7 @@ fn schema_version_mismatch_quarantines_and_starts_fresh() {
 /// `None`: `None` means "first launch" and would re-seed the four defaults OVER the user's real
 /// list. It reads as an empty store, and it's set aside first, so the next edit's write can't land
 /// over the real list.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // A POSIX 0000 mode makes the file unreadable; Windows needs an ACL for that.
 #[test]
 fn an_unreadable_file_reads_as_some_empty_and_survives_the_next_edit() {
     use std::os::unix::fs::PermissionsExt;

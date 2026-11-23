@@ -823,18 +823,20 @@ fn a_moved_per_user_dir_is_protected_where_the_host_keeps_it() {
 }
 
 /// The host's dir may itself be a link, and so may the path asked for.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn the_gate_follows_links_into_and_out_of_a_moved_dir() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = TestDir::new("gate-moved-dir");
     let real_config = dir.join("real-config");
     std::fs::create_dir_all(real_config.join("gh")).unwrap();
     let token = real_config.join("gh/hosts.yml");
     std::fs::write(&token, "token").unwrap();
     let config_link = dir.join("config-link");
-    std::os::unix::fs::symlink(&real_config, &config_link).unwrap();
+    cmdr_fs::testing::symlink(&real_config, &config_link).unwrap();
     let file_link = dir.join("innocent.txt");
-    std::os::unix::fs::symlink(&token, &file_link).unwrap();
+    cmdr_fs::testing::symlink(&token, &file_link).unwrap();
     let plain = dir.join("plain.txt");
     std::fs::write(&plain, "hello").unwrap();
 
@@ -852,9 +854,11 @@ fn the_gate_follows_links_into_and_out_of_a_moved_dir() {
     assert_eq!(gate_on(token.to_str().unwrap(), None, &[]), Ok(()));
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[test]
 fn a_symlink_into_a_mail_or_browser_folder_is_refused_by_the_gate() {
+    if cmdr_fs::testing::skip_without_symlinks() {
+        return;
+    }
     let dir = TestDir::new("gate-symlink-mail");
     let cells: &[Cell] = &[
         (".thunderbird/a.default/Mail/Inbox", MessageStore),
@@ -866,7 +870,7 @@ fn a_symlink_into_a_mail_or_browser_folder_is_refused_by_the_gate() {
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(&file, "x").unwrap();
         let link = dir.join(format!("innocent-{index}.txt"));
-        std::os::unix::fs::symlink(&file, &link).unwrap();
+        cmdr_fs::testing::symlink(&file, &link).unwrap();
         let link = link.to_str().unwrap();
         assert_eq!(classify_plain(link), None, "the name alone gives nothing away");
         assert_eq!(gate_on(link, None, &[]), Err(*reason), "{rest}");

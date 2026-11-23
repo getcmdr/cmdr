@@ -168,13 +168,13 @@ async fn cancellation_during_pending_resolution_completes_the_ui_without_droppin
     assert!(listing.entries()[0].recursive_size.is_none(), "no late walk starts");
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn unreadable_and_quickly_cancelled_retries_preserve_a_manual_partial() {
     let dir = crate::test_support::TestDir::new("count-manual-unreadable");
-    let missing_path = dir.join("missing").to_string_lossy().to_string();
+    let dir_app = crate::test_support::native_app_path(&dir);
+    let missing_path = format!("{}/missing", dir_app.as_str());
     let listing = TestListing::new()
-        .path(crate::test_support::native_app_path(&dir).as_str())
+        .path(dir_app.as_str())
         .entries(vec![FileEntry::new(
             "missing".to_string(),
             missing_path.clone(),
@@ -199,9 +199,9 @@ async fn unreadable_and_quickly_cancelled_retries_preserve_a_manual_partial() {
         &|_| {},
     );
     let requested = plan(listing.id(), false, None, |_| true).expect("cached");
-    let missing: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
+    let missing: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder_at(
         "missing",
-        "/",
+        dir_app.clone(),
         crate::volume_host::host(),
     ));
     assert_eq!(

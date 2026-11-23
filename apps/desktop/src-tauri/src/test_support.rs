@@ -55,6 +55,26 @@ pub(crate) fn native_app_path(path: impl AsRef<std::path::Path>) -> cmdr_fs::app
     cmdr_fs::app_path::AppPathBuf::from_native_unicode(path.as_ref()).expect("a fixture path is Unicode")
 }
 
+/// Registers the boot disk as `root` (if nothing has yet), the way the app does, so the
+/// resolver places a scratch path: rooted at the scratch folder's filesystem root, which is
+/// `/` on macOS and Linux and the drive on Windows. Idempotent.
+pub(crate) fn ensure_scratch_root_volume() {
+    let scratch = cmdr_fs::testing::scratch_root();
+    let fs_root = scratch
+        .ancestors()
+        .last()
+        .expect("an absolute path has a root")
+        .to_path_buf();
+    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
+        "root",
+        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
+            "Test root",
+            fs_root,
+            crate::volume_host::host(),
+        )),
+    );
+}
+
 /// Points the secret store at a scratch directory of this test's own, and returns it.
 ///
 /// **Every test that reaches `crate::secrets::store()` needs this**, including the ones that get

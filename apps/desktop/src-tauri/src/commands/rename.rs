@@ -252,15 +252,13 @@ mod tests {
     /// Registers a real local-FS "root" volume so `rename_file` with
     /// `volume_id = None` (→ "root") exercises the managed path's local branch,
     /// the same one production hits. Idempotent via `register_if_absent`.
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     fn ensure_root_volume() {
-        use crate::file_system::volume::manager::get_volume_manager;
-        use cmdr_local::LocalVolume;
-        use std::sync::Arc;
-        get_volume_manager().register_if_absent(
-            "root",
-            Arc::new(LocalVolume::local_folder("Test root", "/", crate::volume_host::host())),
-        );
+        crate::test_support::ensure_scratch_root_volume();
+    }
+
+    /// A fixture path as the wire text a pane sends: its app path.
+    fn wire(path: &std::path::Path) -> String {
+        crate::test_support::native_app_path(path).as_str().to_string()
     }
 
     // ========================================================================
@@ -523,7 +521,6 @@ mod tests {
     // Rename file (an in-time answer is the reply itself)
     // ========================================================================
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_success() {
         ensure_root_volume();
@@ -532,8 +529,8 @@ mod tests {
         let new = tmp.join("new.txt");
         fs::write(&old, "content").unwrap();
         let result = rename_file_replying(
-            old.to_string_lossy().to_string(),
-            new.to_string_lossy().to_string(),
+            wire(&old),
+            wire(&new),
             false,
             None,
             cmdr_operation_log::types::Initiator::User,
@@ -546,7 +543,6 @@ mod tests {
         assert_eq!(fs::read_to_string(&new).unwrap(), "content");
     }
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_conflict_no_force() {
         ensure_root_volume();
@@ -556,8 +552,8 @@ mod tests {
         fs::write(&old, "old").unwrap();
         fs::write(&new, "new").unwrap();
         let result = rename_file_replying(
-            old.to_string_lossy().to_string(),
-            new.to_string_lossy().to_string(),
+            wire(&old),
+            wire(&new),
             false,
             None,
             cmdr_operation_log::types::Initiator::User,
@@ -571,7 +567,6 @@ mod tests {
         assert!(new.exists());
     }
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn test_rename_file_force_overwrites() {
         ensure_root_volume();
@@ -581,8 +576,8 @@ mod tests {
         fs::write(&old, "new content").unwrap();
         fs::write(&new, "old content").unwrap();
         let result = rename_file_replying(
-            old.to_string_lossy().to_string(),
-            new.to_string_lossy().to_string(),
+            wire(&old),
+            wire(&new),
             true,
             None,
             cmdr_operation_log::types::Initiator::User,

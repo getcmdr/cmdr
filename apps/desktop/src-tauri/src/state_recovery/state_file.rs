@@ -211,7 +211,7 @@ mod tests {
     use crate::state_recovery::testing;
     use crate::test_support::TestDir;
     use serde::Serialize;
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+    #[cfg(unix)] // POSIX modes, for the unreadable-file cell.
     use std::os::unix::fs::PermissionsExt;
 
     #[derive(Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -230,7 +230,7 @@ mod tests {
         serde_json::from_slice(bytes).map_err(|e| e.to_string())
     }
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+    #[cfg(unix)] // `geteuid`, for the unreadable-file cell.
     fn running_as_root() -> bool {
         // SAFETY: (test) `geteuid` takes no arguments, shares no memory, and can't fail.
         unsafe { libc::geteuid() == 0 }
@@ -247,7 +247,7 @@ mod tests {
         write_state_file(&path, "{}").expect("the write goes through");
     }
 
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+    #[cfg(unix)] // A POSIX 0000 mode makes the file unreadable; Windows needs an ACL for that.
     #[test]
     fn an_unreadable_file_is_set_aside_before_anything_writes() {
         if running_as_root() {

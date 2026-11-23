@@ -757,18 +757,10 @@ async fn assert_reaches(label: &str, backend: AiBackend, request: &str, wanted: 
 
 /// "What is this folder?" over a real scratch folder: the model has to reach the deferred `about_item`,
 /// which runs for real, and answer from it. What it said lands in the log.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 #[ignore = "real API call: set ANTHROPIC_API_KEY to run"]
 async fn smoke_anthropic_what_is_this_folder() {
-    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
-        "root",
-        std::sync::Arc::new(cmdr_local::LocalVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
-    );
+    crate::test_support::ensure_scratch_root_volume();
     let dir = crate::test_support::TestDir::new("smoke-what-is-this-folder");
     let folder = dir.join("node_modules");
     std::fs::create_dir_all(folder.join("left-pad")).expect("make the folder");
