@@ -5,7 +5,7 @@
 
 use serde_json::{Value, json};
 
-use super::to_json;
+use super::{to_json, u};
 use crate::location::Location;
 use crate::tools::connect::{ConnectAnswer, ConnectOutcome};
 use crate::tools::read::importance::{ImportantFoldersResult, RankedFolderOut};
@@ -31,7 +31,7 @@ fn on_root_row(row: FileRow) -> InspectRow {
 pub(super) fn pane_listing(scope: PaneListingScope, names: &[&str], total: usize) -> Value {
     to_json(&PaneListingResult {
         pane: "left".into(),
-        location: on_root("/Users/u/Photos"),
+        location: on_root(&u("/Photos")),
         scope,
         total,
         returned: names.len(),
@@ -98,18 +98,16 @@ pub(super) fn inspect_with_find() -> Value {
     to_json(&InspectResult::Ok {
         files: vec![
             inspected(
-                "/Users/u/notes.txt",
+                &u("/notes.txt"),
                 find(vec![(12, "invoice 2026"), (812, "invoice paid")]),
             ),
-            on_root_row(FileRow::Missing {
-                path: "/Users/u/gone.txt".into(),
-            }),
+            on_root_row(FileRow::Missing { path: u("/gone.txt") }),
             on_root_row(FileRow::Unreadable {
-                path: "/Users/u/locked.txt".into(),
+                path: u("/locked.txt"),
                 reason: crate::tools::read::inspect::UnreadableReason::Permission,
             }),
             on_root_row(FileRow::Protected {
-                path: "/Users/u/.ssh/id_rsa".into(),
+                path: u("/.ssh/id_rsa"),
                 reason: crate::tools::sensitive::Protected::Credentials,
                 note: crate::tools::sensitive::PROTECTED_NOTE,
             }),
@@ -123,7 +121,7 @@ pub(super) fn inspect_with_find() -> Value {
         total: 6,
         returned: 5,
         truncated: true,
-        unanswered: vec!["/Users/u/slow.txt".into()],
+        unanswered: vec![u("/slow.txt")],
         nearby: Some(Vec::new()),
     })
 }
@@ -150,7 +148,7 @@ pub(super) fn important_folders(paths: &[&str], truncated: bool) -> Value {
 /// `list_dir` (`read/listing.rs::ListDirResult`): a page of 2 children of 5.
 pub(super) fn list_dir() -> Value {
     json!({
-        "location": { "volumeId": "root", "path": "/Users/u/Downloads" },
+        "location": { "volumeId": "root", "path": u("/Downloads") },
         "coverage": { "indexStatus": "fresh", "authoritative": true },
         "volume": { "id": "root" },
         "children": [
@@ -201,8 +199,8 @@ pub(super) fn search(match_count: u64, returned: usize, complete: bool, capped: 
         .map(|i| {
             json!({
                 "name": format!("report-{i}.pdf"),
-                "path": format!("/Users/u/Docs/report-{i}.pdf"),
-                "parentPath": "/Users/u/Docs",
+                "path": u(&format!("/Docs/report-{i}.pdf")),
+                "parentPath": u("/Docs"),
                 "isDirectory": false,
                 "sizeBytes": 2_048,
                 "sizeHuman": "2 KiB"
@@ -229,7 +227,7 @@ pub(super) fn search(match_count: u64, returned: usize, complete: bool, capped: 
 pub(super) fn search_photos(total: usize, indexing: bool) -> Value {
     let hits: Vec<Value> = (0..total.min(3))
         .map(|i| {
-            json!({ "path": format!("/Users/u/Pictures/IMG_{i}.jpg"), "volume": "root", "matchKind": "ocr", "matchText": "RECEIPT" })
+            json!({ "path": u(&format!("/Pictures/IMG_{i}.jpg")), "volume": "root", "matchKind": "ocr", "matchText": "RECEIPT" })
         })
         .collect();
     json!({
@@ -248,9 +246,9 @@ pub(super) fn image_facts() -> Value {
     json!({
         "status": "ok",
         "facts": [
-            { "path": "/Users/u/Pictures/a.jpg", "state": "indexed", "volume": "root", "text": "TOTAL 42.00" },
-            { "path": "/Users/u/Pictures/b.jpg", "state": "notIndexed" },
-            { "path": "/Users/u/.ssh/c.jpg", "state": "protected", "reason": "credentials" }
+            { "path": u("/Pictures/a.jpg"), "state": "indexed", "volume": "root", "text": "TOTAL 42.00" },
+            { "path": u("/Pictures/b.jpg"), "state": "notIndexed" },
+            { "path": u("/.ssh/c.jpg"), "state": "protected", "reason": "credentials" }
         ],
         "total": 3,
         "returned": 3,
@@ -267,7 +265,7 @@ pub(super) fn operations_list() -> Value {
 /// `list_volumes` (`read/volumes.rs`): `{ volumes: [VolumeSnapshot] }`.
 pub(super) fn list_volumes() -> Value {
     json!({ "volumes": [
-        { "name": "Macintosh HD", "id": "root", "kind": "local", "mountPath": "/" },
+        { "name": "Macintosh HD", "id": "root", "kind": "local", "mountPath": super::host_root() },
         { "name": "Pixel", "id": "mtp-1", "kind": "device" }
     ] })
 }
@@ -291,7 +289,7 @@ pub(super) fn suggestion_group() -> Value {
     json!({
         "found": true,
         "group": { "groupId": 7 },
-        "ops": [{ "opId": 1, "path": "/Users/u/Downloads/setup.dmg", "status": "pending" }],
+        "ops": [{ "opId": 1, "path": u("/Downloads/setup.dmg"), "status": "pending" }],
         "offset": 0,
         "total": 4,
         "returned": 1,

@@ -129,7 +129,13 @@ fn the_listing_lines_ship_their_dir_as_one_token_and_keep_the_rest() {
         crate::test_support::capture_logs(|| cmdr_local::reading::list_directory_core(&dir, host.listings()));
     assert!(listed.expect("list the empty folder").is_empty());
 
-    let token = regex::escape(&r(&LogPrivate::dir_path(&dir).to_string()));
+    // The reader logs the folder as it opens it: the app path's native crossing, which on
+    // Windows is the verbatim `\\?\C:\…` form.
+    let logged = cmdr_fs::app_path::AppPathBuf::from_native(&dir)
+        .ok()
+        .and_then(|app| app.to_native().ok())
+        .expect("a scratch folder has an app path");
+    let token = regex::escape(&r(&LogPrivate::dir_path(&logged).to_string()));
     let goldens = [
         format!(r"^list_directory_core: path={token}, entries=0, read=\d+ms, total=\d+ms$"),
         format!(

@@ -4,8 +4,8 @@ use std::path::Path;
 
 use serde_json::{Value, json};
 
-use super::call;
 use super::fixtures;
+use super::{call, u};
 use crate::agent::line::{LinePane, LinePath, LineResource, MAX_TEXT_CHARS, ToolSubject, subject_of};
 use crate::agent::llm::types::ToolId;
 use crate::tools::read::pane_listing::PaneListingScope;
@@ -15,7 +15,7 @@ fn subject(tool: ToolId, args: Value) -> ToolSubject {
 }
 
 fn home() -> String {
-    std::env::var("HOME").unwrap_or_default()
+    cmdr_fs::tilde::home_folder().unwrap_or_default()
 }
 
 #[test]
@@ -24,9 +24,9 @@ fn argument_only_subjects_per_tool() {
         (ToolId::AppState, json!({}), ToolSubject::Panes),
         (
             ToolId::ListDir,
-            json!({ "path": "/Users/u/Downloads", "sortBy": "size" }),
+            json!({ "path": u("/Downloads"), "sortBy": "size" }),
             ToolSubject::Folder {
-                path: LinePath::of("/Users/u/Downloads"),
+                path: LinePath::of(&u("/Downloads")),
             },
         ),
         (
@@ -245,13 +245,14 @@ fn only_an_absolute_whole_path_is_a_place_to_go() {
         other => panic!("a folder subject, got {other:?}"),
     };
 
-    assert!(folder("/Users/u/Downloads").linkable);
+    assert!(folder(&u("/Downloads")).linkable);
     let relative = folder("Downloads");
     assert_eq!(relative.text, "Downloads");
     assert!(!relative.linkable, "relative");
     assert!(!folder(&long).linkable, "cut");
 
-    let ToolSubject::Search { scope_paths, .. } = subject(ToolId::Search, json!({ "scope": "Docs, /Volumes/NAS" }))
+    let ToolSubject::Search { scope_paths, .. } =
+        subject(ToolId::Search, json!({ "scope": format!("Docs, {}", u("/NAS")) }))
     else {
         panic!("a search subject");
     };
@@ -260,7 +261,8 @@ fn only_an_absolute_whole_path_is_a_place_to_go() {
         [false, true]
     );
 
-    assert_eq!(LinePath::linkable_text("/a/b.txt").as_deref(), Some("/a/b.txt"));
+    let whole = u("/a/b.txt");
+    assert_eq!(LinePath::linkable_text(&whole).as_deref(), Some(whole.as_str()));
     assert_eq!(LinePath::linkable_text("b.txt"), None);
     assert_eq!(LinePath::linkable_text(&long), None);
 }
@@ -311,7 +313,7 @@ fn list_pane_files_takes_its_folder_and_scope_from_the_result() {
             None
         ),
         ToolSubject::FocusedPane {
-            folder: Some(LinePath::of("/Users/u/Photos")),
+            folder: Some(LinePath::of(&u("/Photos"))),
             selection_only: Some(true),
         }
     );
@@ -322,16 +324,16 @@ fn list_pane_files_takes_its_folder_and_scope_from_the_result() {
             None
         ),
         ToolSubject::FocusedPane {
-            folder: Some(LinePath::of("/Users/u/Photos")),
+            folder: Some(LinePath::of(&u("/Photos"))),
             selection_only: Some(false),
         }
     );
     // A thread stored before results carried `location` named its folder as a bare `path`.
-    let legacy = json!({ "pane": "left", "path": "/Users/u/Old", "scope": "folder", "entries": [] });
+    let legacy = json!({ "pane": "left", "path": u("/Old"), "scope": "folder", "entries": [] });
     assert_eq!(
         subject_of(&pane_call, Some(&legacy), None),
         ToolSubject::FocusedPane {
-            folder: Some(LinePath::of("/Users/u/Old")),
+            folder: Some(LinePath::of(&u("/Old"))),
             selection_only: Some(false),
         }
     );
@@ -344,7 +346,11 @@ fn list_pane_files_takes_its_folder_and_scope_from_the_result() {
 
 #[test]
 fn a_memory_path_is_a_place_only_when_it_lands_inside_the_folder() {
-    let root = Path::new("/data/ai/memory");
+    // A native folder, as the app hands it: a drive path on Windows.
+    let root = &Path::new(if cfg!(windows) { "C:\\" } else { "/" })
+        .join("data")
+        .join("ai")
+        .join("memory");
     let memory = |path: &str| {
         subject_of(
             &call(ToolId::MemoryWrite, json!({ "path": path, "content": "x" })),
@@ -357,7 +363,7 @@ fn a_memory_path_is_a_place_only_when_it_lands_inside_the_folder() {
         memory("notes/home.md"),
         ToolSubject::MemoryFile {
             path: "notes/home.md".into(),
-            absolute: Some("/data/ai/memory/notes/home.md".into()),
+            absolute: Some(format!("{}data/ai/memory/notes/home.md", super::host_root())),
         }
     );
     for escape in ["../../etc/passwd.md", "/tmp/x.md", "notes.sh"] {

@@ -12,6 +12,17 @@ use serde_json::Value;
 
 use crate::agent::llm::types::{AgentToolCall, AgentToolResult, ToolId};
 
+/// `rest` under a home folder spelled as this host's app paths are: `C:/Users/u…` on Windows,
+/// where `/Users/u` is no place the panes can go.
+fn u(rest: &str) -> String {
+    format!("{}/Users/u{rest}", if cfg!(windows) { "C:" } else { "" })
+}
+
+/// This host's filesystem root as an app path.
+fn host_root() -> &'static str {
+    if cfg!(windows) { "C:/" } else { "/" }
+}
+
 fn call(tool: ToolId, arguments: Value) -> AgentToolCall {
     call_with_id("call-1", tool, arguments)
 }

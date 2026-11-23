@@ -1,7 +1,5 @@
 //! Tests for executor module.
 
-use std::path::Path;
-
 use super::app::{TabMoveAck, TabMoveRefusal, parse_tab_move_response, parse_tab_opened_response, tab_move_result};
 use super::nav::{
     GoToFailure, PaneChoice, SelectableVolume, nav_result, pane_reports_volume, resolve_volume_selector,
@@ -26,7 +24,8 @@ fn test_tool_error_internal() {
 
 #[test]
 fn test_user_path_param_expands_tilde() {
-    let home = dirs::home_dir().expect("home dir").to_string_lossy().to_string();
+    // The home folder's app path (`C:/Users/…` on Windows), which the expansion answers in.
+    let home = cmdr_fs::tilde::home_folder().expect("home dir");
 
     // Pre-fix, `~/Downloads` passed through raw and failed the existence check.
     let params = json!({"path": "~/Downloads"});
@@ -206,9 +205,11 @@ fn test_is_virtual_path() {
 #[tokio::test]
 async fn test_validate_path_exists() {
     // Local existing path passes
-    assert!(validate_path_exists("/tmp").await.is_ok());
+    let dir = crate::test_support::AppTestDir::new("validate_path_exists");
+    assert!(validate_path_exists(dir.app_path().as_str()).await.is_ok());
     // Local missing path is invalid_params
-    let err = validate_path_exists("/nonexistent/path/xyz").await.unwrap_err();
+    let missing = format!("{}/nonexistent/path/xyz", dir.app_path().as_str());
+    let err = validate_path_exists(&missing).await.unwrap_err();
     assert_eq!(err.code, INVALID_PARAMS);
     // Virtual paths skip the check entirely
     assert!(validate_path_exists("mtp://device/DCIM").await.is_ok());
@@ -268,10 +269,10 @@ fn a_rename_refuses_what_the_git_portal_serves() {
 #[test]
 fn test_path_exists_validation() {
     // Test that Path::new().exists() works as expected for our validation
-    assert!(Path::new("/").exists(), "Root should exist");
-    assert!(Path::new("/tmp").exists(), "Temp dir should exist");
+    let temp = std::env::temp_dir();
+    assert!(temp.exists(), "Temp dir should exist");
     assert!(
-        !Path::new("/nonexistent/path/that/does/not/exist").exists(),
+        !temp.join("nonexistent/path/that/does/not/exist").exists(),
         "Nonexistent path should not exist"
     );
 }

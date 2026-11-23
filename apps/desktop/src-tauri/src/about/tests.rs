@@ -121,15 +121,15 @@ pub(super) fn assert_well_formed(updates: &[AboutUpdate]) {
 }
 
 fn local(path: &std::path::Path) -> Gathered {
+    local_with(path, super::platform::os_caps())
+}
+
+/// [`local`] under `caps` of the test's choosing: a session cell that holds the Download row
+/// runs on every OS, Windows included, whose own caps plan none.
+fn local_with(path: &std::path::Path, caps: OsCaps) -> Gathered {
     let path = crate::test_support::native_app_path(path).into_string();
     let probed = probe(&path, None).expect("the fixture is there");
-    local_gathered(
-        &path,
-        probed,
-        ItemText::new("Macintosh HD"),
-        super::platform::os_caps(),
-        Sources::none(),
-    )
+    local_gathered(&path, probed, ItemText::new("Macintosh HD"), caps, Sources::none())
 }
 
 // ── A real file on this disk ────────────────────────────────────────────────
@@ -236,10 +236,18 @@ async fn a_file_with_no_download_record_says_so_as_a_routine_absence() {
     let recorder = gather(local(&file), quick()).await;
     assert_well_formed(&recorder.updates());
     let facts = recorder.facts();
-    assert!(facts.iter().any(|fact| matches!(
-        fact,
-        AboutFact::Download(Fact::Unknown(unknown)) if unknown.why() == UnknownWhy::NoRecord
-    )));
+    let says_no_record = facts.iter().any(|fact| {
+        matches!(
+            fact,
+            AboutFact::Download(Fact::Unknown(unknown)) if unknown.why() == UnknownWhy::NoRecord
+        )
+    });
+    // Windows keeps no download record (no xattrs), so its card plans no such row at all.
+    if super::platform::os_caps().download_records {
+        assert!(says_no_record);
+    } else {
+        assert!(!kinds(&facts).contains(&FactKind::Download));
+    }
     assert!(
         !kinds(&facts).contains(&FactKind::Signature),
         "a text file plans no signature"
@@ -490,7 +498,7 @@ fn file_card_with(jobs: Vec<(FactKind, Job<AboutFact>)>) -> Gathered {
     let dir = TestDir::new("about-held");
     let file = dir.as_ref().join("notes.txt");
     std::fs::write(&file, "x").expect("write the fixture");
-    let mut gathered = local(&file);
+    let mut gathered = local_with(&file, macos());
     gathered.jobs = jobs;
     gathered
 }
@@ -955,6 +963,19 @@ fn a_container_is_never_looked_inside() {
     assert!(in_a_fixture_home(&outside, &home).plan.kinds().contains(&FactKind::Git));
 }
 
+/// A file in the scratch folder sits on this machine's own disk, by the real mount table. On
+/// Windows the walk once took the verbatim native form (`\\?\C:\…`), which no mount's plain `C:/`
+/// prefixes, so every local card planned as if it were on a share.
+#[test]
+fn a_scratch_file_sits_on_a_local_disk() {
+    let dir = TestDir::new("about-local-disk");
+    let file = dir.join("notes.txt");
+    std::fs::write(&file, "x").expect("write the fixture");
+    let path = crate::test_support::native_app_path(&file).into_string();
+    assert!(super::place::sits_on_a_local_disk(&path), "{path}");
+    assert!(!super::place::reaches_a_share(&path), "{path}");
+}
+
 /// A document no path rule claims and no repo holds has neither row: the card
 /// stays short.
 #[test]
@@ -1039,7 +1060,8 @@ async fn a_slow_card_cant_starve_the_next_cards_rows() {
     let dir = TestDir::new("about-unstarved");
     let file = dir.as_ref().join("notes.txt");
     std::fs::write(&file, "plain words").expect("write the fixture");
-    let mut gathered = local(&file);
+    // Under macOS's caps on every OS, so each one plans the same full burst.
+    let mut gathered = local_with(&file, macos());
     let mut answers = cmdr_about::card::AboutCard::new(&gathered.plan);
     for ready in &gathered.ready {
         let _ = answers.apply(ready.clone());
@@ -1053,10 +1075,7 @@ async fn a_slow_card_cant_starve_the_next_cards_rows() {
             (kind, job)
         })
         .collect();
-    // Linux plans no Spotlight, signature, or default-app row, so its burst is smaller;
-    // one row waiting on a thread is already what this guards.
-    let burst = if cfg!(target_os = "macos") { 3 } else { 1 };
-    assert!(gathered.jobs.len() >= burst, "a card's burst of rows");
+    assert!(gathered.jobs.len() >= 3, "a card's burst of rows");
     let next = Arc::clone(&pool);
     let submit: Submit = Arc::new(move |task: Task| next.submit(task));
     let recorder = Arc::new(Recorder::default());

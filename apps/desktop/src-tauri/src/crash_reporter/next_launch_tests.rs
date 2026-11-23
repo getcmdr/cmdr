@@ -46,7 +46,8 @@ fn crash_file_stamps_keep_their_bytes_and_read_back() {
         (at(1_777_072_708, 0), "2026-04-24T23:18:28+00:00"),
         (at(1_777_072_708, 120_000_000), "2026-04-24T23:18:28.120+00:00"),
         (at(1_777_072_708, 123_456_000), "2026-04-24T23:18:28.123456+00:00"),
-        (at(1_777_072_708, 123_456_789), "2026-04-24T23:18:28.123456789+00:00"),
+        // A 100 ns multiple: the finest `SystemTime` Windows holds, so the stamp round-trips there too.
+        (at(1_777_072_708, 123_456_700), "2026-04-24T23:18:28.123456700+00:00"),
     ] {
         assert_eq!(to_iso8601(time), expected);
         assert_eq!(parse_timestamp(expected), Some(time), "{expected}");

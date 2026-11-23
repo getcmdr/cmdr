@@ -9,6 +9,17 @@ fn all_local(_path: &Path) -> bool {
     false
 }
 
+/// A local path on this host: a drive path on Windows, where `/Users/…` is no local folder (and
+/// a pane there persists `C:/Users/…`).
+fn local(rest: &str) -> String {
+    format!("{}{rest}", if cfg!(windows) { "C:" } else { "" })
+}
+
+/// Persisted pane state as this host writes it: its `/Users/…` paths spelled [`local`]ly.
+fn on_this_host(contents: &str) -> String {
+    contents.replace("\"/Users/", &format!("\"{}", local("/Users/")))
+}
+
 /// A home directory with `folders` in it, each holding one file so the non-empty
 /// bar is met. Returns the handle (which owns the directory) alongside its path.
 fn home_with(label: &str, folders: &[&str]) -> (TestDir, PathBuf) {
@@ -402,8 +413,9 @@ fn a_protected_folder_is_taken_on_trust_while_the_fda_gate_is_pending() {
 /// order, and the first entry is where the user was looking when they quit.
 #[test]
 fn the_focused_pane_s_active_tab_leads_the_tab_order() {
-    let home = PathBuf::from("/Users/test_user_3");
-    let contents = r#"{
+    let home = PathBuf::from(local("/Users/test_user_3"));
+    let contents = &on_this_host(
+        r#"{
         "focusedPane": "right",
         "leftTabs": {
             "activeTabId": "l2",
@@ -419,15 +431,16 @@ fn the_focused_pane_s_active_tab_leads_the_tab_order() {
                 { "id": "r2", "path": "/Users/test_user_3/Desktop", "volumeId": "root" }
             ]
         }
-    }"#;
+    }"#,
+    );
 
     assert_eq!(
         parse_tab_paths(contents, &home),
         vec![
-            PathBuf::from("/Users/test_user_3/Downloads"),
-            PathBuf::from("/Users/test_user_3/Documents"),
-            PathBuf::from("/Users/test_user_3/Desktop"),
-            PathBuf::from("/Users/test_user_3/Projects"),
+            PathBuf::from(local("/Users/test_user_3/Downloads")),
+            PathBuf::from(local("/Users/test_user_3/Documents")),
+            PathBuf::from(local("/Users/test_user_3/Desktop")),
+            PathBuf::from(local("/Users/test_user_3/Projects")),
         ]
     );
 }
@@ -436,8 +449,9 @@ fn the_focused_pane_s_active_tab_leads_the_tab_order() {
 /// its path can look exactly like a local one. `volumeId` is what tells them apart.
 #[test]
 fn a_tab_on_another_volume_is_ignored() {
-    let home = PathBuf::from("/Users/test_user_3");
-    let contents = r#"{
+    let home = PathBuf::from(local("/Users/test_user_3"));
+    let contents = &on_this_host(
+        r#"{
         "focusedPane": "left",
         "leftTabs": {
             "activeTabId": "l1",
@@ -446,11 +460,12 @@ fn a_tab_on_another_volume_is_ignored() {
                 { "id": "l2", "path": "/Users/test_user_3/Documents", "volumeId": "root" }
             ]
         }
-    }"#;
+    }"#,
+    );
 
     assert_eq!(
         parse_tab_paths(contents, &home),
-        vec![PathBuf::from("/Users/test_user_3/Documents")]
+        vec![PathBuf::from(local("/Users/test_user_3/Documents"))]
     );
 }
 
@@ -458,8 +473,9 @@ fn a_tab_on_another_volume_is_ignored() {
 /// unexpanded one would silently drop the most common tab there is.
 #[test]
 fn a_tilde_tab_path_expands_to_the_home_folder() {
-    let home = PathBuf::from("/Users/test_user_3");
-    let contents = r#"{
+    let home = PathBuf::from(local("/Users/test_user_3"));
+    let contents = &on_this_host(
+        r#"{
         "focusedPane": "left",
         "leftTabs": {
             "activeTabId": "l1",
@@ -469,7 +485,8 @@ fn a_tilde_tab_path_expands_to_the_home_folder() {
             "activeTabId": "r1",
             "tabs": [{ "id": "r1", "path": "~/Downloads", "volumeId": "root" }]
         }
-    }"#;
+    }"#,
+    );
 
     assert_eq!(
         parse_tab_paths(contents, &home),
@@ -481,20 +498,22 @@ fn a_tilde_tab_path_expands_to_the_home_folder() {
 /// pane state in the scalar keys, and it is the same signal.
 #[test]
 fn the_pre_tabs_keys_still_answer() {
-    let home = PathBuf::from("/Users/test_user_3");
-    let contents = r#"{
+    let home = PathBuf::from(local("/Users/test_user_3"));
+    let contents = &on_this_host(
+        r#"{
         "focusedPane": "left",
         "leftPath": "/Users/test_user_3/Documents",
         "leftVolumeId": "root",
         "rightPath": "/Users/test_user_3/Downloads",
         "rightVolumeId": "root"
-    }"#;
+    }"#,
+    );
 
     assert_eq!(
         parse_tab_paths(contents, &home),
         vec![
-            PathBuf::from("/Users/test_user_3/Documents"),
-            PathBuf::from("/Users/test_user_3/Downloads"),
+            PathBuf::from(local("/Users/test_user_3/Documents")),
+            PathBuf::from(local("/Users/test_user_3/Downloads")),
         ]
     );
 }
@@ -503,7 +522,7 @@ fn the_pre_tabs_keys_still_answer() {
 /// walk order: the later signals still answer.
 #[test]
 fn an_unreadable_store_yields_no_tabs_rather_than_an_opinion() {
-    let home = PathBuf::from("/Users/test_user_3");
+    let home = PathBuf::from(local("/Users/test_user_3"));
     assert!(parse_tab_paths("", &home).is_empty());
     assert!(parse_tab_paths("{not json", &home).is_empty());
     assert!(parse_tab_paths("{}", &home).is_empty());
@@ -526,12 +545,12 @@ fn only_favorites_on_an_os_path_become_priority_roots() {
         }),
     };
     assert_eq!(
-        local_favorite_path(favorite("/Users/me/Docs", Some("root"))),
-        Some(PathBuf::from("/Users/me/Docs"))
+        local_favorite_path(favorite(&local("/Users/me/Docs"), Some("root"))),
+        Some(PathBuf::from(local("/Users/me/Docs")))
     );
     assert_eq!(
-        local_favorite_path(favorite("/Users/me/Legacy", None)),
-        Some(PathBuf::from("/Users/me/Legacy")),
+        local_favorite_path(favorite(&local("/Users/me/Legacy"), None)),
+        Some(PathBuf::from(local("/Users/me/Legacy"))),
         "an unclaimed legacy entry with an absolute path is still a local folder"
     );
     assert_eq!(

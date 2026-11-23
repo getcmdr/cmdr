@@ -46,9 +46,14 @@ pub(crate) fn dirs_from(vars: &[(&str, Dir)], read: impl Fn(&str) -> Option<OsSt
 mod tests {
     use super::*;
 
+    /// An absolute folder on this host: `/data/cfg` has no drive, so Windows reads it as relative.
+    fn config_home() -> PathBuf {
+        PathBuf::from(if cfg!(windows) { r"C:\data\cfg" } else { "/data/cfg" })
+    }
+
     fn env(name: &str) -> Option<OsString> {
         match name {
-            "XDG_CONFIG_HOME" => Some("/data/cfg".into()),
+            "XDG_CONFIG_HOME" => Some(config_home().into()),
             "XDG_DATA_HOME" => Some("relative/share".into()),
             "XDG_CACHE_HOME" => Some("".into()),
             _ => None,
@@ -57,10 +62,7 @@ mod tests {
 
     #[test]
     fn only_absolute_values_count() {
-        assert_eq!(
-            dirs_from(XDG_VARS, env),
-            vec![(Dir::XdgConfig, PathBuf::from("/data/cfg"))]
-        );
+        assert_eq!(dirs_from(XDG_VARS, env), vec![(Dir::XdgConfig, config_home())]);
     }
 
     #[test]

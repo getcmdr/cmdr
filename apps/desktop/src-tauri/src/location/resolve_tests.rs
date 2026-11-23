@@ -136,7 +136,12 @@ fn a_named_volume_with_a_path_under_none_of_its_roots_is_path_outside_volume() {
 
 #[test]
 fn a_home_relative_path_resolves_to_root() {
-    let resolved = resolve(&facts(), &bare("~/Downloads")).expect("the boot disk holds home");
+    // The boot disk rooted where this host's home lives: `/`, or its drive (`C:/`) on Windows.
+    let home = cmdr_fs::tilde::expand_tilde("~/Downloads");
+    let boot_root = &home[..=home.find('/').expect("an absolute home")];
+    let mut facts = facts();
+    facts.volumes[0].root = boot_root.to_string();
+    let resolved = resolve(&facts, &bare("~/Downloads")).expect("the boot disk holds home");
     assert_eq!(resolved.location.volume_id, "root");
     assert_eq!(resolved.location.path, cmdr_fs::tilde::expand_tilde("~/Downloads"));
     assert!(resolved.location.path.ends_with("/Downloads") && !resolved.location.path.starts_with('~'));

@@ -3,7 +3,7 @@
 use serde_json::{Value, json};
 
 use super::fixtures;
-use super::result;
+use super::{result, u};
 use crate::agent::line::{
     MAX_TEXT_CHARS, PREVIEW_ROWS, ToolPreview, ToolPreviewRow, ToolPreviewRowKind, ToolPreviewRowStatus, preview_of,
 };
@@ -25,7 +25,7 @@ fn a_listing_shows_its_rows_with_paths_joined_onto_the_folder() {
         shown.rows[0],
         ToolPreviewRow {
             name: "big.iso".into(),
-            path: Some("/Users/u/Downloads/big.iso".into()),
+            path: Some(u("/Downloads/big.iso")),
             kind: ToolPreviewRowKind::File,
             size_bytes: Some(9_000_000_000),
             line: None,
@@ -44,7 +44,7 @@ fn a_listing_shows_its_rows_with_paths_joined_onto_the_folder() {
         ToolId::ListPaneFiles,
         fixtures::pane_listing(PaneListingScope::Folder, &["a.jpg", "Sub/"], 2),
     );
-    assert_eq!(pane.rows[0].path.as_deref(), Some("/Users/u/Photos/a.jpg"));
+    assert_eq!(pane.rows[0].path.as_deref(), Some(u("/Photos/a.jpg").as_str()));
     assert_eq!(pane.rows[1].kind, ToolPreviewRowKind::Folder);
 
     // A thread stored before results carried `location` named its folder as a bare `path`.
@@ -52,7 +52,7 @@ fn a_listing_shows_its_rows_with_paths_joined_onto_the_folder() {
     legacy["path"] = legacy["location"]["path"].take();
     legacy.as_object_mut().expect("an object").remove("location");
     let old = preview(ToolId::ListDir, legacy);
-    assert_eq!(old.rows[0].path.as_deref(), Some("/Users/u/Downloads/big.iso"));
+    assert_eq!(old.rows[0].path.as_deref(), Some(u("/Downloads/big.iso").as_str()));
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn the_preview_caps_its_rows_but_reports_what_the_model_got() {
 fn a_search_reports_its_match_count_and_lower_bound() {
     let shown = preview(ToolId::Search, fixtures::search(4_812, 30, false, true));
     assert_eq!(shown.rows.len(), PREVIEW_ROWS);
-    assert_eq!(shown.rows[0].path.as_deref(), Some("/Users/u/Docs/report-0.pdf"));
+    assert_eq!(shown.rows[0].path.as_deref(), Some(u("/Docs/report-0.pdf").as_str()));
     assert_eq!(shown.rows[0].size_bytes, Some(2_048));
     assert_eq!(
         (shown.rows_given_to_model, shown.total, shown.lower_bound),
@@ -116,7 +116,7 @@ fn inspect_shows_a_row_per_find_hit_and_each_paths_status() {
     assert_eq!(shown.rows[1].line, Some(812));
     assert_eq!(shown.rows[0].size_bytes, Some(1_234));
     assert_eq!(shown.rows[2].status, Some(ToolPreviewRowStatus::Missing));
-    assert_eq!(shown.rows[2].path.as_deref(), Some("/Users/u/gone.txt"));
+    assert_eq!(shown.rows[2].path.as_deref(), Some(u("/gone.txt").as_str()));
     assert_eq!(shown.rows[3].status, Some(ToolPreviewRowStatus::Unreadable));
     assert_eq!(shown.rows[4].status, Some(ToolPreviewRowStatus::Protected));
     assert_eq!(shown.rows[5].status, Some(ToolPreviewRowStatus::NoVolumeAtPath));
@@ -146,13 +146,13 @@ fn the_other_lists_show_their_rows() {
     assert_eq!(
         names(&preview(
             ToolId::ImportantFolders,
-            fixtures::important_folders(&["/Users/u/Code"], false)
+            fixtures::important_folders(&[u("/Code").as_str()], false)
         )),
         vec!["Code"]
     );
     let drives = preview(ToolId::ListVolumes, fixtures::list_volumes());
     assert_eq!(names(&drives), vec!["Macintosh HD", "Pixel"]);
-    assert_eq!(drives.rows[0].path.as_deref(), Some("/"));
+    assert_eq!(drives.rows[0].path.as_deref(), Some(super::host_root()));
     assert_eq!(drives.rows[1].path, None, "a phone has no mount path");
     assert_eq!(
         names(&preview(ToolId::ListSuggestions, fixtures::list_suggestions())),

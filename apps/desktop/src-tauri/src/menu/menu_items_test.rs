@@ -66,18 +66,24 @@ fn the_same_kind_payload_deserializes_the_frontend_target() {
 
 #[test]
 fn the_undo_trash_label_names_what_it_would_put_back() {
-    assert_eq!(undo_trash_menu_label(None), "Undo move to trash");
+    // Windows names the action as File Explorer does: Delete (the catalog's `platform` select).
+    let verb = if cfg!(windows) {
+        "Undo delete"
+    } else {
+        "Undo move to trash"
+    };
+    assert_eq!(undo_trash_menu_label(None), verb);
     assert_eq!(
         undo_trash_menu_label(Some(&TrashUndoTarget::One {
             name: "report.pdf".to_string()
         })),
-        "Undo move to trash of “report.pdf”"
+        format!("{verb} of “report.pdf”")
     );
     assert_eq!(
         undo_trash_menu_label(Some(&TrashUndoTarget::Many {
             count_text: "1,234".to_string()
         })),
-        "Undo move to trash of 1,234 items"
+        format!("{verb} of 1,234 items")
     );
 }
 

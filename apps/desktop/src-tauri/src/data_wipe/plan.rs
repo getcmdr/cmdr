@@ -141,8 +141,15 @@ mod tests {
 
     const ID: &str = "com.veszelovszki.cmdr";
 
+    /// This OS's filesystem root, so a fixture path is absolute everywhere: `/` has no drive, so
+    /// Windows reads `/Users/someone` as relative, and the guard rightly refuses all of it.
+    fn abs(rel: &str) -> PathBuf {
+        let root = if cfg!(windows) { r"C:\" } else { "/" };
+        PathBuf::from(root).join(rel)
+    }
+
     fn home() -> PathBuf {
-        PathBuf::from("/Users/someone")
+        abs("Users/someone")
     }
 
     fn library() -> PathBuf {
@@ -229,7 +236,7 @@ mod tests {
     #[test]
     fn an_e2e_run_nests_its_cache_and_logs_inside_the_data_dir() {
         let id = "com.veszelovszki.cmdr-e2e-abc";
-        let data = PathBuf::from("/private/tmp/cmdr-e2e-data");
+        let data = abs("private/tmp/cmdr-e2e-data");
         let roots = WipeRoots {
             data_dir: data.clone(),
             cache_dir: Some(data.join("cache")),
@@ -251,18 +258,18 @@ mod tests {
     #[test]
     fn linux_plans_no_library_state() {
         let roots = WipeRoots {
-            data_dir: PathBuf::from("/home/someone/.local/share/com.veszelovszki.cmdr"),
-            cache_dir: Some(PathBuf::from("/home/someone/.cache/com.veszelovszki.cmdr")),
-            log_dir: Some(PathBuf::from("/home/someone/.local/share/com.veszelovszki.cmdr/logs")),
+            data_dir: abs("home/someone/.local/share/com.veszelovszki.cmdr"),
+            cache_dir: Some(abs("home/someone/.cache/com.veszelovszki.cmdr")),
+            log_dir: Some(abs("home/someone/.local/share/com.veszelovszki.cmdr").join("logs")),
             library_dir: None,
             identifier: ID.to_string(),
-            home_dir: Some(PathBuf::from("/home/someone")),
+            home_dir: Some(abs("home/someone")),
         };
         assert_eq!(
             paths(&build_plan(&roots)),
             vec![
-                PathBuf::from("/home/someone/.local/share/com.veszelovszki.cmdr"),
-                PathBuf::from("/home/someone/.cache/com.veszelovszki.cmdr"),
+                abs("home/someone/.local/share/com.veszelovszki.cmdr"),
+                abs("home/someone/.cache/com.veszelovszki.cmdr"),
             ]
         );
     }
@@ -273,8 +280,8 @@ mod tests {
     #[test]
     fn a_misresolved_root_is_never_planned() {
         for bad in [
-            PathBuf::from("/"),
-            PathBuf::from("/Users"),
+            abs(""),
+            abs("Users"),
             home(),
             home().join("Documents"),
             library(),
