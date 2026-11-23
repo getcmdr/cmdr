@@ -183,11 +183,12 @@ pub fn publish_replacement(
     overlay_rows: usize,
 ) {
     use crate::pipeline::{OverlayRows, Prepared};
-    let generation = engine.inner.next_read_generation();
-    engine.inner.publish_replacement(
+    // As the `Replaced` arm does: a read dated on arrival, ended once it landed.
+    let read = engine.inner.start_read([listing_id]);
+    let _owed = engine.inner.publish_replacement(
         listing_id,
         Prepared::for_test(entries, OverlayRows::Recounted(overlay_rows)),
-        generation,
+        read.generation(),
     );
 }
 

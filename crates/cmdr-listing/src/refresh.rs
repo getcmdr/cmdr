@@ -14,6 +14,7 @@ use crate::Inner;
 use crate::patch_log::Recheck;
 use crate::pipeline::{Prepared, ReadBy};
 use crate::read_generation::ReadGeneration;
+use crate::reread::ReadInFlight;
 
 /// One directory's refresh turnstile: an async lock plus a flag saying whether a
 /// refresh is already queued behind the running one.
@@ -112,11 +113,18 @@ impl Inner {
         if slot.queued.swap(true, Ordering::AcqRel) {
             return;
         }
-        let _turn = slot.lock.lock().await;
+        let turn = slot.lock.lock().await;
         // The berth is free again the moment this refresh OWNS the turn: its own read is
         // still ahead, so a request arriving now must be allowed to queue behind it.
         slot.queued.store(false, Ordering::Release);
-        self.notify_full_refresh_locked(volume_id, parent_path, listings).await;
+        let (read, landed) = self.notify_full_refresh_locked(volume_id, parent_path, listings).await;
+        // The checks after the landing stat through the volume, so they run with the
+        // turn released: a mount dying right then must not hold up the next refresh.
+        drop(turn);
+        for (listing_id, recheck) in landed {
+            self.settle_patches(&listing_id, recheck).await;
+        }
+        drop(read);
     }
 
     /// Makes `entries` the contents of `listing_id` and queues what changed for the
@@ -146,13 +154,15 @@ impl Inner {
         self.update_listing_entries(listing_id, prepared, generation).1
     }
 
-    /// The body of one refresh, with the directory's turn already held.
+    /// The body of one refresh, with the directory's turn already held. Answers the
+    /// read, still in flight, and what each listing's landing owes, for the caller
+    /// to settle once it released the turn.
     async fn notify_full_refresh_locked(
         self: &Arc<Self>,
         volume_id: String,
         parent_path: AppPathBuf,
         listings: Vec<String>,
-    ) {
+    ) -> (Option<ReadInFlight>, Vec<(String, Recheck)>) {
         // Re-resolve from `(volume_id, parent_path)` so a `.zip`-crossing listing hits
         // the same `ArchiveVolume` the read used (the cache keys on the parent drive
         // id, and a re-resolve re-registers a lazily-evicted archive).
@@ -162,12 +172,12 @@ impl Inner {
             Some(v) => v,
             None => {
                 log::warn!("notify_directory_changed: volume `{}` not found", volume_id);
-                return;
+                return (None, Vec::new());
             }
         };
 
         // After the turn, right before the read (`reread.rs`).
-        let generation = self.start_read(listings.iter().map(String::as_str));
+        let read = self.start_read(listings.iter().map(String::as_str));
         let new_entries = match vol.list_directory(&parent_path, None).await {
             Ok(entries) => entries,
             Err(e) => {
@@ -176,7 +186,8 @@ impl Inner {
                     LogPrivate::dir_path(parent_path.as_str()),
                     LogError(&e)
                 );
-                return;
+                // Dropping the read ends it, so its listings stop noting patches.
+                return (None, Vec::new());
             }
         };
 
@@ -186,10 +197,14 @@ impl Inner {
         };
         let prepared = self.prepare(read_by, &volume_id, &parent_path, new_entries).await;
 
-        for listing_id in &listings {
-            let recheck = self.publish_replacement(listing_id, prepared.clone(), generation);
-            self.settle_patches(listing_id, recheck).await;
-        }
+        let landed = listings
+            .into_iter()
+            .map(|listing_id| {
+                let recheck = self.publish_replacement(&listing_id, prepared.clone(), read.generation());
+                (listing_id, recheck)
+            })
+            .collect();
+        (Some(read), landed)
     }
 
     /// Finds every cached listing at or inside `root` on `volume_id`.

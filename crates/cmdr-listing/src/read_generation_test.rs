@@ -8,10 +8,10 @@
 
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -50,12 +50,22 @@ pub(super) struct Read {
 /// until the test releases it, counting how many reads have started. That
 /// makes "the read that started first finishes last" an ordering the test
 /// drives, with no timing in it. A single stat answers from `disk`, the
-/// directory as it stands now, whatever the scripted reads said.
+/// directory as it stands at the moment of the stat, whatever the scripted reads
+/// said; a stat can be held open on `stat_gate` too, after it answered.
 pub(super) struct GatedListVolume {
     inner: InMemoryVolume,
     pub(super) script: Mutex<VecDeque<Read>>,
     started: AtomicUsize,
     disk: Mutex<HashMap<String, FileEntry>>,
+    /// How many of the next reads fail, ahead of the script.
+    pub(super) failing_reads: AtomicUsize,
+    /// Paths whose stat can't tell (a refusal-like error, never `NotFound`).
+    pub(super) unanswerable: Mutex<HashSet<String>>,
+    /// Held stats wait here once they've looked at the disk.
+    pub(super) stat_gate: Mutex<Option<Arc<Notify>>>,
+    stats: AtomicUsize,
+    /// What `stat_lists_the_parent` answers.
+    pub(super) stat_lists_the_parent: AtomicBool,
 }
 
 impl GatedListVolume {
@@ -65,11 +75,21 @@ impl GatedListVolume {
             script: Mutex::new(script.into()),
             started: AtomicUsize::new(0),
             disk: Mutex::new(HashMap::new()),
+            failing_reads: AtomicUsize::new(0),
+            unanswerable: Mutex::new(HashSet::new()),
+            stat_gate: Mutex::new(None),
+            stats: AtomicUsize::new(0),
+            stat_lists_the_parent: AtomicBool::new(false),
         }
     }
 
     pub(super) fn started(&self) -> usize {
         self.started.load(Ordering::SeqCst)
+    }
+
+    /// How many stats have looked at the disk.
+    pub(super) fn stats(&self) -> usize {
+        self.stats.load(Ordering::SeqCst)
     }
 
     /// Puts `entry` on the disk a stat sees, replacing what was there.
@@ -101,8 +121,15 @@ impl Volume for GatedListVolume {
         _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let next = self.script.lock_ignore_poison().pop_front();
         self.started.fetch_add(1, Ordering::SeqCst);
+        let fails = self
+            .failing_reads
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
+            .is_ok();
+        if fails {
+            return Box::pin(async { Err(VolumeError::NotSupported) });
+        }
+        let next = self.script.lock_ignore_poison().pop_front();
         Box::pin(async move {
             let Some(read) = next else {
                 return Ok(Vec::new());
@@ -118,13 +145,26 @@ impl Volume for GatedListVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        match self.disk.lock_ignore_poison().get(path.as_str()) {
-            Some(entry) => {
-                let entry = entry.clone();
-                Box::pin(async move { Ok(entry) })
+        let answer = if self.unanswerable.lock_ignore_poison().contains(path.as_str()) {
+            Err(VolumeError::NotSupported)
+        } else {
+            match self.disk.lock_ignore_poison().get(path.as_str()) {
+                Some(entry) => Ok(entry.clone()),
+                None => Err(VolumeError::NotFound(path.as_str().to_owned())),
             }
-            None => self.inner.get_metadata(path),
-        }
+        };
+        self.stats.fetch_add(1, Ordering::SeqCst);
+        let gate = self.stat_gate.lock_ignore_poison().clone();
+        Box::pin(async move {
+            if let Some(gate) = gate {
+                gate.notified().await;
+            }
+            answer
+        })
+    }
+
+    fn stat_lists_the_parent(&self) -> bool {
+        self.stat_lists_the_parent.load(Ordering::SeqCst)
     }
 
     fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {

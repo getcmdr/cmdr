@@ -661,13 +661,21 @@ pub async fn handle_directory_change(listing_id: &str) {
 }
 
 /// The re-read for a listing whose volume nothing serves any more: `std::fs`,
-/// handed to the engine, again for as long as the engine answers `NoVolume`: it
-/// does when a patch landed during the read and it has no volume to stat that
-/// patch through. Each round reads the folder anew, so it ends once a read goes
-/// unpatched.
+/// handed to the engine. The engine answers `NoVolume` again when more patches
+/// landed during the read than it checks one by one (`cmdr-listing`'s
+/// `patch_log.rs`), so this reads again, at most [`STD_FS_REREAD_ROUNDS`] times:
+/// a folder written to without pause must not keep it reading forever, and the
+/// writes past the last round send their own events.
 async fn reread_with_std_fs(listings: &Listings, id: &ListingId) {
-    while reread_with_std_fs_once(listings, id).await == Some(RefreshOutcome::NoVolume) {}
+    for _ in 0..STD_FS_REREAD_ROUNDS {
+        if reread_with_std_fs_once(listings, id).await != Some(RefreshOutcome::NoVolume) {
+            return;
+        }
+    }
 }
+
+/// How many `std::fs` reads one re-read may take, the first one included.
+const STD_FS_REREAD_ROUNDS: usize = 3;
 
 /// One `std::fs` re-read. The ticket is taken BEFORE the read, so it dates the read.
 async fn reread_with_std_fs_once(listings: &Listings, id: &ListingId) -> Option<RefreshOutcome> {

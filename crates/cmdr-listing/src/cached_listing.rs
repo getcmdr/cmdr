@@ -18,7 +18,7 @@ use crate::Inner;
 use crate::diff_emitter::{CacheWrite, Publish};
 use crate::host::{ListingVolumes, ScratchVisibility};
 use crate::name_filter::NameFilter;
-use crate::patch_log::PatchLog;
+use crate::patch_log::{Observed, PatchLog};
 use crate::path_index::PathIndexCache;
 pub(crate) use crate::pipeline::OverlayRows;
 use crate::pipeline::{ListedDates, Prepared};
@@ -193,12 +193,12 @@ pub(crate) struct CachedListing {
     /// The newest full re-read that landed here, by when it started reading.
     /// A re-read older than this is dropped (`reread.rs`).
     pub(crate) published_generation: ReadGeneration,
-    /// The newest full re-read that STARTED reading here. Newer than
-    /// `published_generation` means one may be in flight, and only then does a
-    /// patch go in `patch_log`.
-    pub(crate) started_generation: ReadGeneration,
-    /// The names patched while a full re-read was in flight, for its landing
-    /// to stat again (`patch_log.rs`).
+    /// How many reads of this listing are in flight: full re-reads and the
+    /// checks after them (`ReadInFlight`). Only while it's above zero does a
+    /// patch go in `patch_log`, which empties when it's back to zero.
+    pub(crate) reads_in_flight: u32,
+    /// The names patched while a read was in flight, for its landing to check
+    /// again (`patch_log.rs`).
     pub(crate) patch_log: PatchLog,
     /// The hidden count ([`Self::hidden_count`]) the pane last heard, from any
     /// answer that carries one. A change that moves no row publishes only when
@@ -262,7 +262,7 @@ impl CachedListing {
             epoch: engine.epoch,
             overlay_rows,
             published_generation: ReadGeneration::INSERT,
-            started_generation: ReadGeneration::INSERT,
+            reads_in_flight: 0,
             patch_log: PatchLog::default(),
             reported_hidden_count: 0,
         }
@@ -279,19 +279,24 @@ impl CachedListing {
         self.overlay_rows = count;
     }
 
-    /// Whether a full re-read of this listing may be in flight, so a patch
-    /// must be noted (`patch_log.rs`). False in the normal case, where noting
-    /// costs nothing.
+    /// Whether a read of this listing is in flight, so a patch must be noted
+    /// (`patch_log.rs`). False in the normal case, where noting costs nothing.
     pub(crate) fn tracks_patches(&self) -> bool {
-        self.started_generation > self.published_generation
+        self.reads_in_flight > 0
     }
 
-    /// Notes a patch to `name` if a re-read may be in flight. Call it under the
-    /// cache write lock with `Inner::read_generation_now` as `now`.
-    pub(crate) fn note_patch(&mut self, name: &str, now: ReadGeneration) {
+    /// Notes a patch to `name` that saw `observed`, if a read is in flight.
+    /// Call it under the cache write lock with `Inner::read_generation_now` as
+    /// `now`; `observed` runs only when the patch is noted.
+    pub(crate) fn note_patch(&mut self, name: &str, now: ReadGeneration, observed: impl FnOnce() -> Observed) {
         if self.tracks_patches() {
-            self.patch_log.note(name, now);
+            self.patch_log.note(name, now, observed());
         }
+    }
+
+    /// Whether a patch to `name` landed at or after `since` (`PatchLog::patched_since`).
+    pub(crate) fn patched_since(&self, name: &str, since: Option<ReadGeneration>) -> bool {
+        since.is_some_and(|since| self.patch_log.patched_since(name, since))
     }
 
     /// Whether a listing overlay contributed any of these rows.

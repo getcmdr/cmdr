@@ -203,13 +203,13 @@ impl Inner {
         listing_id: String,
         path: AppPathBuf,
     ) {
-        let _turn = self.refresh_turn(&volume_id, &path).await;
+        let turn = self.refresh_turn(&volume_id, &path).await;
         let resolved = self.volumes.resolve(&volume_id, &path).await;
         let is_routed = resolved.is_routed();
         let Some(volume) = resolved.volume else {
             return;
         };
-        let generation = self.start_read([listing_id.as_str()]);
+        let read = self.start_read([listing_id.as_str()]);
         let listed = match list_as_stored(volume.as_ref(), &path, None, None).await {
             Ok(listed) => listed,
             Err(e) => {
@@ -232,12 +232,15 @@ impl Inner {
         // it can't see every path changing spelling. The replace step writes the
         // entries whole whatever the diff holds, so the new spellings land, and the
         // pane refetches its rows when it adopts the new spelling.
-        let (_, recheck) = self.update_listing_entries(&listing_id, prepared, generation);
+        let (_, recheck) = self.update_listing_entries(&listing_id, prepared, read.generation());
         if stored != path {
             self.rekey_listing(&listing_id, &volume_id, &stored);
         }
-        // After the rekey, so the stats go through the new spelling.
+        // After the rekey, so a held row is checked through its new spelling, and
+        // with the turn released, so a dying mount can't hold up the next refresh.
+        drop(turn);
         self.settle_patches(&listing_id, recheck).await;
+        drop(read);
     }
 
     /// Moves `listing_id` to `stored`, the same directory in its volume's spelling,

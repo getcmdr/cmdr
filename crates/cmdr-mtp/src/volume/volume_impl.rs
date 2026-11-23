@@ -139,6 +139,11 @@ impl Volume for MtpVolume {
         })
     }
 
+    /// MTP has no by-name lookup: `get_metadata` below lists the parent.
+    fn stat_lists_the_parent(&self) -> bool {
+        true
+    }
+
     fn get_metadata<'a>(
         &'a self,
         path: &'a AppPath,

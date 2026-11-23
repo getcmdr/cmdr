@@ -332,6 +332,15 @@ pub trait Volume: Send + Sync {
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>>;
 
+    /// Whether [`get_metadata`](Self::get_metadata) lists the whole parent
+    /// folder to answer for one item, so a handful of stats in one folder costs
+    /// a handful of listings. The listing engine re-reads the folder once
+    /// instead of statting several of its items. Default `false`: a backend
+    /// with a real single-item stat. MTP says `true` (it has no by-name lookup).
+    fn stat_lists_the_parent(&self) -> bool {
+        false
+    }
+
     /// Checks if a path exists (relative to volume root): [`presence`](Self::presence)
     /// as a plain yes/no, where "couldn't tell" is a no. The right fold for a
     /// conflict check; ❌ the wrong one wherever "no" means "deleted".

@@ -24,10 +24,11 @@
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Weak};
 
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::volume::VolumeError;
 
@@ -68,7 +69,34 @@ pub struct ReadTicket {
     id: ListingId,
     volume_id: String,
     path: AppPathBuf,
+    read: ReadInFlight,
+}
+
+/// A read of some listings in flight, from [`Inner::start_read`] until dropped:
+/// a full re-read, or the check after one (`settle.rs`). While any is in flight
+/// for a listing, its patches get noted (`patch_log.rs`); when the last one
+/// ends, however it ends, the listing forgets them. ❗ Never drop one under the
+/// cache lock: ending takes it.
+#[derive(Debug)]
+pub(crate) struct ReadInFlight {
+    engine: Weak<Inner>,
+    listing_ids: Vec<String>,
     generation: ReadGeneration,
+}
+
+impl ReadInFlight {
+    /// When this read started.
+    pub(crate) fn generation(&self) -> ReadGeneration {
+        self.generation
+    }
+}
+
+impl Drop for ReadInFlight {
+    fn drop(&mut self) {
+        if let Some(engine) = self.engine.upgrade() {
+            engine.end_read(&self.listing_ids);
+        }
+    }
 }
 
 impl ReadTicket {
@@ -87,18 +115,39 @@ impl Inner {
     }
 
     /// [`Self::next_read_generation`] for a read of `listing_ids`, marking each
-    /// as having one in flight so the patches that land meanwhile get noted for
-    /// its landing (`patch_log.rs`). Under the cache write lock, the lock every
-    /// patch stamps under, so a patch is either before this read or noted.
-    pub(crate) fn start_read<'a>(&self, listing_ids: impl IntoIterator<Item = &'a str>) -> ReadGeneration {
+    /// as having one in flight until the answer drops, so the patches that land
+    /// meanwhile get noted for its landing (`patch_log.rs`). Under the cache
+    /// write lock, the lock every patch stamps under, so a patch is either
+    /// before this read or noted.
+    pub(crate) fn start_read<'a>(self: &Arc<Self>, listing_ids: impl IntoIterator<Item = &'a str>) -> ReadInFlight {
         let mut cache = self.write_cache();
         let generation = self.next_read_generation();
+        let mut started = Vec::new();
         for listing_id in listing_ids {
             if let Some((listing, _)) = cache.get_mut(listing_id) {
-                listing.started_generation = listing.started_generation.max(generation);
+                listing.reads_in_flight += 1;
+                started.push(listing_id.to_owned());
             }
         }
-        generation
+        ReadInFlight {
+            engine: Arc::downgrade(self),
+            listing_ids: started,
+            generation,
+        }
+    }
+
+    /// Ends a read [`Self::start_read`] started, landed or not. A listing with
+    /// no read left in flight forgets its patches: nothing can undo them now.
+    fn end_read(&self, listing_ids: &[String]) {
+        let mut cache = self.write_cache();
+        for listing_id in listing_ids {
+            if let Some((listing, _)) = cache.get_mut(listing_id) {
+                listing.reads_in_flight = listing.reads_in_flight.saturating_sub(1);
+                if listing.reads_in_flight == 0 {
+                    listing.patch_log.clear();
+                }
+            }
+        }
     }
 
     /// The last generation handed out, which stamps a patch. Read it under the
@@ -120,7 +169,7 @@ impl Inner {
             return RefreshOutcome::NoVolume;
         };
 
-        let generation = self.start_read([id.as_str()]);
+        let read = self.start_read([id.as_str()]);
         // A re-read comes because someone thinks the cache is stale, so it asks the
         // volume's refresh listing, which reads past a lag the plain one tolerates
         // (`Volume::list_directory_for_refresh`).
@@ -142,13 +191,13 @@ impl Inner {
             routed: is_routed,
         };
         let prepared = self.prepare(read_by, &volume_id, &path, entries).await;
-        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, generation);
+        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, read.generation());
         // Awaited, so a ⌘R or E2E's watcher flush returns with the patches settled.
         self.settle_patches(id.as_str(), recheck).await;
         outcome
     }
 
-    pub(crate) fn begin_read(&self, id: &ListingId) -> Option<ReadTicket> {
+    pub(crate) fn begin_read(self: &Arc<Self>, id: &ListingId) -> Option<ReadTicket> {
         let (volume_id, path) = self.get_listing_volume_id_and_path(id.as_str())?;
         Some(ReadTicket {
             id: id.clone(),
@@ -156,7 +205,7 @@ impl Inner {
             path,
             // Taken here, before the host reads, so it dates the read rather
             // than the hand-over.
-            generation: self.start_read([id.as_str()]),
+            read: self.start_read([id.as_str()]),
         })
     }
 
@@ -169,14 +218,15 @@ impl Inner {
             id,
             volume_id,
             path,
-            generation,
+            read,
         } = ticket;
         let prepared = self.prepare(ReadBy::StdFs, &volume_id, &path, entries).await;
-        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, generation);
+        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, read.generation());
         match self.settle_patches(id.as_str(), recheck).await {
             Settled::Done => outcome,
-            // Nothing serves the volume to stat through: the host reads again.
-            Settled::NoVolume => RefreshOutcome::NoVolume,
+            // Too much changed to check one by one, and nothing serves the
+            // volume to re-read through: the host reads again.
+            Settled::NeedsHostRead => RefreshOutcome::NoVolume,
         }
     }
 
@@ -247,14 +297,18 @@ impl Inner {
         let mut adds: Vec<FileEntry> = Vec::new();
         let mut removes: Vec<PathBuf> = Vec::new();
         let mut modifies: Vec<FileEntry> = Vec::new();
+        let read_in_flight = self.listing_tracks_patches(listing_id);
         for (path, stat) in children {
             let in_cache = self.has_entry(listing_id, &path.to_string_lossy());
             match (in_cache, stat) {
                 (true, Some(entry)) => modifies.push(entry),
-                // Gone from disk and not in the listing still goes through the
-                // remove: it moves no row, but a re-read in flight may have seen
-                // the child, so its landing must hear about it.
-                (_, None) => removes.push(path),
+                (true, None) => removes.push(path),
+                // Gone from disk and not in the listing: nothing to do, unless a
+                // read in flight may have seen the child. Then it goes through
+                // the remove, which moves no row but notes the name for that
+                // read's landing.
+                (false, None) if read_in_flight => removes.push(path),
+                (false, None) => {}
                 (false, Some(entry)) => adds.push(entry),
             }
         }
@@ -267,7 +321,9 @@ impl Inner {
         // batch resolves one parent.
         let added = adds.len();
         let mut batch: Vec<FileEntry> = adds.into_iter().chain(modifies).collect();
-        self.index.enrich(&volume_id, &mut batch);
+        if !batch.is_empty() {
+            self.index.enrich(&volume_id, &mut batch);
+        }
         let modifies = batch.split_off(added);
         let adds = batch;
 
@@ -287,5 +343,11 @@ impl Inner {
             self.carry_forward_deferred(listing_id, &mut entry);
             let _ = self.update_entry_sorted(listing_id, entry);
         }
+    }
+
+    /// Whether a read of `listing_id` is in flight, so its patches get noted.
+    fn listing_tracks_patches(&self, listing_id: &str) -> bool {
+        let cache = self.cache.read_ignore_poison();
+        cache.get(listing_id).is_some_and(|listing| listing.tracks_patches())
     }
 }
