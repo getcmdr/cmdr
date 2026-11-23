@@ -296,8 +296,7 @@
   },
   "commands.viewToggleMenuBar.label": "Toggle menu bar",
   "@commands.viewToggleMenuBar.label": {
-    "description": "Command name that shows or hides the menu bar (File, Edit, View, …) at the top of the window, on Windows and Linux. Hidden, a \"Main menu\" button (ui.mainMenu.label) holds the same menus. Appears in the command palette and the keyboard-shortcuts list. \"Toggle\" matches the other on/off commands such as commands.viewShowHidden.label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "description": "Command name that shows or hides the menu bar (File, Edit, View, …) at the top of the window, on Windows and Linux. Hidden, a \"Main menu\" button (ui.mainMenu.label) holds the same menus. Appears in the command palette and the keyboard-shortcuts list. \"Toggle\" matches the other on/off commands such as commands.viewShowHidden.label."
   },
   "commands.sortByName.label": "Sort by name",
   "@commands.sortByName.label": {

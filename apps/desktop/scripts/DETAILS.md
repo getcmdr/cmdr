@@ -131,6 +131,11 @@ Deleting the surface's object out of `capture-report.json` is safe and is what t
 with `pnpm i18n:couple`, which moves each of its keys to the next surface it appeared on, or clears the coupling;
 without that, the check fails on every `@key.screenshot` still naming the deleted PNG.
 
+**A DROPPED key can leave the report by hand too.** When `message-screenshots-fresh` warns about keys "the capture
+report still names but the catalogs dropped", deleting exactly those strings from each surface's `keys` (then
+`pnpm exec oxfmt` on the report) is what the next full run would do for them. It doesn't refresh the screenshots, which
+still show the old UI, so a UI change that dropped keys still wants a real `pnpm i18n:shots`.
+
 ## The defaults manifest
 
 `gen-analytics-defaults.ts` writes `apps/analytics-dashboard/src/lib/server/settings-defaults.gen.json`: what a fresh

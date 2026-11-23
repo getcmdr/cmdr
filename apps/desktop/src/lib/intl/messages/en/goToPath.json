@@ -50,7 +50,9 @@
     "description": "Neutral info line under the input when the typed path has a “..” right after a symbolic link (an alias-like shortcut to another folder). The “..” then means the parent of the folder the link points to, as the Terminal's ls reads it, not the folder the link sits in, so the destination differs from what the text seems to say. Keep “..” as is; it's the literal text the person typed.",
     "placeholders": {
       "dir": "the folder or file the path really leads to (e.g. /Users/me/Projects/notes)"
-    }
+    },
+    "screenshot": "go-to-path.png",
+    "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed."
   },
   "goToPath.toast.landedOnAncestor": "<req>{requested}</req> doesn’t exist, so we took you to <land>{landed}</land>.",
   "@goToPath.toast.landedOnAncestor": {

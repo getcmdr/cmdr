@@ -16,8 +16,8 @@ Per catalog area, each renderable key is one of three:
 
 Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 
-**Total: 4057 / 6160 keys have a screenshot (66%):** 2184 direct (35%) and 1873 representative (30%). 1908 remain
-uncoupled, and 195 are native surfaces a webview capture cannot reach.
+**Total: 4070 / 6192 keys have a screenshot (66%):** 2184 direct (35%) and 1886 representative (30%). 1926 remain
+uncoupled, and 196 are native surfaces a webview capture cannot reach.
 
 | Area            | Direct | Representative | Uncoupled | Native | Total | Any % |
 | --------------- | -----: | -------------: | --------: | -----: | ----: | ----: |
@@ -26,38 +26,38 @@ uncoupled, and 195 are native surfaces a webview capture cannot reach.
 | ai              |      1 |            159 |         0 |      0 |   160 |  100% |
 | askCmdr         |    192 |            306 |        47 |      0 |   545 |   91% |
 | commandPalette  |      3 |              2 |         2 |      0 |     7 |   71% |
-| commands        |    246 |              5 |        87 |      0 |   338 |   74% |
+| commands        |    246 |              5 |        88 |      0 |   339 |   74% |
 | common          |      8 |              1 |        10 |      0 |    19 |   47% |
 | crashReporter   |     12 |             11 |         0 |      0 |    23 |  100% |
 | downloads       |     10 |              5 |        21 |      0 |    36 |   42% |
 | errorReporter   |     16 |              0 |        43 |      0 |    59 |   27% |
-| errors          |    184 |            496 |         0 |      0 |   680 |  100% |
+| errors          |    184 |            508 |         0 |      0 |   692 |  100% |
 | feedback        |      8 |              6 |         2 |      0 |    16 |   88% |
-| fileExplorer    |    161 |             82 |       359 |      0 |   602 |   40% |
+| fileExplorer    |    161 |             82 |       360 |      0 |   603 |   40% |
 | fileOperations  |    144 |             93 |       128 |      0 |   365 |   65% |
-| goToPath        |      5 |              6 |         2 |      0 |    13 |   85% |
+| goToPath        |      5 |              7 |         2 |      0 |    14 |   86% |
 | indexing        |     34 |             18 |        18 |      0 |    70 |   74% |
 | licensing       |     49 |             35 |        32 |      0 |   116 |   72% |
 | lowDiskSpace    |      0 |              0 |         5 |      0 |     5 |    0% |
 | main            |      7 |              0 |        57 |      2 |    66 |   11% |
-| menu            |      5 |              0 |         0 |    193 |   198 |    3% |
+| menu            |      5 |              0 |         0 |    194 |   199 |    3% |
 | mtp             |     18 |              3 |         0 |      0 |    21 |  100% |
 | multiRename     |     90 |              0 |       146 |      0 |   236 |   38% |
 | notifications   |      0 |              0 |         1 |      0 |     1 |    0% |
 | onboarding      |     96 |             43 |        25 |      0 |   164 |   85% |
-| operationLog    |     31 |             81 |         0 |      0 |   112 |  100% |
+| operationLog    |     31 |             82 |         0 |      0 |   113 |  100% |
 | queryUi         |     41 |            125 |         0 |      0 |   166 |  100% |
 | queue           |     24 |             20 |         5 |      0 |    49 |   90% |
 | search          |      9 |             53 |         0 |      0 |    62 |  100% |
 | securityNotices |      0 |              0 |        16 |      0 |    16 |    0% |
 | selection       |     14 |              0 |         1 |      0 |    15 |   93% |
 | servers         |     95 |             83 |        57 |      0 |   235 |   76% |
-| settings        |    468 |             45 |       416 |      0 |   929 |   55% |
-| shortcuts       |     38 |             45 |         0 |      0 |    83 |  100% |
+| settings        |    468 |             45 |       423 |      0 |   936 |   55% |
+| shortcuts       |     38 |             44 |         0 |      0 |    82 |  100% |
 | stateRecovery   |      0 |              0 |        33 |      0 |    33 |    0% |
-| suggestedOps    |     86 |              0 |        26 |      0 |   112 |   77% |
+| suggestedOps    |     86 |              0 |        27 |      0 |   113 |   76% |
 | transfer        |      2 |             22 |         0 |      0 |    24 |  100% |
-| ui              |     40 |              0 |        27 |      0 |    67 |   60% |
+| ui              |     40 |              0 |        35 |      0 |    75 |   53% |
 | updates         |      6 |             27 |         0 |      0 |    33 |  100% |
 | viewer          |     30 |            100 |         0 |      0 |   130 |  100% |
 | whatsNew        |      8 |              1 |         2 |      0 |    11 |   82% |
@@ -66,7 +66,7 @@ uncoupled, and 195 are native surfaces a webview capture cannot reach.
 
 The run captured 277 surfaces. This section is regenerated every run, so it stays true as the UI changes.
 
-### No unique keys (45)
+### No unique keys (46)
 
 Every key on these surfaces also renders on another captured surface, so dropping one costs no coverage: its keys would
 simply couple to whichever surface keeps them. Worth considering, NOT an automatic delete. A surface can be the clearest
@@ -96,6 +96,7 @@ staging (or add it to `DROPPED_GALLERY_STATES` for a gallery state) in `test/e2e
 - `expiration` (87 keys, none unique)
 - `transfer-error-server_connection_lost` (86 keys, none unique)
 - `mkdir-confirmation-empty` (86 keys, none unique)
+- `mkdir-confirmation-too-long` (86 keys, none unique)
 - `selection-summary` (85 keys, none unique)
 - `servers-hub-nearby` (85 keys, none unique)
 - `tool-ask-setSetting` (85 keys, none unique)
@@ -112,9 +113,9 @@ staging (or add it to `DROPPED_GALLERY_STATES` for a gallery state) in `test/e2e
 - `favorites-menu-empty` (80 keys, none unique)
 - `quick-filter-badge` (79 keys, none unique)
 - `empty-pane` (75 keys, none unique)
-- `settings-appearance` (74 keys, none unique)
-- `settings-updates` (55 keys, none unique)
-- `settings-ai-provider` (37 keys, none unique)
+- `settings-appearance` (69 keys, none unique)
+- `settings-updates` (53 keys, none unique)
+- `settings-ai-provider` (36 keys, none unique)
 - `viewer-encoding` (20 keys, none unique)
 - `toast-compare-marked` (18 keys, none unique)
 - `toast-compare-needs-two-folders` (2 keys, none unique)
