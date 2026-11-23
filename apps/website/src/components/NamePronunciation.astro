@@ -4,7 +4,8 @@
 // or focus, and on a click, which also plays David saying it (`public/audio/commander.mp3`, fetched on that first click).
 //
 // The phonetic spelling signals "this is a pronunciation"; the spelled-out word is what most people
-// can actually read. Screen readers get one plain sentence from the `aria-label`.
+// can actually read. Screen readers get one plain sentence from the `sr-only` span. Not an `aria-label`: the visible
+// letters and IPA aren't in that sentence, which fails axe's `label-content-name-mismatch` (WCAG 2.5.3).
 import Icon from './icons/Icon.astro'
 
 // The name's own letters stay put; `extra` ones are the letters "Cmdr" drops.
@@ -25,9 +26,9 @@ let extraIndex = 0
 <button
     type="button"
     class="say-name inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-sm text-text-tertiary transition-colors hover:bg-accent/10"
-    aria-label="Cmdr is pronounced “commander”. Hear it."
     data-say-name="/audio/commander.mp3"
 >
+    <span class="sr-only">Cmdr is pronounced “commander”. Hear it.</span>
     <Icon name="volume-2" size={16} class="say-name-icon" />
     <span class="say-name-word text-base font-semibold text-text-primary" aria-hidden="true"
         >{
