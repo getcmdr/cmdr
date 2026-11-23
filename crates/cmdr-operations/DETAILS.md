@@ -2282,8 +2282,9 @@ only by duplicating it.
   folder name) and then root-anchors, typed (`cmdr_fs::volume::anchor_at_root`, an `AppPathBuf` answer: a Windows
   `Path::join` put a `\` into a POSIX volume's destination). The transfer dialog's box is volume-relative (`/photos`,
   with the volume in a dropdown beside it) while a pane sends the absolute path it displays; the anchor is idempotent,
-  so neither caller has to know which it holds. Text naming another volume, or holding a `..` (the app resolves one on
-  its volume before a start sends the box), is refused, a start's as `DestinationNotFound`; while escapes aren't live an
+  so neither caller has to know which it holds. A local volume's destination the OS spells (`C:\x\dst`) reads through
+  `from_native_unicode` and anchors again. Text naming another volume, or holding a `..` (the app resolves one on its
+  volume before a start sends the box), is refused, a start's as `DestinationNotFound`; while escapes aren't live an
   escape-range code point in the text is literal, so the place is the one the `std::path` anchor named. Skipping it is
   what made a 360 GB move into an SMB subfolder fail instantly (ERR-XCP5Q): `SmbVolume` read `/photos` as a path outside
   its mount and answered `NotFound`. A copy or move anchors BEFORE its destination resolve (`routing::destination`),

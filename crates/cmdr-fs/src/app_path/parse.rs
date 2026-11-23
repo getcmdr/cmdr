@@ -434,55 +434,36 @@ impl AppPath {
     /// two are one value, byte for byte, and borrowed when the text holds no escape-range code
     /// point (nearly every row). Once escapes are live it's [`Self::from_normalized`]'s value.
     ///
-    /// Text a backend spelled loosely (`//x`, a trailing `/`) is read as the place it names,
-    /// normalized, in the flavor its own shape says: a POSIX volume's `/x` stays POSIX on a
-    /// Windows host, as [`Self::from_normalized`] keeps it.
+    /// Any other text a backend spelled (an archive's relative inner `dir/a.txt`, a Windows
+    /// archive's native `C:\x\a.zip\dir`, a loose `//x`) is the bridge value it always was,
+    /// unnormalized, going with the bridge.
     ///
     /// # Errors
     ///
-    /// [`NotAnAppPath`] for text that names no place: empty, holding a `..` name (a hostile
-    /// server's row climbing out of the folder it listed), or relative with any name that
-    /// isn't plain. A relative row of plain names (an archive's inner `dir/a.txt`) is a bridge
-    /// value, unnormalized, as [`AppPath::legacy_unchecked`] passed it.
+    /// [`NotAnAppPath::DotName`] for a row that names no place under its folder: empty, or
+    /// holding a `..` name (a hostile server's or archive's row climbing out of what it listed).
     pub fn from_listed_row(text: &str) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
         let spelled: Cow<'_, str> = if super::ESCAPES_LIVE {
             Cow::Borrowed(text)
         } else {
             super::platform::os_name_to_app(std::ffi::OsStr::new(text))
         };
-        let canonical = match &spelled {
-            Cow::Borrowed(plain) => Self::from_normalized(plain).is_ok(),
-            Cow::Owned(literal) => Self::from_normalized(literal).is_ok(),
-        };
-        if canonical {
-            return Ok(match spelled {
-                Cow::Borrowed(plain) => Cow::Borrowed(AppPath::new_unchecked(plain)),
-                Cow::Owned(literal) => Cow::Owned(AppPathBuf(literal)),
-            });
+        // Canonical text is the typed value; anything else a backend spelled (an archive's
+        // relative inner `dir/a.txt`, a Windows archive's native `C:\x\a.zip\dir`, a loose
+        // `//x`) is the bridge value it always was, unnormalized, going with the bridge. Only
+        // a climb is refused.
+        if climbs(&spelled) {
+            return Err(NotAnAppPath::DotName);
         }
-        let flavor = match PathFlavor::HOST {
-            PathFlavor::Windows if spelled.starts_with('/') && !spelled.starts_with("//") => PathFlavor::Posix,
-            host => host,
-        };
-        match AppPathBuf::parse(&spelled, flavor) {
-            Ok(parsed) => Ok(Cow::Owned(parsed)),
-            // A volume whose rows are relative to it (an archive's inner paths, `dir/a.txt`)
-            // walks them as the bridge always passed them: a bridge value, unnormalized,
-            // going with the bridge. Only plain names, so a row can't climb (`../x`).
-            Err(NotAnAppPath::Relative) if is_plain_relative_row(&spelled) => Ok(match spelled {
-                Cow::Borrowed(plain) => Cow::Borrowed(AppPath::new_unchecked(plain)),
-                Cow::Owned(literal) => Cow::Owned(AppPathBuf(literal)),
-            }),
-            Err(why) => Err(why),
-        }
+        Ok(match spelled {
+            Cow::Borrowed(plain) => Cow::Borrowed(AppPath::new_unchecked(plain)),
+            Cow::Owned(literal) => Cow::Owned(AppPathBuf(literal)),
+        })
     }
 }
 
-/// Whether `text` is a relative row of plain names: no root, no empty, `.`, or `..` name,
-/// no NUL, and (on Windows) no drive.
-fn is_plain_relative_row(text: &str) -> bool {
-    !text.is_empty()
-        && !text.contains('\0')
-        && !(PathFlavor::HOST == PathFlavor::Windows && text.as_bytes().get(1) == Some(&b':'))
-        && text.split(['/', '\\']).all(|name| !matches!(name, "" | "." | ".."))
+/// Whether a listed row names no place under the folder that listed it: empty, or with a
+/// `..` name (either separator), which a hostile server or archive lists to reach outside.
+fn climbs(text: &str) -> bool {
+    text.is_empty() || text.split(['/', '\\']).any(|name| name == "..")
 }

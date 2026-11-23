@@ -44,7 +44,20 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
     } else {
         Cow::Borrowed(dest_path)
     };
-    cmdr_fs::volume::anchor_at_root(dest_volume.root(), &literal_names(&expanded))
+    let root = dest_volume.root();
+    match cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)) {
+        // A local volume's destination may come as the OS spells it (a native `C:\x\dst` an
+        // agent or a suite hands over): read through the native door and anchored again,
+        // as the `std::path` anchor took it. On macOS and Linux a native path is app text
+        // already, so this answers nothing the anchor above didn't.
+        Err(refused) if dest_volume.local_path().is_some() => {
+            match AppPathBuf::from_native_unicode(std::path::Path::new(expanded.as_ref())) {
+                Ok(native) => cmdr_fs::volume::anchor_at_root(root, native.as_str()),
+                Err(_) => Err(refused),
+            }
+        }
+        anchored => anchored,
+    }
 }
 
 /// `text` with each name spelled as a listing spells it while escapes aren't live

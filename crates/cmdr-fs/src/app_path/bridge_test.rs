@@ -329,8 +329,8 @@ fn a_listed_path_spells_as_the_bridge_and_the_wire_and_reads_back_as_listed() {
 /// A walker's door for a listing row's own path (`FileEntry.path`): for canonical text it's
 /// the bridge's value of the same text, byte for byte and borrowed when plain, on every host,
 /// a literal escape-range code point included, and a POSIX volume's `/x` stays POSIX on
-/// Windows. Loose text reads as the place it names, an archive's relative row as the bridge
-/// passed it; a climb is refused.
+/// Windows. Any other row (an archive's relative one, a loose spelling, a Windows archive's
+/// native one) is the bridge value it always was; only a climb is refused.
 #[test]
 fn a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb() {
     for listed in [
@@ -347,13 +347,18 @@ fn a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb() {
         assert_eq!(row.as_str(), bridge(listed).as_str(), "{listed:?}");
     }
     assert!(matches!(AppPath::from_listed_row("/t0/nested"), Ok(Cow::Borrowed(_))));
-    assert_eq!(AppPath::from_listed_row("/a//b/").expect("loose").as_str(), "/a/b");
-    // An archive's inner rows are relative to it: walked as the bridge passed them.
-    for relative in ["dir/drop.txt", "a", "dir/caf\u{10FEE9}"] {
-        let row = AppPath::from_listed_row(relative).unwrap_or_else(|e| panic!("{relative:?}: {e}"));
-        assert_eq!(row.as_str(), bridge(relative).as_str(), "{relative:?}");
+    for loose in ["dir/drop.txt", "a", "dir/caf\u{10FEE9}", "/a//b/", "C:\\x\\a.zip\\dir"] {
+        let row = AppPath::from_listed_row(loose).unwrap_or_else(|e| panic!("{loose:?}: {e}"));
+        assert_eq!(row.as_str(), bridge(loose).as_str(), "{loose:?}");
     }
-    for refused in ["", "../x", "a/../b", "/a/../b", "a//b", "sftp://u@h:22/srv/../x"] {
+    for refused in [
+        "",
+        "../x",
+        "a/../b",
+        "/a/../b",
+        "C:\\x\\..\\y",
+        "sftp://u@h:22/srv/../x",
+    ] {
         assert!(AppPath::from_listed_row(refused).is_err(), "{refused:?}");
     }
 }
