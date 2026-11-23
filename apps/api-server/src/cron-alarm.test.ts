@@ -59,11 +59,11 @@ const everyTickJobs = [
 ]
 
 /** A non-midnight tick, so only the every-invocation jobs run. */
-const threeAm = { scheduledTime: Date.parse('2026-09-02T03:00:00.000Z') } as ScheduledEvent
+const threeAm = { scheduledTime: Date.parse('2026-09-02T03:00:00.000Z') } as ScheduledController
 /** The tick after it. */
-const sixAm = { scheduledTime: Date.parse('2026-09-02T06:00:00.000Z') } as ScheduledEvent
+const sixAm = { scheduledTime: Date.parse('2026-09-02T06:00:00.000Z') } as ScheduledController
 /** The tick that also runs the daily jobs. */
-const midnight = { scheduledTime: Date.parse('2026-09-02T00:00:00.000Z') } as ScheduledEvent
+const midnight = { scheduledTime: Date.parse('2026-09-02T00:00:00.000Z') } as ScheduledController
 
 function healthPings() {
   return posts.filter((p) => p.url.startsWith('https://hc-ping.com/'))

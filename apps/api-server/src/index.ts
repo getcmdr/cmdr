@@ -112,7 +112,7 @@ async function runCronJob(
 
 export default {
   fetch: app.fetch.bind(app),
-  async scheduled(event: ScheduledEvent, env: Bindings) {
+  async scheduled(event: ScheduledController, env: Bindings) {
     const when = new Date(event.scheduledTime).toISOString()
     const failedJobs: string[] = []
     const heldBack: string[] = []

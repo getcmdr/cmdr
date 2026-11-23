@@ -257,13 +257,13 @@ describe('the morning cron trigger', () => {
     const env = testEnv()
 
     await worker.scheduled(
-      { cron: '30 4,5 * * *', scheduledTime: Date.parse('2026-07-14T05:30:00Z') } as ScheduledEvent,
+      { cron: '30 4,5 * * *', scheduledTime: Date.parse('2026-07-14T05:30:00Z') } as ScheduledController,
       env,
     )
     expect(mockSend).not.toHaveBeenCalled()
 
     await worker.scheduled(
-      { cron: '30 4,5 * * *', scheduledTime: Date.parse('2026-07-14T04:30:00Z') } as ScheduledEvent,
+      { cron: '30 4,5 * * *', scheduledTime: Date.parse('2026-07-14T04:30:00Z') } as ScheduledController,
       env,
     )
     expect(mockSend).toHaveBeenCalledTimes(1)

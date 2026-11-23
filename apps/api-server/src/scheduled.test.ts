@@ -509,7 +509,7 @@ describe('scheduled handler: eviction job isolation', () => {
       // and the scheduled wrapper's per-job try/catch absorbs each failure.
       TELEMETRY_DB: createMockD1().db,
     } as never
-    const event = { scheduledTime: Date.UTC(2026, 3, 23, 0, 0, 0) } as ScheduledEvent
+    const event = { scheduledTime: Date.UTC(2026, 3, 23, 0, 0, 0) } as ScheduledController
     await expect(mod.scheduled(event, env)).resolves.toBeUndefined()
     // At least one job logged its caught error
     expect(errSpy).toHaveBeenCalled()
