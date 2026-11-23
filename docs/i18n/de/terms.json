@@ -907,7 +907,11 @@
     "chosen": "Link",
     "confidence": "high",
     "forms": "web link → Weblink; compounds Freigabelink, Google-Drive-Link",
-    "sources": "catalog (share-link and Google Drive link commands, viewer.markdown.link.*); MS terminology; macOS „Als Link kopieren“"
+    "sources": "catalog (share-link and Google Drive link commands, viewer.markdown.link.*); MS terminology; macOS „Als Link kopieren“",
+    "exceptions": {
+      "fileOperations.delete.symlinkNoticeSingle": "The windows branch names a filesystem link (a symlink or a junction), not a web link: Windows says «Verknüpfung» for these (MS TBX symbolic link → symbolische Verknüpfung, junction point → Verknüpfungspunkt).",
+      "fileOperations.delete.symlinkNoticeMany": "The windows branch names a filesystem link (a symlink or a junction), not a web link: Windows says «Verknüpfung» for these (MS TBX symbolic link → symbolische Verknüpfung, junction point → Verknüpfungspunkt)."
+    }
   },
   "mcp-server": {
     "chosen": "MCP-Server",

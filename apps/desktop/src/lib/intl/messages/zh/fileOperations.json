@@ -127,13 +127,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {这个项目是符号链接。只会删除链接本身，不会删除它指向的目标。} other {这个项目是符号链接。只会删除链接本身，不会删除它指向的目标。}}",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {这个项目是链接。只会删除链接本身，不会删除它指向的内容。} other {这个项目是符号链接。只会删除链接本身，不会删除它指向的目标。}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {你的所选内容包含 {countText} 个{count, plural, other {符号链接}}。只会删除链接本身，不会删除它们指向的目标。} other {你的所选内容包含 {countText} 个{count, plural, other {符号链接}}。只会删除链接本身，不会删除它们指向的目标。}}",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {你的所选内容包含 {countText} 个{count, plural, other {链接}}。只会删除链接本身，不会删除它们指向的内容。} other {你的所选内容包含 {countText} 个{count, plural, other {符号链接}}。只会删除链接本身，不会删除它们指向的目标。}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr 无法创建文件“{name}”。{reason}",
   "@fileOperations.mkfile.notCreatedToast": {

@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.} other {Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.}}",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dit onderdeel is een link. Alleen de link wordt verwijderd, niet waar die naar verwijst.} other {Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.} other {Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.}}",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Je selectie bevat {countText} {count, plural, one {link} other {links}}. Alleen de links zelf worden verwijderd, niet waar ze naar verwijzen.} other {Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr kon het bestand ‘{name}’ niet aanmaken. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

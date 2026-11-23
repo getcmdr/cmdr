@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.} other {Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.}}",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dieses Objekt ist eine Verknüpfung. Nur die Verknüpfung wird gelöscht, nicht das, worauf sie verweist.} other {Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.} other {Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.}}",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Deine Auswahl enthält {countText} {count, plural, one {Verknüpfung} other {Verknüpfungen}}. Nur die Verknüpfungen selbst werden gelöscht, nicht das, worauf sie verweisen.} other {Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr konnte die Datei „{name}“ nicht erstellen. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

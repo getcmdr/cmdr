@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.} other {Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.}}",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Tato položka je odkaz. Smaže se jen odkaz, ne to, kam vede.} other {Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.} other {Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.}}",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Výběr obsahuje {countText} {count, plural, one {odkaz} few {odkazy} many {odkazu} other {odkazů}}. Smažou se jen samotné odkazy, ne to, kam vedou.} other {Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr nemohl vytvořit soubor „{name}“. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

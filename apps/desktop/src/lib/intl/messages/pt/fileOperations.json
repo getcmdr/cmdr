@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Este item é um link simbólico. Apenas o link será apagado, não o destino dele.} other {Este item é um link simbólico. Apenas o link será apagado, não o destino dele.}}",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Este item é um link. Apenas o link será apagado, não aquilo para onde ele aponta.} other {Este item é um link simbólico. Apenas o link será apagado, não o destino dele.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Sua seleção inclui {countText} {count, plural, one {link simbólico} many {links simbólicos} other {links simbólicos}}. Apenas os próprios links serão apagados, não os destinos deles.} other {Sua seleção inclui {countText} {count, plural, one {link simbólico} many {links simbólicos} other {links simbólicos}}. Apenas os próprios links serão apagados, não os destinos deles.}}",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Sua seleção inclui {countText} {count, plural, one {link} many {links} other {links}}. Apenas os próprios links serão apagados, não aquilo para onde eles apontam.} other {Sua seleção inclui {countText} {count, plural, one {link simbólico} many {links simbólicos} other {links simbólicos}}. Apenas os próprios links serão apagados, não os destinos deles.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "O Cmdr não conseguiu criar o arquivo “{name}”. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {
