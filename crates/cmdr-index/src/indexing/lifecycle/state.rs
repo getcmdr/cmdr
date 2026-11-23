@@ -63,6 +63,7 @@ mod walk_database;
 pub use auto_start::{should_auto_start, should_auto_start_indexing};
 pub(crate) use freshness_bridge::{apply_freshness_event, bump_current_epoch_for, get_freshness};
 pub(crate) use queries::registered_mtp_volume_ids_for_device;
+pub(in crate::indexing::lifecycle) use queries::stays_paused_for_space;
 pub(crate) use queries::{
     all_registered_volume_ids, awaits_its_first_scan, index_failure, is_active_and_staying, is_being_torn_down,
     ready_volumes_to_wire, ready_volumes_with_kind, volume_kind,
@@ -80,7 +81,6 @@ pub use scan_control::{force_scan, stop_scan, trigger_verification};
 pub(crate) use scan_control::{rescan_with_phases_owed_for_test, set_ground_in_flux_for_test, while_detached_for_test};
 #[cfg(test)]
 pub(crate) use space_pause::pause_for_space;
-pub(in crate::indexing::lifecycle) use space_pause::stays_paused_for_space;
 pub(in crate::indexing::lifecycle) use startup::boot_root;
 pub(crate) use startup::record_drive_index_enabled;
 pub use startup::start_indexing;

@@ -253,6 +253,29 @@ pub(crate) fn is_being_torn_down(volume_id: &str) -> bool {
     }
 }
 
+/// Whether `volume_id` is paused for disk space and the host still says the disk is
+/// low: then only its waiter (`space_pause.rs`) may restart it (cmdr-reports#118).
+/// Any other start (a launch's auto-start, a user's enable, a search walk standing a
+/// writer up) would take the slot over, hit the same low disk on its first write,
+/// and pause again, each one also doubling the waiter's backoff. Once the host says
+/// there's room, an ordinary start goes ahead at once, so a user who frees space or
+/// lowers the threshold doesn't wait out the backoff.
+///
+/// Asks the registry first, so the host's reading (a local `statfs` at worst) is
+/// taken only for a paused volume, and never under the lock.
+///
+/// ⚠️ Lives here, ❌ not in `space_pause.rs`: re-exporting from there gives `state`
+/// an edge into `space_pause`, which reaches `resources::memory_watchdog`, which
+/// reaches back into `state`, and that pulled the watchdog into the accepted
+/// lifecycle tangle (`module-cycles`).
+pub(in crate::indexing::lifecycle) fn stays_paused_for_space(volume_id: &str) -> bool {
+    let paused = matches!(
+        INDEX_REGISTRY.lock_ignore_poison().get(volume_id).map(|i| &i.phase),
+        Some(IndexPhase::Paused { .. })
+    );
+    paused && crate::indexing::host::policy::current().index_storage_low()
+}
+
 /// Whether a volume's index is in the `Failed` phase (its DB died with a fatal
 /// storage error). Distinct from disabled/absent: a failed volume is still
 /// registered so the badge is honest. Used by the recovery commands to rebuild

@@ -1009,14 +1009,14 @@ still work. Per-drive intent is untouched.
 - **A start takes the slot over** (`reservation.rs`), in the same critical section that installs the new read pool, so
   the volume never routes no reads. It emits the new seed as `FreshnessChanged`, since a seeded value fires no
   transition and the badge would otherwise stay red.
-- **...but only once the host says there's room** (`space_pause::stays_paused_for_space`). While the disk is still low,
-  an ordinary start of a paused volume is a no-op at the choke point (`startup.rs`), and a search walk refuses with
-  `NoCoverContext::PausedForSpace` before standing a writer up: only the waiter restarts it. Gotcha/Why
-  (cmdr-reports#118): every other start took the slot over and paused again on its first write, so a launch's second
-  auto-start and a search walk per keystroke re-paused the boot disk a dozen times in seconds, each pause also doubling
-  the backoff. With room back, an ordinary start goes ahead at once, so freeing space or lowering the threshold doesn't
-  wait out the backoff. A volume the master switch removed starts fresh and pauses once per toggle, which is the user
-  asking. Pinned by
+- **...but only once the host says there's room** (`state::stays_paused_for_space`, in `queries.rs` so `state` gains no
+  edge into `space_pause` and the watchdog behind it). While the disk is still low, an ordinary start of a paused volume
+  is a no-op at the choke point (`startup.rs`), and a search walk refuses with `NoCoverContext::PausedForSpace` before
+  standing a writer up: only the waiter restarts it. Gotcha/Why (cmdr-reports#118): every other start took the slot over
+  and paused again on its first write, so a launch's second auto-start and a search walk per keystroke re-paused the
+  boot disk a dozen times in seconds, each pause also doubling the backoff. With room back, an ordinary start goes ahead
+  at once, so freeing space or lowering the threshold doesn't wait out the backoff. A volume the master switch removed
+  starts fresh and pauses once per toggle, which is the user asking. Pinned by
   `cover::cold_drive_tests::space::nothing_but_the_waiter_restarts_a_paused_drive_while_the_disk_is_low`.
 - **The waiter** rechecks every 30 s and restarts through `StartRequest::after_space_pause`
   (`StartCause::SpacePauseEnded`) once the host says there's room. Whatever happened meanwhile wins (`decide`): no
