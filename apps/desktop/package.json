@@ -109,7 +109,7 @@
     "globals": "^17.14.0",
     "happy-dom": "^21.0.4",
     "jsdom": "^31.0.1",
-    "knip": "6.46.1",
+    "knip": "6.44.2",
     "oxlint": "^1.89.0",
     "postcss-html": "^2.0.1",
     "rollup-plugin-sbom": "5.0.3",

@@ -22,19 +22,20 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@noble/ed25519": "^3.1.0",
+    "@noble/ed25519": "^3.2.0",
     "aws4fetch": "^1.0.20",
-    "hono": "^4.12.30"
+    "hono": "^4.13.19"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.0",
+    "@cloudflare/vitest-plugin": "^1.8.5",
+    "@cloudflare/workers-types": "^5.20261120.1",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0",
-    "vitest": "^5.0.3",
-    "wrangler": "^4.107.1"
+    "vitest": "^5.1.1",
+    "wrangler": "^4.165.0"
   }
 }
