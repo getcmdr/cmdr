@@ -16,7 +16,7 @@ import (
 //
 // To bump: pick a nightly at least 3 days old, edit this line, then run
 // `pnpm check cargo-udeps` locally and fix whatever new lints it surfaces.
-const nightlyToolchain = "nightly-2026-07-10"
+const nightlyToolchain = "nightly-2026-11-19"
 
 // NightlyToolchain exposes the pinned nightly to the CLI (`--print-nightly`).
 func NightlyToolchain() string { return nightlyToolchain }
