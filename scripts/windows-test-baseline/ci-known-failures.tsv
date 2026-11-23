@@ -3,7 +3,6 @@
 # Tighten for free: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write`. Loosen only with a reason: add `-add "<reason>"`.
 crate	test	status	reason
 cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	fails	timed out on the hosted runner, cause unread (windows-test-failures.md)
-cmdr	agent::line::tests::preview_tests::inspect_shows_a_row_per_find_hit_and_each_paths_status	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::a_root_the_index_doesnt_hold_refuses_rather_than_matching_nothing	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
