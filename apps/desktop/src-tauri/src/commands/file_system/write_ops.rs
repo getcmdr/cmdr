@@ -18,6 +18,7 @@ use tokio::time::Duration;
 
 use crate::file_system::Volume;
 use crate::file_system::volume::manager::get_volume_manager;
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::deadline::{DeadlineError, blocking_with_timeout, timeout_detached_typed};
 use cmdr_operation_log::types::{Initiator, OperationId};
 
@@ -88,34 +89,36 @@ async fn scan_preview_source_volume(
 
 /// Rejects a local write op that touches a path a ROUTE serves (an archive, a
 /// repo's virtual `.git` trees, a restic repo's `Browse snapshots`), with the
-/// typed read-only refusal: there's no file for `std::fs` to act on.
+/// typed read-only refusal: there's no file for `std::fs` to act on. Every question
+/// confirms (❌ never the permissive `path_routes_over_its_parent`): a stat and magic
+/// sniff, the portal switch, a read of the repo folder. So a real `foo.zip/`,
+/// `.git/branches/`, or non-repo `Browse snapshots` takes writes.
 ///
-/// Every question confirms (❌ never the permissive `path_routes_over_its_parent`):
-/// a stat and magic sniff, the portal switch, a read of the repo folder. So a
-/// real `foo.zip/`, `.git/branches/`, or non-repo `Browse snapshots` takes writes.
-///
-/// `side` says which half of the transfer these paths are, because the two are
-/// different sentences: a move OFF a snapshot is refused by its SOURCE, and
-/// telling that user to choose a different destination names the half that was
-/// fine. Callers that check both halves ask twice, once per side.
-///
-/// A backend safety net behind the frontend's read-only capability gating. The
-/// transfers that legitimately cross a route (extract-out, copy out of a
-/// snapshot, writing into a zip) run through `copy_between_volumes`, which routes
-/// to the read-only volume, ❌ never this fast path.
+/// `side` says which half of the transfer these paths are: a move OFF a snapshot is
+/// refused by its SOURCE, and telling that user to choose a different destination names
+/// the half that was fine. Callers that check both halves ask twice, once per side. A
+/// backend safety net behind the frontend's read-only capability gating: the transfers
+/// that legitimately cross a route (extract-out, copy out of a snapshot, writing into a
+/// zip) run through `copy_between_volumes`, ❌ never this fast path. Boot disk only: ❗ a
+/// path with NO native spelling (a scheme path, a POSIX `/x` on Windows, a name Win32
+/// can't store) is REFUSED, fail closed, as no route question can be asked of it.
 fn reject_if_routed_over_a_parent<'a>(
-    paths: impl IntoIterator<Item = &'a PathBuf>,
+    paths: impl IntoIterator<Item = &'a AppPathBuf>,
     side: ReadOnlySide,
 ) -> Result<(), WriteOperationError> {
-    for path in paths {
-        // Only a path INSIDE an archive is read-only. The `.zip` file itself is a
-        // regular file — copying/moving/deleting/trashing it must work.
-        if cmdr_archive::path_is_inside_archive(path)
-            || crate::file_system::git::wiring::portal_serves(path)
-            || crate::file_system::restic::wiring::local_path_is_in_a_restic_view(path)
+    for app in paths {
+        let text = || app.as_str().to_owned();
+        let path = app.to_native().map_err(|why| WriteOperationError::IoError {
+            message: cmdr_fs::error_detail::ErrorDetail::path_then(text(), format!(": {why}, no local file")),
+            path: text(),
+        })?;
+        // Only a path INSIDE an archive is read-only; the `.zip` file itself is a regular file.
+        if cmdr_archive::path_is_inside_archive(&path)
+            || crate::file_system::git::wiring::portal_serves(&path)
+            || crate::file_system::restic::wiring::local_path_is_in_a_restic_view(&path)
         {
             return Err(WriteOperationError::ReadOnlyDevice {
-                path: path.to_string_lossy().into_owned(),
+                path: text(), // The text the pane sent, as it always named the refusal.
                 device_name: None,
                 side,
             });
@@ -230,9 +233,9 @@ fn local_transfer_request(
     sources: &[String],
     destination: &str,
     config: Option<WriteOperationConfig>,
-) -> Result<(Vec<PathBuf>, PathBuf, WriteOperationConfig), WriteOperationError> {
+) -> Result<(Vec<AppPathBuf>, AppPathBuf, WriteOperationConfig), WriteOperationError> {
     let sources = tilde_expanded_checked(sources)?;
-    let destination = same_root_destination(destination);
+    let destination = same_root_destination(destination)?;
     // Twice, so the refusal names the half that actually refused rather than
     // whichever path the loop happened to reach first.
     reject_if_routed_over_a_parent(sources.iter(), ReadOnlySide::Source)?;
@@ -241,27 +244,32 @@ fn local_transfer_request(
 }
 
 /// Sources a local start takes: each tilde expanded, then read at the command edge.
-fn tilde_expanded_checked(sources: &[String]) -> Result<Vec<PathBuf>, WriteOperationError> {
+fn tilde_expanded_checked(sources: &[String]) -> Result<Vec<AppPathBuf>, WriteOperationError> {
     let expanded: Vec<String> = sources.iter().map(|s| expand_tilde(s)).collect();
-    Ok(wire_path::checked_all(expanded.iter().map(String::as_str))?)
+    Ok(wire_path::start_paths(expanded.iter().map(String::as_str))?)
 }
 
-/// A same-`root` move's destination, the Move dialog's VOLUME-RELATIVE box text, anchored
-/// on the boot volume's root the way a copy anchors its own (`resolve_dest_path`): on
-/// Windows that root is `C:/`, so `/Users/x` is `C:/Users/x`, which the engine takes; on
-/// macOS and Linux it's `/`, and the path is the one sent. With no boot volume registered
-/// (a test), the text as sent, tilde expanded. A `..` in it is the person's, resolved
-/// before this (`wire_path::transfer_destination`), as a copy's is.
-fn same_root_destination(text: &str) -> PathBuf {
+/// A same-`root` move's destination, the Move dialog's VOLUME-RELATIVE box text, as the app
+/// path the start takes, anchored on the boot volume's root (`wire_path::start_destination`):
+/// on Windows that root is `C:/`, so `/Users/x` is `C:/Users/x`; on macOS and Linux it's `/`,
+/// and the path is the one sent. With no boot volume registered (a test), the text as sent,
+/// tilde expanded. A `..` in it was resolved before this (`wire_path::transfer_destination`).
+fn same_root_destination(text: &str) -> Result<AppPathBuf, WriteOperationError> {
     same_root_destination_on(get_volume_manager().get(cmdr_fs::volume::DEFAULT_VOLUME_ID), text)
 }
 
-/// [`same_root_destination`] on a given boot volume.
-fn same_root_destination_on(root: Option<Arc<dyn Volume>>, text: &str) -> PathBuf {
-    match root {
-        Some(root) => cmdr_operations::resolve_dest_path(&root, text.to_owned()),
-        None => PathBuf::from(expand_tilde(text)),
-    }
+/// [`same_root_destination`] on a given boot volume (`~` expanded on a local root, as a
+/// copy's destination is).
+fn same_root_destination_on(root: Option<Arc<dyn Volume>>, text: &str) -> Result<AppPathBuf, WriteOperationError> {
+    let Some(root) = root else {
+        return Ok(wire_path::start_path(&expand_tilde(text))?);
+    };
+    let expanded = if root.local_path().is_some() {
+        expand_tilde(text)
+    } else {
+        text.to_owned()
+    };
+    Ok(wire_path::start_destination(root.root(), &expanded)?)
 }
 
 /// Uses rename() for same-filesystem (instant), copy+delete for cross-filesystem.
@@ -344,7 +352,7 @@ async fn delete_files_with(
     let sources = if is_local {
         tilde_expanded_checked(&sources)?
     } else {
-        wire_path::checked_all(sources.iter().map(String::as_str))?
+        wire_path::start_paths(sources.iter().map(String::as_str))?
     };
     let config = config.unwrap_or_default();
 
@@ -565,6 +573,10 @@ mod write_ops_destination_test;
 mod tests {
     use super::*;
     use cmdr_fs::app_path;
+    /// [`reject_if_routed_over_a_parent`] for one native path, as a start's typed one.
+    pub(super) fn routed_refusal(path: &std::path::Path, side: ReadOnlySide) -> Result<(), WriteOperationError> {
+        reject_if_routed_over_a_parent(std::iter::once(&cmdr_operations::testing::app_path_of(path)), side)
+    }
 
     #[test]
     fn reject_if_routed_over_a_parent_flags_a_path_inside_a_zip() {
@@ -575,8 +587,7 @@ mod tests {
 
         // A path INSIDE the archive is refused with a typed read-only error...
         let inner = zip.join("inner.txt");
-        let err = reject_if_routed_over_a_parent(std::iter::once(&inner), ReadOnlySide::Source)
-            .expect_err("archive-inner path must be refused");
+        let err = routed_refusal(&inner, ReadOnlySide::Source).expect_err("archive-inner path must be refused");
         assert!(
             matches!(err, WriteOperationError::ReadOnlyDevice { .. }),
             "expected ReadOnlyDevice, got {err:?}"
@@ -584,12 +595,12 @@ mod tests {
 
         // ...while a plain local sibling passes (proves the guard, not a blanket reject).
         let plain = dir.path().join("plain.txt");
-        assert!(reject_if_routed_over_a_parent(std::iter::once(&plain), ReadOnlySide::Source).is_ok());
+        assert!(routed_refusal(&plain, ReadOnlySide::Source).is_ok());
 
         // ...AND the `.zip` FILE ITSELF passes: copying/moving/deleting/trashing a
         // zip file is a normal file op, not a write INSIDE the archive.
         assert!(
-            reject_if_routed_over_a_parent(std::iter::once(&zip), ReadOnlySide::Source).is_ok(),
+            routed_refusal(&zip, ReadOnlySide::Source).is_ok(),
             "the .zip file itself must not be refused"
         );
     }
@@ -608,21 +619,18 @@ mod tests {
         let snapshot = dir.join(".git/branches/main/README.md");
 
         git::wiring::set_virtual_portal_enabled(true);
-        let err = reject_if_routed_over_a_parent(std::iter::once(&snapshot), ReadOnlySide::Source)
-            .expect_err("a snapshot path must be refused");
+        let err = routed_refusal(&snapshot, ReadOnlySide::Source).expect_err("a snapshot path must be refused");
         assert!(
             matches!(err, WriteOperationError::ReadOnlyDevice { .. }),
             "expected ReadOnlyDevice, got {err:?}"
         );
 
         // The real files under `.git/` are the parent volume's, always writable.
-        assert!(
-            reject_if_routed_over_a_parent(std::iter::once(&dir.join(".git/config")), ReadOnlySide::Source).is_ok()
-        );
+        assert!(routed_refusal(&dir.join(".git/config"), ReadOnlySide::Source).is_ok());
 
         git::wiring::set_virtual_portal_enabled(false);
         assert!(
-            reject_if_routed_over_a_parent(std::iter::once(&snapshot), ReadOnlySide::Source).is_ok(),
+            routed_refusal(&snapshot, ReadOnlySide::Source).is_ok(),
             "with the portal off there is no route to protect"
         );
         git::wiring::set_virtual_portal_enabled(true);

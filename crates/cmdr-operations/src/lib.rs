@@ -225,7 +225,7 @@ pub use tree_view::TransferTreeViewError;
 pub use mutation_error::MutationError;
 pub use mutation_reply::{MUTATION_REPLY_DEADLINE, Replied, reply_or_hand_off, reply_within};
 pub use mutation_reply::{MutationReply, MutationSettled};
-pub use rename::{BulkRenameRow, RenameStartError, RenameValidityResult, RenamesStarted};
+pub use rename::{BulkRenameRow, RenameStartError, RenameTarget, RenameValidityResult, RenamesStarted};
 
 // Pre-flight: the transfer dialog's conflict check, a preview's cost facts
 // (the S3 estimate prices them), the source binding a reviewed batch supplies

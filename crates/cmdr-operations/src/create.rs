@@ -50,7 +50,10 @@ enum ArchiveEntryKind {
 /// entry at the archive root).
 async fn parent_crosses_archive_boundary(host: &EngineHost, volume_id: Option<&str>, parent_path: &str) -> bool {
     host.volumes()
-        .path_crosses_archive_boundary(volume_id.unwrap_or("root"), Path::new(parent_path))
+        .path_crosses_archive_boundary(
+            volume_id.unwrap_or("root"),
+            &crate::wire_paths::seam_path(Path::new(parent_path)),
+        )
         .await
 }
 
@@ -65,6 +68,7 @@ async fn refuse_routed_create(
     name: &str,
 ) -> Option<MutationError> {
     let new_path = Path::new(parent_path).join(name);
+    let new_path = crate::wire_paths::seam_path(&new_path);
     route_serving(host, volume_id.unwrap_or("root"), &new_path)
         .await
         .map(|_| routed_mutation_refusal(&new_path))

@@ -1,6 +1,7 @@
 //! The command edge's door: what a wire path becomes, and what it refuses.
 
 use super::*;
+use cmdr_fs::app_path;
 use cmdr_fs::app_path::{AppName, PathArithmetic};
 
 /// The app path a volume call gets for `text`, as text.
@@ -91,16 +92,27 @@ fn an_escape_range_code_point_crosses_byte_for_byte() {
     assert_eq!(checked(text), Ok(PathBuf::from(text)));
     let native = on_volume(text).expect("an app path").to_native().expect("a local path");
     assert_eq!(native.to_str(), Some(text));
+    // The write starts take the same value (`cmdr-operations`' `wire_paths.rs` pins its bytes).
+    assert_eq!(start_path(text), on_volume(text));
 }
 
 /// A refusal of the whole set: one `..` refuses every source, so nothing starts.
 #[test]
 fn a_set_with_one_dot_dot_is_refused_whole() {
-    assert!(checked_all(["/a/b", "/a/../c"]).is_err());
+    assert!(start_paths(["/a/b", "/a/../c"]).is_err());
     assert_eq!(
-        checked_all(["/a/b/", "/a/c"]),
-        Ok(vec![PathBuf::from("/a/b/"), PathBuf::from("/a/c")])
+        start_paths(["/a/b/", "/a/c"]),
+        Ok(vec![app_path!("/a/b").to_owned(), app_path!("/a/c").to_owned()]),
+        "a trailing `/` goes, so the path names what its last name says"
     );
+}
+
+/// A write start's path names a place: relative or empty text, which no row or pane sends,
+/// is refused with the `..`, ❌ never handed to the engine to anchor somewhere.
+#[test]
+fn a_start_path_that_names_no_place_is_refused() {
+    assert!(start_path("a/b").is_err());
+    assert!(start_path("").is_err());
 }
 
 fn posix_root(text: &str) -> &AppPath {
@@ -175,4 +187,34 @@ fn only_an_app_path_a_route_serves_routes_over_its_parent() {
     assert!(routes_over_its_parent(&format!("{}/inner.txt", zip.as_str())));
     assert!(!routes_over_its_parent(zip.as_str()));
     assert!(!routes_over_its_parent("relative/a.zip/inner.txt"));
+}
+
+/// The production door whole, on this host's flavor: a write start's text through
+/// `start_path`, then the engine's crossing into its bodies (`engine_path`). While escapes
+/// aren't live, a literal escape-range code point the text holds reaches the body as its own
+/// UTF-8, byte for byte, ❌ never the byte `E9` an escape of the same code point names. A
+/// trailing `/` goes, so `x/link/` names the link.
+#[test]
+fn a_start_paths_literal_escape_range_code_point_reaches_the_engine_byte_for_byte() {
+    if ESCAPES_LIVE {
+        return;
+    }
+    let root = if cfg!(windows) { "C:/" } else { "/" };
+    for (sent, body) in [
+        (
+            format!("{root}x/caf\u{10FEE9}.txt"),
+            format!("{root}x/caf\u{10FEE9}.txt"),
+        ),
+        (format!("{root}x/cafe\u{301}/"), format!("{root}x/cafe\u{301}")),
+        (format!("{root}x/link/"), format!("{root}x/link")),
+    ] {
+        let typed = start_path(&sent).expect("a start's path");
+        assert_eq!(
+            cmdr_operations::testing::engine_path_of(&typed)
+                .as_os_str()
+                .as_encoded_bytes(),
+            body.as_bytes(),
+            "{sent}"
+        );
+    }
 }

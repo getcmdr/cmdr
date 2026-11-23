@@ -509,9 +509,17 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   path; text a person or an agent types resolves first (go-to-path's typed-path resolver). A write start answers the
   generic `IoError` ("Couldn't delete the file", the path in the technical details), a volume call `VolumeError::IoError`,
   and the drag-and-drop stat an unknown kind. No new copy: it's a bug-class event.
-- **An engine start's sources are checked, then handed on as sent** (`checked`): every write start drops a trailing
-  `/` itself (`crates/cmdr-operations/src/wire_paths.rs`), so the engine sees the bytes it always did, and the start
-  still takes `PathBuf`s until 10d. Text that's no app path (relative, empty) keeps today's answer there.
+- **A write start takes app paths** (`start_path` / `start_paths`, which are `on_volume`): copy, move, delete, trash,
+  rename, rename-by-move, and compress, plus the suggested-ops approval's sources. Text that names no place (relative,
+  empty) is refused with the `..`, as no row or pane sends it. The same-`root` move's destination anchors on the boot
+  volume through the typed `anchor_at_root` (`start_destination`, after `transfer_destination` resolved a `..`).
+  The local fast path's route guard (`write_ops.rs::reject_if_routed_over_a_parent`) then crosses each path at
+  `to_native` and ❗ REFUSES one with no native spelling (a scheme path, a POSIX `/x` on Windows, a name Win32 can't
+  store), fail closed: skipping it let a Windows box's native `C:\…\a.zip/x`, anchored as one name under `C:/`, past
+  every route check (`write_ops_destination_test.rs`).
+  The engine entry points that still take `std::path` (the single trash, the trash-folder lookup, the rename
+  pre-flight, the home-folder pre-check, the scan preview) get the text as sent (`checked`, `pre_check_rows`), and
+  each drops a trailing `/` itself (`crates/cmdr-operations/src/wire_paths.rs`).
 - **A volume call takes the typed path** (`on_volume`), a POSIX `/x` on Windows read as volume-relative; text that names
   no place is refused like a `..`. `read_on_volume` is the same without the bug report, for an agent's stored text.
   The unlock commands (and the MCP `unlock` tool) read their container path through `on_volume` before the route;

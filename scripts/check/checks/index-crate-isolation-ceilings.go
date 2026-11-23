@@ -562,6 +562,12 @@ var surfaceGuardedCrates = []struct {
 		// the SAME resolver, or a share's `CON` reads fine in the field and is
 		// refused on Enter. No existing verb answers it without starting something.
 		//
+		// Raised to 91 root promises on 2026-11-23 for `RenameTarget`: `rename_managed`
+		// takes it, and its only constructor refuses a `.` or `..` new name on the
+		// sender's TEXT, before a typed reading folds `/docs/.` into `/docs` (#1229).
+		// A guard on the typed target can't fire, and an edge-only check is skipped by
+		// any caller that forgets it (the browser demo did), so the type is the guard.
+		//
 		// Raised to 90 root promises and 59 handle methods on 2026-11-05 for the
 		// home-folder guard: `home_folder_guard` and its `HomeFolderAction` let
 		// the frontend ask BEFORE a delete or move dialog or a folder's rename
@@ -596,7 +602,7 @@ var surfaceGuardedCrates = []struct {
 		Name:       "cmdr-operations",
 		HandleType: "Operations",
 		Ceilings: surfaceCeilings{
-			RootPromises:   90,
+			RootPromises:   91,
 			HandleMethods:  60,
 			PublicModules:  1,
 			SubsystemItems: 25,

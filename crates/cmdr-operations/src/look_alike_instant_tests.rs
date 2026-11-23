@@ -11,6 +11,11 @@ use std::sync::Arc;
 use super::create::{create_directory_core_on, create_file_core_on};
 use super::mutation_error::MutationError;
 use crate::testing::TestOperations;
+
+/// Canonical runtime text as the app path a start takes.
+fn canonical(text: &str) -> AppPathBuf {
+    AppPath::from_normalized(text).expect("canonical test text").to_owned()
+}
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
@@ -91,8 +96,8 @@ async fn a_rename_target_goes_out_composed() {
 
     engine
         .rename_managed(
-            "/dir/a.txt".into(),
-            format!("/dir/{CAFE_NFD}").into(),
+            app_path!("/dir/a.txt").to_owned(),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFD}"))),
             false,
             id,
             Initiator::User,
@@ -112,8 +117,8 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
 
     let refused = engine
         .rename_managed(
-            "/dir/a.txt".into(),
-            format!("/dir/{CAFE_NFC}").into(),
+            app_path!("/dir/a.txt").to_owned(),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             false,
             id.clone(),
             Initiator::User,
@@ -129,8 +134,8 @@ async fn a_rename_onto_a_look_alike_is_refused_unless_forced_and_then_replaces_i
 
     engine
         .rename_managed(
-            "/dir/a.txt".into(),
-            format!("/dir/{CAFE_NFC}").into(),
+            app_path!("/dir/a.txt").to_owned(),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             true,
             id,
             Initiator::User,
@@ -160,8 +165,8 @@ async fn respelling_a_name_is_not_a_clash_with_itself() {
 
     engine
         .rename_managed(
-            format!("/dir/{CAFE_NFD}").into(),
-            format!("/dir/{CAFE_NFC}").into(),
+            canonical(&format!("/dir/{CAFE_NFD}")),
+            crate::testing::rename_target(&canonical(&format!("/dir/{CAFE_NFC}"))),
             false,
             id,
             Initiator::User,

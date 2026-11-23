@@ -63,8 +63,8 @@ async fn copy_between_volumes_on(
 ) -> Result<WriteOperationStartResult, WriteOperationError> {
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = engine.map_err(refuse_not_installed)?;
-    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
-    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
+    // Read at the edge as app paths, like every start's rows: a `..` refuses.
+    let sources = wire_path::start_paths(source_paths.iter().map(String::as_str))?;
     // A typed `..` resolves here, where the probes resolve it, so the engine gets none.
     let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
@@ -103,8 +103,8 @@ pub async fn move_between_volumes(
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
-    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
-    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
+    // Read at the edge as app paths, like every start's rows: a `..` refuses.
+    let sources = wire_path::start_paths(source_paths.iter().map(String::as_str))?;
     let dest_path = wire_path::transfer_destination(&dest_volume_id, dest_path).await?;
     let started = engine
         .start_volume_move(
@@ -146,7 +146,7 @@ pub async fn rename_by_move(
         .start_rename_by_move(
             events,
             volume_id,
-            vec![(wire_path::checked(&source_path)?, new_name)],
+            vec![(wire_path::start_path(&source_path)?, new_name)],
             dest_path,
             config.unwrap_or_default(),
             initiator,
@@ -173,8 +173,8 @@ pub async fn compress_files(
     // Before `install` there is no engine to start on: refuse, never write.
     let engine = operations().map_err(refuse_not_installed)?;
     let events: Arc<dyn OperationEventSink> = Arc::new(TauriEventSink::new(app));
-    // Read at the edge like every start's rows: a `..` refuses, the rest goes on as sent.
-    let sources = wire_path::checked_all(source_paths.iter().map(String::as_str))?;
+    // Read at the edge as app paths, like every start's rows: a `..` refuses.
+    let sources = wire_path::start_paths(source_paths.iter().map(String::as_str))?;
     let dest_zip_path = wire_path::transfer_destination(&dest_volume_id, dest_zip_path).await?;
     let started = engine
         .start_volume_compress(

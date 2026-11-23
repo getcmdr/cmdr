@@ -9,6 +9,7 @@
 //! the fixtures with `CMDR_BLESS_GOLDEN=1 cargo nextest run -p cmdr-operations
 //! golden` only when a change is MEANT to move what an operation says.
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::path::{Path, PathBuf};
 
 use cmdr_operation_log::OperationLog;
@@ -90,8 +91,8 @@ impl World for LocalWorld<'_> {
     async fn occupy(&self, name: &str, bytes: &'static [u8]) {
         std::fs::write(self.0.local("out").join(name), bytes).expect("taken");
     }
-    fn source(&self, name: &str) -> PathBuf {
-        self.0.local(name)
+    fn source(&self, name: &str) -> AppPathBuf {
+        crate::testing::app_path_of(&self.0.local(name))
     }
     fn across(&self) -> Sides {
         self.within()

@@ -6,6 +6,10 @@
 //! returns is [`EditError`], in its own leaf so `remote` can name it too.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPath;
+#[cfg(not(target_family = "wasm"))]
+use cmdr_fs::app_path::AppPathBuf;
+use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -81,10 +85,23 @@ where
 /// re-entered, getcmdr/cmdr-reports#55), and a remote parent has no watch at all.
 /// The parsed index goes first, since the cache key can miss the change.
 async fn show_the_edit(host: &EngineHost, parent_volume_id: &str, archive_path: &Path) {
-    host.volumes().forget_archive_index(archive_path);
+    host.volumes().forget_archive_index(&archive_app_path(archive_path));
     host.listings()
         .refresh_archive_listings(parent_volume_id, archive_path)
         .await;
+}
+
+/// The edited archive as the registry names it (`OperationVolumes::forget_archive_index`):
+/// a path on the local disk as the OS spells it (Windows' `C:\…` is the app's `C:/…`, which
+/// the routed archive's id hashes from its native file), anything else (a scheme path on a
+/// remote parent, a name that isn't Unicode text) through the bridge, its text as held.
+/// A page in the browser has no disk, so there it's the bridge's text.
+fn archive_app_path(archive_path: &Path) -> Cow<'_, AppPath> {
+    #[cfg(not(target_family = "wasm"))]
+    if let Ok(app) = AppPathBuf::from_native_unicode(archive_path) {
+        return Cow::Owned(app);
+    }
+    crate::wire_paths::seam_path(archive_path)
 }
 
 /// [`run_managed_edit`]'s dispatch: the closure on the real file for a local
@@ -606,3 +623,32 @@ impl MutationHooks for MutatorHooks {
 #[cfg(test)]
 #[path = "engine_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod archive_app_path_tests {
+    use super::*;
+
+    /// A zip on the local disk reaches the registry as the OS spells it, so on
+    /// Windows its `C:\…` native path is the routed archive's `C:/…`; a scheme
+    /// path keeps its text.
+    #[test]
+    fn the_registry_reads_a_local_zip_as_the_os_spells_it() {
+        let dir = cmdr_fs::testing::TestDir::new("archive_app_path");
+        let zip = dir.join("bundle.zip");
+        let crossed = archive_app_path(&zip);
+        assert!(
+            matches!(crossed, Cow::Owned(_)),
+            "a scratch dir's zip reads as the OS spells it"
+        );
+        assert!(
+            !crossed.as_str().contains('\\'),
+            "an app path, separated by `/`: {}",
+            crossed.as_str()
+        );
+        assert!(crossed.as_str().ends_with("/bundle.zip"));
+        assert_eq!(
+            archive_app_path(Path::new("smb://nas/share/bundle.zip")).as_str(),
+            "smb://nas/share/bundle.zip"
+        );
+    }
+}

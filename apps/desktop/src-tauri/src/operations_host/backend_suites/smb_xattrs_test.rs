@@ -11,7 +11,6 @@
 //! run `cargo nextest run smb_integration --run-ignored all`. macOS only: the
 //! local half writes `com.apple.*` xattrs.
 
-use cmdr_fs::app_path::AppPath;
 use cmdr_fs::ignore_poison::IgnorePoison as _;
 use cmdr_fs::volume::XattrReadMode;
 use cmdr_operations::testing::{LostMetadata, LostMetadataClass, MetadataLeftBehind};
@@ -90,7 +89,7 @@ async fn fruit_fixture() -> (Arc<dyn Volume>, PathBuf) {
     let base = test_dir_name();
     ensure_clean(&volume, &base).await;
     volume
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .unwrap();
     (Arc::new(volume), PathBuf::from(base))
@@ -118,7 +117,7 @@ async fn smb_integration_finder_metadata_survives_local_to_share_to_local() {
         for (xattr, value) in finder_xattrs(Path::new(name)) {
             let read = remote
                 .read_xattr_many(
-                    &[AppPath::legacy_unchecked(&dir.join(name)).into_owned()],
+                    &[cmdr_operations::testing::app_path_of(&dir.join(name))],
                     xattr,
                     XattrReadMode::Verified,
                 )
@@ -183,7 +182,11 @@ async fn smb_integration_a_share_without_streams_lands_the_copy_and_names_the_ta
         }),
         "{left:?}"
     );
-    assert!(remote.exists(&AppPath::legacy_unchecked(&dir.join("tagged.txt"))).await);
+    assert!(
+        remote
+            .exists(&cmdr_operations::testing::app_path_of(&dir.join("tagged.txt")))
+            .await
+    );
 
     clean_deep(remote.as_ref(), &dir).await;
 }
@@ -231,7 +234,7 @@ async fn smb_integration_a_rollback_takes_back_tagged_copies_on_the_share() {
 
     assert_eq!(report.skipped, 0, "every item it copied is its to remove: {report:?}");
     let left: Vec<String> = remote
-        .list_directory(&AppPath::legacy_unchecked(&dir), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(&dir), None)
         .await
         .unwrap()
         .into_iter()

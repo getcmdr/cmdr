@@ -3,7 +3,6 @@
 //! The scenario is backend-blind; the cells stay per backend because the integration lane
 //! selects them by name prefix. `file_viewer/DETAILS.md` § "Media on a volume".
 
-use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -100,8 +99,10 @@ fn the_files() -> [(&'static str, Vec<u8>, ViewerContentKind, &'static str); 3] 
 fn pictures_and_a_pdf_render_through_the_volume(id: &str, remote: Arc<dyn Volume>, write_dir: &Path, view_dir: &Path) {
     get_volume_manager().register(id, Arc::clone(&remote));
     for (name, bytes, kind, mime) in the_files() {
-        tauri::async_runtime::block_on(remote.create_file(&AppPath::legacy_unchecked(&write_dir.join(name)), &bytes))
-            .expect("the fixture file");
+        tauri::async_runtime::block_on(
+            remote.create_file(&cmdr_operations::testing::app_path_of(&write_dir.join(name)), &bytes),
+        )
+        .expect("the fixture file");
         renders(id, &view_dir.join(name), &bytes, kind, mime);
     }
     get_volume_manager().unregister(id);
@@ -162,8 +163,12 @@ fn adb_pictures_and_a_pdf_render_through_the_volume() {
     ));
     for (name, bytes, kind, mime) in the_files() {
         let path = phone.dir.join(name);
-        tauri::async_runtime::block_on(phone.volume.create_file(&AppPath::legacy_unchecked(&path), &bytes))
-            .expect("the fixture file");
+        tauri::async_runtime::block_on(
+            phone
+                .volume
+                .create_file(&cmdr_operations::testing::app_path_of(&path), &bytes),
+        )
+        .expect("the fixture file");
         renders(&phone.volume_id, &path, &bytes, kind, mime);
     }
 }

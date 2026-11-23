@@ -94,6 +94,12 @@ fn fixture(tag: &str, names: &[&str]) -> Fixture {
 }
 
 /// Starts a move of every fixture source on `lane`, returning its id.
+/// A source as the start took it and reports it back: app text, `C:/…` on Windows, ❌
+/// never the OS's `C:\…` spelling.
+fn sent(path: &Path) -> String {
+    crate::testing::app_path_of(path).into_string()
+}
+
 async fn start_move(
     engine: &TestOperations,
     collector: &Arc<CollectorEventSink>,
@@ -104,8 +110,8 @@ async fn start_move(
     engine
         .move_files_start(
             events,
-            fx.sources.clone(),
-            fx.dst.to_path_buf(),
+            crate::testing::app_paths_of(fx.sources.clone()),
+            crate::testing::app_path_of(&fx.dst),
             WriteOperationConfig::default(),
             vec![],
             Some(vec![lane.clone()]),
@@ -156,7 +162,7 @@ async fn a_queued_move_whose_sources_partly_left_asks_then_moves_the_rest() {
     let asked = engine.pending_sources_gone(&op_id).expect("it is asking");
     assert_eq!(asked.next, SourcesGoneNext::AwaitingAnswer);
     assert_eq!((asked.gone_count, asked.total_count), (1, 3), "an honest count: 1 of 3");
-    assert_eq!(asked.gone_sample, vec![fx.sources[1].display().to_string()]);
+    assert_eq!(asked.gone_sample, vec![sent(&fx.sources[1])]);
     assert_eq!(
         collector.sources_gone.lock_ignore_poison().clone(),
         vec![asked],
@@ -180,7 +186,7 @@ async fn a_queued_move_whose_sources_partly_left_asks_then_moves_the_rest() {
         .source_items_done
         .lock_ignore_poison()
         .iter()
-        .find(|item| item.source_path == fx.sources[1].display().to_string())
+        .find(|item| item.source_path == sent(&fx.sources[1]))
         .cloned()
         .expect("the gone source gets its own verdict");
     assert_eq!(gone_item.outcome, SourceItemOutcome::Skipped);

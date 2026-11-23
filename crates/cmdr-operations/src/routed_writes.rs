@@ -15,9 +15,10 @@
 //! `operations_host/portal_rename_tests.rs` pin that; `FakeVolumes` routes only
 //! strictly under its prefix.
 
-use std::path::Path;
+use std::borrow::Borrow;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::volume::{RoutedKind, Volume, VolumeError};
 
 use super::host::EngineHost;
@@ -35,7 +36,7 @@ use super::types::{ReadOnlySide, WriteOperationError};
 pub(crate) async fn route_serving(
     host: &EngineHost,
     volume_id: &str,
-    path: &Path,
+    path: &AppPath,
 ) -> Option<(Arc<dyn Volume>, RoutedKind)> {
     let volumes = host.volumes();
     // Pure string gate, so an ordinary path pays nothing.
@@ -48,13 +49,16 @@ pub(crate) async fn route_serving(
 }
 
 /// The first of `paths` a route serves, as [`route_serving`] answers it.
-pub(crate) async fn first_routed<'a>(
+///
+/// A slice, ❌ not a lazy iterator: a closure held across the await makes the
+/// future not general enough for a Tauri command to hold.
+pub(crate) async fn first_routed<P: Borrow<AppPath> + Sync>(
     host: &EngineHost,
     volume_id: &str,
-    paths: impl IntoIterator<Item = &'a Path>,
+    paths: &[P],
 ) -> Option<(Arc<dyn Volume>, RoutedKind)> {
     for path in paths {
-        if let Some(found) = route_serving(host, volume_id, path).await {
+        if let Some(found) = route_serving(host, volume_id, path.borrow()).await {
             return Some(found);
         }
     }
@@ -72,8 +76,8 @@ pub(crate) fn routed_transfer_refusal(routed: &Arc<dyn Volume>, side: ReadOnlySi
 }
 
 /// The instant-op refusal for a write at `path` that a route serves.
-pub(crate) fn routed_mutation_refusal(path: &Path) -> MutationError {
+pub(crate) fn routed_mutation_refusal(path: &AppPath) -> MutationError {
     MutationError::Volume {
-        error: VolumeError::ReadOnly(path.display().to_string()),
+        error: VolumeError::ReadOnly(crate::transfer::volume::failed_path_text(path)),
     }
 }

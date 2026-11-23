@@ -3,7 +3,7 @@
 //! volumes, `src` and `dst`), shared by every host; the local engine's world is
 //! the native test's own (`golden_trace_tests.rs`).
 
-use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -39,8 +39,8 @@ pub trait World {
     fn seed(&self, dest_out: bool) -> impl Future<Output = ()>;
     /// Puts `bytes` at `out/<name>` on the destination.
     fn occupy(&self, name: &str, bytes: &'static [u8]) -> impl Future<Output = ()>;
-    /// The seeded source `name`.
-    fn source(&self, name: &str) -> PathBuf;
+    /// The seeded source `name`, as the starts take it.
+    fn source(&self, name: &str) -> AppPathBuf;
     /// A transfer to the destination volume's `out`.
     fn across(&self) -> Sides;
     /// A transfer into `out` on the source's own volume.
@@ -98,8 +98,11 @@ impl World for VolumeWorld {
             .await
             .expect("taken");
     }
-    fn source(&self, name: &str) -> PathBuf {
-        Path::new("/").join(name)
+    fn source(&self, name: &str) -> AppPathBuf {
+        AppPath::from_normalized("/")
+            .expect("the root")
+            .join(AppName::from_app_spelling(name).expect("a seeded name"))
+            .expect("a name under the root")
     }
     fn across(&self) -> Sides {
         Sides {
@@ -200,7 +203,7 @@ impl Scenario {
     }
 }
 
-fn sources(world: &impl World) -> Vec<PathBuf> {
+fn sources(world: &impl World) -> Vec<AppPathBuf> {
     ["a.txt", "b.txt", "c.txt", "docs"]
         .iter()
         .map(|name| world.source(name))
@@ -329,6 +332,11 @@ async fn delete(world: &impl World) -> Value {
     trace(world, vec![answer(&started)], &[&sink])
 }
 
+/// A typed path as a rename target, through its one door.
+fn target(path: &AppPath) -> crate::RenameTarget {
+    crate::RenameTarget::read(path.as_str(), |_| Ok(path.to_owned())).expect("a real new name")
+}
+
 async fn rename_and_mkdir(world: &impl World) -> Value {
     world.seed(false).await;
     let volume_id = world.within().from_volume;
@@ -336,7 +344,7 @@ async fn rename_and_mkdir(world: &impl World) -> Value {
     let renamed = engine
         .rename_managed(
             world.source("a.txt"),
-            world.source("renamed.txt"),
+            target(&world.source("renamed.txt")),
             false,
             volume_id.clone(),
             Initiator::User,
@@ -346,7 +354,7 @@ async fn rename_and_mkdir(world: &impl World) -> Value {
     let refused = engine
         .rename_managed(
             world.source("b.txt"),
-            world.source("c.txt"),
+            target(&world.source("c.txt")),
             false,
             volume_id.clone(),
             Initiator::User,

@@ -10,10 +10,11 @@
 //!   agent typed goes through the typed-path resolver first, so a `..` reaching a command
 //!   from a pane, a row, or a store is a sender bug: refused typed and logged as one
 //!   ([`refused`]).
-//! - **An engine start's sources** ([`checked`]) are checked here and handed on as sent:
-//!   every write start drops a trailing `/` itself (`crates/cmdr-operations/src/wire_paths.rs`),
-//!   so the bytes reach the engine as they always did. Text that's no app path (relative,
-//!   empty) keeps today's answer.
+//! - **A write start's paths** ([`start_path`]) are read here as app paths, the type the
+//!   engine's starts take; text that's no app path (relative, empty) is refused with the
+//!   `..`. The engine's pre-checks and the instant ops outside the starts (the single
+//!   trash, the rename pre-flight) still take `std::path` values ([`checked`]), handed on
+//!   as sent: each drops a trailing `/` itself (`crates/cmdr-operations/src/wire_paths.rs`).
 //! - **A person-typed destination** (the transfer dialog's box) anchors on its volume's root
 //!   ([`anchored`]), and a `..` in it is no sender bug: [`destination`] resolves it through the
 //!   typed-path resolver on the volume doing the write, so the probes, the conflict scan, and
@@ -130,8 +131,9 @@ pub(crate) fn routes_over_its_parent(text: &str) -> bool {
     matches!(app_path(text), Ok(Some(path)) if crate::file_system::volume::manager::app_path_routes_over_its_parent(&path))
 }
 
-/// An engine start's source, checked: refused for a `..`, else the text as sent (the start
-/// drops a trailing `/` itself, byte for byte, so a row's path reaches it unchanged).
+/// A path for an engine entry point that still takes `std::path` (the single trash, the
+/// trash-folder lookup, the rename pre-flight), checked: refused for a `..`, else the text as
+/// sent (the entry point drops a trailing `/` itself, byte for byte).
 pub(crate) fn checked(text: &str) -> Result<PathBuf, WirePathRefused> {
     app_path(text)?;
     Ok(PathBuf::from(text))
@@ -162,9 +164,17 @@ pub(crate) fn pre_check_rows(rows: &[String], is_local: bool) -> Vec<PathBuf> {
     rows.iter().map(as_sent).collect()
 }
 
-/// [`checked`] over a start's sources, refusing the whole set on the first `..`.
-pub(crate) fn checked_all<'a>(texts: impl IntoIterator<Item = &'a str>) -> Result<Vec<PathBuf>, WirePathRefused> {
-    texts.into_iter().map(checked).collect()
+/// A write start's path (copy, move, delete, trash, rename, compress), as the engine's
+/// starts take it: the app path [`on_volume`] reads. A trailing `/` goes, so `x/link/`
+/// names the link; a `..` is refused, as is text that names no place (relative, empty),
+/// which no row or pane sends.
+pub(crate) fn start_path(text: &str) -> Result<AppPathBuf, WirePathRefused> {
+    on_volume(text)
+}
+
+/// [`start_path`] over a start's sources, refusing the whole set on the first refusal.
+pub(crate) fn start_paths<'a>(texts: impl IntoIterator<Item = &'a str>) -> Result<Vec<AppPathBuf>, WirePathRefused> {
+    texts.into_iter().map(start_path).collect()
 }
 
 /// `text` as the app path a `Volume` method takes, normalized. A POSIX `/x` under the
@@ -203,6 +213,20 @@ pub(crate) fn anchored(root: &AppPath, text: &str) -> Option<AppPathBuf> {
         Err(_) => Cow::Borrowed(text),
     };
     anchor_at_root(root, &spelled).ok()
+}
+
+/// A write start's destination box text, already resolved ([`transfer_destination`]),
+/// anchored on the volume rooted at `root` ([`anchored`]) as the start takes it. A `..`
+/// left in it, or text on another volume, is refused as a sender bug: the resolve ran first.
+pub(crate) fn start_destination(root: &AppPath, text: &str) -> Result<AppPathBuf, WirePathRefused> {
+    anchored(root, text).ok_or_else(|| {
+        let why = if has_dot_dot_name(text) {
+            NotAnAppPath::DotName
+        } else {
+            NotAnAppPath::WrongFlavor
+        };
+        refused(text, why)
+    })
 }
 
 /// Why a destination box's text names no place on its volume ([`destination`]).

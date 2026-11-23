@@ -10,7 +10,9 @@
 //! exactly what it would have seen without an approval behind it.
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use cmdr_fs::app_path::AppPathBuf;
 use std::sync::{Arc, Mutex};
 
 use rusqlite::Connection;
@@ -33,8 +35,9 @@ pub(super) struct ProposalReportingSink {
     group_id: i64,
     /// Source path to op id, built once from the group live ops. The engine reports paths;
     /// the store keys on ids, and the mapping cannot be re-derived later because a skipped
-    /// source may no longer exist to look up.
-    op_ids: HashMap<PathBuf, i64>,
+    /// source may no longer exist to look up. Keyed by the app path a start took
+    /// ([`op_key`]), so a reported path finds its op whatever its trailing `/`.
+    op_ids: HashMap<AppPathBuf, i64>,
     /// One connection for the operation lifetime rather than one per event: a group may
     /// carry 60 000 sources, and opening a connection per source would dominate the run.
     conn: Mutex<Connection>,
@@ -52,7 +55,7 @@ impl ProposalReportingSink {
     pub(super) fn new(
         inner: Arc<dyn OperationEventSink>,
         group_id: i64,
-        op_ids: HashMap<PathBuf, i64>,
+        op_ids: HashMap<AppPathBuf, i64>,
         conn: Connection,
         memory: Option<MemoryStore>,
     ) -> Self {
@@ -70,7 +73,7 @@ impl ProposalReportingSink {
     /// A path this group never proposed is ignored: the engine reports every top-level source
     /// it was handed, and nothing stops a caller running a group beside sources of its own.
     fn record(&self, source_path: &str, outcome: OpStatus) {
-        let Some(op_id) = self.op_ids.get(&PathBuf::from(source_path)) else {
+        let Some(op_id) = op_key(source_path).and_then(|key| self.op_ids.get(&key)) else {
             return;
         };
         let conn = self.conn.lock_ignore_poison();
@@ -84,6 +87,13 @@ impl ProposalReportingSink {
             );
         }
     }
+}
+
+/// The op map's key for a path's text: a stored op's source, or the path the engine reports
+/// for it (its text exit of the path the start took). `None` for text that's no app path,
+/// which no op holds.
+pub(super) fn op_key(text: &str) -> Option<AppPathBuf> {
+    crate::commands::wire_path::read_on_volume(text).ok()
 }
 
 /// The store vocabulary for what the engine reported.

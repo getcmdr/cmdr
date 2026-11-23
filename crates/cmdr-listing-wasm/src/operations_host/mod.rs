@@ -46,6 +46,8 @@ pub struct DemoOperations {
     volumes: Arc<volumes::DemoVolumes>,
     sink: Arc<dyn EventSink>,
     log_db: PathBuf,
+    /// The visitor's home folder, which a sent `~` names (the desktop's `expand_tilde`).
+    home: Option<String>,
 }
 
 impl DemoOperations {
@@ -96,6 +98,7 @@ impl DemoOperations {
             .name_order(Arc::new(PaneNameOrder {
                 listings: listings.clone(),
             }));
+        let home_text = home.as_ref().and_then(|home| home.to_str()).map(str::to_owned);
         if let Some(home) = home {
             builder = builder.home_folder(home);
         }
@@ -110,6 +113,7 @@ impl DemoOperations {
             volumes: registry,
             sink,
             log_db,
+            home: home_text,
         }
     }
 

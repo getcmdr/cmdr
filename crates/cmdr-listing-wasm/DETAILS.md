@@ -406,10 +406,11 @@ from the computer. Nothing leaves the page.
 The demo's one volume is POSIX on every host (its keys are `/`-separated app text), and a browser has no OS, so nothing
 here crosses at `to_native`.
 
-- **Text in**: a path arg or a `FileEntry.path` becomes an app path through `invoke.rs`'s `demo_path`, which parses as
-  POSIX even where the native tests run on Windows (`from_wire` reads only drives there). It normalizes as `Path`'s own
-  compare read the text (`//`, `.`, a trailing `/`), and refuses relative text and a `..` name, which the bridge rooted
-  at `/` or climbed by text: such a question finds nothing (pinned by `operations_host/commands_test.rs`'
+- **Text in**: a path arg, a write start's sources and destination (`operations_host/commands/mod.rs`' `wire_path`), or
+  a `FileEntry.path` becomes an app path through `invoke.rs`'s `demo_path`, which parses as POSIX even where the native
+  tests run on Windows (`from_wire` reads only drives there). It normalizes as `Path`'s own compare read the text (`//`,
+  `.`, a trailing `/`), and refuses relative text and a `..` name, which the bridge rooted at `/` or climbed by text:
+  such a question finds nothing (pinned by `operations_host/commands_test.rs`'
   `the_path_questions_find_nothing_at_text_that_names_no_app_path`). No pane spells either.
 - **Into the store's own helpers** (`import_folder`, `import_file`): `imports.rs`' `on_store`, the app text as the
   `std::path` key the store takes.

@@ -237,8 +237,8 @@ async fn a_same_fs_move_announces_both_ends_before_the_rename() {
     rig.engine
         .move_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![rig.join("src/a.txt")],
-            rig.join("dst"),
+            vec![crate::testing::app_path_of(&rig.join("src/a.txt"))],
+            crate::testing::app_path_of(&rig.join("dst")),
             WriteOperationConfig::default(),
             vec![],
             None,
@@ -293,7 +293,7 @@ async fn a_delete_announces_each_file_then_its_folder_while_they_still_exist() {
     rig.engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![rig.join("src/folder")],
+            vec![crate::testing::app_path_of(&rig.join("src/folder"))],
             WriteOperationConfig::default(),
             None,
             Initiator::User,
@@ -338,8 +338,8 @@ async fn a_rename_announces_both_ends_before_the_syscall() {
 
     rig.engine
         .rename_managed(
-            rig.join("src/a.txt"),
-            rig.join("src/b.txt"),
+            crate::testing::app_path_of(&rig.join("src/a.txt")),
+            crate::testing::rename_target(&crate::testing::app_path_of(&rig.join("src/b.txt"))),
             false,
             "root".to_string(),
             Initiator::User,

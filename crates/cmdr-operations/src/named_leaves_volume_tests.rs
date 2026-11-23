@@ -227,11 +227,29 @@ impl Rig {
         let dest = self.dest_dir.display().to_string();
         if self.route.moves() {
             self.engine
-                .start_volume_move(events, from, sources, to, dest, config, Initiator::User, None)
+                .start_volume_move(
+                    events,
+                    from,
+                    crate::testing::app_paths_of(sources),
+                    to,
+                    dest,
+                    config,
+                    Initiator::User,
+                    None,
+                )
                 .await
         } else {
             self.engine
-                .start_volume_copy(events, from, sources, to, dest, config, Initiator::User, None)
+                .start_volume_copy(
+                    events,
+                    from,
+                    crate::testing::app_paths_of(sources),
+                    to,
+                    dest,
+                    config,
+                    Initiator::User,
+                    None,
+                )
                 .await
         }
     }

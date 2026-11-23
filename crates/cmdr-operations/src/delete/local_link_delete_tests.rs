@@ -50,7 +50,7 @@ async fn delete_permanently(sources: Vec<PathBuf>) -> Vec<String> {
     engine
         .delete_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            sources,
+            crate::testing::app_paths_of(sources),
             WriteOperationConfig::default(),
             None,
             Initiator::User,

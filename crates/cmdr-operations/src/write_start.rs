@@ -4,9 +4,9 @@
 //! host with no local disk (the browser demo, where `local_start.rs` isn't
 //! compiled) takes the volume path every time. Each is an [`Operations`] method.
 
-use std::path::PathBuf;
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::LaneKey;
 use cmdr_operation_log::types::Initiator;
@@ -19,7 +19,7 @@ use super::types::{
     HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationConfig, WriteOperationError,
     WriteOperationStartResult,
 };
-use super::wire_paths::{named_as_given, owned_without_trailing_separators};
+use super::wire_paths::{engine_path, engine_paths};
 use super::{OperationEventSink, Operations, transfer_sides};
 
 impl Operations {
@@ -36,8 +36,8 @@ impl Operations {
     pub async fn move_files_start(
         &self,
         events: Arc<dyn OperationEventSink>,
-        sources: Vec<PathBuf>,
-        destination: PathBuf,
+        sources: Vec<AppPathBuf>,
+        destination: AppPathBuf,
         config: WriteOperationConfig,
         volume_ids: Vec<String>,
         lanes: Option<Vec<LaneKey>>,
@@ -45,16 +45,16 @@ impl Operations {
         expected_sources: Option<ExpectedSources>,
         sides: Option<transfer_sides::TransferSides>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let sources = named_as_given(sources);
-        let destination = owned_without_trailing_separators(destination);
         let root = cmdr_fs::volume::DEFAULT_VOLUME_ID;
-        // Never the person's own home folder, nor a folder holding it (`home_folder.rs`).
-        if let Some(refusal) = self.home_folder_guard(root, &sources, HomeFolderAction::Move) {
-            return Err(refusal);
-        }
         #[cfg(not(target_family = "wasm"))]
         if self.host().volumes().local_disk(root).is_some() {
+            // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
+            let sources = engine_paths(&sources);
+            let destination = engine_path(&destination);
+            // Never the person's own home folder, nor a folder holding it (`home_folder.rs`).
+            if let Some(refusal) = self.home_folder_guard(root, &sources, HomeFolderAction::Move) {
+                return Err(refusal);
+            }
             validate_transfer_leaves(&config.leaves, &sources, &destination, LeafIdentity::NamesAndInodes)?;
             return self
                 .local_move_start(
@@ -71,14 +71,15 @@ impl Operations {
                 .await;
         }
         // A host with no local disk (the browser demo) has no `std::fs` engine to
-        // run this on: its `root` is a volume, so the move is a volume move.
+        // run this on: its `root` is a volume, so the move is a volume move, which
+        // runs the home-folder guard itself.
         let _ = (volume_ids, lanes, sides);
         self.start_volume_move(
             events,
             root.into(),
             sources,
             root.into(),
-            destination.display().to_string(),
+            engine_path(&destination).display().to_string(),
             VolumeCopyConfig::from(&config),
             initiator,
             expected_sources,
@@ -96,14 +97,15 @@ impl Operations {
     pub async fn delete_files_start(
         &self,
         events: Arc<dyn OperationEventSink>,
-        sources: Vec<PathBuf>,
+        sources: Vec<AppPathBuf>,
         config: WriteOperationConfig,
         volume_id: Option<String>,
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        let typed_sources = sources;
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let sources = named_as_given(sources);
+        let sources = engine_paths(&typed_sources);
         let volume_id_str = volume_id.unwrap_or_else(|| "root".to_string());
 
         log::info!(
@@ -124,7 +126,7 @@ impl Operations {
         // Parent-aware detection (not the `std::fs`-only sync predicate) so a delete
         // inside a REMOTE zip (direct SMB / MTP) also reaches the driver instead of
         // falling through to a confusing parent-volume delete.
-        let first_is_archive_inner = match sources.first() {
+        let first_is_archive_inner = match typed_sources.first() {
             Some(s) => self.host().volumes().path_is_inside_archive(&volume_id_str, s).await,
             None => false,
         };
@@ -143,8 +145,7 @@ impl Operations {
         // Anything else a route serves (a repo's `.git/<category>/` trees, or an in-zip
         // path behind a first source that isn't one) is read-only, and the drive
         // underneath would delete a real entry (`routed_writes.rs`).
-        if let Some((routed, _)) = first_routed(self.host(), &volume_id_str, sources.iter().map(PathBuf::as_path)).await
-        {
+        if let Some((routed, _)) = first_routed(self.host(), &volume_id_str, &typed_sources).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Source));
         }
 
@@ -172,14 +173,15 @@ impl Operations {
     pub async fn trash_files_start(
         &self,
         events: Arc<dyn OperationEventSink>,
-        sources: Vec<PathBuf>,
+        sources: Vec<AppPathBuf>,
         item_sizes: Option<Vec<u64>>,
         config: WriteOperationConfig,
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        let typed_sources = sources;
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let sources = named_as_given(sources);
+        let sources = engine_paths(&typed_sources);
         log::info!(
             "trash_files_start: sources={:?}",
             sources.iter().map(LogPrivate::path).collect::<Vec<_>>()
@@ -208,13 +210,7 @@ impl Operations {
         }
 
         // A routed path is read-only, as for delete (`routed_writes.rs`).
-        if let Some((routed, _)) = first_routed(
-            self.host(),
-            cmdr_fs::volume::DEFAULT_VOLUME_ID,
-            sources.iter().map(PathBuf::as_path),
-        )
-        .await
-        {
+        if let Some((routed, _)) = first_routed(self.host(), cmdr_fs::volume::DEFAULT_VOLUME_ID, &typed_sources).await {
             return Err(routed_transfer_refusal(&routed, ReadOnlySide::Source));
         }
 

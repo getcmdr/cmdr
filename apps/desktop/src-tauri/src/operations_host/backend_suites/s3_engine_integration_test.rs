@@ -9,7 +9,6 @@
 //! runs the same bodies against real accounts. Multipart cells cut 5 MiB parts
 //! (`S3Volume::set_part_floor`), so a few megabytes make several parts.
 
-use cmdr_fs::app_path::AppPath;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -117,7 +116,9 @@ pub(super) async fn a_cancel_mid_multipart_leaves_no_object_and_no_upload(target
     );
     assert!(!running.events.cancelled.lock_ignore_poison().is_empty());
     assert!(
-        !volume.exists(&AppPath::legacy_unchecked(&dir.join("big.bin"))).await,
+        !volume
+            .exists(&cmdr_operations::testing::app_path_of(&dir.join("big.bin")))
+            .await,
         "a cancelled multipart upload publishes nothing"
     );
     // The cancel answers once its first abort is sent; the confirming rounds run after it,
@@ -406,7 +407,7 @@ pub(super) async fn a_folder_of_1005_objects_deletes(target: &S3Target) {
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("folder")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("folder"))],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,
@@ -444,7 +445,7 @@ pub(super) async fn a_folder_of_1005_objects_deletes(target: &S3Target) {
 
     assert!(matches!(
         volume
-            .list_directory(&AppPath::legacy_unchecked(&dir.join("folder")), None)
+            .list_directory(&cmdr_operations::testing::app_path_of(&dir.join("folder")), None)
             .await,
         Err(VolumeError::NotFound(_))
     ));
@@ -561,7 +562,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     // Destinations the person already has, as the dialogs' are.
     for folder in ["", "copied", "moved", "files"] {
         volume
-            .create_directory_all(&AppPath::legacy_unchecked(&dir.join(folder)))
+            .create_directory_all(&cmdr_operations::testing::app_path_of(&dir.join(folder)))
             .await
             .expect("making a destination folder");
     }
@@ -631,7 +632,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_volume_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![dir.join("copied/batch")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("copied/batch"))],
             volume_id.clone(),
             dir.join("moved").display().to_string(),
             VolumeCopyConfig::default(),
@@ -652,7 +653,10 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_rename_by_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![(dir.join("moved/batch"), "renamed".to_string())],
+            vec![(
+                cmdr_operations::testing::app_path_of(&dir.join("moved/batch")),
+                "renamed".to_string(),
+            )],
             dir.join("moved").display().to_string(),
             VolumeCopyConfig::default(),
             Initiator::User,
@@ -680,7 +684,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
         .start_volume_move(
             events.clone() as Arc<dyn OperationEventSink>,
             volume_id.clone(),
-            vec![dir.join("moved/renamed")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("moved/renamed"))],
             off_id,
             off_dir.display().to_string(),
             VolumeCopyConfig::default(),
@@ -700,7 +704,7 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("batch")],
+            vec![cmdr_operations::testing::app_path_of(&dir.join("batch"))],
             WriteOperationConfig::default(),
             Some(volume_id.clone()),
             Initiator::User,
@@ -748,7 +752,10 @@ pub(super) async fn requests_sent_against_the_estimate(target: &S3Target) -> Vec
     app_engine()
         .delete_files_start(
             events.clone() as Arc<dyn OperationEventSink>,
-            vec![dir.join("files/t0.bin"), dir.join("files/t1.bin")],
+            vec![
+                cmdr_operations::testing::app_path_of(&dir.join("files/t0.bin")),
+                cmdr_operations::testing::app_path_of(&dir.join("files/t1.bin")),
+            ],
             WriteOperationConfig::default(),
             Some(volume_id),
             Initiator::User,

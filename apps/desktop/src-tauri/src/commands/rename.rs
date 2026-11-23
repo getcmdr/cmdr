@@ -215,12 +215,17 @@ pub(crate) async fn rename_file_replying(
     let engine = operations().map_err(refuse_instant_not_installed)?;
     let volume_id_str = volume_id.unwrap_or_else(|| crate::volumes::local_volume_id_for_path(&from));
 
-    let (from_path, to_path) = if volume_id_str != "root" {
+    let (from, to) = if volume_id_str != "root" {
         // Non-local volume paths are volume-relative; never tilde-expand them.
-        (PathBuf::from(&from), PathBuf::from(&to))
+        (from, to)
     } else {
-        (PathBuf::from(expand_tilde(&from)), PathBuf::from(expand_tilde(&to)))
+        (expand_tilde(&from), expand_tilde(&to))
     };
+    // Read at the edge as app paths, like every start's: a `..` refuses. The target goes
+    // through `RenameTarget::read`, which refuses a new name of `.` or `..` in the rules'
+    // own words before the reading could fold it away (#1229).
+    let from_path = crate::commands::wire_path::start_path(&from)?;
+    let to_path = cmdr_operations::RenameTarget::read(&to, |text| Ok(crate::commands::wire_path::start_path(text)?))?;
 
     // Detached: the deadline bounds the FE's wait, not the rename. On MTP the
     // rename is a PTP `SetObjectPropValue`, and dropping it mid-transaction

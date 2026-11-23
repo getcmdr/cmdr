@@ -28,8 +28,9 @@ The full text of each, with its why: DETAILS § "Must-knows, in full".
   `AlreadyResolved`, `StaleAnswer`, or `NoPendingConflict`.
 - **Crossing types takes a person's consent, per SHAPE** (`conflict::resolution_for_clash`); ❌ never reduce a
   conditional before it.
-- **A new public mutating start runs its paths through `wire_paths`** first: `x/link/` resolves THROUGH the link, so
-  without it a delete empties the target.
+- **A public mutating start takes `AppPathBuf`s and crosses them once, through `wire_paths::engine_path`** (a seam
+  caller holding a `std::path` value crosses back through `seam_path`, ❌ never a bare `legacy_unchecked`): it trims a
+  trailing `/` too, as `x/link/` resolves THROUGH the link, so without it a delete empties the target.
 - **Emit through `OperationEventSink`**; `write-settled` fires once, AFTER the terminal event.
 - **EVERY local write lands via `overwrite::stage_and_land_file`**, its destination announced (`host::Announced`). ❌
   Only a `temp` leftover goes on sight.

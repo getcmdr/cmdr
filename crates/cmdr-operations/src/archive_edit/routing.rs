@@ -90,11 +90,10 @@ pub async fn archive_inner_exists(
         } else {
             archive_path.join(inner_path)
         };
+        let full_path = AppPath::legacy_unchecked(&full_path);
         let resolved = host.volumes().resolve(parent_volume_id, &full_path).await;
         return match resolved.volume {
-            Some(volume) if resolved.routed == Some(RoutedKind::Archive) => {
-                volume.exists(&AppPath::legacy_unchecked(&full_path)).await
-            }
+            Some(volume) if resolved.routed == Some(RoutedKind::Archive) => volume.exists(&full_path).await,
             _ => false,
         };
     }

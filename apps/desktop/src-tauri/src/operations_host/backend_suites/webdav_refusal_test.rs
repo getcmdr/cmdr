@@ -18,7 +18,6 @@
 //! unread (a quota checked against `Content-Length`, which is what Nextcloud
 //! does).
 
-use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -124,7 +123,9 @@ async fn assert_the_album_is_whole(remote: &Arc<dyn Volume>, dir: &Path, files: 
         "❗ the user's file in the folder the copy merged into must survive the refusal"
     );
     assert!(
-        !remote.exists(&AppPath::legacy_unchecked(&album.join(refused))).await,
+        !remote
+            .exists(&cmdr_operations::testing::app_path_of(&album.join(refused)))
+            .await,
         "❗ the file the server had no room for must not appear at its name"
     );
     for (name, bytes) in files.iter().filter(|(name, _)| *name != refused) {

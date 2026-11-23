@@ -9,7 +9,7 @@
 //! index (`listing_host::directory_changed` → `Index::apply_directory_change`).
 //! A recording host would pass every cell here without proving that hop.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -174,7 +174,7 @@ async fn a_cmdr_copy_onto_a_phone_and_a_delete_on_it_patch_its_index() {
     let running = start_copy_by_id(
         "copy-onto-an-indexed-phone",
         local.volume_id.clone(),
-        vec![PathBuf::from("uploaded.bin")],
+        vec![local.dir.join("uploaded.bin")],
         phone.volume_id.clone(),
         scratch.clone(),
         VolumeCopyConfig::default(),

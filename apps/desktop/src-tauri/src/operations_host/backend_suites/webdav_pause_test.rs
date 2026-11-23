@@ -7,7 +7,6 @@
 //! `Timeout`, a minute each). `webdav-fixture-impatient` drops one after 3 s,
 //! so a pause outlasts it in seconds (GitHub #358).
 
-use cmdr_fs::app_path::AppPath;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -128,7 +127,9 @@ async fn webdav_integration_a_cancel_after_the_server_cut_off_a_paused_upload_le
         "a cancel while paused is reported as the cancel it is, never a failed transfer"
     );
     assert!(
-        !remote.exists(&AppPath::legacy_unchecked(&dir.join("big.bin"))).await,
+        !remote
+            .exists(&cmdr_operations::testing::app_path_of(&dir.join("big.bin")))
+            .await,
         "nothing lands at the user's name"
     );
     assert_no_staging_litter(remote.as_ref(), &dir, "a cancel after a pause the server outlasted").await;

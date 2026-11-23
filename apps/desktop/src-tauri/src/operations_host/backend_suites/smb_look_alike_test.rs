@@ -124,8 +124,8 @@ async fn smb_integration_a_case_only_rename_asks_nothing_and_lands() {
 
     app_engine()
         .rename_managed(
-            dir.join("c.txt"),
-            dir.join("C.txt"),
+            cmdr_operations::testing::app_path_of(&dir.join("c.txt")),
+            cmdr_operations::testing::rename_target(&cmdr_operations::testing::app_path_of(&dir.join("C.txt"))),
             false,
             registered.id.clone(),
             Initiator::User,

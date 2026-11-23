@@ -35,7 +35,6 @@ use super::network_semantics_test_support::{
 };
 use super::smb_test_support::*;
 use crate::operations_host::app_engine;
-use cmdr_fs::app_path::AppPath;
 use cmdr_operations::testing::new_operation_state;
 use cmdr_smb::volume::*;
 use std::sync::atomic::AtomicUsize;
@@ -170,11 +169,13 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
 
     // The destination subfolder exists already, as `test_photos/…` did.
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .unwrap();
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&format!("{base}/photos"))))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&format!(
+            "{base}/photos"
+        ))))
         .await
         .unwrap();
 
@@ -216,7 +217,7 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
     // The file is on the share, under the subfolder the dialog named, and the
     // move took the source with it.
     let mut stream = dest_vol
-        .open_read_stream(&AppPath::legacy_unchecked(Path::new(&format!(
+        .open_read_stream(&cmdr_operations::testing::app_path_of(Path::new(&format!(
             "{base}/photos/clip.mp4"
         ))))
         .await
@@ -267,7 +268,7 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
     let base = test_dir_name();
     ensure_clean(&smb_vol, &base).await;
     smb_vol
-        .create_directory(&AppPath::legacy_unchecked(Path::new(&base)))
+        .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)))
         .await
         .unwrap();
 
@@ -329,7 +330,7 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
         async move {
             loop {
                 if let Ok(entries) = vol
-                    .list_directory(&AppPath::legacy_unchecked(Path::new(&dest)), None)
+                    .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&dest)), None)
                     .await
                 {
                     landed.store(entries.len(), Ordering::Relaxed);
@@ -374,14 +375,14 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
     // Every file landed, whole and correct. A dropped session mid-copy would
     // leave the tail missing or truncated.
     let entries = smb_vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&base)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&base)), None)
         .await
         .unwrap();
     assert_eq!(entries.len(), FILE_COUNT, "every file must have landed");
     for i in [0usize, FILE_COUNT / 2, FILE_COUNT - 1] {
         let path = format!("{base}/file-{i:03}.bin");
         let mut stream = dest_vol
-            .open_read_stream(&AppPath::legacy_unchecked(Path::new(&path)))
+            .open_read_stream(&cmdr_operations::testing::app_path_of(Path::new(&path)))
             .await
             .unwrap();
         let mut out = Vec::new();

@@ -446,7 +446,7 @@ async fn timed_copy(corpus: &Corpus, dest: &Arc<dyn Volume>, dir: &str, window: 
     );
 
     if dest_mode == DestMode::Existing {
-        dest.create_directory(&AppPath::legacy_unchecked(Path::new(dir)))
+        dest.create_directory(&cmdr_operations::testing::app_path_of(Path::new(dir)))
             .await
             .expect("create the destination directory");
     }
@@ -519,7 +519,7 @@ async fn timed_copy(corpus: &Corpus, dest: &Arc<dyn Volume>, dir: &str, window: 
         None => dir.to_owned(),
     };
     let landed = dest
-        .list_directory(&AppPath::legacy_unchecked(Path::new(&landing)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(&landing)), None)
         .await
         .expect("list the destination");
     let leftovers: Vec<&str> = landed
@@ -568,7 +568,7 @@ async fn empty_directory(vol: &Arc<dyn Volume>, dir: &str) {
         "refusing to clean {dir:?}: outside the bench scratch root"
     );
     if let Ok(entries) = vol
-        .list_directory(&AppPath::legacy_unchecked(Path::new(dir)), None)
+        .list_directory(&cmdr_operations::testing::app_path_of(Path::new(dir)), None)
         .await
     {
         for entry in entries {
@@ -576,11 +576,13 @@ async fn empty_directory(vol: &Arc<dyn Volume>, dir: &str) {
             if entry.is_directory {
                 Box::pin(empty_directory(vol, &child)).await;
             } else {
-                let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(&child))).await;
+                let _ = vol
+                    .delete(&cmdr_operations::testing::app_path_of(Path::new(&child)))
+                    .await;
             }
         }
     }
-    let _ = vol.delete(&AppPath::legacy_unchecked(Path::new(dir))).await;
+    let _ = vol.delete(&cmdr_operations::testing::app_path_of(Path::new(dir))).await;
 }
 
 /// Which server the sweep runs against, and where on it the scratch lives.
@@ -645,7 +647,7 @@ async fn connect_target() -> Target {
             // The scratch root is created once and left in place; only the
             // per-rep directories under it come and go.
             let _ = volume
-                .create_directory_all(&AppPath::legacy_unchecked(Path::new(NAS_BENCH_ROOT)))
+                .create_directory_all(&cmdr_operations::testing::app_path_of(Path::new(NAS_BENCH_ROOT)))
                 .await;
             Target {
                 label: format!("QNAP TS-464 (\"Testnas\", {host}/{share}, direct smb2)"),
@@ -685,7 +687,9 @@ async fn serial_precheck_floor(dest: &Arc<dyn Volume>, dir: &str, files: usize) 
         // aren't there, and a miss is the cheap answer. If anything, this
         // UNDERSTATES the floor.
         let probe = format!("{dir}/precheck-probe-{index:05}.missing");
-        let _ = dest.get_metadata(&AppPath::legacy_unchecked(Path::new(&probe))).await;
+        let _ = dest
+            .get_metadata(&cmdr_operations::testing::app_path_of(Path::new(&probe)))
+            .await;
     }
     started.elapsed()
 }
@@ -834,7 +838,7 @@ async fn concurrency_bench_sweep_window_against_wall_clock() {
         };
         target
             .volume
-            .create_directory(&AppPath::legacy_unchecked(Path::new(&probe_dir)))
+            .create_directory(&cmdr_operations::testing::app_path_of(Path::new(&probe_dir)))
             .await
             .expect("create the pre-check probe directory");
         let floor = serial_precheck_floor(&target.volume, &probe_dir, corpus.file_names.len()).await;

@@ -630,7 +630,7 @@ async fn a_trash_frees_its_preview_instead_of_waiting_on_it() {
     let start = engine
         .trash_files_start(
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
-            vec![never_created],
+            vec![crate::testing::app_path_of(&never_created)],
             None,
             WriteOperationConfig {
                 preview_id: Some(preview_id.clone()),

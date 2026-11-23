@@ -178,9 +178,12 @@ pub(crate) fn release_drop(drop_id: &str) -> bool {
     FOLDERS.lock_ignore_poison().release(drop_id)
 }
 
-/// [`DropFolders::claim`] on the process-wide registry.
-pub(crate) fn claim_for_operation(operation_id: &str, source_paths: &[PathBuf]) -> bool {
-    FOLDERS.lock_ignore_poison().claim(operation_id, source_paths)
+/// [`DropFolders::claim`] on the process-wide registry, for a write start's sources. A drop
+/// folder is on this disk, so each source crosses to the OS's spelling; one with no native
+/// form (a phone's, a share's) is in no drop folder.
+pub(crate) fn claim_for_operation(operation_id: &str, source_paths: &[cmdr_fs::app_path::AppPathBuf]) -> bool {
+    let natives: Vec<PathBuf> = source_paths.iter().filter_map(|path| path.to_native().ok()).collect();
+    FOLDERS.lock_ignore_poison().claim(operation_id, &natives)
 }
 
 /// [`DropFolders::release_for_operation`] on the process-wide registry.

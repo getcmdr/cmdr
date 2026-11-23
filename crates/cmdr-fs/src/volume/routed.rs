@@ -8,7 +8,6 @@
 
 use super::Volume;
 use crate::app_path::{AppPath, AppPathBuf};
-use std::path::Path;
 use std::sync::Arc;
 
 /// Which route swapped the volume in, when one did.
@@ -102,15 +101,6 @@ impl ResolvedVolume {
             routed: None,
             unconfirmed: None,
         }
-    }
-
-    /// [`passthrough_at`](Self::passthrough_at) for a host seam that still hands
-    /// a `std::path` value (the write engine's and the browser build's
-    /// `OperationVolumes`, the listing engine's test doubles): the path crosses
-    /// through the bridge, byte for byte. Goes when those seams take app paths
-    /// (milestone 10d).
-    pub fn passthrough(volume: Option<Arc<dyn Volume>>, path: &Path) -> Self {
-        Self::passthrough_at(volume, &AppPath::legacy_unchecked(path))
     }
 
     /// A passthrough over a path where the `kind` route couldn't decide: reads

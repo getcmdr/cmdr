@@ -4,7 +4,6 @@
 //! engine for every operation. Mirrors the desktop's `operations_host/volumes.rs`,
 //! minus the routes: the demo has no archive edits and no git portal.
 
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use cmdr_fs::app_path::AppPath;
@@ -57,19 +56,19 @@ impl VolumeLookup for DemoVolumes {
 }
 
 impl OperationVolumes for DemoVolumes {
-    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a Path) -> VolumeAnswer<'a, ResolvedVolume> {
-        Box::pin(async move { ResolvedVolume::passthrough(self.get(volume_id), path) })
+    fn resolve<'a>(&'a self, volume_id: &'a str, path: &'a AppPath) -> VolumeAnswer<'a, ResolvedVolume> {
+        Box::pin(async move { ResolvedVolume::passthrough_at(self.get(volume_id), path) })
     }
 
-    fn routes_over_its_parent(&self, _path: &Path) -> bool {
+    fn routes_over_its_parent(&self, _path: &AppPath) -> bool {
         false
     }
 
-    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_is_inside_archive<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
 
-    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a Path) -> VolumeAnswer<'a, bool> {
+    fn path_crosses_archive_boundary<'a>(&'a self, _volume_id: &'a str, _path: &'a AppPath) -> VolumeAnswer<'a, bool> {
         Box::pin(async { false })
     }
 
@@ -81,7 +80,7 @@ impl OperationVolumes for DemoVolumes {
             .map(|(id, volume)| (id.clone(), Arc::clone(volume)))
     }
 
-    fn forget_archive_index(&self, _archive_path: &Path) {}
+    fn forget_archive_index(&self, _archive_path: &AppPath) {}
 
     fn on_volume_arrival(&self, listener: ArrivalListener) {
         self.arrival_listeners.lock_ignore_poison().push(listener);

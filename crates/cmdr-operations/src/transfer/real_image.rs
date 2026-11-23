@@ -744,7 +744,10 @@ async fn undoing_a_move_onto_another_drive_puts_every_item_back() {
         .start_volume_move(
             Arc::clone(&events) as Arc<dyn crate::event_sinks::OperationEventSink>,
             "root".to_string(),
-            vec![report.clone(), folder.clone()],
+            vec![
+                crate::testing::app_path_of(&report),
+                crate::testing::app_path_of(&folder),
+            ],
             "vol-image".to_string(),
             dest.display().to_string(),
             VolumeCopyConfig::default(),

@@ -1871,6 +1871,50 @@ included; the hidden couplings it found are why waves B and C differ from round 
   take `PathBuf`; typing the seam alone adds a crossing at each of its ~10 engine callers, so it goes with the starts.
   Then the backend suites, `suggested_ops/bridge/`, and the WebDAV/NFS `scratch_dir` twins (10d), and the `ListingHost`
   std-path seam that #1373 left (its oracle callers here hold `PathBuf`s).
+- **Sixth pass done** (2026-11-22, branch `worktree-agent-acb193f2529f392cf`): the starts and the seam, with 10d's first
+  item. One agent.
+  - **The starts take app paths**: `move_files_start`, `delete_files_start`, `trash_files_start`, `start_volume_copy`,
+    `start_volume_move`, `start_rename_by_move`, `start_volume_compress`, `rename_managed`, and `resolve_source_volume`.
+    Each asks its route gates with the typed values, then crosses once into the bodies through `wire_paths::engine_path`
+    (the bridge plus the trailing-`/` trim). A seam caller holding a value a body made (a ledger row, a create's parent,
+    an anchored destination) crosses back through `wire_paths::seam_path`, the module's other named helper: 14
+    production call sites (and three test cells), the crossings that turn typed as those bodies do.
+  - **`OperationVolumes` is typed** (`resolve`, `routes_over_its_parent`, `path_is_inside_archive`,
+    `path_crosses_archive_boundary`, `forget_archive_index`). Gone: the app's `engine_path`,
+    `ResolvedVolume::passthrough`, and the registry's `engine_archive_volume_id` (the engine names an edited zip as the
+    OS spells it, `archive_edit/engine.rs::archive_app_path`).
+  - **The app's edge**: `wire_path::start_path` / `start_paths` / `start_destination`; the suggested-ops decorator keys
+    by app path (`op_key`). `BulkRenameRow` stays `PathBuf` (the app and `cmdr-multi-rename` build it), so
+    `start_renames` crosses its rows through `seam_path`; as do the scan preview and the home-folder pre-check, which
+    keep `std::path` inputs.
+  - **Behavior changes** (input no pane or row sends): a write start's relative or empty path refuses at the edge as the
+    generic I/O failure; `//` and `/./` fold; `rename_file` refuses a `..` at the edge (a new name of `.` or `..` keeps
+    `NameNotAllowed { DotName }`); the same-`root` move's destination refuses a `..` left after its resolve; on Windows
+    a volume-relative POSIX source holding a literal escape-range code point refuses at the edge.
+  - **Suites**: the engine's and the app's cells hand the starts typed paths (`cmdr_operations::testing::app_path_of`,
+    native or app text; `app_path!` for literals). A volume-relative path (a share suite's `cmdr-test-…/a.txt`) has no
+    app path without its volume's root, so `app_path_of` passes it on as a bridge value through `seam_path`, its bytes
+    as held; cells pinning a shape no typed door makes (a trailing `/`, a `..`, a relative source) say so with a bridge
+    value. The backend suites' concrete cells moved to `app_path_of`; their shared `*_test_support.rs` helpers stay on
+    the bridge, as their callers hand them volume-relative paths too.
+- **Left after the sixth pass**: the suites' support helpers and the WebDAV/NFS `fixture()` (each hands out the
+  `scratch_dir` twin's `PathBuf` to every cell of its backend, so the twins go with typing those helpers); the
+  `ListingHost` seam (its `directory_changed` callers include `cmdr-local`'s watcher, another effort's crate this
+  round); `BulkRenameRow`.
+- **The sixth pass's Windows cells** (2026-11-23, branch `worktree-agent-a21960add7ac0dc90`, which carries the sixth
+  pass to `main`): its 25 newly failing Windows cells, each read for a cause.
+  - **Three real Windows bugs**: a local write reported each finished source re-joined (`C:/x/dir\old.iso`), so the
+    suggested-ops review never marked a deleted file's op done (`scan_source_tracker::top_level_source_path` now slices
+    the file's own path). A rename-as-move into a zip on a POSIX volume went in unrefused, as `start_rename_by_move`
+    built its targets with `Path::join` (`/repo/a.zip\top.txt`, one name the route gate couldn't place); it joins typed
+    now (`ListedFolder`). And the local fast path's route guard (`write_ops.rs::reject_if_routed_over_a_parent`) SKIPPED
+    a path with no native spelling, so a mangled destination (the box's native `C:\…\a.zip/x` anchored as one name under
+    `C:/`) crossed no route check; it refuses now, fail closed.
+  - **The demo** reads its write paths POSIX on every host (`invoke::demo_path`), as its listing commands did.
+  - **Cells**: the suggested-ops bridge fixtures store app text (as the drive index hands the agent a path), and the
+    engine's already-gone and queued-sources cells expect a source reported back as sent (`C:/…`).
+  - **Left**: the four items above. `seam_path` still crosses at 14 production sites the meter doesn't count (it's a
+    named helper over `legacy_unchecked`, counted once in `wire_paths.rs`).
 
 ### 10b. `cmdr-index`
 
@@ -2325,6 +2369,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     Issue #1351's `/C:\…` journal rows weren't reproduced off Windows: the journal's `local_split` stores whatever the
     engine's `PathBuf` holds, and the reader (`escape_mark.rs::app_path_as`) already reads a drive row's `\`; the fix is
     the engine journaling typed ends, with the starts.
+- **Fourth step done** (2026-11-22, with 10a's sixth pass, same branch): `operations_host/volumes.rs::engine_path`, the
+  write commands' `PathBuf` sources, and `suggested_ops/bridge/`'s `PathBuf`-keyed op map are gone; the backend suites'
+  concrete cells are typed. What's left and why: 10a § "Left after the sixth pass".
 
 ### 10f. The escape lands
 
@@ -2394,6 +2441,954 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `file_viewer/materialize_test.rs` (three), `search/live/tests.rs`, and `search/live/walked_tests.rs`. The review on
   #1379 moved Open with, Services, a local drag's file URLs, the inspect tool's plain read, and a favorite's icon off
   these and the mount door onto `app_text::native`, and `open_mock` records text with no crossing at all.
+- **If `ESCAPES_LIVE` went on and then back off** (answered 2026-11-23, from the code): the switch is one-way in
+  practice; ❌ never ship an off build after an on build without first making every store below carry its own mark.
+  - **The operation log**: the first live open stamps `escape_mark_last_literal_op_id` once
+    (`crates/cmdr-operation-log/src/store/escape_mark.rs`), and an off build never stamps or clears it. So every op an
+    OFF build writes after the mark reads `Live`. A row naming a file literally called with an escape-range code point
+    (valid UTF-8, rare) then decodes to a DIFFERENT name: the N7 hazard the mark exists for. Rollback re-verifies each
+    item against its snapshot and skips drift or a gone original, so a delete or overwrite can't hit the wrong file, but
+    a put-back (trash, move) whose target is free restores under the decoded name. The rows written WHILE live read
+    right in the off build (the mark says `Live`, and `to_native` decodes escapes whatever `ESCAPES_LIVE` says). The fix
+    if a round trip is ever needed: the mark becomes a list of op-id intervals (stamped at each switch), still no
+    migration of row shapes.
+  - **Recents, settings, favorites, tabs, and the frontend's stores** carry no mark: their text reads through
+    `app_text::parse` / `from_wire`, which follow the CURRENT build's `ESCAPES_LIVE`. An entry saved live (a Go to path
+    history row for `caf\xE9`, spelled with a live escape) reads in an off build as literal text, so it names a folder
+    literally called `caf` + U+10FEE9: it opens nothing (`NotFound`), or, if such a folder exists, the wrong one. Saved
+    off and read live is the mirror image. None of these stores feeds a write without a person's click on what it
+    resolved to, so the failure is a wrong or missing place shown, ❌ never a silent write.
+  - **The agent's proposal store and the drive index**: proposals refuse escape-range destinations at creation while off
+    (`agent/store/proposals/mod.rs::typed_place`), so a live row read off refuses as `TargetMissing`; the index's stored
+    text (`crates/cmdr-index/src/indexing/paths/app_text.rs`) keeps today's lossy spelling until 10f decides it.
+- **The per-site list that gates 10f** (2026-11-23, this branch on top of `main` at `5b1c2b99ea`): every site the
+  `app-path-std-bridge` tripwire counts, by the check's own regexes over its scanner roots (`apps/` and `crates/`, minus
+  `examples/`, `build.rs`, and `crates/cmdr-fs/src/app_path/`). The budgets hold `appTextToPath` 42 and
+  `pathFromBareText` 272: 314 sites, 57 of them in the app (1 + 56). Each line names the site, its budget, its class,
+  and whether it's a HAZARD (app text that can carry a live escape and reaches the OS or a volume as `std::path` bytes,
+  so it opens a file literally named with the escape), then why it's still there, what removes it, and whether it needs
+  an exemption.
+  - **Classes**: 178 `test-fixture` (a cell or suite helper hands literal or app text to a `PathBuf`-taking helper; no
+    hazard with ASCII literals, but the gate counts them), 45 `name-arith` (`extension`, `file_stem`, `parent`, a
+    compare; nothing opened), 43 `engine-body` (production code keyed by `PathBuf`), 28 `native` (env vars, xattr keys,
+    a DB or log file, mount tables, `hdiutil` output: not app text), 12 `demo` (`cmdr-listing-wasm` calling an engine
+    API still keyed by `PathBuf`; no OS in a browser), 8 `pin` (`std::path` pins that go at milestone 11).
+  - **The 37 HAZARD sites are 10f's real blockers**, all `engine-body`: in the app `tags_io.rs:98`,
+    `native_drag/fulfillment.rs:338`, `tools/sensitive.rs:184`; in `cmdr-fs` `volume/server_side.rs:102`; in
+    `cmdr-local` `platform/local_posix/scan.rs:57`; 24 in `cmdr-operations` (the create, rename-validity, and
+    conflict-preflight entry points still take text, the zip-routing `dest_path`, and the walkers that turn a listed
+    `FileEntry.path` into a `PathBuf` child: `scan_walker`, `scan_oracle`, `delete/volume_scan`, `hidden_links`,
+    `transfer/volume/{merge,rename_merge,source_sweep,cleanup}`, plus `leaf_validation`, `target_names`, and
+    `transfer_leaves` holding a new name as `OsStr`); and 8 in `cmdr-index` (stored frontier, branch, and rescan text
+    handed to a walk, a stat, or the OS watcher). A walker's `legacy_unchecked(Path::new(&entry.path))` round trip isn't
+    the identity once escapes are live: it re-escapes the escape as literal text, so the volume gets a mangled name.
+  - **❗ The list is REGEX-SCOPED, so it undercounts the hazards.** The tripwire only sees an identifier named
+    `path`/`name`/`dir`/`root` (or `*_path`…) or a `.path`/`.name` field on one line, so
+    `PathBuf::from(&op.source_path)` and `Path::new(&expanded)` pass it. A sweep of every production `Path::new` /
+    `PathBuf::from` / `OsStr::new` / `OsString::from` on a variable (2026-11-23, 173 sites off the list, read one by
+    one; most are native: mount tables, env, CLI args, settings naming a binary, server roots) adds 27 hazards, plus 12
+    `seam_path` crossings:
+    - **Off the list, app or stored text reaching the OS or a volume** (27):
+      `agent/suggested_ops/bridge/mod.rs:146, 475, 482, 505` (the approval's sources, rename rows, and leaf keys);
+      `commands/agent/bulk_rename.rs:202, 203` (the reviewed rename's rows); `commands/wire_path.rs:139` (`checked`: the
+      single trash and the rename pre-flight); `app_text.rs:78` (`as_std_path_text`, whose engines answer the OS on some
+      seams, listed above); `commands/file_viewer.rs:116`; `clipboard/platform/macos.rs:98` (a paste's target);
+      `priority/roots.rs:444` (a favorite's text as an index priority root); `services_menu/selection.rs:179` and
+      `quick_look/platform/macos.rs:40, 73` (OS exits); `tools/actions/mod.rs:417` (an agent path's `exists`);
+      `listing_index_sizes/count/measure.rs:87`; in `cmdr-operations` `routing.rs:61` (`resolve_dest_path`: ❗ every
+      volume transfer's destination, a real blocker), `create.rs:500`, and `types/transfer_leaves.rs:108`; in `cmdr-fs`
+      `archive_format.rs:228` (the archive boundary split) and `twin_path.rs:150, 160` (an MTP twin's join); in
+      `cmdr-viewer` `session.rs:293`; in `cmdr-index` `paths/app_text.rs:89` (the door the 8 above route through),
+      `lifecycle/phases/stitch.rs:94`, and `watch/event_loop/live.rs:140`.
+    - **The 14 `seam_path` crossings** (a named helper over `legacy_unchecked`, counted once in `wire_paths.rs`):
+      `in_flight_sweep.rs:287, 404`, `create.rs:55, 71`, `archive_edit/engine.rs:104`, `create_numbered.rs:44`,
+      `conflict_preflight.rs:142, 186`, `rename/bulk/by_move.rs:84, 85, 214`, `routing.rs:686, 753`, and
+      `routing/destination.rs:41`. A `std::path` value the engine made from a typed path round-trips losslessly on macOS
+      and Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point
+      as text and `seam_path` re-escapes it as literal: a mangled name. 12 are new here (`create.rs:55` and
+      `routing.rs:753` are on the list).
+    - **Corrected hazard count: 76** (37 on the list, 27 off it, 12 `seam_path`). The demo's off-list sites
+      (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no hazard. A regex can't
+      make this list complete; the type-level gate (§ "Keeping it that way") is what can.
+  - **27 sites need an exemption**, and the check has no directive for one today: env vars (`cmdr-adb`, the `cmdr-index`
+    benches, the SFTP fixture's key dir), xattr key names (`cmdr-archive`, `cmdr-smb`, `cmdr-fs` caps tests), the SQLite
+    and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
+    and the local trash's native records. Each either moves behind a named native door the scanner doesn't match (as the
+    app's `src/native_text.rs` did) or takes an `allowed-…` directive, which is a check change and David's call.
+  - **The list** (line numbers at this branch's commit; the meter re-derives them, so re-run the check's regexes after
+    any edit):
+    - `apps/desktop/src-tauri/src/agent/store/migrations.rs`
+      - :568 pathFromBareText, name-arith, no hazard: migration groups proposal_ops.source_path by std::path parent
+        (stored path text's parent compared as text, nothing opened). Goes with: AppPath::parent on the stored text
+        (parse the row as AppPathBuf). No exemption.
+    - `apps/desktop/src-tauri/src/file_system/tags_io.rs`
+      - :98 pathFromBareText, engine-body, HAZARD: IPC Vec<String> paths go Path::new then legacy_unchecked (re-escapes)
+        into volume tag calls. Goes with: typing the tags IPC params as AppPathBuf via from_wire at the command edge. No
+        exemption.
+    - `apps/desktop/src-tauri/src/listing_host/backends.rs`
+      - :134 pathFromBareText, test-fixture, no hazard: AppListings::authoritative_listing takes &Path (literal ASCII
+        test path). Goes with: typing authoritative_listing to take &AppPath. No exemption.
+      - :163 pathFromBareText, test-fixture, no hazard: AppListings::authoritative_listing takes &Path (literal ASCII
+        test path). Goes with: typing authoritative_listing to take &AppPath. No exemption.
+      - :293 pathFromBareText, test-fixture, no hazard: AppListings::refresh_archive_listings takes &PathBuf root
+        (literal ASCII test path). Goes with: typing refresh_archive_listings to take &AppPath. No exemption.
+    - `apps/desktop/src-tauri/src/native_drag/fulfillment.rs`
+      - :338 appTextToPath, engine-body, HAZARD: volume-listed entry.name becomes ChildName, joined under native
+        dest_path, written via std::fs. Goes with: AppName join for the source, native door (to_native) for the Finder
+        dest. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/adb_index_test.rs`
+      - :442 pathFromBareText, test-fixture, no hazard: IndexHost::apply_directory_change takes &Path parent (literal
+        ASCII test path). Goes with: typing apply_directory_change's parent as &AppPath. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/copy_concurrency_bench.rs`
+      - :392 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (bench-generated ASCII names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+      - :449 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (bench-generated ASCII names).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :482 pathFromBareText, test-fixture, no hazard: copy_volumes_with_progress dest takes &Path (bench-generated
+        ASCII names). Goes with: typing copy_volumes_with_progress's dest as &AppPath. No exemption.
+      - :571 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (bench-generated ASCII names).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :585 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (bench-generated ASCII names).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :841 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (bench-generated ASCII names).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_archive_test_support.rs`
+      - :338 pathFromBareText, test-fixture, no hazard: testing::compress_start sources are Vec<PathBuf> (literal ASCII
+        test paths). Goes with: typing compress_start's sources as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_dates_test_support.rs`
+      - :291 pathFromBareText, test-fixture, no hazard: test helper listed_date takes &Path (literal ASCII test name).
+        Goes with: typing listed_date to take &AppPath. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_gated_source_test_support.rs`
+      - :250 pathFromBareText, test-fixture, no hazard: PathBuf for parent arithmetic and the served-map key (literal
+        ASCII test paths). Goes with: AppPathBuf parent and keying served by AppPathBuf. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_safety_test_support.rs`
+      - :574 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (literal ASCII test paths).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_semantics_test_support.rs`
+      - :757 pathFromBareText, test-fixture, no hazard: AppPath::legacy_unchecked bridge takes &Path (literal ASCII test
+        name). Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :762 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (literal ASCII test name). Goes
+        with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/network_transfer_test_support.rs`
+      - :725 pathFromBareText, test-fixture, no hazard: start_copy sources are Vec<PathBuf> (literal ASCII test names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/rename_merge_mtp_tests.rs`
+      - :64 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (literal ASCII test path). Goes
+        with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/s3_transfer_integration_test.rs`
+      - :78 pathFromBareText, test-fixture, no hazard: test helper read_all takes &Path (literal ASCII test name). Goes
+        with: typing read_all to take &AppPath. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_flags_test.rs`
+      - :102 pathFromBareText, test-fixture, no hazard: run_copy sources are Vec<PathBuf> (literal ASCII test names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+      - :244 pathFromBareText, test-fixture, no hazard: run_copy sources are Vec<PathBuf> (literal ASCII test names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_full_concurrency_test.rs`
+      - :233 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :262 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (generated ASCII test name).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+      - :459 pathFromBareText, test-fixture, no hazard: test helper hash_volume_file takes &Path (generated ASCII test
+        path). Goes with: typing hash_volume_file to take &AppPath. No exemption.
+      - :518 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (generated ASCII test name).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_outage_test.rs`
+      - :947 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (literal ASCII test path). Goes
+        with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_soak_test.rs`
+      - :244 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :255 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :260 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (generated ASCII test path).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_stream_write_integration_test.rs`
+      - :33 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :58 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :84 pathFromBareText, test-fixture, no hazard: test helper hash_volume_file takes &Path (generated ASCII test
+        path). Goes with: typing hash_volume_file to take &AppPath. No exemption.
+      - :108 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :124 pathFromBareText, test-fixture, no hazard: StagingTemp::mint takes &Path (literal test names, no
+        escape-range code points). Goes with: typing StagingTemp::mint to take &AppPath. No exemption.
+      - :141 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (literal test names, no
+        escape-range code points). Goes with: building the AppPathBuf straight from the text (from_wire/parse). No
+        exemption.
+      - :148 pathFromBareText, test-fixture, no hazard: test helper hash_volume_file takes &Path (literal test names, no
+        escape-range code points). Goes with: typing hash_volume_file to take &AppPath. No exemption.
+      - :154 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :181 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :194 pathFromBareText, test-fixture, no hazard: StagingTemp::mint takes &Path (literal Greek test name, no
+        escape-range code points). Goes with: typing StagingTemp::mint to take &AppPath. No exemption.
+      - :212 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (literal Greek test name, no
+        escape-range code points). Goes with: building the AppPathBuf straight from the text (from_wire/parse). No
+        exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_stress_test.rs`
+      - :71 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :87 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+      - :92 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (generated ASCII test path).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_transfer_semantics_test.rs`
+      - :283 pathFromBareText, test-fixture, no hazard: copy source list is Vec<PathBuf> (generated ASCII test name).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+      - :385 pathFromBareText, test-fixture, no hazard: testing::app_path_of takes &Path (generated ASCII test path).
+        Goes with: building the AppPathBuf straight from the text (from_wire/parse). No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/smb_xattrs_test.rs`
+      - :109 pathFromBareText, test-fixture, no hazard: run_copy sources are Vec<PathBuf> (literal ASCII test names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+      - :117 pathFromBareText, test-fixture, no hazard: test helper finder_xattrs takes &Path (literal ASCII test
+        names). Goes with: typing finder_xattrs to take &str or &AppName. No exemption.
+      - :143 pathFromBareText, test-fixture, no hazard: test helper finder_xattrs takes &Path (literal ASCII test
+        names). Goes with: typing finder_xattrs to take &str or &AppName. No exemption.
+      - :214 pathFromBareText, test-fixture, no hazard: run_copy sources are Vec<PathBuf> (literal ASCII test names).
+        Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/backend_suites/webdav_wire_cost_test.rs`
+      - :53 pathFromBareText, test-fixture, no hazard: webdav transfer helper sources are &[PathBuf] (literal ASCII test
+        paths). Goes with: typing the copy engine's source list as Vec<AppPathBuf>. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/copy_snapshot_out_tests.rs`
+      - :338 pathFromBareText, test-fixture, no hazard: WriteOperationError::SourcesSpanVolumes path String compared to
+        a PathBuf (compare only, in a test). Goes with: typing SourcesSpanVolumes.path as AppPathBuf and comparing
+        AppPaths. No exemption.
+    - `apps/desktop/src-tauri/src/operations_host/restic_guard_tests.rs`
+      - :342 pathFromBareText, test-fixture, no hazard: WriteOperationError::SourcesSpanVolumes path String compared to
+        a PathBuf (compare only, in a test). Goes with: typing SourcesSpanVolumes.path as AppPathBuf and comparing
+        AppPaths. No exemption.
+    - `apps/desktop/src-tauri/src/tools/sensitive.rs`
+      - :181 pathFromBareText, name-arith, no hazard: gate_on takes the tool's path as &str, asks std::path::is_absolute
+        (is_absolute is a text check, nothing opened). Goes with: typing gate_on's path as &AppPath (AppPath
+        absoluteness). No exemption.
+      - :184 pathFromBareText, engine-body, HAZARD: tool path text goes to resolve_existing (std::fs::canonicalize); an
+        escape misses the realpath check. Goes with: the native door: to_native on a typed AppPath before
+        resolve_existing. No exemption.
+    - `crates/cmdr-adb/src/server.rs`
+      - :244 pathFromBareText, native, no hazard: ADB env var arrives as OsString (env var, OS text). Goes with:
+        nothing: OsString into PathBuf is the native door. Exemption: yes, env var is native OS text.
+    - `crates/cmdr-adb/src/server/binary_search.rs`
+      - :101 pathFromBareText, native, no hazard: ANDROID_HOME-style env dirs arrive as OsString (env var, OS text).
+        Goes with: nothing: OsString into PathBuf is the native door. Exemption: yes, env var is native OS text.
+      - :130 pathFromBareText, native, no hazard: DirBase::Root search candidate is a native literal path (static
+        search-table literal, native). Goes with: nothing: compile-time native literal. Exemption: yes, hardcoded native
+        binary location.
+    - `crates/cmdr-archive/src/apple_double.rs`
+      - :206 pathFromBareText, native, no hazard: Xattr.name is OsString (xattr keys are OS names) (xattr key name, not
+        a path). Goes with: nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-archive/src/apple_double_test.rs`
+      - :22 pathFromBareText, native, no hazard: Xattr.name is OsString (xattr key literal in a test). Goes with:
+        nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-archive/src/read/apple_double_index_test.rs`
+      - :44 pathFromBareText, native, no hazard: Xattr.name is OsString (xattr key literal in a test). Goes with:
+        nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-archive/src/read/tar.rs`
+      - :194 pathFromBareText, native, no hazard: Xattr.name is OsString (xattr key from a tar PAX record, not a path).
+        Goes with: nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-fs/src/apple_double_test.rs`
+      - :8 pathFromBareText, name-arith, no hazard: is_sidecar_name takes &OsStr (native walk names) (literal test
+        names, prefix check only). Goes with: an AppName twin of is_sidecar_name, or exempt the test. No exemption.
+    - `crates/cmdr-fs/src/cloud_provider.rs`
+      - :224 pathFromBareText, test-fixture, no hazard: cloud_provider::locate takes &Path (literal ASCII test path).
+        Goes with: typing locate to take &AppPath. No exemption.
+    - `crates/cmdr-fs/src/entry.rs`
+      - :94 pathFromBareText, name-arith, no hazard: special_folders::icon_id_for_path takes &Path (compared to
+        special-folder paths, nothing opened). Goes with: typing icon_id_for_path to take &AppPath. No exemption.
+      - :103 pathFromBareText, name-arith, no hazard: Path::extension on the entry name (extension text only). Goes
+        with: AppName extension helper. No exemption.
+    - `crates/cmdr-fs/src/mac_only_files.rs`
+      - :44 pathFromBareText, name-arith, no hazard: is_mac_only_file_name takes &OsStr (`._`/.DS_Store byte compare,
+        nothing opened). Goes with: an AppName/&str twin of is_mac_only_file_name. No exemption.
+    - `crates/cmdr-fs/src/mac_only_files_test.rs`
+      - :8 pathFromBareText, name-arith, no hazard: is_mac_only_file_name takes &OsStr (literal test names). Goes with:
+        an AppName/&str twin of is_mac_only_file_name. No exemption.
+      - :23 pathFromBareText, name-arith, no hazard: is_mac_only_file_name takes &OsStr (literal test names). Goes with:
+        an AppName/&str twin of is_mac_only_file_name. No exemption.
+    - `crates/cmdr-fs/src/metadata/caps_tests.rs`
+      - :60 pathFromBareText, native, no hazard: Xattr.name is OsString (xattr key literal in a test). Goes with:
+        nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-fs/src/sqlite_util.rs`
+      - :543 pathFromBareText, native, no hazard: database_files appends -wal/-shm to an OsString (DB file path built
+        from a native Path). Goes with: nothing: native DB file path. Exemption: yes, native DB file path arithmetic.
+    - `crates/cmdr-fs/src/testing/disk_images/facts.rs`
+      - :609 pathFromBareText, native, no hazard: AttachedImage.image_path is a native PathBuf (recorded hdiutil image
+        path, native). Goes with: nothing: hdiutil output is native. Exemption: yes, hdiutil image path is native OS
+        text.
+      - :616 pathFromBareText, native, no hazard: SystemEntity.mount_point is a native PathBuf (recorded hdiutil mount
+        point, native). Goes with: nothing: hdiutil output is native. Exemption: yes, hdiutil mount point is native OS
+        text.
+    - `crates/cmdr-fs/src/volume/conformance/listed_dates.rs`
+      - :37 appTextToPath, test-fixture, no hazard: entry.path goes Path::new then legacy_unchecked into get_metadata
+        (conformance support; an escaped name would fail the test, not touch user data). Goes with: typed FileEntry.path
+        (AppPathBuf) passed straight to get_metadata. No exemption.
+    - `crates/cmdr-fs/src/volume/conformance/modification_date.rs`
+      - :150 appTextToPath, test-fixture, no hazard: entry.name compared to Path::file_name OsStr (compare only in
+        conformance support). Goes with: typing the fixture dest as AppPath and comparing AppNames. No exemption.
+    - `crates/cmdr-fs/src/volume/friendly_error/tests.rs`
+      - :613 pathFromBareText, test-fixture, no hazard: listing_error_from_volume_error takes &Path (literal scheme test
+        path). Goes with: typing listing_error_from_volume_error to take &AppPath. No exemption.
+      - :644 pathFromBareText, test-fixture, no hazard: listing_error_from_volume_error takes &Path (literal scheme test
+        path). Goes with: typing listing_error_from_volume_error to take &AppPath. No exemption.
+      - :922 pathFromBareText, test-fixture, no hazard: listing_error_from_volume_error takes &Path (literal test path).
+        Goes with: typing listing_error_from_volume_error to take &AppPath. No exemption.
+    - `crates/cmdr-fs/src/volume/in_memory.rs`
+      - :806 appTextToPath, engine-body, no hazard: InMemoryVolume entries map is keyed by PathBuf (in-memory map, never
+        reaches an OS). Goes with: keying InMemoryVolume entries by AppPathBuf. No exemption.
+    - `crates/cmdr-fs/src/volume/in_memory/device_tests.rs`
+      - :44 pathFromBareText, test-fixture, no hazard: InMemoryVolume entries map is keyed by PathBuf (literal ASCII
+        test path). Goes with: keying InMemoryVolume entries by AppPathBuf. No exemption.
+    - `crates/cmdr-fs/src/volume/in_memory/imports_test.rs`
+      - :23 pathFromBareText, test-fixture, no hazard: AppPath::legacy_unchecked bridge takes &Path (literal ASCII test
+        path). Goes with: building the AppPathBuf straight from the text (parse). No exemption.
+      - :29 pathFromBareText, test-fixture, no hazard: AppPath::legacy_unchecked bridge takes &Path (literal ASCII test
+        path). Goes with: building the AppPathBuf straight from the text (parse). No exemption.
+    - `crates/cmdr-fs/src/volume/in_memory/subtree_totals_test.rs`
+      - :41 pathFromBareText, test-fixture, no hazard: InMemoryVolume::subtree_totals takes &[PathBuf] (literal ASCII
+        test path). Goes with: typing subtree_totals to take &[AppPathBuf]. No exemption.
+    - `crates/cmdr-fs/src/volume/in_memory_test.rs`
+      - :802 pathFromBareText, test-fixture, no hazard: AppPath::legacy_unchecked bridge takes &Path (generated ASCII
+        test path). Goes with: building the AppPathBuf straight from the text (parse). No exemption.
+      - :851 pathFromBareText, test-fixture, no hazard: AppPath::legacy_unchecked bridge takes &Path (generated ASCII
+        test path). Goes with: building the AppPathBuf straight from the text (parse). No exemption.
+      - :1009 pathFromBareText, test-fixture, no hazard: InMemoryVolume::canonicalize takes &Path (literal ASCII test
+        path). Goes with: typing canonicalize to take &AppPath. No exemption.
+    - `crates/cmdr-fs/src/volume/path_helper_pin_test.rs`
+      - :20 pathFromBareText, pin, no hazard: root_anchored takes &Path (pin test of root_anchored's std::path
+        behavior). Goes with: goes with the bridge (milestone 11). No exemption.
+      - :84 pathFromBareText, pin, no hazard: RemoteRoot::new takes &Path (pin test of RemoteRoot's std::path behavior).
+        Goes with: goes with the bridge (milestone 11). No exemption.
+      - :92 pathFromBareText, pin, no hazard: RemoteRoot::to_remote_path takes &Path (pin test of RemoteRoot's std::path
+        behavior). Goes with: goes with the bridge (milestone 11). No exemption.
+      - :231 pathFromBareText, pin, no hazard: ChildName::under takes &Path (pin test of ChildName::under (Path::join)).
+        Goes with: goes with the bridge (milestone 11). No exemption.
+      - :287 pathFromBareText, pin, no hazard: InMemoryVolume::canonicalize takes &Path (pin test of canonicalize's
+        std::path behavior). Goes with: goes with the bridge (milestone 11). No exemption.
+    - `crates/cmdr-fs/src/volume/path_order_pin_test.rs`
+      - :23 pathFromBareText, pin, no hazard: pins BTreeSet<PathBuf> component-wise order (pin test of PathBuf
+        ordering). Goes with: goes with the bridge (milestone 11). No exemption.
+      - :48 pathFromBareText, pin, no hazard: pins PathBuf spelling-equality (pin test of PathBuf equality). Goes with:
+        goes with the bridge (milestone 11). No exemption.
+      - :54 pathFromBareText, pin, no hazard: pins PathBuf spelling-equality (pin test of PathBuf equality). Goes with:
+        goes with the bridge (milestone 11). No exemption.
+    - `crates/cmdr-fs/src/volume/remote_paths_test.rs`
+      - :9 pathFromBareText, test-fixture, no hazard: RemoteRoot::new takes &Path (literal ASCII test path). Goes with:
+        typing RemoteRoot::new to take &AppPath. No exemption.
+    - `crates/cmdr-fs/src/volume/root_anchored_path_test.rs`
+      - :8 pathFromBareText, test-fixture, no hazard: root_anchored takes &Path (literal ASCII test path). Goes with:
+        typing root_anchored to take &AppPath. No exemption.
+    - `crates/cmdr-fs/src/volume/server_side.rs`
+      - :102 appTextToPath, engine-body, HAZARD: server-side walk queues child.path as PathBuf, legacy_unchecked
+        re-escapes it for list_directory. Goes with: typing the walk's pending queue as AppPathBuf (child.path typed).
+        No exemption.
+    - `crates/cmdr-git/src/volume_tests.rs`
+      - :487 appTextToPath, test-fixture, no hazard: portal row paths collected as Vec<PathBuf> for an engine call (git
+        portal test paths, no escapes). Goes with: typing the called API's paths as AppPathBuf. No exemption.
+    - `crates/cmdr-index/src/importance/classify.rs`
+      - :80 pathFromBareText, name-arith, no hazard: file_name only; text out, nothing opened; leaf_name text helper via
+        std::path::Path::file_name. Goes with: split on last `/` (AppPath/`AppName` or path_prefix helper). No
+        exemption.
+    - `crates/cmdr-index/src/importance/scheduler/recompute_tests.rs`
+      - :195 pathFromBareText, name-arith, no hazard: test fixture text parent; nothing opened; test mkdir closure
+        derives parent via Path::parent. Goes with: path_prefix::compute_parent_path or AppPath::parent. No exemption.
+      - :202 pathFromBareText, name-arith, no hazard: test fixture text file_name; nothing opened; test mkdir closure
+        derives row name via Path::file_name. Goes with: AppPath::file_name or a shared test row helper. No exemption.
+    - `crates/cmdr-index/src/importance/scheduler/test_support.rs`
+      - :157 pathFromBareText, name-arith, no hazard: test helper text parent; nothing opened; ensure_dir derives parent
+        via Path::parent. Goes with: path_prefix::compute_parent_path or AppPath::parent. No exemption.
+      - :164 pathFromBareText, name-arith, no hazard: test helper text file_name; nothing opened; ensure_dir derives row
+        name via Path::file_name. Goes with: AppPath::file_name. No exemption.
+      - :183 appTextToPath, name-arith, no hazard: fake home entry text parent; nothing opened; FileEntry.path parent
+        via Path::parent in synthetic index builder. Goes with: typed FileEntry.path (AppPath::parent), 10f type gate.
+        No exemption.
+    - `crates/cmdr-index/src/importance/scheduler/walk.rs`
+      - :539 pathFromBareText, name-arith, no hazard: extension only; escape never a `.`, nothing opened;
+        lowercased_extension_into uses Path::extension on a row name. Goes with: str rsplit_once('.') extension helper
+        on the name. No exemption.
+    - `crates/cmdr-index/src/importance/scorer/types.rs`
+      - :304 pathFromBareText, name-arith, no hazard: extension only; test/tooling, nothing opened; extension_count uses
+        Path::extension on file names. Goes with: shared str extension helper. No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/cover/cold_drive_tests/moves.rs`
+      - :230 pathFromBareText, test-fixture, no hazard: test compare of branch text against old root; nothing opened;
+        Path::starts_with compares branch_paths text to a PathBuf root. Goes with: path_prefix::is_at_or_under on text.
+        No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/cover/mod.rs`
+      - :512 pathFromBareText, engine-body, HAZARD: stored frontier text opened by local cover walk; cover walk
+        (ensure_walkable, local walker) takes &Path root. Goes with: route through app_text::local_path, made
+        escape-decoding (to_native) at 10f. No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/manager/branch_watch.rs`
+      - :206 pathFromBareText, engine-body, HAZARD: branch text becomes OS watch paths; BranchWatchStart.paths:
+        Vec<PathBuf> for DriveWatcher start. Goes with: map via app_text::local_path (escape-aware) or typed branch
+        paths. No exemption.
+      - :237 pathFromBareText, name-arith, no hazard: compare against started PathBufs only; `paths` is Vec<PathBuf>,
+        compared to branch text. Goes with: compare text keys, or retype paths with branch_watch.rs:206. No exemption.
+      - :238 pathFromBareText, engine-body, HAZARD: branch text handed to inotify/FSEvents;
+        DriveWatcher::watch_branch(&Path). Goes with: app_text::local_path (escape-aware) at the watcher seam. No
+        exemption.
+      - :321 pathFromBareText, engine-body, HAZARD: covered branch text handed to OS watcher;
+        DriveWatcher::watch_branch(&Path). Goes with: app_text::local_path (escape-aware) at the watcher seam. No
+        exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/manager/start.rs`
+      - :450 pathFromBareText, native, no hazard: env var CMDR_E2E_START_PATH is native text; DriveWatcher::start(&Path)
+        watcher root from env. Goes with: std::env::var_os into PathBuf (a named env door). Exemption: yes, env var is
+        native OS text; no app text involved.
+    - `crates/cmdr-index/src/indexing/lifecycle/partial_agg.rs`
+      - :101 pathFromBareText, test-fixture, no hazard: test literal paths, nothing opened; OpenListing.path is PathBuf.
+        Goes with: OpenListing.path becomes AppPathBuf. No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/phased_bench.rs`
+      - :323 pathFromBareText, native, no hazard: env var CMDR_PHASE_BENCH_ROOTS, native; macOS test bench;
+        priority_roots() returns Vec<PathBuf> walked natively. Goes with: split_paths(var_os) via a named env door.
+        Exemption: yes, env var is native OS text in an ignored bench.
+      - :576 pathFromBareText, test-fixture, no hazard: ignored macOS-only bench, not shipped (would mis-walk an escaped
+        name); cover_frontier_root(&Path) over index frontier text. Goes with: app_text::local_path (escape-aware), same
+        door as cover/mod.rs:512. No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/phases/tests.rs`
+      - :208 pathFromBareText, native, no hazard: env var CMDR_PHASES_TEST_TREE_DIR, native; tree_parent() PathBuf for
+        tempdir_in. Goes with: var_os via a named env door. Exemption: yes, env var is native OS text.
+    - `crates/cmdr-index/src/indexing/lifecycle/phases/tests/home_bench.rs`
+      - :23 pathFromBareText, native, no hazard: env var CMDR_PHASE_HOME, native; ignored bench; home root PathBuf for a
+        native walk. Goes with: var_os via a named env door. Exemption: yes, env var is native OS text.
+    - `crates/cmdr-index/src/indexing/lifecycle/phases/tests/interleaving.rs`
+      - :574 pathFromBareText, test-fixture, no hazard: ASCII tempdir fixture tree in a test; note_open_listing takes
+        PathBuf (OpenListing.path). Goes with: OpenListing.path becomes AppPathBuf; AppPath parent/join. No exemption.
+    - `crates/cmdr-index/src/indexing/lifecycle/phases/visits.rs`
+      - :78 pathFromBareText, test-fixture, no hazard: test literal paths, nothing opened; OpenListing.path is PathBuf.
+        Goes with: OpenListing.path becomes AppPathBuf. No exemption.
+    - `crates/cmdr-index/src/indexing/network_scanner/cover_scan.rs`
+      - :341 appTextToPath, engine-body, no hazard: share row text in a PathBuf; cmdr-search reads it as text, never
+        opens it; pub CoveredEntry.path: PathBuf read by cmdr-search. Goes with: CoveredEntry.path becomes AppPathBuf
+        (left for 10c). No exemption.
+    - `crates/cmdr-index/src/indexing/read/coverage/tests.rs`
+      - :713 pathFromBareText, native, no hazard: env var DB file path; ignored bench;
+        IndexStore::open_write_connection(&Path). Goes with: var_os via a named env door. Exemption: yes, env var naming
+        a DB file is native text.
+    - `crates/cmdr-index/src/indexing/reconcile/local_reconcile/latency_probe.rs`
+      - :305 pathFromBareText, test-fixture, no hazard: test literal names, nothing opened; LatencyProbe::record takes
+        &Path. Goes with: record takes &str/AppPath key. No exemption.
+    - `crates/cmdr-index/src/indexing/reconcile/reconciler/rescan/hold.rs`
+      - :537 pathFromBareText, test-fixture, no hazard: test literal root, nothing opened; pending set is
+        HashSet<PathBuf>. Goes with: pending_rescans keyed by text or AppPathBuf. No exemption.
+      - :543 pathFromBareText, test-fixture, no hazard: test literal root, nothing opened;
+        RescanThrottle::record_completion takes &Path. Goes with: throttle keyed by text or AppPath. No exemption.
+      - :546 pathFromBareText, test-fixture, no hazard: test literal root, nothing opened; release_and_emit_completion
+        takes &Path. Goes with: rescan seam keyed by text or AppPath. No exemption.
+    - `crates/cmdr-index/src/indexing/reconcile/verifier.rs`
+      - :516 pathFromBareText, engine-body, HAZARD: stored new-dir text opened by subtree scan;
+        scanner::scan_subtree(&Path, ...). Goes with: app_text::local_path (escape-aware) or scan_subtree taking stored
+        text. No exemption.
+    - `crates/cmdr-index/src/indexing/scanner/exclusions.rs`
+      - :122 pathFromBareText, engine-body, HAZARD: stored path's parent text stat'ed via symlink_metadata;
+        has_pseudo_fs_trio does std::fs::symlink_metadata(Path::join). Goes with: app_text::local_path (escape-aware)
+        before the stat. No exemption.
+    - `crates/cmdr-index/src/indexing/scanner/walker/bulk_read.rs`
+      - :634 pathFromBareText, native, no hazard: env var CMDR_BENCH_DIR or literal; ignored bench; bench walk takes
+        &Path root. Goes with: var_os via a named env door. Exemption: yes, env var is native OS text in an ignored
+        bench.
+    - `crates/cmdr-index/src/indexing/scanner/walker/tests.rs`
+      - :62 pathFromBareText, test-fixture, no hazard: test literals keying a mock fs, nothing opened; MockFs keyed by
+        PathBuf (walker's DirTask.path). Goes with: test helper via a named fixture door (walker stays native). No
+        exemption.
+      - :185 pathFromBareText, test-fixture, no hazard: test literal root into mock walker; DirTask.path: PathBuf. Goes
+        with: test helper via a named fixture door (walker stays native). No exemption.
+    - `crates/cmdr-index/src/indexing/watch/event_loop/replay.rs`
+      - :505 pathFromBareText, engine-body, HAZARD: deferred rescan text becomes an OS rescan root;
+        Reconciler::route_must_scan_sub_dirs(PathBuf). Goes with: app_text::local_path (escape-aware) or route takes
+        stored text. No exemption.
+    - `crates/cmdr-index/src/indexing/watch/event_loop/replay_cost_bench.rs`
+      - :58 pathFromBareText, native, no hazard: env var DB file path; bench; env_db() -> Option<PathBuf> for the DB.
+        Goes with: var_os via a named env door. Exemption: yes, env var naming a DB file is native text.
+    - `crates/cmdr-index/src/indexing/watch/event_loop/verification.rs`
+      - :119 pathFromBareText, engine-body, HAZARD: stored new-dir text opened by subtree scan;
+        scanner::scan_subtree(&Path, ...). Goes with: app_text::local_path (escape-aware) or scan_subtree taking stored
+        text. No exemption.
+    - `crates/cmdr-index/src/indexing/watch/watcher/fake_journal.rs`
+      - :92 appTextToPath, test-fixture, no hazard: fake watcher compares event text to root; nothing opened;
+        Path::starts_with on FsChangeEvent.path text. Goes with: path_prefix::is_at_or_under on text. No exemption.
+    - `crates/cmdr-index/src/media_index/backend/fake.rs`
+      - :240 pathFromBareText, name-arith, no hazard: fake backend stem of path text; nothing opened; stem() via
+        Path::file_stem. Goes with: str stem helper on the name. No exemption.
+    - `crates/cmdr-index/src/media_index/backend/vision/spike.rs`
+      - :53 pathFromBareText, native, no hazard: env var CMDR_SPIKE_DIR / HOME, native; spike; collect_into walks a
+        native PathBuf. Goes with: var_os via a named env door. Exemption: yes, env var is native OS text in a spike.
+    - `crates/cmdr-index/src/media_index/predicate.rs`
+      - :106 pathFromBareText, name-arith, no hazard: extension only; escape never a `.`, nothing opened; ext_of via
+        Path::extension. Goes with: shared str extension helper. No exemption.
+      - :114 pathFromBareText, name-arith, no hazard: stem only; nothing opened; stem_of via Path::file_stem. Goes with:
+        shared str stem helper. No exemption.
+    - `crates/cmdr-index/src/media_index/scheduler/enrich_tests.rs`
+      - :43 pathFromBareText, name-arith, no hazard: test fixture text parent; nothing opened; ensure_dir derives parent
+        via Path::parent. Goes with: path_prefix::compute_parent_path or AppPath::parent. No exemption.
+      - :48 pathFromBareText, name-arith, no hazard: test fixture text file_name; nothing opened; ensure_dir derives row
+        name via Path::file_name. Goes with: AppPath::file_name. No exemption.
+    - `crates/cmdr-index/src/media_index/scheduler/kick_tests.rs`
+      - :133 pathFromBareText, name-arith, no hazard: test fixture text parent; nothing opened; ensure_dir derives
+        parent via Path::parent. Goes with: path_prefix::compute_parent_path or AppPath::parent. No exemption.
+      - :138 pathFromBareText, name-arith, no hazard: test fixture text file_name; nothing opened; ensure_dir derives
+        row name via Path::file_name. Goes with: AppPath::file_name. No exemption.
+    - `crates/cmdr-listing-wasm/src/commands.rs`
+      - :190 pathFromBareText, demo, no hazard: demo's engine takes home as Option<PathBuf> (wasm app_to_os is identity,
+        no OS). Goes with: typing the engine's home as AppPathBuf. No exemption.
+    - `crates/cmdr-listing-wasm/src/folder_sizes.rs`
+      - :93 appTextToPath, demo, no hazard: demo folder-size memo keyed by PathBuf (wasm, no OS). Goes with: keying the
+        memo by AppPathBuf. No exemption.
+      - :98 appTextToPath, demo, no hazard: demo folder-size memo keyed by PathBuf (wasm, no OS). Goes with: keying the
+        memo by AppPathBuf. No exemption.
+      - :110 pathFromBareText, demo, no hazard: demo held_at takes &[PathBuf] (wasm, no OS). Goes with: typing
+        held_at/dir_stats paths as AppPathBuf. No exemption.
+      - :288 appTextToPath, demo, no hazard: demo held_at takes &[PathBuf] (wasm, no OS). Goes with: typing held_at
+        paths as AppPathBuf. No exemption.
+    - `crates/cmdr-listing-wasm/src/imports.rs`
+      - :543 appTextToPath, demo, no hazard: InMemoryVolume import_folder/import_file take &Path (wasm, no OS). Goes
+        with: typing InMemoryVolume's import helpers to take &AppPath. No exemption.
+    - `crates/cmdr-listing-wasm/src/operations_host/commands/instant.rs`
+      - :83 appTextToPath, demo, no hazard: engine check_rename_permission_for_volume takes PathBuf (wasm, no OS). Goes
+        with: typing check_rename_permission_for_volume to take AppPathBuf. No exemption.
+    - `crates/cmdr-listing-wasm/src/operations_host/commands/transfers.rs`
+      - :154 pathFromBareText, demo, no hazard: engine home_folder_guard takes &[PathBuf] (wasm, no OS). Goes with:
+        typing home_folder_guard's sources as AppPathBuf. No exemption.
+      - :170 pathFromBareText, demo, no hazard: engine start_scan_preview takes Vec<PathBuf> (wasm, no OS). Goes with:
+        typing start_scan_preview's sources as Vec<AppPathBuf>. No exemption.
+    - `crates/cmdr-listing-wasm/src/search.rs`
+      - :320 pathFromBareText, demo, no hazard: demo search folder map holds PathBuf (wasm, no OS). Goes with: keying
+        the search folder map by AppPathBuf. No exemption.
+    - `crates/cmdr-listing-wasm/src/tree.rs`
+      - :139 appTextToPath, demo, no hazard: demo tree splits entry.path with Path::file_name (wasm, no OS; file_name
+        text only). Goes with: AppPath::file_name on a typed path. No exemption.
+      - :168 appTextToPath, demo, no hazard: InMemoryVolume::with_link_target takes &Path (wasm, no OS). Goes with:
+        typing with_link_target to take &AppPath. No exemption.
+    - `crates/cmdr-local/src/linux_mounts.rs`
+      - :82 pathFromBareText, native, no hazard: mount_table_lists takes &str from to_string_lossy of a native Path
+        (caller lossy-stringifies a native Path; compare to mount table). Goes with: taking &Path through
+        is_mount_point, dropping the lossy &str hop. No exemption.
+      - :200 pathFromBareText, native, no hazard: device_mounted_at takes &str from a native Path (caller
+        lossy-stringifies a native Path; compare to mountinfo). Goes with: taking &Path through the caller, dropping the
+        lossy &str hop. No exemption.
+    - `crates/cmdr-local/src/mount_table.rs`
+      - :130 pathFromBareText, native, no hazard: is_mount_point takes &str from to_string_lossy of a native Path
+        (caller lossy-stringifies a native Path; compare to getfsstat). Goes with: taking &Path through
+        mounts::is_mount_point, dropping the &str hop. No exemption.
+    - `crates/cmdr-local/src/platform/local_posix/scan.rs`
+      - :57 appTextToPath, engine-body, HAZARD: listed entry.name goes OsStr::new into is_sidecar, which
+        symlink_metadata's the sibling. Goes with: the native door: entry's native name kept from the walk, or AppName
+        to_native. No exemption.
+    - `crates/cmdr-local/src/reading/bulk_test.rs`
+      - :120 appTextToPath, name-arith, no hazard: entry.path text compared to a native PathBuf (compare in a test
+        against a TestDir native join). Goes with: compare entry.path to AppPathBuf::from_native(dir.join(..)). No
+        exemption.
+    - `crates/cmdr-local/src/reading_parity_test.rs`
+      - :279 appTextToPath, name-arith, no hazard: entry.path text compared to a native PathBuf (compare in a test
+        against a native fixture join). Goes with: compare entry.path to AppPathBuf::from_native(fx.root.join(..)). No
+        exemption.
+    - `crates/cmdr-local/src/space.rs`
+      - :81 pathFromBareText, native, no hazard: get_volume_space takes &str from a native Path's to_string_lossy
+        (caller lossy-stringifies a native Path). Goes with: taking &Path through get_volume_space, dropping the lossy
+        &str hop. No exemption.
+    - `crates/cmdr-operations/src/archive_edit/fresh_compress_tests.rs`
+      - :705 pathFromBareText, test-fixture, no hazard: literal selection; `compress_start` takes sources as
+        `Vec<PathBuf>`. Goes with: typing `compress_start`'s sources as `AppPathBuf`. No exemption.
+    - `crates/cmdr-operations/src/archive_edit/fresh_plan_tests.rs`
+      - :402 pathFromBareText, test-fixture, no hazard: literal selection; `plan_sources_with_context` takes
+        `&[PathBuf]`. Goes with: typing `plan_sources_with_context` sources as `&[AppPathBuf]`. No exemption.
+    - `crates/cmdr-operations/src/archive_edit/remote_tests.rs`
+      - :620 pathFromBareText, test-fixture, no hazard: literal dir; `sibling_names` takes `&Path`. Goes with: typing
+        `sibling_names` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/archive_edit/routing_tests.rs`
+      - :66 pathFromBareText, test-fixture, no hazard: literal path; `ensure_zip_writable` takes `&Path`. Goes with:
+        typing `ensure_zip_writable` to take `&AppPath`. No exemption.
+      - :93 pathFromBareText, test-fixture, no hazard: literal path; `ensure_zip_writable` takes `&Path`. Goes with:
+        typing `ensure_zip_writable` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/conflict_preflight.rs`
+      - :127 pathFromBareText, engine-body, HAZARD: IPC `dest_path: String` kept as `PathBuf`; `seam_path`,
+        `resolve_dest_path`, `scan_for_conflicts` via it. Goes with: taking `dest_path` as `AppPathBuf` (`from_wire` at
+        the command edge), typed through. No exemption.
+      - :183 pathFromBareText, engine-body, HAZARD: IPC `source_paths: Vec<String>` to `PathBuf` for `seam_path`,
+        `stat_source_paths(&[PathBuf])`. Goes with: taking `source_paths` as `Vec<AppPathBuf>` and typing
+        `stat_source_paths`. No exemption.
+    - `crates/cmdr-operations/src/conflict_preflight_tests.rs`
+      - :434 pathFromBareText, name-arith, no hazard: test helper takes `file_name` of a literal. Goes with:
+        `AppPath::file_name` in the `stat` helper. No exemption.
+      - :440 pathFromBareText, test-fixture, no hazard: literal; stat map keyed by `PathBuf`
+        (`stats_from_watched_panes`). Goes with: typing the stat map keys as `AppPathBuf`. No exemption.
+    - `crates/cmdr-operations/src/create.rs`
+      - :55 pathFromBareText, engine-body, HAZARD: IPC `parent_path: &str` to `Path` then `seam_path` (re-escapes) for
+        the archive gate. Goes with: `create_*_managed` taking `AppPathBuf` parent. No exemption.
+      - :70 pathFromBareText, engine-body, HAZARD: `parent_path` text joined as `Path`, `seam_path` into
+        `route_serving`. Goes with: `AppPath` join on a typed parent. No exemption.
+      - :199 pathFromBareText, engine-body, no hazard: listing-cache key only, nothing opened;
+        `patch_listings_after_create` takes `&Path`. Goes with: typing `patch_listings_after_create` to take `&AppPath`.
+        No exemption.
+      - :276 pathFromBareText, engine-body, no hazard: listing-cache key only, nothing opened;
+        `patch_listings_after_create` takes `&Path`. Goes with: typing `patch_listings_after_create` to take `&AppPath`.
+        No exemption.
+      - :300 pathFromBareText, engine-body, HAZARD: `archive_boundary_candidate(&Path)` splits text; archive path feeds
+        the edit driver. Goes with: `archive_boundary_candidate_at(&AppPath)` on a typed parent. No exemption.
+      - :414 pathFromBareText, engine-body, HAZARD: `cmdr_archive::path_crosses_archive_boundary(&Path)` stats via
+        `std::fs`. Goes with: host `OperationVolumes::path_crosses_archive_boundary(&AppPath)`. No exemption.
+      - :418 pathFromBareText, engine-body, HAZARD: `check_new_name`/`name_rules_at` take `&Path`; `probe_local` stats
+        it. Goes with: typing `name_rules_at` to `&AppPath`, `to_native` at `probe_local`. No exemption.
+      - :481 pathFromBareText, engine-body, no hazard: only `Display`ed into a `NotConnected` message;
+        `unregistered_volume_refusal` takes `&Path`. Goes with: typing `unregistered_volume_refusal` to take `&AppPath`.
+        No exemption.
+    - `crates/cmdr-operations/src/create/tests.rs`
+      - :372 pathFromBareText, test-fixture, no hazard: tempdir result; `create_directory_managed` returns path as
+        `String`. Goes with: returning `AppPathBuf` and asserting via `to_native`. No exemption.
+    - `crates/cmdr-operations/src/delete/already_gone_tests.rs`
+      - :313 pathFromBareText, test-fixture, no hazard: literal; probe counter map keyed by `PathBuf`. Goes with: keying
+        the probe map by `AppPathBuf`. No exemption.
+      - :658 pathFromBareText, test-fixture, no hazard: literal; `RacingVolume.vanishes_after_listing: Option<PathBuf>`.
+        Goes with: typing the `RacingVolume` fields as `AppPathBuf`. No exemption.
+      - :659 pathFromBareText, test-fixture, no hazard: literal;
+        `RacingVolume.delete_answers_not_found: Option<PathBuf>`. Goes with: typing the `RacingVolume` fields as
+        `AppPathBuf`. No exemption.
+      - :669 pathFromBareText, test-fixture, no hazard: literal through `legacy_unchecked(Path::new)` into
+        `create_file`. Goes with: `AppPath::from_normalized` / `app_path!`. No exemption.
+    - `crates/cmdr-operations/src/delete/cloud_trash.rs`
+      - :303 pathFromBareText, test-fixture, no hazard: literal; facts table keyed `PathBuf` for `routing_with(&Path)`
+        (local trash). Goes with: none while trash routing stays native local-disk. Exemption: yes, local-disk trash
+        routing is native (`routing_with` over host paths).
+      - :323 pathFromBareText, test-fixture, no hazard: literal; `routing_with` takes `&[PathBuf]` (local trash). Goes
+        with: none while trash routing stays native local-disk. Exemption: yes, local-disk trash routing is native
+        (`routing_with` over host paths).
+    - `crates/cmdr-operations/src/delete/delete_outage_tests.rs`
+      - :90 pathFromBareText, test-fixture, no hazard: literal; `delete_volume_files_with_progress_inner` takes
+        `&[PathBuf]`. Goes with: typing the delete body's sources as `AppPathBuf`. No exemption.
+      - :106 pathFromBareText, test-fixture, no hazard: literal through `legacy_unchecked(Path::new)` into `exists`.
+        Goes with: `AppPath::from_normalized`. No exemption.
+    - `crates/cmdr-operations/src/delete/preview_binding_tests.rs`
+      - :41 pathFromBareText, test-fixture, no hazard: literal through `legacy_unchecked(Path::new)` into
+        `open_read_stream`. Goes with: `AppPath::from_normalized`. No exemption.
+    - `crates/cmdr-operations/src/delete/trash_tests.rs`
+      - :363 pathFromBareText, test-fixture, no hazard: literal; `TrashItemError.path: PathBuf` (local trash). Goes
+        with: none while trash stays a native local-disk record. Exemption: yes, `TrashItemError.path` names a
+        local-disk trash item, native.
+    - `crates/cmdr-operations/src/delete/volume_scan.rs`
+      - :225 appTextToPath, engine-body, HAZARD: `scan_volume_recursive` keyed by `PathBuf`; child re-bridged via
+        `legacy_unchecked` to `entry_kind`. Goes with: typing `scan_volume_recursive`'s child paths (typed
+        `FileEntry.path`). No exemption.
+    - `crates/cmdr-operations/src/error_classification.rs`
+      - :70 pathFromBareText, native, no hazard: text is a local `PathBuf`'s `display`, never an escape;
+        `refusing_folder(&Path)` probes OS. Goes with: passing the native `&Path` into `classify_io_error` instead of
+        `String`. No exemption.
+    - `crates/cmdr-operations/src/hidden_links.rs`
+      - :35 appTextToPath, engine-body, HAZARD: `on_volume(&Path)` = `legacy_unchecked`, re-escapes `entry.path` before
+        `entry_kind`. Goes with: passing typed `FileEntry.path` straight to `entry_kind`. No exemption.
+    - `crates/cmdr-operations/src/in_flight_log_writer.rs`
+      - :191 pathFromBareText, native, no hazard: the in-flight log file's own on-disk path plus a suffix. Goes with:
+        none. Exemption: yes, the app's own log file on local disk, native by nature.
+    - `crates/cmdr-operations/src/in_flight_records_format_tests.rs`
+      - :14 pathFromBareText, test-fixture, no hazard: literal; `TrackedItem.path: PathBuf`. Goes with: typing
+        `TrackedItem.path` as `AppPathBuf`. No exemption.
+    - `crates/cmdr-operations/src/in_flight_sweep_tests.rs`
+      - :661 pathFromBareText, test-fixture, no hazard: literal temp name; `TrackedItem.path: PathBuf`. Goes with:
+        typing `TrackedItem.path` as `AppPathBuf`. No exemption.
+    - `crates/cmdr-operations/src/in_flight_temps_tests.rs`
+      - :228 pathFromBareText, test-fixture, no hazard: literal; `app(&Path)` helper bridges into `create_file`. Goes
+        with: `AppPath::from_normalized` on the literal. No exemption.
+    - `crates/cmdr-operations/src/journal_capture_volume_tests.rs`
+      - :372 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_modified_at` takes `&Path`. Goes
+        with: typing `set_modified_at` to take `&AppPath`. No exemption.
+      - :715 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_modified_at` takes `&Path`. Goes
+        with: typing `set_modified_at` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/journal_landed.rs`
+      - :158 appTextToPath, name-arith, no hazard: compare only: listing name looked up in an `OsStr`-keyed `wanted`
+        map. Goes with: keying `wanted` by `AppName`. No exemption.
+    - `crates/cmdr-operations/src/leaf_validation.rs`
+      - :234 pathFromBareText, engine-body, HAZARD: chosen leaf joined onto `destination: &Path`; `stat` (`file_id`)
+        opens it in `NamesAndInodes`. Goes with: typing leaves as `AppName` and `destination` as `&AppPath`. No
+        exemption.
+    - `crates/cmdr-operations/src/locked_sources_tests.rs`
+      - :19 pathFromBareText, test-fixture, no hazard: literal; `LockedScan.locked: Vec<PathBuf>`. Goes with: typing
+        `LockedScan`'s paths. No exemption.
+      - :20 pathFromBareText, test-fixture, no hazard: literal; `LockedScan.system_locked: Vec<PathBuf>`. Goes with:
+        typing `LockedScan`'s paths. No exemption.
+    - `crates/cmdr-operations/src/rename/validity.rs`
+      - :159 pathFromBareText, engine-body, HAZARD: IPC `dir: String` into `name_rules_at(&Path)`; `probe_local` stats
+        it. Goes with: `check_rename_validity_impl` taking `AppPathBuf` dir. No exemption.
+      - :172 pathFromBareText, engine-body, HAZARD: `new_path` to `validate_path_length` and
+        `check_sibling_conflict_via_volume(&Path)`. Goes with: `AppPath` join on a typed dir; typing the sibling check.
+        No exemption.
+      - :185 pathFromBareText, engine-body, HAZARD: `old_path` to `check_sibling_conflict_via_volume`,
+        `rename_by_move(&Path)`. Goes with: `AppPath` join on a typed dir; typing `rename_by_move`. No exemption.
+    - `crates/cmdr-operations/src/rollback/planner_tests/test_support.rs`
+      - :440 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_modified_at` takes `&Path`. Goes
+        with: typing `set_modified_at` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/routed_writes_tests.rs`
+      - :247 pathFromBareText, test-fixture, no hazard: literal; `create_numbered_file` takes `&Path`. Goes with: typing
+        `create_numbered_file` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/routing.rs`
+      - :70 pathFromBareText, engine-body, HAZARD: IPC `dest_path: String` as `PathBuf` for the zip driver
+        (`landing_parent`). Goes with: taking `dest_path` as `AppPathBuf` at the start. No exemption.
+      - :753 pathFromBareText, engine-body, HAZARD: IPC `dest_zip_path: String` through `seam_path` (re-escapes) into
+        `resolve`. Goes with: taking `dest_zip_path` as `AppPathBuf`. No exemption.
+    - `crates/cmdr-operations/src/scan_cache.rs`
+      - :438 pathFromBareText, test-fixture, no hazard: literal; `FileInfo.path: PathBuf`. Goes with: typing
+        `FileInfo.path`. No exemption.
+      - :439 pathFromBareText, test-fixture, no hazard: literal; `FileInfo.source_root: PathBuf`. Goes with: typing
+        `FileInfo.source_root`. No exemption.
+    - `crates/cmdr-operations/src/scan_cache_tests.rs`
+      - :41 pathFromBareText, test-fixture, no hazard: literal; scan cache sources are `Vec<PathBuf>`. Goes with: typing
+        the scan cache's source paths. No exemption.
+    - `crates/cmdr-operations/src/scan_failure_tests.rs`
+      - :168 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a `PathBuf`. Goes with:
+        typed path in `WriteOperationError` (or compare `AppPath`). No exemption.
+      - :200 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a `PathBuf`. Goes with:
+        typed path in `WriteOperationError` (or compare `AppPath`). No exemption.
+      - :238 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a `PathBuf`. Goes with:
+        typed path in `WriteOperationError` (or compare `AppPath`). No exemption.
+    - `crates/cmdr-operations/src/scan_oracle.rs`
+      - :116 appTextToPath, engine-body, HAZARD: `scan_subtree_with_oracle` recurses on `PathBuf` child paths. Goes
+        with: typing `scan_subtree_with_oracle`'s child paths (AppPath join). No exemption.
+    - `crates/cmdr-operations/src/scan_preview/volume.rs`
+      - :379 appTextToPath, name-arith, no hazard: `file_name` of `entry.path` as a map key; nothing opened. Goes with:
+        `AppPath::file_name` on typed `FileEntry.path`. No exemption.
+      - :612 appTextToPath, name-arith, no hazard: compares `file_name`s; nothing opened. Goes with:
+        `AppPath::file_name` on typed `FileEntry.path`. No exemption.
+    - `crates/cmdr-operations/src/scan_tests.rs`
+      - :22 pathFromBareText, test-fixture, no hazard: literal; `FileInfo.path: PathBuf`. Goes with: typing
+        `FileInfo.path`. No exemption.
+      - :23 pathFromBareText, test-fixture, no hazard: literal; `FileInfo.source_root: PathBuf`. Goes with: typing
+        `FileInfo.source_root`. No exemption.
+    - `crates/cmdr-operations/src/scan_walker.rs`
+      - :396 appTextToPath, name-arith, no hazard: `is_left_out(&OsStr)` filters by name; nothing opened. Goes with:
+        `is_left_out` taking `&AppName`. No exemption.
+      - :401 appTextToPath, engine-body, HAZARD: cached `entry.path` into `walk_dir_recursive(&Path)`, which
+        `fs::read_dir`s it. Goes with: crossing typed `entry.path` with `to_native` (local walk). No exemption.
+    - `crates/cmdr-operations/src/summary_tests.rs`
+      - :6 pathFromBareText, test-fixture, no hazard: literal; summary takes `Vec<PathBuf>`. Goes with: typing the
+        summary's paths. No exemption.
+    - `crates/cmdr-operations/src/target_names.rs`
+      - :37 pathFromBareText, name-arith, no hazard: `components` check that the name is one plain component. Goes with:
+        `AppName` parse (`from_app_spelling`). No exemption.
+      - :40 pathFromBareText, engine-body, HAZARD: IPC rename text stored as `OsString` leaf, later joined onto the
+        destination. Goes with: `TargetNames` holding `AppNameBuf`. No exemption.
+    - `crates/cmdr-operations/src/transfer/real_image.rs`
+      - :620 pathFromBareText, test-fixture, no hazard: literal; `move_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `move_volumes_with_progress`'s sources. No exemption.
+      - :675 pathFromBareText, test-fixture, no hazard: literal; `route_archive_copy_into` takes `Vec<PathBuf>`. Goes
+        with: typing `route_archive_copy_into`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/recovered_name.rs`
+      - :216 pathFromBareText, name-arith, no hazard: compare only: error path text vs `PathBuf` landings. Goes with:
+        typed error paths and `AppPathBuf` landings. No exemption.
+    - `crates/cmdr-operations/src/transfer/transfer_driver_test_support.rs`
+      - :24 pathFromBareText, test-fixture, no hazard: literal; transfer drivers take `Vec<PathBuf>`. Goes with: typing
+        the transfer drivers' sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/cleanup.rs`
+      - :602 appTextToPath, engine-body, HAZARD: `legacy_unchecked(Path::new(&child.path))` re-escapes before
+        `remove_tree` recursion. Goes with: using typed `FileEntry.path` directly. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_cancel_tests.rs`
+      - :57 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :266 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :348 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_concurrent_driver_tests.rs`
+      - :787 pathFromBareText, test-fixture, no hazard: literal; `MisbehaveOnOpenVolume.misbehave_for: Option<PathBuf>`.
+        Goes with: typing the test volume's field as `AppPathBuf`. No exemption.
+      - :791 pathFromBareText, test-fixture, no hazard: literal; copy driver sources are `Vec<PathBuf>`. Goes with:
+        typing `copy_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_crashsafe_tests.rs`
+      - :438 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds; re-bridged into
+        `open_read_stream`. Goes with: using typed `FileEntry.path` directly. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_failure_drain_tests.rs`
+      - :53 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_flags_tests.rs`
+      - :70 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :91 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_carried_metadata` takes `&Path`.
+        Goes with: typing `set_carried_metadata` to take `&AppPath`. No exemption.
+      - :105 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::carried_metadata` takes `&Path`. Goes
+        with: typing `carried_metadata` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_landing_race_tests.rs`
+      - :471 pathFromBareText, test-fixture, no hazard: literal; `parent` then `legacy_unchecked` into seeding. Goes
+        with: `AppPath` parent on a `from_normalized` literal. No exemption.
+      - :488 pathFromBareText, test-fixture, no hazard: literal; `parent` then `legacy_unchecked` into seeding. Goes
+        with: `AppPath` parent on a `from_normalized` literal. No exemption.
+      - :499 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_outage_tests.rs`
+      - :56 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_modified_at` takes `&Path`. Goes
+        with: typing `set_modified_at` to take `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_precheck_tests.rs`
+      - :326 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :353 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes dest `&Path`. Goes
+        with: typing `copy_volumes_with_progress`'s destination. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_source_hint_tests.rs`
+      - :40 pathFromBareText, test-fixture, no hazard: literal; `seed_incoherent_scan_result_for_test` takes
+        `Vec<PathBuf>`. Goes with: typing the preview store's source paths. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_tree_order_tests.rs`
+      - :115 pathFromBareText, test-fixture, no hazard: literal; transfer drivers take `Vec<PathBuf>`. Goes with: typing
+        the transfer drivers' sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/copy_tree_rows_tests.rs`
+      - :51 pathFromBareText, test-fixture, no hazard: literal; `parent` then `legacy_unchecked` into
+        `create_directory_all`. Goes with: `AppPath` parent on a `from_normalized` literal. No exemption.
+      - :71 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :94 pathFromBareText, test-fixture, no hazard: literal; `parent` then `legacy_unchecked` into
+        `create_directory_all`. Goes with: `AppPath` parent on a `from_normalized` literal. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/displaced_destination_tests.rs`
+      - :124 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds collected as `PathBuf` for
+        assertions. Goes with: collecting typed `FileEntry.path`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/look_alike_tests.rs`
+      - :93 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `copy_volumes_with_progress`'s sources. No exemption.
+      - :101 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes dest `&Path`. Goes
+        with: typing `copy_volumes_with_progress`'s destination. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/merge.rs`
+      - :925 appTextToPath, engine-body, HAZARD: merge recursion and copy take `PathBuf` child sources
+        (`copy_single_path(&Path)`). Goes with: typing merge's child paths (typed `FileEntry.path`). No exemption.
+      - :986 appTextToPath, name-arith, no hazard: `DestinationNames::refuses(&OsStr)` checks name rules; nothing
+        opened. Goes with: `refuses` taking `&AppName`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/merge_window_tests.rs`
+      - :282 pathFromBareText, test-fixture, no hazard: literal; transfer drivers take `Vec<PathBuf>`. Goes with: typing
+        the transfer drivers' sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/move_by_copy_tests.rs`
+      - :52 pathFromBareText, test-fixture, no hazard: literal join through `legacy_unchecked` into `create_directory`.
+        Goes with: `AppPath` join / `app_path!`. No exemption.
+      - :56 pathFromBareText, test-fixture, no hazard: literal join through `legacy_unchecked` into `create_file`. Goes
+        with: `AppPath` join / `app_path!`. No exemption.
+      - :60 pathFromBareText, test-fixture, no hazard: literal join through `legacy_unchecked` into `create_file`. Goes
+        with: `AppPath` join / `app_path!`. No exemption.
+      - :65 pathFromBareText, test-fixture, no hazard: literal join through `legacy_unchecked` into `create_file`. Goes
+        with: `AppPath` join / `app_path!`. No exemption.
+      - :89 pathFromBareText, test-fixture, no hazard: literal; `move_within_same_volume_with_progress` takes
+        `&[PathBuf]`. Goes with: typing that body's sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/move_outage_tests.rs`
+      - :111 pathFromBareText, test-fixture, no hazard: literal; `move_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `move_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/move_source_drift_tests.rs`
+      - :117 pathFromBareText, test-fixture, no hazard: literal through `legacy_unchecked` into `get_metadata`. Goes
+        with: `AppPath::from_normalized`. No exemption.
+      - :168 pathFromBareText, test-fixture, no hazard: literal; `move_volumes_with_progress` takes `&[PathBuf]`. Goes
+        with: typing `move_volumes_with_progress`'s sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/rename_merge.rs`
+      - :184 appTextToPath, engine-body, HAZARD: rename-merge recursion keyed by `PathBuf` child sources, re-bridged to
+        the volume. Goes with: typing rename-merge's child paths (typed `FileEntry.path`). No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/safety_grid_tests.rs`
+      - :161 pathFromBareText, test-fixture, no hazard: literal; preview per-path map keyed by `PathBuf`. Goes with:
+        typing the preview store's source paths. No exemption.
+      - :196 pathFromBareText, test-fixture, no hazard: literal; `seed_incoherent_scan_result_for_test` takes
+        `Vec<PathBuf>`. Goes with: typing the preview store's source paths. No exemption.
+      - :777 pathFromBareText, test-fixture, no hazard: literal; transfer drivers take `Vec<PathBuf>`. Goes with: typing
+        the transfer drivers' sources. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/safety_oracle.rs`
+      - :45 pathFromBareText, test-fixture, no hazard: test oracle: literal through `legacy_unchecked` into
+        `open_read_stream`. Goes with: `try_read_all` taking `&AppPath`. No exemption.
+      - :63 pathFromBareText, test-fixture, no hazard: test oracle: listing text stack through `legacy_unchecked` into
+        `list_directory`. Goes with: a typed `AppPathBuf` dir stack. No exemption.
+      - :90 pathFromBareText, test-fixture, no hazard: test oracle: listing text stack through `legacy_unchecked` into
+        `list_directory`. Goes with: a typed `AppPathBuf` dir stack. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/safe_replace_grid_tests.rs`
+      - :350 pathFromBareText, test-fixture, no hazard: literal; `read_all` helper takes `&Path`. Goes with: typing
+        `read_all` to take `&AppPath`. No exemption.
+      - :365 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds; dir stack of `PathBuf`
+        re-bridged. Goes with: a typed `AppPathBuf` dir stack. No exemption.
+      - :670 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds collected as `PathBuf`. Goes with:
+        collecting typed `FileEntry.path`. No exemption.
+      - :864 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds collected as `PathBuf`. Goes with:
+        collecting typed `FileEntry.path`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/self_collision_tests.rs`
+      - :428 pathFromBareText, test-fixture, no hazard: literal; `resolve_volume_conflict` takes source `&Path`. Goes
+        with: typing `resolve_volume_conflict`'s paths. No exemption.
+      - :430 pathFromBareText, test-fixture, no hazard: literal; `resolve_volume_conflict` takes dest `&Path`. Goes
+        with: typing `resolve_volume_conflict`'s paths. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/source_sweep.rs`
+      - :186 appTextToPath, engine-body, HAZARD: `doomed`/`husk` lists keep `PathBuf` beside the app path; errors and
+        deletes via it. Goes with: typing the sweep's paths (drop the `PathBuf` twin). No exemption.
+      - :338 appTextToPath, engine-body, HAZARD: `PathBuf` dir stack re-bridged via `legacy_unchecked` into
+        `list_directory_as_source`. Goes with: typed `AppPathBuf` dir stack from `FileEntry.path`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/strategy_abort_tests.rs`
+      - :67 pathFromBareText, test-fixture, no hazard: literal; `copy_single_path` takes `&Path`. Goes with: typing
+        `copy_single_path`'s paths. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/strategy_retry_tests.rs`
+      - :61 pathFromBareText, test-fixture, no hazard: literal; `copy_single_path` takes dest `&Path`. Goes with: typing
+        `copy_single_path`'s paths. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/strategy_test_support.rs`
+      - :416 appTextToPath, test-fixture, no hazard: test volume's recursive delete re-bridges listed plain seeds. Goes
+        with: using typed `FileEntry.path` directly. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/swap_outage_tests.rs`
+      - :358 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds collected as `PathBuf`. Goes with:
+        collecting typed `FileEntry.path`. No exemption.
+      - :370 appTextToPath, test-fixture, no hazard: in-memory listing of plain seeds collected as `PathBuf`. Goes with:
+        collecting typed `FileEntry.path`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/transfer_error.rs`
+      - :632 pathFromBareText, name-arith, no hazard: `over_every_name_limit(&Path)` counts the name's length; nothing
+        opened. Goes with: `over_every_name_limit` taking `&AppPath`. No exemption.
+    - `crates/cmdr-operations/src/transfer/volume/transfer_error_tests.rs`
+      - :523 pathFromBareText, test-fixture, no hazard: literal; `PathedVolumeError::new` takes `&Path`. Goes with:
+        typing `PathedVolumeError`'s path. No exemption.
+      - :605 pathFromBareText, test-fixture, no hazard: literal; `hard_abort_error` takes `&Path`. Goes with: typing
+        `hard_abort_error`'s path. No exemption.
+    - `crates/cmdr-operations/src/transfer_tree/build_tests.rs`
+      - :13 pathFromBareText, test-fixture, no hazard: literal; `TreeRecorder`/`sort_sources` take `PathBuf`s. Goes
+        with: typing the transfer tree's paths. No exemption.
+    - `crates/cmdr-operations/src/transfer_tree/report.rs`
+      - :125 pathFromBareText, name-arith, no hazard: `node_at_path(&Path)` looks up the tree model; nothing opened.
+        Goes with: typing the transfer tree's paths (`&AppPath` lookup). No exemption.
+    - `crates/cmdr-operations/src/transfer_tree/view_tests.rs`
+      - :176 pathFromBareText, test-fixture, no hazard: literal; `TreeRecorder::dir` takes `&Path`. Goes with: typing
+        the transfer tree's paths. No exemption.
+      - :208 pathFromBareText, test-fixture, no hazard: literal; `TreeRecorder::dir` takes `&Path`. Goes with: typing
+        the transfer tree's paths. No exemption.
+    - `crates/cmdr-operations/src/types/errors.rs`
+      - :665 appTextToPath, name-arith, no hazard: compare only: error path text vs `from: &Path`. Goes with: typed path
+        in `WriteOperationError`; `on_item_instead` on `&AppPath`. No exemption.
+      - :687 pathFromBareText, engine-body, no hazard: error text from a native path's display; only the
+        `/Volumes/<share>` root probed (`mounted_share_refused`). Goes with: passing the native `&Path` to
+        `permission_denied` instead of text. No exemption.
+    - `crates/cmdr-operations/src/types/transfer_leaves.rs`
+      - :109 pathFromBareText, engine-body, HAZARD: chosen leaf `String` handed out as `OsStr`, joined onto the
+        destination by the engine. Goes with: `TransferLeaves` holding `AppNameBuf`. No exemption.
+    - `crates/cmdr-operations/src/validation_integration_test.rs`
+      - :280 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a tempdir `PathBuf`. Goes
+        with: typed path in `WriteOperationError`. No exemption.
+      - :300 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a tempdir `PathBuf`. Goes
+        with: typed path in `WriteOperationError`. No exemption.
+    - `crates/cmdr-operations/src/wire_paths.rs`
+      - :82 pathFromBareText, name-arith, no hazard: lexical trim, text in and text out; nothing opened
+        (`text_without_trailing_separators`). Goes with: `from_wire` trimming a typed destination; drop the text
+        variant. No exemption.
+    - `crates/cmdr-operation-log/src/query/landed/tests.rs`
+      - :33 pathFromBareText, name-arith, no hazard: test split helper uses Path::parent/file_name (parent/file_name
+        text split in a test). Goes with: AppPath parent/file_name. No exemption.
+      - :122 pathFromBareText, test-fixture, no hazard: landed_at takes &Path (literal scheme test path). Goes with:
+        typing landed_at to take &AppPath. No exemption.
+    - `crates/cmdr-restic/src/tree_tests.rs`
+      - :22 pathFromBareText, test-fixture, no hazard: rustic_core Node::new_node takes &OsStr (literal ASCII test
+        name). Goes with: nothing in our code: rustic_core's API is OsStr. Exemption: yes, rustic_core Node names are
+        OsStr by upstream API.
+    - `crates/cmdr-s3/src/volume/live_hostile_failure_test.rs`
+      - :275 pathFromBareText, test-fixture, no hazard: S3 connect_with_state takes &Path root (generated ASCII scratch
+        path). Goes with: typing connect_with_state's root as &AppPath. No exemption.
+    - `crates/cmdr-sftp/src/volume/conformance_test.rs`
+      - :54 pathFromBareText, test-fixture, no hazard: conformance::assert_listing_dates_are_claimed takes &Path
+        (generated ASCII scratch path). Goes with: typing the conformance suite to take &AppPath. No exemption.
+      - :262 pathFromBareText, test-fixture, no hazard: conformance::assert_a_link_lands_verbatim takes &Path (generated
+        ASCII scratch path). Goes with: typing the conformance suite to take &AppPath. No exemption.
+      - :293 pathFromBareText, test-fixture, no hazard: conformance::assert_writability_matches_the_mutations_offered
+        takes &Path (generated ASCII scratch path). Goes with: typing the conformance suite to take &AppPath. No
+        exemption.
+      - :429 pathFromBareText, test-fixture, no hazard: conformance::assert_batch_scan_stops_when_told takes &Path
+        (generated ASCII scratch path). Goes with: typing the conformance suite to take &AppPath. No exemption.
+      - :447 pathFromBareText, test-fixture, no hazard: conformance::assert_batch_scan_asks_inside_the_walk takes &Path
+        (generated ASCII scratch path). Goes with: typing the conformance suite to take &AppPath. No exemption.
+    - `crates/cmdr-sftp/src/volume/testing.rs`
+      - :197 pathFromBareText, native, no hazard: fixture key dir from CMDR_SFTP_KEYS_DIR env var (env var or
+        compile-time default, native). Goes with: nothing: env var text is native (var_os would be tidier). Exemption:
+        yes, env var is native OS text.
+    - `crates/cmdr-smb/src/volume/copy_xattrs.rs`
+      - :143 pathFromBareText, native, no hazard: Xattr.name is OsString (SMB stream name as xattr key, not a path).
+        Goes with: nothing: xattr keys aren't app paths. Exemption: yes, xattr key name, not path text.
+    - `crates/cmdr-smb/src/volume/test_support.rs`
+      - :63 pathFromBareText, native, no hazard: SmbVolume mount_path is the native local mount point (literal native
+        mount point in a test helper). Goes with: nothing: a mount point is native. Exemption: yes, SMB mount point is
+        native OS path.
+    - `crates/cmdr-smb/src/volume/watcher.rs`
+      - :557 pathFromBareText, name-arith, no hazard: watcher splits share_path with Path::parent (parent text only, for
+        a cache forget). Goes with: AppPath/share-path text parent helper. No exemption.
 
 ### 11. Close
 
