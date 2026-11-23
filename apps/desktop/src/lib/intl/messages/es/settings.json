@@ -1021,6 +1021,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {La indexación está en pausa porque tu disco de arranque está casi lleno. Seguirá donde se quedó en cuanto haya más espacio. <thresholdLink>Cambiar cuándo se pausa</thresholdLink>} windows {La indexación está en pausa porque tu unidad de sistema está casi llena. Seguirá donde se quedó en cuanto haya más espacio. <thresholdLink>Cambiar cuándo se pausa</thresholdLink>} other {La indexación está en pausa porque tu disco del sistema está casi lleno. Seguirá donde se quedó en cuanto haya más espacio. <thresholdLink>Cambiar cuándo se pausa</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "La indexación de unidades está desactivada, así que no se indexa ninguna unidad y los tamaños de carpeta quedan ocultos. Cada unidad recuerda si estaba activada o desactivada, lista para cuando vuelvas a activar la indexación.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1752,9 +1756,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "La indexación sigue donde se quedó en cuanto el espacio libre sube un punto por encima de ese valor. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "La indexación solo se pausa si además quedan menos de 10 GB libres, así que un disco grande sigue indexándose. Sigue donde se quedó en cuanto el espacio libre sube un punto por encima de este valor o pasa de 11 GB. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Evita que el índice ocupe el espacio que necesitan tus propios archivos.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

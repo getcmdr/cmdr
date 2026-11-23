@@ -1022,6 +1022,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Die Indizierung ist angehalten, weil dein Startvolume fast voll ist. Sie macht dort weiter, wo sie aufgehört hat, sobald wieder mehr Platz frei ist. <thresholdLink>Ändern, wann die Indizierung anhält</thresholdLink>} windows {Die Indizierung ist angehalten, weil dein Systemlaufwerk fast voll ist. Sie macht dort weiter, wo sie aufgehört hat, sobald wieder mehr Platz frei ist. <thresholdLink>Ändern, wann die Indizierung anhält</thresholdLink>} other {Die Indizierung ist angehalten, weil dein Systemlaufwerk fast voll ist. Sie macht dort weiter, wo sie aufgehört hat, sobald wieder mehr Platz frei ist. <thresholdLink>Ändern, wann die Indizierung anhält</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Die Laufwerksindizierung ist aus, deshalb wird kein Laufwerk indiziert und Ordnergrößen bleiben ausgeblendet. Jedes Laufwerk behält seine eigene Einstellung, bereit für den Moment, in dem du das wieder einschaltest.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1754,9 +1758,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Die Indizierung macht dort weiter, wo sie aufgehört hat, sobald der freie Speicherplatz wieder einen Prozentpunkt darüber liegt. Das gilt unabhängig davon, ob die „Warnung bei wenig Speicherplatz“ ein- oder ausgeschaltet ist.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Angehalten wird die Indizierung nur, wenn zugleich weniger als 10 GB frei sind, deshalb wird ein großes Laufwerk weiter indiziert. Sie macht dort weiter, wo sie aufgehört hat, sobald der freie Speicherplatz wieder einen Prozentpunkt über diesem Wert oder über 11 GB liegt. Das gilt unabhängig davon, ob die „Warnung bei wenig Speicherplatz“ ein- oder ausgeschaltet ist.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Verhindert, dass der Index den Platz belegt, den deine eigenen Dateien brauchen.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {
