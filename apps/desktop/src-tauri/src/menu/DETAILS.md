@@ -692,7 +692,9 @@ menu is swapped wholesale via `app.set_menu()`:
       alone; reusing them would make one click mean two things. The viewer's items had no ids at all while they were
       Predefined, which is why the collision never existed before.
 - `MenuState.active_menu_kind` tracks which menu is installed, so a same-kind focus event (viewer →
-  viewer, main → main) skips the swap entirely.
+  viewer, main → main) skips the swap entirely. `viewer_bar_installed` reads it so the Services adoption and the
+  display accelerators skip the viewer's bar (no app, Select, or Go menu) instead of warning on every main-window push
+  that lands while a viewer is in front; the swap back re-runs both.
 - `"main"` and `"other"` install the main menu; `"viewer"` installs the viewer menu. After any swap
   we re-run `cleanup_macos_menus` (macOS re-injects Edit items on every `set_menu`), and on a
   swap-back to the main menu we also re-apply `set_macos_menu_icons` (SF Symbols don't survive

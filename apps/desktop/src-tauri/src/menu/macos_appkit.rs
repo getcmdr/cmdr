@@ -21,9 +21,11 @@ use objc2_app_kit::{
 };
 use objc2_foundation::{NSNotification, NSNotificationCenter, NSString};
 use tauri::{
-    AppHandle, Runtime,
+    AppHandle, Manager as _, Runtime,
     menu::{Menu, MenuItemKind, Submenu},
 };
+
+use crate::ignore_poison::IgnorePoison as _;
 
 use super::{
     APP_MENU_ID, CHANGELOG_ID, CHECK_FOR_UPDATES_ID, CLI_INSTALL_ID, CLONE_PANE_ID, CLOSE_OTHER_TABS_ID, CLOSE_TAB_ID,
@@ -68,7 +70,10 @@ fn cleanup_macos_menus_inner<R: Runtime>(app: &AppHandle<R>) {
 
     // In its own `catch`: re-parenting an `NSMenu` is the one step here that can raise, and an
     // exception escaping to the caller would take the Edit-menu strip below down with it.
-    if let Err(e) = objc2::exception::catch(AssertUnwindSafe(|| adopt_installed_services_menu(mtm, &menu))) {
+    // The viewer's bar has no app menu to adopt into; the swap back to the main bar re-runs this.
+    if !viewer_bar_installed(app)
+        && let Err(e) = objc2::exception::catch(AssertUnwindSafe(|| adopt_installed_services_menu(mtm, &menu)))
+    {
         log::warn!(target: "menu", "Couldn't hand the Services item AppKit's own menu: {e:?}");
     }
 
@@ -371,6 +376,15 @@ pub(super) fn menu_item_text<R: Runtime>(item: &MenuItemKind<R>) -> Option<Strin
     Some(plain_title(&text).to_string())
 }
 
+/// Whether the viewer's bar is the installed one. It has no app, Select, or Go menu, so the passes
+/// that work on those skip it rather than warn about menus it never had: every swap back to the
+/// main bar re-runs them (`swap_to_main_menu`). False before `MenuState` is managed (startup only
+/// ever installs the main bar).
+pub(super) fn viewer_bar_installed<R: Runtime>(app: &AppHandle<R>) -> bool {
+    app.try_state::<super::MenuState<R>>()
+        .is_some_and(|state| *state.active_menu_kind.lock_ignore_poison() == super::ActiveMenuKind::Viewer)
+}
+
 /// The `NSMenu` hanging off the item in `parent` with this title.
 pub(super) fn find_ns_submenu(parent: &NSMenu, title: &str) -> Option<Retained<NSMenu>> {
     (0..parent.numberOfItems())
@@ -393,7 +407,7 @@ pub(super) fn find_ns_submenu(parent: &NSMenu, title: &str) -> Option<Retained<N
 /// point).
 ///
 /// Runs with the rest of this pass after every `app.set_menu()`, because a swap installs a fresh
-/// item. Idempotent, and a no-op while the viewer menu is up (it has no Services item).
+/// item. Idempotent, and skipped while the viewer menu is up (it has no Services item).
 fn adopt_installed_services_menu<R: Runtime>(mtm: MainThreadMarker, menu: &Menu<R>) {
     let Some(app_submenu) = submenu_by_id(menu, APP_MENU_ID) else {
         log::warn!(target: "menu", "The installed menu bar has no `{APP_MENU_ID}` menu, so the Services menu stays short");
