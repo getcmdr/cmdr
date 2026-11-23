@@ -61,6 +61,8 @@ Work in a worktree. Take npm and Cargo in **separate commits**, so a bisect can 
    - **The 3-day window is yours to enforce here.** crates.io has no equivalent of pnpm's gate:
      `curl -s https://crates.io/api/v1/crates/<name>/versions | jq -r '.versions[] | "\(.num) \(.created_at)"'` and take
      the newest one older than three days.
+   - **A fix for a security advisory skips the window** (npm and Cargo alike) when the update looks safe: read its
+     changelog and diff, and take it if it's a patch release with a contained fix. Anything bigger, raise it with David.
    - ❗ Any `--precise` call can re-pick duplicate-version edges on crates you never named, a no-op one most of all
      (`windows-sys` 0.61 → 0.52, `getrandom` 0.4 → 0.3, `proc-macro-crate` 3 → 1; cargo 1.99.1, 2026-10-27 and
      2026-11-10). Editing `Cargo.toml` and letting cargo resolve once doesn't; it picks the newest match, so follow it
