@@ -156,15 +156,20 @@ mod tests {
     #[test]
     fn a_typed_path_spells_back_the_text_its_row_held() {
         use cmdr_fs::app_path::Namer;
-        let held = "/d/caf\u{10FEC3}\u{10FEA9}.txt";
+        // A device's scheme path, which reads as an app path on every host (a POSIX `/d`
+        // is no app path on Windows).
+        let held = "mtp://mtp-0-1/65537/d/caf\u{10FEC3}\u{10FEA9}.txt";
         for namer in [Namer::Bytes, Namer::Units] {
             let typed = AppPathBuf::from_literal_store(held, namer).expect("an app path");
             assert_ne!(typed.as_str(), held, "{namer:?} escapes the literal code points");
             assert_eq!(typed.stored(), held, "{namer:?}");
             assert_eq!(stored_leaf(&typed).as_deref(), Some("caf\u{10FEC3}\u{10FEA9}.txt"));
         }
-        let plain = AppPathBuf::from_wire("/d/a.txt").expect("an app path");
-        assert!(matches!(plain.stored(), Cow::Borrowed("/d/a.txt")));
-        assert_eq!(stored_split(&plain), ("/d".to_string(), "a.txt".to_string()));
+        let plain = AppPathBuf::from_wire("mtp://mtp-0-1/65537/d/a.txt").expect("an app path");
+        assert!(matches!(plain.stored(), Cow::Borrowed("mtp://mtp-0-1/65537/d/a.txt")));
+        assert_eq!(
+            stored_split(&plain),
+            ("mtp://mtp-0-1/65537/d".to_string(), "a.txt".to_string())
+        );
     }
 }

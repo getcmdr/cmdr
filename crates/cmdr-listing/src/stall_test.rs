@@ -69,7 +69,7 @@ struct SilentServerVolume {
 impl SilentServerVolume {
     fn new(server_back: watch::Receiver<bool>, script: Vec<Step>) -> Self {
         Self {
-            root: cmdr_fs::app_path!("/"),
+            root: AppPath::from_normalized(LOCAL_ROOT).expect("the local root is an app path"),
             server_back,
             script: Mutex::new(script.into()),
             calls: AtomicUsize::new(0),
@@ -170,12 +170,23 @@ impl Volume for SilentServerVolume {
     }
 }
 
-/// An engine whose mount table puts `/` on a local disk, as every machine the
-/// tests run on does.
+/// The local disk's root on this host, which the rig's volume reads: a POSIX `/`
+/// is no native path on Windows, so a stall there could name no mount at all.
+#[cfg(windows)]
+const LOCAL_ROOT: &str = "C:/";
+#[cfg(not(windows))]
+const LOCAL_ROOT: &str = "/";
+
+/// An engine whose mount table puts [`LOCAL_ROOT`] on a local disk, as every
+/// machine the tests run on does. On Windows in both spellings the stall report
+/// asks in: the plain one first, then the verbatim one `canonicalize` gives.
 fn engine_on_a_local_disk() -> TestEngine {
-    TestEngine::builder()
-        .mounts(Arc::new(FakeMountTable::default().mount("/", "apfs", "/dev/disk3s1s1")))
-        .build()
+    let mounts = FakeMountTable::default().mount("/", "apfs", "/dev/disk3s1s1");
+    #[cfg(windows)]
+    let mounts = mounts
+        .mount(r"C:\", "ntfs", r"\\?\Volume{00000000-0000-0000-0000-000000000001}\")
+        .mount(r"\\?\C:\", "ntfs", r"\\?\Volume{00000000-0000-0000-0000-000000000001}\");
+    TestEngine::builder().mounts(Arc::new(mounts)).build()
 }
 
 /// One engine, one volume, and the switch that brings its server back.
@@ -226,7 +237,11 @@ impl Rig {
             let state = Arc::clone(&state);
             let volume_id = self.volume_id.clone();
             let listing_id = listing_id.to_string();
-            tokio::spawn(async move { engine.read_with(&state, &request(&listing_id, &volume_id, "/")).await })
+            tokio::spawn(async move {
+                engine
+                    .read_with(&state, &request(&listing_id, &volume_id, LOCAL_ROOT))
+                    .await
+            })
         };
         (state, task)
     }
@@ -279,7 +294,7 @@ async fn a_read_that_never_answers_reports_the_listing_stalled_within_the_deadli
     assert!(rig.engine.events.complete.lock_ignore_poison().is_empty());
     assert!(rig.engine.events.failed.lock_ignore_poison().is_empty());
     // The event names what the folder lives on: this volume is a plain filesystem
-    // backend reading `/`, which is a local disk on every machine the tests run on.
+    // backend reading `LOCAL_ROOT`, a local disk on every machine the tests run on.
     assert_eq!(
         rig.engine.events.stalled.lock_ignore_poison().as_slice(),
         [(listing.id().to_string(), StalledOn::Drive)]
