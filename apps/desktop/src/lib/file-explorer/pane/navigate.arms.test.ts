@@ -332,6 +332,37 @@ describe('{ location } arm — self-routing by volume', () => {
     expect(h.lastUsedRecords).toContainEqual({ volumeId: 'root', path: '/Users/me/sub' })
   })
 
+  // #1385: a resolver can name a volume for a path below a root its row doesn't show (a
+  // share's second mount, `/Volumes/Ext-1`). In place, the listing landed and was dropped
+  // as foreign, so the pane showed one folder while its tab held another; committed as
+  // `(ext, /Volumes/Ext-1/…)`, every operation read the path against `/Volumes/Ext` and a
+  // copy aimed at the wrong folder. The path goes on the listed volume that holds it.
+  it('a path off its volume row goes on the listed volume holding it, never split from it', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const result = navigate(
+      { pane: 'left', to: { goTo: { volumeId: 'ext', path: '/Volumes/Ext-1/docs/sub' } }, source: 'user' },
+      h.deps,
+    )
+    expect(result.status).toBe('started')
+    expect(h.tab('left')).toMatchObject({ volumeId: 'root', path: '/Volumes/Ext-1/docs/sub' })
+  })
+
+  it('a pane already on the holding volume takes such a path in place', () => {
+    h = makeHarness({ left: { path: '/Users/me', volumeId: 'root' } })
+    navigate({ pane: 'left', to: { goTo: { volumeId: 'ext', path: '/Volumes/Ext-1/docs' } }, source: 'user' }, h.deps)
+    expect(h.paneState.left.paneRef?.navigateToPath).toHaveBeenCalledWith('/Volumes/Ext-1/docs', undefined)
+    expect(h.tab('left').volumeId).toBe('root')
+  })
+
+  it('keeps a volume no row names as asked (a share nobody mapped)', () => {
+    h = makeHarness({ left: { path: '/Users/me', volumeId: 'root' } })
+    navigate(
+      { pane: 'left', to: { goTo: { volumeId: 'smb-unlisted', path: '/Volumes/unlisted/x' } }, source: 'user' },
+      h.deps,
+    )
+    expect(h.tab('left')).toMatchObject({ volumeId: 'smb-unlisted', path: '/Volumes/unlisted/x' })
+  })
+
   it('a pinned tab forks a new unpinned tab on the { location } cross-volume switch', () => {
     h = makeHarness({ left: { path: '/testshare/share', volumeId: 'testshare' } })
     getActiveTab(h.mgr('left')).pinned = true

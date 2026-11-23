@@ -83,6 +83,17 @@ describe('skippedTransferConfirmation', () => {
     expect(skippedTransferConfirmation(props, VOLUMES)?.destination).toBe('/backup')
   })
 
+  // #1385's split, on any OS: a destination its volume's root doesn't hold read as `/`, so
+  // an unconfirmed copy landed in the volume's root. Nothing names a place there, so ask.
+  it('shows the dialog when the destination is off its volume, never copying into the root', () => {
+    const props = transferProps({
+      destinationPath: '/Volumes/Stick-1/backup',
+      currentVolumeId: 'stick',
+      destVolumeId: 'stick',
+    })
+    expect(skippedTransferConfirmation(props, VOLUMES)).toBeNull()
+  })
+
   it('shows the dialog for a compress, which has a name to pick', () => {
     expect(skippedTransferConfirmation(transferProps({ operationType: 'compress' }), VOLUMES)).toBeNull()
   })

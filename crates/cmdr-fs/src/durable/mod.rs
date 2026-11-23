@@ -39,7 +39,9 @@ use platform::NEEDS_DEVICE_BARRIER;
 /// The classes a filesystem answers for a sync it doesn't offer at all, by
 /// class because the numbers differ by platform (Linux's `ENOTSUP` and
 /// `EOPNOTSUPP` are one number, macOS keeps them apart, `ENOSYS` is 78 on macOS
-/// and 38 on Linux). Network and FUSE mounts are the likely ones.
+/// and 38 on Linux). Network and FUSE mounts are the likely ones; a Windows share
+/// answers a folder's flush with `ERROR_INVALID_FUNCTION`, read as `Unsupported`, so a
+/// copy onto one no longer says it couldn't confirm the copies were written.
 pub const SYNC_UNSUPPORTED: [OsErrorClass; 5] = [
     OsErrorClass::Unsupported,
     OsErrorClass::OperationNotSupported,

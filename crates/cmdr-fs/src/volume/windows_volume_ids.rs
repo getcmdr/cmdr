@@ -207,6 +207,41 @@ pub fn covering_drive<'a>(drives: &'a [WindowsDrive], path: &str) -> Option<&'a 
         .max_by_key(|drive| drive.root.trim_end_matches('/').len())
 }
 
+/// One place the mount manager mounts a local volume: a drive letter's root (`D:/`) or a
+/// folder (`C:/mnt/data`), with the GUID path of the volume there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VolumeMountPath<'a> {
+    /// The app root: `D:/` or `C:/mnt/data`.
+    pub root: &'a str,
+    /// The volume GUID path (`\\?\Volume{…}\`) of the volume mounted there.
+    pub guid_path: &'a str,
+}
+
+/// Whether `candidate` is its volume's ONE root among `mounts` (every letter and folder
+/// mount on the machine): its drive letter when it has one, else its shortest folder, ties
+/// by name. Every other place the same volume is mounted is a plain folder of the volume
+/// holding it, as Explorer's This PC lists it (one row per drive; a folder mount shows as a
+/// folder of its parent).
+///
+/// Why one root (#1385): a volume id names one `Volume` at one root. With a folder mount as
+/// a second root of `D:`'s id, a path below it resolved to `D:`'s volume while its text sat
+/// on `C:`, so the pane's commit dropped it as a foreign listing and the tab kept the old
+/// folder the transfer dialog then offered.
+pub fn is_volume_root(candidate: &VolumeMountPath<'_>, mounts: &[VolumeMountPath<'_>]) -> bool {
+    let rank = |mount: &VolumeMountPath<'_>| {
+        let is_letter = mount.root.len() == 3 && mount.root.ends_with(":/");
+        (!is_letter, mount.root.len(), mount.root.to_lowercase())
+    };
+    let volume = |mount: &VolumeMountPath<'_>| {
+        volume_guid(mount.guid_path).map_or_else(|| mount.guid_path.to_lowercase(), str::to_lowercase)
+    };
+    let own = volume(candidate);
+    let own_rank = rank(candidate);
+    !mounts
+        .iter()
+        .any(|other| volume(other) == own && rank(other) < own_rank)
+}
+
 /// Whether two app roots name one place: drive letters and folder names fold case on
 /// Windows' filesystems, and a trailing `/` doesn't count.
 fn same_root(a: &str, b: &str) -> bool {

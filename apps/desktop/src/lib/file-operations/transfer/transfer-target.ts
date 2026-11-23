@@ -1,8 +1,9 @@
 /** Resolve the complete single-item Copy/Move target before preflight or dispatch. */
 import type { VolumeInfo } from '#lib/file-explorer/types.js'
 import { capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
+import { listedOsVolumeHolding } from '#lib/file-explorer/pane/volume-holding.js'
 import { isPathOnVolume } from '#lib/path/canonical.js'
-import { parsePath, typedSeparators } from '#lib/path/grammar.js'
+import { isLocalPath, parsePath, typedSeparators } from '#lib/path/grammar.js'
 import { DEFAULT_VOLUME_ID } from '#lib/tauri-commands/index.js'
 import { containingFolder, getFolderName, resolveTransferFilename, toVolumeRelativePath } from './transfer-dialog-utils'
 
@@ -25,6 +26,18 @@ function readEntered(enteredPath: string): { entered: string; relative: boolean;
   const onThisMachine = kind === 'drive' || kind === 'unc'
   const relative = !entered.startsWith('/') && !entered.startsWith('~/') && !onThisMachine
   return { entered, relative, onThisMachine }
+}
+
+/**
+ * The volume for a typed drive or share path no listed root holds: the picked one when the
+ * list doesn't know its root (a share nobody mapped, which a pane reaches by its UNC path and
+ * which has no row), else the boot drive. Either way the path goes on whole, and the backend
+ * refuses it if it's another volume's: ❌ never anchored on a root it isn't under.
+ */
+function fallbackVolume(parent: string, pickedId: string, volumes: VolumeInfo[]): string {
+  const picked = volumes.find((v) => v.id === pickedId)
+  if (picked === undefined && pickedId !== DEFAULT_VOLUME_ID && isLocalPath(parent)) return pickedId
+  return DEFAULT_VOLUME_ID
 }
 
 export function resolveTransferTarget(args: {
@@ -53,20 +66,16 @@ export function resolveTransferTarget(args: {
     ? sourceIsLocal
     : entered.startsWith('~/') || onThisMachine || capabilitiesForPane(selectedVolumeId, selectedRoot).kind === 'local'
   let volumeId = relative ? sourceVolumeId : selectedVolumeId
-  if (localTarget) {
-    volumeId =
-      volumes
-        .filter(
-          (v) =>
-            v.category !== 'favorite' &&
-            capabilitiesForPane(v.id, v.path).kind === 'local' &&
-            isPathOnVolume(named.parent, v.path),
-        )
-        .sort((a, b) => b.path.length - a.path.length)[0]?.id ?? DEFAULT_VOLUME_ID
-  }
+  if (localTarget)
+    volumeId = listedOsVolumeHolding(named.parent, volumes)?.id ?? fallbackVolume(named.parent, volumeId, volumes)
   const root = volumeRoot(volumes, volumeId)
   const path = parentForVolume(named.parent, root, localTarget)
-  const fullParent = root === '/' ? path : `${root.replace(/\/+$/, '')}${path === '/' ? '' : path}`
+  // No place on the volume (`toVolumeRelativePath`): no target, so the box refuses to
+  // confirm. ❌ Never sent on: the backend anchors an empty path at the volume's root.
+  if (path === '') return null
+  // A drive or share path off every listed root stays whole (`toVolumeRelativePath`).
+  const keptWhole = !path.startsWith('/')
+  const fullParent = root === '/' || keptWhole ? path : `${root.replace(/\/+$/, '')}${path === '/' ? '' : path}`
   return {
     ...named,
     volumeId,
