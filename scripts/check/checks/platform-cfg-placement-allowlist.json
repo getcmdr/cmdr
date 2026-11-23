@@ -416,9 +416,6 @@
     "crates/cmdr-index/src/indexing/resources/subsystem_stop.rs": {
       "outsideSeam": 1
     },
-    "crates/cmdr-index/src/indexing/scanner/boot_tree_mounts.rs": {
-      "outsideSeam": 1
-    },
     "crates/cmdr-index/src/indexing/scanner/exclusions.rs": {
       "outsideSeam": 6
     },

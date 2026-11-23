@@ -4605,7 +4605,8 @@
       "fileExplorer.network.osMountFallback.message": "Windows' select here means pressing a control, the click ruling's нажать, not marking files.",
       "settings.fileOperations.showAlreadyGoneToast.description": "Windows' select here means pressing a control, the click ruling's нажать, not marking files.",
       "settings.search.autoApply.description": "Windows' select here means pressing a control, the click ruling's нажать, not marking files.",
-      "fileOperations.delete.cloudOnlineOnlyHandedBack": "\"Your selection\" is the marked files, «выделенных файлов» (marking stays выделить); no pick from a menu here."
+      "fileOperations.delete.cloudOnlineOnlyHandedBack": "\"Your selection\" is the marked files, «выделенных файлов» (marking stays выделить); no pick from a menu here.",
+      "fileOperations.delete.symlinkNoticeMany": "«В выделенном» refers to the marked files (the base ruling «выделение»), not to picking a menu row, which is what the windows form «выбрать» covers."
     },
     "decision": "Selection: выделение",
     "windows": {

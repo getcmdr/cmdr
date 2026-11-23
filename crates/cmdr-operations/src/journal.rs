@@ -292,13 +292,15 @@ pub(super) fn record_trashed(
     let dest_identity = in_trash
         .and_then(|path| std::fs::symlink_metadata(path).ok())
         .and_then(|metadata| NodeIdentity::of(&metadata));
+    // Under the op's own volume, as the header names it: `root` on a Mac, the drive on
+    // Windows' `D:` (#1433). An undo reads each row's volume id.
     record_row(
         scope,
         entry_type,
         RowRole::RollbackUnit,
-        DEFAULT_VOLUME_ID,
+        scope.local_ids_for(source, in_trash).0,
         source,
-        in_trash.map(|d| (DEFAULT_VOLUME_ID, d)),
+        in_trash.map(|d| (scope.local_ids_for(source, Some(d)).1, d)),
         size,
         mtime,
         false,
@@ -565,17 +567,22 @@ pub(super) fn note_not_rollbackable(scope: &OpScope, reason: NotRollbackableReas
 /// `(item_count, items_done, bytes_total)`; `item_count` is `None` when no real
 /// scanned total is available (an instant op, or a direct-call test that never
 /// registered a status row), so finalize keeps the provisional open-time value.
-fn header_totals_from_status(scope: &OpScope) -> (Option<u64>, u64, u64) {
+///
+/// `completed` is what the op's terminal event said it finished: the status cache
+/// moves only on a throttled progress frame, so a delete or trash that finishes inside
+/// the first frame still reads `0` done there (#1433). It raises `items_done`, capped
+/// at the planned total.
+fn header_totals_from_status(scope: &OpScope, completed: usize) -> (Option<u64>, u64, u64) {
     let status = scope
         .journal()
         .and_then(|journal| scope.status().snapshot(journal.op_id().as_str(), None));
     match status {
         Some(status) if status.files_total > 0 => (
             Some(status.files_total as u64),
-            status.files_done as u64,
+            status.files_done.max(completed.min(status.files_total)) as u64,
             status.bytes_total,
         ),
-        _ => (None, 0, 0),
+        _ => (None, completed as u64, 0),
     }
 }
 
@@ -584,7 +591,18 @@ fn header_totals_from_status(scope: &OpScope) -> (Option<u64>, u64, u64) {
 /// The header aggregates are refined from the status cache (the header-aggregate rider) so the alpha
 /// dialog renders a real "Copy N items" instead of zero.
 pub(super) fn finalize_op(scope: &OpScope, kind: OpKind, execution_status: ExecutionStatus) {
-    let (item_count, items_done, bytes_total) = header_totals_from_status(scope);
+    finalize_op_reporting(scope, kind, execution_status, 0);
+}
+
+/// [`finalize_op`] for an op whose terminal event reported `completed` items done
+/// (`header_totals_from_status` says why the status cache alone can miss them).
+pub(super) fn finalize_op_reporting(
+    scope: &OpScope,
+    kind: OpKind,
+    execution_status: ExecutionStatus,
+    completed: usize,
+) {
+    let (item_count, items_done, bytes_total) = header_totals_from_status(scope, completed);
     journal_finalize(
         scope,
         FinalizeInputs {

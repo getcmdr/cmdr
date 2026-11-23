@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Mục này là một liên kết mềm. Chỉ liên kết bị xóa, không phải đích của nó.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Mục này là một liên kết. Chỉ liên kết bị xóa, không phải nơi nó trỏ tới.} other {Mục này là một liên kết mềm. Chỉ liên kết bị xóa, không phải đích của nó.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Lựa chọn của bạn gồm {countText} {count, plural, other {liên kết mềm}}. Chỉ bản thân các liên kết bị xóa, không phải đích của chúng.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Lựa chọn của bạn gồm {countText} {count, plural, other {liên kết}}. Chỉ bản thân các liên kết bị xóa, không phải nơi chúng trỏ tới.} other {Lựa chọn của bạn gồm {countText} {count, plural, other {liên kết mềm}}. Chỉ bản thân các liên kết bị xóa, không phải đích của chúng.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr không thể tạo tệp “{name}”. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

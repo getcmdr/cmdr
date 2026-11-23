@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Ez az elem egy szimbolikus link. Csak a link törlődik, a célja nem.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Ez az elem egy link. Csak a link törlődik, az nem, amire mutat.} other {Ez az elem egy szimbolikus link. Csak a link törlődik, a célja nem.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "A kijelölésed {countText} {count, plural, one {szimbolikus linket} other {szimbolikus linket}} tartalmaz. Csak maguk a linkek törlődnek, a céljaik nem.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {A kijelölésed {countText} {count, plural, one {linket} other {linket}} tartalmaz. Csak maguk a linkek törlődnek, az nem, amire mutatnak.} other {A kijelölésed {countText} {count, plural, one {szimbolikus linket} other {szimbolikus linket}} tartalmaz. Csak maguk a linkek törlődnek, a céljaik nem.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "A Cmdr nem tudta létrehozni ezt a fájlt: „{name}”. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

@@ -422,6 +422,29 @@ fn each_unreadable_list_gets_its_own_sentence() {
     );
 }
 
+/// Regression (#1434): on Windows the note said "protected by macOS itself". It names only
+/// the OS it runs on, and a long list stays in `offLimits` rather than repeating inline.
+#[test]
+fn the_off_limits_note_names_only_the_os_it_runs_on() {
+    let one = vec!["C:/Windows/Prefetch".to_string()];
+    let mac = off_limits_note(&one, "macos");
+    assert!(
+        mac.contains("C:/Windows/Prefetch") && mac.contains("macOS itself"),
+        "{mac}"
+    );
+    for os in ["windows", "linux"] {
+        let note = off_limits_note(&one, os);
+        assert!(note.contains("C:/Windows/Prefetch"), "{note}");
+        assert!(!note.contains("macOS"), "{os}: {note}");
+    }
+
+    let many: Vec<String> = (0..112).map(|i| format!("C:/test_dir_{i}")).collect();
+    let note = off_limits_note(&many, "windows");
+    assert!(note.contains("C:/test_dir_0"), "{note}");
+    assert!(!note.contains("C:/test_dir_111"), "the rest stay in offLimits: {note}");
+    assert!(note.contains("102 more") && note.contains("offLimits"), "{note}");
+}
+
 #[test]
 fn full_disk_access_is_offered_only_when_granting_it_would_help() {
     let refused = vec!["/Users/test_user_10/Downloads".to_string()];

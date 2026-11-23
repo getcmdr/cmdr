@@ -127,13 +127,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "這個項目是符號連結。只會刪除連結本身，不會刪除它指向的目標。",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {這個項目是連結。只會刪除連結本身，不會刪除它指向的內容。} other {這個項目是符號連結。只會刪除連結本身，不會刪除它指向的目標。}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "你選取的內容包含 {countText} 個{count, plural, other {符號連結}}。只會刪除連結本身，不會刪除它們指向的目標。",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {你選取的內容包含 {countText} 個{count, plural, other {連結}}。只會刪除連結本身，不會刪除它們指向的內容。} other {你選取的內容包含 {countText} 個{count, plural, other {符號連結}}。只會刪除連結本身，不會刪除它們指向的目標。}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr 無法建立檔案「{name}」。{reason}",
   "@fileOperations.mkfile.notCreatedToast": {

@@ -413,6 +413,8 @@ impl EngineStores {
 #[cfg(test)]
 mod approved_op_parity_tests;
 #[cfg(test)]
+mod finished_header_tests;
+#[cfg(test)]
 mod journal_capture_tests;
 #[cfg(test)]
 mod journal_capture_volume_tests;

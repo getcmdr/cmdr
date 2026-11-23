@@ -23,3 +23,51 @@ fn text_that_names_no_place_reads_as_nothing() {
     );
     assert_eq!(last_name("/"), None);
 }
+
+/// Regression (#1430): Windows' `realpath` (`std::fs::canonicalize`) answers the verbatim
+/// `\\?\C:\…`, and its lossy text reached the index as a scope no row matched, so a search of
+/// the current folder found nothing. The crossing [`super::of_native`] takes reads a native
+/// answer back as the app path it names: pinned here in either flavor, on every host.
+#[test]
+fn a_native_answer_reads_back_as_its_app_path_in_either_flavor() {
+    use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
+    use std::path::Path;
+
+    let of_native_as = |native: &Path, flavor| {
+        AppPathBuf::from_native_as(native, flavor)
+            .ok()
+            .map(|app| app.as_str().to_owned())
+    };
+
+    let windows = [
+        (r"\\?\C:\Users\test_user_1\src", "C:/Users/test_user_1/src"),
+        (r"C:\Users\test_user_1\src", "C:/Users/test_user_1/src"),
+        (r"\\?\UNC\testnas.local\share\x", "//testnas.local/share/x"),
+        (r"\\?\C:\", "C:/"),
+    ];
+    for (native, app) in windows {
+        assert_eq!(
+            of_native_as(Path::new(native), PathFlavor::Windows).as_deref(),
+            Some(app),
+            "{native}"
+        );
+    }
+    assert_eq!(
+        of_native_as(Path::new("/private/tmp/x"), PathFlavor::Posix).as_deref(),
+        Some("/private/tmp/x")
+    );
+    // A device path names no app path: the caller keeps what it had.
+    assert_eq!(
+        of_native_as(Path::new(r"\\?\Volume{1234}\x"), PathFlavor::Windows),
+        None
+    );
+}
+
+/// [`super::realpath`] resolves a real folder to app text this host's [`super::parse`] reads.
+#[test]
+fn a_real_folders_realpath_is_app_text() {
+    let dir = crate::test_support::AppTestDir::new("app-text-realpath");
+    let real = super::realpath(dir.app_path().as_str()).expect("an existing folder resolves");
+    assert!(super::parse(&real).is_ok(), "{real} reads as an app path");
+    assert!(!real.starts_with(r"\\?\"), "{real}");
+}

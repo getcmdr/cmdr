@@ -104,7 +104,7 @@
           "source": "note.md"
         }
       ],
-      "itemsDone": 0,
+      "itemsDone": 4,
       "kind": "Delete",
       "notRollbackable": "PermanentDelete",
       "reverses": false,

@@ -44,7 +44,9 @@ Depth for the search backend. `CLAUDE.md` holds the must-knows; this file holds 
   literal so an offline-index scope still gets a best-effort match. Applies to `search`, `ai_search`, and the FE search
   dialog — all route through the one `scope_pairs`. The pipeline's order is `~` (`query::expand_tilde`, against the
   search context's home), then `realpath` (the host's), then the mount strip (`seam::resolve_scope`), because an
-  index-relative path can't be canonicalized.
+  index-relative path can't be canonicalized. The answer comes back as app text through `app_text::realpath`, ❌ never
+  the native answer's `to_string_lossy`: on Windows that's `\\?\C:\…`, which matched no row and made the cover walk
+  refuse the scope, so every folder-scoped search came back empty (#1430).
 - **Only a volume read through `std::fs` is canonicalized** (`index_source::PathNamespace`, decided once per `Target` from
   the registered volume's `BackendKind`, and the one `Target::canonical_scope` (through
   `index_source::canonicalize_scope_path`) every site calls, since the coverage

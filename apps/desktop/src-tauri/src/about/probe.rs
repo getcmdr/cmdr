@@ -164,8 +164,15 @@ fn identity(path: &Path, name: &str, metadata: &std::fs::Metadata, extras: platf
             .is_symlink()
             .then(|| std::fs::read_link(path).ok())
             .flatten()
-            .map(|target| ItemText::new(&target.to_string_lossy())),
+            .map(|target| ItemText::new(&link_target_text(&target))),
     }
+}
+
+/// A link's target as the card shows it: an absolute target as the app path it names
+/// (`app_text::of_native`), so a Windows junction's `\\?\C:\…` reads `C:/…` (#1430), and a
+/// relative one (`../x`) as the link holds it, since it names no place on its own.
+pub(super) fn link_target_text(target: &Path) -> String {
+    crate::app_text::of_native(target).unwrap_or_else(|| target.to_string_lossy().into_owned())
 }
 
 fn unix_seconds(time: std::time::SystemTime) -> Option<i64> {

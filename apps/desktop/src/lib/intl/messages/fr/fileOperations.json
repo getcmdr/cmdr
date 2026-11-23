@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Cet élément est un lien symbolique. Seul le lien sera supprimé, pas sa cible.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Cet élément est un lien. Seul le lien sera supprimé, pas ce vers quoi il pointe.} other {Cet élément est un lien symbolique. Seul le lien sera supprimé, pas sa cible.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Votre sélection comprend {countText} {count, plural, one {lien symbolique} many {liens symboliques} other {liens symboliques}}. Seuls les liens eux-mêmes seront supprimés, pas leurs cibles.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Votre sélection comprend {countText} {count, plural, one {lien} many {liens} other {liens}}. Seuls les liens eux-mêmes seront supprimés, pas ce vers quoi ils pointent.} other {Votre sélection comprend {countText} {count, plural, one {lien symbolique} many {liens symboliques} other {liens symboliques}}. Seuls les liens eux-mêmes seront supprimés, pas leurs cibles.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr n’a pas pu créer le fichier « {name} ». {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

@@ -5,9 +5,10 @@
 //! [`Operations`] method.
 
 use std::future::Future;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use cmdr_fs::log_private::LogPrivate;
@@ -18,19 +19,21 @@ use cmdr_operation_log::types::{Initiator, OperationId};
 use super::delete::already_gone::{self, AlreadyGoneSink};
 use super::delete::delete_files_with_progress_inner;
 use super::delete::trash::trash_files_with_progress;
+use super::host::{OperationVolumes, SinkDecorator};
 use super::manager::{self, OperationDescriptor, OperationSummaryText};
 use super::source_binding::{ExpectedSources, retain_bound_sources, retain_bound_sources_with_sizes};
 use super::state::{WriteOperationState, WriteSettledGuard};
 use super::transfer::copy::copy_files_with_progress_inner;
 use super::transfer::move_op::move_files_with_progress_inner;
 use super::types::{
-    ConflictResolution, RollbackSupport, WriteErrorEvent, WriteOperationConfig, WriteOperationError,
-    WriteOperationStartResult, WriteOperationType,
+    ConflictResolution, RollbackSupport, WriteCompleteEvent, WriteErrorEvent, WriteOperationConfig,
+    WriteOperationError, WriteOperationStartResult, WriteOperationType,
 };
 use super::validation::{
     ensure_destination_dir, validate_destination_not_inside_source, validate_destination_writable,
     validate_source_names_are_distinct, validate_sources,
 };
+use super::wire_paths::seam_path;
 use super::{OperationEventSink, Operations, journal, path_summary, scan_bridge, transfer_sides};
 
 // ============================================================================
@@ -67,6 +70,9 @@ impl Operations {
         // can't be named afterwards (`transfer_sides.rs`). `None` for an operation
         // with only one side (a delete, a trash).
         sides: Option<transfer_sides::TransferSides>,
+        // A one-sided op's volume and its root, when it isn't `root`
+        // ([`one_local_side`]): its journal rows name it. `None` for a transfer.
+        one_side: Option<(String, PathBuf)>,
         // What a copy or move does with a name already taken at the destination,
         // as the snapshot reports it (`conflict_policy_cell.rs`). `None` for an
         // operation with no destination to clash at.
@@ -153,6 +159,8 @@ impl Operations {
                         (&source.volume_id, &source.root),
                         (&destination.volume_id, &destination.root),
                     );
+                } else if let Some((volume_id, root)) = &one_side {
+                    state.scope().journal_local_sides((volume_id, root), (volume_id, root));
                 }
                 journal::open_local_op(
                     state.scope(),
@@ -164,7 +172,11 @@ impl Operations {
                 );
 
                 let op_id_for_blocking = op_id.to_string();
-                let events_for_handler = Arc::clone(&events);
+                let completed = Arc::new(AtomicUsize::new(0));
+                let events_for_handler: Arc<dyn OperationEventSink> = Arc::new(CompletionTally {
+                    inner: Arc::clone(&events),
+                    done: Arc::clone(&completed),
+                });
                 // Kept out of the handler's move so the safety net below can still
                 // read the operation's captured sides: a transfer that returned an
                 // error without emitting one itself gets the vanished drive named
@@ -187,7 +199,12 @@ impl Operations {
                     }
                     _ => cmdr_operation_log::types::ExecutionStatus::Failed,
                 };
-                journal::finalize_op(state_for_net.scope(), op_kind, execution_status);
+                journal::finalize_op_reporting(
+                    state_for_net.scope(),
+                    op_kind,
+                    execution_status,
+                    completed.load(Ordering::Relaxed),
+                );
 
                 match result {
                     Ok(Ok(())) => {} // Handler already emitted write-complete or write-cancelled
@@ -283,6 +300,7 @@ impl Operations {
             config.preview_id.clone(),
             sources.len() as u64,
             sides,
+            None,
             Some(config.conflict_resolution),
             config.os_junk_files,
             move |events, op_id, state| {
@@ -354,6 +372,7 @@ impl Operations {
             config.preview_id.clone(),
             sources.len() as u64,
             sides,
+            None,
             Some(config.conflict_resolution),
             config.os_junk_files,
             move |events, op_id, state| {
@@ -408,6 +427,9 @@ impl Operations {
                 sources.len() as u64,
                 // One side only: a delete has no destination volume.
                 None,
+                sources
+                    .first()
+                    .and_then(|first| one_local_side(self.host().volumes(), first)),
                 None,
                 OsJunkFiles::Include,
                 move |events, op_id, state| {
@@ -462,8 +484,11 @@ impl Operations {
             summary,
             None,
             sources.len() as u64,
-            // One side only: trash always lands in the local macOS Trash.
+            // One side only: trash lands in the OS trash of the source's own drive.
             None,
+            sources
+                .first()
+                .and_then(|first| one_local_side(self.host().volumes(), first)),
             None,
             OsJunkFiles::Include,
             move |events, op_id, state| {
@@ -494,6 +519,41 @@ impl Operations {
             },
         )
         .await
+    }
+}
+
+/// The volume a one-sided local op (a delete, a trash) journals under when it's not the
+/// local disk's `root`: the registered volume whose root is the nearest ancestor of
+/// `source`, with that root. `None` while `root`'s own root holds `source`, so on a Mac
+/// (`root` is `/`) every row keeps naming `root`; on Windows `root` is the system drive
+/// alone, and a trash on `D:` journaled under it filed `D:`'s rows under `C:` (#1433).
+pub(crate) fn one_local_side(volumes: &dyn OperationVolumes, source: &Path) -> Option<(String, PathBuf)> {
+    let local_root = volumes.get(cmdr_fs::volume::DEFAULT_VOLUME_ID);
+    if local_root.is_some_and(|root| source.starts_with(root.root().as_str())) {
+        return None;
+    }
+    source.ancestors().find_map(|ancestor| {
+        let (id, _) = volumes.find_by_root(&seam_path(ancestor))?;
+        (id != cmdr_fs::volume::DEFAULT_VOLUME_ID).then(|| (id, ancestor.to_path_buf()))
+    })
+}
+
+/// Counts the items a finished op reports done ([`WriteCompleteEvent::files_processed`]),
+/// so its journal header says so: delete and trash update the status cache only on a
+/// throttled progress frame, so one that finishes inside the first frame left
+/// `itemsDone: 0` on a done op (#1433). Forwards every event unchanged.
+struct CompletionTally {
+    inner: Arc<dyn OperationEventSink>,
+    done: Arc<AtomicUsize>,
+}
+
+impl SinkDecorator for CompletionTally {
+    fn inner(&self) -> &dyn OperationEventSink {
+        &*self.inner
+    }
+    fn emit_complete(&self, event: WriteCompleteEvent) {
+        self.done.fetch_max(event.files_processed, Ordering::Relaxed);
+        self.inner.emit_complete(event);
     }
 }
 

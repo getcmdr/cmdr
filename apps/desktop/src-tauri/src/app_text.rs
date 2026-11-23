@@ -7,10 +7,9 @@
 //! LITERAL (no producer made it), so it parses through `from_literal_store`, and the native
 //! path out is byte for byte the text in.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath};
-
+use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor};
 /// `text` as an app path, with this host's flavor, normalized (a trailing `/` and `.` names
 /// dropped).
 ///
@@ -36,7 +35,7 @@ pub(crate) fn parse_posix(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
     if !ESCAPES_LIVE && text.chars().any(cmdr_fs::app_path::is_escape) {
         return Err(NotAnAppPath::WrongFlavor);
     }
-    AppPathBuf::parse(text, cmdr_fs::app_path::PathFlavor::Posix)
+    AppPathBuf::parse(text, PathFlavor::Posix)
 }
 
 /// App text that may name a place on ANY volume (a journal row, a card's place): [`parse`],
@@ -85,6 +84,26 @@ pub(crate) fn as_std_path_text(text: &str) -> PathBuf {
 pub(crate) fn native_plain(text: &str) -> Option<PathBuf> {
     let path = parse(text).ok()?;
     path.to_native_plain().or_else(|_| path.to_native()).ok()
+}
+
+/// The app text for a path the OS reported (a `realpath`, a resolved link), through
+/// `AppPathBuf::from_native_unicode`: the one way an OS answer becomes app text. ❌ Never
+/// `to_string_lossy` of one: on Windows `std::fs::canonicalize` answers the verbatim
+/// `\\?\C:\…`, which no index row, mount root, or pane path spells (#1430). `None` for a device
+/// path, and for a name that isn't Unicode text while escapes aren't live: the caller keeps the
+/// text it had.
+pub(crate) fn of_native(native: &Path) -> Option<String> {
+    AppPathBuf::from_native_unicode(native)
+        .ok()
+        .map(|app| app.as_str().to_owned())
+}
+
+/// App text `text` with every link resolved (`realpath`), as app text ([`of_native`]). `None`
+/// when the place doesn't exist or the answer has no app spelling. ❗ A `realpath` blocks on a
+/// hung mount: a caller on a shared thread runs this under a deadline.
+pub(crate) fn realpath(text: &str) -> Option<String> {
+    let native = native(text).unwrap_or_else(|| PathBuf::from(text));
+    of_native(&std::fs::canonicalize(native).ok()?)
 }
 
 #[cfg(test)]

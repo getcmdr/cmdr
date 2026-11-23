@@ -107,6 +107,10 @@ read as "already deleting" while the scan was still counting.
 
 - **Dangling symlinks**: `symlink_metadata()` instead of `path.exists()`. A dangling symlink (target deleted) is still a
   valid item to trash/delete.
+- **A link to a folder** (a macOS symlink, a Windows junction) lists as a folder, but the title counts it as a file
+  (`generateDeleteTitle`): only the link goes, and the scan's count line counts it as one file, so the two agree
+  (#1432). The link notice says "link" on Windows, where the listing can't tell a junction from a symlink, and "symlink"
+  elsewhere.
 - **Locked files**: `trashItemAtURL` refuses a Locked item, and so does a permanent delete. Both say so and suggest
   unlocking via Finder; the trash reads it as `TrashRefusalKind::Locked` (backend `delete/DETAILS.md` § "What a batch
   trash reports").

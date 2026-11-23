@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Цей елемент — символічне посилання. Буде видалено лише посилання, а не цільовий обʼєкт.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Цей елемент — посилання. Буде видалено лише посилання, а не те, на що воно вказує.} other {Цей елемент — символічне посилання. Буде видалено лише посилання, а не цільовий обʼєкт.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Серед вибраного є {countText} {count, plural, one {символічне посилання} few {символічні посилання} many {символічних посилань} other {символічного посилання}}. Буде видалено лише самі посилання, а не цільові обʼєкти.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Серед вибраного є {countText} {count, plural, one {посилання} few {посилання} many {посилань} other {посилання}}. Буде видалено лише самі посилання, а не те, на що вони вказують.} other {Серед вибраного є {countText} {count, plural, one {символічне посилання} few {символічні посилання} many {символічних посилань} other {символічного посилання}}. Буде видалено лише самі посилання, а не цільові обʼєкти.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr не вдалося створити файл «{name}». {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

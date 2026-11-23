@@ -128,13 +128,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Det här objektet är en symlänk. Bara länken raderas, inte målet.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Det här objektet är en länk. Bara länken raderas, inte det som den pekar på.} other {Det här objektet är en symlänk. Bara länken raderas, inte målet.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Din markering innehåller {countText} {count, plural, one {symlänk} other {symlänkar}}. Bara själva länkarna raderas, inte deras mål.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Din markering innehåller {countText} {count, plural, one {länk} other {länkar}}. Bara själva länkarna raderas, inte det som de pekar på.} other {Din markering innehåller {countText} {count, plural, one {symlänk} other {symlänkar}}. Bara själva länkarna raderas, inte deras mål.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr kunde inte skapa filen ”{name}”. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

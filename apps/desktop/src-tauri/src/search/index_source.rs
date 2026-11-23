@@ -140,10 +140,11 @@ fn canonicalize_scope_path_under(path: &str, home: Option<&str>, namespace: Path
     let owned = path.clone();
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
-        let _ = tx.send(std::fs::canonicalize(&owned));
+        // App text back, ❌ never the native answer's text: Windows' is `\\?\C:\…` (#1430).
+        let _ = tx.send(crate::app_text::realpath(&owned));
     });
     match rx.recv_timeout(std::time::Duration::from_secs(2)) {
-        Ok(Ok(canonical)) => canonical.to_string_lossy().into_owned(),
+        Ok(Some(canonical)) => canonical,
         _ => path,
     }
 }

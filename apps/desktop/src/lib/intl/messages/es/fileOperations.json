@@ -127,13 +127,13 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Este elemento es un enlace simbólico. Solo se eliminará el enlace, no su destino.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Este elemento es un enlace. Solo se eliminará el enlace, no aquello a lo que apunta.} other {Este elemento es un enlace simbólico. Solo se eliminará el enlace, no su destino.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "sourceHash": "c5a4259"
+    "sourceHash": "85fb1a0"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Tu selección incluye {countText} {count, plural, one {enlace simbólico} many {enlaces simbólicos} other {enlaces simbólicos}}. Solo se eliminarán los enlaces en sí, no sus destinos.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Tu selección incluye {countText} {count, plural, one {enlace} many {enlaces} other {enlaces}}. Solo se eliminarán los enlaces en sí, no aquello a lo que apuntan.} other {Tu selección incluye {countText} {count, plural, one {enlace simbólico} many {enlaces simbólicos} other {enlaces simbólicos}}. Solo se eliminarán los enlaces en sí, no sus destinos.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "sourceHash": "56b3f52"
+    "sourceHash": "9831d2f"
   },
   "fileOperations.mkfile.notCreatedToast": "Cmdr no ha podido crear el archivo “{name}”. {reason}",
   "@fileOperations.mkfile.notCreatedToast": {

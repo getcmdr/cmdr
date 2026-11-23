@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, onTestFinished } from 'vitest'
 import { _setLocaleForTests } from '#lib/intl/locale.js'
+import { withPlatform } from '#lib/platform/test-platform.js'
 import {
   generateDeleteTitle,
   abbreviatePath,
@@ -70,6 +71,22 @@ describe('generateDeleteTitle', () => {
       expect(generateDeleteTitle([], false)).toBe('Delete')
     })
   })
+
+  // Regression (#1432): a link to a folder (a Windows junction, a macOS symlink) reads as a
+  // folder in the listing, but only the link goes, and the scan counts it as one file. The
+  // title counts it the same way, so the two never disagree.
+  describe('a link to a folder', () => {
+    const link = makeItem({ name: 'test_junction_1', isDirectory: true, isSymlink: true })
+
+    it('counts as a file under the cursor', () => {
+      expect(generateDeleteTitle([link], true)).toBe('Delete 1 file under cursor')
+    })
+
+    it('counts as a file in a selection', () => {
+      const items = [link, makeItem({ name: 'src', isDirectory: true })]
+      expect(generateDeleteTitle(items, false)).toBe('Delete 1 selected file and 1 folder')
+    })
+  })
 })
 
 describe('abbreviatePath', () => {
@@ -126,6 +143,28 @@ describe('getSymlinkNotice', () => {
     const notice = getSymlinkNotice([makeItem({ isSymlink: true }), makeItem()])
     expect(notice).toContain('1 symlink')
     expect(notice).toContain('links themselves')
+  })
+
+  // Regression (#1432): Windows users meet junctions far more than symlinks, and the listing
+  // can't tell the two apart, so Windows names both "link". macOS and Linux keep "symlink".
+  describe('per platform', () => {
+    it('names a link "link" on Windows, never "symlink"', () => {
+      onTestFinished(withPlatform('windows'))
+      const single = getSymlinkNotice([makeItem({ isSymlink: true })])
+      expect(single).toBe('This item is a link. Only the link will be deleted, not what it points to.')
+      const many = getSymlinkNotice([makeItem({ isSymlink: true }), makeItem(), makeItem({ isSymlink: true })])
+      expect(many).toBe(
+        'Your selection includes 2 links. Only the links themselves will be deleted, not what they point to.',
+      )
+    })
+
+    it.each(['macos', 'linux'] as const)('keeps "symlink" on %s', (platform) => {
+      onTestFinished(withPlatform(platform))
+      expect(getSymlinkNotice([makeItem({ isSymlink: true })])).toBe(
+        'This item is a symlink. Only the link will be deleted, not its target.',
+      )
+      expect(getSymlinkNotice([makeItem({ isSymlink: true }), makeItem()])).toContain('1 symlink')
+    })
   })
 })
 
