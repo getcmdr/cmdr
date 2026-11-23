@@ -30,7 +30,7 @@ use tauri::{AppHandle, Runtime, menu::Submenu};
 use crate::ignore_poison::IgnorePoison as _;
 
 use super::MenuState;
-use super::macos_appkit::{find_ns_item, find_ns_submenu, menu_item_text, submenu_by_id};
+use super::macos_appkit::{find_ns_item, find_ns_submenu, menu_item_text, submenu_by_id, viewer_bar_installed};
 use super::menu_bar::MENU_BAR;
 use super::menu_spec::{EntryKind, ItemSpec, Platform, SubmenuSpec};
 
@@ -67,6 +67,11 @@ pub(crate) fn set_display_accelerators<R: Runtime>(app: &AppHandle<R>, menu_stat
 
 fn set_display_accelerators_inner<R: Runtime>(app: &AppHandle<R>, menu_state: &MenuState<R>) {
     let mtm = MainThreadMarker::new().expect("set_display_accelerators_inner must be called from the main thread");
+    // A main-window push can land while a viewer's bar is up, which has no Select or Go menu.
+    // Nothing to draw on it, and the swap back to the main bar redraws these.
+    if viewer_bar_installed(app) {
+        return;
+    }
     let Some(menu) = app.menu() else {
         return;
     };
