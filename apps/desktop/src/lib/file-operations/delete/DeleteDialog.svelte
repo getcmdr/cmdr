@@ -335,12 +335,9 @@
      *  through the delete dialog infrastructure for a transient confirmation dialog). */
     function itemSizeBytes(item: DeleteSourceItem): number | null {
         // Group A wire-format: IPC sends `null` for absent fields, not `undefined`.
-        // A link to a folder is the link alone (`deletesAsFolder`), ❌ never its target's size.
         if (!deletesAsFolder(item)) return item.size ?? null
-        // A folder's size is the drive index's, so it reads the way the listing
-        // reads it: nothing counted yet is no size at all, and a partial count is
-        // a `≥` floor (`itemSizeIsLowerBound`), ❌ never a bare number someone
-        // decides a delete on.
+        // A folder's size is the drive index's, read the way the listing reads it: nothing counted yet is no size,
+        // and a partial count is a `≥` floor (`itemSizeIsLowerBound`), ❌ never a bare number to decide a delete on.
         const state = getDirSizeDisplayState(item.recursiveSize, item.recursiveSizeComplete)
         return state === 'dir' ? null : (item.recursiveSize ?? null)
     }

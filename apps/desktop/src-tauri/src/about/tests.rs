@@ -292,7 +292,8 @@ fn a_missing_path_is_unavailable_not_a_card_of_unknowns() {
 /// absolute target reads as the app path it names, and a relative one stays as written.
 #[test]
 fn a_link_target_reads_as_app_text() {
-    let absolute = std::env::temp_dir();
+    let dir = TestDir::new("about-link-target");
+    let absolute = dir.as_ref().to_path_buf();
     let shown = super::probe::link_target_text(&absolute);
     assert_eq!(Some(shown.clone()), crate::app_text::of_native(&absolute));
     assert!(!shown.starts_with(r"\\?\"), "{shown}");
