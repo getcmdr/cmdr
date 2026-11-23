@@ -28,7 +28,6 @@ cmdr-listing-wasm	multi_rename_test::a_sheet_opens_previews_moves_renames_and_ro
 cmdr-listing-wasm	operations_host::commands_test::move_delete_rename_and_new_folder_reach_the_pane	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-listing-wasm	search_test::a_write_reaches_the_next_search	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-listing-wasm	viewer_test::markdown_renders_follows_a_relative_link_and_serves_its_image	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
-cmdr-local	mounts::tests::a_windows_drive_root_is_a_mount_point_in_every_spelling_and_a_junction_is_not	fails	cause unread (windows-test-failures.md)
 cmdr-operations	archive_edit::driver_tests::deleting_inside_a_remote_archive_reports_its_upload	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	archive_edit::driver_tests::route_archive_delete_removes_entries_and_completes	fails	#1225: a native home path where an app path belongs (cluster H) (windows-test-failures.md)
 cmdr-operations	archive_edit::driver_tests::route_archive_delete_reports_the_deleted_count_not_the_retained_count	fails	#1225: a native home path where an app path belongs (cluster H) (windows-test-failures.md)

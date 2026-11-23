@@ -55,10 +55,10 @@ fn windows_build() -> u32 {
         .expect("a numeric build")
 }
 
-/// The first build whose WinHTTP drops a PAC's `SOCKS5` entry: 26100, Windows Server 2025 (the
-/// hosted runner, CI run 45158786958, 2026-11-23) and, by the same build number, Windows 11 24H2.
-/// Windows 10 22H2 (19045, the builder) still reads it.
-const DROPS_SOCKS5: u32 = 26_100;
+/// The first build whose WinHTTP drops a PAC's versioned `SOCKS5` and `SOCKS4` entries: 26100,
+/// Windows Server 2025 (the hosted runner, CI runs 45158786958 and 45204801821, 2026-11-23) and,
+/// by the same build number, Windows 11 24H2. Windows 10 22H2 (19045, the builder) reads both.
+const DROPS_VERSIONED_SOCKS: u32 = 26_100;
 
 /// `SOCKS5` is WinHTTP's to read, and which build reads it is pinned here: Windows 10 22H2's typed
 /// answer carries it, and build 26100's drops it from the list, so Cmdr goes DIRECT around the
@@ -67,7 +67,7 @@ const DROPS_SOCKS5: u32 = 26_100;
 #[test]
 fn a_socks5_answer_is_read_up_to_the_build_that_drops_it() {
     let five = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS5 s.test:1081; DIRECT"; }"#);
-    let expected = if windows_build() >= DROPS_SOCKS5 {
+    let expected = if windows_build() >= DROPS_VERSIONED_SOCKS {
         vec![Entry::Direct]
     } else {
         vec![socks("s.test", 1081), Entry::Direct]
@@ -75,16 +75,20 @@ fn a_socks5_answer_is_read_up_to_the_build_that_drops_it() {
     assert_eq!(five, Some(expected), "build {}", windows_build());
 }
 
-/// `SOCKS4` comes through as SOCKS4, ❌ never a SOCKS5 entry it can't speak.
+/// `SOCKS4` comes through as SOCKS4 (❌ never a SOCKS5 entry it can't speak) up to build 26100,
+/// which drops it from the list as it drops `SOCKS5` (#1421), pinned the same way.
 #[test]
-fn a_socks4_answer_is_a_socks4_entry() {
-    assert_eq!(
-        pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#),
-        Some(vec![Entry::Socks4 {
+fn a_socks4_answer_is_a_socks4_entry_up_to_the_build_that_drops_it() {
+    let four = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#);
+    let expected = if windows_build() >= DROPS_VERSIONED_SOCKS {
+        vec![]
+    } else {
+        vec![Entry::Socks4 {
             host: "s.test".into(),
             port: 1082,
-        }])
-    );
+        }]
+    };
+    assert_eq!(four, Some(expected), "build {}", windows_build());
 }
 
 /// `HTTPS host:port` is a TLS proxy, ❌ never a plain HTTP one on its TLS port.
