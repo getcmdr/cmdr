@@ -3,8 +3,9 @@ description: >-
   Saves a lane's marker: a tiny Actions cache entry under the lane's key from `ci.yml`'s lane plan, which says these
   exact inputs passed. Only a lane's LAST step uses it, with no `if:`, so it runs only when every step before it passed.
 
-# Why and the trust argument: `scripts/lane-markers/DETAILS.md`. The entry is never restored, only listed by key, so its
-# content and path don't matter; keys are immutable, so a rerun's save of an existing key only warns.
+# Why and the trust argument: `scripts/lane-markers/DETAILS.md`. The entry's content never matters (it's listed by key,
+# and `.github/actions/touch-lane-markers` restores it lookup-only), but its `path` must match that action's, since an
+# entry's version hashes it. Keys are immutable, so a rerun's save of an existing key only warns.
 inputs:
   key:
     description: The lane's marker key (`fromJSON(needs.changes.outputs.lanes)['<lane>'].key`)

@@ -15,7 +15,7 @@ description: >-
 # - Exact keys only, no prefix restore: an older store would carry every package a past lockfile named into each new
 #   save, and `pnpm store prune` can't trim it here (after `warm-light-cache`'s `pnpm fetch` no project references the
 #   store, so it would empty it). A new lockfile installs from the registry until `main` saves its store.
-# - `prune-superseded-caches` keeps one `pnpm-store-*` entry per family on `main`.
+# - Upkeep's cache prune (`lane-markers prune`) keeps one `pnpm-store-*` generation per family on `main` once it settles.
 inputs:
   phase:
     description: '`restore` or `save`'
@@ -44,8 +44,8 @@ runs:
           echo "::error::pnpm store path printed nothing."
           exit 1
         fi
-        # A `container:` job's entry needs a key of its own too: `prune-superseded-caches` keeps one
-        # entry per key family, and two entries under one key (versions differ by path) would look
+        # A `container:` job's entry needs a key of its own too: upkeep's cache prune keeps one
+        # generation per key family, and two entries under one key (versions differ by path) would look
         # like a superseded pair.
         where=host
         [[ -f /.dockerenv ]] && where=container

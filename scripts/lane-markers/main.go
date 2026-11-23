@@ -14,6 +14,7 @@
 //	lane-markers hash [-lane ID] [-files]      print each lane's marker key (and its inputs)
 //	lane-markers plan   <context flags>        the `changes` job: decide every lane, write `lanes=<json>`
 //	lane-markers verify <context flags> -needs JSON   the `CI OK` job: fail on any unproven skip
+//	lane-markers prune -repo OWNER/NAME [-dry-run]   `ci-upkeep.yml`: delete superseded and closed-PR caches
 //
 // Context flags: -event, -ref, -repo, -head-repo, -run-all, -main-ref, -author-type, -author.
 package main
@@ -37,6 +38,8 @@ func main() {
 		err = runPlan(os.Args[2:])
 	case "verify":
 		err = runVerify(os.Args[2:])
+	case "prune":
+		err = runPrune(os.Args[2:])
 	default:
 		usage()
 	}
@@ -47,7 +50,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: lane-markers hash|plan|verify [flags] (see main.go)")
+	fmt.Fprintln(os.Stderr, "usage: lane-markers hash|plan|verify|prune [flags] (see main.go)")
 	os.Exit(2)
 }
 
@@ -132,17 +135,81 @@ func runPlan(args []string) error {
 		fmt.Printf("::warning::Couldn't list lane markers, so every lane runs on its filters: %v\n", err)
 		markers = nil
 	}
+	if len(cfg.lanes) > touchSlots {
+		return fmt.Errorf("%d lanes, but `.github/actions/touch-lane-markers` restores at most %d markers; add slots there and raise `touchSlots`", len(cfg.lanes), touchSlots)
+	}
 	plan := map[string]decision{}
+	verified := []string{}
 	for _, l := range cfg.lanes {
 		d := decide(l.id, hashes[l.id], c.ctx, markers)
 		plan[l.id] = d
+		if d.Verified {
+			verified = append(verified, d.Key)
+		}
 		fmt.Printf("%s: %s (%s)\n", l.id, d.reason, d.Key)
 	}
 	out, err := json.Marshal(plan)
 	if err != nil {
 		return err
 	}
-	return writeOutput(laneOutput, string(out))
+	if err := writeOutput(laneOutput, string(out)); err != nil {
+		return err
+	}
+	keys, err := json.Marshal(verified)
+	if err != nil {
+		return err
+	}
+	return writeOutput(verifiedKeysOutput, string(keys))
+}
+
+// verifiedKeysOutput is the plan step's output listing the marker keys the plan trusted, as a
+// JSON array. `.github/actions/touch-lane-markers` restores each one right away, so the marker
+// reads as freshly used and is among the last entries LRU eviction takes while this run's lanes
+// go. A marker that's only listed reads as least recently used, and losing one between `plan`
+// and `CI OK`'s `verify` turned a run red with every lane green (#1368).
+const verifiedKeysOutput = "verified-keys"
+
+// touchSlots is how many restore steps `.github/actions/touch-lane-markers` has (`[0]` to
+// `[touchSlots-1]`). `TestTouchActionHasOneSlotPerPossibleLane` holds the two together, and
+// `plan` refuses more lanes than slots, so no verified marker goes untouched.
+const touchSlots = 10
+
+func runPrune(args []string) error {
+	fs := flag.NewFlagSet("prune", flag.ExitOnError)
+	repo := fs.String("repo", "", "github.repository")
+	mainRef := fs.String("main-ref", "refs/heads/main", "the default branch's ref")
+	dryRun := fs.Bool("dry-run", false, "print what it would delete, delete nothing")
+	_ = fs.Parse(args)
+	if *repo == "" {
+		return fmt.Errorf("prune needs -repo")
+	}
+	// Caches first, open PRs second: a PR opened in between has no entry in this list, so it
+	// can't read as closed.
+	caches, err := listAllCaches(*repo)
+	if err != nil {
+		return err
+	}
+	open, err := listOpenPRs(*repo)
+	if err != nil {
+		fmt.Printf("::warning::Couldn't list open PRs, so no PR's caches go this time: %v\n", err)
+		open = nil
+	}
+	verdicts := planPrune(caches, *mainRef, open)
+	deleted := 0
+	for _, v := range verdicts {
+		fmt.Printf("Deleting %s on %s (%s)\n", v.entry.key, v.entry.ref, v.reason)
+		if *dryRun {
+			continue
+		}
+		// Another upkeep run's prune may have got there first; either way it's gone.
+		if err := deleteCache(*repo, v.entry.id); err != nil {
+			fmt.Printf("::warning::Couldn't delete %s: %v\n", v.entry.key, err)
+			continue
+		}
+		deleted++
+	}
+	fmt.Printf("Deleted %d of the %d listed cache entries.\n", deleted, len(caches))
+	return nil
 }
 
 func runVerify(args []string) error {

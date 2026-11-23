@@ -510,55 +510,120 @@ jobs:
   # ===========================================
   # Drop superseded build caches on main
   # ===========================================
-  # A new `Cargo.lock` gives every big cache a new key, and the old entry (~1.3–1.9 GB) stays
+  # A new `Cargo.lock` gives every big cache a new key, and the old entry (~0.5–1.2 GB) stays
   # until it ages out after 7 unused days. Two generations of the Rust and E2E caches put the
-  # repo at ~11.5 GB against its 10 GB budget, so GitHub's LRU eviction started dropping
-  # entries the lanes still used (2026-10-22). After every job that reads or saves one has
-  # finished (CI's lanes and deploy jobs before this workflow started, the warm jobs through
-  # `needs`), this keeps the most recently USED `main` entry of each family and deletes the
-  # rest. Used, not created: the jobs just before it touched the entry this commit's key names,
-  # while a stale key can be the newer one (on 2026-10-22 a flipping toolchain hash saved one
-  # after the live entry). A family is the key minus its trailing hash parts, for example
-  # `v0-rust-desktop-rust-Linux-x64`. A PR whose lockfile is older still restores the kept
-  # entry through its restore-keys prefix. The light lane's `light-*` entries (a new lockfile
-  # or Go sum makes a new key each) are families too, and so are mise's (~0.1–0.3 GB each; a
-  # `.mise.toml` edit makes a new key for every OS and variant). A failure only leaves the old
-  # entries to age out. It reads and writes no cache entry, so it keeps the default cache mode.
-  prune-superseded-caches:
-    name: Drop superseded build caches
+  # repo past its 10 GB budget, so GitHub's LRU eviction dropped entries runs still used: the
+  # lanes' caches (2026-10-22), and a lane marker a PR run had verified, which turned the run red
+  # with every lane green (#1368). So a prune runs right after EACH warm job, not once after the
+  # slowest: a family's old generation goes minutes after its new one is saved, and the repo
+  # stays near its resting ~8 GB. One job per warm job because rust-cache and actions/cache save
+  # in a post step, after the job's last step, so only a later job sees the new entry.
+  # - What goes: in `main`'s scope, every member of a family but its most recently used and its
+  #   newest (so the entry this commit's key names always stays), and every cache of a closed PR.
+  #   Lane markers on `main` never go. `planPrune` in `scripts/lane-markers/prune.go` says why.
+  # - It reads and writes no cache entry (only deletes through the API), so it keeps the default
+  #   cache mode; the lane-markers tool's restore is a read. A failure only leaves old entries to
+  #   age out, and the next land's prune catches up.
+  # - It checks out `main`'s head (this workflow's own commit, trusted) only to run the tool; it
+  #   builds nothing from the commit CI ran.
+  prune-after-e2e-linux:
+    name: Drop superseded caches (after E2E)
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs:
-      [warm-e2e-linux-cache, warm-rust-cache, warm-rust-macos-cache, warm-rust-windows-tests-cache, warm-light-cache]
+    needs: warm-e2e-linux-cache
     if: >-
       always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     permissions:
+      contents: read # check out the tool's source
       actions: write # delete caches
-
+      pull-requests: read # tell open PRs from closed ones
     steps:
-      - name: Keep the most recently used main entry of each Rust, E2E, light lane, pnpm store, and mise cache family
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          declare -A kept
-          gh cache list --repo "$REPO" --ref refs/heads/main --sort last_accessed_at --order desc --limit 100 \
-            --json id,key --jq '.[] | "\(.id) \(.key)"' >caches.txt
-          while read -r id key; do
-            case "$key" in
-              v0-rust-* | *-docker-e2e-* | light-* | pnpm-store-*)
-                family=$(sed -E 's/(-[0-9a-f]{8,})+$//' <<<"$key") ;;
-              # mise-action's key ends in the config hash, after an optional `install_args` hash that
-              # names a variant of its own (the Go-only one), so only the last hash goes.
-              mise-v1-*) family=$(sed -E 's/-[0-9a-f]{8,}$//' <<<"$key") ;;
-              *) continue ;;
-            esac
-            if [[ -n "${kept[$family]:-}" ]]; then
-              echo "Deleting $key (superseded by ${kept[$family]})"
-              gh cache delete "$id" --repo "$REPO"
-            else
-              kept[$family]=$key
-              echo "Keeping $key"
-            fi
-          done <caches.txt
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prune caches
+        uses: ./.github/actions/prune-caches
+
+  prune-after-rust-linux:
+    name: Drop superseded caches (after Rust Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: warm-rust-cache
+    if: >-
+      always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read # check out the tool's source
+      actions: write # delete caches
+      pull-requests: read # tell open PRs from closed ones
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prune caches
+        uses: ./.github/actions/prune-caches
+
+  prune-after-rust-macos:
+    name: Drop superseded caches (after Rust macOS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: warm-rust-macos-cache
+    if: >-
+      always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read # check out the tool's source
+      actions: write # delete caches
+      pull-requests: read # tell open PRs from closed ones
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prune caches
+        uses: ./.github/actions/prune-caches
+
+  prune-after-rust-windows:
+    name: Drop superseded caches (after Rust Windows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: warm-rust-windows-tests-cache
+    if: >-
+      always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read # check out the tool's source
+      actions: write # delete caches
+      pull-requests: read # tell open PRs from closed ones
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prune caches
+        uses: ./.github/actions/prune-caches
+
+  # The light warm job is the quickest (~30 s on hits), so this one also drops what CI's own
+  # lanes superseded on this push, minutes after CI ends.
+  prune-after-light:
+    name: Drop superseded caches (after light)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: warm-light-cache
+    if: >-
+      always() && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read # check out the tool's source
+      actions: write # delete caches
+      pull-requests: read # tell open PRs from closed ones
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Prune caches
+        uses: ./.github/actions/prune-caches

@@ -8,7 +8,8 @@ cache lookup.
 
 - `match.go`: dorny/paths-filter's matching (picomatch subset, all three quantifiers). `workflow.go`: finds the filters
   and the lanes in the workflows. `hash.go`: a lane's input set and hash. `markers.go`: the trust rules and `decide`.
-  `verify.go`: `CI OK`'s lane rule. `main.go`: the `hash`, `plan`, and `verify` subcommands.
+  `verify.go`: `CI OK`'s lane rule. `prune.go`: upkeep's cache prune. `main.go`: the `hash`, `plan`, `verify`, and
+  `prune` subcommands.
 
 ## Must-knows
 
@@ -26,6 +27,9 @@ cache lookup.
 - **Saved by `.github/actions/lane-marker`**, as a lane's last step or in a multi-job lane's `marker` job.
 - **Only a lane's own job reads its `.key`**; any other job reading it is refused as a misplaced marker save. A
   prerequisite job may read a lane's `.verified`. `CI OK` reads `toJSON(needs)` and neither.
+- **`changes` touches every marker it trusts** (`touch-lane-markers`, a lookup-only restore), or LRU can evict it before
+  `verify` looks again (#1368). Its slot count is `touchSlots`; a test holds the two together.
+- `go run . prune -repo getcmdr/cmdr -dry-run` shows what upkeep's prune would delete now.
 - `go run . hash -files` (here) prints each lane's key and inputs at `HEAD`.
 
 Trust argument, store choice, the one risk and its guards, and the per-lane wiring: `DETAILS.md`.

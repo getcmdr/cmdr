@@ -1,0 +1,20 @@
+name: Prune caches
+description: >-
+  Deletes superseded `main` cache generations and every closed PR's caches (`lane-markers prune`), keeping the repo
+  under its 10 GB budget so LRU eviction doesn't reach entries runs still use. Expects a checkout and a token with
+  `actions: write` and `pull-requests: read`.
+
+# Rules (what goes, what always stays, and why): `planPrune` in `scripts/lane-markers/prune.go`. A failed run only
+# leaves old entries to age out, so the caller's job never needs to be green for CI's sake.
+runs:
+  using: composite
+  steps:
+    - name: Get the lane-markers tool
+      uses: ./.github/actions/lane-markers-tool
+
+    - name: Delete superseded and closed-PR caches
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+      run: ./scripts/lane-markers/lane-markers prune -repo "$REPO"
