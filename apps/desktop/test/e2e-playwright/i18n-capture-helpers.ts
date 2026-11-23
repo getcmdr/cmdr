@@ -34,11 +34,14 @@ import {
 } from './i18n-capture-config.js'
 import {
   clearStrayToasts,
+  endScrollPaging,
   fitWindowToContent,
   measureCropGeometry,
   readToastSignature,
   scanForClipping,
+  scrollToNextPage,
   selectorList,
+  startScrollPaging,
   straysIn,
   type FitOutcome,
   type FrameSelector,
@@ -644,28 +647,70 @@ export async function captureSurface(
     // off at the bottom. Restored right after the shot so the next surface starts
     // from the same window as every other run.
     const fit = fitSelector === undefined ? null : await fitSurfaceWindow(page, windowLabel, fitSelector)
-    try {
-      // `shoot` owns focus, paint settling, and verifying the pixels that landed.
-      // The MAIN window needs the focus step as much as a separate window does: it
-      // loses key status to every settings/viewer/shortcuts window the run opens,
-      // and macOS then hands the capture a stale frame for every main-window surface
-      // that follows. That's what produced a run of blank dialogs.
-      await shoot(page, windowLabel, screenshot)
-      // Scan while the window is still the one that got photographed, so a clip
-      // finding always describes the image next to it in the report.
-      await scanForClipping(page, label)
-    } finally {
-      recordFit(label, fit)
-      await fit?.restore()
-    }
+    const pages = await shootFitted(page, windowLabel, label, screenshot, fit, fitSelector)
     const zoom = fit?.outcome.zoom ?? DEFAULT_UI_ZOOM
-    report[label] = { screenshot, keys: await keysFor(page, label) }
+    const keys = await keysFor(page, label)
+    report[label] = { screenshot, keys }
     if (zoom !== DEFAULT_UI_ZOOM) report[label].uiZoom = zoom
-    console.log(`[i18n-capture] ${label}: ${String(report[label].keys.length)} keys → ${screenshot}`)
+    // Every page carries the surface's keys, since each shows some of them.
+    pages.forEach((pageShot, index) => {
+      report[`${label}-page-${String(index + 2)}`] = { screenshot: pageShot, keys }
+    })
+    const paged = pages.length > 0 ? ` (+${String(pages.length)} scrolled page(s))` : ''
+    console.log(`[i18n-capture] ${label}: ${String(keys.length)} keys → ${screenshot}${paged}`)
   } catch (err) {
     failed.push(label)
     console.warn(`[i18n-capture] surface ${label} FAILED: ${err instanceof Error ? err.message : String(err)}`)
   }
+}
+
+/**
+ * Shoots a staged surface in its fitted window, then puts the window back. A fitted surface
+ * still taller than the display is photographed page by page (`startScrollPaging`); answers
+ * the later pages' filenames, empty for a surface that fit.
+ */
+async function shootFitted(
+  page: TauriPage,
+  windowLabel: string,
+  label: string,
+  screenshot: string,
+  fit: WindowFit | null,
+  fitSelector: FrameSelector | undefined,
+): Promise<string[]> {
+  const pagedFrom =
+    fit !== null && fit.outcome.residual > 1 && fitSelector !== undefined
+      ? await startScrollPaging(page, fitSelector)
+      : null
+  const pages: string[] = []
+  try {
+    // `shoot` owns focus, paint settling, and verifying the pixels that landed.
+    // The MAIN window needs the focus step as much as a separate window does: it
+    // loses key status to every settings/viewer/shortcuts window the run opens,
+    // and macOS then hands the capture a stale frame for every main-window surface
+    // that follows. That's what produced a run of blank dialogs.
+    await shoot(page, windowLabel, screenshot)
+    // Scan while the window is still the one that got photographed, so a clip
+    // finding always describes the image next to it in the report.
+    await scanForClipping(page, label)
+    if (pagedFrom !== null) pages.push(...(await shootLaterPages(page, windowLabel, label)))
+  } finally {
+    if (pagedFrom !== null) await endScrollPaging(page, pagedFrom).catch(() => {})
+    recordFit(label, fit)
+    await fit?.restore()
+  }
+  return pages
+}
+
+/** Shoots page 2 onward of a paged surface, answering their filenames in order. */
+async function shootLaterPages(page: TauriPage, windowLabel: string, label: string): Promise<string[]> {
+  const shots: string[] = []
+  while (await scrollToNextPage(page, shots.length + 1)) {
+    await settlePaint(page)
+    const shot = `${label}-page-${String(shots.length + 2)}.png`
+    await shoot(page, windowLabel, shot)
+    shots.push(shot)
+  }
+  return shots
 }
 
 /**

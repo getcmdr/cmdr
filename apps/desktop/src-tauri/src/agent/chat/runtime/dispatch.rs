@@ -134,6 +134,10 @@ impl<R: Runtime> AppHandleDispatcher<R> {
 impl<R: Runtime> ToolDispatcher for AppHandleDispatcher<R> {
     fn dispatch<'a>(&'a self, call: &'a AgentToolCall, turn: CallContext<'a>) -> BoxFuture<'a, ToolDispatchOutcome> {
         async move {
+            // The i18n capture's hold, so a round's lines can be photographed running. Inside the
+            // turn's Stop race (`dispatch_until_stopped`), so a held call still stops.
+            #[cfg(feature = "playwright-e2e")]
+            e2e_hold::wait_while_held().await;
             let outcome = crate::agent::tool_gate::dispatch(&self.app, self.scope, call, turn).await;
             ToolDispatchOutcome {
                 result: outcome.result,
@@ -157,6 +161,29 @@ impl<R: Runtime> ToolDispatcher for AppHandleDispatcher<R> {
 
     fn memory_root(&self) -> Option<PathBuf> {
         crate::agent::memory::store_for(&self.app).map(|store| store.root().to_path_buf())
+    }
+}
+
+/// Whether Ask Cmdr's tool calls wait before they run, set by the `playwright-e2e` command
+/// `hold_tool_calls`. The i18n capture holds them to photograph a round's lines in their "doing"
+/// words, which a real call passes through faster than a shutter. Starts released, and nothing
+/// but that command arms it, so every other run dispatches exactly as before.
+#[cfg(feature = "playwright-e2e")]
+pub mod e2e_hold {
+    use std::sync::LazyLock;
+
+    static HELD: LazyLock<tokio::sync::watch::Sender<bool>> = LazyLock::new(|| tokio::sync::watch::channel(false).0);
+
+    /// Hold (`true`) or release (`false`) the tool calls before they run.
+    pub fn set_held(held: bool) {
+        HELD.send_replace(held);
+    }
+
+    /// Waits while the calls are held; returns at once when they aren't.
+    pub(super) async fn wait_while_held() {
+        let mut held = HELD.subscribe();
+        // The sender lives in a static, so it never drops and the wait can't error.
+        let _ = held.wait_for(|held| !*held).await;
     }
 }
 

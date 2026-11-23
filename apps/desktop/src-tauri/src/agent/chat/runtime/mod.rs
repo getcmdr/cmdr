@@ -68,6 +68,8 @@ mod types;
 
 pub(crate) use analytics::send_refused;
 pub(crate) use cost::day_for;
+#[cfg(feature = "playwright-e2e")]
+pub use dispatch::e2e_hold;
 pub use dispatch::{AppHandleDispatcher, CallContext, ToolDispatchOutcome, ToolDispatcher, dispatch_ok};
 pub use events::{AgentChatEvent, AgentErrorKind, ChatEventSink, ResolvedCall};
 pub use turn::run_turn;

@@ -329,6 +329,76 @@ export async function fitWindowToContent(
 }
 
 /**
+ * How much of the previous page each later page repeats, in CSS px, so a row the page break
+ * cuts in half shows whole on one of the two images.
+ */
+const PAGE_OVERLAP_CSS_PX = 48
+/** A ceiling on pages per surface, so a scroller that never reports its end can't loop forever. */
+const MAX_SCROLL_PAGES = 40
+/** Marks the scroller a surface is being paged through, so each step finds the same element. */
+const PAGER_ATTR = 'data-capture-pager'
+
+/**
+ * Picks the surface's tallest scroller (the one with the most hidden content under its frame),
+ * marks it, and scrolls it to the top. Answers the scroll offset to put back afterwards, or null
+ * when nothing under the frame scrolls, so there is nothing to page.
+ *
+ * Why pages: a surface longer than the display (a settings section, the shortcut list, a long
+ * Ask Cmdr thread) can't be grown or zoomed into one frame, and a single shot of its top left
+ * hundreds of its keys coupled to an image that doesn't show them. Each page is photographed as
+ * its own image, and the coupler's OCR gives each key the page that actually shows it.
+ */
+export async function startScrollPaging(page: TauriPage, selector: FrameSelector): Promise<number | null> {
+  return page.evaluate<number | null>(`(function(){
+    var root = ${firstMatchExpression(selectorList(selector))};
+    if (!root) return null;
+    var nodes = [root].concat(Array.prototype.slice.call(root.querySelectorAll('*')));
+    var best = null;
+    var bestOver = 1;
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      var over = el.scrollHeight - el.clientHeight;
+      if (over <= bestOver) continue;
+      var s = getComputedStyle(el);
+      if (s.overflowY !== 'auto' && s.overflowY !== 'scroll') continue;
+      best = el;
+      bestOver = over;
+    }
+    if (!best) return null;
+    var from = best.scrollTop;
+    best.setAttribute('${PAGER_ATTR}', '');
+    best.scrollTop = 0;
+    return from;
+  })()`)
+}
+
+/**
+ * Scrolls the marked scroller one page down (its visible height, less the overlap). Answers
+ * false once it already sat at its end, so the caller stops paging.
+ */
+export async function scrollToNextPage(page: TauriPage, pagesSoFar: number): Promise<boolean> {
+  if (pagesSoFar >= MAX_SCROLL_PAGES) return false
+  return page.evaluate<boolean>(`(function(){
+    var el = document.querySelector('[${PAGER_ATTR}]');
+    if (!el) return false;
+    var max = el.scrollHeight - el.clientHeight;
+    if (el.scrollTop >= max - 1) return false;
+    el.scrollTop = Math.min(max, el.scrollTop + Math.max(1, el.clientHeight - ${String(PAGE_OVERLAP_CSS_PX)}));
+    return true;
+  })()`)
+}
+
+/** Puts the paged scroller back where it was and drops its mark. */
+export async function endScrollPaging(page: TauriPage, scrollTop: number): Promise<void> {
+  await page.evaluate(`(function(){
+    var el = document.querySelector('[${PAGER_ATTR}]');
+    if (!el) return;
+    el.scrollTop = ${String(scrollTop)};
+    el.removeAttribute('${PAGER_ATTR}');
+  })()`)
+}
+
+/**
  * One element flagged by the clip-overflow scan: a text-bearing node whose
  * content is cut off by its own box (its scroll size exceeds its client size
  * while `overflow` clips). Best-effort heuristic, not proof of a visible defect.

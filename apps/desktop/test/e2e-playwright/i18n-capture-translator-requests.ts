@@ -25,6 +25,7 @@ import {
   getFixtureRoot,
   moveCursorToFile,
   openSettingsWindowViaProd,
+  pointerClick,
   skipParentEntry,
 } from './helpers.js'
 import { recreateFixtures } from '../e2e-shared/fixtures.js'
@@ -403,6 +404,30 @@ export async function captureMultiRenameSurfaces(main: TauriPage, report: Report
       return { page: main, readySelector: `${SHEET} .sheet`, fitSelector: SHEET }
     })
     await captureCall(main, 'disable').catch(() => {})
+
+    // The letter case options live in a closed dropdown, so the sheet's own shot names them
+    // without showing them.
+    const caseTrigger = `document.querySelector('${SHEET} .case-field .select-trigger')`
+    const openCaseList = '.select-content[data-state="open"]'
+    try {
+      await captureSurface('multi-rename-letter-case', report, failed, async () => {
+        await startSink(main, 'multi-rename-letter-case')
+        const outcome = await pointerClick(main, caseTrigger)
+        if (outcome !== 'clicked') throw new Error(`the letter case trigger was ${outcome} when clicked`)
+        await main.waitForSelector(openCaseList, waitBudget(5000))
+        return { page: main, readySelector: openCaseList }
+      })
+    } finally {
+      await captureCall(main, 'disable').catch(() => {})
+      if (await main.evaluate<boolean>(`document.querySelector('${openCaseList}') !== null`)) {
+        await pointerClick(main, caseTrigger).catch(() => 'missing')
+        await expect
+          .poll(() => main.evaluate<boolean>(`document.querySelector('${openCaseList}') === null`), {
+            timeout: waitBudget(3000),
+          })
+          .toBe(true)
+      }
+    }
 
     await captureSurface('multi-rename-preset-name', report, failed, async () => {
       await startSink(main, 'multi-rename-preset-name')
