@@ -46,7 +46,7 @@ import { volumeScheme } from '#lib/volume-scheme.js'
 import type { VolumeInfo } from '../types'
 
 /** A per-row switch the submenu carries as a checkbox row. */
-export type RowToggleKind = 'direct-connection' | 'auto-reconnect'
+export type RowToggleKind = 'direct-connection' | 'share-parent-row' | 'auto-reconnect'
 
 /** A one-shot repair a row offers only while its current state needs it. */
 export type RowFixKind = 'connect-directly'
@@ -122,6 +122,12 @@ export interface VolumeRowFacts {
    * or `undefined` where nothing saved backs the row: a one-shot connection has nothing to persist.
    */
   autoReconnect: boolean | undefined
+  /**
+   * An SMB share's "Show “..” in the top folder" (its override, else the default) and the
+   * server `..` leads to, or `undefined` until Rust answered for the share
+   * (`../network/share-parent-row.svelte.ts`).
+   */
+  shareParentRow: { shown: boolean; serverLabel: string } | undefined
 }
 
 /** A pick a surface hands back: the entry, and the volume it acts on. */
@@ -258,6 +264,17 @@ function rowToggles(facts: VolumeRowFacts): RowToggleEntry[] {
       toggle: 'direct-connection',
       label: tString('fileExplorer.navigation.useDirectConnection'),
       checked: facts.directConnection,
+    })
+  }
+  if (facts.shareParentRow !== undefined) {
+    toggles.push({
+      type: 'toggle',
+      toggle: 'share-parent-row',
+      label: tString('fileExplorer.navigation.showShareParentRow'),
+      checked: facts.shareParentRow.shown,
+      tooltip: tString('fileExplorer.navigation.showShareParentRowTooltip', {
+        server: facts.shareParentRow.serverLabel,
+      }),
     })
   }
   if (facts.autoReconnect !== undefined) {

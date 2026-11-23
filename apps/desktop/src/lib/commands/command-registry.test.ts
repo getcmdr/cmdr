@@ -150,6 +150,7 @@ const EXPECTED_PALETTE_IDS: readonly CommandId[] = [
   'servers.togglePin',
   'servers.disconnect',
   'servers.forgetSecret',
+  'servers.toggleShareParentRow',
   'servers.connect',
   'servers.edit',
   'about.openWebsite',

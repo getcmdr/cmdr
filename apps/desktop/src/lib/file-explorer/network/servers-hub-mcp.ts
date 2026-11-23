@@ -17,6 +17,11 @@ import { parseServerPath, serverAppRoot } from '#lib/servers/server-path-utils.j
 import type { HubRow } from './servers-hub-rows'
 import { fullIndexOf, type HubItem } from './servers-hub-items'
 
+/** A saved server's "More shares on …" row, as an agent sees it: English whatever the locale, like the status tokens. */
+export function moreSharesMcpName(server: HubRow): string {
+  return `More shares on ${server.name}…`
+}
+
 /**
  * The nearby group's header, as an agent sees it: English whatever the locale,
  * like the status tokens. `move_cursor` finds it by this name, and
@@ -77,9 +82,43 @@ export function hubPaneState(
 
 /** One entry per item, then the add row. */
 export function hubMcpEntries(items: HubItem[], lookups: HubMcpLookups): PaneFileEntry[] {
-  const entries = items.map((item) => (item.kind === 'row' ? entryFor(item.row, lookups) : groupEntry(item)))
+  const entries = items.map((item) => itemEntry(item, lookups))
   entries.push(emptyEntry(ADD_SERVER_MCP_NAME, ADD_SERVER_MCP_PATH, false))
   return entries
+}
+
+/**
+ * The name an agent finds an item by: what precedes the tokens in its entry.
+ * `findItemIndex` matches `move_cursor`'s name against it.
+ */
+export function hubItemMcpName(item: HubItem): string {
+  switch (item.kind) {
+    case 'row':
+      return item.row.name
+    case 'nearby_group':
+      return NEARBY_GROUP_MCP_NAME
+    case 'unsaved_share':
+      return item.name
+    case 'more_shares':
+      return moreSharesMcpName(item.server)
+  }
+}
+
+function itemEntry(item: HubItem, lookups: HubMcpLookups): PaneFileEntry {
+  switch (item.kind) {
+    case 'row':
+      return entryFor(item.row, lookups)
+    case 'nearby_group':
+      return groupEntry(item)
+    case 'unsaved_share': {
+      // A share of a saved server nobody saved yet: `open_under_cursor` mounts it, which saves it.
+      const tokens = ['protocol=smb', 'status="not_connected"', `address=${item.server.address}`, 'kind=unsaved_share']
+      return emptyEntry(`${item.name}  ${tokens.join('  ')}`, `smb://${item.server.address}/${item.name}`, true)
+    }
+    case 'more_shares':
+      // `open_under_cursor` opens the server's share list, as on the server row.
+      return emptyEntry(`${moreSharesMcpName(item.server)}  kind=more_shares`, `smb://${item.server.address}`, false)
+  }
 }
 
 /** The nearby group's header: whether it's open, and how many servers it holds. */

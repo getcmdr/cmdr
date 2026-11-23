@@ -1885,6 +1885,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "在顶层文件夹中显示“..”",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "在这个共享的顶层文件夹中，“..”会带你前往 {server} 上的其他共享。",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "“..”把你带到了 {server} 的共享。如果你希望共享的顶层文件夹表现得像个顶层文件夹，可以在这里关闭。之后随时可以在宗卷选择器里这个共享的菜单中更改。",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "对这个共享关闭",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "对所有共享关闭",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "知道了",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "立即直接连接",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

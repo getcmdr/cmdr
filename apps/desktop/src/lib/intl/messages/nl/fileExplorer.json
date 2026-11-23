@@ -1902,6 +1902,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "Toon ‘..’ in de hoofdmap",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "In de hoofdmap van deze gedeelde map brengt ‘..’ je naar de andere gedeelde mappen op {server}.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "‘..’ bracht je naar de gedeelde mappen op {server}. Wil je liever dat de hoofdmap van de gedeelde map er als een gewone hoofdmap uitziet, zet ‘..’ dan hier uit. Je kunt dit altijd wijzigen in het menu van de gedeelde map in de volumekiezer.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Zet voor deze gedeelde map uit",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Zet voor alle gedeelde mappen uit",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Begrepen",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Nu direct verbinden",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

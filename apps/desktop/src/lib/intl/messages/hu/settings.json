@@ -1363,6 +1363,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "„..” megjelenítése minden megosztás legfelső mappájában",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "A „..” a szerver megosztásainak listájához visz. Megosztásonként is módosíthatod a kötetválasztóban, a megosztás menüjében.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "szülőmappa, feljebb, vissza, többi megosztás, gyökér, gyökérmappa, testvérmappa, két pont, pont pont",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Megosztásgyorsítótár élettartama",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2364,6 +2376,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "A megosztások legfelső mappájában lévő „..” tippjének elnyomása",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "Amikor a „..” először visz el egy megosztás legfelső mappájából a szerver megosztásaihoz, a Cmdr elmagyarázza. Kapcsold ezt ki, hogy még egyszer lásd a magyarázatot.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "szülőmappa, feljebb, gyökérmappa, buborék, értesítés, súgó, két pont, pont pont",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "szerver, rögzítés, feloldás, hálózat, kötetválasztó, lista, tipp, buborék",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3146,6 +3170,10 @@
   "settings.network.card.connection": "Kapcsolat",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Viselkedés",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Teljesítmény és időtúllépések",
   "@settings.network.card.performanceAndTimeouts": {

@@ -32,6 +32,7 @@ of the app build.
   - `smb_connect_failure.rs`: why an smb2 connect didn't get in, read by type. A `Refusal` (who the attempt went out as, and whether sign-in or the share said no, with the log advice for each) or an `UpgradeFailure` (read off a `FailedDial` plus `MountEvidence` by `of_dial`, § "This Mac refusing the route"); plus `UpgradeError` and `log_direct_connect_failure`. Shared by `share_access.rs` and both upgrade paths (§ "An auth rejection says what was actually rejected").
   - `smb_connect_directly.rs`: the manual "Connect directly" upgrade, with Cmdr's stored credentials, the sign-in sheet's, or Finder's saved password. Behind the three `upgrade_to_smb_volume*` commands, the MCP `upgrade_smb_to_direct` tool, and the indexer's `ensure_direct_smb`. Owns `UpgradeResult` (§ "Connect directly answers a gone volume").
   - `smb_direct_switch.rs`: the per-share "Use Cmdr's fast direct connection" switch, read and set by volume id for the volume switcher. Behind `get_smb_direct_connection_enabled` / `set_smb_direct_connection_enabled`. Owns `DirectConnectionSwitch` (§ "The per-share direct-connection switch").
+  - `smb_share_parent.rs`: "Show “..” in the top folder", where `..` out of a share leads and its per-share override, by volume id. Behind `get_smb_share_parent` / `set_smb_share_parent_row` (§ "Show “..” in the top folder"). Its pure rule and the share key (`ShareRef`, `names_share`) sit in the leaf `share_choices.rs`, shared with `known_shares`.
 - **Mounting** (`os_mount/`, a platform seam: `os_mount/platform/mod.rs` pins each arm's fns; `MountResult` and `MountError` are defined once in `os_mount/mod.rs`):
   - `os_mount/platform/macos/mount.rs`: macOS `NetFSMountURLSync` for native `/Volumes/` mounts, each success confirmed against `statfs` (§ "A reported mount counts once it's there"); also `unmount_smb_shares_from_host` (iterates `/Volumes/`, matches via `statfs`, unmounts via `diskutil`)
   - `os_mount/platform/linux/mount.rs`: Linux `gio mount` for GVFS-based user-space mounts, confirmed the same way
@@ -1047,6 +1048,30 @@ didn't work. On only saves; the frontend then runs "Connect directly" for an `os
 the toasts. Every off also withdraws the share's slow-connection notice (§ "Telling the user about a kernel-mount
 fallback"), so ❗ a new route that switches a share off goes through `set_direct_connection_for`, not
 `known_shares::set_direct_connection_enabled` directly.
+
+## "Show “..” in the top folder"
+
+In an SMB share's top folder, `..` opens the server's share list (#1238; the frontend flow:
+`apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "`..` out of a share's top folder"). `smb_share_parent.rs`
+answers by volume id, reading the share off its mount (bounded, `smb_direct_switch::read_share_within`), so a share
+macOS mounted works like one Cmdr mounted.
+
+- **One default plus per-share overrides, an override stored only while it differs.** The default is the frontend
+  setting `network.showShareParentRow`, handed in on every write (`set_smb_share_parent_row`'s `default_show`), so a
+  share set back to match it drops its entry. A default that changes later prunes nothing: each override is a choice
+  someone made about that share, which is also what "Turn off for all shares" keeps.
+- **Stored in `known_shares::parent_row_overrides` and matched like the direct-connection opt-outs** (`ShareRef` +
+  `names_share`, server by `same_machine`, ❌ never by account), for the same reasons: a share macOS mounted has no saved
+  row, and `statfs` spells one server several ways. A server that moves to a new address carries them along with the
+  opt-outs (`move_host_rows_in` → `share_choices::carry_parent_row`).
+- **The rule and the key live in the leaf `share_choices.rs`** (`ShareRef`, `names_share`, `fold_name`,
+  `ParentRowOverride` and its three pure functions), which both `known_shares` and `smb_share_parent` import. ❌ Don't
+  move them back into `smb_share_parent`: `known_shares` importing it closed a `module-cycles` tangle with
+  `smb_direct_switch` (`smb_share_parent` → `smb_direct_switch` → `known_shares` → `smb_share_parent`).
+- **Where `..` leads** (`get_smb_share_parent`): a host discovery knows (a resolved discovered one first, then a typed
+  one), else one made from the mount's server the way Add server makes one (`create_network_host`), so it works with
+  discovery off. Its name in words is the share label's (`smb_share_label::mounted`): a typed name, else the friendly
+  name with the port off 445.
 
 ## A pane on an OS-mounted share tries the direct connection
 

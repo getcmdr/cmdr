@@ -24,10 +24,18 @@
         refreshAllStaleShares,
     } from './network-store.svelte'
     import { getStatusTooltip } from './host-status'
-    import { hubRowIcon, lastUsedSeconds, openMoveFor, type HubRow, type HubRowStatus } from './servers-hub-rows'
+    import {
+        hubRowIcon,
+        lastUsedSeconds,
+        openMoveFor,
+        type HubOpenMove,
+        type HubRow,
+        type HubRowStatus,
+    } from './servers-hub-rows'
     import { visibleIndexOf, type HubItem } from './servers-hub-items'
+    import { shareItemMove } from './servers-hub-shares'
     import { createHubList } from './servers-hub-list.svelte'
-    import { hubPaneState, NEARBY_GROUP_MCP_NAME } from './servers-hub-mcp'
+    import { hubItemMcpName, hubPaneState } from './servers-hub-mcp'
     import { createHubActions, type HubRowMenuAPI } from './servers-hub-actions'
     import { cursorAcrossRebuild } from './servers-hub-keys'
     import { cursorAfterArrow, nameStartsWith, scrollRowIntoView } from './list-cursor'
@@ -285,25 +293,31 @@
     // noinspection JSUnusedGlobalSymbols -- used dynamically
     export function findItemIndex(name: string): number {
         const wanted = name.toLowerCase()
-        return items.findIndex(
-            (item) => (item.kind === 'row' ? item.row.name : NEARBY_GROUP_MCP_NAME).toLowerCase() === wanted,
-        )
+        return items.findIndex((item) => hubItemMcpName(item).toLowerCase() === wanted)
     }
 
     /**
      * Type-to-jump: the cursor goes to the first row whose name starts with `prefix`, and the
      * answer is that name, or `null` with the cursor left alone. It walks the FULL list so a
      * server a collapsed nearby group hides stays reachable (`setCursorIndex` opens the group);
-     * those rows come last, so anything on screen wins. The header and "Add server…" aren't
-     * names to jump to.
+     * those rows come last, so anything on screen wins. An unsaved share is a name to jump to;
+     * the header, the "More shares on …" rows, and "Add server…" aren't.
      */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by NetworkMountView
     export function jumpToPrefix(prefix: string): string | null {
-        const index = items.findIndex((item) => item.kind === 'row' && nameStartsWith(item.row.name, prefix))
-        const item = items.at(index)
-        if (index < 0 || item?.kind !== 'row') return null
+        const index = items.findIndex((item) => {
+            const name = jumpNameOf(item)
+            return name !== null && nameStartsWith(name, prefix)
+        })
+        const name = index < 0 ? null : jumpNameOf(items[index])
+        if (name === null) return null
         setCursorIndex(index)
-        return item.row.name
+        return name
+    }
+
+    function jumpNameOf(item: HubItem): string | null {
+        if (item.kind === 'row') return item.row.name
+        return item.kind === 'unsaved_share' ? item.name : null
     }
 
     /**
@@ -339,14 +353,24 @@
             return
         }
         const item = itemUnderCursor()
-        if (item?.kind === 'nearby_group') list.toggleNearbyGroup()
-        else if (item) openRow(item.row)
+        if (item) openItem(item)
     }
 
-    /** What Enter does to a row: `openMoveFor` decides, this carries it out. */
+    /** Enter or a double-click on any item: a row, the group's header, or a share item under a saved server. */
+    function openItem(item: HubItem): void {
+        if (item.kind === 'nearby_group') list.toggleNearbyGroup()
+        else if (item.kind === 'row') openRow(item.row)
+        else runMove(shareItemMove(item))
+    }
+
+    /** What Enter does to a row: `openMoveFor` decides, `runMove` carries it out. */
     function openRow(row: HubRow): void {
         const move = openMoveFor(row, rows, volumes)
         if (!move) { log.warn('The hub row {server} has nowhere to open', { server: row.name }); return; }
+        runMove(move)
+    }
+
+    function runMove(move: HubOpenMove): void {
         if (move.kind === 'host') onHostSelect?.(move.host, move.label)
         else if (move.kind === 'place') onServerSelect?.(move.row)
         // ❗ Says where to go rather than doing nothing: an S3 account is no place itself.
@@ -555,6 +579,59 @@
                         {/if}
                     </button>
                 </div>
+            {:else if item.kind === 'unsaved_share'}
+                <!--
+                    A share of a saved server nobody saved yet (#1404), dimmed: no account, no
+                    pin, and no menu, since nothing about it is saved. Enter mounts it, which saves it.
+                -->
+                <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                <div
+                    class="server-row unsaved-share-row"
+                    data-hub-row={index}
+                    class:is-under-cursor={index === cursorIndex}
+                    class:is-focused-and-under-cursor={isFocused && index === cursorIndex}
+                    role="listitem"
+                    onclick={() => {
+                        handleRowClick(index)
+                    }}
+                    ondblclick={() => {
+                        openItem(item)
+                    }}
+                    onkeydown={() => {}}
+                >
+                    <span class="col-name is-place">
+                        <span class="row-icon"><Icon name="folder" size={16} aria-hidden="true" /></span>
+                        <span class="name-text" use:tooltip={{ text: item.name, overflowOnly: true }}>{item.name}</span>
+                    </span>
+                    <span class="col-type">{typeLabel(item.server)}</span>
+                    <span class="col-address" use:tooltip={{ text: item.server.address, overflowOnly: true }}
+                        >{item.server.address}</span
+                    >
+                    <span class="col-status">{tString('servers.hub.status.notConnected')}</span>
+                    <span class="col-last-used"></span>
+                </div>
+            {:else if item.kind === 'more_shares'}
+                <!-- The way to every share not on screen: Enter opens the server's share list, as on its row. -->
+                <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                <div
+                    class="server-row more-shares-row"
+                    data-hub-row={index}
+                    class:is-under-cursor={index === cursorIndex}
+                    class:is-focused-and-under-cursor={isFocused && index === cursorIndex}
+                    role="listitem"
+                    onclick={() => {
+                        handleRowClick(index)
+                    }}
+                    ondblclick={() => {
+                        openItem(item)
+                    }}
+                    onkeydown={() => {}}
+                >
+                    <span class="col-name is-place more-shares-label">
+                        <span class="row-icon"><Icon name="more-horizontal" size={16} aria-hidden="true" /></span>
+                        <span class="name-text">{tString('servers.hub.moreShares', { server: item.server.name })}</span>
+                    </span>
+                </div>
             {:else}
             {@const row = item.row}
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -725,8 +802,22 @@
        header, the searching and discovery lines, the empty state) spans every column. */
     .row-list > :not(.server-row),
     .add-row .col-name,
+    .more-shares-row .col-name,
     .nearby-group-toggle {
         grid-column: 1 / -1;
+    }
+
+    /* A share nobody saved yet reads quieter than a saved one (#1404). */
+    .unsaved-share-row .col-name,
+    .unsaved-share-row .row-icon {
+        color: var(--color-text-tertiary);
+    }
+
+    /* Italic like "Add server…": a pseudo-row that opens something, ❌ not a share. */
+    .more-shares-label,
+    .more-shares-label .row-icon {
+        color: var(--color-text-tertiary);
+        font-style: italic;
     }
 
     /* The nearby group's header reads as a label over its rows, quieter than a server's name. */

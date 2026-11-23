@@ -29,6 +29,16 @@ export function nameStartsWith(name: string, prefix: string): boolean {
   return name.normalize('NFC').toLowerCase().startsWith(prefix.normalize('NFC').toLowerCase())
 }
 
+/**
+ * Where the row named `name` sits, or -1: case-insensitive and blind to Unicode form, since
+ * a kernel mount can spell a share decomposed while its server's share list spells it
+ * composed. The cursor landing back on the share `..` came from asks this (#1238).
+ */
+export function indexOfName(rows: readonly { name: string }[], name: string): number {
+  const wanted = name.normalize('NFC').toLowerCase()
+  return rows.findIndex((row) => row.name.normalize('NFC').toLowerCase() === wanted)
+}
+
 /** Scrolls a network list just enough to show the row at `index`. Both lists have fixed-height rows. */
 export function scrollRowIntoView(
   container: HTMLElement,

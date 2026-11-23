@@ -141,7 +141,10 @@ suite:
   `supportsTrash`, plus the archive boundary), shared by the delete opener and the rename conflict dialog. A volume
   missing from the list answers YES on purpose: a refused trash is honest and reversible, a permanent delete isn't. A
   caller with its own reason to force permanence (an online-only cloud file) folds it in on top.
-- `network-host-state.svelte.ts`: the open Network host and its queued auto-mount share.
+- `network-host-state.svelte.ts`: the open Network host, its queued auto-mount share, and the share `..` came out of.
+- `share-parent-pane.svelte.ts`: `..` out of an SMB share's top folder, the pane's side (whether the row shows, Go to
+  parent and the row's Enter leaving for the server's shares). `../network/DETAILS.md` § "`..` out of a share's top
+  folder".
 - `context-menu-anchor.ts`: where a keyboard-opened context menu pops (cursor row, else the scroll surface), as a pure
   rect → point function plus a DOM reader over it. § Keyboard context menu.
 - `rename-move-dialog.ts`: a rename chain's one Move dialog for a rename that copies on S3, held until the editor closes
@@ -663,7 +666,8 @@ There's no Search-specific capabilities shim — `lib/search/capabilities.ts` ke
   `FilePane.applyIndexSizes`, since each push re-reads and ships the visible range). The rendering side:
   `src-tauri/src/tools/resources/DETAILS.md` § "Directory sizes say how much they're worth".
 - **`has-parent.ts`**: `computeHasParent` folds ONLY the snapshot rule via `hasParentRow`; the two PATH comparisons
-  (`=== '/'`, `=== root`) stay.
+  (`=== '/'`, `=== root`) stay. At the root, `topFolderLeadsOut` (an SMB share whose `..` opens its server's shares) is
+  the one way a volume's top folder gets a `..` row.
 - **FilePane alt-view chain** (`FilePane.svelte`): the kind-structural view selection resolves through a `paneViewKind`
   derived discriminant (`'network' | 'search-results' | 'normal'`) off `caps.kind`. The `{#if}` chain branches on
   `paneViewKind` for the two alt-views (NetworkMountView / SearchResultsView) and the SelectionInfo footer

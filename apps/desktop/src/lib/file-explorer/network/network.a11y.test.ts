@@ -41,6 +41,9 @@ let mockHosts: Array<{
 // the share list. Each block installs its own in `beforeEach`.
 let mockShareState: unknown = undefined
 
+// What `listSavedServers` answers: none, unless a test saves one.
+let mockSavedServers: unknown[] = []
+
 vi.mock('./network-store.svelte', () => ({
   getNetworkHosts: () => mockHosts,
   getDiscoveryState: () => 'idle',
@@ -81,6 +84,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
   getSmbCredentials: vi.fn(() => Promise.resolve(null)),
   isUsingCredentialFileFallback: vi.fn(() => Promise.resolve(false)),
   updateKnownShare: vi.fn(() => Promise.resolve()),
+  listSavedServers: vi.fn(() => Promise.resolve(mockSavedServers)),
 }))
 
 vi.mock('#lib/utils/confirm-dialog.js', () => ({
@@ -148,6 +152,37 @@ describe('ServersHub a11y', () => {
     })
     await tick()
     await expectNoA11yViolations(target)
+  })
+
+  it('a saved server with unsaved shares and the "More shares" row has no a11y violations', async () => {
+    mockHosts = [{ id: 'h1', name: 'testnas.local', hostname: 'testnas.local', ipAddress: '10.0.0.10', port: 445 }]
+    mockSavedServers = [
+      {
+        id: 'h1',
+        protocol: 'smb',
+        displayName: 'testnas.local',
+        nameSource: 'fallback',
+        address: 'testnas.local',
+        username: null,
+        pinned: false,
+        lastConnectedAt: null,
+        autoReconnect: null,
+        places: [],
+      },
+    ]
+    const shares = Array.from({ length: 10 }, (_, i) => ({ name: `share${String(i)}`, isDisk: true, comment: null }))
+    mockShareState = { status: 'loaded', result: { shares, authMode: 'unknown', fromCache: false }, fetchedAt: 0 }
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(ServersHub, {
+      target,
+      props: { paneId: 'left', isFocused: true, onHostSelect: () => {}, onConnectToServer: () => {} },
+    })
+    for (let round = 0; round < 3; round++) await tick()
+    expect(target.querySelectorAll('.unsaved-share-row')).toHaveLength(8)
+    expect(target.querySelector('.more-shares-row')).not.toBeNull()
+    await expectNoA11yViolations(target)
+    mockSavedServers = []
   })
 })
 

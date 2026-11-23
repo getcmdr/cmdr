@@ -214,3 +214,7 @@ record the outcome in `terms.json` or `decisions.md`).
   «Розкажіть».
 - **Notarization ticket** (`aboutThis.signature.ticket*`, `ai.cloudConsent.aboutThis.item.appAndSigner`): «квитанція
   нотаризації» has no Apple source; confirm the term Ukrainian Mac developers use.
+- **Share top folder** (`fileExplorer.shareParentRow.*`, `settings.network.showShareParentRow.*`,
+  `settings.behavior.shareParentRowHintSeen.*`, `commands.serversToggleShareParentRow.label`): «коренева папка спільної
+  папки» repeats «папка» because both rulings use it; confirm it reads naturally, or suggest a shorter form.
+  `servers.hub.moreShares` renders "More shares" as «Інші спільні папки…»; confirm.

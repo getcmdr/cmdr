@@ -102,3 +102,39 @@ describe('the two index spaces', () => {
     expect([0, 1, 2, 3, 4].map((at) => visibleIndexOf(expanded, at))).toEqual([0, 1, 2, 3, 4])
   })
 })
+
+describe('hubItems with a saved server’s other shares (#1404)', () => {
+  /** A saved SMB server with `places` saved, and the share row under it for each. */
+  function serverWithPlaces(id: string, places: string[]): HubRow[] {
+    const server: HubRow = { ...savedRow(id), saved: { id, places: places.map((name) => ({ name })) } as SavedServer }
+    const placeRows = places.map((name): HubRow => ({
+      ...savedRow(`share:${id}-${name}`),
+      kind: 'place',
+      parentId: id,
+      name,
+    }))
+    return [server, ...placeRows]
+  }
+
+  it('puts the unsaved shares after the saved ones, then the More row, before the next server', () => {
+    const rows = [...serverWithPlaces('nas', ['admin']), ...serverWithPlaces('attic', [])]
+    const shares = (row: HubRow) => (row.id === 'nas' ? ['admin', 'Media', 'backup'] : null)
+    expect(ids(hubItems(rows, true, shares))).toEqual([
+      'nas',
+      'share:nas-admin',
+      'unsaved-share:nas:backup',
+      'unsaved-share:nas:Media',
+      'attic',
+      'more-shares:attic',
+    ])
+  })
+
+  it('adds nothing under a server Cmdr only found, whatever its list holds', () => {
+    const items = hubItems([...serverWithPlaces('nas', []), nearbyRow('printer')], true, () => ['Media'])
+    expect(ids(items)).toEqual(['nas', 'unsaved-share:nas:Media', NEARBY_GROUP_ID, 'printer'])
+  })
+
+  it('adds no share rows when the hub passes no share lists', () => {
+    expect(ids(hubItems(serverWithPlaces('nas', ['admin']), true))).toEqual(['nas', 'share:nas-admin'])
+  })
+})

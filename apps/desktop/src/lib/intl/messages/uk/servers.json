@@ -39,6 +39,10 @@
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
   },
+  "servers.hub.moreShares": "Інші спільні папки на сервері «{server}»…",
+  "@servers.hub.moreShares": {
+    "sourceHash": "db4e1ab"
+  },
   "servers.hub.status.connected": "Підʼєднано",
   "@servers.hub.status.connected": {
     "sourceHash": "2296556"
@@ -46,6 +50,10 @@
   "servers.hub.status.saved": "Збережено",
   "@servers.hub.status.saved": {
     "sourceHash": "b5c120b"
+  },
+  "servers.hub.status.notConnected": "Не підʼєднано",
+  "@servers.hub.status.notConnected": {
+    "sourceHash": "0303e18"
   },
   "servers.hub.status.notConnectedYet": "Ще не підʼєднано",
   "@servers.hub.status.notConnectedYet": {

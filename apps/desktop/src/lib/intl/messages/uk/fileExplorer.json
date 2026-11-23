@@ -1888,6 +1888,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "Показувати «..» у кореневій папці",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "У кореневій папці цієї спільної папки «..» веде до інших спільних папок сервера «{server}».",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "Через «..» ви перейшли до спільних папок сервера «{server}». Якщо хочете, щоб коренева папка спільної папки поводилася як звичайна коренева папка, вимкніть це тут. Змінити це можна будь-коли в меню спільної папки в перемикачі томів.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Вимкнути для цієї спільної папки",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Вимкнути для всіх спільних папок",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Зрозуміло",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Підʼєднатися напряму зараз",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

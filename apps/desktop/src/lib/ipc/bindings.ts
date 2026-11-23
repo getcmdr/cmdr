@@ -5337,6 +5337,33 @@ export const commands = {
   setSmbDirectConnectionEnabled: (volumeId: string, enabled: boolean) =>
     __TAURI_INVOKE<DirectConnectionSwitch>('set_smb_direct_connection_enabled', { volumeId, enabled }),
   /**
+   *  Where `..` in the top folder of the SMB share behind `volume_id` leads (the server
+   *  and its name), plus the share's own "Show “..”" choice, or `None` when no SMB
+   *  share is behind it. See `network::smb_share_parent`.
+   */
+  getSmbShareParent: (volumeId: string) =>
+    __TAURI_INVOKE<{
+      // The server, as its share list opens it.
+      host: NetworkHost
+      /**
+       *  What to call the server in words: the name a person typed for it, else the
+       *  name it goes by, with its port off 445. The same name the share's own label uses.
+       */
+      serverLabel: string
+      // The share as the mount spells it, for the cursor to land back on.
+      shareName: string
+      // The share's own choice, or `None` while it follows the default.
+      showParentRow: boolean | null
+    } | null>('get_smb_share_parent', { volumeId }),
+  /**
+   *  Saves the "Show “..”" choice for the SMB share behind `volume_id`, measured against
+   *  `default_show` (the `network.showShareParentRow` setting): a choice matching it
+   *  clears the share's override. `false` when no SMB share is behind it, and nothing
+   *  was saved.
+   */
+  setSmbShareParentRow: (volumeId: string, show: boolean, defaultShow: boolean) =>
+    __TAURI_INVOKE<boolean>('set_smb_share_parent_row', { volumeId, show, defaultShow }),
+  /**
    *  Tries to rebuild a Disconnected volume's session in place.
    *
    *  ❗ Backend-neutral: every remote backend implements `attempt_reconnect`, and
@@ -21606,6 +21633,21 @@ export type ShareListResult = {
   authMode: AuthMode
   // True when this answer came from the in-memory cache rather than the wire.
   fromCache: boolean
+}
+
+// Where `..` in a share's top folder leads, and the share's own switch.
+export type ShareParent = {
+  // The server, as its share list opens it.
+  host: NetworkHost
+  /**
+   *  What to call the server in words: the name a person typed for it, else the
+   *  name it goes by, with its port off 445. The same name the share's own label uses.
+   */
+  serverLabel: string
+  // The share as the mount spells it, for the cursor to land back on.
+  shareName: string
+  // The share's own choice, or `None` while it follows the default.
+  showParentRow: boolean | null
 }
 
 /**

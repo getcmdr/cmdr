@@ -1364,6 +1364,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "Mostrar “..” na pasta raiz de cada compartilhamento",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "O “..” leva à lista de compartilhamentos do servidor. Para mudar só em um compartilhamento, use o menu desse compartilhamento no seletor de volumes.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "pasta superior, pasta pai, subir, voltar, outros compartilhamentos, raiz, servidor, rede, ponto ponto, dois pontos",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Duração do cache de compartilhamentos",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2365,6 +2377,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Ocultar a dica do “..” na pasta raiz dos compartilhamentos",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "Na primeira vez que o “..” leva você da pasta raiz de um compartilhamento aos compartilhamentos do servidor, o Cmdr explica o que aconteceu. Desative isto para ver a explicação de novo.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "dica, aviso, notificação, servidor, pasta superior, subir, rede",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "servidor, servidores, fixar, desafixar, rede, seletor, lista, dica",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3146,6 +3170,10 @@
   "settings.network.card.connection": "Conexão",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Comportamento",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Desempenho e tempos limite",
   "@settings.network.card.performanceAndTimeouts": {

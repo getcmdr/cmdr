@@ -105,6 +105,38 @@ describe('hubMcpEntries', () => {
   })
 })
 
+describe('a saved server’s other shares, as an agent sees them (#1404)', () => {
+  const server = row({
+    id: 'manual-nas',
+    protocol: 'smb',
+    status: 'saved',
+    volumeId: null,
+    address: 'testnas.local',
+    saved: { places: [] as unknown[] } as SavedServer,
+  })
+  const lookups = { appRootOf: () => null }
+
+  it('tells an unsaved share apart from a saved one by its kind and status', () => {
+    const [, entry] = entriesOf(
+      hubItems([server], false, () => ['Media']),
+      lookups,
+    )
+    expect(entry.name).toBe('Media  protocol=smb  status="not_connected"  address=testnas.local  kind=unsaved_share')
+    expect(entry.path).toBe('smb://testnas.local/Media')
+    expect(entry.isDirectory).toBe(true)
+  })
+
+  it('lists the More row by an English name and its own kind, leading to the server', () => {
+    const [, entry] = entriesOf(
+      hubItems([server], false, () => null),
+      lookups,
+    )
+    expect(entry.name).toBe('More shares on Testnas…  kind=more_shares')
+    expect(entry.path).toBe('smb://testnas.local')
+    expect(entry.isDirectory).toBe(false)
+  })
+})
+
 describe('the nearby group, as an agent sees it', () => {
   const saved = row({ id: 'nas', name: 'Testnas', saved: {} as SavedServer })
   const nearby = (name: string) =>

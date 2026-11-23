@@ -496,7 +496,10 @@ list can't disagree on where the rule goes.
 - **A drive or phone**: its detach item, worded and greyed from the same `detachControlFor` answer the inline button
   renders (`Eject ({name})`, or `Disconnect` with the unplug glyph on a phone). An SMB share adds its direct-connection
   checkbox under the rule, and "Connect directly now" as a fix while that switch is ON but the share is still `os_mount`
-  (§ "Connection state indicator" above has why only then).
+  (§ "Connection state indicator" above has why only then). Under it, "Show “..” in the top folder" (the share's
+  effective value, its tooltip naming the server), re-read when the switcher opens like the direct-connection switch; a
+  flip goes through `../network/share-parent-row.svelte.ts` (`../network/DETAILS.md` § "`..` out of a share's top
+  folder"). The servers hub's share rows keep their own menu, so it isn't there.
 - **A server place**: `Open`, `Edit server…` (saved only), `Disconnect` (when `showsDisconnect`), `Pin to switcher` or
   `Unpin`, `Forget saved password`, `Forget server` (saved only). ❌ Never `Eject`: it promises safe-to-unplug, and a
   server has nothing to unplug. `Open` and `Edit server…` lead, the way the row's two purposes rank, and neither is

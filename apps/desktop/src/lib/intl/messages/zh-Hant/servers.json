@@ -39,6 +39,10 @@
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
   },
+  "servers.hub.moreShares": "{server} 上的更多共享資料夾⋯",
+  "@servers.hub.moreShares": {
+    "sourceHash": "db4e1ab"
+  },
   "servers.hub.status.connected": "已連線",
   "@servers.hub.status.connected": {
     "sourceHash": "2296556"
@@ -46,6 +50,10 @@
   "servers.hub.status.saved": "已儲存",
   "@servers.hub.status.saved": {
     "sourceHash": "b5c120b"
+  },
+  "servers.hub.status.notConnected": "未連線",
+  "@servers.hub.status.notConnected": {
+    "sourceHash": "0303e18"
   },
   "servers.hub.status.notConnectedYet": "尚未連線",
   "@servers.hub.status.notConnectedYet": {

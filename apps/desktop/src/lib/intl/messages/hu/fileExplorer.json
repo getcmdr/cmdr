@@ -1889,6 +1889,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "„..” megjelenítése a legfelső mappában",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "Ennek a megosztásnak a legfelső mappájában a „..” {server} többi megosztásához visz.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "A „..” {server} megosztásaihoz vitt. Ha inkább azt szeretnéd, hogy a megosztás legfelső mappája legfelső mappaként viselkedjen, kapcsold ki itt. Bármikor módosíthatod a kötetválasztóban, a megosztás menüjében.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Kikapcsolás ennél a megosztásnál",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Kikapcsolás minden megosztásnál",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Értem",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Közvetlen csatlakozás most",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

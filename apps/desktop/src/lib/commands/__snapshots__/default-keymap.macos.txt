@@ -179,6 +179,7 @@ servers.show
 servers.togglePin	
 servers.disconnect	
 servers.forgetSecret	
+servers.toggleShareParentRow	
 servers.connect	⌘K
 servers.edit	⌘E
 volume.select	Enter

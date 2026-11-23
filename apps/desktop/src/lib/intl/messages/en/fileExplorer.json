@@ -2844,6 +2844,36 @@
     "description": "Checkbox menu item in the submenu of a network share's row in the volume switcher. Checked (the default), Cmdr opens its own faster connection to this one share. Unchecked, the share stays on the slower connection the system made. Applies to this share only, not the whole server.",
     "screenshot": "pane-volume-chooser.png"
   },
+  "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "description": "Checkbox menu item in the submenu of a network share’s row in the volume switcher. Checked (the default, unless changed in Settings), the share’s top folder gets a “..” row that leads to the other shares on the same server. Applies to this share only. Keep “..” exactly as written: it’s the parent-folder row the file list shows."
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "description": "Tooltip on the “Show “..” in the top folder” checkbox (fileExplorer.navigation.showShareParentRow) in a network share’s row menu in the volume switcher. Keep “..” as written.",
+    "placeholders": {
+      "server": { "description": "The server’s name, for example “Testnas” or “192.168.1.20”." }
+    }
+  },
+  "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
+  "@fileExplorer.shareParentRow.hint": {
+    "description": "Text of a one-time notification, shown the first time someone opens “..” in a network share’s top folder and lands on the list of that server’s shares. “Turn it off here” points at the buttons below it (fileExplorer.shareParentRow.turnOffForShare and .turnOffForAll). “The share’s menu in the volume switcher” is the submenu of the share’s row in the drive list that opens from the pane’s header. Keep “..” as written.",
+    "placeholders": {
+      "server": { "description": "The server’s name, for example “Testnas” or “192.168.1.20”." }
+    }
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "description": "VERB phrase (imperative), a button on the “..” notification (fileExplorer.shareParentRow.hint): this share’s top folder stops showing “..”. Other shares keep it."
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Turn off for all shares",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "description": "VERB phrase (imperative), a button on the “..” notification (fileExplorer.shareParentRow.hint): no share’s top folder shows “..” from now on, except shares someone turned it on for one by one."
+  },
+  "fileExplorer.shareParentRow.gotIt": "Got it",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "description": "VERB phrase (imperative), the main button that dismisses the “..” notification (fileExplorer.shareParentRow.hint) and keeps “..” on. Casual acknowledgement, the way a person says “understood” and moves on. Two or three words at most."
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Connect directly now",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "description": "Menu item in the submenu of a network share's row in the volume switcher, sitting just above the \"Use Cmdr's fast direct connection\" checkbox. It's a ONE-TIME ACTION, not a setting: clicking it makes Cmdr open its own faster connection to this share right now. It only appears when that checkbox is already on but the share is still on the slower connection the system made (for example, the server was asleep or no password was saved). Use an imperative VERB phrase and keep the \"now\" meaning (this moment, once), so it can't be read as a mode or a preference.",

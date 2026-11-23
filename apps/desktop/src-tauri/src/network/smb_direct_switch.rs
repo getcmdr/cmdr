@@ -35,7 +35,7 @@ pub enum DirectConnectionSwitch {
 
 /// What reading the share behind a volume came back with.
 #[derive(Debug)]
-enum ShareRead {
+pub(crate) enum ShareRead {
     Smb(SmbMountInfo),
     NotSmb,
     NotResponding,
@@ -46,7 +46,7 @@ enum ShareRead {
 /// Reads the mount for a direct share too: its OS mount stays up underneath the
 /// session, and the mount is the one place the server and share are spelled the
 /// way the auto upgrade will see them.
-async fn read_share_within(
+pub(crate) async fn read_share_within(
     volume_id: &str,
     limit: Duration,
     read: impl FnOnce(&str) -> Option<SmbMountInfo> + Send + 'static,

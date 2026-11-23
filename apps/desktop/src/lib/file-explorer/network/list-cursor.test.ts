@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cursorAfterArrow, nameStartsWith } from './list-cursor'
+import { cursorAfterArrow, indexOfName, nameStartsWith } from './list-cursor'
 
 describe('cursorAfterArrow', () => {
   it('steps one row, clamped to the list', () => {
@@ -29,6 +29,22 @@ describe('nameStartsWith', () => {
   })
 
   it('reads a decomposed name the way a keyboard types it', () => {
-    expect(nameStartsWith('Re\u0301sume\u0301', 'R\u00e9s')).toBe(true)
+    expect(nameStartsWith('Résumé', 'Rés')).toBe(true)
+  })
+})
+
+describe('indexOfName', () => {
+  const shares = [{ name: 'admin' }, { name: 'Café' }, { name: 'media' }]
+
+  it('finds the row the cursor came from, whatever its case', () => {
+    expect(indexOfName(shares, 'Media')).toBe(2)
+  })
+
+  it('matches a decomposed name to a composed one, as a kernel mount spells it', () => {
+    expect(indexOfName(shares, 'Café')).toBe(1)
+  })
+
+  it('answers -1 for a name the list doesn’t hold', () => {
+    expect(indexOfName(shares, 'backup')).toBe(-1)
   })
 })

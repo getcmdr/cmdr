@@ -1892,6 +1892,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "Hiển thị “..” trong thư mục gốc",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "Trong thư mục gốc của mục chia sẻ này, “..” đưa bạn tới các mục chia sẻ khác của {server}.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "“..” đã đưa bạn tới các mục chia sẻ của {server}. Nếu bạn muốn thư mục gốc của mục chia sẻ trông như một thư mục gốc, hãy tắt tính năng này tại đây. Bạn có thể đổi lại bất cứ lúc nào trong menu của mục chia sẻ ở bộ chọn ổ đĩa.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Tắt cho mục chia sẻ này",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Tắt cho mọi mục chia sẻ",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Đã hiểu",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Kết nối trực tiếp ngay",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

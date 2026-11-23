@@ -1361,6 +1361,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "Zobrazit „..“ v kořenové složce každé sdílené složky",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "Položka „..“ vás zavede na seznam sdílených složek serveru. Zvlášť pro každou sdílenou složku to změňte v její nabídce v přepínači svazků.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "nadřazená složka, nahoru, zpět, o úroveň výš, ostatní sdílené složky, kořen, sousední, dvě tečky, síťový disk",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Platnost mezipaměti sdílených složek",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2362,6 +2374,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Potlačit tip k „..“ v kořenových složkách sdílených složek",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "Když vás „..“ poprvé zavede z kořenové složky sdílené složky ke sdíleným složkám serveru, Cmdr to vysvětlí. Vypněte tuto volbu a vysvětlení se zobrazí ještě jednou.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "sdílená složka, nadřazená složka, kořen, nápověda, oznámení, upozornění, dvě tečky",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "servery, připnout, odepnout, síť, seznam disků, oznámení, nápověda",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3144,6 +3168,10 @@
   "settings.network.card.connection": "Připojení",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Chování",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Výkon a časové limity",
   "@settings.network.card.performanceAndTimeouts": {

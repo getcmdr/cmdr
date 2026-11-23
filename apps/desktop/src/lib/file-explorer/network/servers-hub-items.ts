@@ -15,14 +15,27 @@
 
 import type { NearbyServersGroupChoice } from '#lib/settings/index.js'
 import { isNearbyOnly, type HubRow } from './servers-hub-rows'
+import { shareRowsFor, type ShareItem } from './servers-hub-shares'
 
-/** The header's id. Row ids are server and host ids, or `share:<volume id>`, so it can't meet one. */
+/**
+ * The header's id. Row ids are server and host ids, or `share:<volume id>`, and a
+ * share item's `unsaved-share:` / `more-shares:`, so it can't meet one.
+ */
 export const NEARBY_GROUP_ID = 'group:nearby'
 
-/** One line the cursor can sit on, short of "Add server…". */
+/**
+ * One line the cursor can sit on, short of "Add server…". A share item (an
+ * unsaved share of a saved server, or its "More shares on …" row) is no ROW:
+ * nothing about it is saved, so F8, the row menus, and the palette's server
+ * commands find nothing on it, as on the group's header.
+ */
 export type HubItem =
   | { kind: 'row'; id: string; row: HubRow; inNearbyGroup: boolean }
   | { kind: 'nearby_group'; id: typeof NEARBY_GROUP_ID; count: number; expanded: boolean }
+  | ShareItem
+
+/** A saved server's prefetched share names, or `null` while nobody knows them (`servers-hub-shares.ts`). */
+export type ShareNamesOf = (server: HubRow) => readonly string[] | null
 
 /**
  * Whether the nearby group is open: what the person last chose, else collapsed
@@ -36,22 +49,41 @@ export function isNearbyGroupExpanded(choice: NearbyServersGroupChoice, hasSaved
 
 /**
  * Every item, hidden ones included. The header is there only while something was
- * found nearby.
+ * found nearby. With `shareNamesOf`, each saved SMB server's unsaved shares and
+ * its "More shares on …" row follow its saved shares (`servers-hub-shares.ts`).
  *
- * ❗ Counts on the rows' order: `buildHubRows` puts the found-only hosts last.
+ * ❗ Counts on the rows' order: `buildHubRows` puts the found-only hosts last, and
+ * a server's place rows right after it.
  */
-export function hubItems(rows: HubRow[], nearbyExpanded: boolean): HubItem[] {
+export function hubItems(rows: HubRow[], nearbyExpanded: boolean, shareNamesOf?: ShareNamesOf): HubItem[] {
   const nearbyStart = rows.findIndex(isNearbyOnly)
-  const asItem = (row: HubRow, at: number): HubItem => ({
-    kind: 'row',
-    id: row.id,
-    row,
-    inNearbyGroup: nearbyStart >= 0 && at >= nearbyStart,
+  const items: HubItem[] = []
+  let server: HubRow | null = null
+  rows.forEach((row, at) => {
+    if (at === nearbyStart) {
+      const count = rows.length - nearbyStart
+      items.push({ kind: 'nearby_group', id: NEARBY_GROUP_ID, count, expanded: nearbyExpanded })
+    }
+    items.push({ kind: 'row', id: row.id, row, inNearbyGroup: nearbyStart >= 0 && at >= nearbyStart })
+    if (row.kind === 'server') server = row
+    const next = rows.at(at + 1)
+    const lastUnderServer = server !== null && (next?.kind !== 'place' || next.parentId !== server.id)
+    if (shareNamesOf && server && lastUnderServer) items.push(...shareItemsUnder(server, shareNamesOf(server)))
   })
-  const items = rows.map(asItem)
-  if (nearbyStart < 0) return items
-  const count = rows.length - nearbyStart
-  items.splice(nearbyStart, 0, { kind: 'nearby_group', id: NEARBY_GROUP_ID, count, expanded: nearbyExpanded })
+  return items
+}
+
+/** The share items under one server, in order: its unsaved shares, then the More row. */
+function shareItemsUnder(server: HubRow, shares: readonly string[] | null): ShareItem[] {
+  const under = shareRowsFor(server, shares)
+  if (!under) return []
+  const items: ShareItem[] = under.unsaved.map((name) => ({
+    kind: 'unsaved_share',
+    id: `unsaved-share:${server.id}:${name}`,
+    server,
+    name,
+  }))
+  if (under.more) items.push({ kind: 'more_shares', id: `more-shares:${server.id}`, server })
   return items
 }
 

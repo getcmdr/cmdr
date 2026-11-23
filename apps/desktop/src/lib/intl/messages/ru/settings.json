@@ -1361,6 +1361,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "Показывать «..» в корневой папке каждой общей папки",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "«..» ведет к списку общих папок на сервере. Изменить это для отдельной общей папки можно в ее меню в переключателе томов.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "родительская папка, вверх, назад, уровень выше, другие общие папки, корень, сервер, соседние папки, две точки, сетевая папка, шара",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Время хранения кэша общих папок",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2361,6 +2373,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Скрывать подсказку о «..» в корневых папках общих папок",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "Когда «..» впервые переводит вас из корневой папки общей папки к общим папкам сервера, Cmdr объясняет это. Выключите параметр, чтобы увидеть объяснение еще раз.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "сетевая папка, родительская папка, вверх, уровень выше, совет, уведомление, две точки",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "серверы, закрепить, открепить, сеть, список дисков, уведомление, совет",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3141,6 +3165,10 @@
   "settings.network.card.connection": "Подключение",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Поведение",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Производительность и тайм-ауты",
   "@settings.network.card.performanceAndTimeouts": {

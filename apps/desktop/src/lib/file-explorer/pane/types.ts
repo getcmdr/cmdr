@@ -71,6 +71,8 @@ export interface VolumeChangePayload {
    * the other pane's or the remembered folder instead.
    */
   exact?: boolean
+  /** On the network volume: the host whose share list opens (`..` out of an SMB share's top folder). */
+  networkHost?: NetworkHost
 }
 
 /**

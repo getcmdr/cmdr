@@ -309,6 +309,7 @@ export function createHubActions(deps: HubActionDeps): HubActions {
       isSaved: row.saved !== null,
       directConnection: undefined,
       autoReconnect: placeAutoReconnect(row) ?? undefined,
+      shareParentRow: undefined,
     })
   }
 
@@ -379,6 +380,8 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   const flipToggle: Record<RowToggleKind, (row: HubRow) => Promise<void>> = {
     // An SMB share's switch: never on a one-place (SFTP or WebDAV) row.
     'direct-connection': () => Promise.resolve(),
+    // An SMB share's: the hub's share rows keep their own menu (`shareMenu`).
+    'share-parent-row': () => Promise.resolve(),
     // The row shows the saved entry's switch; the `volumes-changed` the command emits is what
     // re-reads the saved list, so the next open shows the new state.
     'auto-reconnect': async (row) => {

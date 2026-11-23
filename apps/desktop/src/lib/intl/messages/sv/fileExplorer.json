@@ -1889,6 +1889,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "Visa ”..” i rotmappen",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "I den här delade mappens rotmapp tar ”..” dig till de andra delade mapparna på {server}.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "”..” tog dig till de delade mapparna på {server}. Om du hellre vill att den delade mappens rotmapp ska se ut som en rotmapp, stäng av det här. Du kan ändra det när som helst i den delade mappens meny i volymväljaren.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Stäng av för den här delade mappen",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Stäng av för alla delade mappar",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Uppfattat",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Anslut direkt nu",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

@@ -1364,6 +1364,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "Mostrar “..” en la carpeta raíz de cada recurso compartido",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "“..” te lleva a la lista de recursos compartidos del servidor. Cámbialo en cada recurso compartido desde su menú en el selector de volúmenes.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "carpeta superior, subir, arriba, atrás, volver, otros recursos, raíz, servidor, NAS, punto punto, dos puntos",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Duración de la caché de recursos compartidos",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2365,6 +2377,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Ocultar el aviso de “..” en la carpeta raíz de los recursos compartidos",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "La primera vez que “..” te lleva de la carpeta raíz de un recurso compartido a los recursos compartidos del servidor, Cmdr te lo explica. Desactiva esto para volver a ver la explicación.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "recursos, servidor, carpeta superior, raíz, notificación, consejo, explicación",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "servidor, servidores, fijar, desfijar, red, selector, lista, aviso",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3145,6 +3169,10 @@
   "settings.network.card.connection": "Conexión",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Comportamiento",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Rendimiento y tiempos de espera",
   "@settings.network.card.performanceAndTimeouts": {

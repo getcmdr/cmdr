@@ -27,6 +27,7 @@
     const networkEnabledDef = getSettingDefinition('network.enabled') ?? defaultDef
     const directSmbDef = getSettingDefinition('network.directSmbConnection') ?? defaultDef
     const requireEncryptionDef = getSettingDefinition('network.requireSmbEncryption') ?? defaultDef
+    const shareParentRowDef = getSettingDefinition('network.showShareParentRow') ?? defaultDef
     const cacheDurationDef = getSettingDefinition('network.shareCacheDuration') ?? defaultDef
     const timeoutDef = getSettingDefinition('network.timeout') ?? defaultDef
 
@@ -99,6 +100,19 @@
                     <SettingSwitch id="network.requireSmbEncryption" />
                 </SettingRow>
             {/if}
+        </SectionCard>
+    {/if}
+
+    {#if shouldShow('network.showShareParentRow')}
+        <SectionCard label={tString('settings.network.card.behavior')}>
+            <SettingRow
+                id="network.showShareParentRow"
+                label={shareParentRowDef.label}
+                description={shareParentRowDef.description}
+                {searchQuery}
+            >
+                <SettingSwitch id="network.showShareParentRow" />
+            </SettingRow>
         </SectionCard>
     {/if}
 

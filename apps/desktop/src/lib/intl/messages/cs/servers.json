@@ -39,6 +39,10 @@
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
   },
+  "servers.hub.moreShares": "Další sdílené složky na serveru {server}…",
+  "@servers.hub.moreShares": {
+    "sourceHash": "db4e1ab"
+  },
   "servers.hub.status.connected": "Připojeno",
   "@servers.hub.status.connected": {
     "sourceHash": "2296556"
@@ -46,6 +50,10 @@
   "servers.hub.status.saved": "Uloženo",
   "@servers.hub.status.saved": {
     "sourceHash": "b5c120b"
+  },
+  "servers.hub.status.notConnected": "Nepřipojeno",
+  "@servers.hub.status.notConnected": {
+    "sourceHash": "0303e18"
   },
   "servers.hub.status.notConnectedYet": "Zatím není připojeno",
   "@servers.hub.status.notConnectedYet": {

@@ -112,6 +112,10 @@ pub(crate) mod smb_saved_shares;
 pub(crate) mod smb_server_guid;
 // What the UI calls a share ("private on Home NAS"): the one spelling every surface shares.
 pub(crate) mod smb_share_label;
+// A choice about one share, keyed by server + share: a leaf both `known_shares` and `smb_share_parent` read.
+pub(crate) mod share_choices;
+// "Show “..” in the top folder": where `..` leads out of a share, and its per-share switch.
+pub(crate) mod smb_share_parent;
 
 // The "we're stuck on the kernel mount" notice's once-per-server ledger. Lives
 // beside `smb_upgrade` (its only caller) rather than inside it, so the ledger is

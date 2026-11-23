@@ -1365,6 +1365,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "„..“ im obersten Ordner jeder Freigabe einblenden",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "„..“ führt dich zur Liste der Freigaben auf dem Server. Für eine einzelne Freigabe änderst du das in ihrem Menü in der Volume-Auswahl.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "übergeordnet, nach oben, hoch, zurück, andere Freigaben, Stammordner, Wurzel, Netzwerkfreigabe, Nachbar, zwei Punkte, Punkt Punkt",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Cache-Dauer für Freigaben",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2371,6 +2383,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Hinweis zu „..“ im obersten Ordner von Freigaben unterdrücken",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "Wenn „..“ dich zum ersten Mal aus dem obersten Ordner einer Freigabe zu den Freigaben des Servers bringt, erklärt Cmdr es. Schalte das aus, um die Erklärung noch einmal zu sehen.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "Netzwerkfreigabe, übergeordnet, nach oben, Stammordner, Tipp, Mitteilung, Erklärung, zwei Punkte",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "Server, fixieren, lösen, Netzwerk, Liste, lang, Laufwerke, Tipp, Mitteilung",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3153,6 +3177,10 @@
   "settings.network.card.connection": "Verbindung",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Verhalten",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Leistung und Zeitüberschreitungen",
   "@settings.network.card.performanceAndTimeouts": {

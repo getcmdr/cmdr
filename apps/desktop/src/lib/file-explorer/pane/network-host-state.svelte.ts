@@ -12,6 +12,7 @@
  */
 
 import type { NetworkHost } from '../types'
+import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
 export interface NetworkHostStateDeps {
   getIsNetworkView: () => boolean
@@ -33,16 +34,24 @@ export interface NetworkHostState {
   /** The view reports a host change: remember it AND bubble it. */
   handleHostChange: (host: NetworkHost | null) => void
   setAutoMountShare: (shareName: string | undefined) => void
+  /**
+   * The share `..` came out of on the way here (#1238), for the share list's cursor and the
+   * one-time explainer. A one-shot like `autoMountShare`, and cleared the same way.
+   */
+  readonly shareLanding: ShareParentLanding | undefined
+  setShareLanding: (landing: ShareParentLanding | undefined) => void
 }
 
 export function createNetworkHostState(deps: NetworkHostStateDeps): NetworkHostState {
   let host = $state<NetworkHost | null>(null)
   let autoMountShare = $state<string | undefined>(undefined)
+  let shareLanding = $state<ShareParentLanding | undefined>(undefined)
 
   $effect(() => {
     if (deps.getIsNetworkView()) return
     if (host !== null) host = null
     if (autoMountShare !== undefined) autoMountShare = undefined
+    if (shareLanding !== undefined) shareLanding = undefined
   })
 
   return {
@@ -61,6 +70,12 @@ export function createNetworkHostState(deps: NetworkHostStateDeps): NetworkHostS
     },
     setAutoMountShare: (shareName) => {
       autoMountShare = shareName
+    },
+    get shareLanding() {
+      return shareLanding
+    },
+    setShareLanding: (landing) => {
+      shareLanding = landing
     },
   }
 }

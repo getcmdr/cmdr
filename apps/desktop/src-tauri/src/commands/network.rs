@@ -9,6 +9,7 @@ use crate::network::{
 use crate::network::os_mount_notice::FallbackNotice;
 use crate::network::smb_connect_directly::{self, UpgradeResult};
 use crate::network::smb_direct_switch::{self, DirectConnectionSwitch};
+use crate::network::smb_share_parent::{self, ShareParent};
 use crate::network::smb_upgrade::register_smb_volume;
 
 /// Gets every host discovery knows, including ones a stopped browse found: the
@@ -503,6 +504,25 @@ pub async fn get_smb_direct_connection_enabled(volume_id: String) -> Option<bool
 #[specta::specta]
 pub async fn set_smb_direct_connection_enabled(volume_id: String, enabled: bool) -> DirectConnectionSwitch {
     smb_direct_switch::set_direct_connection_for(&volume_id, enabled).await
+}
+
+/// Where `..` in the top folder of the SMB share behind `volume_id` leads (the server
+/// and its name), plus the share's own "Show “..”" choice, or `None` when no SMB
+/// share is behind it. See `network::smb_share_parent`.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_smb_share_parent(volume_id: String) -> Option<ShareParent> {
+    smb_share_parent::share_parent_for(&volume_id).await
+}
+
+/// Saves the "Show “..”" choice for the SMB share behind `volume_id`, measured against
+/// `default_show` (the `network.showShareParentRow` setting): a choice matching it
+/// clears the share's override. `false` when no SMB share is behind it, and nothing
+/// was saved.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_smb_share_parent_row(volume_id: String, show: bool, default_show: bool) -> bool {
+    smb_share_parent::set_parent_row_for(&volume_id, show, default_show).await
 }
 
 // Per-drive indexing enable/disable/rescan lives in `commands/indexing.rs` as a

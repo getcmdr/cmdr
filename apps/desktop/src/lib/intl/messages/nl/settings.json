@@ -1367,6 +1367,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "‘..’ in de hoofdmap van elke gedeelde map tonen",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "‘..’ brengt je naar de lijst met gedeelde mappen van de server. Wijzig dit per gedeelde map in het menu van die map in de volumekiezer.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "bovenliggende map, omhoog, terug, andere shares, netwerkshare, bovenste map, root, naastgelegen, twee puntjes, puntpunt",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Cacheduur van shares",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2372,6 +2384,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "De hint over ‘..’ in de hoofdmap van gedeelde mappen onderdrukken",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "De eerste keer dat ‘..’ je van de hoofdmap van een gedeelde map naar de gedeelde mappen van de server brengt, legt Cmdr dat uit. Zet dit uit om de uitleg nog een keer te zien.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "share, netwerkshare, server, bovenliggende map, bovenste map, tip, melding, uitleg",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "server, vastzetten, losmaken, vast, los, lijst, lang, melding, tip",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3157,6 +3181,10 @@
   "settings.network.card.connection": "Verbinding",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Gedrag",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Prestaties en time-outs",
   "@settings.network.card.performanceAndTimeouts": {

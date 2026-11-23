@@ -35,6 +35,7 @@
     import { eventMatchesCommand } from '#lib/shortcuts/index.js'
     import { claimKey } from '#lib/shortcuts/claim-key.js'
     import type { VolumeChangePayload } from './types'
+    import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
     const log = getAppLogger('fileExplorer')
 
@@ -63,6 +64,12 @@
          * so the same share name can be queued again later.
          */
         onAutoMountConsumed?: () => void
+        /**
+         * The share `..` came out of (#1238): its host's share list puts the cursor on it,
+         * and reports back through `onShareLanded` once the list is on screen.
+         */
+        shareLanding?: ShareParentLanding
+        onShareLanded?: () => void
         onVolumeChange?: (change: VolumeChangePayload) => void
         onNetworkHostChange?: (host: NetworkHost | null) => void
     }
@@ -73,6 +80,8 @@
         initialNetworkHost = null,
         initialAutoMountShare,
         onAutoMountConsumed,
+        shareLanding,
+        onShareLanded,
         onVolumeChange,
         onNetworkHostChange,
     }: Props = $props()
@@ -715,6 +724,8 @@
         {autoMountShare}
         onShareSelect={handleShareSelect}
         onBack={handleNetworkBack}
+        landOnShare={shareLanding?.hostId === currentAccount.host.id ? shareLanding.shareName : undefined}
+        onLandedOnShare={() => onShareLanded?.()}
     />
 {:else}
     <ServersHub

@@ -1888,6 +1888,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "Показывать «..» в корневой папке",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "В корневой папке этой общей папки «..» ведет к другим общим папкам на сервере {server}.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "Через «..» вы попали к общим папкам на сервере {server}. Если хотите, чтобы корневая папка общей папки выглядела как корневая, выключите «..» здесь. Изменить это можно в любой момент в меню общей папки в переключателе томов.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Выключить для этой общей папки",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Выключить для всех общих папок",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Понятно",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Подключиться напрямую сейчас",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

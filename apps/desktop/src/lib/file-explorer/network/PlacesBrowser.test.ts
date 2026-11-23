@@ -294,6 +294,33 @@ describe('PlacesBrowser type-to-jump', () => {
   })
 })
 
+describe('PlacesBrowser landing on the share `..` came out of (#1238)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    document.body.innerHTML = ''
+    h.getSmbCredentials.mockRejectedValue(new Error('not found'))
+  })
+
+  it('puts the cursor on that share once the list loads, and says so once', async () => {
+    const shares = [{ ...testshare, name: 'admin' }, testshare, { ...testshare, name: 'zeta' }]
+    h.fetchShares.mockResolvedValue({ shares, authMode: 'guest_allowed', fromCache: false })
+    const onLandedOnShare = vi.fn()
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const component = mount(PlacesBrowser, {
+      target,
+      props: { account: { protocol: 'smb', host }, landOnShare: 'TestShare', onLandedOnShare },
+    })
+    await waitForShareList(target)
+    await tick()
+
+    const api = component as unknown as PlacesBrowserApi
+    expect(api.getShareUnderCursor()?.name).toBe('testshare')
+    expect(onLandedOnShare).toHaveBeenCalledOnce()
+    await unmount(component)
+  })
+})
+
 describe('PlacesBrowser Enter', () => {
   beforeEach(() => {
     vi.clearAllMocks()

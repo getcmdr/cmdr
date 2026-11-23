@@ -102,12 +102,12 @@ palette-visible; the rest are `showInPalette: false`: low-level navigation and M
 documentation and Settings panes.
 
 **Conditional palette rows.** A source may carry a `paletteCondition` (a `PaletteCondition` member:
-`focusedPaneSharesLinks`, or `trashUndoAvailable`, which hides `edit.undoTrash` exactly while its Edit menu item is
-greyed out), and the palette shows it only while that holds. `CommandPalette.svelte` answers each one through its
-`PALETTE_CONDITIONS` record when it searches, so a new member doesn't compile until it's answered there. Without
-`holds`, `getPaletteCommands` counts every conditional row as shown, which is what pruning stale recents wants. Every
-other surface (Settings, help, MCP) lists the command regardless, and its handler still checks: the palette knows the
-pane, not the cursor row.
+`focusedPaneSharesLinks`, `focusedPaneOnSmbShare` (the focused pane's share's "Show “..”" switch), or
+`trashUndoAvailable`, which hides `edit.undoTrash` exactly while its Edit menu item is greyed out), and the palette
+shows it only while that holds. `CommandPalette.svelte` answers each one through its `PALETTE_CONDITIONS` record when it
+searches, so a new member doesn't compile until it's answered there. Without `holds`, `getPaletteCommands` counts every
+conditional row as shown, which is what pruning stale recents wants. Every other surface (Settings, help, MCP) lists the
+command regardless, and its handler still checks: the palette knows the pane, not the cursor row.
 
 `command-ids.ts::COMMAND_IDS` is also the backend's command-breadcrumb vocabulary. `src-tauri/build.rs` parses the tuple
 into an `OUT_DIR` Rust slice, and `error_reporter/breadcrumbs.rs` retains a command event only when its id is in that

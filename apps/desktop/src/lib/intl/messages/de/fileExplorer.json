@@ -1895,6 +1895,30 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "sourceHash": "68ff111"
   },
+  "fileExplorer.navigation.showShareParentRow": "„..“ im obersten Ordner einblenden",
+  "@fileExplorer.navigation.showShareParentRow": {
+    "sourceHash": "fe7ac1b"
+  },
+  "fileExplorer.navigation.showShareParentRowTooltip": "Im obersten Ordner dieser Freigabe führt „..“ dich zu den anderen Freigaben von {server}.",
+  "@fileExplorer.navigation.showShareParentRowTooltip": {
+    "sourceHash": "2282b68"
+  },
+  "fileExplorer.shareParentRow.hint": "„..“ hat dich zu den Freigaben von {server} gebracht. Soll der oberste Ordner der Freigabe lieber wie ein oberster Ordner aussehen, schalte „..“ hier aus. Du kannst das jederzeit im Menü der Freigabe in der Volume-Auswahl ändern.",
+  "@fileExplorer.shareParentRow.hint": {
+    "sourceHash": "bdafe17"
+  },
+  "fileExplorer.shareParentRow.turnOffForShare": "Für diese Freigabe deaktivieren",
+  "@fileExplorer.shareParentRow.turnOffForShare": {
+    "sourceHash": "1616e09"
+  },
+  "fileExplorer.shareParentRow.turnOffForAll": "Für alle Freigaben deaktivieren",
+  "@fileExplorer.shareParentRow.turnOffForAll": {
+    "sourceHash": "b9133dc"
+  },
+  "fileExplorer.shareParentRow.gotIt": "Alles klar",
+  "@fileExplorer.shareParentRow.gotIt": {
+    "sourceHash": "5ad3dbd"
+  },
   "fileExplorer.navigation.connectDirectlyNow": "Jetzt direkt verbinden",
   "@fileExplorer.navigation.connectDirectlyNow": {
     "sourceHash": "e81ea20"

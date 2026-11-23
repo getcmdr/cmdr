@@ -41,6 +41,10 @@
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
   },
+  "servers.hub.moreShares": "Weitere Freigaben auf {server} …",
+  "@servers.hub.moreShares": {
+    "sourceHash": "db4e1ab"
+  },
   "servers.hub.status.connected": "Verbunden",
   "@servers.hub.status.connected": {
     "sourceHash": "2296556"
@@ -48,6 +52,10 @@
   "servers.hub.status.saved": "Gespeichert",
   "@servers.hub.status.saved": {
     "sourceHash": "b5c120b"
+  },
+  "servers.hub.status.notConnected": "Nicht verbunden",
+  "@servers.hub.status.notConnected": {
+    "sourceHash": "0303e18"
   },
   "servers.hub.status.notConnectedYet": "Noch nicht verbunden",
   "@servers.hub.status.notConnectedYet": {

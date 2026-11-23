@@ -1136,6 +1136,10 @@
   "@commands.serversTogglePin.label": {
     "sourceHash": "7d800c8"
   },
+  "commands.serversToggleShareParentRow.label": "Показать или скрыть «..» в корневой папке этой общей папки",
+  "@commands.serversToggleShareParentRow.label": {
+    "sourceHash": "91b0b2e"
+  },
   "commands.serversDisconnect.label": "Отключиться от сервера",
   "@commands.serversDisconnect.label": {
     "sourceHash": "8656022"
