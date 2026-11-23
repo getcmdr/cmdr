@@ -1937,12 +1937,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Новое ненулевое ограничение вступит в силу при следующем запуске Cmdr.",
+  "settings.advanced.maxLogStorageMb.description": "Укажите 0, чтобы не хранить журналы, но тогда отчеты об ошибках отправить не получится.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Укажите 0, чтобы не хранить журналы, но тогда отчеты об ошибках отправить не получится.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "журнал, лог, логи, хранилище, диск, место, ограничение, ротация, ошибка, отчет, конфиденциальность",
@@ -3387,10 +3383,6 @@
   "settings.advanced.defaultPrefix": "По умолчанию:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Перезапустите Cmdr, чтобы применить изменение хранения журналов.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} из {totalText} изображения в выбранных папках} few {{enrichedText} из {totalText} изображений в выбранных папках} many {{enrichedText} из {totalText} изображений в выбранных папках} other {{enrichedText} из {totalText} изображения в выбранных папках}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

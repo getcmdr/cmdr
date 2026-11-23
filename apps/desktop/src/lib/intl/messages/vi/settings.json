@@ -1937,12 +1937,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Giới hạn mới khác 0 sẽ có hiệu lực ở lần tiếp theo Cmdr khởi động.",
+  "settings.advanced.maxLogStorageMb.description": "Đặt 0 để không giữ nhật ký nào, nhưng khi đó không thể gửi báo cáo trục trặc.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Đặt 0 để không giữ nhật ký nào, nhưng khi đó không thể gửi báo cáo trục trặc.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "nhật ký, lưu trữ, dung lượng, đĩa, giới hạn, xoay vòng, lỗi, báo cáo, quyền riêng tư",
@@ -3390,10 +3386,6 @@
   "settings.advanced.defaultPrefix": "Mặc định:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Khởi động lại Cmdr để áp dụng thay đổi lưu trữ nhật ký.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, other {Đã lập chỉ mục {enrichedText} trên {totalText} ảnh trong các thư mục được bao phủ}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

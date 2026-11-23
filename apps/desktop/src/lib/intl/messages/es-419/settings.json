@@ -219,8 +219,8 @@
   "@settings.fileExplorer.typeToJump.resetDelay.description": {
     "sourceHash": "d33fa4a"
   },
-  "settings.advanced.maxLogStorageMb.summary": "Ponlo en 0 para no guardar registros, aunque entonces no se pueden enviar reportes de error.",
-  "@settings.advanced.maxLogStorageMb.summary": {
+  "settings.advanced.maxLogStorageMb.description": "Ponlo en 0 para no guardar registros, aunque entonces no se pueden enviar reportes de error.",
+  "@settings.advanced.maxLogStorageMb.description": {
     "sourceHash": "fadbab0"
   },
   "settings.advanced.logLlmCalls.description": "{platform, select, macos {Cmdr las escribe en la carpeta llm-logs para depurar. Estos archivos se quedan en tu Mac.} windows {Cmdr las escribe en la carpeta llm-logs para depurar. Estos archivos se quedan en tu PC.} other {Cmdr las escribe en la carpeta llm-logs para depurar. Estos archivos se quedan en tu computadora.}}",

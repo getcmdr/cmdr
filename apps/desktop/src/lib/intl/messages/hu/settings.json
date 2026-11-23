@@ -1940,12 +1940,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Egy új, nem nulla korlát a Cmdr következő indításakor lép életbe.",
+  "settings.advanced.maxLogStorageMb.description": "Állítsd 0-ra, ha nem akarsz naplókat tárolni, de akkor a Cmdr nem tud hibajelentést küldeni.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Állítsd 0-ra, ha nem akarsz naplókat tárolni, de akkor a Cmdr nem tud hibajelentést küldeni.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "napló, naplófájl, tárhely, lemez, lemezterület, korlát, felső határ, rotálás, hiba, jelentés, adatvédelem",
@@ -3392,10 +3388,6 @@
   "settings.advanced.defaultPrefix": "Alapérték:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Indítsd újra a Cmdrt a naplótárolási módosítás alkalmazásához.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} / {totalText} kép indexelve a lefedett mappáidban} other {{enrichedText} / {totalText} kép indexelve a lefedett mappáidban}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

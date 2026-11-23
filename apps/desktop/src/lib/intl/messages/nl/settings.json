@@ -1944,12 +1944,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Een nieuwe limiet boven 0 gaat in de volgende keer dat Cmdr start.",
+  "settings.advanced.maxLogStorageMb.description": "Zet op 0 om geen logbestanden te bewaren, maar dan kan Cmdr geen foutrapporten versturen.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Zet op 0 om geen logbestanden te bewaren, maar dan kan Cmdr geen foutrapporten versturen.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "log, logbestand, logboek, opslag, schijf, schijfruimte, limiet, maximum, rotatie, fout, rapport, privacy",
@@ -3405,10 +3401,6 @@
   "settings.advanced.defaultPrefix": "Standaard:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Herstart Cmdr om de wijziging in logopslag toe te passen.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} van {totalText} afbeelding geïndexeerd in je gedekte mappen} other {{enrichedText} van {totalText} afbeeldingen geïndexeerd in je gedekte mappen}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

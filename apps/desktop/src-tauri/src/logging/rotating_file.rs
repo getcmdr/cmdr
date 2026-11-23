@@ -48,6 +48,12 @@ impl RotatingFile {
         }
     }
 
+    /// Changes how many rotated files the next rotation keeps. Files already beyond the new
+    /// count stay until that rotation (or `eager_prune`) removes them.
+    pub(crate) fn set_rotated_keep(&mut self, rotated_keep: usize) {
+        self.rotated_keep = rotated_keep;
+    }
+
     fn live_file(&mut self) -> io::Result<&mut File> {
         let file = match self.file.take() {
             Some(file) => file,

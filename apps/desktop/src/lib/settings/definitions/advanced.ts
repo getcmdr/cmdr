@@ -584,7 +584,6 @@ export const advancedSettings: SettingDefinitionSource[] = [
     cardKey: 'settings.advanced.card.loggingAndDiagnostics',
     labelKey: 'settings.advanced.maxLogStorageMb.label',
     descriptionKey: 'settings.advanced.maxLogStorageMb.description',
-    descriptionInTip: { summaryKey: 'settings.advanced.maxLogStorageMb.summary' },
     keywordsKey: 'settings.advanced.maxLogStorageMb.keywords',
     terms: ['mb'],
     type: 'number',

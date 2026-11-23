@@ -45,8 +45,7 @@ import {
   applyRecentSearchesMaxCount,
   applyRecentSelectionsMaxCount,
 } from '#lib/tauri-commands/index.js'
-import { addToast } from '#lib/ui/toast/toast-store.svelte.js'
-import { tString, setLocale } from '#lib/intl/messages.svelte.js'
+import { setLocale } from '#lib/intl/messages.svelte.js'
 import { loadSystemLocales, pickUiLocale, watchSystemLocales } from '#lib/intl/os-locales.js'
 import { trackLanguageResolved } from '#lib/intl/language-analytics.js'
 import { refreshSystemStrings } from '#lib/system-strings.svelte.js'
@@ -63,13 +62,6 @@ const log = getAppLogger('settings-applier')
 let initialized = false
 let unsubscribe: (() => void) | undefined
 let unlistenOsLocale: (() => void) | undefined
-
-/**
- * Last observed value of `advanced.maxLogStorageMb`. Used to detect `0 ↔ non-zero`
- * transitions that require an app restart (the `tauri-plugin-log` plugin has no runtime
- * reconfigure API: dropping / adding the `Folder` target only happens at build time).
- */
-let lastMaxLogStorageMb: number | undefined
 
 /**
  * Applies the size-tier color palette by setting `data-size-colors` on the
@@ -221,11 +213,13 @@ function applyAllSettings(): void {
 /**
  * Lookup table of straightforward "push-to-backend" setting wirings. Each entry
  * is a fire-and-forget call mapping the setting value through to the Rust
- * side. Settings with branching logic (like `advanced.maxLogStorageMb`) live
- * in `handleSettingChange` directly so the table stays simple.
+ * side. Settings with branching logic live in `handleSettingChange` directly
+ * so the table stays simple.
  */
 const passthroughBackendHandlers: Partial<Record<string, (value: unknown) => void>> = {
   'developer.verboseLogging': (v) => void setVerboseLogging(v as boolean),
+  // The file log follows the cap live, storage off and on included (`logging/live_storage.rs`).
+  'advanced.maxLogStorageMb': (v) => void setMaxLogStorageMb(v as number),
   'advanced.fileWatcherDebounce': (v) => void updateFileWatcherDebounce(v as number),
   'advanced.serviceResolveTimeout': (v) => void updateServiceResolveTimeout(v as number),
   'indexing.enabled': (v) => void setIndexingEnabled(v as boolean),
@@ -351,31 +345,8 @@ function handleSettingChange(id: string, value: unknown): void {
     void applyTheme(value as ThemeMode)
     return
   }
-  if (id === 'advanced.maxLogStorageMb') {
-    applyMaxLogStorageMb(value as number)
-    return
-  }
   const handler = passthroughBackendHandlers[id]
   if (handler) handler(value)
-}
-
-/**
- * Pushes a new log-storage cap to the backend and toasts a "restart required"
- * notice for `0 ↔ non-zero` transitions. The rotation strategy and target list
- * are baked in at app start, so those transitions only take full effect after
- * relaunch. A non-zero ↔ non-zero change applies live.
- */
-function applyMaxLogStorageMb(newValue: number): void {
-  const oldValue = lastMaxLogStorageMb
-  lastMaxLogStorageMb = newValue
-  void setMaxLogStorageMb(newValue)
-  if (oldValue !== undefined && (oldValue === 0) !== (newValue === 0)) {
-    addToast(tString('settings.applier.logStorageRestart'), {
-      level: 'info',
-      dismissal: 'transient',
-      id: 'max-log-storage-restart',
-    })
-  }
 }
 
 /**
@@ -401,10 +372,6 @@ export async function initSettingsApplier(): Promise<void> {
     // Ensure settings store is initialized
     await initializeSettings()
     await systemLocales
-
-    // Seed the last-observed log-storage cap so the first change event can distinguish
-    // `0 ↔ non-zero` transitions from routine cap changes.
-    lastMaxLogStorageMb = getSetting('advanced.maxLogStorageMb')
 
     // Apply current settings
     applyAllSettings()

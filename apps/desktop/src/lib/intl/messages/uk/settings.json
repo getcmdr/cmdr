@@ -1937,12 +1937,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Новий ненульовий ліміт почне діяти після наступного запуску Cmdr.",
+  "settings.advanced.maxLogStorageMb.description": "Задайте 0, щоб не зберігати журнали, але тоді звіти про помилки надіслати не вийде.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Задайте 0, щоб не зберігати журнали, але тоді звіти про помилки надіслати не вийде.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "журнали, логи, обсяг, місце, ротація, звіт, приватність, налагодження",
@@ -3387,10 +3383,6 @@
   "settings.advanced.defaultPrefix": "Типово:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Перезапустіть Cmdr, щоб застосувати нові параметри зберігання журналу.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {Проіндексовано {enrichedText} з {totalText} зображення в охоплених папках} few {Проіндексовано {enrichedText} з {totalText} зображень в охоплених папках} many {Проіндексовано {enrichedText} з {totalText} зображень в охоплених папках} other {Проіндексовано {enrichedText} з {totalText} зображення в охоплених папках}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

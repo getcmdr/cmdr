@@ -1940,12 +1940,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Um novo limite diferente de zero entra em vigor na próxima vez que o Cmdr iniciar.",
+  "settings.advanced.maxLogStorageMb.description": "Defina como 0 para não manter registros, mas aí o Cmdr não consegue enviar relatórios de problema.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Defina como 0 para não manter registros, mas aí o Cmdr não consegue enviar relatórios de problema.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "registro, registros, log, armazenamento, disco, espaço, limite, rotação, erro, relatório, privacidade",
@@ -3392,10 +3388,6 @@
   "settings.advanced.defaultPrefix": "Padrão:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Reinicie o Cmdr para aplicar a mudança no armazenamento de registros.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} de {totalText} imagem indexada nas suas pastas cobertas} other {{enrichedText} de {totalText} imagens indexadas nas suas pastas cobertas} many {{enrichedText} de {totalText} imagens indexadas nas suas pastas cobertas}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {
