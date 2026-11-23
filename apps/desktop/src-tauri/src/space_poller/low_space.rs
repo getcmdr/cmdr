@@ -35,6 +35,16 @@ static INDEX_PAUSE_THRESHOLD_PERCENT: AtomicU64 = AtomicU64::new(DEFAULT_INDEX_P
 /// The `advanced.indexPauseFreeSpacePercent` registry default.
 pub(super) const DEFAULT_INDEX_PAUSE_PERCENT: u64 = 5;
 
+/// The index pauses only when free space is below its percent threshold AND below
+/// this many bytes (cmdr-reports#118): a percent alone called a 1 TB disk with
+/// 36 GB free "nearly full" and never indexed it. Decimal GB, the unit Finder shows.
+const INDEX_PAUSE_FLOOR_BYTES: u64 = 10_000_000_000;
+
+/// Re-arm margin on [`INDEX_PAUSE_FLOOR_BYTES`], the byte twin of
+/// [`LOW_SPACE_REARM_MARGIN_PERCENT`]: a paused index resumes once free space clears
+/// the floor by this much, so a disk hovering at 10 GB doesn't flap.
+const INDEX_PAUSE_FLOOR_MARGIN_BYTES: u64 = 1_000_000_000;
+
 /// Hysteresis state: `true` means the detector may fire on the next crossing
 /// below the threshold. Disarmed after firing; re-armed once free space climbs
 /// back above threshold + [`LOW_SPACE_REARM_MARGIN_PERCENT`].
@@ -93,7 +103,7 @@ pub(super) fn configure_index_pause(threshold_percent: u64) {
 }
 
 /// Whether the boot volume, where the drive index's databases live, is below the
-/// index's pause threshold. The index pauses while it is
+/// index's pause threshold and [`INDEX_PAUSE_FLOOR_BYTES`]. The index pauses while it is
 /// (`AppHostPolicy::index_storage_low`).
 ///
 /// On demand: answers from the poller's boot-volume reading when one is younger than
@@ -129,33 +139,38 @@ fn update_index_storage_low(space: &SpaceInfo) {
     let threshold = INDEX_PAUSE_THRESHOLD_PERCENT.load(Ordering::Relaxed) as f64;
     let free = free_percent(total_bytes, available_bytes);
     let was_low = INDEX_STORAGE_LOW.load(Ordering::Relaxed);
-    let low = index_storage_low_after(was_low, free, threshold);
+    let low = index_storage_low_after(was_low, free, available_bytes, threshold);
     if low != was_low
         && INDEX_STORAGE_LOW
             .compare_exchange(was_low, low, Ordering::Relaxed, Ordering::Relaxed)
             .is_ok()
     {
         info!(
-            "index storage {}: boot volume at {:.1}% free, threshold {}%",
+            "index storage {}: boot volume at {:.1}% free ({} bytes), threshold {}% and {} bytes",
             if low {
                 "low, pausing indexing"
             } else {
                 "recovered, indexing may resume"
             },
             free,
-            threshold
+            available_bytes,
+            threshold,
+            INDEX_PAUSE_FLOOR_BYTES
         );
     }
 }
 
-/// The pure hysteresis step for [`index_storage_low`]: low below the threshold,
-/// back past threshold + [`LOW_SPACE_REARM_MARGIN_PERCENT`], unchanged in between,
-/// so a disk hovering at the line can't flap every index on and off.
-fn index_storage_low_after(was_low: bool, free_percent: f64, threshold_percent: f64) -> bool {
+/// The pure hysteresis step for [`index_storage_low`]: low once free space is below
+/// BOTH the percent threshold and [`INDEX_PAUSE_FLOOR_BYTES`], back once it clears
+/// EITHER by its margin ([`LOW_SPACE_REARM_MARGIN_PERCENT`],
+/// [`INDEX_PAUSE_FLOOR_MARGIN_BYTES`]), unchanged in between, so a disk hovering at
+/// a line can't flap every index on and off.
+fn index_storage_low_after(was_low: bool, free_percent: f64, available_bytes: u64, threshold_percent: f64) -> bool {
     if was_low {
         free_percent < threshold_percent + LOW_SPACE_REARM_MARGIN_PERCENT
+            && available_bytes < INDEX_PAUSE_FLOOR_BYTES + INDEX_PAUSE_FLOOR_MARGIN_BYTES
     } else {
-        free_percent < threshold_percent
+        free_percent < threshold_percent && available_bytes < INDEX_PAUSE_FLOOR_BYTES
     }
 }
 
@@ -267,6 +282,8 @@ fn emit_low_disk_space(
 mod tests {
     use super::*;
 
+    const GB: u64 = 1_000_000_000;
+
     #[test]
     fn fires_once_when_crossing_below_threshold() {
         let (armed, transition) = low_space_transition(true, 4.9, 5.0);
@@ -341,23 +358,70 @@ mod tests {
     /// volume's index on and off (cmdr-reports#100).
     #[test]
     fn index_storage_low_has_a_one_point_margin() {
-        assert!(!index_storage_low_after(false, 5.0, 5.0), "at the line is not below it");
-        assert!(index_storage_low_after(false, 0.5, 5.0), "the incident's 0.5% free");
+        const FEW: u64 = GB;
         assert!(
-            index_storage_low_after(true, 5.5, 5.0),
+            !index_storage_low_after(false, 5.0, FEW, 5.0),
+            "at the line is not below it"
+        );
+        assert!(
+            index_storage_low_after(false, 0.5, FEW, 5.0),
+            "the incident's 0.5% free"
+        );
+        assert!(
+            index_storage_low_after(true, 5.5, FEW, 5.0),
             "inside the margin it stays low"
         );
-        assert!(!index_storage_low_after(true, 6.0, 5.0), "past the margin it recovers");
         assert!(
-            !index_storage_low_after(false, 5.5, 5.0),
+            !index_storage_low_after(true, 6.0, FEW, 5.0),
+            "past the margin it recovers"
+        );
+        assert!(
+            !index_storage_low_after(false, 5.5, FEW, 5.0),
             "and inside it, a recovered disk stays clear"
         );
+    }
+
+    /// A percent alone calls a big disk full long before it is: cmdr-reports#118's
+    /// 1 TB boot disk had 36 GB free at 3.6%, and its index never filled. The index
+    /// pauses only below BOTH the percent and [`INDEX_PAUSE_FLOOR_BYTES`].
+    #[test]
+    fn a_big_disk_with_plenty_of_room_keeps_indexing() {
+        assert!(
+            !index_storage_low_after(false, 3.6, 36 * GB, 5.0),
+            "36 GB free is room, whatever the percent"
+        );
+        assert!(
+            !index_storage_low_after(true, 3.6, 36 * GB, 5.0),
+            "and a paused index resumes on it"
+        );
+        assert!(
+            index_storage_low_after(false, 3.6, 9 * GB, 5.0),
+            "below both, it pauses"
+        );
+        assert!(
+            !index_storage_low_after(false, 50.0, 2 * GB, 5.0),
+            "a small disk with half of it free is room too"
+        );
+        assert!(
+            index_storage_low_after(true, 3.6, 10 * GB + GB / 2, 5.0),
+            "a paused index stays paused inside the floor's margin"
+        );
+        assert!(!index_storage_low_after(true, 3.6, 11 * GB, 5.0), "and resumes past it");
+    }
+
+    /// The floor, end to end through the stored threshold: the reporter's reading.
+    #[test]
+    fn the_reporters_disk_does_not_pause_the_index() {
+        configure_index_pause(5);
+        update_index_storage_low(&SpaceInfo::bounded(994_662_584_320, 35_818_785_542));
+        assert!(!INDEX_STORAGE_LOW.load(Ordering::Relaxed));
     }
 
     /// The warning set to 30% to hear about it early mustn't pause indexing at 30%
     /// free (getcmdr/cmdr#1002): the index reads only its own threshold.
     #[test]
     fn the_index_pauses_on_its_own_threshold_not_the_warnings() {
+        // 100 GiB total, so every reading below is under the 10 GB floor too.
         const GIB: u64 = 1024 * 1024 * 1024;
         configure(true, 30);
         configure_index_pause(5);

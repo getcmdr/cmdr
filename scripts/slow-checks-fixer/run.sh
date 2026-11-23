@@ -55,9 +55,25 @@ export GIT_CONFIG_KEY_1=credential.https://github.com.helper GIT_CONFIG_VALUE_1=
 export GH_PROMPT_DISABLED=1 GIT_TERMINAL_PROMPT=0
 
 refresher=""
+watcher=""
 run_dir=""
+issue=""
+claimed_at=""
+# A claimed run that ends without a fix in flight hands the card back to Todo, so it doesn't sit in Implementing and
+# keep every later agent off it. A landed fix, a rerun, or a PR waiting for David keeps it there until the green run
+# closes the issue. A run that stood down leaves the card to whoever took it.
+release_claim() {
+  [[ -n "$claimed_at" && -n "$run_dir" ]] || return 0
+  [[ -e "$run_dir/stand-down" ]] && return 0
+  case "$(cat "$run_dir/outcome" 2>/dev/null || true)" in
+    landed | rerun | pr-waiting) ;;
+    *) "$here/claim.sh" release "$issue" Todo || log "#$issue: couldn't move the card back to Todo" ;;
+  esac
+}
 cleanup() {
   if [[ -n "$refresher" ]]; then kill "$refresher" 2>/dev/null || true; fi
+  if [[ -n "$watcher" ]]; then kill "$watcher" 2>/dev/null || true; fi
+  release_claim
   if [[ -n "$run_dir" ]]; then remove_run "$run_dir"; fi
   rm -rf -- "$creds"
 }
@@ -103,14 +119,34 @@ run_id=$(jq -rn --argjson issue "$body" --argjson comments "$comments" '
   | map([scan("actions/runs/([0-9]+)") | .[0]] | first) | map(select(. != null)) | last // empty')
 [[ -n "$run_id" ]] || { log "#$issue names no run; nothing to do"; exit 0; }
 grep -qx "$run_id" "$handled" && exit 0
+# When the workflow reported this run: the issue's creation for the body's run, else its "went red" comment. A
+# maintainer's comment after this means someone's already on it (claim.sh).
+reported_at=$(jq -rn --argjson issue "$body" --argjson comments "$comments" --arg run "$run_id" '
+  [($comments[] | select(.user.login == "github-actions[bot]" and ((.body // "") | test("actions/runs/" + $run)))
+    | .created_at)] | first // $issue.created_at')
 
 # Work to do: only now does the run hold a token.
 mint_token || { log "gh-app-token printed no token; not starting"; exit 1; }
 
+# Someone else on it already (the card in Implementing, or a maintainer's comment since the report)? Then it's theirs:
+# mark the run handled and leave it. A lookup that fails (exit 2) starts nothing and retries next hour.
+free_status=0
+why="$("$here/claim.sh" free "$issue" "$reported_at")" || free_status=$?
+if [[ $free_status -eq 1 ]]; then
+  echo "$run_id" >>"$handled"
+  log "#$issue, red run $run_id: someone else is on it ($why); leaving it to them"
+  exit 0
+elif [[ $free_status -ne 0 ]]; then
+  log "#$issue, red run $run_id: couldn't check whether someone else is on it; not starting"
+  exit 1
+fi
+
 # Claim it before starting, so a crash or a stopped run doesn't make every following hour retry it. A run that needs
-# another look gets one from the next red night, which names a new run.
+# another look gets one from the next red night, which names a new run. The board claim and its comment tell every
+# other agent (and David) that this one is taken.
 echo "$run_id" >>"$handled"
-log "=== #$issue, red run $run_id: starting the fixer (claude $(claude --version 2>/dev/null)) ==="
+claimed_at="$("$here/claim.sh" take "$issue" "$run_id")" || { log "#$issue: couldn't claim the card; not starting"; exit 1; }
+log "=== #$issue, red run $run_id: claimed at $claimed_at, starting the fixer (claude $(claude --version 2>/dev/null)) ==="
 
 ( while sleep 1800; do mint_token || log "re-minting the App token didn't work; gh and git use the old one until it expires"; done ) &
 refresher=$!
@@ -163,7 +199,8 @@ build_status=0
 log "warm-up build (pnpm check clippy) took $((SECONDS - started)) s, exit $build_status"
 
 prompt="$(sed -e "s/{{ISSUE}}/$issue/g" -e "s/{{RUN_ID}}/$run_id/g" -e "s|{{FAILED_LOG}}|$failed_log|g" \
-  -e "s|{{BRANCH}}|fixer/run-$run_id|g" "$here/prompt.md")"
+  -e "s|{{BRANCH}}|fixer/run-$run_id|g" -e "s|{{CLAIM_CHECK}}|$here/claim.sh held $issue $claimed_at|g" \
+  -e "s|{{STAND_DOWN}}|$run_dir/stand-down|g" -e "s|{{OUTCOME}}|$run_dir/outcome|g" "$here/prompt.md")"
 # The sensitive-path list is the one CI's gate reads (`ci.yml`'s `ci-ok`), from this run's `origin/main` checkout, so
 # the prompt and the gate can't drift. Without it the agent would work blind, so a missing file stops the run.
 sensitive_list="$wt/.github/workflows/sensitive-paths.txt"
@@ -181,7 +218,33 @@ CLAUDE_CODE_OAUTH_TOKEN="$claude_token" \
   /usr/bin/perl -e 'alarm shift; exec @ARGV or die "exec: $!"' 10800 \
   claude -p "$prompt" \
   --model claude-opus-5-5 \
-  --permission-mode bypassPermissions ||
-  status=$?
+  --permission-mode bypassPermissions &
+agent=$!
+
+# The claim, watched while the agent works: every two minutes, `claim.sh held`. Once someone else takes the issue (the
+# card leaves Implementing, or a maintainer comments), it writes `stand-down` with the reason, which the agent checks
+# before every step that changes something. An agent still running 15 minutes later is stopped. A lookup that fails
+# changes nothing: a GitHub hiccup isn't someone taking over.
+(
+  lost_at=""
+  while sleep 120; do
+    if [[ -z "$lost_at" ]]; then
+      held_status=0
+      why="$("$here/claim.sh" held "$issue" "$claimed_at")" || held_status=$?
+      if [[ $held_status -eq 1 ]]; then
+        printf '%s\n' "$why" >"$run_dir/stand-down"
+        log "#$issue: someone else took it ($why); the agent stands down"
+        lost_at=$SECONDS
+      fi
+    elif ((SECONDS - lost_at >= 900)); then
+      log "#$issue: the agent is still running 15 min after standing down; stopping it"
+      kill "$agent" 2>/dev/null || true
+      break
+    fi
+  done
+) &
+watcher=$!
+
+wait "$agent" || status=$?
 log "=== #$issue, red run $run_id: the fixer exited $status after $(((SECONDS - started) / 60)) min ==="
 exit "$status"

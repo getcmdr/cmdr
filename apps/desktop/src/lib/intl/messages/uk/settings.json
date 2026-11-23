@@ -1018,6 +1018,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Індексування призупинено, бо стартовий диск майже заповнений. Воно продовжиться з того ж моменту, щойно звільниться більше місця. <thresholdLink>Змінити, коли призупиняти</thresholdLink>} windows {Індексування призупинено, бо системний диск майже заповнений. Воно продовжиться з того ж моменту, щойно звільниться більше місця. <thresholdLink>Змінити, коли призупиняти</thresholdLink>} other {Індексування призупинено, бо системний диск майже заповнений. Воно продовжиться з того ж моменту, щойно звільниться більше місця. <thresholdLink>Змінити, коли призупиняти</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Індексування дисків вимкнено, тож жоден диск не індексується, а розміри папок приховано. Кожен диск зберігає свій вибір (увімкнено чи вимкнено), і він знову діятиме, щойно ви ввімкнете індексування.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1749,9 +1753,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Індексування продовжиться з того ж моменту, щойно вільного місця стане на один відсотковий пункт більше за поріг. Це працює незалежно від того, ввімкнено «Застереження про брак місця на диску» чи ні.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Індексування призупиняється, лише якщо вільного місця ще й менше ніж 10 ГБ, тож великий диск індексується далі. Воно продовжиться з того ж моменту, щойно вільного місця стане на один відсотковий пункт більше за цей поріг або більше ніж 11 ГБ. Це працює незалежно від того, ввімкнено «Застереження про брак місця на диску» чи ні.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Не дає індексу зайняти місце, потрібне вашим власним файлам.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

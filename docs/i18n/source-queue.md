@@ -252,6 +252,12 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `servers.hub.moreShares`'s note says "the single character … (U+2026); keep it", which contradicts each locale's
   `mechanics.json` ellipsis (zh-Hant `⋯`). It's a house phrasing on 12 keys (`servers.json`, `commands.json`,
   `menu.json`); reword them together: "keep a trailing ellipsis, in your locale's glyph". (zh-Hant)
+- `settings.advanced.indexPauseFreeSpacePercent.description`: "pauses only while less than 10 GB is free, too" reads two
+  ways until the `@key` note settles it (BOTH limits must hold). "Indexing also waits until less than 10 GB is free"
+  would carry the AND on its own. (all)
+- `startup-disk` has no `windows` / `other` forms for nl, pt, uk, vi, and zh, so `settings.indexing.pausedForSpaceNote`
+  reused the system-drive and system-disk words `fileExplorer.dirSize.pausedForSpaceOtherDrive` ships; record them as
+  rulings in a termbase pass. (nl, pt, uk, vi, zh)
 
 ## Process feedback
 
@@ -471,3 +477,7 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   shared, so cs and zh-Hant logged and nl, sv, hu, zh reported to the lead instead. `decisions.md` budgets again blocked
   short entries (nl, sv, hu reverted theirs; es trimmed two phrases to fit, 7 bytes left). Let a scoped translator
   append here, or collect feedback from reports by design. No scripts written. (all, SMB share `..` + hub batch)
+- A brand-new key (`settings.indexing.pausedForSpaceNote`) was missing from every locale catalog, so all 13 `i18n:apply`
+  calls refused and needed 13 `sync-locale-keys.ts <tag>` runs first; the brief could run the sync, or say so up front.
+  The `for` loop, a `W=…` variable, and a Monitor `until` loop were all refused by the worktree guard, and the chained
+  checks spilled into the background again. No script written. (all, `pausedForSpaceNote` batch)

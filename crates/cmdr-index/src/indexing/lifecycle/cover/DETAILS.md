@@ -145,7 +145,9 @@ three levels, each closing a case the one above it can't see.
    and `context_for_walk` turns that plus `Initializing` into `NoCoverContext::ScanInProgress`. The scan already covers
    everything a search would have walked, and running beside it isn't merely redundant: both allocate fresh ids for the
    same names, `insert_entries_v2_batch` is `INSERT OR IGNORE`, and the row that loses takes its subtree with it. With
-   no index at all, the lock-first reservation inside `start_indexing_for` decides who builds one.
+   no index at all, the lock-first reservation inside `start_indexing_for` decides who builds one. A volume paused for
+   disk space while the disk is still low gets `NoCoverContext::PausedForSpace` and no writer: standing one up would
+   only pause again on its first write (`../DETAILS.md` § "Pausing for disk space").
 3. **Claim the frontier roots.** One writer isn't enough on its own, because two walks THROUGH that one writer over the
    same directories hit the same `INSERT OR IGNORE` collision. Decision 11 makes this routine: a refined query re-asks
    `coverage` while the first query's walk is still running, and that first walk keeps going. So `cover::start` claims

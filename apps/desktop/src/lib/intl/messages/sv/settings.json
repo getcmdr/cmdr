@@ -1022,6 +1022,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Indexeringen är pausad eftersom din startskiva är nästan full. Den fortsätter där den slutade när det finns mer utrymme. <thresholdLink>Ändra när den pausar</thresholdLink>} windows {Indexeringen är pausad eftersom din systemenhet är nästan full. Den fortsätter där den slutade när det finns mer utrymme. <thresholdLink>Ändra när den pausar</thresholdLink>} other {Indexeringen är pausad eftersom din systemdisk är nästan full. Den fortsätter där den slutade när det finns mer utrymme. <thresholdLink>Ändra när den pausar</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Enhetsindexering är avstängd, så ingen enhet indexeras och mappstorlekar förblir dolda. Varje enhet behåller sitt eget val, på eller av, så att allt är redo när du slår på det här igen.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1754,9 +1758,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexeringen fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen. Det gäller oavsett om ”Varning vid lågt diskutrymme” är på eller av.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexeringen pausar bara om det också finns mindre än 10 GB ledigt, så en stor disk indexeras ändå. Den fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen eller över 11 GB. Det gäller oavsett om ”Varning vid lågt diskutrymme” är på eller av.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Hindrar indexet från att ta det utrymme som dina egna filer behöver.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

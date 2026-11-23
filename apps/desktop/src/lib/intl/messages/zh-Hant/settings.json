@@ -1020,6 +1020,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {你的啟動磁碟快滿了，所以索引已暫停。空間變多後，索引就會從中斷的地方繼續。<thresholdLink>變更何時暫停</thresholdLink>} windows {你的系統磁碟機快滿了，所以索引已暫停。空間變多後，索引就會從中斷的地方繼續。<thresholdLink>變更何時暫停</thresholdLink>} other {你的系統磁碟快滿了，所以索引已暫停。空間變多後，索引就會從中斷的地方繼續。<thresholdLink>變更何時暫停</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "磁碟機索引已關閉，因此沒有磁碟機在建立索引，資料夾大小也不會顯示。每部磁碟機都會記住自己的開關選擇，等你重新開啟時就會再次生效。",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1751,9 +1755,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "可用空間回升到比這個值高 1 個百分點後，索引就會從中斷的地方繼續。不論「磁碟空間不足警告」開或關都一樣。",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "只有在可用空間也低於 10 GB 時，索引才會暫停，所以大磁碟會繼續建立索引。可用空間回升到比這個值高 1 個百分點，或超過 11 GB 後，索引就會從中斷的地方繼續。不論「磁碟空間不足警告」開或關都一樣。",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "避免索引佔用你自己的檔案需要的空間。",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

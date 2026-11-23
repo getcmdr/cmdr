@@ -5303,6 +5303,7 @@ export type MessageKey =
   | 'settings.indexing.indexSize.keywords'
   | 'settings.indexing.masterOffNote'
   | 'settings.indexing.overriddenBadge'
+  | 'settings.indexing.pausedForSpaceNote'
   | 'settings.indexing.reEnableNotifications.button'
   | 'settings.indexing.reEnableNotifications.description'
   | 'settings.indexing.reEnableNotifications.disabledTooltip'

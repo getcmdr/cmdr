@@ -1023,6 +1023,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Het indexeren is gepauzeerd, omdat je opstartschijf bijna vol is. Het gaat verder waar het gebleven was zodra er meer ruimte is. <thresholdLink>Wijzig wanneer het pauzeert</thresholdLink>} windows {Het indexeren is gepauzeerd, omdat je systeemstation bijna vol is. Het gaat verder waar het gebleven was zodra er meer ruimte is. <thresholdLink>Wijzig wanneer het pauzeert</thresholdLink>} other {Het indexeren is gepauzeerd, omdat je systeemschijf bijna vol is. Het gaat verder waar het gebleven was zodra er meer ruimte is. <thresholdLink>Wijzig wanneer het pauzeert</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Het indexeren van schijven staat uit, dus er wordt geen schijf geïndexeerd en mapgroottes blijven verborgen. Elke schijf onthoudt of hij aan of uit staat, zodat alles klaarstaat wanneer je dit weer aanzet.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1755,9 +1759,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Het indexeren gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt boven de drempel komt. Dit werkt ongeacht of ‘Waarschuwing bij weinig schijfruimte’ aan of uit staat.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Het indexeren pauzeert alleen als er ook minder dan 10 GB vrij is, dus op een grote schijf gaat het indexeren door. Het gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt boven deze drempel komt of boven 11 GB. Dit werkt ongeacht of ‘Waarschuwing bij weinig schijfruimte’ aan of uit staat.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Zo neemt de index niet de ruimte in die je eigen bestanden nodig hebben.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

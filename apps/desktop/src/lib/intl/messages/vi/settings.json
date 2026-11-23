@@ -1018,6 +1018,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Việc lập chỉ mục đang tạm dừng vì ổ đĩa khởi động sắp đầy. Khi có thêm dung lượng, việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng. <thresholdLink>Đổi ngưỡng tạm dừng</thresholdLink>} windows {Việc lập chỉ mục đang tạm dừng vì ổ đĩa hệ thống sắp đầy. Khi có thêm dung lượng, việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng. <thresholdLink>Đổi ngưỡng tạm dừng</thresholdLink>} other {Việc lập chỉ mục đang tạm dừng vì ổ đĩa hệ thống sắp đầy. Khi có thêm dung lượng, việc lập chỉ mục sẽ tiếp tục từ chỗ đã dừng. <thresholdLink>Đổi ngưỡng tạm dừng</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Lập chỉ mục ổ đĩa đang tắt, nên không có ổ đĩa nào được lập chỉ mục và kích cỡ thư mục vẫn ẩn. Mỗi ổ đĩa giữ lựa chọn bật hay tắt của riêng nó, sẵn sàng cho lúc bạn bật lại mục này.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1749,9 +1753,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Việc lập chỉ mục tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn ngưỡng đó một điểm phần trăm. Điều này áp dụng dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Việc lập chỉ mục chỉ tạm dừng khi dung lượng trống cũng dưới 10 GB, nên ổ đĩa lớn vẫn tiếp tục được lập chỉ mục. Việc lập chỉ mục tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn ngưỡng này một điểm phần trăm hoặc vượt quá 11 GB. Điều này áp dụng dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Giúp chỉ mục không chiếm chỗ mà các tệp của bạn cần.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

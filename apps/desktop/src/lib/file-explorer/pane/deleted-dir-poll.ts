@@ -12,11 +12,24 @@
  * Which panes poll is a capability answer (`paneFolderIsPolledForDeletion`): only a
  * folder the Mac itself mounts has the blind spot. A phone or server pane never
  * polls, and neither does a `.git` portal snapshot, which never exists on disk.
+ *
+ * ❗ Every check asks the pane's OWN volume (`getVolumeId`), the one that listed
+ * the folder. A direct SMB share sits at a kernel mount path too, but the boot
+ * disk's `stat` there goes through smbfs, which can't see every name the direct
+ * session lists (an NFD name, a negative-cache miss), and read as "deleted" it
+ * bounced the pane to the parent (#1338). Cost and rationale: `DETAILS.md`.
+ *
+ * It skips its tick while the main window is hidden (minimized, app hidden,
+ * another Space, fully covered) and checks once the moment the window shows
+ * again, so nobody waits on a stale folder. Visible but not frontmost keeps
+ * polling: that's when Finder or another client deletes the folder.
  */
 
 import { pathExistsChecked } from '#lib/tauri-commands/index.js'
 import { resolveValidPath } from '../navigation/path-resolution'
 import { getAppLogger } from '#lib/logging/logger.js'
+import type { ConnectionState } from '../types'
+import { isMainWindowVisible, onMainWindowShown } from '../../../routes/(main)/main-window-visibility'
 
 const log = getAppLogger('fileExplorer')
 
@@ -33,6 +46,10 @@ export interface DeletedDirPollDeps {
   getCurrentPath: () => string
   /** The pane volume's mount point, or `/` for the root volume. */
   getVolumePath: () => string
+  /** The pane's volume id: every check asks this volume, the one that listed the folder. */
+  getVolumeId: () => string
+  /** That volume's session state, so the walk-up waits out a busy live session (`probeTimeoutMs`). */
+  getConnectionState: () => ConnectionState | null | undefined
   /** Navigate to the resolved surviving ancestor (`null` when even `/` is gone). */
   navigateToFallback: (path: string | null) => void
 }
@@ -46,23 +63,32 @@ export interface DeletedDirPoll {
 
 export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
   let interval: ReturnType<typeof setInterval> | undefined
+  let stopWatchingWindow: (() => void) | undefined
   let notExistsCount = 0
 
-  function walkUp(currentPath: string, volumePath: string): void {
+  function walkUp(currentPath: string, volumePath: string, volumeId: string): void {
     // The root just answered "there" (`poll`), so one that's slow on the walk's rung is
     // still there: land on it, ❌ never on `~` of another volume.
-    void resolveValidPath(currentPath, { volumeRoot: volumePath, keepSilentVolume: true }).then((validPath) => {
+    void resolveValidPath(currentPath, {
+      volumeRoot: volumePath,
+      volumeId,
+      connectionState: deps.getConnectionState(),
+      keepSilentVolume: true,
+    }).then((validPath) => {
       deps.navigateToFallback(validPath)
     })
   }
 
   function poll(): void {
+    if (!isMainWindowVisible()) return
     if (!deps.getListingId() || deps.getLoading() || !deps.getFolderIsPolled()) return
     const currentPath = deps.getCurrentPath()
+    const volumeId = deps.getVolumeId()
 
-    // No volume id on purpose: the gate above only admits a path the Mac can
-    // stat, so the boot disk's own answer is the right and cheapest one.
-    void pathExistsChecked(currentPath).then(({ data: exists, timedOut }) => {
+    // The pane's own volume, ❌ never the boot disk: on a direct SMB share that asks
+    // smbfs, which misses names the session listed (#1338). A local or kernel-mounted
+    // volume answers with the same local `stat` either way.
+    void pathExistsChecked(currentPath, volumeId).then(({ data: exists, timedOut }) => {
       // An answer about a folder the pane has since left says nothing about where it
       // stands now: a share that mounted back elsewhere moved the pane mid-poll, and
       // this walked it off the share onto the boot disk.
@@ -93,7 +119,7 @@ export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
       // re-resolves the owning volume for wherever the walk-up lands. See
       // `DETAILS.md` § "The walk-up fallback".
       if (volumePath !== '/') {
-        void pathExistsChecked(volumePath).then(({ data: volumeExists, timedOut: volumeTimedOut }) => {
+        void pathExistsChecked(volumePath, volumeId).then(({ data: volumeExists, timedOut: volumeTimedOut }) => {
           // If we couldn't tell whether the volume is there, don't walk up.
           if (volumeTimedOut) return
           if (!volumeExists) return
@@ -102,11 +128,11 @@ export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
             dir: currentPath,
             root: volumePath,
           })
-          walkUp(currentPath, volumePath)
+          walkUp(currentPath, volumePath, volumeId)
         })
       } else {
         log.info('Directory {dir} no longer exists, navigating to nearest valid parent', { dir: currentPath })
-        walkUp(currentPath, volumePath)
+        walkUp(currentPath, volumePath, volumeId)
       }
     })
   }
@@ -114,10 +140,13 @@ export function createDeletedDirPoll(deps: DeletedDirPollDeps): DeletedDirPoll {
   return {
     start: () => {
       interval = setInterval(poll, POLL_INTERVAL_MS)
+      stopWatchingWindow = onMainWindowShown(poll)
     },
     stop: () => {
       clearInterval(interval)
       interval = undefined
+      stopWatchingWindow?.()
+      stopWatchingWindow = undefined
     },
   }
 }

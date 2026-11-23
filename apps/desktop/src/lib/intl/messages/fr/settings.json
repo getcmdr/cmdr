@@ -1022,6 +1022,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {L’indexation est en pause, car votre disque de démarrage est presque plein. Elle reprendra là où elle s’était arrêtée dès qu’il y aura plus de place. <thresholdLink>Modifier le seuil de pause</thresholdLink>} windows {L’indexation est en pause, car votre lecteur système est presque plein. Elle reprendra là où elle s’était arrêtée dès qu’il y aura plus de place. <thresholdLink>Modifier le seuil de pause</thresholdLink>} other {L’indexation est en pause, car votre disque système est presque plein. Elle reprendra là où elle s’était arrêtée dès qu’il y aura plus de place. <thresholdLink>Modifier le seuil de pause</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "L’indexation est désactivée, donc aucun disque n’est indexé et les tailles des dossiers restent masquées. Chaque disque garde son propre choix, activé ou désactivé, prêt pour le moment où vous la réactiverez.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1757,9 +1761,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "L’indexation reprend là où elle s’était arrêtée dès que l’espace libre dépasse ce seuil d’un point. Cela fonctionne que l’option « Avertissement d’espace disque faible » soit activée ou non.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "L’indexation ne se met en pause que s’il reste aussi moins de 10 Go libres, donc un grand disque continue d’être indexé. Elle reprend là où elle s’était arrêtée dès que l’espace libre dépasse ce seuil d’un point ou passe au-dessus de 11 Go. Cela fonctionne que l’option « Avertissement d’espace disque faible » soit activée ou non.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Évite que l’index prenne la place dont vos propres fichiers ont besoin.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

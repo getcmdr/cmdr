@@ -977,10 +977,11 @@ about the user's own environment. Three triggers, one path:
 
 - **`SQLITE_FULL`** (`store::IndexStoreError::is_disk_full`, its own class, out of `is_fatal_storage_error`).
 - **The host's low-disk-space answer** (`HostPolicy::index_storage_low`), asked by every writer about once a second
-  while it writes (`../writer/space_guard.rs`). App side it's the boot volume's free space against a threshold
-  (`space_poller`). The databases live in the cache dir on the boot volume, so that's the disk that matters for every
-  volume, which is why `VolumeIndexStatus::holds_index_storage` exists: the badge words a paused external drive
-  differently from a paused boot disk. This one stops the index before it takes the last free space rather than after.
+  while it writes (`../writer/space_guard.rs`). App side it's the boot volume's free space below BOTH a percent
+  threshold and a 10 GB floor (`space_poller/low_space.rs`; cmdr-reports#118: a percent alone paused a 1 TB disk with 36
+  GB free). The databases live in the cache dir on the boot volume, so that's the disk that matters for every volume,
+  which is why `VolumeIndexStatus::holds_index_storage` exists: the badge words a paused external drive differently from
+  a paused boot disk. This one stops the index before it takes the last free space rather than after.
 - **An `SQLITE_IOERR*` or `SQLITE_CANTOPEN` while that host answer is true** (`IndexFailureSignal::note` via
   `IndexStoreError::could_be_low_disk_space`; cmdr-reports#105: a WAL truncate failed `SQLITE_IOERR_TRUNCATE` at 0.2%
   free; cmdr-reports#109: a write failed `SQLITE_CANTOPEN` at 0.3% free, where SQLite couldn't create a journal or temp
@@ -1008,6 +1009,15 @@ still work. Per-drive intent is untouched.
 - **A start takes the slot over** (`reservation.rs`), in the same critical section that installs the new read pool, so
   the volume never routes no reads. It emits the new seed as `FreshnessChanged`, since a seeded value fires no
   transition and the badge would otherwise stay red.
+- **...but only once the host says there's room** (`state::stays_paused_for_space`, in `queries.rs` so `state` gains no
+  edge into `space_pause` and the watchdog behind it). While the disk is still low, an ordinary start of a paused volume
+  is a no-op at the choke point (`startup.rs`), and a search walk refuses with `NoCoverContext::PausedForSpace` before
+  standing a writer up: only the waiter restarts it. Gotcha/Why (cmdr-reports#118): every other start took the slot over
+  and paused again on its first write, so a launch's second auto-start and a search walk per keystroke re-paused the
+  boot disk a dozen times in seconds, each pause also doubling the backoff. With room back, an ordinary start goes ahead
+  at once, so freeing space or lowering the threshold doesn't wait out the backoff. A volume the master switch removed
+  starts fresh and pauses once per toggle, which is the user asking. Pinned by
+  `cover::cold_drive_tests::space::nothing_but_the_waiter_restarts_a_paused_drive_while_the_disk_is_low`.
 - **The waiter** rechecks every 30 s and restarts through `StartRequest::after_space_pause`
   (`StartCause::SpacePauseEnded`) once the host says there's room. Whatever happened meanwhile wins (`decide`): no
   longer `Paused` (started, stopped, cleared, the master switch), database gone, turned off (`user_disabled`), or a

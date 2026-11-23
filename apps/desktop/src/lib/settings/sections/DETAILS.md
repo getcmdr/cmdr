@@ -63,26 +63,28 @@ sections compose).
 - **`DriveIndexingSection.svelte`**: `Indexing > Drive indexing`: one unlabeled `SectionCard` (the section title already
   reads "Drive indexing") — the `indexing.enabled` toggle + clear-index action, the per-drive first-connect prompt
   toggle (`askForEachDrive`) with its "re-enable notifications" button, and the stale-drive notification toggle
-  (`staleNotify`). Stays interactive regardless of the FDA gate (indexing operates on whatever paths it can read; the
-  gate is for the downloads watcher). The card frame is gated via `anyVisible(shouldShow, ...memberIds)` (the card-group
-  pattern), and the two rows that aren't settings — index size, re-enable notifications — take part in that guard
-  through the ids in `DriveIndexingSection.rows.ts` (§ Searchable rows below), which is what keeps "index size" a hit
-  and the pane non-blank. See `lib/settings/components/CLAUDE.md` § card groups. `indexing.enabled` is the MASTER
-  switch, a hard gate in the backend (`crates/cmdr-index/src/indexing/lifecycle/DETAILS.md` § The two indexing
-  switches), so while it's off this section renders the rows it overrides as overridden: both sub-toggles get
-  `disabled` + the "Off with drive indexing" badge, the hand-rendered re-enable row dims with them
-  (`.reenable-row.disabled`, the same class `SettingRow` uses for its own disabled opacity), and one `.master-off-note`
-  line says what stopped and that each drive keeps its own choice. Clear index stays live on purpose: reclaiming the
-  disk is exactly what someone who turned indexing off may want next, and there IS something to reclaim there: a search
-  walks whatever folder it's pointed at whichever way the switch is set, and leaves an index behind. So the size and the
-  button read the whole index's FOOTPRINT off disk (`get_index_disk_usage`, every `index-*.db` plus sidecars, `root`
-  included) instead of the live `root` instance's `db_file_size`, which answers `None` on exactly the machine that most
-  needs the number. Clearing goes just as wide (`clear_drive_index` → `Index::forget_all_volumes`): a walk's disk can
-  belong to a share nobody ever enabled, and per-drive clearing has its own action in the drive's badge menu. ❌ **Don't
-  "fix" `settings.indexing.masterOffNote` without asking David.** It says no drive is indexed and folder sizes stay
-  hidden, which stops being strictly true the moment a search writes coverage for a branch it walked; he read it against
-  that and chose to leave it, since it describes what the switch does rather than what a search may have left behind. It
-  is accepted difference 11 in `apps/desktop/src-tauri/src/search/DETAILS.md`.
+  (`staleNotify`). While the boot disk has paused indexing for space, a note under the master switch says so and links
+  to the Advanced pause threshold (`lib/indexing/DETAILS.md` § Honest size rendering). Stays interactive regardless of
+  the FDA gate (indexing operates on whatever paths it can read; the gate is for the downloads watcher). The card frame
+  is gated via `anyVisible(shouldShow, ...memberIds)` (the card-group pattern), and the two rows that aren't settings —
+  index size, re-enable notifications — take part in that guard through the ids in `DriveIndexingSection.rows.ts` (§
+  Searchable rows below), which is what keeps "index size" a hit and the pane non-blank. See
+  `lib/settings/components/CLAUDE.md` § card groups. `indexing.enabled` is the MASTER switch, a hard gate in the backend
+  (`crates/cmdr-index/src/indexing/lifecycle/DETAILS.md` § The two indexing switches), so while it's off this section
+  renders the rows it overrides as overridden: both sub-toggles get `disabled` + the "Off with drive indexing" badge,
+  the hand-rendered re-enable row dims with them (`.reenable-row.disabled`, the same class `SettingRow` uses for its own
+  disabled opacity), and one `.master-off-note` line says what stopped and that each drive keeps its own choice. Clear
+  index stays live on purpose: reclaiming the disk is exactly what someone who turned indexing off may want next, and
+  there IS something to reclaim there: a search walks whatever folder it's pointed at whichever way the switch is set,
+  and leaves an index behind. So the size and the button read the whole index's FOOTPRINT off disk
+  (`get_index_disk_usage`, every `index-*.db` plus sidecars, `root` included) instead of the live `root` instance's
+  `db_file_size`, which answers `None` on exactly the machine that most needs the number. Clearing goes just as wide
+  (`clear_drive_index` → `Index::forget_all_volumes`): a walk's disk can belong to a share nobody ever enabled, and
+  per-drive clearing has its own action in the drive's badge menu. ❌ **Don't "fix" `settings.indexing.masterOffNote`
+  without asking David.** It says no drive is indexed and folder sizes stay hidden, which stops being strictly true the
+  moment a search writes coverage for a branch it walked; he read it against that and chose to leave it, since it
+  describes what the switch does rather than what a search may have left behind. It is accepted difference 11 in
+  `apps/desktop/src-tauri/src/search/DETAILS.md`.
 - **`NotificationsSection.svelte`**: `Behavior > Notifications`: three `SectionCard` card groups — On-screen
   notifications (the "Keep notifications until I close them" `SettingSwitch`, which `ToastContainer` reads), Downloads
   (BOTH Downloads-folder features in one card: the 4-option `downloadsNotifications` ToggleGroup, plus the on/off

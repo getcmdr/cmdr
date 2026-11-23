@@ -269,6 +269,13 @@ fn start_the_volume(volume_id: &str, request: StartRequest) -> Result<(), String
         log::info!("start_indexing: refusing '{volume_id}' ({kind:?}), drive indexing is off in settings");
         return Ok(());
     }
+    // A volume paused for disk space is its waiter's to restart while the disk is
+    // still low: any other start would take the slot over and pause straight
+    // again, bypassing the backoff (cmdr-reports#118). Its sizes keep serving.
+    if request.cause() == StartCause::Ordinary && super::stays_paused_for_space(volume_id) {
+        log::info!("start_indexing: '{volume_id}' stays paused, the disk the index lives on is still low");
+        return Ok(());
+    }
     log::info!("start_indexing: begin for '{volume_id}' ({kind:?})");
     // A `Failed` volume stays registered so the badge can be honest about it, and
     // its database is dead: the documented recovery is a rebuild, so a start CLEARS

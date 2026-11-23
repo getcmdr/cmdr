@@ -1018,6 +1018,10 @@
   "@settings.indexing.staleNotify.keywords": {
     "sourceHash": "12276c3"
   },
+  "settings.indexing.pausedForSpaceNote": "{platform, select, macos {Индексация приостановлена, потому что загрузочный диск почти заполнен. Она продолжится с того места, где остановилась, как только освободится больше места. <thresholdLink>Изменить, когда приостанавливать</thresholdLink>} windows {Индексация приостановлена, потому что системный диск почти заполнен. Она продолжится с того места, где остановилась, как только освободится больше места. <thresholdLink>Изменить, когда приостанавливать</thresholdLink>} other {Индексация приостановлена, потому что системный диск почти заполнен. Она продолжится с того места, где остановилась, как только освободится больше места. <thresholdLink>Изменить, когда приостанавливать</thresholdLink>}}",
+  "@settings.indexing.pausedForSpaceNote": {
+    "sourceHash": "0d75966"
+  },
   "settings.indexing.masterOffNote": "Индексация дисков выключена: диски не индексируются, а размеры папок скрыты. Индивидуальный выбор для каждого диска сохранен и будет применен, когда вы включите индексацию снова.",
   "@settings.indexing.masterOffNote": {
     "sourceHash": "311f02a"
@@ -1749,9 +1753,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Индексация продолжится с того места, где остановилась, как только свободного места станет на один процентный пункт больше порога. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Индексация приостанавливается, только если свободного места при этом меньше 10 ГБ, поэтому на большом диске она продолжается. Она продолжится с того места, где остановилась, как только свободного места станет на один процентный пункт больше этого порога или больше 11 ГБ. Это работает независимо от того, включен ли параметр «Предупреждать о нехватке места».",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "4d80336"
+    "sourceHash": "0e1b2e0"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Не дает индексу занимать место, нужное вашим собственным файлам.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

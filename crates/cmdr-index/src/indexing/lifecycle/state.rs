@@ -63,6 +63,7 @@ mod walk_database;
 pub use auto_start::{should_auto_start, should_auto_start_indexing};
 pub(crate) use freshness_bridge::{apply_freshness_event, bump_current_epoch_for, get_freshness};
 pub(crate) use queries::registered_mtp_volume_ids_for_device;
+pub(in crate::indexing::lifecycle) use queries::stays_paused_for_space;
 pub(crate) use queries::{
     all_registered_volume_ids, awaits_its_first_scan, index_failure, is_active_and_staying, is_being_torn_down,
     ready_volumes_to_wire, ready_volumes_with_kind, volume_kind,

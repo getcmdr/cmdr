@@ -617,6 +617,8 @@
         getFolderIsPolled: () => paneFolderIsPolledForDeletion(volumeId, currentPath),
         getCurrentPath: () => currentPath,
         getVolumePath: () => volumePath,
+        getVolumeId: () => volumeId,
+        getConnectionState: () => currentVolumeInfo?.connectionState,
         navigateToFallback: loader.navigateToFallback,
     })
 

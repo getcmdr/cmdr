@@ -37,6 +37,11 @@
     import Size from '#lib/ui/Size.svelte'
     import { getAppLogger } from '#lib/logging/logger.js'
     import { clearDriveIndex, getIndexDiskUsage } from '#lib/tauri-commands/index.js'
+    import { destroySpacePause, getSpacePause, initSpacePause } from '#lib/indexing/space-pause.svelte.js'
+    import { ROOT_VOLUME_ID } from '#lib/indexing/index-state.svelte.js'
+    import { openSettingsWindow, settingAnchorId } from '#lib/settings/settings-window.js'
+    import Trans from '#lib/intl/Trans.svelte'
+    import LinkButton from '#lib/ui/LinkButton.svelte'
 
     interface Props {
         searchQuery: string
@@ -58,6 +63,22 @@
     const enabledDef = getSettingDefinition('indexing.enabled') ?? { label: '', description: '' }
     const askForEachDriveDef = getSettingDefinition('indexing.askForEachDrive') ?? { label: '', description: '' }
     const staleNotifyDef = getSettingDefinition('indexing.staleNotify') ?? { label: '', description: '' }
+
+    // The boot disk, where every drive's index lives, paused for disk space
+    // (cmdr-reports#118). A fresh index has no folder sizes yet, so the size column's
+    // "may be out of date" warning never shows, and this note is where the pause is
+    // explained, with a way to the threshold that set it off.
+    const bootDiskPaused = $derived(getSpacePause(ROOT_VOLUME_ID) !== undefined)
+
+    function openPauseThreshold(): void {
+        openSettingsWindow(
+            'index-pause-note',
+            ['Advanced'],
+            settingAnchorId('advanced.indexPauseFreeSpacePercent'),
+        ).catch((e: unknown) => {
+            log.warn('opening the index pause threshold failed: {error}', { error: e })
+        })
+    }
 
     // The "Re-enable notifications for all drives" button is disabled until the
     // user has silenced at least one drive's first-connect prompt. Tracked
@@ -105,6 +126,12 @@
 
     onMount(() => {
         void refreshIndexSize()
+        // The Settings window runs none of the main window's services, so the pause
+        // map starts here, and only this section reads it.
+        // No listener just means no note, which is the safe default.
+        initSpacePause().catch((e: unknown) => {
+            log.warn('listening for the disk-space pause failed: {error}', { error: e })
+        })
         // Re-read whether any drive is silenced (a first-connect notification can
         // silence one while this page is open, in the same window or another).
         const unsubSilenced = onSpecificSettingChange('indexing.silencedDrives', () => {
@@ -120,11 +147,16 @@
 
         return () => {
             clearInterval(refreshTimer)
+            destroySpacePause()
             unsubSilenced()
             unsubMaster()
         }
     })
 </script>
+
+{#snippet thresholdLink(children: import('svelte').Snippet)}
+    <LinkButton onclick={openPauseThreshold}>{@render children()}</LinkButton>
+{/snippet}
 
 <SettingsSection title={tString('settings.section.driveIndexing')}>
     {#if anyVisible(shouldShow, 'indexing.enabled', 'row:indexing.indexSize', 'indexing.askForEachDrive', 'row:indexing.reEnableNotifications', 'indexing.staleNotify')}
@@ -142,6 +174,10 @@
                     <!-- One line explaining what the master switch overrides, and
                          that per-drive choices survive it. -->
                     <p class="master-off-note">{tString('settings.indexing.masterOffNote')}</p>
+                {:else if bootDiskPaused}
+                    <p class="master-off-note">
+                        <Trans key="settings.indexing.pausedForSpaceNote" snippets={{ thresholdLink }} />
+                    </p>
                 {/if}
             {/if}
 
