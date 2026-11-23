@@ -154,8 +154,10 @@ style guide disagree, the style guide's general rule wins unless the ruling says
   string where the context was insufficient. When you changed text macOS already read, open with a "macOS text fixed"
   section: each key and one line on what was wrong, which the lead copies into the commit message. End with two
   sections, each "none" when it's empty:
-  - **Source feedback**: `@key` descriptions that were insufficient, screenshots that were missing or unhelpful, English
-    that was ambiguous or inconsistent, and proposed cross-language rules. Log each in docs/i18n/source-queue.md too.
+  - **Source feedback**: `@key` descriptions that were insufficient, screenshots that were missing or unhelpful, a
+    screenshot that doesn't show the string it's coupled to (name the key and the image; skip one whose `screenshotNote`
+    already says the string isn't in it), English that was ambiguous or inconsistent, and proposed cross-language rules.
+    Log each in docs/i18n/source-queue.md too.
   - **Process feedback**: every script you wrote (even a one-off lookup) and why, every workaround (a command a guard
     refused, a manual step a tool couldn't take, an instruction that didn't fit), and what would have saved you the
     time. Log each under `## Process feedback` in docs/i18n/source-queue.md too. Two translators writing the same script

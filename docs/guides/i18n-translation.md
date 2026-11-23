@@ -465,12 +465,12 @@ grammar, native typography, escalating source problems). Those live in `docs/i18
 `style.md`. Flags, sections, and the blind-run mode: `docs/i18n/termbase.md` § Tooling.
 
 **Closing the loop.** Every translator report ends with a Source feedback section (weak descriptions, missing
-screenshots, ambiguous English, proposed cross-language rules), and each item also lands in `docs/i18n/source-queue.md`.
-The lead resolves the queue with David (fixing the English, the description, or the shared docs) and deletes each entry
-once it's resolved. A locale's own files never carry a workaround for an English problem. The report's second section,
-Process feedback, lists every script the translator wrote and every workaround it needed, and lands under that heading
-in the same queue: the lead reads it after each wave, since two translators writing the same script is a missing tool
-(`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
+screenshots, a screenshot that doesn't show its string, ambiguous English, proposed cross-language rules), and each item
+also lands in `docs/i18n/source-queue.md`. The lead resolves the queue with David (fixing the English, the description,
+or the shared docs) and deletes each entry once it's resolved. A locale's own files never carry a workaround for an
+English problem. The report's second section, Process feedback, lists every script the translator wrote and every
+workaround it needed, and lands under that heading in the same queue: the lead reads it after each wave, since two
+translators writing the same script is a missing tool (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 
 **The tools a translator runs** (in `apps/desktop`; flags in `docs/i18n/termbase.md` § Tooling): `pnpm i18n:brief`
 (read), `pnpm i18n:apply` (write values, stamped and validated), `pnpm i18n:apply-terms` (write the termbase),
