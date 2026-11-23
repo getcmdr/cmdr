@@ -83,8 +83,10 @@ pub(crate) fn is_mount_point(path: &Path) -> Option<bool> {
     // A volume mounts on a folder, so a file is no mount point, whatever code the call below
     // gives it: Windows 10 answers `ERROR_INVALID_NAME`, and Windows Server 2025 (the hosted CI
     // runner) one the list below doesn't hold, which read as "can't say" (CI run 45158786958,
-    // 2026-11-23).
-    if std::fs::symlink_metadata(&asked).is_ok_and(|meta| meta.file_type().is_file()) {
+    // 2026-11-23). Asked without the trailing `\` the mount call wants: with it, a file's stat
+    // fails too, and the file fell through to "can't say" anyway.
+    let bare = asked.strip_suffix('\\').unwrap_or(&asked);
+    if std::fs::symlink_metadata(bare).is_ok_and(|meta| meta.file_type().is_file()) {
         return Some(false);
     }
     let mut name = [0u16; GUID_PATH_LEN];

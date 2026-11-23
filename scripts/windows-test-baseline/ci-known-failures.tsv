@@ -2,13 +2,13 @@
 # status: `fails` (fails on the hosted runner today; passing turns the job red until the entry goes), `flaky` (either outcome is fine; say why it flips), `builder` (left out of the hosted run; the Windows builder covers it, and the reason names what the runner lacks).
 # Tighten for free: `go -C scripts/windows-test-baseline run . ratchet -run <run-id> -write`. Loosen only with a reason: add `-add "<reason>"`.
 crate	test	status	reason
-cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	fails	timed out on the hosted runner, cause unread (windows-test-failures.md)
+cmdr	about::through_tests::a_share_that_stopped_answering_gets_its_card_at_once_and_says_so_once	fails	#1423: times out on the hosted runner, cause unread (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::a_root_the_index_doesnt_hold_refuses_rather_than_matching_nothing	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	agent::suggested_ops::tests::the_drive_index_resolves_a_selector_over_a_real_index	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	commands::file_system::volume_copy::destination_root_echo_test::a_server_path_typed_on_a_server_place_names_both_readings	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	commands::file_system::write_ops::tests::reject_if_routed_over_a_parent_flags_a_path_inside_a_zip	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	go_to_path::tests::typing_a_path_into_a_zip_enters_it_as_a_directory	fails	#1337: a typed path holding an 8.3 short name (the runner TEMP is RUNNER~1) answers in its short spelling, where listings and the expectation use the long one
-cmdr	logging::rotating_file::tests::a_writer_rotated_away_by_another_reopens_the_live_file_instead_of_renaming_it	fails	a product gap on Windows (windows-test-failures.md)
+cmdr	logging::rotating_file::tests::a_writer_rotated_away_by_another_reopens_the_live_file_instead_of_renaming_it	fails	#1422: a rename of an open log file fails on Windows (no FILE_SHARE_DELETE) (windows-test-failures.md)
 cmdr	search::execute::tests::goldens::search_answers_match_the_goldens	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	search::execute::tests::goldens::the_other_platforms_goldens_hold_under_its_rules	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	tools::suggestions::tests::input::an_age_predicate_arrives_in_days_and_leaves_in_seconds	fails	windows-port plan task 34 (windows-test-failures.md)
@@ -21,10 +21,10 @@ cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_
 cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_writes_nothing_on_a_repeat_pass	fails	#1226 (windows-test-failures.md)
 cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_sized_hardlink_still_compares_on_size	fails	#1226 (windows-test-failures.md)
 cmdr-index	indexing::store::tests::subtree_deletes::interrupting_a_subtree_delete_never_strands_a_row	flaky	mostly times out at the 8 s cap on the hosted runner (three of four runs on 2026-11-21) and sometimes finishes; cause unread (windows-test-failures.md)
-cmdr-listing-wasm	folder_sizes_test::a_copy_and_a_delete_recount_every_pane_above_them	fails	timed out on the hosted runner, cause unread (windows-test-failures.md)
+cmdr-listing-wasm	folder_sizes_test::a_copy_and_a_delete_recount_every_pane_above_them	fails	#1424: times out on the hosted runner, cause unread (windows-test-failures.md)
 cmdr-listing-wasm	folder_sizes_test::a_long_delete_tells_a_pane_above_it_in_a_few_coalesced_events	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-listing-wasm	folder_sizes_test::a_write_tells_each_pane_above_it_its_moved_row_and_its_own_total	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
-cmdr-listing-wasm	multi_rename_test::a_sheet_opens_previews_moves_renames_and_rolls_back	fails	timed out on the hosted runner, cause unread (windows-test-failures.md)
+cmdr-listing-wasm	multi_rename_test::a_sheet_opens_previews_moves_renames_and_rolls_back	fails	#1424: times out on the hosted runner, cause unread (windows-test-failures.md)
 cmdr-listing-wasm	operations_host::commands_test::move_delete_rename_and_new_folder_reach_the_pane	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-listing-wasm	search_test::a_write_reaches_the_next_search	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-listing-wasm	viewer_test::markdown_renders_follows_a_relative_link_and_serves_its_image	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
