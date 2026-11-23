@@ -1062,7 +1062,8 @@ macOS mounted works like one Cmdr mounted.
   someone made about that share, which is also what "Turn off for all shares" keeps.
 - **Stored in `known_shares::parent_row_overrides` and matched like the direct-connection opt-outs** (`ShareRef` +
   `names_share`, server by `same_machine`, ❌ never by account), for the same reasons: a share macOS mounted has no saved
-  row, and `statfs` spells one server several ways.
+  row, and `statfs` spells one server several ways. A server that moves to a new address carries them along with the
+  opt-outs (`move_host_rows_in` → `smb_share_parent::carry_override`).
 - **Where `..` leads** (`get_smb_share_parent`): a host discovery knows (a resolved discovered one first, then a typed
   one), else one made from the mount's server the way Add server makes one (`create_network_host`), so it works with
   discovery off. Its name in words is the share label's (`smb_share_label::mounted`): a typed name, else the friendly

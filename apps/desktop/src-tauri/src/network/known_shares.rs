@@ -456,7 +456,7 @@ pub fn move_host_rows(rows: &[KnownNetworkShare], from: &SmbServer, to: &SmbServ
 /// Points `rows` at `to` in one pass under the lock: each row with an address dials the
 /// new one, a name that spelled the old address spells the new one, and each saved share
 /// with a volume id waits for its first mount there (`pending_moves`). A share's
-/// direct-connection opt-out is copied to the new address.
+/// direct-connection opt-out and "Show “..”" override are copied to the new address.
 ///
 /// ❗ The volume id and mount path STAY: only a mount knows the new id, and the old one
 /// is what favorites, tabs, and the share's `saved` row name until then.
@@ -500,6 +500,8 @@ fn move_host_rows_in(
         moved += 1;
     }
     for share in shares {
+        use crate::network::smb_share_parent::carry_override;
+        carry_override(&mut store.parent_row_overrides, from.host(), to.host(), &share, hosts);
         if is_opted_out(&store.direct_connection_opt_outs, &[from.host()], &share, hosts)
             && !is_opted_out(&store.direct_connection_opt_outs, &[to.host()], &share, hosts)
         {

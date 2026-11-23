@@ -101,7 +101,12 @@ async fn set_parent_row_within(
 }
 
 /// The share's override in `overrides`, under any name its server goes by.
-fn override_in(overrides: &[ParentRowOverride], server: &str, share: &str, hosts: &[NetworkHost]) -> Option<bool> {
+pub(crate) fn override_in(
+    overrides: &[ParentRowOverride],
+    server: &str,
+    share: &str,
+    hosts: &[NetworkHost],
+) -> Option<bool> {
     overrides
         .iter()
         .find(|entry| names_share(&entry.share, &[server], share, hosts))
@@ -111,7 +116,7 @@ fn override_in(overrides: &[ParentRowOverride], server: &str, share: &str, hosts
 /// Records the share's choice: every entry naming the share goes first (so a share
 /// chosen under two spellings keeps one entry), and a new one is filed only when
 /// `show` differs from `default_show`.
-fn apply_choice(
+pub(crate) fn apply_choice(
     overrides: &mut Vec<ParentRowOverride>,
     server: &str,
     share: &str,
@@ -124,6 +129,31 @@ fn apply_choice(
         overrides.push(ParentRowOverride {
             share: ShareRef {
                 server_name: server.to_string(),
+                share_name: share.to_string(),
+            },
+            show,
+        });
+    }
+}
+
+/// Copies the share's override from the server's old address to its new one, when the
+/// new one has none yet: a moved server's share keeps its `..` choice
+/// (`known_shares::move_host_rows_in`, which carries the direct-connection opt-outs the
+/// same way). The old entry stays, since it names a machine another server may share.
+pub(crate) fn carry_override(
+    overrides: &mut Vec<ParentRowOverride>,
+    from_server: &str,
+    to_server: &str,
+    share: &str,
+    hosts: &[NetworkHost],
+) {
+    let Some(show) = override_in(overrides, from_server, share, hosts) else {
+        return;
+    };
+    if override_in(overrides, to_server, share, hosts).is_none() {
+        overrides.push(ParentRowOverride {
+            share: ShareRef {
+                server_name: to_server.to_string(),
                 share_name: share.to_string(),
             },
             show,

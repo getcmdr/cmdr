@@ -1109,6 +1109,23 @@ fn a_host_move_carries_a_shares_direct_connection_opt_out() {
     ));
 }
 
+/// A share's "Show “..”" override follows the share the same way (#1238).
+#[test]
+fn a_host_move_carries_a_shares_parent_row_override() {
+    use crate::network::smb_share_parent::{apply_choice as choose, override_in as shown};
+    let row = mounted("nas", "10.0.0.2", "photos", None, "smb-p");
+    let mut store = store_of(vec![row.clone()]);
+    choose(&mut store.parent_row_overrides, "10.0.0.2", "photos", false, true, &[]);
+    let (from, to) = (SmbServer::new("10.0.0.2", 445), SmbServer::new("10.0.0.3", 445));
+
+    move_host_rows_in(&mut store, &[row], &from, &to, &[]);
+
+    let overrides = &store.parent_row_overrides;
+    assert_eq!(shown(overrides, "10.0.0.3", "photos", &[]), Some(false));
+    assert_eq!(shown(overrides, "10.0.0.2", "photos", &[]), Some(false));
+    assert_eq!(overrides.len(), 2, "one copy for the new address");
+}
+
 // -- a file that doesn't read is never saved over --
 
 const SAVED: &str = r#"{
