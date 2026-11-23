@@ -171,7 +171,9 @@ async function moveMacOnlyFilesToOsJunkFiles(store: Store): Promise<boolean> {
     await store.set('fileOperations.osJunkFiles', legacy)
   }
   await store.delete(LEGACY_MAC_ONLY_FILES_KEY)
-  log.info('Migration 11: moved the Mac-only files choice to the OS junk files key', { carried: isPolicy })
+  log.info('Migration 11: moved the Mac-only files choice to the OS junk files key (carried: {carried})', {
+    carried: isPolicy,
+  })
   return true
 }
 
