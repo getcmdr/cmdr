@@ -5,9 +5,9 @@
 //! this calls `CreateFileW` itself. The rename that finishes an atomic write keeps the explicit
 //! DACL, and the protection keeps the new folder's inheritable entries out.
 //!
-//! No `SYSTEM` or `Administrators` entry, on purpose: nothing Cmdr runs needs one, and an
-//! administrator who wants the file has to take ownership first, which is audited and visible,
-//! where an inherited entry would let them read it silently. `DETAILS.md` § "Private files".
+//! No `SYSTEM` or `Administrators` entry: nothing Cmdr runs needs one. That's no barrier to an
+//! elevated admin, who reads through the backup privilege; the gain is against a loose or relocated
+//! folder. `DETAILS.md` § "Private files".
 
 use std::ffi::{OsStr, c_void};
 use std::fs::File;

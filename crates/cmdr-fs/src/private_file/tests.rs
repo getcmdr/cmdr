@@ -69,6 +69,30 @@ fn write_atomically_replaces_a_loose_file_with_a_private_one_and_leaves_no_temp(
     assert_eq!(names, vec![std::ffi::OsString::from("mcp.token")], "the temp is gone");
 }
 
+/// A crash between the temp's create and its rename leaves the secret in the temp; the next write
+/// of that file takes it away, and nothing that isn't one of its temps.
+#[test]
+fn write_atomically_sweeps_temps_a_crashed_write_of_the_same_file_left() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("mcp.token");
+    let crashed = crate::staging::temp_sibling_path(&path);
+    std::fs::write(&crashed, "the old token").expect("plant a crashed write's temp");
+    let other_files_temp = crate::staging::temp_sibling_path(&dir.path().join("mcp.port"));
+    std::fs::write(&other_files_temp, "1234").expect("another file's temp");
+    let folder_with_the_shape = dir.path().join("mcp.token.cmdr-tmp-folder");
+    std::fs::create_dir(&folder_with_the_shape).expect("a folder named like a temp");
+
+    write_atomically(&path, b"fresh").expect("write");
+
+    assert!(!crashed.exists(), "the crashed write's temp is gone");
+    assert!(
+        other_files_temp.exists(),
+        "another file's temp is that writer's business"
+    );
+    assert!(folder_with_the_shape.is_dir(), "only regular files are swept");
+    assert_eq!(std::fs::read_to_string(&path).expect("read"), "fresh");
+}
+
 #[test]
 fn write_atomically_into_a_missing_folder_fails_and_leaves_nothing() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -113,6 +137,29 @@ mod windows {
                 sid: Some(me),
             }]),
         );
+    }
+
+    /// A junction needs no privilege to make, so any local account that can write the folder can
+    /// plant one at the name. It counts as taken; the create never follows it to its target.
+    #[test]
+    fn create_new_refuses_a_junction_at_the_name_rather_than_following_it() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let target = dir.path().join("where-the-junction-points");
+        let link = dir.path().join("mcp.token");
+        let status = std::process::Command::new("cmd")
+            .arg("/C")
+            .arg("mklink")
+            .arg("/J")
+            .arg(&link)
+            .arg(&target)
+            .stdout(std::process::Stdio::null())
+            .status()
+            .expect("run mklink");
+        assert!(status.success(), "plant a junction");
+
+        let err = create_new(&link).expect_err("must not follow the junction");
+        assert_eq!(err.kind(), io::ErrorKind::AlreadyExists);
+        assert!(!target.exists(), "the junction's target must not be created");
     }
 
     #[test]

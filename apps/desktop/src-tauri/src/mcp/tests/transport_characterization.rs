@@ -306,7 +306,7 @@ fn the_discovery_files_are_replaced_atomically_and_never_inherit_a_loose_mode() 
         let leftovers: Vec<_> = std::fs::read_dir(dir)
             .expect("the data dir reads")
             .map(|entry| entry.expect("an entry").file_name().to_string_lossy().into_owned())
-            .filter(|name| name.contains("tmp"))
+            .filter(|name| name.contains(cmdr_fs::staging::STAGING_TEMP_MARKER))
             .collect();
         assert_eq!(leftovers, Vec::<String>::new(), "no tempfile outlives the rename");
 

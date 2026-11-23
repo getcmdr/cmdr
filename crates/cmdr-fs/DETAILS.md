@@ -851,20 +851,28 @@ landing errors must keep a refused name typed (`NameTooLong` / `InvalidName`), n
   keeps the destination folder's inheritable entries out. `FILE_FLAG_OPEN_REPARSE_POINT` / `O_EXCL` make a link at the
   name count as taken, so a planted link can't redirect the create.
 - **Decision: the DACL holds the user alone, no `SYSTEM`, no `Administrators`.** Why: nothing Cmdr runs needs another
-  entry (the app, `scripts/mcp-call.sh`, and the E2E harness all run as the user), and an administrator who wants the
-  file has to take ownership or use the backup privilege first, which leaves an audit trail and changes the file, where
-  an inherited entry let them read it silently. A backup tool reads through the backup privilege, which ignores the
-  DACL, so backups keep working. Owner is set explicitly to the user SID too: an elevated admin's default owner can be
-  `Administrators`.
+  entry (the app, `scripts/mcp-call.sh`, and the E2E harness all run as the user), so there's no reason to grant one. ❗
+  This is NOT a barrier against an administrator: an elevated admin reads the file with `SeBackupPrivilege` and
+  `FILE_FLAG_BACKUP_SEMANTICS` without changing it, and Windows audits that only when the privilege-use audit policy is
+  on, which it isn't by default. An admin owns the machine; nothing in a user's files is safe from one. The real gain is
+  against a loose or relocated folder (next bullet). Backup tools read through the same privilege, so backups keep
+  working. Owner is set explicitly to the user SID too: an elevated admin's default owner can be `Administrators`.
 - **Why not rely on the folder.** The default profile ACL on `%APPDATA%` / `%LOCALAPPDATA%` grants the user, `SYSTEM`,
   and `BUILTIN\Administrators` full control, inherited by every file, and no other standard user anything; so in
-  practice only other admins could read an inherited file (Windows 10/11 default profile ACL, `icacls`; to re-verify on
-  the builder). But `CMDR_DATA_DIR`, a redirected `AppData`, or a roaming-profile policy can put the folder anywhere,
-  and then an inherited file is as open as that folder. The Windows test grants `Everyone` on the folder and asserts the
-  file still carries exactly one entry.
+  practice only admins could read an inherited file, and they can read this one too (above). But `CMDR_DATA_DIR`, a
+  redirected `AppData`, or a roaming-profile policy can put the folder anywhere, and then an inherited file is as open
+  as that folder: that's what the explicit DACL closes. The Windows test grants `Everyone` on the folder and asserts the
+  file still carries exactly one entry. (Default profile ACL from Windows 10/11 as commonly documented; to re-verify on
+  the builder with `icacls`.)
+- **Crashed writes.** A crash between the temp's create and its rename leaves `<name>.cmdr-tmp-<uuid>` holding the
+  secret, private but never cleaned by anything else, so `write_atomically` first removes the regular files named like
+  that file's temps (`staging::temp_sibling_prefix`). Every caller rewrites its file on the next start or save. The
+  cost: two writers of the same file at once would remove each other's temp and one rename fails, which no caller does.
 - **What it doesn't cover.** The folder: a principal with delete-child or write on the folder can still replace or
-  delete the file (Administrators can on a profile folder). And the path length: `CreateFileW` gets the path as given,
-  without `std`'s `\\?\` long-path handling, which is fine for the data and cache dirs these files live in.
+  delete the file (Administrators can on a profile folder). An administrator (above). macOS ACLs: mode `0600` doesn't
+  stop an inheritable ACE on the parent folder, and `is_private_to_current_user` reads mode bits only (tracked
+  separately). And the path length: `CreateFileW` gets the path as given, without `std`'s `\\?\` long-path handling,
+  which is fine for the data and cache dirs these files live in.
 
 ## `volume::ids`: why an ID is a digest and not a rendering
 
