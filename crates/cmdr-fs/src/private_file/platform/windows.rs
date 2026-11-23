@@ -64,12 +64,12 @@ pub(crate) fn create_new(path: &Path) -> io::Result<File> {
         lpSecurityDescriptor: descriptor.0,
         bInheritHandle: 0,
     };
-    let path = wide(path.as_os_str())?;
-    // SAFETY: `path` is a NUL-terminated UTF-16 string, and `attributes` points at a descriptor
-    // that stays alive (`descriptor`) until this returns; no template handle.
+    let wide_path = wide(path.as_os_str())?;
+    // SAFETY: `wide_path` is a NUL-terminated UTF-16 string, and `attributes` points at a
+    // descriptor that stays alive (`descriptor`) until this returns; no template handle.
     let handle = unsafe {
         CreateFileW(
-            path.as_ptr(),
+            wide_path.as_ptr(),
             GENERIC_WRITE,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             &attributes,
@@ -79,7 +79,15 @@ pub(crate) fn create_new(path: &Path) -> io::Result<File> {
         )
     };
     if handle == INVALID_HANDLE_VALUE {
-        return Err(io::Error::last_os_error());
+        let err = io::Error::last_os_error();
+        // A junction at the name (a folder reparse point) doesn't answer `ERROR_FILE_EXISTS`
+        // (verified on the hosted Windows runner by the junction cell, run 45234643738). It's still
+        // something at the name, so it reads as `AlreadyExists` like every other occupant, keeping
+        // the OS error inside.
+        if err.kind() != io::ErrorKind::AlreadyExists && std::fs::symlink_metadata(path).is_ok() {
+            return Err(io::Error::new(io::ErrorKind::AlreadyExists, err));
+        }
+        return Err(err);
     }
     // SAFETY: `handle` is a valid file handle this call just opened and nothing else owns.
     Ok(unsafe { File::from_raw_handle(handle) })

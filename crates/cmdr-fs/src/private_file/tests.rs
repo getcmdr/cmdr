@@ -158,7 +158,7 @@ mod windows {
         assert!(status.success(), "plant a junction");
 
         let err = create_new(&link).expect_err("must not follow the junction");
-        assert_eq!(err.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(err.kind(), io::ErrorKind::AlreadyExists, "{err:?}");
         assert!(!target.exists(), "the junction's target must not be created");
     }
 
