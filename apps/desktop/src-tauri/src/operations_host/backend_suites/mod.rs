@@ -24,15 +24,19 @@ mod network_transfer_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod network_archive_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod network_look_alike_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod network_move_drift_test_support;
 // Filing onto a server or a phone, each item under its own name, then undone.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod network_named_leaves_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod network_safety_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod network_semantics_test_support;
 
 // "A copy keeps the source's date", onto a server and off it, for every backend.
@@ -79,14 +83,19 @@ mod rename_merge_mtp_tests;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod sftp_archive_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod sftp_look_alike_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod sftp_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod sftp_transfer_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod sftp_transfer_safety_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod sftp_transfer_semantics_test;
 
 // SMB: every cell whose other half is this pipeline rather than the protocol.
@@ -98,11 +107,13 @@ mod smb_archive_integration_test;
 // Hidden and Locked onto and off a share: the local half needs macOS's flags.
 #[cfg(target_os = "macos")]
 mod smb_flags_test;
-// Finder tags and other xattrs onto and off a share: the local half writes `com.apple.*` xattrs.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_full_concurrency_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_look_alike_test;
+// Finder tags and other xattrs onto and off a share: the local half writes `com.apple.*` xattrs.
 #[cfg(target_os = "macos")]
 mod smb_xattrs_test;
 // A copy that loses the network mid-transfer waits for it (`#398`), through a
@@ -110,12 +121,16 @@ mod smb_xattrs_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod outage_proxy_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_outage_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_soak_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_stream_write_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_stress_test;
 // The fixture wiring the SMB suites share, plus the three outside this
 // directory (`volume::smb_media_fetch_integration_test`,
@@ -124,26 +139,29 @@ mod smb_stress_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(crate) mod smb_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_transfer_safety_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod smb_transfer_semantics_test;
 // Measurement harnesses for the volume copy over SMB, `#[ignore]`d and run by
 // hand: a NAS baseline and a concurrency-window sweep.
-#[cfg(all(test, unix))]
-// POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(all(test, unix))] // Hand-run benches against the NAS and the Docker SMB stack, from a Mac or Linux box.
 mod copy_bench;
-#[cfg(all(test, unix))]
-// POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(all(test, unix))] // Hand-run benches against the NAS and the Docker SMB stack, from a Mac or Linux box.
 mod copy_concurrency_bench;
 
 // NFS: gated on the knfsd fixture and named for the `nfs_integration_` lane.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod nfs_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod nfs_transfer_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod nfs_transfer_safety_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod nfs_transfer_semantics_test;
 
 // S3: gated on the Docker fixture and named for the `s3_integration_` lane.
@@ -154,34 +172,48 @@ mod nfs_transfer_semantics_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod s3_engine_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod s3_live_engine_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod s3_rename_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod s3_transfer_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod s3_transfer_safety_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod s3_transfer_semantics_test;
 
 // WebDAV: gated on the Docker fixture and named for the `webdav_integration_` lane.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod webdav_archive_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_look_alike_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_pause_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_refusal_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_refusing_proxy_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_test_support;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_transfer_integration_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_transfer_safety_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_transfer_semantics_test;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+// A live server suite: its Docker fixture stacks run on Linux and macOS only.
 mod webdav_wire_cost_test;

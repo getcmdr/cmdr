@@ -512,7 +512,7 @@ async fn an_archive_entry_names_its_archive_with_the_archives_own_record() {
 
 // ── A snapshot from a repo's history ────────────────────────────────────────
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // The portal path is a `std::path` join onto a native repo (`.git/branches/…`); it needs an app-path fixture first.
 fn portal_over(repo: &Path) -> Arc<dyn Volume> {
     let portal = Arc::new(cmdr_git::GitPortal::new(
         crate::volume_host::host(),
@@ -560,7 +560,7 @@ fn the_snapshot_categories_are_the_portals_own_words() {
 /// A file in a branch whose name holds a slash: the portal says where the name
 /// ends, the card names the branch whole, and removal says only that it's git's
 /// record.
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // The portal path is a `std::path` join onto a native repo (`.git/branches/…`); it needs an app-path fixture first.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_file_in_a_branch_snapshot_names_the_branch_and_when_it_last_changed() {
     let repo = cmdr_git::test_fixtures::build_repo_with_a_tag_and_a_slashed_branch("about-snapshot-branch");

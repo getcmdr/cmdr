@@ -301,7 +301,7 @@ fn action_verb(action: &str) -> &'static str {
     }
 }
 
-#[cfg(all(test, target_os = "macos"))]
+#[cfg(all(test, target_os = "macos"))] // Finder tags: the tool and every helper here are macOS-only.
 mod tests {
     use super::*;
     use cmdr_fs::entry::TagRef;

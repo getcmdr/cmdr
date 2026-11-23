@@ -212,17 +212,9 @@ mod tests {
 
     /// A row whose job never comes back by the deadline is named, never dropped
     /// and never waited on for good.
-    #[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
     #[tokio::test]
     async fn a_row_still_out_at_the_deadline_is_named() {
-        crate::file_system::volume::manager::get_volume_manager().register_if_absent(
-            "root",
-            Arc::new(cmdr_local::LocalVolume::local_folder(
-                "Test root",
-                "/",
-                crate::volume_host::host(),
-            )),
-        );
+        crate::test_support::ensure_scratch_root_volume();
         let dir = TestDir::new("about-lookup-deadline");
         let file = dir.as_ref().join("notes.txt");
         std::fs::write(&file, "x").expect("write the fixture");
@@ -230,7 +222,7 @@ mod tests {
         let never: Submit = Arc::new(|_task| {});
 
         let looked_up = look_up_with(
-            file.to_string_lossy().into_owned(),
+            crate::test_support::native_app_path(&file).into_string(),
             None,
             Started::ByPerson,
             &CancellationToken::new(),

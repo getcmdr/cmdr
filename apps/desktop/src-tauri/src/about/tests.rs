@@ -263,7 +263,7 @@ async fn a_file_with_no_download_record_says_so_as_a_routine_absence() {
     assert_eq!(identity.hard_links, Some(1));
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // The link count is `st_nlink`; Windows' `std` metadata carries none.
 #[tokio::test]
 async fn a_hard_linked_file_counts_its_other_name() {
     let dir = TestDir::new("about-hard-link");
@@ -288,7 +288,7 @@ fn a_missing_path_is_unavailable_not_a_card_of_unknowns() {
     );
 }
 
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
+#[cfg(unix)] // A dangling link to a POSIX target text, made with `std::os::unix::fs::symlink`.
 #[test]
 fn a_symlink_is_about_the_link_and_reads_nothing_through_it() {
     let dir = TestDir::new("about-symlink");
@@ -612,18 +612,10 @@ async fn a_cancel_that_beats_its_start_makes_the_start_send_nothing() {
 /// race against a budget. A folder, since this runs the real `start`: a file would
 /// ask Spotlight and LaunchServices, whose cold start a loaded machine stretches
 /// past the cap (`jobs::OsReads`).
-#[cfg(unix)] // POSIX-only: `LocalPosixVolume`, modes, inodes, `libc`, or `std::os::unix` (windows-port plan).
 #[tokio::test]
 async fn the_facts_dont_wait_for_the_verdicts_gate() {
     use crate::ignore_poison::IgnorePoison;
-    crate::file_system::volume::manager::get_volume_manager().register_if_absent(
-        "root",
-        Arc::new(cmdr_local::LocalPosixVolume::local_folder(
-            "Test root",
-            "/",
-            crate::volume_host::host(),
-        )),
-    );
+    crate::test_support::ensure_scratch_root_volume();
     let dir = TestDir::new("about-gate-held");
     let folder = dir.as_ref().join("notes");
     std::fs::create_dir(&folder).expect("make the fixture");
