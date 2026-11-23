@@ -144,8 +144,7 @@ mod tests {
     /// This OS's filesystem root, so a fixture path is absolute everywhere: `/` has no drive, so
     /// Windows reads `/Users/someone` as relative, and the guard rightly refuses all of it.
     fn abs(rel: &str) -> PathBuf {
-        let root = if cfg!(windows) { r"C:\" } else { "/" };
-        PathBuf::from(root).join(rel)
+        PathBuf::from(if cfg!(windows) { r"C:\" } else { "/" }).join(rel)
     }
 
     fn home() -> PathBuf {

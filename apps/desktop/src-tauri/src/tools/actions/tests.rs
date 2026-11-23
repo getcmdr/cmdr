@@ -269,7 +269,7 @@ fn a_rename_refuses_what_the_git_portal_serves() {
 #[test]
 fn test_path_exists_validation() {
     // Test that Path::new().exists() works as expected for our validation
-    let temp = std::env::temp_dir();
+    let temp = crate::test_support::TestDir::new("path_exists_validation");
     assert!(temp.exists(), "Temp dir should exist");
     assert!(
         !temp.join("nonexistent/path/that/does/not/exist").exists(),
