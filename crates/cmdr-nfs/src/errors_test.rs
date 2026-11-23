@@ -48,7 +48,14 @@ fn the_errno_shaped_statuses_carry_their_errno() {
         assert_eq!(errno(number), class.host_code(), "{number}: {class:?}");
     }
     #[cfg(unix)]
-    for (number, errno_here) in [(66, libc::ENOTEMPTY), (10008, libc::EAGAIN), (5, libc::EIO)] {
+    for (number, errno_here) in [
+        (66, libc::ENOTEMPTY),
+        (10008, libc::EAGAIN),
+        (5, libc::EIO),
+        (18, libc::EXDEV),
+        (22, libc::EINVAL),
+        (27, libc::EFBIG),
+    ] {
         assert_eq!(errno(number), Some(errno_here), "{number}");
     }
 }

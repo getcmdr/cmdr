@@ -71,7 +71,8 @@ pub fn port_file_path(dir: &Path, name: &str) -> PathBuf {
 
 /// Create a tempfile for the atomic write with owner-only perms baked in (0o600 on unix,
 /// no umask window). The atomic rename preserves the tempfile's mode, so the final file
-/// lands 0o600 too. On non-unix we fall back to `File::create` (no POSIX mode bits). This
+/// lands 0o600 too. On Windows it's a plain create, inheriting the data folder's ACL, which
+/// isn't owner-only (#1425). This
 /// is the single create point shared by `write_port_file` and `write_secret_file`; the
 /// reference for the 0o600 pattern is `secrets/plain_file.rs`.
 fn create_owner_only(tmp_path: &Path) -> std::io::Result<File> {

@@ -235,7 +235,7 @@ async fn every_bind_mode_listens_on_loopback_only() {
 }
 
 #[test]
-fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
+fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_its_discovery_files() {
     let data_dir = isolate_secrets();
     let app = app_with_stores();
     on_tauri_runtime(async {
@@ -250,7 +250,9 @@ fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_files() {
         assert_eq!(token.len(), 32, "a fresh random token, with no trailing newline");
         assert!(serves_with_token(port, &token).await);
 
-        #[cfg(unix)] // POSIX modes: Windows files carry ACLs, not 0600.
+        // Owner-only on POSIX. On Windows they inherit the data folder's ACL, which isn't owner-only
+        // (#1425); its own check lands with the fix.
+        #[cfg(unix)]
         {
             assert_eq!(mode_of(&dir.join(PORT_FILE_NAME)), 0o600);
             assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
