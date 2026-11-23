@@ -116,7 +116,8 @@ impl super::super::Operations {
                         buffered,
                     );
                 }
-                super::super::journal::finalize_op(&scope, OpKind::Trash, ExecutionStatus::Done);
+                // Its one item is done: no status row counts it (#1433).
+                super::super::journal::finalize_op_reporting(&scope, OpKind::Trash, ExecutionStatus::Done, 1);
                 Ok(in_trash)
             }
             Err(e) => {

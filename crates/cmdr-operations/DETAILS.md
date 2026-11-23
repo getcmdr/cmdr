@@ -253,10 +253,13 @@ The full top-level inventory is here:
   ends stored as app text through `journal_split`, why in `crates/cmdr-operation-log/DETAILS.md`'s escape-mark notes; a
   test's `root` that undoes is `host::testing::scratch_disk_root`, the drive on Windows, ❌ never a bare `/`; a
   both-local transfer between two volumes journals each row under a volume that reaches it, `OpScope::local_ids_for`,
-  since Windows' `root` is the system drive alone, #1351), `journal_search.rs`, `journal_landed.rs` (which node each
-  landed item is, and a volume transfer's landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A
-  landed item must still be the node that landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs`
-  (the remote edit itself is `archive_edit/remote.rs`). Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`,
+  since Windows' `root` is the system drive alone, #1351; a local delete or trash outside `root`'s own root journals
+  under the registered volume holding it, `local_start::one_local_side`, #1433; a finished local op's `items_done` is
+  the larger of the status cache's and its terminal event's count, `local_start::CompletionTally`, since delete and
+  trash move the cache only on a throttled frame), `journal_search.rs`, `journal_landed.rs` (which node each landed item
+  is, and a volume transfer's landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item
+  must still be the node that landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote
+  edit itself is `archive_edit/remote.rs`). Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`,
   `create_numbered.rs` (paste-as-file's numbered create), `routing.rs` (the one routing every cross-volume transfer
   takes: `start_volume_{copy,move,compress}`, plus `start_rename_by_move`; `routing/retry.rs` is the Retry recipe a copy
   or move leaves with the manager), `routed_writes.rs` (the refusal every drive-only entry point asks first for an
