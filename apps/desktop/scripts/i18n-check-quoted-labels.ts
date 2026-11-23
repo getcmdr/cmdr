@@ -211,9 +211,7 @@ export function quoteMismatches(
       const labelOf = (s: string) => pickPlatformBranch(messages[s], platform)
       if (labels.some((s) => fold(value).includes(fold(labelOf(s))))) continue
       const [first] = labels
-      const shown = labelOf(first)
-        .replace(/''/g, "'")
-        .replace(/[…⋯]$/, '')
+      const shown = labelOf(first).replace(/''/g, "'").replace(/[…⋯]$/, '')
       const on = platforms === undefined ? '' : ` on ${platform}`
       issues.push({
         key,

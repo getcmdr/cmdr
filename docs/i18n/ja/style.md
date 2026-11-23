@@ -28,14 +28,14 @@ Cmdr wants, not "エラー".
   "項目の新しい名前を入力してください。" ("please provide a new name", polite -てください imperative),
   "フォルダを作成できませんでした。" (polite negative) (all verified in `ja/macOS/Finder/Localizable.json`, 2026-06-19).
 - This is the de-facto standard for consumer software UI. Plain form (だ/である) reads as terse/blunt and is wrong for
-  user-facing copy; heavy keigo (お…になる, 〜いたします) reads as over-formal/obsequious and is also
-  wrong. です・ます is the warm-professional middle that matches Cmdr's friendly voice.
+  user-facing copy; heavy keigo (お…になる, 〜いたします) reads as over-formal/obsequious and is also wrong. です・ます
+  is the warm-professional middle that matches Cmdr's friendly voice.
 
 Mechanics:
 
 - **Button and menu labels: bare noun-stem (連用形 / sahen noun), not a full sentence.** macOS labels are nouns:
-  "キャンセル" (Cancel), "コピー" (Copy), "移動" (Move), "削除" (Delete), "名称変更" (Rename). Don't make a button
-  a です・ますsentence, that's for descriptions, prompts, and status, not labels.
+  "キャンセル" (Cancel), "コピー" (Copy), "移動" (Move), "削除" (Delete), "名称変更" (Rename). Don't make a button a
+  です・ますsentence, that's for descriptions, prompts, and status, not labels.
 - **Sentences, prompts, status, and descriptions: です・ます.** "…します" / "…できませんでした" / "…してください".
 - Don't force a subject pronoun ("あなた"), Japanese omits it; macOS does too.
 

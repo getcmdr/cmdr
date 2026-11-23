@@ -29,8 +29,8 @@ The must-know rules; the rest of this file elaborates them.
   genuinely split, Taiwan's norm wins (網路, 軟體, 資訊, 遠端, 可用空間, 再試一次).
 - **The Apple-zh-TW outlier rule**: where Apple zh-TW stands alone against Apple zh-HK, Microsoft, and the file
   managers, take the consensus form: `資料夾` (not 檔案夾), `複製` (not 拷貝), `移動` (not 搬移), `開啟` (not 打開),
-  `分頁` (not 標籤頁), plus `縮圖` and `重設`. Everywhere Apple TW and HK agree, Apple beats Microsoft
-  (卷宗, 還原, 直欄, 喜好項目, 略過). ❌ Don't "fix" an override back by citing macOS-first.
+  `分頁` (not 標籤頁), plus `縮圖` and `重設`. Everywhere Apple TW and HK agree, Apple beats Microsoft (卷宗, 還原,
+  直欄, 喜好項目, 略過). ❌ Don't "fix" an override back by citing macOS-first.
 - **Address**: `你` everywhere, licensing included (Apple's Traditional UI has zero `您`). `您` only where the user
   writes to someone else (`licensing.dialog.mailtoBody` opens `您好，`) or in contract prose, which the catalog doesn't
   ship.
@@ -90,10 +90,10 @@ The delta is large and systematic (Simplified → Traditional, all verified in t
 - 文件夹 → **資料夾**, 保存 → **儲存**, 搜索 → **搜尋**, 设置 → **設定**, 默认 → **預設**, 视频 → **影片**, 程序 →
   **程式**, 信息 → **資訊**, 用户 → **使用者**, 网络 → **網路**, 内存 → **記憶體**, 服务器 → **伺服器**, 缓存 →
   **快取**, 扩展名 → **副檔名**, 窗口 → **視窗**, 菜单 → **選單**, 剪切 → **剪下**, 粘贴 → **貼上**, 刷新 →
-  **重新整理**, 加载 → **載入**, 屏幕 → **螢幕**, 打印 → **列印**, 软件 → **軟體**, 硬件 → **硬體**, 兼容 →
-  **相容**, 性能 → **效能**, 优化 → **最佳化**, 质量 → **品質**, 数据 → **資料**, 登录 → **登入**, 界面 →
-  **介面**, 快捷方式 → **捷徑**, 收藏 → **喜好項目**, 芯片 → **晶片**, 密钥 → **金鑰**, 设备 → **裝置**, 废纸篓 →
-  **垃圾桶**, 创建 → **製作**/**新增**, 自定义 → **自訂**.
+  **重新整理**, 加载 → **載入**, 屏幕 → **螢幕**, 打印 → **列印**, 软件 → **軟體**, 硬件 → **硬體**, 兼容 → **相容**,
+  性能 → **效能**, 优化 → **最佳化**, 质量 → **品質**, 数据 → **資料**, 登录 → **登入**, 界面 → **介面**, 快捷方式 →
+  **捷徑**, 收藏 → **喜好項目**, 芯片 → **晶片**, 密钥 → **金鑰**, 设备 → **裝置**, 废纸篓 → **垃圾桶**, 创建 →
+  **製作**/**新增**, 自定义 → **自訂**.
 - Punctuation differs too: Simplified quotes filenames with `“…”`, Traditional with `「…」` (see § Punctuation).
 
 Translate each key from the **English** source. The `zh` catalog is useful as a structural precedent (it already solved
@@ -221,19 +221,20 @@ it. Recorded rulings, with the divergence measured in the two macOS corpora:
 **On `duplicate`**: Taiwan's 複製 is the word this catalog already uses for _copy_, and Cmdr ships Copy and Duplicate as
 two separate commands. Taking Hong Kong's 製作副本 keeps them distinct.
 
-Where TW and HK agree, there's nothing to rule on, and the term differs from Simplified
-anyway: 程式 (176/177), 設定 (160/160), 儲存 (123/123), 搜尋 (82/82), 磁碟 (69/70), 卷宗 (68/69), 預設 (27/27), 影片 (16/14), 記憶體, 硬碟, 垃圾桶, 副檔名, 刪除, 重新命名.
+Where TW and HK agree, there's nothing to rule on, and the term differs from Simplified anyway: 程式 (176/177), 設定
+(160/160), 儲存 (123/123), 搜尋 (82/82), 磁碟 (69/70), 卷宗 (68/69), 預設 (27/27), 影片 (16/14), 記憶體, 硬碟, 垃圾桶,
+副檔名, 刪除, 重新命名.
 
 ### Tech-term strategy: Apple first, then Microsoft, then the two-pane pair
 
 - Traditional Chinese has mature native IT vocabulary, so prefer the established Chinese term over an English loan.
 - **Apple (zh-TW + zh-HK agreeing) is the top authority**, with the outlier refinement above.
-- **Where Apple is silent, Microsoft's zh-Hant TBX fills
-  in**: 窗格 (pane), 佇列 (queue), 篩選 (filter), 鍵盤快速鍵 (keyboard shortcut), 深色模式 (dark
-  mode), 對話方塊 (dialog), 磁碟機 (drive as a device). ❗ Check Apple's LIVE bundles before concluding it is silent:
-  `theme` was filled in from MS as `佈景主題` and is in fact `主題` in Apple's Appearance pane.
-- **For the two-pane concepts every OS vendor lacks, the orthodox pair is the lineage match**: 命令列 (command
-  line), 功能鍵列 (function-key bar), 常用資料夾清單 (directory hotlist), 比對資料夾, 同步資料夾, 多檔重新命名. Rulings:
+- **Where Apple is silent, Microsoft's zh-Hant TBX fills in**: 窗格 (pane), 佇列 (queue), 篩選 (filter), 鍵盤快速鍵
+  (keyboard shortcut), 深色模式 (dark mode), 對話方塊 (dialog), 磁碟機 (drive as a device). ❗ Check Apple's LIVE
+  bundles before concluding it is silent: `theme` was filled in from MS as `佈景主題` and is in fact `主題` in Apple's
+  Appearance pane.
+- **For the two-pane concepts every OS vendor lacks, the orthodox pair is the lineage match**: 命令列 (command line),
+  功能鍵列 (function-key bar), 常用資料夾清單 (directory hotlist), 比對資料夾, 同步資料夾, 多檔重新命名. Rulings:
   `terms.json` (`command-line`, `function-key-bar`, `pane`, and neighbors). The pane is the one two-pane term where we
   don't take the orthodox word: TC's `視窗` collides with window and DC's `面板` with a settings panel, so it's MS's
   `窗格`. ❗ Weight TC over DC: DC's zh-TW file carries Simplified contamination (`重復分頁`, `刷新`, `在新分頁中打開`),

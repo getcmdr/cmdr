@@ -154,10 +154,10 @@ to a pan-Traditional consensus that serves Taiwan, Hong Kong, and Macau from one
 
 ### Gender and inclusive language: inherently neutral
 
-- Chinese has no grammatical gender on nouns or verbs, and no verb agreement. The written third-person
-  pronouns 他/她/它 (he/she/it) differ only in writing and sound identical; UI rarely needs them because Cmdr addresses
-  the user in second person (`你`/`您`, ungendered) and refers to files/items as things. `high`. No special handling
-  needed; keep strings second-person or item-referring and gender never arises.
+- Chinese has no grammatical gender on nouns or verbs, and no verb agreement. The written third-person pronouns 他/她/它
+  (he/she/it) differ only in writing and sound identical; UI rarely needs them because Cmdr addresses the user in second
+  person (`你`/`您`, ungendered) and refers to files/items as things. `high`. No special handling needed; keep strings
+  second-person or item-referring and gender never arises.
 
 ### Numerals, punctuation, and spacing
 
@@ -217,8 +217,8 @@ inflection.
 
 ## Notes and decisions
 
-- **原生菜单跟随 Finder 的用词，而不是目录里的旧用词。**
-  macOS 有对应项时以它为准（`显示`、`上层文件夹`、`个人`、`显示简介`）。唯一有意保留的分歧是 Apple 的「访达」，Cmdr 仍写
+- **原生菜单跟随 Finder 的用词，而不是目录里的旧用词。** macOS
+  有对应项时以它为准（`显示`、`上层文件夹`、`个人`、`显示简介`）。唯一有意保留的分歧是 Apple 的「访达」，Cmdr 仍写
   `Finder`。证据与例外：`decisions.md` § Native menus.
 - **Click is `点按`, not `点击`.** macOS `zh-CN` uses `点按` exclusively (0 occurrences of `点击` across Finder, AppKit,
   and SystemSettings, verified against the reference pile, 2026-08-21), and onboarding writes
