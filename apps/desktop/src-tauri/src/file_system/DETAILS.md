@@ -842,8 +842,14 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
     process's write, because a Windows server answers SMB change notify for every writer, but a NAS may not implement
     it, and no server forwards a change the network buffer (64 KiB) dropped. So it never lets a delete walker skip a
     read.
-  - A FAT32 or ReFS drive probes as not-local (`mount_is_local_disk` knows `ntfs` and `exfat` among Windows names), so
-    it's `ThisMachineOnly`: an under-claim, costing a re-read before a delete.
+  - A fixed FAT32, FAT, or ReFS drive probes local (`mount_is_local_disk` knows Windows' own names for them), so it's
+    `EveryWriter` like NTFS, and a delete walker there skips its re-read. FAT has no change journal, but change notify
+    doesn't need one: the FAT driver answers `IRP_MN_NOTIFY_CHANGE_DIRECTORY` (`FsRtlNotifyFullChangeDirectory`) and
+    reports each change from its own create, write, rename, and delete paths (`FsRtlNotifyFullReportChange`), and every
+    writer on this machine goes through that driver (verified by reading Microsoft's `fastfat` sample,
+    `filesys/fastfat/dirctrl.c` and `fatprocs.h` at `Windows-driver-samples` `d49bb7d72f`, 2026-11-23; not yet watched
+    on a real FAT32 fixed drive). ReFS is a native Windows filesystem with the same notify support NTFS has. A
+    removable FAT32 or exFAT drive stays `ThisMachineOnly` (above).
 - **What the open handle blocks** (notify opens it `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`; same
   probe, 2026-11-21): deleting the watched folder works (it's gone at once, and the same name can be made again),
   renaming the watched folder itself works, deleting an ancestor works. ❗ Renaming or moving an ANCESTOR fails with
