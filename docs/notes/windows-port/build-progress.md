@@ -535,3 +535,9 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   open"), so wait for `cmdr://state` dialogs to empty; and `[IO.File]::Open` with `ReadWrite` sharing reads a held
   file's live length for comparing against the pane. Fixtures, the mount point, and the data dir are gone; `cmdr-m6` is
   back on `origin/main`, clean.
+- **2026-11-23, second pass: PR #1436's fixes, #1409, #1407** (`a66f00afae`, the warm pair, `CARGO_BUILD_JOBS=2`, a
+  debug app build 16 min warm): `real-windows-check-2026-11-23.md` § "Second pass". Gotchas: with `CMDR_DATA_DIR` set,
+  the app's log is `<data dir>\logs\cmdr.log`; a PowerShell `{…}` volume GUID in an inline `mountvol` call parses as a
+  script block, so run it through `cmd /c '…'`; and a `ssh -M -S` control socket under the scratchpad's long path
+  exceeds the Unix socket limit, so keep it short. Fixtures, the mount point, and the data dir are gone; `cmdr-m6` is
+  back on `origin/main`, clean.

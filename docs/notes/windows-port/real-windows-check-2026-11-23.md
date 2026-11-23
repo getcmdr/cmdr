@@ -97,3 +97,53 @@ cards, `~` in Go to folder, and the second-instance refusal weren't checked.
 Mami after the run: the app quit, no `cmdr`, `cargo`, `node`, or writer processes left, the fixtures, data dir, and
 scripts gone, the mount point removed, nothing of this run in either Recycle Bin, and `cmdr-m6` on `origin/main`
 (`14311db169`), clean. David's Task Manager was left as it was.
+
+## Second pass: PR #1436's fixes, #1409, and #1407 (evening)
+
+- **Build**: `main` at `a66f00afae` in the warm pair, `CARGO_BUILD_JOBS=2`, `pnpm tauri build --debug --no-bundle`
+  through `run-on-desktop.sh` (16 min, 14m 38s in cargo). PR #1438 was still open, so the `icacls` check wasn't run.
+- **How it ran**: as the first pass, with a fresh `CMDR_DATA_DIR` (`D:\w2-data`, so the `C:` index was scanning from
+  empty throughout), fixtures under `C:\Users\Admin\w2` and `D:\w2`. The app's log is `<data dir>\logs\cmdr.log`. Cmdr's
+  window was moved right of the always-on-top Task Manager (`MoveWindow` from a desktop job) for screenshots.
+- **Folder mount**: `D:` at `C:\Users\Admin\w2\dmount`, 20:19:36–20:19:56, removed with `mountvol /D`, verified gone.
+
+PR #1436:
+
+- Fail, #1430 left open: the `\\?\` half is fixed, but a "Current folder" search of `C:\Users\Admin\w2\src` still finds
+  nothing ("Cmdr's index doesn't cover one folder yet"), and MCP `search` with `scope: "C:/Users/Admin/w2/src"` lists it
+  under `unresolvedScopes`. The log reads `include path not found in index: C:/Users/Admin/w2/src`, while the same scope
+  spelled `/Users/Admin/w2/src` finds both files: `cmdr-search`'s `to_index_relative` strips no root for `root` (its
+  prefix is empty), so the drive letter reaches the lookup. Evidence on #1430.
+- Pass, #1431 closed: below the mount, the pane's visits logged no cover phase, and after the unmount a whole-drive
+  search for `d_file_1*` found nothing. The "rebuilds once" fingerprint change wasn't observable on a fresh data dir.
+- Pass, #1433 closed: a trash on `D:` journals `D:`'s volume id with `itemsDone: 1`, its undo settles `rolledBack` (the
+  file back, no bin item left), and a permanent delete on `C:` journals `root` with `itemsDone: 1`.
+- Pass, #1432 closed: the junction's dialog reads "Delete 1 selected file", a file icon, "0 bytes / 1 file / 0 folders",
+  and "This item is a link. Only the link will be deleted, not what it points to."; the target's `keep.txt` stayed.
+- Unchecked, #1434 left open: the fresh index had met no off-limits folder yet (`offLimits: []`), so the note never
+  showed.
+
+PR #1409 (with a `Thumbs.db` made as a hidden, system 200-byte file; Windows 10 writes real ones only on network
+folders):
+
+- Pass: the Copy dialog reads "Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)", checked, "Skipping by default",
+  and counts 7 bytes / 1 file (the `Thumbs.db` left out). The copy to `D:` and a move to `D:` land `photo_1.txt` only;
+  the move removes the source folder, its `Thumbs.db` with it.
+- Pass: a move of a folder whose `Thumbs.db` a PowerShell process held open with `FileShare.None`, with Explorer open on
+  that folder, finishes `done`, `itemsDone: 1`, no error: `photo_1.txt` lands on `D:`, and the held `Thumbs.db` stays
+  behind in the source folder.
+- Pass: with `fileOperations.osJunkFiles` set to `include`, the copy carries `Thumbs.db` too.
+
+PR #1407:
+
+- Pass: `about_item` on a local file plans the local rows (identity, the real type from its bytes).
+- Found: its "Cmdr's operation" row reads `volumeCantTell` even for a file Cmdr just copied: `NodeIdentity::of` reads no
+  file id from `Metadata` on Windows (#1445).
+- Pass: a second instance on the same data dir names the running one: "Another Cmdr instance (process 10116) already
+  owns the data dir D:\w2-data…" on stderr, with a message box waiting for OK.
+- Unchecked: `~` and `~\` in Go to folder (time). No lettered FAT32 or ReFS volume exists (only the unlettered EFI
+  partition), so none was tried.
+
+Mami after the run: the app and the second instance quit, the Explorer window this run opened closed, the holder and no
+`cmdr`, `cargo`, or `node` processes left, the fixtures, data dir, scripts, and mount point gone, nothing of this run in
+either Recycle Bin, and `cmdr-m6` on `origin/main` (`a66f00afae`), clean.
