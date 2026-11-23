@@ -1607,6 +1607,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "description": "Search keywords for the “Always require SMB encryption” setting (settings.network.requireSmbEncryption.label) in Settings > File systems > SMB/Network shares. What it does: makes Cmdr encrypt its connections to network shares and refuse a server that can't. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
+  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "@settings.network.showShareParentRow.label": {
+    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SMB network share; opening it shows the other shares on the same server. Keep “..” exactly as written: it’s the parent-folder row the file list shows. A “share” is a shared folder on a network server. In Settings > File systems > SMB/Network shares, Behavior card."
+  },
+  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "@settings.network.showShareParentRow.description": {
+    "description": "Help text under the “Show “..” in each share’s top folder” switch (settings.network.showShareParentRow.label). “..” is the parent-folder row; keep it as written. “Its menu in the volume switcher” is the → submenu of the share’s row in the drive list that opens from the pane’s header chip."
+  },
+  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "@settings.network.showShareParentRow.keywords": {
+    "description": "Search keywords for the “Show “..” in each share’s top folder” setting (settings.network.showShareParentRow.label) in Settings > File systems > SMB/Network shares. What it does: in a network share’s top folder, a “..” row leads to the server’s other shares. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  },
   "settings.network.shareCacheDuration.label": "Share cache duration",
   "@settings.network.shareCacheDuration.label": {
     "description": "Label for the picker controlling how long the list of a server's shares is cached. In Settings > File systems > SMB/Network shares.",
@@ -2785,6 +2797,18 @@
     "description": "Help text for the “Suppress the long Network group hint” switch (settings.behavior.serversPinHintSeen.label). “Network group” is the Network section of the volume switcher (the drive list).",
     "screenshot": "settings-advanced.png"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "description": "Advanced-section label (in the Hints and warnings card) for the switch that silences the one-time toast explaining that “..” in a network share’s top folder took the person to the server’s other shares (fileExplorer.shareParentRow.hint). On means the hint was already shown and won’t show again; the app turns it on by itself the moment the hint appears, and turning it off makes the hint show once more. Keep “..” as written."
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "description": "Help text for the “Suppress the “..” in share top folders hint” switch (settings.behavior.shareParentRowHintSeen.label). “..” is the parent-folder row; keep it as written. A “share” is a shared folder on a network server."
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "description": "Search keywords for the “Suppress the “..” in share top folders hint” setting (settings.behavior.shareParentRowHintSeen.label) in Settings > Advanced. What it does: turned off, brings back the one-time toast explaining that “..” in a network share’s top folder leads to the server’s other shares. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  },
   "settings.behavior.serversPinHintSeen.keywords": "server, pin, unpin, network, switcher, hint, toast",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "description": "Search keywords for the “Suppress the long Network group hint” setting (settings.behavior.serversPinHintSeen.label) in Settings > Advanced. What it does: turned off, brings back the one-time toast about unpinning servers from the volume switcher. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
@@ -3805,6 +3829,10 @@
   "@settings.network.card.connection": {
     "description": "Heading of the connection card (enable networking, direct SMB connection) in Settings > File systems > SMB/Network shares.",
     "screenshot": "settings-file-systems-smb.png"
+  },
+  "settings.network.card.behavior": "Behavior",
+  "@settings.network.card.behavior": {
+    "description": "Heading of the behavior card (whether “..” in a share’s top folder opens the server’s other shares) in Settings > File systems > SMB/Network shares. It sits between the Connection and Performance and timeouts cards."
   },
   "settings.network.card.performanceAndTimeouts": "Performance and timeouts",
   "@settings.network.card.performanceAndTimeouts": {

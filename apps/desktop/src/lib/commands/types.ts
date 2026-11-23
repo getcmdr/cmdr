@@ -288,7 +288,7 @@ export interface Command {
 }
 
 /** What a palette row's `paletteCondition` can ask. One member per question. */
-export type PaletteCondition = 'focusedPaneSharesLinks' | 'trashUndoAvailable'
+export type PaletteCondition = 'focusedPaneSharesLinks' | 'focusedPaneOnSmbShare' | 'trashUndoAvailable'
 
 /**
  * Authored form of a command, as written in `command-registry.ts`. Holds i18n

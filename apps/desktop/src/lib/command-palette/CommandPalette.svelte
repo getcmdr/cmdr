@@ -27,6 +27,8 @@
     import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
     import { capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
     import { isTrashUndoAvailable } from '#lib/file-operations/delete/trash-undo.js'
+    import { isSmbShareVolume } from '#lib/file-explorer/network/share-parent-row.svelte.js'
+    import { getVolumes } from '#lib/stores/volume-store.svelte.js'
 
     /**
      * Whether each conditional row belongs in the palette right now. A record, so a
@@ -36,6 +38,11 @@
     const PALETTE_CONDITIONS: Record<PaletteCondition, () => boolean> = {
         focusedPaneSharesLinks: () =>
             capabilitiesForPane(getFocusedPaneVolumeId(), getFocusedPanePath()).canShareLinks,
+        // "Show or hide “..”" acts on the focused pane's SMB share, so it's offered only on one.
+        focusedPaneOnSmbShare: () => {
+            const volumeId = getFocusedPaneVolumeId()
+            return isSmbShareVolume(getVolumes().find((volume) => volume.id === volumeId))
+        },
         // Like the greyed-out Edit menu item: a row that could only do nothing isn't offered.
         trashUndoAvailable: isTrashUndoAvailable,
     }

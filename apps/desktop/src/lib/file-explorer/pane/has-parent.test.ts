@@ -47,6 +47,39 @@ describe('computeHasParent (R3 T1)', () => {
     ).toBe(false)
   })
 
+  it('returns true at an SMB share’s top folder whose “..” opens the server’s shares (#1238)', () => {
+    expect(
+      computeHasParent({
+        hasParentRow: true,
+        currentPath: '/Volumes/media',
+        effectiveVolumeRoot: '/Volumes/media',
+        topFolderLeadsOut: true,
+      }),
+    ).toBe(true)
+  })
+
+  it('returns false at an SMB share’s top folder with “..” turned off, as a root does', () => {
+    expect(
+      computeHasParent({
+        hasParentRow: true,
+        currentPath: '/Volumes/media',
+        effectiveVolumeRoot: '/Volumes/media',
+        topFolderLeadsOut: false,
+      }),
+    ).toBe(false)
+  })
+
+  it('never gives a snapshot pane a “..” row, even when its top folder would lead out', () => {
+    expect(
+      computeHasParent({
+        hasParentRow: false,
+        currentPath: 'search-results://sr-1',
+        effectiveVolumeRoot: 'search-results://sr-1',
+        topFolderLeadsOut: true,
+      }),
+    ).toBe(false)
+  })
+
   it('returns true inside a folder on the volume', () => {
     expect(
       computeHasParent({

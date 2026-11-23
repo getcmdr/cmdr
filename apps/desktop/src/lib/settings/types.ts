@@ -513,6 +513,7 @@ export interface SettingsValues {
    * `#lib/stores/volume-store` the first time five server places are pinned.
    */
   'behavior.serversPinHintSeen': boolean
+  'behavior.shareParentRowHintSeen': boolean
   /**
    * Whether the volume switcher's favorites section was last left open. Hidden internal
    * state, flipped by the section's own row (`file-explorer/navigation/VolumeChooserMenu.svelte`).
@@ -612,6 +613,8 @@ export interface SettingsValues {
   'network.nearbyServersGroup': NearbyServersGroupChoice
   'network.directSmbConnection': boolean
   'network.requireSmbEncryption': boolean
+  /** `..` in an SMB share's top folder opens the server's shares (each share can override it). */
+  'network.showShareParentRow': boolean
   'network.shareCacheDuration': number
   /** Milliseconds; edited in seconds. */
   'network.timeout': number

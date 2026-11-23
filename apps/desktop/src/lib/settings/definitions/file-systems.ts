@@ -106,6 +106,20 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
     },
   },
   {
+    // In a share's top folder, `..` opens the server's share list (#1238). Each share can override it from
+    // its row menu; the overrides live in Rust (`network/smb_share_parent.rs`), stored only while they differ.
+    id: 'network.showShareParentRow',
+    section: ['File systems', 'SMB/Network shares'],
+    labelKey: 'settings.network.showShareParentRow.label',
+    descriptionKey: 'settings.network.showShareParentRow.description',
+    cardKey: 'settings.network.card.behavior',
+    keywordsKey: 'settings.network.showShareParentRow.keywords',
+    terms: ['smb'],
+    type: 'boolean',
+    default: true,
+    component: 'switch',
+  },
+  {
     // One stepper, in seconds. It replaced a Normal (15 s) / Slow network (45 s) / Custom radio
     // list plus a custom field; `settings-migrations.ts` migration 10 carries old choices across.
     id: 'network.timeout',

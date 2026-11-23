@@ -115,6 +115,10 @@
   "@settings.section.behavior": {
     "sourceHash": "edf8d3f"
   },
+  "settings.network.card.behavior": "Behaviour",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
+  },
   "settings.section.license": "Licence",
   "@settings.section.license": {
     "sourceHash": "c011d60"

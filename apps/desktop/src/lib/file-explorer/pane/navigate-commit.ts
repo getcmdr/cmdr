@@ -34,7 +34,9 @@ export type NavigateSource = 'user' | 'mcp' | 'history' | 'correction' | 'cancel
  */
 export type NavigateTo =
   | { goTo: Location } // navigate to a location; in-place arm (same volume) or switch arm (different volume)
-  | { selectVolume: Location } // deliberately (re)activate a volume; ALWAYS the switch arm, even if already current
+  // Deliberately (re)activate a volume; ALWAYS the switch arm, even if already current. On the
+  // network volume, `networkHost` opens that host's share list (`..` out of an SMB share's top folder).
+  | { selectVolume: Location; networkHost?: HistoryEntry['networkHost'] }
   | { history: 'back' | 'forward' | 'parent' }
   | { snapshot: string } // search-results snapshot id; routes through the volume-change machinery
   | { returnTo: ReturnPoint } // a cancelled load hands the pane back to what it showed

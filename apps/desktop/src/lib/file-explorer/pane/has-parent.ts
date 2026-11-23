@@ -27,6 +27,12 @@ export interface HasParentInput {
   currentPath: string
   /** The effective volume root (resolved from the listing event or the prop). */
   effectiveVolumeRoot: string
+  /**
+   * Whether the volume's top folder has a `..` leading out of the volume: an SMB share
+   * whose "Show “..” in the top folder" is on, where `..` opens the server's shares
+   * (#1238, `../network/share-parent-row.svelte.ts`). Omitted: a root has no `..`.
+   */
+  topFolderLeadsOut?: boolean
 }
 
 /**
@@ -37,13 +43,14 @@ export interface HasParentInput {
  *     off-by-one in `selectAll`.
  *   - Filesystem root (`'/'`) has no parent.
  *   - When `currentPath === effectiveVolumeRoot` we're at the volume root,
- *     so there's no in-volume parent either.
+ *     so there's no in-volume parent either, unless the top folder leads out
+ *     (`topFolderLeadsOut`: an SMB share's `..` to its server's shares).
  *   - Everything else has a parent.
  */
 export function computeHasParent(input: HasParentInput): boolean {
   if (!input.hasParentRow) return false
   if (input.currentPath === '/') return false
-  if (input.currentPath === input.effectiveVolumeRoot) return false
+  if (input.currentPath === input.effectiveVolumeRoot) return input.topFolderLeadsOut === true
   return true
 }
 

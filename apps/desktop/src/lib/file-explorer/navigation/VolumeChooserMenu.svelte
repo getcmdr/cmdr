@@ -57,6 +57,13 @@
     import UsbSpeedDot from './UsbSpeedDot.svelte'
     import VolumeSpaceLine from './VolumeSpaceLine.svelte'
     import { createDirectConnectionSwitches } from './direct-connection-switch.svelte'
+    import {
+        isSmbShareVolume,
+        loadShareParent,
+        shareParentOf,
+        showsParentRow,
+        toggleShareParentRow,
+    } from '../network/share-parent-row.svelte'
     import { detachControlFor } from './detach-control'
     import { runDetach } from './detach-volume'
     import { isDriveRow } from './drive-index-manager.svelte'
@@ -224,8 +231,16 @@
             isSaved: savedPlaces.has(volume.id),
             directConnection: directSwitches.valueFor(volume.id),
             autoReconnect: savedPlaces.get(volume.id)?.autoReconnect,
+            shareParentRow: shareParentRowFacts(volume.id),
         })
         return rowMenuItems(volume.id, menu, (entry) => ({ kind: 'row-entry', volume, entry }))
+    }
+
+    /** An SMB share's "Show “..”" switch as the row menu draws it, once Rust answered for the share. */
+    function shareParentRowFacts(volumeId: string): { shown: boolean; serverLabel: string } | undefined {
+        const parent = shareParentOf(volumeId)
+        const shown = showsParentRow(volumeId)
+        return parent && shown !== undefined ? { shown, serverLabel: parent.serverLabel } : undefined
     }
 
     function toMenuItem(volume: VolumeInfo): MenuItem<SwitcherRow> {
@@ -335,6 +350,7 @@
             void spaceManager.fetchVolumeSpaces(volumes)
             badges.fetchForRows(volumes)
             void directSwitches.fetchForRows(volumes)
+            for (const volume of volumes) if (isSmbShareVolume(volume)) void loadShareParent(volume.id)
             void listSavedPlaces().then((places) => {
                 savedPlaces = places
             })
@@ -415,6 +431,7 @@
     /** What flipping each row switch does. A `Record`, so a new `RowToggleKind` won't compile until it's handled. */
     const flipToggle: Record<RowToggleKind, (volume: VolumeInfo) => Promise<void>> = {
         'direct-connection': (volume) => directSwitches.pick(volume, volumes),
+        'share-parent-row': (volume) => toggleShareParentRow(volume.id),
         // A row shows the switch only once the saved list answered, so the flip starts from it.
         'auto-reconnect': (volume) => setServerAutoReconnect(volume.id, !savedPlaces.get(volume.id)?.autoReconnect),
     }

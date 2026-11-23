@@ -43,7 +43,7 @@
     import { handleNavigationShortcut } from '../navigation/keyboard-shortcuts'
     import { eventMatchesCommand } from '#lib/shortcuts/index.js'
     import { claimKey } from '#lib/shortcuts/claim-key.js'
-    import { cursorAfterArrow, nameStartsWith, scrollRowIntoView } from './list-cursor'
+    import { cursorAfterArrow, indexOfName, nameStartsWith, scrollRowIntoView } from './list-cursor'
     import { updateLeftPaneState, updateRightPaneState, type PaneState, type PaneFileEntry } from '#lib/tauri-commands/index.js'
 
     async function notifyIfUsingFileFallback(): Promise<void> {
@@ -71,9 +71,25 @@
         onShareSelect?: (share: ShareInfo, credentials: { username: string; password: string } | null) => void
         /** Callback to go back to host list */
         onBack?: () => void
+        /**
+         * The share `..` came out of (#1238): the cursor lands on it once the list loads, the
+         * way going up from a folder lands on the folder you left. Once per distinct value.
+         */
+        landOnShare?: string
+        /** The list loaded and the cursor took `landOnShare` (or found no such share). */
+        onLandedOnShare?: () => void
     }
 
-    const { account, paneId, isFocused = false, autoMountShare, onShareSelect, onBack }: Props = $props()
+    const {
+        account,
+        paneId,
+        isFocused = false,
+        autoMountShare,
+        onShareSelect,
+        onBack,
+        landOnShare,
+        onLandedOnShare,
+    }: Props = $props()
 
     // The SMB host behind the account. Everything below still speaks SMB; the
     // account is the seam a second protocol arrives through, not a rewrite.
@@ -148,6 +164,21 @@
                 level: 'warn',
             })
         }
+    })
+
+    // The share `..` came out of: the cursor lands on it once the list is on screen, once per
+    // distinct value. A list that didn't load (an error, a sign-in) keeps it for when it does.
+    let lastLanding: string | undefined
+    $effect(() => {
+        const shareName = landOnShare
+        if (!shareName || shareName === lastLanding || loading || error !== null || sortedShares.length === 0) return
+        lastLanding = shareName
+        const index = indexOfName(sortedShares, shareName)
+        if (index >= 0) {
+            cursorIndex = index
+            scrollToIndex(index)
+        }
+        onLandedOnShare?.()
     })
 
     /**

@@ -48,7 +48,14 @@ import type { VolumeInfo } from '../types'
 import { addToast } from '#lib/ui/toast/index.js'
 import { withPlatform } from '#lib/platform/test-platform.js'
 
-const idle = { busy: false, ejecting: false, isSaved: false, directConnection: undefined, autoReconnect: undefined }
+const idle = {
+  busy: false,
+  ejecting: false,
+  isSaved: false,
+  directConnection: undefined,
+  autoReconnect: undefined,
+  shareParentRow: undefined,
+}
 
 const usbDrive: VolumeInfo = {
   id: 'usb-stick',
@@ -257,6 +264,25 @@ describe('volumeRowMenu: an SMB share’s direct connection', () => {
 
   it('offers no fix before Rust has answered for the switch', () => {
     expect(entry(volumeRowMenu(share, idle), 'fix:connect-directly')).toBeUndefined()
+  })
+
+  it('puts “Show “..” in the top folder” in the settings, after the direct-connection switch, naming the server', () => {
+    const menu = volumeRowMenu(share, {
+      ...idle,
+      directConnection: true,
+      shareParentRow: { shown: false, serverLabel: 'Testnas' },
+    })
+    expect(shape(menu).settings).toEqual(['toggle:direct-connection', 'toggle:share-parent-row'])
+    expect(entry(menu, 'toggle:share-parent-row')).toMatchObject({
+      type: 'toggle',
+      label: 'Show “..” in the top folder',
+      checked: false,
+      tooltip: 'In this share’s top folder, “..” takes you to Testnas’s other shares.',
+    })
+  })
+
+  it('has no “..” switch before Rust has answered for the share', () => {
+    expect(entry(volumeRowMenu(share, idle), 'toggle:share-parent-row')).toBeUndefined()
   })
 })
 

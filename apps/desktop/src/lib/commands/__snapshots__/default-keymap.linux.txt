@@ -161,6 +161,7 @@ servers.show
 servers.togglePin	
 servers.disconnect	
 servers.forgetSecret	
+servers.toggleShareParentRow	
 servers.connect	Ctrl+K
 servers.edit	Ctrl+E
 volume.select	Enter

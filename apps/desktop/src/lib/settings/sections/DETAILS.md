@@ -193,12 +193,13 @@ sections compose).
   poll long. (The slider hosts the reclaim line.) Then the reclaim-space line + prune confirm, and the
   per-network-volume opt-in list. Each owns its own state and IPC; the section only renders and gates them on the live
   `mediaIndex.enabled` toggle.
-- **`NetworkSection.svelte`**: `File systems > SMB/Network shares`: two `SectionCard` card groups — Connection
-  (`network.enabled` master switch + the inline Local Network access info block + `network.directSmbConnection`) and
-  Performance and timeouts (`shareCacheDuration` select, `network.timeout` stepper in seconds, with the recommended 15
-  and 45 behind its ⓘ). `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page.
-  The info block's own heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via
-  `anyVisible(shouldShow, ...)` (same pattern as FSW above).
+- **`NetworkSection.svelte`**: `File systems > SMB/Network shares`: three `SectionCard` card groups — Connection
+  (`network.enabled` master switch + the inline Local Network access info block + `network.directSmbConnection`),
+  Behavior (`network.showShareParentRow`, the default for `..` in a share's top folder), and Performance and timeouts
+  (`shareCacheDuration` select, `network.timeout` stepper in seconds, with the recommended 15 and 45 behind its ⓘ).
+  `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page. The info block's own
+  heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via `anyVisible(shouldShow, ...)`
+  (same pattern as FSW above).
 - **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV)`: a "Trusted host keys" `SectionCard` listing
   `listTrustedSftpHostKeys()`, a row per key (host with port, algorithm, fingerprint, the date it was trusted) with a
   confirmed Forget, and a "Trusted certificates" card the same shape over `listTrustedWebdavCertificates()`, and an "SMB

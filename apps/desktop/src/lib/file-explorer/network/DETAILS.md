@@ -332,6 +332,36 @@ ever lists its shares. The bug this closes (cmdr-reports#7, "Cmdr tried to open 
 outlived its visit, every new `PlacesBrowser` instance fired it again, and a host row the person meant to browse mounted
 a share they never picked.
 
+## `..` out of a share's top folder
+
+In an SMB share's top folder, `..` (and Go to parent, which follows the same switch) opens the server's share list with
+the cursor on the share it came from (#1238): a person on one share of a Mac couldn't find the drive shared beside it.
+Every SMB share, Cmdr-mounted or OS-mounted; SMB only.
+
+- **The switch is one default plus per-share overrides.** The default is `network.showShareParentRow` (Settings > File
+  systems > SMB, Behavior card). A share's override lives in Rust (`src-tauri/src/network/smb_share_parent.rs`, the
+  canonical description of storage and identity), stored only while it differs from the default, so the row menu's plain
+  checkbox never needs a "use default" state. `share-parent-rule.ts` is the frontend's read of the rule.
+- **`share-parent-row.svelte.ts` caches Rust's answer per volume id** (`getSmbShareParent`: the server's host, its name
+  in words, the share's name as the mount spells it, and the override), so both panes, the switcher's row menu, and the
+  palette command read one value. Every write goes through Rust first.
+- **The pane side is `../pane/share-parent-pane.svelte.ts`**: it adds the `..` row through `has-parent.ts`'s
+  `topFolderLeadsOut`, and leaves through `onVolumeChange` with a `networkHost` (the `{ selectVolume }` arm's own
+  `networkHost`), so the history entry carries the host and Back returns to the share. ❗ That `..` row has no parent
+  path, so it's no drop target and opens no context menu: its `entry.path` would otherwise be the mount's parent on the
+  boot disk (`/Volumes`).
+- **Opening the share list is the person opening the host** (#324 holds): it lists, and ❌ never mounts anything. The
+  host comes from discovery when it knows the server, else one made from the mount's server the way Add server makes
+  one.
+- **The landing is a one-shot like `autoMountShare`** (`../pane/network-host-state.svelte.ts`, cleared when the pane
+  leaves the network volume). `PlacesBrowser`'s `landOnShare` puts the cursor on the share once the list is on screen
+  (`list-cursor.ts::indexOfName`, case- and Unicode-form-blind) and reports back; only then does `share-parent-hint.ts`
+  raise the once-per-install explainer (`behavior.shareParentRowHintSeen`), so the person sees where they landed.
+- **"Turn off for all shares" turns the default off and keeps every override**, so a share someone turned on keeps its
+  `..`. Default flips never prune overrides either: each is a choice someone made about that share.
+- **The toast's buttons are written in macOS order** (dismissive first, primary last). `ToastActions` doesn't flip them
+  for Windows or Linux the way `ModalDialog`'s footer does.
+
 ## `smb-sign-in.ts`
 
 SMB's side of the one sign-in sheet. The sheet contract, the three SMB sites and what each `attempt` runs, and the

@@ -134,6 +134,7 @@
     import { createHiddenFilesResync } from './hidden-files-resync'
     import { countFolderOnSpace as countFolderOnSpaceAt } from './folder-size-count'
     import { createNetworkHostState } from './network-host-state.svelte'
+    import { createShareParentPane } from './share-parent-pane.svelte'
     import { createMtpDisconnectWatch } from './mtp-disconnect-watch.svelte'
     import { createSnapshotSelectionSync } from './snapshot-selection-sync.svelte'
     import { createHistoryCursorSync } from './history-cursor-sync.svelte'
@@ -487,7 +488,11 @@
         getTotalCount: () => effectiveTotalCount,
         getHiddenCount: () => hiddenCount,
         getLoading: () => loading,
-        getParentRow: () => ({ hasParent, parentPath: hasParent && canonicalPath ? parentOf(canonicalPath) : '' }),
+        // A `..` out of an SMB share's top folder has no parent path, so it's no drop target.
+        getParentRow: () => ({
+            hasParent,
+            parentPath: hasParent && canonicalPath && !shareParent.leadsOutHere ? parentOf(canonicalPath) : '',
+        }),
         getEffectiveSortBy: () => effectiveSortBy,
     })
     /** A load past the grace period: the list's rows give way to `LoadingIcon`, its header stays. */
@@ -802,6 +807,15 @@
     const networkHost = createNetworkHostState({
         getIsNetworkView: () => isNetworkView,
         onHostChange: (host) => onNetworkHostChange?.(host),
+    })
+
+    // `..` in an SMB share's top folder opens the server's share list (`share-parent-pane.svelte.ts`).
+    const shareParent = createShareParentPane({
+        getVolume: () => currentVolumeInfo,
+        getIsAtTopFolder: () => currentPath === effectiveVolumeRoot,
+        openServer: (change) => onVolumeChange?.(change),
+        getLanding: () => networkHost.shareLanding,
+        setLanding: networkHost.setShareLanding,
     })
 
     // noinspection JSUnusedGlobalSymbols -- Used dynamically
@@ -1451,6 +1465,7 @@
      * there and an agent had no way out of a failed mount.
      */
     export function navigateToParent(): Promise<boolean> {
+        if (shareParent.leaveTopFolder()) return Promise.resolve(true)
         if (isNetworkView) {
             if (networkHost.host === null) return Promise.resolve(false)
             // Clear the view first (it also drops the mount error), then the pane
@@ -1584,6 +1599,7 @@
             hasParentRow: caps.hasParentRow,
             currentPath,
             effectiveVolumeRoot,
+            topFolderLeadsOut: shareParent.topFolderLeadsOut,
         }),
     )
 
@@ -1661,7 +1677,9 @@
         navigateToParent: () => void navigateToParent(),
     })
     const handleSelect = pointer.handleSelect
-    const handleContextMenu = pointer.handleContextMenu
+    // A `..` out of an SMB share's top folder is no folder to favorite, so it has no menu.
+    const handleContextMenu: typeof pointer.handleContextMenu = (entry, anchor) =>
+        entry.name === '..' && shareParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
 
     // Opening an entry (Enter, ⌘↓, double-click, or a popup choice): the redirect
     // arm, the archive/bundle Enter policy, the browse-in-place arm, the viewer
@@ -1682,7 +1700,9 @@
         },
         onGoToLocation: (location) => onGoToLocation?.(location),
     })
-    const handleNavigate = activation.handleNavigate
+    // `..` out of an SMB share's top folder goes to the server's shares, as Go to parent does there.
+    const handleNavigate = (entry: FileEntry): Promise<void> =>
+        entry.name === '..' && shareParent.leaveTopFolder() ? Promise.resolve() : activation.handleNavigate(entry)
 
     // The breadcrumb's three interactions (ancestor click, right-click menu with
     // its eject item, volume switch).
@@ -2279,6 +2299,8 @@
                 initialNetworkHost={networkHost.host}
                 initialAutoMountShare={networkHost.autoMountShare}
                 onAutoMountConsumed={() => { networkHost.setAutoMountShare(undefined) }}
+                shareLanding={networkHost.shareLanding}
+                onShareLanded={shareParent.landed}
                 {onVolumeChange}
                 onNetworkHostChange={networkHost.handleHostChange}
             />

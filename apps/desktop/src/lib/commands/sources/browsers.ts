@@ -98,6 +98,17 @@ export const browsersCommands: CommandSource[] = [
     whileDialogOpen: BLOCKED_BY_DIALOGS,
   },
   {
+    // The focused pane's SMB share's "Show “..” in the top folder" (#1238), the same switch
+    // its row menu in the volume switcher carries. Offered only on an SMB share.
+    id: 'servers.toggleShareParentRow',
+    nameKey: 'commands.serversToggleShareParentRow.label',
+    scope: 'Main window',
+    showInPalette: true,
+    shortcuts: sameOnAll(),
+    whileDialogOpen: BLOCKED_BY_DIALOGS,
+    paletteCondition: 'focusedPaneOnSmbShare',
+  },
+  {
     // ⌘K, Finder's binding for the same thing. ❗ Window-wide, ❌ not the hub's
     // scope: adding a server is about no server in particular, so it works from
     // a file list as readily as from the hub.

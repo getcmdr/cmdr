@@ -291,6 +291,28 @@ describe('history walk ({ history } arm)', () => {
   })
 })
 
+describe('{ selectVolume } with a network host (`..` out of an SMB share, #1238)', () => {
+  it('lands on the host’s share list in one history entry', () => {
+    const host = { id: 'srv', name: 'srv', hostname: 'srv.local', port: 445 }
+    const depthBefore = h.tab('left').history.stack.length
+
+    navigate(
+      {
+        pane: 'left',
+        to: { selectVolume: { volumeId: 'network', path: 'smb://' }, networkHost: host },
+        source: 'user',
+      },
+      h.deps,
+    )
+
+    expect(h.tab('left').volumeId).toBe('network')
+    expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenCalledWith(host)
+    const { stack, currentIndex } = h.tab('left').history
+    expect(stack.length).toBe(depthBefore + 1)
+    expect(stack[currentIndex]).toMatchObject({ volumeId: 'network', networkHost: host })
+  })
+})
+
 describe('{ location } arm — self-routing by volume', () => {
   it('(the bug) volumeId ≠ current switches the volume and lands on the resolved volume', () => {
     // Repro: pane sits on an SMB-like fake volume; navigating to a `root`

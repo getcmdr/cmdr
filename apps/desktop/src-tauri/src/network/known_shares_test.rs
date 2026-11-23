@@ -205,6 +205,7 @@ fn test_store_serialization() {
             },
         ],
         direct_connection_opt_outs: Vec::new(),
+        parent_row_overrides: Vec::new(),
         pending_moves: Vec::new(),
     };
 

@@ -14,6 +14,7 @@
 import { runServerRowAction } from '#lib/file-explorer/navigation/server-row-actions.js'
 import { openAddServerSheet } from '#lib/servers/open-sign-in.js'
 import { editServerInView } from '#lib/file-explorer/network/servers-hub-actions.js'
+import { isSmbShareVolume, toggleShareParentRow } from '#lib/file-explorer/network/share-parent-row.svelte.js'
 import { serverCommandTarget, type ServerCommandTarget } from '#lib/servers/server-command-target.js'
 import { getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
 import { getVolumes } from '#lib/stores/volume-store.svelte.js'
@@ -78,6 +79,14 @@ export const serversHandlers = {
     const server = target(explorerRef)
     if (!server) return
     await runServerRowAction({ action: 'forget-secret', volumeId: server.volumeId, volumeName: server.name })
+  },
+
+  // The focused pane's SMB share, the switch its row menu carries. The palette offers it only
+  // there (`focusedPaneOnSmbShare`); from anywhere else (a rebound key) it says nothing.
+  'servers.toggleShareParentRow': async () => {
+    const volumeId = getFocusedPaneVolumeId()
+    if (!isSmbShareVolume(getVolumes().find((volume) => volume.id === volumeId))) return
+    await toggleShareParentRow(volumeId)
   },
 
   // ❗ The two sheet commands OPEN and return, ❌ never await the sheet: a

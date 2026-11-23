@@ -11,6 +11,7 @@ import type {
   DirectConnectionSwitch,
   MountResult,
   NetworkHostContextAction,
+  ShareParent as ShareParentWire,
   SignInShape,
   SignedInReply,
   SmbCredentials,
@@ -463,6 +464,34 @@ export async function setSmbDirectConnectionEnabled(
   enabled: boolean,
 ): Promise<DirectConnectionSwitch> {
   return commands.setSmbDirectConnectionEnabled(volumeId, enabled)
+}
+
+/** Where `..` in an SMB share's top folder leads, and the share's own switch. */
+export type ShareParent = Omit<ShareParentWire, 'host'> & { host: NetworkHost }
+
+/**
+ * Where `..` in the top folder of the SMB share behind `volumeId` leads (its server, and
+ * what to call it), plus the share's own "Show “..”" choice (`null` while it follows the
+ * default). `null` when no SMB share is behind it.
+ */
+export async function getSmbShareParent(volumeId: string): Promise<ShareParent | null> {
+  const parent = await commands.getSmbShareParent(volumeId)
+  if (!parent) return null
+  // The wire spells an unresolved name `null`; the frontend's `NetworkHost` leaves it out.
+  const { hostname, ipAddress, ...host } = parent.host
+  return {
+    ...parent,
+    host: { ...host, hostname: hostname ?? undefined, ipAddress: ipAddress ?? undefined },
+  }
+}
+
+/**
+ * Saves the share's "Show “..”" choice against `defaultShow` (the setting): a choice that
+ * matches the default clears the share's override. `false` when no SMB share is behind
+ * `volumeId`, and nothing was saved.
+ */
+export async function setSmbShareParentRow(volumeId: string, show: boolean, defaultShow: boolean): Promise<boolean> {
+  return commands.setSmbShareParentRow(volumeId, show, defaultShow)
 }
 
 /**

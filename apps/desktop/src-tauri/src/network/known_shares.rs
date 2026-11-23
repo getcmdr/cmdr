@@ -7,6 +7,7 @@ use crate::ignore_poison::IgnorePoison;
 use crate::network::NetworkHost;
 use crate::network::server_guid::GuidProof;
 use crate::network::server_identity::SmbServer;
+use crate::network::smb_share_parent::ParentRowOverride;
 use crate::state_recovery::StateFile;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -93,14 +94,13 @@ impl KnownNetworkShare {
     }
 }
 
-/// One share on one server, named the way the mount reported it. Private, like the
-/// list it lives in: the switch is read and set only through
-/// [`direct_connection_enabled`] and [`set_direct_connection_enabled`].
+/// One share on one server, named the way the mount reported it. Matched with
+/// [`names_share`], ❌ never compared as a key; the lists holding it stay private.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct ShareRef {
-    server_name: String,
-    share_name: String,
+pub(crate) struct ShareRef {
+    pub(crate) server_name: String,
+    pub(crate) share_name: String,
 }
 
 /// The known shares store, persisted to disk.
@@ -119,6 +119,13 @@ pub struct KnownSharesStore {
     /// [`direct_connection_enabled`].
     #[serde(default, deserialize_with = "crate::state_recovery::lenient_entries")]
     direct_connection_opt_outs: Vec<ShareRef>,
+    /// Shares whose "Show “..”" differs from the default, apart from rows like the opt-outs (`smb_share_parent`).
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "crate::state_recovery::lenient_entries"
+    )]
+    parent_row_overrides: Vec<ParentRowOverride>,
     /// Saved shares whose server moved to a new address since their last mount, by the
     /// volume id their row still carries (`server_move::smb`).
     ///
@@ -700,13 +707,24 @@ pub(crate) fn fold_name(name: &str) -> String {
 /// used: one NAS is `192.168.50.10` on one mount and `Testnas._smb._tcp.local` on the
 /// next, and a choice the other spelling can't see looks like the switch resetting
 /// itself.
-fn names_share(entry: &ShareRef, server_names: &[&str], share: &str, hosts: &[NetworkHost]) -> bool {
+pub(crate) fn names_share(entry: &ShareRef, server_names: &[&str], share: &str, hosts: &[NetworkHost]) -> bool {
     use crate::network::server_identity::same_machine;
 
     fold_name(&entry.share_name) == fold_name(share)
         && server_names
             .iter()
             .any(|server| same_machine(&entry.server_name, server, hosts))
+}
+
+/// Reads the per-share "Show “..”" overrides under the store's lock.
+pub(crate) fn read_parent_row_overrides<T>(read: impl FnOnce(&[ParentRowOverride]) -> T) -> T {
+    read(&get_known_shares_mutex().lock_ignore_poison().parent_row_overrides)
+}
+
+/// Changes the per-share "Show “..”" overrides under the store's lock, then persists.
+pub(crate) fn update_parent_row_overrides(update: impl FnOnce(&mut Vec<ParentRowOverride>)) {
+    update(&mut get_known_shares_mutex().lock_ignore_poison().parent_row_overrides);
+    save_known_shares();
 }
 
 /// Whether `opt_outs` holds the share, under any name form of its server.

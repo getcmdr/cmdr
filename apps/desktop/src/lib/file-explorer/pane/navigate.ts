@@ -415,7 +415,7 @@ export function navigate(intent: NavigateIntent, deps: NavigateDeps): NavigateRe
   // switch arm, even when the volume equals the pane's current one (the
   // cancel walk-up, retry, and `selectVolumeByIndex` re-select callers
   // all pass the current id on purpose).
-  return switchVolumeArm(deps, intent, to.selectVolume.volumeId, to.selectVolume.path)
+  return switchVolumeArm(deps, intent, to.selectVolume.volumeId, to.selectVolume.path, to.networkHost)
 }
 
 /**
@@ -456,12 +456,19 @@ function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, asked: L
  * correction. The unmount redirect and the walk-up additionally suppress the
  * history push (`pushHistory: false`).
  */
-function switchVolumeArm(deps: NavigateDeps, intent: NavigateIntent, volumeId: string, path: string): NavigateResult {
+function switchVolumeArm(
+  deps: NavigateDeps,
+  intent: NavigateIntent,
+  volumeId: string,
+  path: string,
+  networkHost?: HistoryEntry['networkHost'],
+): NavigateResult {
   const { pane, source } = intent
   const token = mintToken(deps, pane)
   const volumePath = deps.getVolumePathById(volumeId) ?? path
   const corrected = commitVolumeSwitch(deps, pane, token, volumeId, volumePath, path, {
     shiftFocus: shiftsFocus(source),
+    networkHost,
     terminal: source === 'fallback' || source === 'cancel',
     pushHistory: intent.pushHistory,
     fromCancel: source === 'cancel',

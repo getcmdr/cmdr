@@ -319,6 +319,22 @@ export const advancedSettings: SettingDefinitionSource[] = [
     component: 'switch',
   },
   {
+    // The toast explaining `..` in an SMB share's top folder, raised the first time it
+    // takes someone to the server's shares (`file-explorer/network/share-parent-hint.ts`).
+    id: 'behavior.shareParentRowHintSeen',
+    kind: 'state',
+    section: ['Advanced'],
+    cardKey: 'settings.advanced.card.hintsAndWarnings',
+    labelKey: 'settings.behavior.shareParentRowHintSeen.label',
+    descriptionKey: 'settings.behavior.shareParentRowHintSeen.description',
+    descriptionInTip: true,
+    keywordsKey: 'settings.behavior.shareParentRowHintSeen.keywords',
+    terms: ['smb'],
+    type: 'boolean',
+    default: false,
+    component: 'switch',
+  },
+  {
     // The line offering USB debugging at the top of an MTP phone pane, spent by
     // its own × (`adb/AdbHint.svelte`).
     id: 'behavior.adbHintDismissed',
