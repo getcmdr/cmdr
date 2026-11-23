@@ -537,6 +537,11 @@ index lives, which a reader of another drive's sizes wouldn't otherwise connect 
 uses the same split (`driveIndexPausedTooltipKey`) and offers only turn off and forget: a rescan would only pause again,
 and forgetting frees the space the index takes.
 
+A fresh index has no sizes, so none of that shows, and the badge dot is easy to miss: Settings > Indexing > Drive
+indexing also reads `space-pause` for `root` (the disk every index lives on) and puts a note under the master switch,
+linking to the Advanced pause threshold (cmdr-reports#118). The Settings window runs no main-window services, so that
+section starts and stops the map itself.
+
 **Sort-by-size keeps the three classes distinct** and runs in Rust (`crates/cmdr-listing/src/sorting.rs`), not the FE.
 `known_dir_size` returns `None` (sorts LAST, by name, regardless of order) for an unknown dir — either incomplete + size
 0 (the `<dir>` placeholder) or a not-yet-enriched `None`; a genuinely-empty `0 bytes` and a lower-bound both return

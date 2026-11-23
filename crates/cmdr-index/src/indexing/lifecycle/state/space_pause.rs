@@ -185,6 +185,20 @@ fn is_paused(volume_id: &str) -> bool {
     )
 }
 
+/// Whether `volume_id` is paused for disk space and the host still says the disk is
+/// low: then only its waiter may restart it (cmdr-reports#118). Any other start
+/// (a launch's auto-start, a user's enable, a search walk standing a writer up)
+/// would take the slot over, hit the same low disk on its first write, and pause
+/// again, each one also doubling the waiter's backoff ([`note_a_pause`]). Once the
+/// host says there's room, an ordinary start goes ahead at once, so a user who
+/// frees space or lowers the threshold doesn't wait out the backoff.
+///
+/// Asks the registry first, so the host's reading (a local `statfs` at worst) is
+/// taken only for a paused volume, and never under the lock.
+pub(in crate::indexing::lifecycle) fn stays_paused_for_space(volume_id: &str) -> bool {
+    is_paused(volume_id) && policy::current().index_storage_low()
+}
+
 /// Wait until the host says there's room, then restart the volume, unless
 /// something else decided its fate meanwhile.
 async fn wait_for_room(volume_id: &str, db_path: &Path, first_try: Duration, watchdog_stops: u64) {

@@ -80,6 +80,7 @@ pub use scan_control::{force_scan, stop_scan, trigger_verification};
 pub(crate) use scan_control::{rescan_with_phases_owed_for_test, set_ground_in_flux_for_test, while_detached_for_test};
 #[cfg(test)]
 pub(crate) use space_pause::pause_for_space;
+pub(in crate::indexing::lifecycle) use space_pause::stays_paused_for_space;
 pub(in crate::indexing::lifecycle) use startup::boot_root;
 pub(crate) use startup::record_drive_index_enabled;
 pub use startup::start_indexing;

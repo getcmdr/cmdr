@@ -131,6 +131,8 @@ export type SettingsSurface =
   | 'security-notice-toast'
   /** The notice that Cmdr had to start `settings.json` fresh, deep-linking to Updates & privacy. */
   | 'state-recovery-toast'
+  /** Settings > Indexing > Drive indexing's "paused for disk space" note, deep-linking to the index pause threshold. */
+  | 'index-pause-note'
   /** The "Tell me about this" card's AI-take hints (cloud AI needs allowing, no key, AI off), deep-linking to AI > Provider. */
   | 'about-this-card'
 

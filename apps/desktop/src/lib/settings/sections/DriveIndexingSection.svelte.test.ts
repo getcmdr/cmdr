@@ -18,11 +18,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, tick } from 'svelte'
 
-const { getSettingMock, setSettingMock, getIndexDiskUsageMock, clearDriveIndexMock } = vi.hoisted(() => ({
+const {
+  getSettingMock,
+  setSettingMock,
+  getIndexDiskUsageMock,
+  clearDriveIndexMock,
+  getSpacePauseMock,
+  openSettingsWindowMock,
+} = vi.hoisted(() => ({
   getSettingMock: vi.fn(),
   setSettingMock: vi.fn(),
   getIndexDiskUsageMock: vi.fn(),
   clearDriveIndexMock: vi.fn(),
+  getSpacePauseMock: vi.fn(),
+  openSettingsWindowMock: vi.fn(),
+}))
+
+vi.mock('#lib/indexing/space-pause.svelte.js', () => ({
+  getSpacePause: getSpacePauseMock,
+  initSpacePause: vi.fn(() => Promise.resolve()),
+  destroySpacePause: vi.fn(),
+}))
+
+vi.mock('#lib/settings/settings-window.js', () => ({
+  openSettingsWindow: openSettingsWindowMock,
+  settingAnchorId: (id: string) => `setting-${id}`,
 }))
 
 vi.mock('#lib/settings/settings-store.js', () => ({
@@ -65,6 +85,8 @@ beforeEach(() => {
   setSettingMock.mockReset()
   getIndexDiskUsageMock.mockReset().mockResolvedValue({ status: 'ok', data: 1024 })
   clearDriveIndexMock.mockReset().mockResolvedValue({ status: 'ok', data: null })
+  getSpacePauseMock.mockReset().mockReturnValue(undefined)
+  openSettingsWindowMock.mockReset().mockResolvedValue(undefined)
   setDefaultSettings()
 })
 
@@ -181,6 +203,27 @@ describe('DriveIndexingSection', () => {
     expect(switches).toHaveLength(2)
     for (const input of switches) expect(input.disabled).toBe(true)
 
+    target.remove()
+  })
+
+  it('says the boot disk paused indexing, and links to the threshold that did it (cmdr-reports#118)', async () => {
+    // A fresh index has no folder sizes, so the size column's "may be out of date"
+    // warning never shows: this note is where the pause is explained.
+    getSpacePauseMock.mockImplementation((volumeId: string) =>
+      volumeId === 'root' ? { holdsIndexStorage: true } : undefined,
+    )
+    const target = await mountSection()
+
+    const note = target.querySelector('.master-off-note')
+    expect(note?.textContent).toContain('Indexing is paused because your system disk is almost full')
+    const link = note?.querySelector('button')
+    expect(link?.textContent.trim()).toBe('Change when it pauses')
+    link?.click()
+    expect(openSettingsWindowMock).toHaveBeenCalledWith(
+      'index-pause-note',
+      ['Advanced'],
+      'setting-advanced.indexPauseFreeSpacePercent',
+    )
     target.remove()
   })
 })

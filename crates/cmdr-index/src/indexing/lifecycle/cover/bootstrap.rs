@@ -46,6 +46,11 @@ pub(crate) enum NoCoverContext {
     /// stopped (or is between a stop and a start), so the machine that asked has
     /// nothing left to cover for. Only [`WalkFor::TheIndex`] gets this.
     NotIndexing,
+    /// The volume's index is paused because the disk it lives on is still low, and
+    /// only its waiter restarts it (`state::stays_paused_for_space`). A walk would
+    /// only stand a writer up to pause it again on its first write, once per
+    /// keystroke of a search (cmdr-reports#118).
+    PausedForSpace,
     /// Standing the index up failed. Log-only.
     Failed(String),
 }
@@ -56,6 +61,7 @@ impl std::fmt::Display for NoCoverContext {
             Self::NotMounted => f.write_str("nothing is mounted under that id"),
             Self::ScanInProgress => f.write_str("the volume's own scan is running"),
             Self::NotIndexing => f.write_str("the volume isn't indexing any more"),
+            Self::PausedForSpace => f.write_str("the index is paused while its disk is low"),
             Self::Failed(e) => write!(f, "the index wouldn't start: {e}"),
         }
     }
@@ -106,6 +112,9 @@ pub(crate) fn context_for_walk(
     }
     if for_whom == WalkFor::TheIndex {
         return Err(NoCoverContext::NotIndexing);
+    }
+    if state::stays_paused_for_space(volume_id) {
+        return Err(NoCoverContext::PausedForSpace);
     }
 
     let volume = walkable_volume(volume_id)?;

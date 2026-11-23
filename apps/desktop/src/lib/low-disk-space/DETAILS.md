@@ -43,10 +43,11 @@ command updates the poller's atomics, re-arms the hysteresis, and registers the 
 while the warning is on, unwatching it when it's off, so an off warning with a hidden window polls nothing.
 
 The drive index's pause is a separate setting, `advanced.indexPauseFreeSpacePercent` (default 5, range 1–20,
-auto-rendered in Advanced > File watching, live-applied through `setIndexPauseFreeSpacePercent`). It holds whether the
-warning is on or off, and the index takes its own boot-volume readings on demand (`space_poller/low_space.rs`,
-`index_storage_low`), so it needs no watcher (`crates/cmdr-index/src/indexing/lifecycle/DETAILS.md` § "Pausing for disk
-space").
+auto-rendered in Advanced > File watching, live-applied through `setIndexPauseFreeSpacePercent`). The index pauses only
+below both that percent and a fixed 10 GB floor (`INDEX_PAUSE_FLOOR_BYTES`, cmdr-reports#118), so a big disk keeps
+indexing. It holds whether the warning is on or off, and the index takes its own boot-volume readings on demand
+(`space_poller/low_space.rs`, `index_storage_low`), so it needs no watcher
+(`crates/cmdr-index/src/indexing/lifecycle/DETAILS.md` § "Pausing for disk space").
 
 ## Toast shape and live-follow
 

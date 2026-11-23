@@ -2,7 +2,7 @@
 //! to the error pipeline, and comes back by itself once there's room
 //! (cmdr-reports#100, `state/space_pause.rs`).
 
-use super::toggles::an_indexed_drive;
+use super::toggles::{an_indexed_drive, turn_on};
 use super::*;
 use crate::indexing::host::policy::{FakeHostPolicy, HostPolicy, install_for_test};
 use crate::indexing::lifecycle::freshness::Freshness;
@@ -194,6 +194,66 @@ fn a_drive_pauses_while_the_disk_is_low_and_resumes_when_there_is_room() {
             .expect("readable")
             .is_some(),
         "the same database file: a `Failed`-style rebuild would have deleted it"
+    );
+}
+
+/// While the disk is still low, only the pause's own waiter restarts a paused drive
+/// (cmdr-reports#118). Every other start took the slot over and walked straight
+/// into the next pause: a launch's second auto-start, and a search walk standing a
+/// writer up on every keystroke, re-paused the boot disk a dozen times in seconds,
+/// each one also doubling the waiter's backoff. Once there's room, an ordinary
+/// start takes the slot over at once, so a user who frees space or lowers the
+/// threshold doesn't wait out the backoff.
+#[test]
+fn nothing_but_the_waiter_restarts_a_paused_drive_while_the_disk_is_low() {
+    let drive = an_indexed_drive("cover-space-pause-no-bypass-test");
+    let host = FakeHostPolicy::shared();
+    let _host = install_for_test(Arc::clone(&host) as Arc<dyn HostPolicy>);
+    pause_for_low_disk(&drive, &host);
+    let pauses = || {
+        drive
+            .events
+            .events()
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event,
+                    crate::IndexEvent::FreshnessChanged {
+                        freshness: Freshness::Paused,
+                        ..
+                    }
+                )
+            })
+            .count()
+    };
+    let pauses_before = pauses();
+
+    assert!(
+        drive
+            .index
+            .cover(
+                drive.volume_id,
+                vec![drive.path("scope")],
+                CoverageDimension::Listing,
+                CancellationToken::new(),
+            )
+            .is_err(),
+        "a search walk doesn't stand a writer up on a paused drive"
+    );
+    turn_on(&drive);
+    assert!(!state::is_active(drive.volume_id), "a start leaves the pause alone");
+    assert_eq!(state::get_freshness(drive.volume_id), Some(Freshness::Paused));
+    assert_eq!(pauses(), pauses_before, "and nothing paused it again");
+    assert!(
+        drive.index.read_pool(drive.volume_id).is_some(),
+        "its reads still serve"
+    );
+
+    host.note_index_storage_low(false);
+    turn_on(&drive);
+    assert!(
+        state::is_active(drive.volume_id),
+        "with room again, a start takes the slot over right away"
     );
 }
 
