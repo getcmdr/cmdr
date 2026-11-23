@@ -12,7 +12,7 @@
 //! this event is what raises the toast.
 
 use std::net::SocketAddr;
-#[cfg(unix)] // POSIX modes: the owner-only checks run where files carry one.
+#[cfg(unix)] // POSIX modes: the exact `0o600` checks run where files carry one.
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
@@ -174,6 +174,12 @@ fn mode_of(path: &Path) -> u32 {
         & 0o777
 }
 
+/// Readable by this user alone, on every OS: mode 0o600 on unix, a protected DACL with one entry
+/// for this user on Windows (`cmdr_fs::private_file`, whose own test asserts the exact DACL).
+fn is_owner_only(path: &Path) -> bool {
+    cmdr_fs::private_file::is_private_to_current_user(path).expect("the file's access reads")
+}
+
 fn port_on_disk(dir: &Path) -> u16 {
     std::fs::read_to_string(dir.join(PORT_FILE_NAME))
         .expect("the port file should exist")
@@ -235,7 +241,7 @@ async fn every_bind_mode_listens_on_loopback_only() {
 }
 
 #[test]
-fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_its_discovery_files() {
+fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_owner_only_discovery_files() {
     let data_dir = isolate_secrets();
     let app = app_with_stores();
     on_tauri_runtime(async {
@@ -250,9 +256,9 @@ fn startup_binds_ephemeral_when_the_port_is_zero_and_writes_its_discovery_files(
         assert_eq!(token.len(), 32, "a fresh random token, with no trailing newline");
         assert!(serves_with_token(port, &token).await);
 
-        // Owner-only on POSIX. On Windows they inherit the data folder's ACL, which isn't owner-only
-        // (#1425); its own check lands with the fix.
-        #[cfg(unix)]
+        assert!(is_owner_only(&dir.join(PORT_FILE_NAME)));
+        assert!(is_owner_only(&dir.join(TOKEN_FILE_NAME)));
+        #[cfg(unix)] // POSIX modes.
         {
             assert_eq!(mode_of(&dir.join(PORT_FILE_NAME)), 0o600);
             assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
@@ -293,13 +299,14 @@ fn the_discovery_files_are_replaced_atomically_and_never_inherit_a_loose_mode() 
 
         for (path, stale_node) in stale {
             assert_ne!(FileId::at(&path, Follow::NotLinks), Some(stale_node), "{path:?}");
+            assert!(is_owner_only(&path), "{path:?}");
             #[cfg(unix)] // POSIX modes.
             assert_eq!(mode_of(&path), 0o600, "{path:?}");
         }
         let leftovers: Vec<_> = std::fs::read_dir(dir)
             .expect("the data dir reads")
             .map(|entry| entry.expect("an entry").file_name().to_string_lossy().into_owned())
-            .filter(|name| name.contains(".tmp."))
+            .filter(|name| name.contains("tmp"))
             .collect();
         assert_eq!(leftovers, Vec::<String>::new(), "no tempfile outlives the rename");
 
@@ -447,6 +454,7 @@ fn the_token_env_var_pins_the_token_across_restarts() {
             .await
             .expect("the server should start");
         assert_eq!(token_on_disk(dir), "pinned-by-env", "trimmed");
+        assert!(is_owner_only(&dir.join(TOKEN_FILE_NAME)));
         #[cfg(unix)] // POSIX modes.
         assert_eq!(mode_of(&dir.join(TOKEN_FILE_NAME)), 0o600);
         assert!(serves_with_token(port_on_disk(dir), "pinned-by-env").await);
