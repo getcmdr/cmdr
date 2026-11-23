@@ -41,6 +41,11 @@ const WAIT: Duration = Duration::from_secs(5);
 /// be confused for each other.
 const TREE_FILES: usize = 400;
 
+/// Deadline for a resumed copy of the whole tree to land: real I/O on [`TREE_FILES`] files,
+/// which a hosted Windows runner (its scanner opening every new file) took past [`WAIT`] on
+/// some runs and well under it on others. Still a condition, never a sleep.
+const COPY_WAIT: Duration = Duration::from_secs(30);
+
 fn unique(label: &str) -> String {
     static N: AtomicU64 = AtomicU64::new(0);
     let n = N.fetch_add(1, Ordering::Relaxed);
@@ -508,7 +513,7 @@ async fn an_operations_own_scan_parks_too() {
     assert!(!sink.complete.load(Ordering::SeqCst));
 
     engine.resume_operation(&op_id);
-    wait_until_async(WAIT, "the resumed copy to finish", || {
+    wait_until_async(COPY_WAIT, "the resumed copy to finish", || {
         sink.complete.load(Ordering::SeqCst) || sink.failed.lock().expect("the failure slot").is_some()
     })
     .await;
