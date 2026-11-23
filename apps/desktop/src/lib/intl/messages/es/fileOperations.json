@@ -127,11 +127,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Este elemento es un enlace simbólico. Solo se eliminará el enlace, no su destino.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Este elemento es un enlace simbólico. Solo se eliminará el enlace, no su destino.} other {Este elemento es un enlace simbólico. Solo se eliminará el enlace, no su destino.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Tu selección incluye {countText} {count, plural, one {enlace simbólico} many {enlaces simbólicos} other {enlaces simbólicos}}. Solo se eliminarán los enlaces en sí, no sus destinos.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Tu selección incluye {countText} {count, plural, one {enlace simbólico} many {enlaces simbólicos} other {enlaces simbólicos}}. Solo se eliminarán los enlaces en sí, no sus destinos.} other {Tu selección incluye {countText} {count, plural, one {enlace simbólico} many {enlaces simbólicos} other {enlaces simbólicos}}. Solo se eliminarán los enlaces en sí, no sus destinos.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

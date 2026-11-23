@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.} other {Tato položka je symbolický odkaz. Smaže se jen odkaz, ne jeho cíl.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.} other {Výběr obsahuje {countText} {count, plural, one {symbolický odkaz} few {symbolické odkazy} many {symbolického odkazu} other {symbolických odkazů}}. Smažou se jen samotné odkazy, ne jejich cíle.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

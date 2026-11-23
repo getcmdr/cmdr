@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.} other {Dieses Objekt ist ein Symlink. Nur die Verknüpfung wird gelöscht, nicht ihr Ziel.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.} other {Deine Auswahl enthält {countText} {count, plural, one {Symlink} other {Symlinks}}. Nur die Verknüpfungen selbst werden gelöscht, nicht ihre Ziele.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

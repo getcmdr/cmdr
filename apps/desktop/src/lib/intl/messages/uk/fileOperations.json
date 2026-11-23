@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Цей елемент — символічне посилання. Буде видалено лише посилання, а не цільовий обʼєкт.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Цей елемент — символічне посилання. Буде видалено лише посилання, а не цільовий обʼєкт.} other {Цей елемент — символічне посилання. Буде видалено лише посилання, а не цільовий обʼєкт.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Серед вибраного є {countText} {count, plural, one {символічне посилання} few {символічні посилання} many {символічних посилань} other {символічного посилання}}. Буде видалено лише самі посилання, а не цільові обʼєкти.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Серед вибраного є {countText} {count, plural, one {символічне посилання} few {символічні посилання} many {символічних посилань} other {символічного посилання}}. Буде видалено лише самі посилання, а не цільові обʼєкти.} other {Серед вибраного є {countText} {count, plural, one {символічне посилання} few {символічні посилання} many {символічних посилань} other {символічного посилання}}. Буде видалено лише самі посилання, а не цільові обʼєкти.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

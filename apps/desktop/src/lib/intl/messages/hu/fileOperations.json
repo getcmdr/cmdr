@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Ez az elem egy szimbolikus link. Csak a link törlődik, a célja nem.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Ez az elem egy szimbolikus link. Csak a link törlődik, a célja nem.} other {Ez az elem egy szimbolikus link. Csak a link törlődik, a célja nem.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "A kijelölésed {countText} {count, plural, one {szimbolikus linket} other {szimbolikus linket}} tartalmaz. Csak maguk a linkek törlődnek, a céljaik nem.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {A kijelölésed {countText} {count, plural, one {szimbolikus linket} other {szimbolikus linket}} tartalmaz. Csak maguk a linkek törlődnek, a céljaik nem.} other {A kijelölésed {countText} {count, plural, one {szimbolikus linket} other {szimbolikus linket}} tartalmaz. Csak maguk a linkek törlődnek, a céljaik nem.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Этот объект — символическая ссылка. Будет удалена только ссылка, а не то, на что она указывает.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Этот объект — символическая ссылка. Будет удалена только ссылка, а не то, на что она указывает.} other {Этот объект — символическая ссылка. Будет удалена только ссылка, а не то, на что она указывает.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "В выделенном есть {countText} {count, plural, one {символическая ссылка} few {символические ссылки} many {символических ссылок} other {символической ссылки}}. Будут удалены только сами ссылки, а не то, на что они указывают.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {В выделенном есть {countText} {count, plural, one {символическая ссылка} few {символические ссылки} many {символических ссылок} other {символической ссылки}}. Будут удалены только сами ссылки, а не то, на что они указывают.} other {В выделенном есть {countText} {count, plural, one {символическая ссылка} few {символические ссылки} many {символических ссылок} other {символической ссылки}}. Будут удалены только сами ссылки, а не то, на что они указывают.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },

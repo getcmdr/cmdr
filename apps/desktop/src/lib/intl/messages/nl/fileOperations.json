@@ -128,11 +128,11 @@
   "@fileOperations.delete.foldersPart": {
     "sourceHash": "9bd56b2"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.} other {Dit onderdeel is een symbolische koppeling. Alleen de koppeling wordt verwijderd, niet het doel ervan.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
     "sourceHash": "c5a4259"
   },
-  "fileOperations.delete.symlinkNoticeMany": "Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.} other {Je selectie bevat {countText} {count, plural, one {symbolische koppeling} other {symbolische koppelingen}}. Alleen de koppelingen zelf worden verwijderd, niet hun doelen.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
     "sourceHash": "56b3f52"
   },
