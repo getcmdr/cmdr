@@ -15,25 +15,17 @@
 //! direct-connection opt-outs, ❌ never by account: a share macOS mounted has no saved
 //! row, and `statfs` spells one server several ways.
 
-use crate::network::known_shares::{self, ShareRef, names_share};
+use crate::network::known_shares;
 use crate::network::manual_servers::{create_network_host, typed_name};
 use crate::network::server_identity::{SmbServer, smb_server, smb_servers_of};
+use crate::network::share_choices::{choose_parent_row, parent_row_override};
 use crate::network::smb_direct_switch::{ShareRead, read_share_within};
 use crate::network::smb_server_address::{ServerAddress, friendly_server_name, resolve_server_address};
 use crate::network::smb_upgrade::MOUNT_READ_LIMIT;
 use crate::network::{HostSource, NetworkHost, service_name_to_hostname};
 use crate::volumes::{SmbMountInfo, get_smb_mount_info};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::time::Duration;
-
-/// One share's own "Show “..”" choice, stored only while it differs from the default.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ParentRowOverride {
-    #[serde(flatten)]
-    share: ShareRef,
-    show: bool,
-}
 
 /// Where `..` in a share's top folder leads, and the share's own switch.
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -66,8 +58,9 @@ async fn share_parent_within(
     };
     // Discovery is read BEFORE the store's lock is taken, so the two never nest.
     let hosts = crate::network::fresh_discovered_hosts();
-    let show_parent_row =
-        known_shares::read_parent_row_overrides(|overrides| override_in(overrides, &info.server, &info.share, &hosts));
+    let show_parent_row = known_shares::read_parent_row_overrides(|overrides| {
+        parent_row_override(overrides, &info.server, &info.share, &hosts)
+    });
     Some(ShareParent {
         host: host_for_mount(&info, &hosts),
         server_label: server_label(&info),
@@ -95,70 +88,9 @@ async fn set_parent_row_within(
     };
     let hosts = crate::network::fresh_discovered_hosts();
     known_shares::update_parent_row_overrides(|overrides| {
-        apply_choice(overrides, &info.server, &info.share, show, default_show, &hosts);
+        choose_parent_row(overrides, &info.server, &info.share, show, default_show, &hosts);
     });
     true
-}
-
-/// The share's override in `overrides`, under any name its server goes by.
-pub(crate) fn override_in(
-    overrides: &[ParentRowOverride],
-    server: &str,
-    share: &str,
-    hosts: &[NetworkHost],
-) -> Option<bool> {
-    overrides
-        .iter()
-        .find(|entry| names_share(&entry.share, &[server], share, hosts))
-        .map(|entry| entry.show)
-}
-
-/// Records the share's choice: every entry naming the share goes first (so a share
-/// chosen under two spellings keeps one entry), and a new one is filed only when
-/// `show` differs from `default_show`.
-pub(crate) fn apply_choice(
-    overrides: &mut Vec<ParentRowOverride>,
-    server: &str,
-    share: &str,
-    show: bool,
-    default_show: bool,
-    hosts: &[NetworkHost],
-) {
-    overrides.retain(|entry| !names_share(&entry.share, &[server], share, hosts));
-    if show != default_show {
-        overrides.push(ParentRowOverride {
-            share: ShareRef {
-                server_name: server.to_string(),
-                share_name: share.to_string(),
-            },
-            show,
-        });
-    }
-}
-
-/// Copies the share's override from the server's old address to its new one, when the
-/// new one has none yet: a moved server's share keeps its `..` choice
-/// (`known_shares::move_host_rows_in`, which carries the direct-connection opt-outs the
-/// same way). The old entry stays, since it names a machine another server may share.
-pub(crate) fn carry_override(
-    overrides: &mut Vec<ParentRowOverride>,
-    from_server: &str,
-    to_server: &str,
-    share: &str,
-    hosts: &[NetworkHost],
-) {
-    let Some(show) = override_in(overrides, from_server, share, hosts) else {
-        return;
-    };
-    if override_in(overrides, to_server, share, hosts).is_none() {
-        overrides.push(ParentRowOverride {
-            share: ShareRef {
-                server_name: to_server.to_string(),
-                share_name: share.to_string(),
-            },
-            show,
-        });
-    }
 }
 
 /// The server a mount is from, as the share list opens it.

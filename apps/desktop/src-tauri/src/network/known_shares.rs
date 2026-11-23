@@ -7,7 +7,8 @@ use crate::ignore_poison::IgnorePoison;
 use crate::network::NetworkHost;
 use crate::network::server_guid::GuidProof;
 use crate::network::server_identity::SmbServer;
-use crate::network::smb_share_parent::ParentRowOverride;
+use crate::network::share_choices::fold_name;
+use crate::network::share_choices::{ParentRowOverride, ShareRef, carry_parent_row, names_share};
 use crate::state_recovery::StateFile;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -92,15 +93,6 @@ impl KnownNetworkShare {
     pub fn is_share(&self) -> bool {
         !self.share_name.is_empty()
     }
-}
-
-/// One share on one server, named the way the mount reported it. Matched with
-/// [`names_share`], ❌ never compared as a key; the lists holding it stay private.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ShareRef {
-    pub(crate) server_name: String,
-    pub(crate) share_name: String,
 }
 
 /// The known shares store, persisted to disk.
@@ -500,8 +492,7 @@ fn move_host_rows_in(
         moved += 1;
     }
     for share in shares {
-        use crate::network::smb_share_parent::carry_override;
-        carry_override(&mut store.parent_row_overrides, from.host(), to.host(), &share, hosts);
+        carry_parent_row(&mut store.parent_row_overrides, from.host(), to.host(), &share, hosts);
         if is_opted_out(&store.direct_connection_opt_outs, &[from.host()], &share, hosts)
             && !is_opted_out(&store.direct_connection_opt_outs, &[to.host()], &share, hosts)
         {
@@ -693,29 +684,6 @@ pub fn forget_rows(gone: &[KnownNetworkShare]) -> usize {
         save_known_shares();
     }
     removed
-}
-
-/// Case- and NFC-folds one half of a share's name, the fold [`share_key`] applies.
-pub(crate) fn fold_name(name: &str) -> String {
-    use unicode_normalization::UnicodeNormalization;
-
-    name.nfc().flat_map(char::to_lowercase).collect()
-}
-
-/// Whether `entry` names the share `share` on the server any of `server_names` names.
-///
-/// The server half asks [`same_machine`](crate::network::server_identity::same_machine)
-/// rather than comparing keys, because `statfs` echoes whichever name form each mount
-/// used: one NAS is `192.168.50.10` on one mount and `Testnas._smb._tcp.local` on the
-/// next, and a choice the other spelling can't see looks like the switch resetting
-/// itself.
-pub(crate) fn names_share(entry: &ShareRef, server_names: &[&str], share: &str, hosts: &[NetworkHost]) -> bool {
-    use crate::network::server_identity::same_machine;
-
-    fold_name(&entry.share_name) == fold_name(share)
-        && server_names
-            .iter()
-            .any(|server| same_machine(&entry.server_name, server, hosts))
 }
 
 /// Reads the per-share "Show “..”" overrides under the store's lock.

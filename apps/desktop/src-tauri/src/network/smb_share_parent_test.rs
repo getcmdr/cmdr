@@ -27,32 +27,39 @@ fn mount(server: &str, share: &str) -> SmbMountInfo {
 #[test]
 fn a_choice_matching_the_default_is_not_stored() {
     let mut overrides = Vec::new();
-    apply_choice(&mut overrides, "198.51.100.7", "media", true, true, &[]);
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", true, true, &[]);
     assert!(overrides.is_empty(), "on, with the default on, is no override");
-    assert_eq!(override_in(&overrides, "198.51.100.7", "media", &[]), None);
+    assert_eq!(parent_row_override(&overrides, "198.51.100.7", "media", &[]), None);
 }
 
 #[test]
 fn a_choice_differing_from_the_default_is_stored_and_read_back() {
     let mut overrides = Vec::new();
-    apply_choice(&mut overrides, "198.51.100.7", "media", false, true, &[]);
-    assert_eq!(override_in(&overrides, "198.51.100.7", "media", &[]), Some(false));
-    assert_eq!(override_in(&overrides, "198.51.100.7", "other", &[]), None, "per share");
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", false, true, &[]);
+    assert_eq!(
+        parent_row_override(&overrides, "198.51.100.7", "media", &[]),
+        Some(false)
+    );
+    assert_eq!(
+        parent_row_override(&overrides, "198.51.100.7", "other", &[]),
+        None,
+        "per share"
+    );
 }
 
 #[test]
 fn flipping_back_to_the_default_clears_the_override() {
     let mut overrides = Vec::new();
-    apply_choice(&mut overrides, "198.51.100.7", "media", false, true, &[]);
-    apply_choice(&mut overrides, "198.51.100.7", "media", true, true, &[]);
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", false, true, &[]);
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", true, true, &[]);
     assert!(overrides.is_empty());
 }
 
 #[test]
 fn a_share_keeps_one_entry_whatever_its_name_is_spelled() {
     let mut overrides = Vec::new();
-    apply_choice(&mut overrides, "198.51.100.7", "Media", true, false, &[]);
-    apply_choice(&mut overrides, "198.51.100.7", "media", true, false, &[]);
+    choose_parent_row(&mut overrides, "198.51.100.7", "Media", true, false, &[]);
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", true, false, &[]);
     assert_eq!(overrides.len(), 1, "share names fold case");
 }
 
@@ -67,8 +74,11 @@ fn an_override_follows_the_server_under_another_name() {
         HostSource::Discovered,
     )];
     let mut overrides = Vec::new();
-    apply_choice(&mut overrides, "198.51.100.7", "media", false, true, &hosts);
-    assert_eq!(override_in(&overrides, "testnas.local", "media", &hosts), Some(false));
+    choose_parent_row(&mut overrides, "198.51.100.7", "media", false, true, &hosts);
+    assert_eq!(
+        parent_row_override(&overrides, "testnas.local", "media", &hosts),
+        Some(false)
+    );
 }
 
 #[test]

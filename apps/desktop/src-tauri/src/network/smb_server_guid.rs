@@ -123,7 +123,7 @@ pub(crate) fn adopt_live_guid(volume_id: &str) {
 /// a share an add named (an approved Ask Cmdr suggestion included) is on a host
 /// nobody connected yet, and Cmdr doesn't dial one on its own initiative.
 pub(crate) fn rows_to_probe(rows: &[KnownNetworkShare]) -> Vec<&KnownNetworkShare> {
-    let fold = known_shares::fold_name;
+    let fold = crate::network::share_choices::fold_name;
     let has_guid = |row: &KnownNetworkShare| row.server_guid.as_deref().and_then(ServerGuid::parse).is_some();
     let connected = |row: &&KnownNetworkShare| row.is_share() && row.volume_id.is_some();
     rows.iter()
