@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   couplingsFromReport,
+  placeKeys,
+  ocrVerdict,
+  NOT_SHOWN_NOTE,
   coupleCatalog,
   fileForKey,
   representativeFor,
@@ -293,6 +296,55 @@ describe('couplingsFromReport', () => {
   })
 })
 
+describe('placeKeys (the OCR verdict decides)', () => {
+  const report = {
+    'menu-closed': { screenshot: 'closed.png', keys: ['multiRename.presets.saveAs', 'multiRename.title'] },
+    'menu-open': { screenshot: 'open.png', keys: ['multiRename.presets.saveAs'] },
+    'settings-page': { screenshot: 'page.png', keys: ['settings.x.label'] },
+    'settings-page-2': { screenshot: 'page-2.png', keys: ['settings.x.label'] },
+  }
+
+  it('skips a surface that looked a key up but whose image does not show it', () => {
+    const shows = (key: string, shot: string) => !(key === 'multiRename.presets.saveAs' && shot === 'closed.png')
+    const { shown, notShown } = placeKeys(report, shows)
+    expect(shown.get('multiRename.presets.saveAs')).toBe('open.png')
+    expect(shown.get('multiRename.title')).toBe('closed.png')
+    expect(notShown.size).toBe(0)
+  })
+
+  it('finds a paged surface on the page that shows the key', () => {
+    const { shown } = placeKeys(report, (key, shot) => key !== 'settings.x.label' || shot === 'page-2.png')
+    expect(shown.get('settings.x.label')).toBe('page-2.png')
+  })
+
+  it('trusts a surface it cannot judge (null), and parks a key no image shows on its first surface', () => {
+    const { shown, notShown } = placeKeys(report, (key) => (key === 'settings.x.label' ? false : null))
+    expect(shown.get('multiRename.presets.saveAs')).toBe('closed.png')
+    expect(notShown.get('settings.x.label')).toBe('page.png')
+  })
+
+  it('keeps first-surface-wins when nothing is judged', () => {
+    expect(couplingsFromReport(report).get('multiRename.presets.saveAs')).toBe('closed.png')
+  })
+})
+
+describe('ocrVerdict', () => {
+  const english = { 'a.shown': 'Reset all to defaults', 'a.hidden': 'Drag threshold', 'a.closeAria': 'Close' }
+  const descriptions = { 'a.closeAria': 'Accessible name of the close button.' }
+  const ocr = { 'page.png': { sha256: 'x', lines: ['Advanced', 'Reset all to defaults'] } }
+  const shows = ocrVerdict(ocr, english, descriptions)
+
+  it('answers from the image text', () => {
+    expect(shows('a.shown', 'page.png')).toBe(true)
+    expect(shows('a.hidden', 'page.png')).toBe(false)
+  })
+
+  it('answers null for an image never read, and for a never-visible key', () => {
+    expect(shows('a.shown', 'unread.png')).toBeNull()
+    expect(shows('a.closeAria', 'page.png')).toBeNull()
+  })
+})
+
 describe('representativeFor', () => {
   const mappings = [
     { prefix: 'errors.write.', screenshot: 'write.png', note: 'write note' },
@@ -331,6 +383,25 @@ describe('buildCouplings (direct + representative, direct-wins)', () => {
     )
     expect(byKey.size).toBe(0)
     expect(representativeKeys.size).toBe(0)
+  })
+
+  it('couples a not-shown key to the surface that uses it, with the note, after the rules', () => {
+    const notShown = new Map([
+      ['common.saveAs', 'closed.png'],
+      ['errors.listing.c.title', 'closed.png'],
+    ])
+    const { byKey, notShownKeys, representativeKeys } = buildCouplings(
+      new Map(),
+      ['common.saveAs', 'errors.listing.c.title'],
+      new Set(['closed.png', 'error-example.png']),
+      mappings,
+      notShown,
+    )
+    expect(byKey.get('common.saveAs')).toEqual({ screenshot: 'closed.png', note: NOT_SHOWN_NOTE })
+    // A rule's stand-in names the family's layout, which beats the generic note.
+    expect(byKey.get('errors.listing.c.title')?.screenshot).toBe('error-example.png')
+    expect(notShownKeys).toEqual(new Set(['common.saveAs']))
+    expect(representativeKeys).toEqual(new Set(['errors.listing.c.title']))
   })
 
   it('leaves a non-matching uncoupled key uncoupled', () => {

@@ -12,7 +12,8 @@ import (
 // RunDesktopMessageScreenshotsFresh checks the catalogs' `@key.screenshot`
 // couplings and the representative rules (`scripts/representative-screenshots.ts`)
 // against the committed capture report (`messages/screenshots/capture-report.json`),
-// by running the coupler's `--check`. Every input is tracked and it reads no PNG,
+// by running the coupler's `--check`. Every input is tracked (the report, the catalogs,
+// the rules, and the screenshots' OCR text in `ocr-text.json`) and it reads no PNG,
 // so it runs the same on a clean checkout as in CI. The findings logic lives in
 // the coupler; this only maps its exit code.
 //

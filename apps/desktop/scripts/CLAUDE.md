@@ -8,7 +8,7 @@ launch boundary and the llama-server fetch.
 - **`tauri-wrapper.ts`**: what `pnpm dev` / `pnpm build` call. Resolves `CMDR_INSTANCE_ID`, reserves ephemeral ports
   (Vite + tauri-MCP bridge), writes the generated `tauri.instance.json` to `$TMPDIR`, exports env, spawns Tauri.
   Dev-only: `CMDR_VIRTUAL_MTP` appends `--features virtual-mtp` (`docs/tooling/virtual-mtp.md`)
-- **`instance-id.ts`**: the wrapper's pure instance-isolation helpers
+- **`instance-id.ts`**: the wrapper's pure helpers
 - **`download-llama-server.go`**: build-time llama-server downloader, invoked from `src-tauri/build.rs`
 - **`check-type-drift.ts`**: fast-lane check for hand-written types drifting from `bindings.ts`
 - **`gen-shipped-locales.ts`** (+ `-lib.ts`): the Rust locale resolver's tables: shipped catalogs with their CLDR
@@ -30,7 +30,8 @@ launch boundary and the llama-server fetch.
   `marketing-launch.ts`; `docs/guides/screenshots.md`, `docs/guides/product-clips.md`
 - **`capture-runtime.ts`**: launch primitives for both capture orchestrators, plus `createTrackedArtifactGuard` (DETAILS
   § "The capture guard"). `capture-countdown.ts`: the self-calibrating estimate behind the specs' orange hands-off
-  countdown (DETAILS § "The pre-capture countdown"). `screenshot-store.ts`: where translator PNGs live
+  countdown (DETAILS § "The pre-capture countdown"). `screenshot-store.ts`: where translator PNGs live;
+  `screenshot-ocr.ts`, `-text-match.ts`, `-placement.ts`: the coupler's OCR check
 - **`e2e-linux.sh`** + its sourced `e2e-linux-fixtures.sh` (fixture stacks): Linux Docker E2E
 
 Wrapper architecture, decisions, instance-isolation reference: `DETAILS.md`, `docs/tooling/instance-isolation.md`.
@@ -55,6 +56,6 @@ Wrapper architecture, decisions, instance-isolation reference: `DETAILS.md`, `do
 - **`download-llama-server.go` takes the binaries from the main clone in a worktree when `.version` matches**, as a
   COPY, ❌ never a symlink: the Linux-E2E container bind-mounts only the worktree, where such a symlink dangles. Signing
   is the `sign` subcommand, ❌ never the fetch. DETAILS § "The llama-server fetch".
-- **`--worktree` slug isn't checked against the dir**: pin isolation from any shell.
+- **`--worktree` slug isn't checked against the dir.**
 - **`instance-id.ts` is stdlib-only** (`node:net`/`fs`/`os`/`path`/`child_process`), imported by `tauri-wrapper.ts` and
   the test. New helpers need a default-arg shape so existing wrapper code keeps working.

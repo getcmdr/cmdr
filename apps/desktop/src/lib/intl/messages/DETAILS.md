@@ -330,12 +330,40 @@ surfaces share, and being the clearest is reason enough to keep it. To act on it
 that covers it. The gallery's own novel-keys rule can't catch these, because each one WAS novel when it ran and only a
 later surface made it redundant — run order alone would decide which of an overlapping pair survives.
 
+### OCR-verified coupling
+
+The report records what each surface LOOKED UP, which isn't what it shows: a closed menu resolves its rows, a settings
+section every row below the fold, a tool line its running words while it's photographed finished. Coupled on first
+lookup, 567 of 1,743 keys (32.5 %) pointed at an image without their English (OCR over the 2026-10-31 set, catalogs at
+`430b237b21`). So the coupler asks the image:
+
+- **The text**: `apps/desktop/scripts/screenshot-ocr.ts` reads each screenshot with macOS Vision
+  (`screenshot-ocr.swift`, compiled once per source version into `~/Library/Caches/com.veszelovszki.cmdr-capture/ocr/`)
+  and keeps the lines in the TRACKED `screenshots/ocr-text.json`, keyed by image SHA-256. A coupling run re-reads only
+  images whose bytes moved; off macOS, with no `swiftc`, or with the PNG absent, it keeps the tracked entry. `--check`
+  never reads an image, so CI (Linux) judges against the same text. About 20 s for 250 images.
+- **The match**: `apps/desktop/scripts/screenshot-text-match.ts` turns the English (the macOS branch of a per-OS block)
+  into literal runs, with a plural or select as a choice of branches and a placeholder as a break; raw values drop their
+  markdown and `{token}`s. Runs under three characters are skipped while a longer one exists. Matching folds quotes,
+  dashes, and OCR look-alikes, allows about one edit per 12 characters, and accepts a long run the window wrapped when
+  85 % of its words show. It agreed with the one-off Go prototype on all 1,743 keys and with eyeballing on about 90–95
+  %; the misses are short common words matching another element and lines a frame cuts off.
+- **The policy** (`placeKeys` in `apps/desktop/scripts/screenshot-placement.ts`): a key takes the first surface whose
+  image shows it. An image with no OCR text, and a never-visible key (an accessible name, tooltip, or announcement, by
+  its key segment or its description: `isNeverVisible`), is trusted as before, since no picture shows those words and
+  the control's surface is the right context. A key no image shows goes to a representative rule if one reaches it, else
+  to the first surface that looked it up with `NOT_SHOWN_NOTE`, so a translator knows the picture shows the
+  surroundings, not the string. The coverage report counts those as **Not shown**.
+- **Paged surfaces lean on it**: every page of a paged surface (§ How a surface is framed) carries all the surface's
+  keys, and the OCR is what puts each key on the page that shows it.
+
 ### Direct vs representative couplings
 
 The coupler writes screenshots in two passes:
 
 - **Direct**: a key that rendered on a captured surface gets that surface's screenshot (no note). It assigns each key
-  its FIRST surface in the report's order (surfaces ordered narrow-to-broad, so the most-specific surface wins).
+  its FIRST surface in the report's order (surfaces ordered narrow-to-broad, so the most-specific surface wins) whose
+  image shows the key's text (§ OCR-verified coupling).
 - **Representative**: for a key STILL uncoupled after the direct pass that matches a curated prefix in
   `REPRESENTATIVE_SCREENSHOTS` (in `scripts/representative-screenshots.ts`), the coupler writes a STAND-IN screenshot (a
   real capture of the same panel/toast/dialog where the string appears), plus a `@key.screenshotNote` explaining the

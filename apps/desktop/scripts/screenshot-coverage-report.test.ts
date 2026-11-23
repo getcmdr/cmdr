@@ -26,7 +26,15 @@ describe('buildCoverageReport', () => {
     // Areas are sorted by name.
     expect(r.areas.map((a) => a.area)).toEqual(['about', 'common', 'errors'])
     const errors = r.areas.find((a) => a.area === 'errors')
-    expect(errors).toEqual({ area: 'errors', total: 2, direct: 1, representative: 1, uncoupled: 0, nativeOnly: 0 })
+    expect(errors).toEqual({
+      area: 'errors',
+      total: 2,
+      direct: 1,
+      representative: 1,
+      notShown: 0,
+      uncoupled: 0,
+      nativeOnly: 0,
+    })
   })
 
   it('counts a native-surface key apart from an uncoupled one', () => {
@@ -48,9 +56,23 @@ describe('buildCoverageReport', () => {
       total: 2,
       direct: 0,
       representative: 0,
+      notShown: 0,
       uncoupled: 0,
       nativeOnly: 2,
     })
+  })
+
+  it('counts a key on a surface whose image does not show it apart from a direct one', () => {
+    const r = buildCoverageReport(
+      new Set(['common.ok']),
+      new Set(),
+      new Map([['common', ['common.ok', 'common.menuRow', 'common.extra']]]),
+      new Set(['common.menuRow']),
+    )
+    expect(r.direct).toBe(1)
+    expect(r.notShown).toBe(1)
+    expect(r.uncoupled).toBe(1)
+    expect(renderCoverageReport(r)).toContain('| common | 1 | 0 | 1 | 1 | 0 | 3 | 67% |')
   })
 
   it('lets a real capture beat the native exemption', () => {
@@ -75,7 +97,7 @@ describe('renderCoverageReport', () => {
     expect(md).toContain('2 / 3 keys have a screenshot (67%)')
     expect(md).toContain('1 direct')
     expect(md).toContain('1 representative')
-    expect(md).toContain('| common | 1 | 1 | 1 | 0 | 3 | 67% |')
+    expect(md).toContain('| common | 1 | 1 | 0 | 1 | 0 | 3 | 67% |')
     expect(md.toLowerCase()).toContain('partial')
     // It explains what a representative coupling is (honesty).
     expect(md.toLowerCase()).toContain('representative')

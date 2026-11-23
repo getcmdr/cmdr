@@ -8,10 +8,14 @@
  * into the right `messages/en/*.json` for every key that rendered on a captured
  * surface.
  *
- * Coupling policy (kept simple, one screenshot per key): a key may render on
- * several surfaces; it's assigned the FIRST surface it appeared on, in the
- * report's insertion order (the spec orders surfaces narrow-to-broad, so the
- * most specific surface a key belongs to wins). Re-runnable and idempotent: a
+ * Coupling policy (one screenshot per key): a key may render on several
+ * surfaces; it's assigned the FIRST surface, in the report's insertion order
+ * (the spec orders surfaces narrow-to-broad, so the most specific surface wins),
+ * whose image SHOWS its text, judged by OCR (`placeKeys`; the text comes from
+ * `screenshot-ocr.ts`, tracked in `screenshots/ocr-text.json`, and the matcher
+ * is `screenshot-text-match.ts`). An image with no OCR text, and an accessible
+ * name or tooltip, is trusted as before. A key no image shows keeps the surface
+ * that uses it, with `NOT_SHOWN_NOTE`. Re-runnable and idempotent: a
  * second run with the same report produces no diff. It owns `screenshot` and
  * `screenshotNote` outright: a twin carrying either one for a key this run
  * doesn't couple (its surface is gone, or no representative rule reaches it
@@ -60,6 +64,17 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { type RepresentativeMapping, REPRESENTATIVE_SCREENSHOTS } from './representative-screenshots.ts'
+import { type OcrText, refreshOcrText } from './screenshot-ocr.ts'
+import {
+  type CaptureReport,
+  type ShowsVerdict,
+  NOT_SHOWN_NOTE,
+  TRUST_EVERY_SURFACE,
+  couplingsFromReport,
+  ocrVerdict,
+  placeKeys,
+} from './screenshot-placement.ts'
+import { setTwinField } from './catalog-twin-field.ts'
 import {
   buildCoverageReport,
   buildSurfaceReview,
@@ -68,6 +83,15 @@ import {
 } from './screenshot-coverage-report.ts'
 
 export { type RepresentativeMapping, REPRESENTATIVE_SCREENSHOTS }
+export {
+  type CaptureReport,
+  type CaptureSurface,
+  type ShowsVerdict,
+  NOT_SHOWN_NOTE,
+  couplingsFromReport,
+  ocrVerdict,
+  placeKeys,
+} from './screenshot-placement.ts'
 
 /**
  * The catalog filename a key belongs to: first dot-segment + `.json`.
@@ -75,36 +99,6 @@ export { type RepresentativeMapping, REPRESENTATIVE_SCREENSHOTS }
 export function fileForKey(key: string): string {
   const area = key.split('.')[0]
   return `${area}.json`
-}
-
-/** One captured surface in the capture report: its screenshot and the keys that rendered on it. */
-export interface CaptureSurface {
-  screenshot: string
-  keys: string[]
-  /**
-   * The UI zoom the driver had to photograph this surface at, present only when
-   * it isn't the default 100%. Written by the capture driver for a surface too
-   * tall to fit the display at full window height; surfaced in the coverage
-   * report so a translator doesn't read that image as "this is the real size".
-   */
-  uiZoom?: number
-}
-
-/** The capture report: surface name → its screenshot + recorded keys. */
-export type CaptureReport = Record<string, CaptureSurface>
-
-/**
- * Flattens a capture report (surface → { screenshot, keys }) into a key →
- * screenshot map, first-surface-wins in the report's insertion order.
- */
-export function couplingsFromReport(report: CaptureReport): Map<string, string> {
-  const keyToScreenshot = new Map<string, string>()
-  for (const { screenshot, keys } of Object.values(report)) {
-    for (const key of keys) {
-      if (!keyToScreenshot.has(key)) keyToScreenshot.set(key, screenshot)
-    }
-  }
-  return keyToScreenshot
 }
 
 /**
@@ -122,12 +116,14 @@ export function representativeFor(
 }
 
 export interface Couplings {
-  /** Every key → its coupling (direct OR representative). */
+  /** Every key → its coupling (direct, representative, or not shown). */
   byKey: Map<string, Coupling>
   /** Keys coupled to their OWN captured screenshot. */
   directKeys: Set<string>
   /** Keys coupled to a representative stand-in. */
   representativeKeys: Set<string>
+  /** Keys coupled to the surface that uses them, whose image doesn't show their text (`NOT_SHOWN_NOTE`). */
+  notShownKeys: Set<string>
 }
 
 /**
@@ -140,16 +136,20 @@ export interface Couplings {
  * @param directKeyToScreenshot key → captured screenshot.
  * @param allKeys every renderable catalog key.
  * @param capturedScreenshots filenames present in the capture report.
+ * @param notShownKeyToScreenshot keys no captured image shows, each with the first surface that
+ *   looked it up (`placeKeys`); coupled there with `NOT_SHOWN_NOTE` when no rule reaches them.
  */
 export function buildCouplings(
   directKeyToScreenshot: Map<string, string>,
   allKeys: Iterable<string>,
   capturedScreenshots: Set<string>,
   mappings: RepresentativeMapping[] = REPRESENTATIVE_SCREENSHOTS,
+  notShownKeyToScreenshot = new Map<string, string>(),
 ): Couplings {
   const byKey = new Map<string, Coupling>()
   const directKeys = new Set<string>()
   const representativeKeys = new Set<string>()
+  const notShownKeys = new Set<string>()
 
   for (const [key, screenshot] of directKeyToScreenshot) {
     byKey.set(key, { screenshot })
@@ -165,7 +165,15 @@ export function buildCouplings(
     representativeKeys.add(key)
   }
 
-  return { byKey, directKeys, representativeKeys }
+  // Last: a key no image shows and no rule stands in for keeps the surface that uses it, with
+  // a note saying so, rather than passing that image off as a picture of the string.
+  for (const [key, screenshot] of notShownKeyToScreenshot) {
+    if (byKey.has(key)) continue
+    byKey.set(key, { screenshot, note: NOT_SHOWN_NOTE })
+    notShownKeys.add(key)
+  }
+
+  return { byKey, directKeys, representativeKeys, notShownKeys }
 }
 
 /**
@@ -198,9 +206,10 @@ export function findStructuralProblems(
   allKeys: Iterable<string>,
   screenshotByKey: Map<string, string>,
   mappings: RepresentativeMapping[] = REPRESENTATIVE_SCREENSHOTS,
+  shows: ShowsVerdict = TRUST_EVERY_SURFACE,
 ): StructuralFinding[] {
   const captured = new Set(Object.values(report).map((surface) => surface.screenshot))
-  const direct = couplingsFromReport(report)
+  const direct = couplingsFromReport(report, shows)
   // A rule "reaches" the keys it's the FIRST match for, the same way
   // `representativeFor` picks, so a broad rule whose keys all sit under earlier
   // specific ones counts as dead.
@@ -429,92 +438,6 @@ function clearUncoupledTwins(
   return { text, stale, unlocatable }
 }
 
-/**
- * Sets, replaces, or REMOVES one top-level string `field` of a single
- * `"@key": { … }` object in the catalog text, touching only that object. With a
- * non-null `value`, replaces an existing `"field": "…"` line if present, else
- * inserts the field as the LAST property (appending a comma to the previous last
- * line). With `value === null`, removes the field's line entirely (and its comma,
- * keeping the object's comma structure valid); a no-op if the field is absent.
- * Returns the new text, or null if the twin block can't be located/parsed
- * (caller then skips, never corrupting the file).
- *
- * Used for both `screenshot` and `screenshotNote` (representative-coupling note).
- * @param metaKey e.g. `@common.ok`
- * @param field e.g. `screenshot` or `screenshotNote`
- * @param value the JSON string value, or null to remove the field
- */
-/**
- * Index of the `}` matching the `{` at `braceStart`, skipping braces inside
- * strings (`placeholders` nests, so a naive "first }" is wrong). Returns -1 if
- * the object never closes.
- */
-function matchingBraceIndex(text: string, braceStart: number): number {
-  let depth = 0
-  let inStr = false
-  let esc = false
-  for (let i = braceStart; i < text.length; i++) {
-    const c = text[i]
-    if (inStr) {
-      if (esc) esc = false
-      else if (c === '\\') esc = true
-      else if (c === '"') inStr = false
-      continue
-    }
-    if (c === '"') inStr = true
-    else if (c === '{') depth++
-    else if (c === '}') {
-      depth--
-      if (depth === 0) return i
-    }
-  }
-  return -1
-}
-
-function setTwinField(text: string, metaKey: string, field: string, value: string | null): string | null {
-  // The twin is an oxfmt'd object opening on its own line: `  "@key": {`.
-  const open = `  ${JSON.stringify(metaKey)}: {`
-  const openIdx = text.indexOf(open)
-  if (openIdx === -1) return null
-  const braceStart = openIdx + open.length - 1 // index of the `{`
-  const closeIdx = matchingBraceIndex(text, braceStart)
-  if (closeIdx === -1) return null
-
-  const body = text.slice(braceStart + 1, closeIdx) // between the braces
-  const before = text.slice(0, braceStart + 1)
-  const after = text.slice(closeIdx)
-
-  // Matches the existing top-level `"field": "…"` line (4-space indent, the
-  // twin's own field indent) plus a trailing comma if it has one (`$1`).
-  const fieldName = field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const existingRe = new RegExp(`\\n {4}"${fieldName}": "(?:[^"\\\\]|\\\\.)*"(,?)`)
-  const m = existingRe.exec(body)
-
-  if (value === null) {
-    // Remove the field. If it had a trailing comma, dropping the line + comma
-    // keeps the rest valid. If it was the LAST field (no trailing comma), also
-    // drop the comma on the now-last preceding field.
-    if (!m) return before + body + after // already absent
-    if (m[1] === ',') return before + body.replace(existingRe, '') + after
-    // Last field: remove it AND the preceding field's trailing comma.
-    const withoutField = body.replace(existingRe, '')
-    const trimmedComma = withoutField.replace(/,(\n {2})$/, '$1') // last `,` before `\n  }`
-    return before + trimmedComma + after
-  }
-
-  if (m) {
-    const replaced = body.replace(existingRe, `\n    "${field}": ${JSON.stringify(value)}${m[1]}`)
-    return before + replaced + after
-  }
-
-  // Insert as the last field: append a comma to the current last property line,
-  // then add the new field line before the closing brace. `body` ends with the
-  // last field then a newline + the close brace's indent; trim that trailing
-  // newline/indent, add `,\n    "field": "…"\n  ` back.
-  const trimmed = body.replace(/\n {2}$/, '') // drop the "\n  " before `}`
-  return before + trimmed + `,\n    "${field}": ${JSON.stringify(value)}\n  ` + after
-}
-
 // ── CLI shell (file I/O only; skipped when imported as a module) ──────────────
 
 /**
@@ -527,9 +450,13 @@ function setTwinField(text: string, metaKey: string, field: string, value: strin
 function readCatalogs(messagesDir: string): {
   keysByArea: Map<string, string[]>
   screenshotByKey: Map<string, string>
+  english: Record<string, string>
+  descriptions: Record<string, string>
 } {
   const keysByArea = new Map<string, string[]>()
   const screenshotByKey = new Map<string, string>()
+  const english: Record<string, string> = {}
+  const descriptions: Record<string, string> = {}
   for (const name of readdirSync(messagesDir)) {
     if (!name.endsWith('.json')) continue
     const json = JSON.parse(readFileSync(join(messagesDir, name), 'utf8')) as Record<string, unknown>
@@ -537,13 +464,17 @@ function readCatalogs(messagesDir: string): {
       name.slice(0, -'.json'.length),
       Object.keys(json).filter((k) => !k.startsWith('@')),
     )
+    for (const [key, value] of Object.entries(json)) {
+      if (!key.startsWith('@') && typeof value === 'string') english[key] = value
+    }
     for (const [metaKey, meta] of Object.entries(json)) {
       if (!metaKey.startsWith('@') || typeof meta !== 'object' || meta === null) continue
-      const { screenshot } = meta as { screenshot?: unknown }
+      const { screenshot, description } = meta as { screenshot?: unknown; description?: unknown }
       if (typeof screenshot === 'string') screenshotByKey.set(metaKey.slice(1), screenshot)
+      if (typeof description === 'string') descriptions[metaKey.slice(1)] = description
     }
   }
-  return { keysByArea, screenshotByKey }
+  return { keysByArea, screenshotByKey, english, descriptions }
 }
 
 /** Groups key→coupling pairs by their catalog file, so each file is read/written once. */
@@ -683,10 +614,9 @@ function main() {
   }
 
   const report = JSON.parse(readFileSync(reportPath, 'utf8')) as CaptureReport
-  const directKeyToScreenshot = couplingsFromReport(report)
 
   // Every renderable catalog key (for the representative pass + coverage).
-  const { keysByArea, screenshotByKey } = readCatalogs(messagesDir)
+  const { keysByArea, screenshotByKey, english, descriptions } = readCatalogs(messagesDir)
   const allKeys = [...keysByArea.values()].flat()
   // Screenshots the capture run actually produced (a representative may only
   // point at one of these, never at a missing image).
@@ -694,7 +624,25 @@ function main() {
 
   // Direct (captured) couplings, then representative stand-ins for the keys still
   // uncoupled. Direct always wins.
-  const { byKey, directKeys, representativeKeys } = buildCouplings(directKeyToScreenshot, allKeys, capturedScreenshots)
+  // What each image shows. `--check` (CI, any OS) reads the tracked text as it is; a coupling
+  // run first reads any image whose bytes changed, where it can (macOS with the PNGs).
+  const screenshotsDir = join(messagesRoot, 'screenshots')
+  const ocrPath = join(screenshotsDir, 'ocr-text.json')
+  const trackedOcr = existsSync(ocrPath) ? (JSON.parse(readFileSync(ocrPath, 'utf8')) as OcrText) : {}
+  const ocrText = checkOnly
+    ? trackedOcr
+    : refreshOcrText(screenshotsDir, [...capturedScreenshots], trackedOcr, (line) => {
+        console.log(`[ocr] ${line}`)
+      })
+  const shows = ocrVerdict(ocrText, english, descriptions)
+  const placed = placeKeys(report, shows)
+  const { byKey, directKeys, representativeKeys, notShownKeys } = buildCouplings(
+    placed.shown,
+    allKeys,
+    capturedScreenshots,
+    REPRESENTATIVE_SCREENSHOTS,
+    placed.notShown,
+  )
 
   // Group target keys by their catalog file so each file is read/written once.
   const byFile = groupByFile(byKey)
@@ -711,7 +659,7 @@ function main() {
   if (checkOnly) {
     // Read against the catalogs as committed: a screenshot the report lacks is a
     // break for as long as a twin still names it.
-    const findings = findStructuralProblems(report, allKeys, screenshotByKey)
+    const findings = findStructuralProblems(report, allKeys, screenshotByKey, REPRESENTATIVE_SCREENSHOTS, shows)
     // Removed keys ride along in the summary but never raise the exit code on
     // their own: only a fresh capture clears them, and that's an E2E run.
     const exitCode = checkExitCode(findings, staleForCheck.length)
@@ -736,12 +684,14 @@ function main() {
 
   // This run just rewrote every twin from the report, so only the rules can still
   // be broken; a finding here doesn't stop the write, it tells the person running it.
-  printFindings(findStructuralProblems(report, allKeys, new Map()), [], removedKeys)
+  printFindings(findStructuralProblems(report, allKeys, new Map(), REPRESENTATIVE_SCREENSHOTS, shows), [], removedKeys)
+  writeFileSync(ocrPath, JSON.stringify(ocrText, null, 2) + '\n')
 
   console.log(
     `Coupled ${String(couplingCount)} key(s) to screenshots and cleared ${String(clearedCount)} stale coupling(s) ` +
       `across ${String(changedFiles.length)} catalog file(s) ` +
-      `(${String(directKeys.size)} direct, ${String(representativeKeys.size)} representative).`,
+      `(${String(directKeys.size)} direct, ${String(representativeKeys.size)} representative, ` +
+      `${String(notShownKeys.size)} on a surface whose image doesn't show them).`,
   )
 
   if (coupledWithoutDescription.length > 0) {
@@ -761,7 +711,7 @@ function main() {
   // Coverage report (Decision 4: no silent gaps): a tracked, text artifact that
   // shows which areas have screenshots (direct vs representative) and which keys
   // remain uncoupled.
-  const coverage = buildCoverageReport(directKeys, representativeKeys, keysByArea)
+  const coverage = buildCoverageReport(directKeys, representativeKeys, keysByArea, notShownKeys)
   const coveragePath = join(messagesRoot, 'screenshots', 'coverage-report.md')
   // The per-key table, then the per-SURFACE review (redundant surfaces, reduced
   // zoom). One tracked artifact, so a reviewer reads both in the same diff.
@@ -776,7 +726,7 @@ function main() {
   // but the coverage report is rendered from scratch and its reflowed prose and
   // padded tables are oxfmt's call, not ours; without this the next `pnpm check`
   // fails on a file nobody hand-edited.
-  const toFormat = [...changedFiles, coveragePath]
+  const toFormat = [...changedFiles, coveragePath, ocrPath]
   const res = spawnSync('pnpm', ['exec', 'oxfmt', ...toFormat], { cwd: desktopDir, stdio: 'inherit' })
   if (res.status !== 0) {
     console.warn('oxfmt did not exit cleanly; run `pnpm exec oxfmt` on the changed files manually.')

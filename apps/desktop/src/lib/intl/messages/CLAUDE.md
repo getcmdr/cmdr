@@ -1,16 +1,15 @@
 # Message catalogs
 
 JSON message catalogs, one file per feature area, under `en/` plus one dir per translated locale.
-`apps/desktop/scripts/vite-locale-catalogs.ts` builds one module per locale dir. Runtime and the error-pipeline
-boundary: `../CLAUDE.md`.
+`apps/desktop/scripts/vite-locale-catalogs.ts` builds one module per locale dir. Runtime: `../CLAUDE.md`.
 
 ## Layout
 
 - `en/<area>.json`: messages for one area. The key prefix maps 1:1 to the filename (`settings.fsWatch.title` →
-  `settings.json`), so one feature touches one file. `common.json` holds truly shared strings.
+  `settings.json`), so one feature touches one file. `common.json` holds shared strings.
 - `screenshots/`: capture artifacts referenced by `@key.screenshot`; one file serves many keys. PNGs are **gitignored**
-  (stored in the main clone); the two reports are tracked. Don't hand-edit those `@key` fields or commit PNGs;
-  regenerate with `pnpm i18n:shots`. `DETAILS.md` § Screenshots.
+  (kept in the main clone); the reports and `ocr-text.json` are tracked. Don't hand-edit those `@key` fields or commit
+  PNGs; regenerate with `pnpm i18n:shots`. `DETAILS.md` § Screenshots.
 - `en-XA/`: the generated **pseudolocale** (accented, expanded, structure-preserving) for overflow testing.
   **Gitignored, regenerable** with `pnpm i18n:pseudo`; never hand-edit or hand-justify it (it auto-emits
   `sameAsSourceJustification`). Fixture: `test/fixtures/i18n-pseudolocale/`. `docs/guides/i18n.md` § Pseudolocale.
