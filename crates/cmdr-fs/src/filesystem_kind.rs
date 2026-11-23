@@ -251,6 +251,10 @@ pub fn mount_is_local_disk(source: Option<&str>, fs_type: Option<&str>) -> bool 
             | "exfat"
             | "msdos"
             | "vfat"
+            // Windows' own names for FAT (`GetVolumeInformationW`), and its ReFS.
+            | "fat"
+            | "fat32"
+            | "refs"
             | "ntfs"
             | "ntfs3"
             | "ufsd_ntfs"
@@ -489,6 +493,18 @@ mod tests {
             assert!(
                 !mount_is_local_disk(Some(source), Some(fs_type)),
                 "{fs_type} from {source} must not read as a local disk"
+            );
+        }
+    }
+
+    /// Windows names a drive's filesystem itself (`GetVolumeInformationW`), with a drive root as
+    /// its source: a FAT32 stick, a FAT16 card, and a ReFS volume are local disks like NTFS.
+    #[test]
+    fn a_windows_drive_s_own_filesystem_names_are_local_disks() {
+        for fs_type in ["NTFS", "FAT32", "FAT", "exFAT", "ReFS"] {
+            assert!(
+                mount_is_local_disk(Some("E:/"), Some(fs_type)),
+                "{fs_type} on a drive letter is a local disk"
             );
         }
     }

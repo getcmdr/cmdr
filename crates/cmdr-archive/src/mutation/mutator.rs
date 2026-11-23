@@ -545,10 +545,11 @@ fn reap_sibling_temps(archive_path: &Path) {
 }
 
 /// fsyncs the archive's parent directory so a just-completed rename is durable.
-/// Best-effort (opening a dir read-only can fail on some filesystems).
+/// Best-effort (opening a dir can fail on some filesystems). Through
+/// `open_dir_to_sync`, since Windows refuses a plain `File::open` of a folder.
 fn fsync_parent_dir(archive_path: &Path) {
     if let Some(parent) = archive_path.parent()
-        && let Ok(dir) = File::open(parent)
+        && let Ok(dir) = cmdr_fs::durable::open_dir_to_sync(parent)
     {
         let _ = dir.sync_all();
     }

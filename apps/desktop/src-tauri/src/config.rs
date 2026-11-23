@@ -261,7 +261,7 @@ pub fn durable_write_json(path: &Path, tmp: &Path, content: &str) -> std::io::Re
     // Best-effort: fsync the parent directory so the rename (the new directory entry) is durable
     // too. Logged and ignored on failure, matching `LocalPosixVolume`'s parent-dir fsync.
     if let Some(parent) = path.parent() {
-        match std::fs::File::open(parent).and_then(|dir| dir.sync_all()) {
+        match cmdr_fs::durable::open_dir_to_sync(parent).and_then(|dir| dir.sync_all()) {
             Ok(()) => {}
             Err(e) => log::debug!(
                 target: "write_durability",

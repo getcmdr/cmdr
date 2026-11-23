@@ -299,10 +299,12 @@ fn merge_rows(
     Ok(changed)
 }
 
-/// Sync `file`'s folder, so a file created in it survives a power loss.
+/// Sync `file`'s folder, so a file created in it survives a power loss. Through
+/// `open_dir_to_sync`: a plain `File::open` of a folder is `Access is denied` on
+/// Windows, which failed every split there.
 fn sync_folder_of(file: &Path) -> std::io::Result<()> {
     match file.parent() {
-        Some(dir) if !dir.as_os_str().is_empty() => std::fs::File::open(dir)?.sync_all(),
+        Some(dir) if !dir.as_os_str().is_empty() => cmdr_fs::durable::open_dir_to_sync(dir)?.sync_all(),
         _ => Ok(()),
     }
 }

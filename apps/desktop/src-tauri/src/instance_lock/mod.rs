@@ -14,8 +14,10 @@
 //! released when the process dies for ANY reason, `SIGKILL` and a panic included. There is no such
 //! thing as a stale lock to clean up, which is exactly why this isn't a PID file.
 //!
-//! The pid we write into the file is diagnostics only: it names the holder in the refusal line.
-//! Nothing branches on it, and unreadable or garbage content is treated as "unknown holder".
+//! The pid we write beside it (`.instance.pid`) is diagnostics only: it names the holder in the
+//! refusal line. Nothing branches on it, and unreadable or garbage content is treated as "unknown
+//! holder". It lives in a file of its own because `LockFileEx` is mandatory on Windows: another
+//! handle can't even read a locked file, so a pid inside the lock file named no holder there.
 //!
 //! The claim runs BEFORE the logger is installed (`lib.rs`), so a refused instance never opens the
 //! shared log files: it used to append to `cmdr.log`, and near 50 MB it could rotate the running
@@ -27,7 +29,7 @@ mod platform;
 use cmdr_fs::log_private::LogPrivate;
 use std::fmt;
 use std::fs::{File, OpenOptions};
-use std::io::{Seek as _, SeekFrom, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
@@ -35,6 +37,9 @@ use tauri::{AppHandle, Runtime};
 
 /// Lock filename inside each claimed dir.
 const LOCK_FILE_NAME: &str = ".instance.lock";
+
+/// The holder's pid, beside the lock (module docs).
+const PID_FILE_NAME: &str = ".instance.pid";
 
 /// How long we keep retrying before declaring a dir taken. One budget for all three dirs, not
 /// one each: the overlap it waits out is the same old process holding all of them.
@@ -112,6 +117,11 @@ fn lock_path(dir: &Path) -> PathBuf {
     dir.join(LOCK_FILE_NAME)
 }
 
+/// Path of the holder's pid file for a given dir.
+fn pid_path(dir: &Path) -> PathBuf {
+    dir.join(PID_FILE_NAME)
+}
+
 /// Why we couldn't take a lock.
 #[derive(Debug)]
 enum AcquireError {
@@ -137,16 +147,12 @@ fn holder_description(holder_pid: Option<u32>) -> String {
     }
 }
 
-/// Best-effort, diagnostics-only: stamp our pid into the lock file. A failure only leaves a
-/// refused second instance naming "an unknown process". Nothing to log it to yet (module docs).
-fn write_pid(file: &File) {
-    let mut file = file;
+/// Best-effort, diagnostics-only: stamp our pid beside the lock we hold in `dir`. A failure only
+/// leaves a refused second instance naming "an unknown process". Nothing to log it to yet (module
+/// docs).
+fn write_pid(dir: &Path) {
     // Best-effort: the pid is diagnostics only, and the logger isn't up yet to report a failure.
-    let _ = file
-        .set_len(0)
-        .and_then(|()| file.seek(SeekFrom::Start(0)))
-        .and_then(|_| file.write_all(std::process::id().to_string().as_bytes()))
-        .and_then(|()| file.flush());
+    let _ = std::fs::write(pid_path(dir), std::process::id().to_string());
 }
 
 /// One line to stderr, for the stretch of startup before the logger exists. Best-effort: a closed
@@ -157,8 +163,11 @@ fn to_stderr(line: impl fmt::Display) {
 }
 
 /// Best-effort: who holds the lock right now, per the file's contents.
-fn read_holder_pid(path: &Path) -> Option<u32> {
-    std::fs::read_to_string(path).ok().as_deref().and_then(parse_holder_pid)
+fn read_holder_pid(dir: &Path) -> Option<u32> {
+    std::fs::read_to_string(pid_path(dir))
+        .ok()
+        .as_deref()
+        .and_then(parse_holder_pid)
 }
 
 /// Takes the lock in `dir` (creating the dir if needed), retrying until `deadline`.
@@ -176,13 +185,13 @@ fn acquire_until(dir: &Path, deadline: Instant) -> Result<File, AcquireError> {
     loop {
         match file.try_lock() {
             Ok(()) => {
-                write_pid(&file);
+                write_pid(dir);
                 return Ok(file);
             }
             Err(std::fs::TryLockError::WouldBlock) => {
                 if Instant::now() >= deadline {
                     return Err(AcquireError::Busy {
-                        holder_pid: read_holder_pid(&path),
+                        holder_pid: read_holder_pid(dir),
                     });
                 }
                 std::thread::sleep(RETRY_INTERVAL);
@@ -506,7 +515,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("create temp dir");
 
         let held = acquire_until(dir.path(), Instant::now()).expect("acquire");
-        assert_eq!(read_holder_pid(&lock_path(dir.path())), Some(std::process::id()));
+        assert_eq!(read_holder_pid(dir.path()), Some(std::process::id()));
 
         drop(held);
     }

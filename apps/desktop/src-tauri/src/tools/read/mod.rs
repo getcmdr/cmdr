@@ -26,18 +26,11 @@ pub mod pane_listing;
 pub mod state;
 pub mod volumes;
 
-/// Expand a leading `~` to `$HOME` (agents routinely send `~/Documents`). Only the
-/// tilde prefix — no `~user` form. Mirrors the importance resource's handling so an
-/// agent's paths resolve the same way across tools.
+/// Expand a leading `~` to the home folder's app path (agents routinely send `~/Documents`).
+/// Only the tilde prefix, no `~user` form. `cmdr_fs::tilde`'s, so it reads the OS's home: Windows
+/// sets no `HOME`, which expanded `~/Documents` to `/Documents` there.
 pub(crate) fn expand_tilde(path: &str) -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
-    if path == "~" {
-        return home;
-    }
-    match path.strip_prefix("~/") {
-        Some(rest) => format!("{home}/{rest}"),
-        None => path.to_string(),
-    }
+    cmdr_fs::tilde::expand_tilde(path)
 }
 
 /// `serde(skip_serializing_if)` predicate for a `bool` field that should only

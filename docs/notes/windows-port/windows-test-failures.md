@@ -357,3 +357,18 @@ the right cluster is named; the TSV keeps the tool's inherited answer.
    operation), the person's file was gone and nothing replaced it. The link is now made under a temp name and renamed
    over the file, and a refusal is the typed `LinksNotSupported` where the errno can only mean that
    (`crates/cmdr-operations/DETAILS.md` § "Key patterns and gotchas (shared)").
+7. **Opening a folder to sync it failed on Windows** (fixed, #942 round 3). `File::open` of a folder is
+   `Access is denied` there; three sites did it: the importance store's split of an older build's file (so every split
+   failed and the old store stayed, the 18 `legacy_split` cells), the zip mutator's parent sync, and the settings
+   writer's. All go through `cmdr_fs::durable::open_dir_to_sync` now.
+8. **Every local About card read as off the disk on Windows** (fixed, round 3). `about::place` walked the verbatim
+   native path (`\\?\C:\…`), which shares no prefix with the mount table's plain `C:/`, so no local card planned git,
+   owner, image, or download rows. It walks the plain form now.
+9. **The volume list shipped `capabilities: None` for every row on Windows** (fixed, round 3): the Windows arm of
+   `enrich_from_volume_registry` was a no-op, so the pane guessed from the kind.
+10. **A refused second instance named "an unknown process" on Windows** (fixed, round 3): `LockFileEx` is mandatory, so
+    the pid inside the lock file was unreadable; it lives in `.instance.pid` beside it now.
+11. **`~` expanded through `HOME`, which Windows doesn't set** (fixed, round 3): the agent tools' `expand_tilde`, the
+    importance resource's home fold, and a memory file's link (native `\` text, never linkable) now read app paths.
+12. **Windows' own names for FAT and ReFS weren't local disks** (fixed, round 3): `mount_is_local_disk` knew `msdos` and
+    `vfat` but not `FAT32`, `FAT`, or `ReFS`, so such a drive got the network walker.

@@ -138,7 +138,10 @@ fn memory_file(path: &str, memory_root: Option<&Path>) -> ToolSubject {
         path: bounded(path),
         absolute: memory_root
             .and_then(|root| crate::agent::memory::shown_location(root, path))
-            .and_then(|absolute| LinePath::linkable_text(&absolute.to_string_lossy())),
+            // The memory folder is a native path; its app spelling is the place a pane goes to
+            // (on Windows the native text's `\` made no memory file a link).
+            .and_then(|absolute| cmdr_fs::app_path::AppPathBuf::from_native_unicode(&absolute).ok())
+            .and_then(|absolute| LinePath::linkable_text(absolute.as_str())),
     }
 }
 

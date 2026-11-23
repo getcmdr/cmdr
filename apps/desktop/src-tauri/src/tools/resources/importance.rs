@@ -245,7 +245,8 @@ fn read_folded(
     keep: usize,
     threshold: Option<f64>,
 ) -> Result<(Vec<RankedFolder>, bool), String> {
-    let home = std::env::var("HOME").unwrap_or_default();
+    // The home folder's app path, which the ranked rows are spelled in (Windows sets no `HOME`).
+    let home = cmdr_fs::tilde::home_folder().unwrap_or_default();
     let under = scope.under;
     let mut fetch = (keep * COLLAPSE_OVERFETCH).clamp(1, MAX_FOLD_WINDOW);
     loop {

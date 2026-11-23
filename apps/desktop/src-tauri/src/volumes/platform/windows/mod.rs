@@ -211,8 +211,19 @@ pub(crate) fn network_mount_under(_path: &Path) -> Option<NetworkMount> {
     None
 }
 
-/// Nothing to copy: the listing publishes no row a backend serves.
-pub(crate) fn enrich_from_volume_registry(_volumes: &mut [LocationInfo]) {}
+/// Copies each registered volume's capabilities and connection state onto its row, as on Linux.
+/// The drives and the server and device rows (appended before this, `volume_listing::complete`)
+/// are all served by a registered backend; a no-op here shipped every one with
+/// `capabilities: None`, so the pane guessed from the kind.
+pub(crate) fn enrich_from_volume_registry(volumes: &mut [LocationInfo]) {
+    let manager = crate::file_system::volume::manager::get_volume_manager();
+    for vol in volumes.iter_mut() {
+        if let Some(registered) = manager.get(&vol.id) {
+            vol.capabilities = Some(registered.capabilities());
+            vol.connection_state = registered.connection_state();
+        }
+    }
+}
 
 /// ❗ No SMB mount info on Windows yet: a mapped drive's share is known (its id is the `smb-`
 /// one), but nothing upgrades it to a direct session, so the SMB-mount readers answer nothing.

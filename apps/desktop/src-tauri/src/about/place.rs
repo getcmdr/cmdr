@@ -214,7 +214,9 @@ pub(crate) fn sits_on_a_local_disk(path: &str) -> bool {
         return false;
     };
     // Text with no native file (a server's, a phone's) is on no local disk.
-    crate::app_text::native(path).is_some_and(|native| on_a_local_disk(&native, &mounts, &Os))
+    // ❗ The PLAIN native form: the mount table spells `C:/`, and a verbatim `\\?\C:\…` shares no
+    // prefix with it, so on Windows every local file read as off the disk.
+    crate::app_text::native_plain(path).is_some_and(|native| on_a_local_disk(&native, &mounts, &Os))
 }
 
 /// Whether the archive holding the archive-inner `path` [`sits_on_a_local_disk`]: no
@@ -245,7 +247,7 @@ pub(crate) fn reaches_a_share(path: &str) -> bool {
         return true;
     };
     // Text with no native file proves nothing local: it fails closed.
-    crate::app_text::native(path).is_none_or(|native| reaches_off_the_disk(&native, &mounts, &Os))
+    crate::app_text::native_plain(path).is_none_or(|native| reaches_off_the_disk(&native, &mounts, &Os))
 }
 
 /// [`reaches_a_share`] over a given table and filesystem.
@@ -262,7 +264,7 @@ pub(crate) fn reaches_off_the_disk(path: &Path, mounts: &Mounts, fs: &dyn LocalF
 /// mount table): the gate fails closed then.
 pub(crate) fn resolved_on_local_disks(path: &str) -> Option<PathBuf> {
     let mounts = Mounts::of_the_os()?;
-    resolved_within(&crate::app_text::native(path)?, &mounts, &Os)
+    resolved_within(&crate::app_text::native_plain(path)?, &mounts, &Os)
 }
 
 /// [`resolved_on_local_disks`] over a given table and filesystem.
