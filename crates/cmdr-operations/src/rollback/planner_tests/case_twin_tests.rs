@@ -124,7 +124,11 @@ async fn undoing_a_case_only_rename_on_a_case_insensitive_volume_restores_it() {
     }
     let photo = root.join("img_0001.jpg");
     std::fs::write(&photo, b"DATA").expect("write");
-    filetime::set_file_mtime(&photo, filetime::FileTime::from_unix_time(MT as i64, 0)).expect("pin mtime");
+    std::fs::set_times(
+        &photo,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(MT)),
+    )
+    .expect("pin mtime");
     std::fs::create_dir(root.join("photos")).expect("mkdir");
 
     let rig = Rig::new();

@@ -421,8 +421,11 @@ fn a_detached_arm_rereads_a_change_that_landed_while_it_was_in_flight() {
     let watched = scratch.join("dir");
     std::fs::create_dir(&watched).expect("scratch dir is writable");
     std::fs::write(watched.join("alpha.txt"), b"a").expect("scratch dir is writable");
-    filetime::set_file_mtime(&watched, filetime::FileTime::from_unix_time(1_600_000_000, 0))
-        .expect("the scratch dir's mtime is settable");
+    std::fs::set_times(
+        &watched,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(1_600_000_000)),
+    )
+    .expect("the scratch dir's mtime is settable");
 
     // An unregistered volume id, as in the replaced-root test: the re-read takes the
     // `list_directory_core` fallback, a real readdir.

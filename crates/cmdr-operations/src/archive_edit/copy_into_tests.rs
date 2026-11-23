@@ -270,8 +270,8 @@ async fn overwrite_older_overwrites_only_a_strictly_older_entry() {
     }
     let old = DateTime::from_date_and_time(2020, 1, 1, 0, 0, 0).expect("2020 date");
     let new = DateTime::from_date_and_time(2024, 1, 1, 0, 0, 0).expect("2024 date");
-    let src_2020 = filetime::FileTime::from_unix_time(1_577_836_800, 0); // 2020-01-01Z
-    let src_2024 = filetime::FileTime::from_unix_time(1_704_067_200, 0); // 2024-01-01Z
+    let src_2020 = std::time::UNIX_EPOCH + Duration::from_secs(1_577_836_800); // 2020-01-01Z
+    let src_2024 = std::time::UNIX_EPOCH + Duration::from_secs(1_704_067_200); // 2024-01-01Z
 
     let tmp = tempfile::tempdir().expect("tempdir");
 
@@ -281,7 +281,7 @@ async fn overwrite_older_overwrites_only_a_strictly_older_entry() {
     let src_a = tmp.path().join("srca");
     std::fs::create_dir_all(src_a.join("d")).expect("mkdir");
     std::fs::write(src_a.join("d/f.txt"), b"INCOMING").expect("w");
-    filetime::set_file_mtime(src_a.join("d/f.txt"), src_2020).expect("mtime");
+    std::fs::set_times(src_a.join("d/f.txt"), std::fs::FileTimes::new().set_modified(src_2020)).expect("mtime");
     let events_a = run_policy_copy_into(
         &engine,
         &archive_a,
@@ -307,7 +307,7 @@ async fn overwrite_older_overwrites_only_a_strictly_older_entry() {
     let src_b = tmp.path().join("srcb");
     std::fs::create_dir_all(src_b.join("d")).expect("mkdir");
     std::fs::write(src_b.join("d/f.txt"), b"INCOMING").expect("w");
-    filetime::set_file_mtime(src_b.join("d/f.txt"), src_2024).expect("mtime");
+    std::fs::set_times(src_b.join("d/f.txt"), std::fs::FileTimes::new().set_modified(src_2024)).expect("mtime");
     let events_b = run_policy_copy_into(
         &engine,
         &archive_b,
@@ -341,9 +341,9 @@ async fn overwrite_older_overwrites_only_a_strictly_older_entry() {
     let src_c = tmp.path().join("srcc");
     std::fs::create_dir_all(src_c.join("d")).expect("mkdir");
     std::fs::write(src_c.join("d/f.txt"), b"INCOMING").expect("w");
-    filetime::set_file_mtime(
+    std::fs::set_times(
         src_c.join("d/f.txt"),
-        filetime::FileTime::from_unix_time(parsed_mtime, 0),
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(parsed_mtime as u64)),
     )
     .expect("mtime");
     let events_c = run_policy_copy_into(

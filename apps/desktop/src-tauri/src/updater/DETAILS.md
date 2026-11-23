@@ -387,5 +387,5 @@ Optional data that's bad is dropped with a warn and never blocks an update.
 - `minisign-verify`: signature verification.
 - `tauri-plugin-updater` (off macOS): the installer hand-off only.
 - `cmdr-update-trust`: tarball extraction, the bundle's version, and the Apple code-signature check.
-- `filetime`: touches the bundle after install to trigger a LaunchServices refresh.
+- `std::fs::set_times` touches the bundle after install to trigger a LaunchServices refresh.
 - `base64`: decodes the double-encoded minisign key and signatures.

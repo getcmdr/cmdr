@@ -127,8 +127,8 @@ fn overwrite_older_never_deletes_a_folder_a_file_landed_on() {
     let (src_root, dst_root) = file_over_folder_fixture(&dir);
     // The source is newer than the destination folder, so the mtime comparison
     // alone would say "overwrite".
-    let old = filetime::FileTime::from_unix_time(1_600_000_000, 0);
-    filetime::set_file_mtime(dst_root.join("notes"), old).unwrap();
+    let old = std::time::UNIX_EPOCH + Duration::from_secs(1_600_000_000);
+    fs::set_times(dst_root.join("notes"), fs::FileTimes::new().set_modified(old)).unwrap();
 
     copy_files_with_progress_inner(
         &CollectorEventSink::new(),

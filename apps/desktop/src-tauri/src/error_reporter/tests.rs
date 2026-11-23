@@ -749,14 +749,12 @@ fn build_bundle_window_scope_drops_an_old_records_continuations() {
     );
 }
 
-/// Sets the file's mtime to `now - age` via the `filetime` crate (a dependency the
-/// production crate already declares). Cross-platform.
+/// Sets the file's mtime to `now - age` through `std::fs::set_times`. Cross-platform.
 fn set_mtime_to_age(path: &Path, age: Duration) {
     let target = SystemTime::now()
         .checked_sub(age)
         .expect("system clock can produce a target mtime");
-    let ft = filetime::FileTime::from_system_time(target);
-    filetime::set_file_mtime(path, ft).expect("set_file_mtime");
+    std::fs::set_times(path, std::fs::FileTimes::new().set_modified(target)).expect("set mtime");
 }
 
 /// Tests for `settings_defaults`: FE pushes the registry default map; the resolved

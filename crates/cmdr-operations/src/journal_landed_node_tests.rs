@@ -47,7 +47,11 @@ fn state(engine: &TestOperations) -> Arc<WriteOperationState> {
 fn write_old(path: &Path, bytes: &[u8]) {
     std::fs::create_dir_all(path.parent().expect("a parent")).expect("mk parents");
     std::fs::write(path, bytes).expect("write fixture");
-    filetime::set_file_mtime(path, filetime::FileTime::from_unix_time(OLD, 0)).expect("pin mtime");
+    std::fs::set_times(
+        path,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(OLD as u64)),
+    )
+    .expect("pin mtime");
 }
 
 fn node_at(path: &Path) -> NodeIdentity {

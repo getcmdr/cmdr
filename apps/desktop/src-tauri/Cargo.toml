@@ -411,10 +411,6 @@ cmdr-update-trust = { path = "../../../crates/cmdr-update-trust" }
 # touches it. `urlencoding` can't do the job: it escapes `/` too, and
 # the scheme wants a literal path. Already in the lockfile via `cmdr-webdav`.
 percent-encoding = "2"
-# The updater touches the installed bundle's mtime with it (`updater/installer.rs`, macOS-only),
-# so it sits here for the reason `cmdr-update-trust` gives. Tests on
-# every platform age fixture files with it through `[dev-dependencies]`.
-filetime = "0.2"
 core-foundation = "0.10.1"
 core-services = "1.0.0"
 icns = "0.5.0"
@@ -532,7 +528,6 @@ objc2-io-kit = { version = "0.3.2", default-features = false, features = ["std",
 
 
 [dev-dependencies]
-filetime = "0.2"
 # The Linux-only `cocoon` above, again for every platform's tests, so the encrypted credential
 # store's recovery cells (`secrets/encrypted_file.rs`) run on a Mac too. Same package, no new one.
 cocoon = "0.6"

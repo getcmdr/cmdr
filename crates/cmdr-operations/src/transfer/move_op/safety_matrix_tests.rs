@@ -127,14 +127,14 @@ fn assert_single_file_cell(
 
 /// Sets mtimes so the strict-comparison conditional cells are deterministic.
 fn set_mtimes(src: &Path, dst: &Path, src_newer: bool) {
-    let older = filetime::FileTime::from_unix_time(1_600_000_000, 0);
-    let newer = filetime::FileTime::from_unix_time(1_700_000_000, 0);
+    let older = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000);
+    let newer = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000);
     if src_newer {
-        filetime::set_file_mtime(src, newer).unwrap();
-        filetime::set_file_mtime(dst, older).unwrap();
+        fs::set_times(src, fs::FileTimes::new().set_modified(newer)).unwrap();
+        fs::set_times(dst, fs::FileTimes::new().set_modified(older)).unwrap();
     } else {
-        filetime::set_file_mtime(src, older).unwrap();
-        filetime::set_file_mtime(dst, newer).unwrap();
+        fs::set_times(src, fs::FileTimes::new().set_modified(older)).unwrap();
+        fs::set_times(dst, fs::FileTimes::new().set_modified(newer)).unwrap();
     }
 }
 

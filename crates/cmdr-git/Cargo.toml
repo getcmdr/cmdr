@@ -89,9 +89,6 @@ cmdr-git = { path = ".", features = ["testing"] }
 # `TestDir`, `wait_until`, `InMemoryVolume`, and the shared read-only `Volume`
 # conformance cells every backend runs.
 cmdr-fs = { path = "../cmdr-fs", features = ["testing"] }
-# The status-cache cell forces an index-file mtime forward, which is exactly what
-# the cache keys on. Same pin the app carries.
-filetime = "0.2"
 # The portal-volume cells are `#[tokio::test]`s, and the copy-scan ones drive a
 # walk and its boundary at once, so they need a multi-threaded runtime the lib
 # deliberately can't build for itself.

@@ -112,8 +112,11 @@ fn seed_dated_local_folder(root: &Path) {
 }
 
 fn date_local_folder(path: &Path, secs: u64) {
-    filetime::set_file_mtime(path, filetime::FileTime::from_unix_time(secs as i64, 0))
-        .unwrap_or_else(|e| panic!("date {}: {e}", path.display()));
+    std::fs::set_times(
+        path,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(secs)),
+    )
+    .unwrap_or_else(|e| panic!("date {}: {e}", path.display()));
 }
 
 fn assert_dated(listed: u64, expected: u64, tolerance: Duration, what: &str) {

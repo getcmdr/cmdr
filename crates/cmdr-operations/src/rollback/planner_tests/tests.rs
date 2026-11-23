@@ -770,7 +770,11 @@ async fn a_restore_recreates_the_folder_the_move_emptied() {
     let landed = work.path().join("dst/album/song.txt");
     std::fs::create_dir_all(landed.parent().expect("a parent")).expect("mk dst");
     std::fs::write(&landed, b"SONG").expect("write");
-    filetime::set_file_mtime(&landed, filetime::FileTime::from_unix_time(MT as i64, 0)).expect("pin mtime");
+    std::fs::set_times(
+        &landed,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(MT)),
+    )
+    .expect("pin mtime");
     let original = work.path().join("src/album/song.txt");
     rig.vm.register(
         "root",

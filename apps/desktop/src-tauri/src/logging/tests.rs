@@ -18,7 +18,7 @@ fn touch_log(dir: &Path, name: &str, age_secs: u64) {
     let path = dir.join(name);
     fs::write(&path, format!("{name}\n")).expect("write");
     let aged = SystemTime::now() - Duration::from_secs(age_secs);
-    filetime::set_file_mtime(&path, filetime::FileTime::from_system_time(aged)).expect("stamp mtime");
+    fs::set_times(&path, fs::FileTimes::new().set_modified(aged)).expect("stamp mtime");
 }
 
 #[test]

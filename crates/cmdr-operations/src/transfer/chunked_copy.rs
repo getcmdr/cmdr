@@ -528,18 +528,19 @@ mod tests {
         fs::write(&src, "stamped").unwrap();
 
         // Stamp source with a clearly-in-the-past mtime.
-        let target_mtime = filetime::FileTime::from_unix_time(1_600_000_000, 0); // 2020-09-13
-        filetime::set_file_mtime(&src, target_mtime).unwrap();
+        let target_mtime = std::time::UNIX_EPOCH + Duration::from_secs(1_600_000_000); // 2020-09-13
+        fs::set_times(&src, fs::FileTimes::new().set_modified(target_mtime)).unwrap();
 
         let (_engine, state) = running_state();
         chunked_copy_with_metadata(&src, &dst, &state, None).unwrap();
 
         let dst_meta = fs::metadata(&dst).unwrap();
-        let dst_mtime = filetime::FileTime::from_last_modification_time(&dst_meta);
+        let dst_mtime = dst_meta.modified().unwrap();
         // Allow nanosecond drift but require the seconds to round-trip exactly.
+        let secs = |t: std::time::SystemTime| t.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
         assert_eq!(
-            dst_mtime.unix_seconds(),
-            target_mtime.unix_seconds(),
+            secs(dst_mtime),
+            secs(target_mtime),
             "chunked copy must preserve source mtime"
         );
     }

@@ -14,11 +14,21 @@ const INNER_FOLDER_DATE: i64 = 1_577_836_800;
 const EMPTY_FOLDER_DATE: i64 = 1_546_300_800;
 
 fn date(path: &Path, secs: i64) {
-    filetime::set_file_mtime(path, filetime::FileTime::from_unix_time(secs, 0)).expect("date the folder");
+    fs::set_times(
+        path,
+        fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(secs as u64)),
+    )
+    .expect("date the folder");
 }
 
 fn mtime(path: &Path) -> i64 {
-    filetime::FileTime::from_last_modification_time(&fs::metadata(path).expect("stat")).unix_seconds()
+    fs::metadata(path)
+        .expect("stat")
+        .modified()
+        .expect("mtime")
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("after 1970")
+        .as_secs() as i64
 }
 
 /// `album/` with a file, `inner/` holding a file, and an empty `empty/`, each

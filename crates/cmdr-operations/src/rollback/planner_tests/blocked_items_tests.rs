@@ -30,7 +30,11 @@ fn register_root(rig: &Rig) {
 /// Writes the copy's bytes with the mtime its journal row snapshots.
 fn write_copy(path: &Path) {
     std::fs::write(path, b"COPY").expect("write");
-    filetime::set_file_mtime(path, filetime::FileTime::from_unix_time(MT as i64, 0)).expect("pin mtime");
+    std::fs::set_times(
+        path,
+        std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(MT)),
+    )
+    .expect("pin mtime");
 }
 
 /// Locked and a `deny delete` ACL each refuse the `unlink`, even for the owner:

@@ -449,7 +449,7 @@ mod cache_tests {
         // new mtime may equal the pre-add mtime and the cache stays warm.
         // Instead of sleeping a full second to wait the FS out (the previous
         // shape did `sleep(1100ms)`, ~1.3 s of pure wall-clock per run),
-        // forcibly bump the index mtime via `filetime`. This is the exact
+        // forcibly bump the index mtime via `std::fs::set_times`. This is the exact
         // invariant `list_status`'s cache check keys off, so we're testing the
         // same code path — minus the FS-resolution lottery.
         std::fs::write(dir.join("new.txt"), "x\n").unwrap();
@@ -458,8 +458,7 @@ mod cache_tests {
         let index_path = root.join(".git").join("index");
         let cur_mtime = std::fs::metadata(&index_path).unwrap().modified().unwrap();
         let bumped = cur_mtime + std::time::Duration::from_secs(2);
-        filetime::set_file_mtime(&index_path, filetime::FileTime::from_system_time(bumped))
-            .expect("bump .git/index mtime");
+        std::fs::set_times(&index_path, std::fs::FileTimes::new().set_modified(bumped)).expect("bump .git/index mtime");
 
         let second = list_status(&handle, &dir).unwrap();
         let entries_second: Vec<&str> = second.iter().map(|e| e.relative_path.as_str()).collect();

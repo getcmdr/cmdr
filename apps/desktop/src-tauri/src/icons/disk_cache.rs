@@ -221,8 +221,8 @@ mod tests {
         /// Sets the target folder's mtime to a specific epoch-second value so the
         /// staleness token is deterministic (no sleeping).
         fn set_folder_mtime(&self, secs: u64) {
-            let t = filetime::FileTime::from_unix_time(secs as i64, 0);
-            filetime::set_file_mtime(&self.folder, t).expect("set mtime");
+            let t = UNIX_EPOCH + std::time::Duration::from_secs(secs);
+            fs::set_times(&self.folder, fs::FileTimes::new().set_modified(t)).expect("set mtime");
         }
     }
 

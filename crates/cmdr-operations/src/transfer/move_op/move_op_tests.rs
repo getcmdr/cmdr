@@ -297,9 +297,17 @@ fn cross_fs_move_keeps_folder_dates() {
     fs::create_dir_all(src_dir.join("tree/populated")).unwrap();
     fs::write(src_dir.join("tree/populated/file.txt"), b"content").unwrap();
     fs::create_dir_all(&dst_dir).unwrap();
-    let at = |secs| filetime::FileTime::from_unix_time(secs, 0);
-    filetime::set_file_mtime(src_dir.join("tree/populated"), at(1_577_836_800)).unwrap();
-    filetime::set_file_mtime(src_dir.join("tree"), at(1_611_909_015)).unwrap();
+    let at = |secs| std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs);
+    fs::set_times(
+        src_dir.join("tree/populated"),
+        fs::FileTimes::new().set_modified(at(1_577_836_800)),
+    )
+    .unwrap();
+    fs::set_times(
+        src_dir.join("tree"),
+        fs::FileTimes::new().set_modified(at(1_611_909_015)),
+    )
+    .unwrap();
 
     let events = Arc::new(CollectorEventSink::new());
     let source = src_dir.join("tree");
@@ -315,7 +323,13 @@ fn cross_fs_move_keeps_folder_dates() {
     assert!(result.is_ok(), "expected Ok, got {:?}", result);
 
     let mtime = |path: &Path| {
-        filetime::FileTime::from_last_modification_time(&fs::metadata(path).expect("stat")).unix_seconds()
+        fs::metadata(path)
+            .expect("stat")
+            .modified()
+            .expect("mtime")
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("after 1970")
+            .as_secs()
     };
     assert_eq!(mtime(&dst_dir.join("tree")), 1_611_909_015);
     assert_eq!(mtime(&dst_dir.join("tree/populated")), 1_577_836_800);

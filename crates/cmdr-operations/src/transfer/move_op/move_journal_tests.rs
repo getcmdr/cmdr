@@ -71,7 +71,11 @@ impl MoveLoop {
         let path = self.path(rel);
         std::fs::create_dir_all(path.parent().expect("a parent")).expect("mk parents");
         std::fs::write(&path, contents).expect("write fixture");
-        filetime::set_file_mtime(&path, filetime::FileTime::from_unix_time(1_700_000_000, 0)).expect("pin mtime");
+        std::fs::set_times(
+            &path,
+            std::fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(1_700_000_000)),
+        )
+        .expect("pin mtime");
         path
     }
 

@@ -20,8 +20,8 @@ use uuid::Uuid;
 fn temp_with_size_and_mtime(dir: &Path, name: &str, size: usize, mtime_secs: i64) -> PathBuf {
     let path = dir.join(name);
     fs::write(&path, vec![0u8; size]).unwrap();
-    let mtime = filetime::FileTime::from_unix_time(mtime_secs, 0);
-    filetime::set_file_mtime(&path, mtime).unwrap();
+    let mtime = std::time::UNIX_EPOCH + Duration::from_secs(mtime_secs as u64);
+    fs::set_times(&path, fs::FileTimes::new().set_modified(mtime)).unwrap();
     path
 }
 
@@ -295,7 +295,7 @@ fn older_ignores_size() {
 }
 
 // ------------------------------------------------------------------
-// Realistic mtime span via SystemTime (in case filetime crate ever drifts).
+// Realistic mtime span via SystemTime.
 // ------------------------------------------------------------------
 
 #[test]
@@ -311,8 +311,8 @@ fn older_works_with_systemtime_offsets_from_now() {
 
     let now = SystemTime::now();
     let an_hour_ago = now - Duration::from_secs(3600);
-    filetime::set_file_mtime(&src, filetime::FileTime::from_system_time(now)).unwrap();
-    filetime::set_file_mtime(&dst, filetime::FileTime::from_system_time(an_hour_ago)).unwrap();
+    fs::set_times(&src, fs::FileTimes::new().set_modified(now)).unwrap();
+    fs::set_times(&dst, fs::FileTimes::new().set_modified(an_hour_ago)).unwrap();
 
     let src_m = meta(&src);
     let dst_m = meta(&dst);
@@ -322,8 +322,8 @@ fn older_works_with_systemtime_offsets_from_now() {
         "dst from an hour ago must be older than src from now"
     );
     // And the inverse: dst newer than src → Skip.
-    filetime::set_file_mtime(&src, filetime::FileTime::from_system_time(an_hour_ago)).unwrap();
-    filetime::set_file_mtime(&dst, filetime::FileTime::from_system_time(now)).unwrap();
+    fs::set_times(&src, fs::FileTimes::new().set_modified(an_hour_ago)).unwrap();
+    fs::set_times(&dst, fs::FileTimes::new().set_modified(now)).unwrap();
     let src_m = meta(&src);
     let dst_m = meta(&dst);
     assert_eq!(

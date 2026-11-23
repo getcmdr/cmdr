@@ -363,8 +363,8 @@ fn an_edit_keeps_the_archive_mode_and_xattrs_and_dates_it_now() {
     // (macOS) a real Finder-tag xattr. Plus an old mtime, which the edit must
     // REPLACE: the contents changed, so "Date Modified" says when (#412).
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o640)).expect("chmod");
-    let old_mtime = filetime::FileTime::from_unix_time(1_600_000_000, 0);
-    filetime::set_file_mtime(&path, old_mtime).expect("set mtime");
+    let old_mtime = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000);
+    std::fs::set_times(&path, std::fs::FileTimes::new().set_modified(old_mtime)).expect("set mtime");
     #[cfg(target_os = "macos")]
     let tag_xattr = "com.apple.metadata:_kMDItemUserTags";
     #[cfg(not(target_os = "macos"))]
@@ -374,7 +374,7 @@ fn an_edit_keeps_the_archive_mode_and_xattrs_and_dates_it_now() {
     // preservation when the stamp itself took.
     let xattr_stamped = xattr::set(&path, tag_xattr, &tag_value).is_ok();
 
-    let before_edit = filetime::FileTime::now().unix_seconds();
+    let before_edit = unix_secs(std::time::SystemTime::now());
     apply(
         &path,
         &Changeset {
@@ -391,11 +391,11 @@ fn an_edit_keeps_the_archive_mode_and_xattrs_and_dates_it_now() {
         0o640,
         "mode preserved across the edit"
     );
-    let new_mtime = filetime::FileTime::from_last_modification_time(&meta);
+    let new_mtime = meta.modified().expect("mtime");
     assert_ne!(new_mtime, old_mtime, "the edit dates the archive anew");
     assert!(
-        new_mtime.unix_seconds() >= before_edit,
-        "mtime is the edit time: {new_mtime} vs {before_edit}"
+        unix_secs(new_mtime) >= before_edit,
+        "mtime is the edit time: {new_mtime:?} vs {before_edit}"
     );
     if xattr_stamped {
         assert_eq!(
@@ -440,7 +440,7 @@ mod archive_file_metadata {
         let fixture = MetadataFixture::new("mutator_birth");
         let path = dated_zip(&fixture);
 
-        let before_edit = filetime::FileTime::now().unix_seconds();
+        let before_edit = unix_secs(std::time::SystemTime::now());
         edit(&path).expect("apply edit");
 
         assert_eq!(birth_secs(&path), BIRTH_SECS);
@@ -724,7 +724,12 @@ fn a_local_path_add_carries_the_source_files_mtime() {
     let src = tmp.path().join("src.txt");
     std::fs::write(&src, b"payload").expect("write source");
     let mtime_secs: i64 = 1_600_000_000; // 2020-09-13T12:26:40Z
-    filetime::set_file_mtime(&src, filetime::FileTime::from_unix_time(mtime_secs, 0)).expect("set mtime");
+    std::fs::set_times(
+        &src,
+        std::fs::FileTimes::new()
+            .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(mtime_secs as u64)),
+    )
+    .expect("set mtime");
 
     apply(
         &path,
@@ -751,6 +756,12 @@ fn a_local_path_add_carries_the_source_files_mtime() {
         (reported - mtime_secs).abs() <= 2,
         "the added entry's mtime {reported} must match the source's {mtime_secs} within DOS-time granularity"
     );
+}
+
+/// `t` in whole Unix seconds. Only the Unix metadata tests read it.
+#[cfg(unix)]
+fn unix_secs(t: std::time::SystemTime) -> i64 {
+    t.duration_since(std::time::UNIX_EPOCH).expect("after 1970").as_secs() as i64
 }
 
 /// The modification time OUR reader reports for `name`, as Unix seconds.
@@ -780,7 +791,12 @@ fn a_local_path_add_keeps_the_source_mtime_to_the_second() {
     // An ODD second: the DOS field alone rounds it to an even one, so only the
     // extended timestamp can bring it back exact.
     let mtime_secs: i64 = 1_600_000_001;
-    filetime::set_file_mtime(&src, filetime::FileTime::from_unix_time(mtime_secs, 0)).expect("set mtime");
+    std::fs::set_times(
+        &src,
+        std::fs::FileTimes::new()
+            .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(mtime_secs as u64)),
+    )
+    .expect("set mtime");
 
     apply(
         &path,

@@ -456,8 +456,8 @@ fn sync_failure(e: SyncError, not_writable: impl Fn() -> BundleWriteBlocker) -> 
 /// and the "apps installed" notification `nehelper` rebuilds the Local Network rule from
 /// (`local_network_refresh`, which touches again on the next launch for that reason).
 pub(super) fn touch_bundle(bundle_path: &Path) {
-    let now = filetime::FileTime::now();
-    if let Err(e) = filetime::set_file_mtime(bundle_path, now) {
+    let now = std::time::SystemTime::now();
+    if let Err(e) = fs::set_times(bundle_path, fs::FileTimes::new().set_modified(now)) {
         log::warn!("Couldn't touch bundle: {e}");
     }
 }

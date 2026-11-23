@@ -65,7 +65,11 @@ fn touch(dir: &Path, name: &str) -> PathBuf {
 /// coarse the filesystem's timestamp granularity is, and the test costs nothing to run.
 fn touch_stamped(dir: &Path, name: &str, unix_secs: i64) -> PathBuf {
     let p = touch(dir, name);
-    filetime::set_file_mtime(&p, filetime::FileTime::from_unix_time(unix_secs, 0)).unwrap();
+    fs::set_times(
+        &p,
+        fs::FileTimes::new().set_modified(std::time::UNIX_EPOCH + Duration::from_secs(unix_secs as u64)),
+    )
+    .unwrap();
     p
 }
 

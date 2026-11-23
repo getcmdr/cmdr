@@ -160,8 +160,6 @@ cmdr-webdav = { path = "../cmdr-webdav" }
 jiff = "0.2.43"
 # The hot-path bench (`benches/transfer_benchmarks.rs`).
 criterion = { version = "0.8.1", features = ["html_reports"] }
-# Ageing fixture files.
-filetime = "0.2"
 # Reading a journal's rows back.
 rusqlite = { version = "0.42", features = ["bundled", "collation", "fallible_uint"] }
 # Tarball fixtures for the read-only archive cells.
