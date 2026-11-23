@@ -4,7 +4,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::{AppPathBuf, Namer, PathFlavor};
 use cmdr_fs::volume::AnchorRefusal;
 
 use cmdr_fs::volume::{RoutedKind, Volume};
@@ -47,11 +47,12 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
     let root = dest_volume.root();
     match cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)) {
         // A local volume's destination may come as the OS spells it (a native `C:\x\dst` an
-        // agent or a suite hands over): read through the native door and anchored again,
-        // as the `std::path` anchor took it. On macOS and Linux a native path is app text
-        // already, so this answers nothing the anchor above didn't.
+        // agent or a suite hands over): read as outside text a machine handed over
+        // (`from_external_text`: on Windows `\` separates too) and anchored again, as the
+        // `std::path` anchor took it. On macOS and Linux that's the text the anchor above
+        // read, so it answers nothing new there.
         Err(refused) if dest_volume.local_path().is_some() => {
-            match AppPathBuf::from_native_unicode(std::path::Path::new(expanded.as_ref())) {
+            match AppPathBuf::from_external_text(&expanded, PathFlavor::HOST, Namer::HOST) {
                 Ok(native) => cmdr_fs::volume::anchor_at_root(root, native.as_str()),
                 Err(_) => Err(refused),
             }

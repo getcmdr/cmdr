@@ -1930,9 +1930,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **`resolve_dest_path` anchors typed** (`anchor_at_root`, answering an `AppPathBuf`), the destination's literal
     escape-range code points spelled as the bridge spelled them; `resolve_destination`, the compress start, the
     rename-as-move, and the conflict scan anchor on the drive first and ask the route question with the typed value. A
-    local volume's destination the OS spells (`C:\x\dst`, an agent's or a suite's) reads through `from_native_unicode`
-    and anchors again, as the `std::path` anchor took it. The rename-merge's case-folded sibling joins through
-    `ListedName` (it was a raw `Path::join` of a listed name).
+    local volume's destination the OS spells (`C:\x\dst`, an agent's or a suite's) reads as machine-handed outside text
+    (`from_external_text`) and anchors again, as the `std::path` anchor took it. The rename-merge's case-folded sibling
+    joins through `ListedName` (it was a raw `Path::join` of a listed name).
   - **Behavior changes** (input no pane or row sends): a destination holding a `..` or naming another volume refuses as
     `DestinationNotFound` (the app resolves a box's `..` first, `commands/wire_path.rs::transfer_destination`); the
     conflict scan anchors before its route question, as the start does (#1369's shape); a trailing-`/` trim keeps the
