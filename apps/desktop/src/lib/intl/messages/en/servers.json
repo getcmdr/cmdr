@@ -49,6 +49,13 @@
     "description": "The last row of the servers hub, which opens the form for typing a new server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
     "screenshot": "servers-hub.png"
   },
+  "servers.hub.moreShares": "More shares on {server}…",
+  "@servers.hub.moreShares": {
+    "description": "A row in the servers hub, under a saved file server's shared folders, shown when not all of that server's shared folders fit or the list isn't known yet. Activating it opens the full list of that server's shared folders. \"Shares\" means shared folders on a network file server. Italic, like \"Add server…\". The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
+    "placeholders": {
+      "server": "the file server's name as the list shows it, like \"Testnas\""
+    }
+  },
   "servers.hub.status.connected": "Connected",
   "@servers.hub.status.connected": {
     "description": "Status of a server the app is talking to right now. One word, ADJECTIVE."
@@ -56,6 +63,10 @@
   "servers.hub.status.saved": "Saved",
   "@servers.hub.status.saved": {
     "description": "Status of a server the user has saved but isn’t connected to. Nothing is wrong; it’s simply idle. One word, ADJECTIVE."
+  },
+  "servers.hub.status.notConnected": "Not connected",
+  "@servers.hub.status.notConnected": {
+    "description": "Status of a shared folder on a saved file server that the user hasn’t opened in Cmdr yet. The row is dimmed; opening it connects to that shared folder. ❗ NOT a failure or an error: nothing went wrong. Short, ADJECTIVE phrase."
   },
   "servers.hub.status.notConnectedYet": "Not connected yet",
   "@servers.hub.status.notConnectedYet": {

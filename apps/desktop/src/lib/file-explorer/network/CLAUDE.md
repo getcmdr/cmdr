@@ -6,7 +6,7 @@ Signing in is `#lib/servers`' one sheet; this module only says what to ask and w
 ## Module map
 
 - `network-store.svelte.ts`: the `$state` singleton behind all network data. `lazy-trigger.ts`: the network-action hook.
-- `ServersHub.svelte` (+ `servers-hub-{rows,items,keys,actions,mcp,columns}.ts`, `servers-hub-list.svelte.ts`,
+- `ServersHub.svelte` (+ `servers-hub-{rows,items,shares,keys,actions,mcp,columns}.ts`, `servers-hub-list.svelte.ts`,
   `host-status.ts`, `ServersHubRowMenu.svelte`, `ServersHubStatusBar.svelte`): the hub table on the `network` volume.
   `PlacesBrowser.svelte` (+ `PlacesHeader.svelte`): one account's places, the listing's sign-in, and "Sign in as…".
   `smb-sign-in.ts`: SMB's side of the sheet. `list-cursor.ts`: both lists' arrow keys, jump rule, and scrolling.

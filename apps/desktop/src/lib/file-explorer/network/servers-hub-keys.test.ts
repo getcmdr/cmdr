@@ -57,3 +57,24 @@ describe('cursorAcrossRebuild', () => {
     expect(cursorAcrossRebuild(items('>', '~a', '~b'), items('a', '<'), 1)).toBe(0)
   })
 })
+
+describe('cursorAcrossRebuild as a server’s share list lands (#1404)', () => {
+  /** A share item under the saved server `nas`: an unsaved share, or the More row. */
+  const shareItem = (id: string): HubItem => ({ kind: 'more_shares', id, server: { id: 'nas' } as HubRow })
+
+  it('stays on the same item when share rows appear above it', () => {
+    const before = [...items('nas'), shareItem('more-shares:nas'), ...items('attic')]
+    const after = [
+      ...items('nas'),
+      shareItem('unsaved-share:nas:a'),
+      shareItem('unsaved-share:nas:b'),
+      ...items('attic'),
+    ]
+    expect(cursorAcrossRebuild(before, after, 2)).toBe(3)
+  })
+
+  it('keeps the add row the add row when share rows appear', () => {
+    const after = [...items('nas'), shareItem('unsaved-share:nas:a'), ...items('attic')]
+    expect(cursorAcrossRebuild(items('nas', 'attic'), after, 2)).toBe(3)
+  })
+})

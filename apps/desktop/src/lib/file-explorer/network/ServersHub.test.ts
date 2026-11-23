@@ -38,6 +38,8 @@ const h = vi.hoisted(() => ({
   setSetting: vi.fn(),
   /** The stored settings, reactive like the app's, so a toggle re-renders the hub. */
   settings: new Map<string, string>(),
+  /** The prefetched share lists by host id, reactive like the store's, so a list landing re-renders the hub. */
+  shareStates: new Map<string, unknown>(),
 }))
 
 /** The saved SMB server behind a discovered host, which is what makes it the person's own. */
@@ -84,23 +86,27 @@ const savedSftp: SavedServer = {
   ],
 }
 
-vi.mock('./network-store.svelte', () => ({
-  getNetworkHosts: () => mockHosts,
-  getDiscoveryState: () => 'idle',
-  getShareState: () => undefined,
-  isHostResolving: () => false,
-  isListingShares: () => false,
-  isShareDataStale: () => false,
-  getShareCount: () => undefined,
-  refreshAllStaleShares: h.refreshAllStaleShares,
-  clearShareState: h.clearShareState,
-  fetchShares: h.fetchShares,
-  getCredentialStatus: () => 'unknown',
-  checkCredentialsForHost: vi.fn(() => Promise.resolve()),
-  forgetCredentials: vi.fn(() => Promise.resolve()),
-  setCredentialStatus: vi.fn(),
-  getListedAccount: () => undefined,
-}))
+vi.mock('./network-store.svelte', async () => {
+  const { SvelteMap } = await import('svelte/reactivity')
+  h.shareStates = new SvelteMap()
+  return {
+    getNetworkHosts: () => mockHosts,
+    getDiscoveryState: () => 'idle',
+    getShareState: (hostId: string) => h.shareStates.get(hostId),
+    isHostResolving: () => false,
+    isListingShares: () => false,
+    isShareDataStale: () => false,
+    getShareCount: () => undefined,
+    refreshAllStaleShares: h.refreshAllStaleShares,
+    clearShareState: h.clearShareState,
+    fetchShares: h.fetchShares,
+    getCredentialStatus: () => 'unknown',
+    checkCredentialsForHost: vi.fn(() => Promise.resolve()),
+    forgetCredentials: vi.fn(() => Promise.resolve()),
+    setCredentialStatus: vi.fn(),
+    getListedAccount: () => undefined,
+  }
+})
 
 vi.mock('./lazy-trigger', () => ({ triggerNetworkDiscovery: vi.fn() }))
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: () => [] }))
@@ -171,6 +177,7 @@ interface MountedHub {
   onHostSelect: ReturnType<typeof vi.fn>
   onServerSelect: ReturnType<typeof vi.fn>
   onConnectToServer: ReturnType<typeof vi.fn>
+  onShareViaHost: ReturnType<typeof vi.fn>
   cleanup: () => Promise<void>
 }
 
@@ -188,9 +195,10 @@ function mountBehindBothHandlers(): MountedHub {
   const onHostSelect = vi.fn()
   const onServerSelect = vi.fn()
   const onConnectToServer = vi.fn()
+  const onShareViaHost = vi.fn()
   const component = mount(ServersHub, {
     target,
-    props: { paneId: 'left', isFocused: true, onHostSelect, onServerSelect, onConnectToServer },
+    props: { paneId: 'left', isFocused: true, onHostSelect, onServerSelect, onConnectToServer, onShareViaHost },
   })
   const api = component as unknown as ServersHubApi
 
@@ -216,7 +224,7 @@ function mountBehindBothHandlers(): MountedHub {
     document.removeEventListener('keydown', documentDispatcher)
     await unmount(component)
   }
-  return { target, api, onHostSelect, onServerSelect, onConnectToServer, cleanup }
+  return { target, api, onHostSelect, onServerSelect, onConnectToServer, onShareViaHost, cleanup }
 }
 
 /**
@@ -238,6 +246,7 @@ beforeEach(() => {
   h.dispatched.length = 0
   h.listSavedServers.mockResolvedValue([])
   h.settings.clear()
+  h.shareStates.clear()
   document.body.innerHTML = ''
   // The document dispatcher's reverse lookup is built here in the app's startup.
   initShortcutDispatch()
@@ -749,7 +758,8 @@ describe('ServersHub nearby group', () => {
     h.listSavedServers.mockResolvedValue([savedSmb(mockHosts[0])])
     const { target, cleanup } = mountBehindBothHandlers()
     await settle()
-    expect(rowNames(target)).toEqual(['Testnas'])
+    // Its share list isn't known yet, so the "More shares" row stands under it (#1404).
+    expect(rowNames(target)).toEqual(['Testnas', 'More shares on Testnas…'])
     expect(header(target)?.textContent.trim()).toBe('1 server found nearby')
     await cleanup()
   })
@@ -918,6 +928,85 @@ describe('ServersHub nearby group', () => {
     expect(onConnectToServer).toHaveBeenCalledOnce()
     // Reaching past a collapsed group is no reason to open it.
     expect(rowNames(target)).toEqual(['Jump box'])
+    await cleanup()
+  })
+})
+
+describe('ServersHub other shares of a saved server (#1404)', () => {
+  const [testnas, attic] = mockHosts
+  const loaded = (names: string[]) => ({
+    status: 'loaded',
+    result: {
+      shares: names.map((name) => ({ name, isDisk: true, comment: null })),
+      authMode: 'unknown',
+      fromCache: false,
+    },
+    fetchedAt: 0,
+  })
+  /** The text of every line the list shows, in order, the add row and hints aside. */
+  const lines = (target: HTMLElement) =>
+    [...target.querySelectorAll('.server-row:not(.add-row) .col-name')].map((cell) => cell.textContent.trim())
+
+  it('lists the unsaved shares only under a saved server, dimmed and "Not connected"', async () => {
+    h.listSavedServers.mockResolvedValue([savedSmb(testnas)])
+    h.shareStates.set(testnas.id, loaded(['Media', 'backup']))
+    h.shareStates.set(attic.id, loaded(['Junk']))
+    h.settings.set('network.nearbyServersGroup', 'expanded')
+    const { target, cleanup } = mountBehindBothHandlers()
+    await settle()
+
+    // Attic is only found nearby: its list (which a person's opening made) adds nothing under it.
+    expect(lines(target)).toEqual(['Testnas', 'backup', 'Media', 'Attic'])
+    const unsaved = target.querySelectorAll('.unsaved-share-row')
+    expect(unsaved).toHaveLength(2)
+    expect(unsaved[0].querySelector('.col-status')?.textContent.trim()).toBe('Not connected')
+    // Every share is on screen, so there's no "More shares" row.
+    expect(target.querySelector('.more-shares-row')).toBeNull()
+    await cleanup()
+  })
+
+  it('shows the More row while the list is still loading, and opens the share list from it', async () => {
+    h.listSavedServers.mockResolvedValue([savedSmb(testnas)])
+    h.shareStates.set(testnas.id, { status: 'loading' })
+    const { target, api, onHostSelect, cleanup } = mountBehindBothHandlers()
+    await settle()
+
+    expect(target.querySelector('.more-shares-row')?.textContent.trim()).toBe('More shares on Testnas…')
+    api.setCursorIndex(api.findItemIndex('More shares on Testnas…'))
+    expect(api.getRowUnderCursor()).toBeNull()
+    api.openCursorItem()
+    expect(onHostSelect).toHaveBeenCalledWith(testnas, 'Testnas')
+    await cleanup()
+  })
+
+  it('mounts an unsaved share through its host’s share list on Enter', async () => {
+    h.listSavedServers.mockResolvedValue([savedSmb(testnas)])
+    h.shareStates.set(testnas.id, loaded(['Media']))
+    const { target, api, onShareViaHost, cleanup } = mountBehindBothHandlers()
+    await settle()
+
+    api.setCursorIndex(api.findItemIndex('Media'))
+    // Nothing is saved about it, so F8 and the menus find no row.
+    expect(api.getRowUnderCursor()).toBeNull()
+    target.querySelector('.row-list')?.dispatchEvent(plainKey('Enter'))
+    expect(onShareViaHost).toHaveBeenCalledOnce()
+    expect(onShareViaHost).toHaveBeenCalledWith(testnas, { share: 'Media', label: 'Testnas' })
+    await cleanup()
+  })
+
+  it('keeps the cursor on the same server when another server’s shares land above it', async () => {
+    h.listSavedServers.mockResolvedValue([savedSmb(testnas), savedSmb(attic)])
+    h.shareStates.set(attic.id, loaded([]))
+    h.shareStates.set(testnas.id, loaded([]))
+    const { api, cleanup } = mountBehindBothHandlers()
+    await settle()
+    api.setCursorIndex(api.findItemIndex('Testnas'))
+    await settle()
+
+    // Attic sorts first, so its shares arrive above the cursor.
+    h.shareStates.set(attic.id, loaded(['Media', 'Photos', 'Music']))
+    await settle()
+    expect(api.getRowUnderCursor()?.name).toBe('Testnas')
     await cleanup()
   })
 })

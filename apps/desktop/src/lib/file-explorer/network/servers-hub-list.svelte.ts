@@ -14,11 +14,23 @@ import { getNearbyServersGroupChoice } from '#lib/settings/reactive-settings.sve
 import { setSetting } from '#lib/settings/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { LogOnceGate } from '#lib/logging/log-once.js'
-import { getListedAccount, getNetworkHosts } from './network-store.svelte'
-import { buildHubRows, savedSmbHostIds } from './servers-hub-rows'
+import { getListedAccount, getNetworkHosts, getShareState } from './network-store.svelte'
+import { buildHubRows, savedSmbHostIds, type HubRow } from './servers-hub-rows'
 import { hubItems, isNearbyGroupExpanded, visibleHubItems } from './servers-hub-items'
 
 const log = getAppLogger('servers')
+
+/**
+ * The share names a saved server's list already holds, or `null` while it's
+ * loading, needs a sign-in, couldn't be read, or was never read. ❗ A READ of the
+ * store only: the prefetch that fills it (`startPrefetchShares`) is the one
+ * listing a saved server gets, so the hub's share rows cost no connection (#1404).
+ * Keyed like the prefetch: the host mDNS sees, else the saved entry's own id.
+ */
+function prefetchedShareNames(server: HubRow): string[] | null {
+  const state = (server.host ? getShareState(server.host.id) : undefined) ?? getShareState(server.id)
+  return state?.status === 'loaded' ? state.result.shares.map((share) => share.name) : null
+}
 
 export function createHubList() {
   /** `listSavedServers()`, refreshed whenever the volume list is. */
@@ -55,7 +67,7 @@ export function createHubList() {
   const nearbyExpanded = $derived(
     nearbyRevealed || isNearbyGroupExpanded(getNearbyServersGroupChoice(), hadSavedServerAtOpen === true),
   )
-  const items = $derived(hubItems(rows, nearbyExpanded))
+  const items = $derived(hubItems(rows, nearbyExpanded, prefetchedShareNames))
   const visibleItems = $derived(visibleHubItems(items))
 
   /** Retried on every `volumes-changed`, so a store that stays broken logs once until a read works. */

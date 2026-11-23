@@ -95,13 +95,38 @@ either way.
 - **A saved SMB share** (a row right under its host, `docs/specs/saved-smb-shares.md`) takes the pane to its place when
   the volume list has one, exactly like a one-place server, so an unmounted one is mounted IN THE PANE. One no mount
   went through yet (Add named it) opens its host's places list and mounts that share for the visit (`onShareViaHost`).
+- **An unsaved share** of a saved server (§ "A saved server's other shares") goes the same way as a saved share no mount
+  went through: its host's places list, mounting that share, and that mount is what saves it.
+- **The "More shares on …" row** opens its server's places list, exactly what Enter on the server row does.
 - **An S3 place** (a bucket, or the account root, right under its account) takes the pane to its place, exactly like a
   one-place server. **The S3 account row** is no place, so Enter answers a toast pointing at the places under it.
 - **The add row** opens the one sign-in sheet in add mode (`../../servers/open-sign-in.ts`). An SMB address comes back
   as a hand-off, and `NetworkMountView` opens the injected host's places.
 
-`servers-hub-rows.ts::openMoveFor` is the one place that decides which of these a row gets; the component only carries
-it out.
+`servers-hub-rows.ts::openMoveFor` is the one place that decides which of these a row gets
+(`servers-hub-shares.ts::shareItemMove` for the two share items); the component only carries it out.
+
+### A saved server's other shares
+
+Under each SAVED SMB server the hub lists every share its prefetched list holds, not only the saved ones (#1404): a
+person who saved one share of a Mac read the server as having just that one.
+
+- **Off the list the prefetch already made, ❌ never a new listing** (`servers-hub-list.svelte.ts::prefetchedShareNames`
+  reads `getShareState`). A server Cmdr only found gets none: the #324 line holds, and this adds no `listSharesOnHost`
+  caller.
+- **They're ITEMS, ❌ not `HubRow`s** (`servers-hub-shares.ts::ShareItem`, spliced in by `hubItems`). Nothing about them
+  is saved, so `getRowUnderCursor()` is `null` on them, like on the group's header: F8, the row menus, and the palette's
+  server commands find nothing, and no account, pin, or Forget share shows. An unsaved share is dimmed, reads "Not
+  connected", and is a type-to-jump name.
+- **Order and cap**: saved shares first, then the rest by name (case-insensitive; a saved share matches case- and
+  Unicode-form-blind, so it never shows twice). At most `MAX_SHARE_ROWS_PER_SERVER` (8) share rows per server, the saved
+  ones counted but ❌ never hidden: past the cap only the More row is added.
+- **The More row** ("More shares on {server}…", italic like "Add server…") stands last whenever a share isn't on screen
+  or nobody knows yet: capped, still loading, needs a sign-in, couldn't be read, or never read (a saved server mDNS
+  isn't seeing, or one still `awaitingFirstConnect`).
+- **Rows land late, under the cursor**: the prefetched list arrives after the view opens. `cursorAcrossRebuild` follows
+  the item by id, so the cursor stays on the same item (`ServersHub.test.ts` pins it). Item ids are
+  `unsaved-share:<server id>:<name>` and `more-shares:<server id>`.
 
 ### The nearby group
 
@@ -225,7 +250,9 @@ unit-tested:
   one-place row's path is the place's `appRoot` (from `SavedPlace`, which Rust mints in one function); an SMB host keeps
   the `smb://<address>` spelling the host list publishes; an S3 account row publishes the account's own prefix
   (`s3://<key>@<host>:<port>`) and its place rows `kind=place` (a share row keeps `kind=share`); the add row is
-  `+ Add server…` at `smb://add`.
+  `+ Add server…` at `smb://add`. A saved server's unsaved share carries `status="not_connected"` and
+  `kind=unsaved_share` at `smb://<address>/<name>`, its More row is `More shares on <server>…  kind=more_shares` at
+  `smb://<address>` (English, like the group's name). `hubItemMcpName` is the name `findItemIndex` matches.
 - **`servers-hub-actions.ts`**: F8, the two row menus, and the SMB host menu's answers, behind live getters (❌ never
   snapshots: the rows change under a menu that is still open). ❗ A one-place row and an SMB host take different paths
   at every branch, which is why they live in one unit: a one-place row is a PLACE the servers family speaks for, an SMB
