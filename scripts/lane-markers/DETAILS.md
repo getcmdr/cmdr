@@ -86,8 +86,10 @@ repo reached 9.71 GB of 10 during the run, the marker went, and `verify` failed 
 - **Touch**: the `changes` job restores each trusted key lookup-only (`.github/actions/touch-lane-markers`). Listing
   (the REST API) doesn't bump `last_accessed_at`; a restore does, and a lookup-only one sends the identical
   `GetCacheEntryDownloadURL` request (actions/toolkit `restoreCacheV2`, read 2026-11-23, skips only the blob download).
-  The marker is then newer than every entry not used since the run started. A step can't loop, so the action has
-  `touchSlots` fixed slots; `TestTouchActionHasOneSlotPerPossibleLane` holds the count, and `plan` refuses more lanes.
+  The marker is then newer than every entry not used since the run started. To see it work, compare a trusted marker's
+  `last_accessed_at` (`gh api repos/getcmdr/cmdr/actions/caches -f key=<its key>`) with the `Touch marker N` step's time
+  in `Detect changes`. A step can't loop, so the action has `touchSlots` fixed slots;
+  `TestTouchActionHasOneSlotPerPossibleLane` holds the count, and `plan` refuses more lanes.
 - **Less pressure**: upkeep prunes a family's old generation minutes after the new one's save (`docs/tooling/ci.md` §
   Build caching), so a key rotation no longer parks the repo past its budget for the length of the upkeep run.
 - **Residual**: a bot PR trusts only `main`'s scope, but a restore searches the PR's own scope first, so if its own
