@@ -30,9 +30,10 @@ fn set_of(points: &[&str]) -> BootTreeMounts {
 }
 
 /// The table a Linux machine with a separate `/home` and three shares inside its
-/// tree reads.
-fn linux_table() -> BootTreeMounts {
-    BootTreeMounts::from_mount_table(
+/// tree reads, under `cut` (a value, so each platform's rule holds on every host).
+fn linux_table(cut: BootTreeCut) -> BootTreeMounts {
+    BootTreeMounts::from_mount_table_cut(
+        cut,
         [
             row("/", "/dev/nvme0n1p3", "btrfs"),
             row("/home", "/dev/nvme0n1p3", "btrfs"),
@@ -41,7 +42,7 @@ fn linux_table() -> BootTreeMounts {
             row("/home/someone/smb", "//testshare/photos", "cifs"),
             row("/home/someone/remote", "someone@host:", "fuse.sshfs"),
         ],
-        excluded_by_boot_prefixes,
+        |_| false,
     )
 }
 
@@ -49,10 +50,9 @@ fn linux_table() -> BootTreeMounts {
 /// so a share under the home folder isn't crawled at local-walker speed, but keeps
 /// walking into a local disk mounted there, so a separate `/home` stays indexed.
 #[test]
-#[cfg(not(target_os = "macos"))]
 fn linux_cuts_only_the_mounts_that_arent_a_local_disk() {
     assert_eq!(
-        paths(&linux_table()),
+        paths(&linux_table(BootTreeCut::NotALocalDisk)),
         vec!["/home/someone/nas", "/home/someone/remote", "/home/someone/smb"]
     );
 }
@@ -60,10 +60,9 @@ fn linux_cuts_only_the_mounts_that_arent_a_local_disk() {
 /// macOS stops at every mount inside its tree, a local disk image included: each
 /// has its own index.
 #[test]
-#[cfg(target_os = "macos")]
 fn macos_cuts_every_mount_inside_its_tree() {
     assert_eq!(
-        paths(&linux_table()),
+        paths(&linux_table(BootTreeCut::Every)),
         vec![
             "/home",
             "/home/someone/nas",
@@ -233,7 +232,8 @@ fn should_exclude_stops_the_boot_disk_at_a_mount_inside_its_tree() {
 /// #731 at the gate: what the host reports for each row decides it, so an NFS
 /// share under the home folder is cut while the local `/home` holding it isn't.
 #[test]
-#[cfg(not(target_os = "macos"))]
+// Linux's own rule, live through `should_exclude`: macOS and Windows cut every mount.
+#[cfg(target_os = "linux")]
 fn linux_should_exclude_stops_at_a_share_but_not_at_a_local_home() {
     let _serialized = crate::indexing::handle::test_lock();
     let (_installed, provider) = install_mount_table(&["/", "/home", "/home/someone/nas"]);
