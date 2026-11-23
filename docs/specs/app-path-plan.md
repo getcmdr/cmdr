@@ -1903,12 +1903,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
   round); `BulkRenameRow`.
 - **The sixth pass's Windows cells** (2026-11-23, branch `worktree-agent-a21960add7ac0dc90`, which carries the sixth
   pass to `main`): its 25 newly failing Windows cells, each read for a cause.
-  - **Two real Windows bugs**: a rename-as-move into a zip on a POSIX volume went in unrefused, as
-    `start_rename_by_move` built its targets with `Path::join` (`/repo/a.zip\top.txt`, one name the route gate couldn't
-    place); it joins typed now (`ListedFolder`). And the local fast path's route guard
-    (`write_ops.rs::reject_if_routed_over_a_parent`) SKIPPED a path with no native spelling, so a mangled destination
-    (the box's native `C:\…\a.zip/x` anchored as one name under `C:/`) crossed no route check; it refuses now, fail
-    closed.
+  - **Three real Windows bugs**: a local write reported each finished source re-joined (`C:/x/dir\old.iso`), so the
+    suggested-ops review never marked a deleted file's op done (`scan_source_tracker::top_level_source_path` now slices
+    the file's own path). A rename-as-move into a zip on a POSIX volume went in unrefused, as `start_rename_by_move`
+    built its targets with `Path::join` (`/repo/a.zip\top.txt`, one name the route gate couldn't place); it joins typed
+    now (`ListedFolder`). And the local fast path's route guard (`write_ops.rs::reject_if_routed_over_a_parent`) SKIPPED
+    a path with no native spelling, so a mangled destination (the box's native `C:\…\a.zip/x` anchored as one name under
+    `C:/`) crossed no route check; it refuses now, fail closed.
   - **The demo** reads its write paths POSIX on every host (`invoke::demo_path`), as its listing commands did.
   - **Cells**: the suggested-ops bridge fixtures store app text (as the drive index hands the agent a path), and the
     engine's already-gone and queued-sources cells expect a source reported back as sent (`C:/…`).
