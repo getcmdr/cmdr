@@ -1944,7 +1944,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **Windows cells** (by cause): `wire_paths`' two, `failure_side_tests`' five (their fixture joined `/t0` and `nested`
     with `Path::join`), and the separator-shaped siblings: `unique_name.rs::sibling_in` joins a recovered or ` (N)` name
     with its folder's own separator (`/dest\notes (recovered).txt` on Windows was a name no remote volume holds), and
-    `cmdr-listing-wasm`'s `folder_sizes.rs` joins its POSIX rows with `/`.
+    `cmdr-listing-wasm`'s `folder_sizes.rs` joins its POSIX rows with `/`. Seen on the hosted Windows lane (run
+    45228362992): 0 newly failing; the known-failures list's `cmdr-operations` entries 45 → 36 and `cmdr-listing-wasm`'s
+    7 → 5. Its first runs caught three Windows-only shapes the typed doors had refused (a native `C:\x\dst` destination,
+    a Windows archive's native rows, a suite's `/`-rooted local volume); each reads as the `std::path` form read it now.
   - **Left in 10a** (sizes are guesses): the leaf bodies past the walk (`copy_leaf`, `LeafPool` rows, `RefusedChild` /
     `RefusedLeaf`, `stream_pipe_file`, `land_link`, the staged write's `Spelled`, `ResolvedConflict.write_path`,
     `CreatedPaths`), then `native_join_refuses`' deletion (L, one cascade); the drivers' sources and destination
