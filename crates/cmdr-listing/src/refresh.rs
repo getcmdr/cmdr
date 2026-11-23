@@ -13,7 +13,7 @@ use cmdr_fs::log_private::LogPrivate;
 use crate::Inner;
 use crate::patch_log::Recheck;
 use crate::pipeline::{Prepared, ReadBy};
-use crate::reread::ReadGeneration;
+use crate::read_generation::ReadGeneration;
 
 /// One directory's refresh turnstile: an async lock plus a flag saying whether a
 /// refresh is already queued behind the running one.

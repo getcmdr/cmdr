@@ -33,8 +33,10 @@ use cmdr_fs::volume::VolumeError;
 
 use super::Inner;
 use super::listing_id::ListingId;
-use super::patch_log::{Recheck, Settled};
+use super::patch_log::Recheck;
 use super::pipeline::{OverlayRows, Prepared, ReadBy};
+use super::read_generation::ReadGeneration;
+use super::settle::Settled;
 use super::sorting::sort_entries;
 
 /// How a full re-read of one listing ended.
@@ -69,17 +71,6 @@ pub struct ReadTicket {
     generation: ReadGeneration,
 }
 
-/// When a full re-read started reading, from its engine's one counter: a later
-/// start has a higher generation. A listing remembers the newest one it
-/// published, and a re-read older than that is dropped.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct ReadGeneration(u64);
-
-impl ReadGeneration {
-    /// What the streaming read's cache insert publishes, so any later re-read wins.
-    pub(crate) const INSERT: Self = Self(0);
-}
-
 impl ReadTicket {
     /// The directory to read, in the listing's spelling.
     pub fn path(&self) -> &AppPath {
@@ -92,7 +83,7 @@ impl Inner {
     /// before the read, after any turn or volume lookup it waits on: one taken
     /// while queued would lose to a read that started later.
     pub(crate) fn next_read_generation(&self) -> ReadGeneration {
-        ReadGeneration(self.read_generations.fetch_add(1, Ordering::SeqCst) + 1)
+        ReadGeneration::of_count(self.read_generations.fetch_add(1, Ordering::SeqCst) + 1)
     }
 
     /// [`Self::next_read_generation`] for a read of `listing_ids`, marking each
@@ -113,7 +104,7 @@ impl Inner {
     /// The last generation handed out, which stamps a patch. Read it under the
     /// cache write lock, where [`Self::start_read`] hands one out.
     pub(crate) fn read_generation_now(&self) -> ReadGeneration {
-        ReadGeneration(self.read_generations.load(Ordering::SeqCst))
+        ReadGeneration::of_count(self.read_generations.load(Ordering::SeqCst))
     }
 
     pub(crate) async fn refresh(self: &Arc<Self>, id: &ListingId) -> RefreshOutcome {

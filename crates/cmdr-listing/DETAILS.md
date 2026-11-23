@@ -1230,6 +1230,9 @@ state, and nothing corrected it: a 3,000-file `cmd` loop on Windows left a pane 
   same lock, so a read with generation `G` started before every patch stamped `G` or later, and after every other one.
   On landing, `PatchLog::landing(G)` owes the names stamped `>= G` and keeps only those stamped `> G`, for a newer read
   still in flight.
+- **Module shape.** `read_generation.rs` and `patch_log.rs` are pure-data leaves; the listing holds a `PatchLog`, and
+  `settle.rs` acts on what a landing owes. Keep it that way: `CachedListing` methods in `patch_log.rs` closed a
+  `cached_listing` / `patch_log` / `reread` cycle that `module-cycles` rejects.
 - **Settling.** `update_listing_entries` hands back a `Recheck`, and its caller runs `settle_patches` with no lock held:
   it stats each owed name through the volume (16 at a time) and patches it again through `notify_added` (an upsert that
   carries tags forward) or `notify_removed`. `refresh`, `refresh_from_entries`, the `FullRefresh`, and the respell await

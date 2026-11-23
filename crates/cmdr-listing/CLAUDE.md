@@ -7,11 +7,12 @@ Tauri-free; Cmdr hosts it from `apps/desktop/src-tauri/src/listing_host/`.
 
 - **lib.rs** (`Inner`, the engine's state, and the API re-exports), **engine/** (`Listings`, one file per caller group),
   **host/** (the seams, see `src/host/CLAUDE.md`), **testing/** (fixtures).
-- Read: **streaming.rs**, **stall.rs**, **pipeline.rs**, **reread.rs**, **patch_log.rs** (patches during a re-read),
-  **refresh.rs**, **foreign_path.rs**. Cache: **cached_listing.rs**, **caching.rs** (lookups, change intake),
-  **mutate.rs**, **authoritative.rs**, **operations.rs**. Rows: **visible_rows.rs**, **path_index.rs**,
-  **quick_filter.rs**, **diff.rs**, **diff_emitter.rs**. Sort: **sorting.rs**, **search_rows.rs** (a results pane's
-  order) (names collate through `cmdr-collation`; the vocabulary is `cmdr-sort`'s, re-exported).
+- Read: **streaming.rs**, **stall.rs**, **pipeline.rs**, **reread.rs**, **read_generation.rs**, **patch_log.rs** +
+  **settle.rs** (patches during a re-read), **refresh.rs**, **foreign_path.rs**. Cache: **cached_listing.rs**,
+  **caching.rs** (lookups, change intake), **mutate.rs**, **authoritative.rs**, **operations.rs**. Rows:
+  **visible_rows.rs**, **path_index.rs**, **quick_filter.rs**, **diff.rs**, **diff_emitter.rs**. Sort: **sorting.rs**,
+  **search_rows.rs** (a results pane's order) (names collate through `cmdr-collation`; the vocabulary is `cmdr-sort`'s,
+  re-exported).
 
 ## Must-knows
 

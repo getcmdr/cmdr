@@ -22,7 +22,7 @@ use crate::patch_log::PatchLog;
 use crate::path_index::PathIndexCache;
 pub(crate) use crate::pipeline::OverlayRows;
 use crate::pipeline::{ListedDates, Prepared};
-use crate::reread::ReadGeneration;
+use crate::read_generation::ReadGeneration;
 use crate::sorting::{EffectiveSort, sort_entries};
 use crate::visible_rows::{ScratchProjection, VisibleRows, VisibleRowsCache};
 use cmdr_collation::NameCollator;
@@ -277,6 +277,21 @@ impl CachedListing {
     /// the directory.
     pub(crate) fn set_overlay_rows(&mut self, count: usize) {
         self.overlay_rows = count;
+    }
+
+    /// Whether a full re-read of this listing may be in flight, so a patch
+    /// must be noted (`patch_log.rs`). False in the normal case, where noting
+    /// costs nothing.
+    pub(crate) fn tracks_patches(&self) -> bool {
+        self.started_generation > self.published_generation
+    }
+
+    /// Notes a patch to `name` if a re-read may be in flight. Call it under the
+    /// cache write lock with `Inner::read_generation_now` as `now`.
+    pub(crate) fn note_patch(&mut self, name: &str, now: ReadGeneration) {
+        if self.tracks_patches() {
+            self.patch_log.note(name, now);
+        }
     }
 
     /// Whether a listing overlay contributed any of these rows.
