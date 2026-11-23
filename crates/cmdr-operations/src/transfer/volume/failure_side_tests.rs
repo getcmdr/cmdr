@@ -61,23 +61,16 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let mut paths = Vec::new();
     for n in 0..count {
-        let root = PathBuf::from(format!("/t{n}"));
+        // App paths, `/`-joined on every host (a Windows `Path::join` made `/t0\nested`).
+        let top = format!("/t{n}");
+        let at = |text: String| AppPath::from_normalized(&text).expect("canonical").to_owned();
+        source.create_directory(&at(top.clone())).await.unwrap();
+        source.create_directory(&at(format!("{top}/nested"))).await.unwrap();
         source
-            .create_directory(&AppPath::legacy_unchecked(&root))
+            .create_file(&at(format!("{top}/nested/deep.txt")), b"the user's bytes")
             .await
             .unwrap();
-        source
-            .create_directory(&AppPath::legacy_unchecked(&root.join("nested")))
-            .await
-            .unwrap();
-        source
-            .create_file(
-                &AppPath::legacy_unchecked(&root.join("nested/deep.txt")),
-                b"the user's bytes",
-            )
-            .await
-            .unwrap();
-        paths.push(root);
+        paths.push(PathBuf::from(top));
     }
     (source, paths)
 }
@@ -171,10 +164,10 @@ async fn assert_destination_refusal(
         "{driver:?} {op:?}: the report names the DESTINATION item that refused, got {path:?}"
     );
     // A move that failed in its copy phase never touches the source.
-    for path in &paths {
+    for n in 0..paths.len() {
         assert!(
             source
-                .exists(&AppPath::legacy_unchecked(&path.join("nested/deep.txt")))
+                .exists(AppPath::from_normalized(&format!("/t{n}/nested/deep.txt")).expect("canonical"))
                 .await
         );
     }

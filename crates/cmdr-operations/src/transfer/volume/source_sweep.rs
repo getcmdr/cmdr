@@ -33,6 +33,7 @@ use super::super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::super::state::WriteOperationState;
 use super::super::left_in_source::junk_volume_delete_refused;
 use super::super::volume_outage::through_outages;
+use super::listed_name::{into_std, listed_path, on_volume, std_of};
 use super::transfer_error::{AtPath, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
@@ -184,10 +185,24 @@ async fn sweep_level(
     // went, so a folder that stays keeps the metadata describing it.
     let (mut husk, mut husk_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
     for entry in &entries {
-        let path = PathBuf::from(&entry.path);
-        // The entry in the volume's spelling, made once for its stat, its
-        // delete, and the batch delete (a borrow until a batch keeps it).
-        let path_app = AppPath::legacy_unchecked(&path);
+        // The entry as its listing row names it, typed, made once for its stat,
+        // its delete, and the batch delete (a borrow until a batch keeps it). A
+        // row naming no place in this folder (a hostile `../x`) is never
+        // deleted: it stays, like anything the sweep can't vouch for.
+        let path_app = match listed_path(entry) {
+            Ok(path_app) => path_app,
+            Err(e) => {
+                log::warn!(
+                    "move sweep: kept a listed entry that names no place under {}: {}",
+                    LogPrivate::path(dir),
+                    LogError(&e)
+                );
+                remains = true;
+                continue;
+            }
+        };
+        // The same entry for the ledgers, which key on `std::path`.
+        let path = std_of(&path_app).into_owned();
         let outcome = if skipped.contains(&path) {
             Ok(true)
         } else {
@@ -334,32 +349,26 @@ pub(crate) enum CarriedSource {
 /// not into the ledger, so it stays in the source too: a duplicate, never a
 /// loss.
 pub(crate) async fn stamp_source(volume: &Arc<dyn Volume>, source: &Path) -> Result<CarriedSource, PathedVolumeError> {
-    if volume
-        .entry_kind(&AppPath::legacy_unchecked(source))
-        .await
-        .at_source(source)?
-        != EntryKind::Directory
-    {
+    // The source in the volume's spelling, once; every folder below it is
+    // walked typed, each child as its own listing row names it.
+    let source_app = on_volume(source);
+    if volume.entry_kind(&source_app).await.at_source(source)? != EntryKind::Directory {
         return Ok(CarriedSource::File(stamp_file(volume, source).await));
     }
     let mut ledger = SourceLedger::default();
-    let mut pending = vec![source.to_path_buf()];
+    let mut pending: Vec<AppPathBuf> = vec![source_app.into_owned()];
     while let Some(dir) = pending.pop() {
-        for entry in volume
-            .list_directory_as_source(&AppPath::legacy_unchecked(&dir))
-            .await
-            .at_source(&dir)?
-        {
-            let path = PathBuf::from(&entry.path);
-            match kind_of(volume, &entry, &AppPath::legacy_unchecked(&path)).await? {
+        for entry in volume.list_directory_as_source(&dir).await.at_source(&*dir)? {
+            let path = listed_path(&entry).at_source(&*dir)?.into_owned();
+            match kind_of(volume, &entry, &path).await? {
                 EntryKind::Directory => pending.push(path),
-                EntryKind::File => ledger.record_carried_file(path, SourceStamp::of(&entry)),
+                EntryKind::File => ledger.record_carried_file(into_std(path), SourceStamp::of(&entry)),
                 // A link is never walked through (it could loop, and a move
                 // carries a link as itself); unrecorded, it stays in the source.
                 EntryKind::Symlink => {}
             }
         }
-        ledger.record_walked_dir(dir);
+        ledger.record_walked_dir(into_std(dir));
     }
     Ok(CarriedSource::Folder(ledger))
 }

@@ -2279,14 +2279,17 @@ only by duplicating it.
   snapshot would otherwise start and die on its first write. A `.zip` destination is NOT this case; it routes to the
   archive-edit driver, which really does write.
 - **`resolve_dest_path(dest_volume, dest_path)`** expands `~` for LOCAL volumes only (on a share, `~` is an ordinary
-  folder name) and then root-anchors. The transfer dialog's box is volume-relative (`/photos`, with the volume in a
-  dropdown beside it) while a pane sends the absolute path it displays; `root_anchored` is idempotent, so neither caller
-  has to know which it holds. Skipping it is what made a 360 GB move into an SMB subfolder fail instantly (ERR-XCP5Q):
-  `SmbVolume` read `/photos` as a path outside its mount and answered `NotFound`. A copy or move anchors BEFORE its
-  destination resolve (`routing::destination`), since a `.zip` boundary is confirmed at the place the path names:
-  unanchored, `/z/box.zip` on a drive rooted at `C:/` (or a folder volume below `/`) confirmed nothing, and a copy into
-  the zip fell through to the local engine as `destination_not_a_folder` (#1369;
-  `routing::tests::a_volume_relative_destination_still_routes_into_its_zip`).
+  folder name) and then root-anchors, typed (`cmdr_fs::volume::anchor_at_root`, an `AppPathBuf` answer: a Windows
+  `Path::join` put a `\` into a POSIX volume's destination). The transfer dialog's box is volume-relative (`/photos`,
+  with the volume in a dropdown beside it) while a pane sends the absolute path it displays; the anchor is idempotent,
+  so neither caller has to know which it holds. Text naming another volume, or holding a `..` (the app resolves one on
+  its volume before a start sends the box), is refused, a start's as `DestinationNotFound`; while escapes aren't live an
+  escape-range code point in the text is literal, so the place is the one the `std::path` anchor named. Skipping it is
+  what made a 360 GB move into an SMB subfolder fail instantly (ERR-XCP5Q): `SmbVolume` read `/photos` as a path outside
+  its mount and answered `NotFound`. A copy or move anchors BEFORE its destination resolve (`routing::destination`),
+  since a `.zip` boundary is confirmed at the place the path names: unanchored, `/z/box.zip` on a drive rooted at `C:/`
+  (or a folder volume below `/`) confirmed nothing, and a copy into the zip fell through to the local engine as
+  `destination_not_a_folder` (#1369; `routing::tests::a_volume_relative_destination_still_routes_into_its_zip`).
 - **`start_volume_copy` / `start_volume_move` / `start_volume_compress`** are the three entry points. Between them they
   cover the plain cross-volume engine, copy/move INTO a zip (one `{ add }` changeset), move OUT of one (the compound
   extract-then-delete op), and compress (seed an empty archive, then copy into it). Each takes an injected

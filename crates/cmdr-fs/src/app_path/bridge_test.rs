@@ -326,6 +326,32 @@ fn a_listed_path_spells_as_the_bridge_and_the_wire_and_reads_back_as_listed() {
     }
 }
 
+/// A walker's door for a listing row's own path (`FileEntry.path`): for canonical text it's
+/// the bridge's value of the same text, byte for byte and borrowed when plain, on every host,
+/// a literal escape-range code point included, and a POSIX volume's `/x` stays POSIX on
+/// Windows. Loose text reads as the place it names; a climb or a relative row is refused.
+#[test]
+fn a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb() {
+    for listed in [
+        "/",
+        "/t0/nested/deep.txt",
+        "/inbox/12:00 notes.txt",
+        "/inbox/back\\slash.txt",
+        "/x/caf\u{10FEE9}",
+        "/x/\u{10E800}a",
+        "sftp://u@h:22/srv/x\u{10FEFF}",
+        "mtp://mtp-0-1/65537/DCIM/IMG_1.JPG",
+    ] {
+        let row = AppPath::from_listed_row(listed).unwrap_or_else(|e| panic!("{listed:?}: {e}"));
+        assert_eq!(row.as_str(), bridge(listed).as_str(), "{listed:?}");
+    }
+    assert!(matches!(AppPath::from_listed_row("/t0/nested"), Ok(Cow::Borrowed(_))));
+    assert_eq!(AppPath::from_listed_row("/a//b/").expect("loose").as_str(), "/a/b");
+    for refused in ["", "a/b", "/a/../b", "sftp://u@h:22/srv/../x"] {
+        assert!(AppPath::from_listed_row(refused).is_err(), "{refused:?}");
+    }
+}
+
 /// [`listed_text`] refuses what no listed name escapes to: a live escape, both alphabets in
 /// one text, and escapes that aren't the literal spelling of what they decode to (the bytes
 /// of `é`, a look-alike of `café`).

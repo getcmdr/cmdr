@@ -6,6 +6,7 @@
 //! `DETAILS.md` § "Listed names are untrusted".
 
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
+use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{ChildName, NotAChildName, VolumeError};
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -70,6 +71,18 @@ pub(super) fn join_under(dir: &ListedFolder<'_>, name: &AppName) -> Result<AppPa
         .map_err(|_| VolumeError::from(NotAChildName(name.shown().into_owned())))
 }
 
+/// A listed child's own path (`FileEntry.path`, which the backend that listed it
+/// built), typed: the one way a walk reads a child it descends into or acts on
+/// (`AppPath::from_listed_row`), ❌ never `Path::new(&entry.path)` and the bridge
+/// back, which re-escapes a live escape as literal text once escapes are live.
+/// Borrowed for a plain row; byte for byte the bridge's value of canonical text.
+///
+/// A row naming no place (a relative or climbing path a hostile server listed)
+/// is refused as that child's name, ❌ never walked.
+pub(crate) fn listed_path(entry: &FileEntry) -> Result<Cow<'_, AppPath>, VolumeError> {
+    AppPath::from_listed_row(&entry.path).map_err(|_| VolumeError::from(NotAChildName(entry.name.clone())))
+}
+
 /// A `std::path` value the driver hands in, in the volume's spelling: the
 /// bridge's lossless door in, ONE named crossing for this module and the walk.
 pub(super) fn on_volume(path: &Path) -> Cow<'_, AppPath> {
@@ -86,7 +99,7 @@ pub(super) fn std_of(path: &AppPath) -> Cow<'_, Path> {
 /// [`std_of`], owned, reusing the app path's buffer when the two spellings are
 /// one (every name that's valid UTF-8 text holding no escape-range code
 /// point), so a child's path costs the one allocation its join already made.
-pub(super) fn into_std(path: AppPathBuf) -> PathBuf {
+pub(crate) fn into_std(path: AppPathBuf) -> PathBuf {
     let respelled = match std_of(&path) {
         Cow::Borrowed(_) => None,
         Cow::Owned(native) => Some(native),

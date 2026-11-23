@@ -27,7 +27,7 @@ use super::super::super::types::{
 use super::super::super::unblocked_removal::{NodeKind, RemovalRefused, delete_clearing_blockers};
 use super::super::leftover_cleanup::{LeftBehind, finish_in_background};
 use super::super::recovered_name::KeptNewData;
-use super::listed_name::{ListedName, std_of};
+use super::listed_name::{ListedName, listed_path, std_of};
 use super::transfer_error::{PathRole, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -598,8 +598,17 @@ async fn remove_tree_inner(
     let mut first_child_failure: Option<PathedVolumeError> = None;
     let mut content_remains = false;
     for child in &children {
-        // The row's own text, read the way the walk always read it (`legacy_unchecked`).
-        let child_path = AppPath::legacy_unchecked(Path::new(&child.path));
+        // The row's own path, typed (`listed_name.rs::listed_path`). One naming no
+        // place under here (a hostile `../x`) is never deleted: it stays, and so
+        // does this folder.
+        let child_path = match listed_path(child) {
+            Ok(child_path) => child_path,
+            Err(e) => {
+                content_remains = true;
+                first_child_failure.get_or_insert(refused(path, e));
+                continue;
+            }
+        };
         // Labelled with `child_path` at the frame that knows the child: one level
         // up and every leaf failure would answer with this directory's name instead.
         let outcome = if child.is_directory || child.is_symlink {

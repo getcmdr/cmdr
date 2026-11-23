@@ -23,7 +23,7 @@
 //! `safety_oracle.rs`, never fresh inline asserts. See `CLAUDE.md` § Merge and
 //! conflicts, and `DETAILS.md` § "Scan-as-you-merge".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, ListedFolder};
 use std::collections::HashSet;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -42,7 +42,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
 use super::landing::{DestFolder, NewName, where_it_lands};
-use super::listed_name::{ListedName, into_std, on_volume, std_of};
+use super::listed_name::{ListedName, into_std, listed_path, on_volume, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
 use super::preflight::SourceFileFacts;
@@ -660,7 +660,7 @@ pub(super) async fn copy_directory_streaming(
     // child joined typed (`listed_name.rs::ListedName`).
     let walked = merge_level(
         source_volume,
-        source_path,
+        &on_volume(source_path),
         dest_volume,
         &on_volume(dest_path),
         state,
@@ -720,7 +720,9 @@ pub(super) async fn copy_directory_streaming(
 )]
 async fn merge_level<'a>(
     source_volume: &'a Arc<dyn Volume>,
-    source_path: &Path,
+    // The level in the source's spelling: what its listing reads, and what every
+    // child's own listed path (`listed_name.rs::listed_path`) hangs under.
+    source_path: &AppPath,
     dest_volume: &'a Arc<dyn Volume>,
     // The level in the destination's spelling: what its stat, its creates, and
     // every child's typed join read.
@@ -866,13 +868,12 @@ async fn merge_level<'a>(
                     Ok((dest_index, made_here))
                 };
 
-                let source_path_app = on_volume(source_path);
                 let (dest_index, entries) = if legs_may_overlap {
-                    tokio::join!(dest_prepare, source_volume.list_directory_as_source(&source_path_app))
+                    tokio::join!(dest_prepare, source_volume.list_directory_as_source(source_path))
                 } else {
                     (
                         dest_prepare.await,
-                        source_volume.list_directory_as_source(&source_path_app).await,
+                        source_volume.list_directory_as_source(source_path).await,
                     )
                 };
                 // Each leg's failure is its own volume's: a share that won't create the
@@ -894,7 +895,7 @@ async fn merge_level<'a>(
     });
     // A move sweeps exactly the folders this walk listed; anything else it
     // finds in the source afterwards arrived later and stays.
-    created.record_walked_source_dir(source_path);
+    created.record_walked_source_dir(&std_of(source_path));
     // The level's children by name, for each entry's tree row: one index per
     // level, dropped with it.
     let mut tree_level = progress.tree().level(
@@ -922,7 +923,11 @@ async fn merge_level<'a>(
             return Err(VolumeError::Cancelled("Operation cancelled by user".into())).at_source(source_path);
         }
 
-        let child_source = PathBuf::from(&entry.path);
+        // The child as its own listing row names it, typed (an MTP twin's path
+        // isn't its folder joined with its name); the bodies past the walk still
+        // take `std::path`, so they get the join's own buffer.
+        let listed_source = listed_path(entry).at_source(source_path)?;
+        let child_source = into_std(listed_source.clone().into_owned());
         // A repeat waits for what's in flight to land, then asks the destination
         // afresh, so the earlier item is an ordinary clash for it.
         let repeat = !names_seen.insert(entry.name.as_str());
@@ -947,8 +952,13 @@ async fn merge_level<'a>(
             let refused = RefusedChild {
                 entry,
                 source: child_source,
-                // The name as the question shows it; nothing is written there.
-                dest: dest_path.join(entry.name.as_str()),
+                // The name as the question shows it, by the typed join (a Windows
+                // `Path::join` puts a `\` between a POSIX folder and the name);
+                // nothing is written there.
+                dest: AppName::from_listed_text(&entry.name)
+                    .ok()
+                    .and_then(|name| ListedFolder::new(&join_dir).join(&name).ok())
+                    .map_or_else(|| dest_path.to_path_buf(), into_std),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;
@@ -1037,7 +1047,7 @@ async fn merge_level<'a>(
             if !dir_clashes_with_leaf {
                 let level = match Box::pin(merge_level(
                     source_volume,
-                    &child_source,
+                    &listed_source,
                     dest_volume,
                     &child_dest,
                     state,
@@ -1149,7 +1159,7 @@ async fn merge_level<'a>(
             // this name, so the destination stores it.
             let level = Box::pin(merge_level(
                 source_volume,
-                &child_source,
+                &listed_source,
                 dest_volume,
                 &on_volume(&write_dest),
                 state,

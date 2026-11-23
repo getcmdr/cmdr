@@ -19,8 +19,8 @@ use cmdr_fs::app_path::{AppPath, AppPathBuf};
 /// authority such as `sftp://host/`, which have no last name to name.
 #[must_use]
 pub(crate) fn without_trailing_separators(path: &Path) -> Cow<'_, Path> {
-    // Read-only bytes, to find what trails; the rebuild below stays in `OsStr`, so
-    // a name that isn't UTF-8 survives byte for byte, on every OS.
+    // Read-only bytes, to find what trails; the rebuild below is the kept text, or
+    // for a name that isn't UTF-8 stays in `OsStr`, so it survives byte for byte.
     let text = path.as_os_str().as_encoded_bytes();
     let mut end = text.len();
     // Each step drops one `/`, or the `.` of a trailing `/.`.
@@ -30,6 +30,16 @@ pub(crate) fn without_trailing_separators(path: &Path) -> Cow<'_, Path> {
     if end == text.len() || is_a_root(&text[..end]) {
         return Cow::Borrowed(path);
     }
+    // The kept text, cut out as text: a `Path::join` of its parent and name would put a
+    // `\` between a POSIX volume's folder and the name on Windows (`/x/link/` came back
+    // `/x\link`, a name no volume holds). A trailing `..` keeps what it names, as below.
+    if let Some(kept) = path.to_str().map(|text| &text[..end]) {
+        return match kept.rsplit(['/', '\\']).next() {
+            Some("..") => Cow::Borrowed(path),
+            _ => Cow::Owned(PathBuf::from(kept)),
+        };
+    }
+    // Not valid text (a Linux name that isn't UTF-8): the join, in `OsStr`, byte for byte.
     // `file_name` skips the trailing `/` and `.` the OS would resolve through, and
     // `parent` is the original text before that name, so the join is the kept text.
     // `None` is a trailing `..`, which already names what the OS resolves.
@@ -139,6 +149,16 @@ mod tests {
         assert_eq!(trimmed("/x/link/.."), "/x/link/..");
         // A `/` after a `..` changes nothing: both resolve through the link.
         assert_eq!(trimmed("/x/link/../"), "/x/link/../");
+    }
+
+    /// The kept text is cut out as text, so a POSIX volume's path keeps its `/` on every
+    /// host: a Windows `Path::join` of its parent and name made `/x\link`, one name no
+    /// volume holds (a delete of `/x/link/` on a share asked for the wrong file).
+    #[test]
+    fn the_kept_text_keeps_its_own_separators_on_every_host() {
+        assert_eq!(trimmed("/x/link/"), "/x/link");
+        assert_eq!(trimmed("sftp://h/srv/a b/"), "sftp://h/srv/a b");
+        assert_eq!(trimmed("/x/cafe\u{301}/."), "/x/cafe\u{301}");
     }
 
     /// A start's typed path reaches the body as the bytes its caller's text held: a trailing

@@ -3,6 +3,7 @@
 //! volume's, so it serves the volume scan preview in every build; the local
 //! walk over top-level sources is `scan.rs`.
 
+use crate::transfer::volume::{into_std, listed_path};
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
 use std::collections::HashSet;
@@ -113,7 +114,10 @@ pub(super) async fn scan_subtree_with_oracle(
         if let Some(pause) = pause {
             pause.park_while_paused_async().await;
         }
-        let child_path = PathBuf::from(&entry.path);
+        // The child as its listing row names it, typed (a row naming no place, a
+        // hostile `../x`, stops the scan rather than walk it); the recursion and
+        // the recorder still key on `std::path`, so they get the read's own buffer.
+        let child_path: PathBuf = into_std(listed_path(&entry)?.into_owned());
         if entry.is_directory && !entry.is_symlink {
             // Recurse — oracle re-applies inside this call. The recursive
             // emit reports counts local to the child subtree (starting fresh),

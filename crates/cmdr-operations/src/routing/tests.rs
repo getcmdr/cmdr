@@ -12,7 +12,6 @@
 
 use super::resolve_dest_path;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use std::path::Path;
 use std::sync::Arc;
 
 /// A non-local volume (no `local_path`) rooted where a mounted share is: stands in
@@ -29,8 +28,8 @@ fn a_remote_destination_is_anchored_at_its_mount_root() {
     // (ERR-XCP5Q) and reported the DESTINATION as a missing source.
     let volume = share_at("/Volumes/testshare");
     assert_eq!(
-        resolve_dest_path(&volume, "/test_photos/test footage".to_string()),
-        Path::new("/Volumes/testshare/test_photos/test footage")
+        anchored(&volume, "/test_photos/test footage"),
+        "/Volumes/testshare/test_photos/test footage"
     );
 }
 
@@ -38,8 +37,8 @@ fn a_remote_destination_is_anchored_at_its_mount_root() {
 fn a_remote_destination_already_under_its_root_is_untouched() {
     let volume = share_at("/Volumes/testshare");
     assert_eq!(
-        resolve_dest_path(&volume, "/Volumes/testshare/test_photos".to_string()),
-        Path::new("/Volumes/testshare/test_photos")
+        anchored(&volume, "/Volumes/testshare/test_photos"),
+        "/Volumes/testshare/test_photos"
     );
 }
 
@@ -48,24 +47,66 @@ fn a_remote_destination_at_the_share_root_stays_the_root() {
     // The one shape that worked before anchoring existed; it must keep
     // working, and must not become `/Volumes/testshare/`.
     let volume = share_at("/Volumes/testshare");
-    assert_eq!(
-        resolve_dest_path(&volume, "/".to_string()),
-        Path::new("/Volumes/testshare")
-    );
+    assert_eq!(anchored(&volume, "/"), "/Volumes/testshare");
 }
 
 #[test]
 fn a_local_destination_still_expands_the_home_shortcut() {
+    // The home folder as an app path (`C:/Users/x` on Windows), on the drive that holds it.
+    let home = cmdr_fs::tilde::home_folder().expect("a home folder");
+    let root = if cfg!(windows) { &home[..3] } else { "/" };
     let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
         "Root",
-        "/",
+        root,
         crate::host::testing::pane_order_host(),
     ));
-    let home = std::env::var("HOME").expect("HOME");
-    assert_eq!(
-        resolve_dest_path(&volume, "~/Downloads".to_string()),
-        Path::new(&home).join("Downloads")
+    assert_eq!(anchored(&volume, "~/Downloads"), format!("{home}/Downloads"));
+}
+
+/// The anchor is the app path's own arithmetic, so a remote volume's destination is
+/// `/`-joined on every host: on Windows, `Path::join` made `/Volumes/testshare\photos`
+/// of it, one name the share never had.
+#[test]
+fn a_destination_is_joined_with_a_slash_on_every_host() {
+    let volume = share_at("/Volumes/testshare");
+    assert_eq!(anchored(&volume, "photos/2024"), "/Volumes/testshare/photos/2024");
+    let device = share_at("mtp://mtp-0-1/65537");
+    assert_eq!(anchored(&device, "/DCIM/Camera"), "mtp://mtp-0-1/65537/DCIM/Camera");
+}
+
+/// A `..` is the volume's to answer, which the app does before a start sends the box
+/// (`commands/wire_path.rs::transfer_destination`); one that reaches the anchor is
+/// refused, ❌ never passed through for the OS to climb with.
+#[test]
+fn a_climbing_destination_is_refused() {
+    let volume = share_at("/Volumes/testshare");
+    assert!(resolve_dest_path(&volume, "/photos/../../etc").is_err());
+}
+
+/// While escapes aren't live, an escape-range code point in the box is literal text, so
+/// the anchored place is the one the bridge spelled from the same text, byte for byte.
+#[test]
+fn a_literal_escape_range_code_point_anchors_as_the_bridge_spelled_it() {
+    let volume = share_at("/Volumes/testshare");
+    let text = "/x/caf\u{10FEE9}";
+    // The listed-text door spells a path as the bridge spells it (pinned in `cmdr-fs`).
+    let listed = cmdr_fs::app_path::AppPathBuf::from_listed_text(
+        "/Volumes/testshare/x/caf\u{10FEE9}",
+        cmdr_fs::app_path::PathFlavor::Posix,
+    )
+    .expect("an app path");
+    assert_ne!(
+        listed.as_str(),
+        "/Volumes/testshare/x/caf\u{10FEE9}",
+        "spelled, not as typed"
     );
+    assert_eq!(anchored(&volume, text), listed.as_str());
+}
+
+fn anchored(volume: &Arc<dyn Volume>, text: &str) -> String {
+    resolve_dest_path(volume, text)
+        .unwrap_or_else(|e| panic!("{text}: {e:?}"))
+        .into_string()
 }
 
 /// A `NotConnected` a backend answers mid-transfer names the half that asked, the

@@ -827,6 +827,12 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   (`//`, `/./`, a leading `//` on macOS and Linux), the same file. The walk's crossings back to `std::path` for the
   bodies that still take it are `listed_name.rs`'s `on_volume`, `std_of`, and `into_std` (the join's own buffer, no
   copy, when the two spellings are one). Evidence: `docs/specs/app-path-plan.md` § 10a, third pass.
+- **A walk reads a listed child's own path through `listed_name.rs::listed_path`** (`AppPath::from_listed_row`), ❌
+  never `Path::new(&entry.path)` and the bridge back, which re-escapes a live escape as literal text once escapes are
+  live: the merge walk's source side (`merge_level` holds its source level typed too), the rename-merge, the move's
+  source sweep and `stamp_source`, `cleanup.rs::remove_tree`, and, outside this module, the volume delete's scan, the
+  scan oracle, and `hidden_links`. A row naming no place (relative, or a hostile `../x`) is refused as that child, ❌
+  never walked: the sweep and `remove_tree` keep it (and its folder), the delete scan and the scan stop.
 - **`listed_name.rs` is a leaf** (no engine module): the stale-temp reaps in `cleanup.rs` and the remote zip edit join
   through it, and importing it from `landing.rs` closed a module cycle (`landing` → `transfer_driver` → `staged_write` →
   `cleanup`).

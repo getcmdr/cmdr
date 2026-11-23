@@ -13,6 +13,7 @@
 use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
+use crate::transfer::volume::listed_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
@@ -32,7 +33,7 @@ pub(crate) async fn list_marking_hidden_links(volume: &dyn Volume, dir: &Path) -
     let mut entries = volume.list_directory(&on_volume(dir), None).await?;
     for entry in entries.iter_mut() {
         if listed_folder_may_be_a_link(volume, entry)
-            && volume.entry_kind(&on_volume(Path::new(&entry.path))).await? == EntryKind::Symlink
+            && volume.entry_kind(&listed_path(entry)?).await? == EntryKind::Symlink
         {
             entry.is_symlink = true;
         }
@@ -40,9 +41,9 @@ pub(crate) async fn list_marking_hidden_links(volume: &dyn Volume, dir: &Path) -
     Ok(entries)
 }
 
-/// A folder or a listed row as the app path the volume takes: the merges hand their folders
-/// over as `std::path` values, and a row's path is read back the same way, losslessly. The
-/// one crossing here.
+/// A folder as the app path the volume takes: the merges hand their folders over as
+/// `std::path` values. The one crossing here; a listed row reads through its own typed door
+/// (`listed_path`).
 fn on_volume(path: &Path) -> std::borrow::Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }

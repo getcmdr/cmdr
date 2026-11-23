@@ -64,7 +64,12 @@ pub async fn get_name_rules(volume_id: Option<String>, dir: String) -> NameRules
     // (`resolve_dest_path`), the boot volume's too: on Windows its root is `C:/`, and the
     // dialog's `/Users/x` is `C:/Users/x` there.
     let dir = match get_volume_manager().get(&volume_id) {
-        Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, dir),
+        // A local volume's folder the OS probes, so it crosses down through `to_native`;
+        // text the anchor refuses (a `..`, another volume's path) is asked as sent.
+        Some(volume) if volume.local_path().is_some() => cmdr_operations::resolve_dest_path(&volume, &dir)
+            .ok()
+            .and_then(|anchored| anchored.to_native().ok())
+            .unwrap_or_else(|| crate::commands::wire_path::as_sent_std_path(&dir)),
         _ if volume_id == "root" => crate::commands::wire_path::as_sent_std_path(&expand_tilde(&dir)),
         _ => crate::commands::wire_path::as_sent_std_path(&dir),
     };

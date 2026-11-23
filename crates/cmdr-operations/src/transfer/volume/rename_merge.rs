@@ -67,7 +67,7 @@ use super::super::super::types::{RecoveredOriginal, VolumeCopyConfig, WriteOpera
 use super::super::dest_name_index::{DestLookup, DestNameIndex};
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::displaced_destination::{DisplacedDestination, displace_destination};
-use super::listed_name::{ListedName, on_volume, std_of};
+use super::listed_name::{ListedName, into_std, listed_path, on_volume, std_of};
 use super::strategy::Replaces;
 use super::transfer_error::{PathRole, map_volume_error};
 use cmdr_fs::entry::FileEntry;
@@ -181,7 +181,11 @@ pub(super) async fn rename_merge_directory(
             });
         }
 
-        let child_source = PathBuf::from(&entry.path);
+        // The child as its listing row names it, typed (`listed_name.rs::listed_path`);
+        // the bodies past the walk take `std::path`, so they get the read's own buffer.
+        let child_source = listed_path(entry)
+            .map(|listed| into_std(listed.into_owned()))
+            .map_err(|e| map_rename_error(source_dir, e))?;
         // ❗ Listed names are the server's word: ❌ never join one raw, or `../x`
         // renames the entry out of the folder being merged.
         let under = |name: &str| {
@@ -307,7 +311,7 @@ async fn late_detected_collision(
         // in the directory the backend already has.
         let actual_dest = dest_entry
             .as_ref()
-            .map(|d| dest_parent.join(&d.name))
+            .and_then(|d| sibling_named(dest_parent, &d.name))
             .unwrap_or_else(|| child_dest.to_path_buf());
         return Box::pin(rename_merge_directory(
             ctx,
@@ -322,7 +326,7 @@ async fn late_detected_collision(
     // path so an Overwrite/Rename acts on the entry the backend really holds.
     let actual_dest = dest_entry
         .as_ref()
-        .map(|d| dest_parent.join(&d.name))
+        .and_then(|d| sibling_named(dest_parent, &d.name))
         .unwrap_or_else(|| child_dest.to_path_buf());
     let (decision, aside) = resolve_child(ctx, child_source, entry, &actual_dest).await?;
     resolved_children.insert(entry.name.clone(), decision.clone());
@@ -569,4 +573,13 @@ async fn volume_list(volume: &Arc<dyn Volume>, path: &Path) -> Result<Vec<FileEn
 /// `WriteOperationError::Cancelled`.
 fn map_rename_error(path: &Path, e: VolumeError) -> WriteOperationError {
     map_volume_error(&path.display().to_string(), PathRole::Source, e)
+}
+
+/// The destination's own entry `name` (its listing's word) in `parent`, by the
+/// typed join (`listed_name.rs::ListedName`): ❌ never a raw `Path::join`, which
+/// lands a listed `../x` outside the folder and, on Windows, puts a `\` into a
+/// POSIX volume's path. `None` for a name that isn't one plain name here.
+fn sibling_named(parent: &Path, name: &str) -> Option<PathBuf> {
+    let name = ListedName::new(name).ok()?;
+    name.under(&on_volume(parent)).ok().map(into_std)
 }

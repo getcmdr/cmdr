@@ -124,14 +124,13 @@ impl crate::Operations {
         source_volume_id: Option<String>,
         source_paths: Option<Vec<String>>,
     ) -> Result<Vec<ScanConflict>, VolumeScanError> {
-        let dest_path = PathBuf::from(dest_path);
         log::debug!(
             target: CONFLICT_LOG_TARGET,
             // Keyed so the redactor can find it: for a network volume this is a
             // volume-relative path, which no mount-prefix pattern recognizes.
             "checking {} item(s) against path={:?} on volume {}",
             source_items.len(),
-            LogPrivate::dir_path(&dest_path),
+            LogPrivate::dir_path(dest_path.as_str()),
             volume_id
         );
 
@@ -139,7 +138,15 @@ impl crate::Operations {
         // routes to its ArchiveVolume (consistent with the copy op's routing).
         let engine = self.clone();
         let resolve_id = volume_id.clone();
-        let resolve_path = crate::wire_paths::seam_path(&dest_path).into_owned();
+        // Anchored on its drive first, typed, so the route question gets the place the
+        // box names, as the copy's own start asks it (`routing/destination.rs`).
+        let Some(drive) = self.host().volumes().get(&volume_id) else {
+            return Err(VolumeScanError::destination_missing(self.host(), volume_id).await);
+        };
+        let no_such_place = |text: &str| VolumeScanError::Volume {
+            error: VolumeError::NotFound(text.to_string()),
+        };
+        let resolve_path = resolve_dest_path(&drive, &dest_path).map_err(|_| no_such_place(&dest_path))?;
         let volume = timeout_detached_within(
             &deadline,
             || VolumeScanError::TimedOut,
@@ -157,7 +164,9 @@ impl crate::Operations {
         // Same anchoring the copy op applies: the dialog's box is volume-relative,
         // so without it the scan asks a share for a path outside its mount and
         // reports "no conflicts" for a folder full of them.
-        let dest_path = resolve_dest_path(&volume, dest_path.to_string_lossy().into_owned());
+        let dest_path = resolve_dest_path(&volume, &dest_path)
+            .map(|anchored| crate::wire_paths::engine_path(&anchored))
+            .map_err(|_| no_such_place(&dest_path))?;
 
         let mut source_items: Vec<cmdr_fs::volume::SourceItemInfo> = source_items
             .into_iter()

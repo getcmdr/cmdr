@@ -37,40 +37,25 @@ use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::Initiator;
 use destination::ResolvedDestination;
-
-/// Turns the destination a caller sent into the path the destination volume
-/// accepts: home shortcut expanded (local only), then anchored at the volume's
-/// root.
-///
-/// The transfer dialog's destination box is VOLUME-RELATIVE (`/photos`) because
-/// the volume is a separate dropdown next to it, while a pane sends the absolute
-/// path it displays. `cmdr_fs::volume::root_anchored` folds both into the absolute
-/// form, and it's idempotent, so neither caller has to know which one it holds.
-/// Skipping it is what made a move into an SMB subfolder fail instantly
-/// (ERR-XCP5Q): `SmbVolume` reads `/photos` as an absolute path outside its mount
-/// and answers `NotFound` rather than guessing.
-///
-/// `~` expands for local volumes only, per the "never tilde-expand MTP/network
-/// paths" rule: on a share, `~` is an ordinary folder name.
-pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: String) -> PathBuf {
-    let expanded = if dest_volume.local_path().is_some() {
-        cmdr_fs::tilde::expand_tilde(&dest_path)
-    } else {
-        dest_path
-    };
-    cmdr_fs::volume::root_anchored(&std_root(dest_volume.root()), Path::new(&expanded))
-}
+use destination::no_such_destination;
+pub use destination::resolve_dest_path;
 
 /// The folder a transfer's sources land in, as its engine takes it: a zip's
-/// inner path as given (the archive driver splits it at the boundary), any other
-/// destination resolved on its volume ([`resolve_dest_path`]). The routed start
-/// validates the leaves against this, once.
-fn landing_parent(dest_volume: &Arc<dyn Volume>, dest_path: String, into_zip: bool) -> PathBuf {
+/// inner path as anchored on its drive (the archive driver splits it at the
+/// boundary), any other destination anchored again on the volume that serves it
+/// ([`resolve_dest_path`], idempotent). The routed start validates the leaves
+/// against this, once. Crosses into the engine's `std::path` bodies here.
+fn landing_parent(
+    dest_volume: &Arc<dyn Volume>,
+    dest_path: &AppPath,
+    into_zip: bool,
+) -> Result<PathBuf, WriteOperationError> {
     if into_zip {
-        PathBuf::from(dest_path)
-    } else {
-        resolve_dest_path(dest_volume, dest_path)
+        return Ok(engine_path(dest_path));
     }
+    resolve_dest_path(dest_volume, dest_path.as_str())
+        .map(|anchored| engine_path(&anchored))
+        .map_err(|_| no_such_destination(dest_path.as_str()))
 }
 
 /// The routed start's one check of a transfer's leaves
@@ -370,7 +355,7 @@ impl crate::Operations {
         if into_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("copy into a zip"));
         }
-        let dest_path = landing_parent(&dest_volume, dest_path, into_zip);
+        let dest_path = landing_parent(&dest_volume, &dest_path, into_zip)?;
         if into_zip {
             refuse_per_source_leaves_here(&config.leaves, &dest_path)?;
         }
@@ -476,7 +461,7 @@ impl crate::Operations {
         if into_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("move into a zip"));
         }
-        let dest_path = landing_parent(&dest_volume, dest_path, into_zip);
+        let dest_path = landing_parent(&dest_volume, &dest_path, into_zip)?;
         if out_of_zip || into_zip {
             refuse_per_source_leaves_here(&config.leaves, &dest_path)?;
         }
@@ -674,7 +659,7 @@ impl crate::Operations {
         let Some(volume) = self.host().volumes().get(&volume_id) else {
             return Err(source_volume_missing(self.host(), &volume_id, &typed_sources).await);
         };
-        let dest_path = resolve_dest_path(&volume, dest_path);
+        let dest_app = resolve_dest_path(&volume, &dest_path).map_err(|_| no_such_destination(&dest_path))?;
         // A rename runs on the drive itself, and a route (inside a `.zip`, or a repo's
         // `.git/<category>/` trees) serves these paths read-only (`routed_writes.rs`).
         if let Some((routed, _)) = first_routed(self.host(), &volume_id, &typed_sources).await {
@@ -683,7 +668,6 @@ impl crate::Operations {
         // Each target by the TYPED join under the destination, ❌ never `Path::join`: on
         // Windows that joins a POSIX volume's `/repo/a.zip` and `x` as `/repo/a.zip\x`, one
         // name the route gate below can't see inside the zip, so the move went in unrefused.
-        let dest_app = crate::wire_paths::seam_path(&dest_path);
         let under = cmdr_fs::app_path::ListedFolder::new(&dest_app);
         let targets: Vec<AppPathBuf> = names
             .iter()
@@ -707,7 +691,7 @@ impl crate::Operations {
             sources,
             volume_id,
             volume,
-            dest_path,
+            engine_path(&dest_app),
             config,
             target_names,
             initiator,
@@ -745,20 +729,20 @@ impl crate::Operations {
 
         // A new `.zip` resolves to its PARENT drive (nothing routes through an archive
         // that does not exist). `compress_start` owns staging and publication there.
-        let Some(dest_volume) = self
-            .host()
-            .volumes()
-            .resolve(
-                &dest_volume_id,
-                &crate::wire_paths::seam_path(Path::new(&dest_zip_path)),
-            )
-            .await
-            .volume
-        else {
+        // Anchored on the drive first, typed, so the route question gets the place
+        // the box names (`resolve_destination` does the same, #1369).
+        let volumes: &dyn host::OperationVolumes = self.host().volumes();
+        let Some(drive) = volumes.get(&dest_volume_id) else {
+            return Err(dest_volume_missing(self.host(), &dest_volume_id, &dest_zip_path).await);
+        };
+        let anchored = resolve_dest_path(&drive, &dest_zip_path).map_err(|_| no_such_destination(&dest_zip_path))?;
+        let Some(dest_volume) = volumes.resolve(&dest_volume_id, &anchored).await.volume else {
             return Err(dest_volume_missing(self.host(), &dest_volume_id, &dest_zip_path).await);
         };
 
-        let dest_zip_path = resolve_dest_path(&dest_volume, dest_zip_path);
+        let dest_zip_path = resolve_dest_path(&dest_volume, anchored.as_str())
+            .map(|anchored| engine_path(&anchored))
+            .map_err(|_| no_such_destination(&dest_zip_path))?;
 
         self.compress_start_leaving_out(
             events,

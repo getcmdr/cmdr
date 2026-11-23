@@ -423,4 +423,45 @@ impl AppPath {
         }
         Ok(path)
     }
+
+    /// A listing row's own path (`FileEntry.path`, which the backend that listed it built),
+    /// for a walk that descends into it or acts on it: the typed door a walker reads a child
+    /// through, ❌ never `Path::new(&entry.path)` and the bridge back.
+    ///
+    /// While escapes aren't live ([`super::ESCAPES_LIVE`]) no row holds a live escape, so an
+    /// escape-range code point in it is LITERAL text, spelled through this host's units
+    /// exactly as [`AppPath::legacy_unchecked`] spells the same text: for canonical text the
+    /// two are one value, byte for byte, and borrowed when the text holds no escape-range code
+    /// point (nearly every row). Once escapes are live it's [`Self::from_normalized`]'s value.
+    ///
+    /// Text a backend spelled loosely (`//x`, a trailing `/`) is read as the place it names,
+    /// normalized, in the flavor its own shape says: a POSIX volume's `/x` stays POSIX on a
+    /// Windows host, as [`Self::from_normalized`] keeps it.
+    ///
+    /// # Errors
+    ///
+    /// [`NotAnAppPath`] for text that names no place: relative, empty, or holding a `..`
+    /// name (a hostile server's row climbing out of the folder it listed).
+    pub fn from_listed_row(text: &str) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
+        let spelled: Cow<'_, str> = if super::ESCAPES_LIVE {
+            Cow::Borrowed(text)
+        } else {
+            super::platform::os_name_to_app(std::ffi::OsStr::new(text))
+        };
+        let canonical = match &spelled {
+            Cow::Borrowed(plain) => Self::from_normalized(plain).is_ok(),
+            Cow::Owned(literal) => Self::from_normalized(literal).is_ok(),
+        };
+        if canonical {
+            return Ok(match spelled {
+                Cow::Borrowed(plain) => Cow::Borrowed(AppPath::new_unchecked(plain)),
+                Cow::Owned(literal) => Cow::Owned(AppPathBuf(literal)),
+            });
+        }
+        let flavor = match PathFlavor::HOST {
+            PathFlavor::Windows if spelled.starts_with('/') && !spelled.starts_with("//") => PathFlavor::Posix,
+            host => host,
+        };
+        AppPathBuf::parse(&spelled, flavor).map(Cow::Owned)
+    }
 }

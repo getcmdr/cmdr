@@ -1915,6 +1915,37 @@ included; the hidden couplings it found are why waves B and C differ from round 
     engine's already-gone and queued-sources cells expect a source reported back as sent (`C:/…`).
   - **Left**: the four items above. `seam_path` still crosses at 14 production sites the meter doesn't count (it's a
     named helper over `legacy_unchecked`, counted once in `wire_paths.rs`).
+- **Seventh pass done** (2026-11-23, branch `worktree-agent-a4b43c8f78683cd81`; one agent, no helpers): the walkers read
+  their children typed, and every transfer's destination anchors typed. 10f's hazards 76 → 61 (the list's 11 walker and
+  destination sites, `resolve_dest_path`, and three `seam_path` crossings); bridge calls 917 → 908 (`cmdr-operations`
+  459 → 450), `appTextToPath` 42 → 34, `pathFromBareText` 272 → 269; no entry grew.
+  - **A listed child's path is read typed**: `AppPath::from_listed_row` (`cmdr-fs`) is the walk's door for a row's own
+    `FileEntry.path` (an MTP twin's path isn't its folder plus its name), the bridge's value byte for byte for canonical
+    text while escapes aren't live, `from_normalized`'s once they are. Through
+    `transfer/volume/listed_name.rs::listed_path`: the merge walk (its source level typed too), the rename-merge, the
+    move's sweep and `stamp_source`, `remove_tree`, the volume delete's scan, the scan oracle, and `hidden_links`. A row
+    naming no place (relative, a hostile `../x`) is refused as that child, never walked: the sweep and `remove_tree`
+    keep it, the delete scan and the scan stop. The bodies past the walk still take `std::path`, so they get the read's
+    own buffer (`into_std`).
+  - **`resolve_dest_path` anchors typed** (`anchor_at_root`, answering an `AppPathBuf`), the destination's literal
+    escape-range code points spelled as the bridge spelled them; `resolve_destination`, the compress start, the
+    rename-as-move, and the conflict scan anchor on the drive first and ask the route question with the typed value. The
+    rename-merge's case-folded sibling joins through `ListedName` (it was a raw `Path::join` of a listed name).
+  - **Behavior changes** (input no pane or row sends): a destination holding a `..` or naming another volume refuses as
+    `DestinationNotFound` (the app resolves a box's `..` first, `commands/wire_path.rs::transfer_destination`); the
+    conflict scan anchors before its route question, as the start does (#1369's shape); a trailing-`/` trim keeps the
+    kept text as text, so `/a//b/` stays `/a//b` (it was `/a/b`, the same place) and on Windows `/x/link/` stays
+    `/x/link` (it was `/x\link`, one name no volume holds).
+  - **Windows cells** (by cause): `wire_paths`' two, and `failure_side_tests`' five (their fixture joined `/t0` and
+    `nested` with `Path::join`).
+  - **Left in 10a** (sizes are guesses): the leaf bodies past the walk (`copy_leaf`, `LeafPool` rows, `RefusedChild` /
+    `RefusedLeaf`, `stream_pipe_file`, `land_link`, the staged write's `Spelled`, `ResolvedConflict.write_path`,
+    `CreatedPaths`, `recovered_name.rs`'s `recovered_sibling` / `NameCandidates`, which make Windows'
+    `/dest\notes (recovered).txt`), then `native_join_refuses`' deletion (L, one cascade); the drivers' sources and
+    destination (`copy_volumes_with_progress` / `move_volumes_with_progress` and ~110 test call sites, L); the create,
+    rename-validity, and conflict-preflight-sources entry points, `leaf_validation` / `target_names` / `transfer_leaves`
+    (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 10 `seam_path` crossings;
+    `cmdr-listing-wasm`'s `folder_sizes.rs` joins (S, its cluster-S cells).
 
 ### 10b. `cmdr-index`
 
@@ -2464,24 +2495,24 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **The per-site list that gates 10f** (2026-11-23, this branch on top of `main` at `5b1c2b99ea`): every site the
   `app-path-std-bridge` tripwire counts, by the check's own regexes over its scanner roots (`apps/` and `crates/`, minus
   `examples/`, `build.rs`, and `crates/cmdr-fs/src/app_path/`). The budgets hold `appTextToPath` 42 and
-  `pathFromBareText` 272: 314 sites, 57 of them in the app (1 + 56). Each line names the site, its budget, its class,
-  and whether it's a HAZARD (app text that can carry a live escape and reaches the OS or a volume as `std::path` bytes,
-  so it opens a file literally named with the escape), then why it's still there, what removes it, and whether it needs
-  an exemption.
+  `pathFromBareText` 272: 314 sites, 57 of them in the app (1 + 56); 34 and 269 (303) after 10a's seventh pass, whose
+  sites are off the list below. Each line names the site, its budget, its class, and whether it's a HAZARD (app text
+  that can carry a live escape and reaches the OS or a volume as `std::path` bytes, so it opens a file literally named
+  with the escape), then why it's still there, what removes it, and whether it needs an exemption.
   - **Classes**: 178 `test-fixture` (a cell or suite helper hands literal or app text to a `PathBuf`-taking helper; no
     hazard with ASCII literals, but the gate counts them), 45 `name-arith` (`extension`, `file_stem`, `parent`, a
     compare; nothing opened), 43 `engine-body` (production code keyed by `PathBuf`), 28 `native` (env vars, xattr keys,
     a DB or log file, mount tables, `hdiutil` output: not app text), 12 `demo` (`cmdr-listing-wasm` calling an engine
     API still keyed by `PathBuf`; no OS in a browser), 8 `pin` (`std::path` pins that go at milestone 11).
-  - **The 37 HAZARD sites are 10f's real blockers**, all `engine-body`: in the app `tags_io.rs:98`,
+  - **The HAZARD sites are 10f's real blockers**, all `engine-body`: 37 at the snapshot, 26 left after 10a's seventh
+    pass (2026-11-23, which took the 11 walker and destination sites, listed there). Left: in the app `tags_io.rs:98`,
     `native_drag/fulfillment.rs:338`, `tools/sensitive.rs:184`; in `cmdr-fs` `volume/server_side.rs:102`; in
-    `cmdr-local` `platform/local_posix/scan.rs:57`; 24 in `cmdr-operations` (the create, rename-validity, and
-    conflict-preflight entry points still take text, the zip-routing `dest_path`, and the walkers that turn a listed
-    `FileEntry.path` into a `PathBuf` child: `scan_walker`, `scan_oracle`, `delete/volume_scan`, `hidden_links`,
-    `transfer/volume/{merge,rename_merge,source_sweep,cleanup}`, plus `leaf_validation`, `target_names`, and
-    `transfer_leaves` holding a new name as `OsStr`); and 8 in `cmdr-index` (stored frontier, branch, and rescan text
-    handed to a walk, a stat, or the OS watcher). A walker's `legacy_unchecked(Path::new(&entry.path))` round trip isn't
-    the identity once escapes are live: it re-escapes the escape as literal text, so the volume gets a mangled name.
+    `cmdr-local` `platform/local_posix/scan.rs:57`; 13 in `cmdr-operations` (the create, rename-validity, and
+    conflict-preflight-sources entry points still take text, `scan_walker`'s cached walk (it flips with the lossless
+    row), plus `leaf_validation`, `target_names`, and `transfer_leaves` holding a new name as `OsStr`); and 8 in
+    `cmdr-index` (stored frontier, branch, and rescan text handed to a walk, a stat, or the OS watcher). A walker's
+    `legacy_unchecked(Path::new(&entry.path))` round trip isn't the identity once escapes are live: it re-escapes the
+    escape as literal text, so the volume gets a mangled name.
   - **❗ The list is REGEX-SCOPED, so it undercounts the hazards.** The tripwire only sees an identifier named
     `path`/`name`/`dir`/`root` (or `*_path`…) or a `.path`/`.name` field on one line, so
     `PathBuf::from(&op.source_path)` and `Path::new(&expanded)` pass it. A sweep of every production `Path::new` /
@@ -2495,21 +2526,22 @@ included; the hidden couplings it found are why waves B and C differ from round 
       seams, listed above); `commands/file_viewer.rs:116`; `clipboard/platform/macos.rs:98` (a paste's target);
       `priority/roots.rs:444` (a favorite's text as an index priority root); `services_menu/selection.rs:179` and
       `quick_look/platform/macos.rs:40, 73` (OS exits); `tools/actions/mod.rs:417` (an agent path's `exists`);
-      `listing_index_sizes/count/measure.rs:87`; in `cmdr-operations` `routing.rs:61` (`resolve_dest_path`: ❗ every
-      volume transfer's destination, a real blocker), `create.rs:500`, and `types/transfer_leaves.rs:108`; in `cmdr-fs`
-      `archive_format.rs:228` (the archive boundary split) and `twin_path.rs:150, 160` (an MTP twin's join); in
-      `cmdr-viewer` `session.rs:293`; in `cmdr-index` `paths/app_text.rs:89` (the door the 8 above route through),
-      `lifecycle/phases/stitch.rs:94`, and `watch/event_loop/live.rs:140`.
-    - **The 14 `seam_path` crossings** (a named helper over `legacy_unchecked`, counted once in `wire_paths.rs`):
-      `in_flight_sweep.rs:287, 404`, `create.rs:55, 71`, `archive_edit/engine.rs:104`, `create_numbered.rs:44`,
-      `conflict_preflight.rs:142, 186`, `rename/bulk/by_move.rs:84, 85, 214`, `routing.rs:686, 753`, and
-      `routing/destination.rs:41`. A `std::path` value the engine made from a typed path round-trips losslessly on macOS
-      and Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point
-      as text and `seam_path` re-escapes it as literal: a mangled name. 12 are new here (`create.rs:55` and
-      `routing.rs:753` are on the list).
-    - **Corrected hazard count: 76** (37 on the list, 27 off it, 12 `seam_path`). The demo's off-list sites
-      (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no hazard. A regex can't
-      make this list complete; the type-level gate (§ "Keeping it that way") is what can.
+      `listing_index_sizes/count/measure.rs:87`; in `cmdr-operations` `create.rs:500`, and
+      `types/transfer_leaves.rs:108`; in `cmdr-fs` `archive_format.rs:228` (the archive boundary split) and
+      `twin_path.rs:150, 160` (an MTP twin's join); in `cmdr-viewer` `session.rs:293`; in `cmdr-index`
+      `paths/app_text.rs:89` (the door the 8 above route through), `lifecycle/phases/stitch.rs:94`, and
+      `watch/event_loop/live.rs:140`.
+    - **The `seam_path` crossings** (a named helper over `legacy_unchecked`, counted once in `wire_paths.rs`), 14 at the
+      snapshot, 10 left: `in_flight_sweep.rs:287, 404`, `create.rs:55, 71`, `archive_edit/engine.rs:104`,
+      `create_numbered.rs:44`, `conflict_preflight.rs:195` (the sources), and `rename/bulk/by_move.rs:84, 85, 214`. A
+      `std::path` value the engine made from a typed path round-trips losslessly on macOS and Linux, but on Windows a
+      POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as text and `seam_path`
+      re-escapes it as literal: a mangled name. 9 of the 10 are new here (`create.rs:55` is on the list).
+    - **Corrected hazard count: 61** (26 on the list, 26 off it, 9 `seam_path`); 76 at the snapshot (37, 27, 12), 15
+      gone with 10a's seventh pass: `resolve_dest_path` (off the list), the 11 walker and destination sites, and the
+      `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`. The
+      demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no
+      hazard. A regex can't make this list complete; the type-level gate (§ "Keeping it that way") is what can.
   - **27 sites need an exemption**, and the check has no directive for one today: env vars (`cmdr-adb`, the `cmdr-index`
     benches, the SFTP fixture's key dir), xattr key names (`cmdr-archive`, `cmdr-smb`, `cmdr-fs` caps tests), the SQLite
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
@@ -2999,9 +3031,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
       - :93 pathFromBareText, test-fixture, no hazard: literal path; `ensure_zip_writable` takes `&Path`. Goes with:
         typing `ensure_zip_writable` to take `&AppPath`. No exemption.
     - `crates/cmdr-operations/src/conflict_preflight.rs`
-      - :127 pathFromBareText, engine-body, HAZARD: IPC `dest_path: String` kept as `PathBuf`; `seam_path`,
-        `resolve_dest_path`, `scan_for_conflicts` via it. Goes with: taking `dest_path` as `AppPathBuf` (`from_wire` at
-        the command edge), typed through. No exemption.
       - :183 pathFromBareText, engine-body, HAZARD: IPC `source_paths: Vec<String>` to `PathBuf` for `seam_path`,
         `stat_source_paths(&[PathBuf])`. Goes with: taking `source_paths` as `Vec<AppPathBuf>` and typing
         `stat_source_paths`. No exemption.
@@ -3062,17 +3091,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
       - :363 pathFromBareText, test-fixture, no hazard: literal; `TrashItemError.path: PathBuf` (local trash). Goes
         with: none while trash stays a native local-disk record. Exemption: yes, `TrashItemError.path` names a
         local-disk trash item, native.
-    - `crates/cmdr-operations/src/delete/volume_scan.rs`
-      - :225 appTextToPath, engine-body, HAZARD: `scan_volume_recursive` keyed by `PathBuf`; child re-bridged via
-        `legacy_unchecked` to `entry_kind`. Goes with: typing `scan_volume_recursive`'s child paths (typed
-        `FileEntry.path`). No exemption.
     - `crates/cmdr-operations/src/error_classification.rs`
       - :70 pathFromBareText, native, no hazard: text is a local `PathBuf`'s `display`, never an escape;
         `refusing_folder(&Path)` probes OS. Goes with: passing the native `&Path` into `classify_io_error` instead of
         `String`. No exemption.
-    - `crates/cmdr-operations/src/hidden_links.rs`
-      - :35 appTextToPath, engine-body, HAZARD: `on_volume(&Path)` = `legacy_unchecked`, re-escapes `entry.path` before
-        `entry_kind`. Goes with: passing typed `FileEntry.path` straight to `entry_kind`. No exemption.
     - `crates/cmdr-operations/src/in_flight_log_writer.rs`
       - :191 pathFromBareText, native, no hazard: the in-flight log file's own on-disk path plus a suffix. Goes with:
         none. Exemption: yes, the app's own log file on local disk, native by nature.
@@ -3116,11 +3138,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
     - `crates/cmdr-operations/src/routed_writes_tests.rs`
       - :247 pathFromBareText, test-fixture, no hazard: literal; `create_numbered_file` takes `&Path`. Goes with: typing
         `create_numbered_file` to take `&AppPath`. No exemption.
-    - `crates/cmdr-operations/src/routing.rs`
-      - :70 pathFromBareText, engine-body, HAZARD: IPC `dest_path: String` as `PathBuf` for the zip driver
-        (`landing_parent`). Goes with: taking `dest_path` as `AppPathBuf` at the start. No exemption.
-      - :753 pathFromBareText, engine-body, HAZARD: IPC `dest_zip_path: String` through `seam_path` (re-escapes) into
-        `resolve`. Goes with: taking `dest_zip_path` as `AppPathBuf`. No exemption.
     - `crates/cmdr-operations/src/scan_cache.rs`
       - :438 pathFromBareText, test-fixture, no hazard: literal; `FileInfo.path: PathBuf`. Goes with: typing
         `FileInfo.path`. No exemption.
@@ -3136,9 +3153,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
         typed path in `WriteOperationError` (or compare `AppPath`). No exemption.
       - :238 pathFromBareText, name-arith, no hazard: test compares error `path: String` with a `PathBuf`. Goes with:
         typed path in `WriteOperationError` (or compare `AppPath`). No exemption.
-    - `crates/cmdr-operations/src/scan_oracle.rs`
-      - :116 appTextToPath, engine-body, HAZARD: `scan_subtree_with_oracle` recurses on `PathBuf` child paths. Goes
-        with: typing `scan_subtree_with_oracle`'s child paths (AppPath join). No exemption.
     - `crates/cmdr-operations/src/scan_preview/volume.rs`
       - :379 appTextToPath, name-arith, no hazard: `file_name` of `entry.path` as a map key; nothing opened. Goes with:
         `AppPath::file_name` on typed `FileEntry.path`. No exemption.
@@ -3173,9 +3187,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
     - `crates/cmdr-operations/src/transfer/transfer_driver_test_support.rs`
       - :24 pathFromBareText, test-fixture, no hazard: literal; transfer drivers take `Vec<PathBuf>`. Goes with: typing
         the transfer drivers' sources. No exemption.
-    - `crates/cmdr-operations/src/transfer/volume/cleanup.rs`
-      - :602 appTextToPath, engine-body, HAZARD: `legacy_unchecked(Path::new(&child.path))` re-escapes before
-        `remove_tree` recursion. Goes with: using typed `FileEntry.path` directly. No exemption.
     - `crates/cmdr-operations/src/transfer/volume/copy_cancel_tests.rs`
       - :57 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes `&[PathBuf]`. Goes
         with: typing `copy_volumes_with_progress`'s sources. No exemption.
@@ -3238,8 +3249,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
       - :101 pathFromBareText, test-fixture, no hazard: literal; `copy_volumes_with_progress` takes dest `&Path`. Goes
         with: typing `copy_volumes_with_progress`'s destination. No exemption.
     - `crates/cmdr-operations/src/transfer/volume/merge.rs`
-      - :925 appTextToPath, engine-body, HAZARD: merge recursion and copy take `PathBuf` child sources
-        (`copy_single_path(&Path)`). Goes with: typing merge's child paths (typed `FileEntry.path`). No exemption.
       - :986 appTextToPath, name-arith, no hazard: `DestinationNames::refuses(&OsStr)` checks name rules; nothing
         opened. Goes with: `refuses` taking `&AppName`. No exemption.
     - `crates/cmdr-operations/src/transfer/volume/merge_window_tests.rs`
@@ -3264,9 +3273,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
         with: `AppPath::from_normalized`. No exemption.
       - :168 pathFromBareText, test-fixture, no hazard: literal; `move_volumes_with_progress` takes `&[PathBuf]`. Goes
         with: typing `move_volumes_with_progress`'s sources. No exemption.
-    - `crates/cmdr-operations/src/transfer/volume/rename_merge.rs`
-      - :184 appTextToPath, engine-body, HAZARD: rename-merge recursion keyed by `PathBuf` child sources, re-bridged to
-        the volume. Goes with: typing rename-merge's child paths (typed `FileEntry.path`). No exemption.
     - `crates/cmdr-operations/src/transfer/volume/safety_grid_tests.rs`
       - :161 pathFromBareText, test-fixture, no hazard: literal; preview per-path map keyed by `PathBuf`. Goes with:
         typing the preview store's source paths. No exemption.
@@ -3295,11 +3301,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
         with: typing `resolve_volume_conflict`'s paths. No exemption.
       - :430 pathFromBareText, test-fixture, no hazard: literal; `resolve_volume_conflict` takes dest `&Path`. Goes
         with: typing `resolve_volume_conflict`'s paths. No exemption.
-    - `crates/cmdr-operations/src/transfer/volume/source_sweep.rs`
-      - :186 appTextToPath, engine-body, HAZARD: `doomed`/`husk` lists keep `PathBuf` beside the app path; errors and
-        deletes via it. Goes with: typing the sweep's paths (drop the `PathBuf` twin). No exemption.
-      - :338 appTextToPath, engine-body, HAZARD: `PathBuf` dir stack re-bridged via `legacy_unchecked` into
-        `list_directory_as_source`. Goes with: typed `AppPathBuf` dir stack from `FileEntry.path`. No exemption.
     - `crates/cmdr-operations/src/transfer/volume/strategy_abort_tests.rs`
       - :67 pathFromBareText, test-fixture, no hazard: literal; `copy_single_path` takes `&Path`. Goes with: typing
         `copy_single_path`'s paths. No exemption.

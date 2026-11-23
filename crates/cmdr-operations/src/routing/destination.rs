@@ -1,19 +1,85 @@
 //! Where a copy or move lands, resolved once for the routes: anchored on its volume,
 //! then routed (a `.zip`, a snapshot) or the drive itself.
 
+use std::borrow::Cow;
 use std::sync::Arc;
+
+use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::volume::AnchorRefusal;
 
 use cmdr_fs::volume::{RoutedKind, Volume};
 
-use super::{dest_volume_missing, destination_takes_no_writes, host, resolve_dest_path};
+use super::{dest_volume_missing, destination_takes_no_writes, host};
 use crate::types::WriteOperationError;
+
+/// Turns the destination a caller sent into the path the destination volume
+/// accepts: home shortcut expanded (local only), then anchored at the volume's
+/// root, as a typed app path.
+///
+/// The transfer dialog's destination box is VOLUME-RELATIVE (`/photos`) because
+/// the volume is a separate dropdown next to it, while a pane sends the absolute
+/// path it displays. `cmdr_fs::volume::anchor_at_root` folds both into the
+/// absolute form by the app path's own arithmetic (❌ never `Path::join`, which on
+/// Windows puts a `\` into a POSIX volume's path), and it's idempotent, so neither
+/// caller has to know which one it holds.
+/// Skipping it is what made a move into an SMB subfolder fail instantly
+/// (ERR-XCP5Q): `SmbVolume` reads `/photos` as an absolute path outside its mount
+/// and answers `NotFound` rather than guessing.
+///
+/// `~` expands for local volumes only, per the "never tilde-expand MTP/network
+/// paths" rule: on a share, `~` is an ordinary folder name.
+///
+/// While escapes aren't live (`cmdr_fs::app_path::ESCAPES_LIVE`) the text's
+/// escape-range code points are LITERAL, each name spelled through the listed-name
+/// door, so the place is the one the `std::path` anchor named, byte for byte.
+///
+/// # Errors
+///
+/// [`AnchorRefusal`]: text naming a place on another volume (its own scheme, drive,
+/// or UNC root), or holding a `..`, which the app resolves on its volume before a
+/// start sends the box (`commands/wire_path.rs::transfer_destination`).
+pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Result<AppPathBuf, AnchorRefusal> {
+    let expanded: Cow<'_, str> = if dest_volume.local_path().is_some() {
+        Cow::Owned(cmdr_fs::tilde::expand_tilde(dest_path))
+    } else {
+        Cow::Borrowed(dest_path)
+    };
+    cmdr_fs::volume::anchor_at_root(dest_volume.root(), &literal_names(&expanded))
+}
+
+/// `text` with each name spelled as a listing spells it while escapes aren't live
+/// (`AppName::from_listed_text`): an escape-range code point is literal text.
+/// Separators, and the empty, `.`, and `..` names the anchor answers itself, stay
+/// as they are. Borrowed for text holding no escape-range code point (nearly all).
+fn literal_names(text: &str) -> Cow<'_, str> {
+    if cmdr_fs::app_path::ESCAPES_LIVE || !text.chars().any(cmdr_fs::app_path::is_escape) {
+        return Cow::Borrowed(text);
+    }
+    let names: Vec<Cow<'_, str>> = text
+        .split('/')
+        .map(|name| match cmdr_fs::app_path::AppName::from_listed_text(name) {
+            Ok(Cow::Owned(spelled)) => Cow::Owned(spelled.into_string()),
+            _ => Cow::Borrowed(name),
+        })
+        .collect();
+    Cow::Owned(names.join("/"))
+}
+
+/// A destination the anchor refused, as a write start reports it: the place the
+/// box named isn't one on this volume, as the app's own resolve words it
+/// (`commands/wire_path.rs::DestinationRefusal::into_write_error`).
+pub(super) fn no_such_destination(dest_path: &str) -> WriteOperationError {
+    WriteOperationError::DestinationNotFound {
+        path: dest_path.to_string(),
+    }
+}
 
 /// A transfer's destination, resolved: the volume that serves it, the route it took
 /// (`None` for the drive itself), and the path as the routes read it.
 pub(super) struct ResolvedDestination {
     pub(super) volume: Arc<dyn Volume>,
     pub(super) routed: Option<RoutedKind>,
-    pub(super) path: String,
+    pub(super) path: AppPathBuf,
 }
 
 impl crate::Operations {
@@ -36,13 +102,10 @@ impl crate::Operations {
         let Some(drive) = volumes.get(dest_volume_id) else {
             return Err(dest_volume_missing(self.host(), dest_volume_id, &dest_path).await);
         };
-        let anchored = resolve_dest_path(&drive, dest_path.clone());
-        let resolved = volumes
-            .resolve(dest_volume_id, &crate::wire_paths::seam_path(&anchored))
-            .await;
-        let path = anchored.into_os_string().into_string().unwrap_or(dest_path);
+        let path = resolve_dest_path(&drive, &dest_path).map_err(|_| no_such_destination(&dest_path))?;
+        let resolved = volumes.resolve(dest_volume_id, &path).await;
         let Some(volume) = resolved.volume else {
-            return Err(dest_volume_missing(self.host(), dest_volume_id, &path).await);
+            return Err(dest_volume_missing(self.host(), dest_volume_id, path.as_str()).await);
         };
         if resolved.routed.is_some_and(|kind| !kind.takes_writes()) {
             return Err(destination_takes_no_writes(&volume));

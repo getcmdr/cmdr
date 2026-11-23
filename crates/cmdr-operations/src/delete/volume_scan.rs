@@ -13,6 +13,7 @@ use super::super::scan_preview::entry_in_parent_listing;
 use super::super::state::WriteOperationState;
 use super::super::types::{WriteOperationError, WriteOperationPhase, WriteOperationType, WriteProgressEvent};
 use super::outage::{Listed, read_through_outages};
+use crate::transfer::volume::{PathRole, listed_path, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
@@ -222,10 +223,16 @@ pub(super) async fn scan_volume_recursive(
         // is asked `entry_kind` before the walk descends it.
         let listings_mark_links = volume.backend_kind().listings_mark_links();
         for child in &children {
-            let child_path = PathBuf::from(&child.path);
+            // The child as its listing row names it, typed. A row naming no place
+            // under this folder (a hostile `../x`) stops the delete before anything
+            // goes, ❌ never walked: it would delete outside the selection.
+            let child_path_app =
+                listed_path(child).map_err(|e| map_volume_error(&path.display().to_string(), PathRole::Source, e))?;
+            // The same child for the delete's entries, which key on `std::path`
+            // (the bridge's way out, until they're typed).
+            let child_path = child_path_app.as_std_legacy().into_owned();
             let mut child_kind = EntryKind::of(child);
             if child_kind == EntryKind::Directory && !listings_mark_links {
-                let child_path_app = AppPath::legacy_unchecked(&child_path);
                 child_kind = read_through_outages(volume, state, || volume.entry_kind(&child_path_app))
                     .await
                     .map_err(|stop| stop.into_error(&child_path))?;
