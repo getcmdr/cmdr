@@ -8,7 +8,7 @@ use super::Inner;
 use super::cached_listing::CachedListing;
 use super::diff::DiffChange;
 use super::operations::ListingLookupError;
-use super::reread::ReadGeneration;
+use super::read_generation::ReadGeneration;
 
 /// The seven `recursive_*` fields the drive index fills in on a folder row: data,
 /// so a writer can't touch a name or a path under the cache lock. Each field

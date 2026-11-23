@@ -8,6 +8,7 @@ use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
 use crate::Inner;
 use crate::listing_id::ListingId;
+use crate::read_generation::ReadGeneration;
 use cmdr_fs::entry::FileEntry;
 pub(crate) use cmdr_fs::volume::DirectoryChange;
 
@@ -177,12 +178,20 @@ impl Inner {
                 // The backend already re-read the directory, so there's nothing to ask
                 // it for: prepare once for the volume, then publish per listing. This is
                 // where the diffing a device backend used to do for itself lives now.
-                // Dated on arrival: the backend serializes its own re-reads.
-                let generation = self.next_read_generation();
+                // Dated on arrival: the backend serializes its own re-reads. So a
+                // patch that landed while the backend was reading isn't owed a check
+                // (`DETAILS.md` § "Read generations", #1415).
+                let read = self.start_read(listings.iter().map(String::as_str));
                 match self.prepare_handed_over(volume_id, parent_path, entries) {
                     Some(prepared) => {
                         for listing_id in &listings {
-                            self.publish_replacement(listing_id, prepared.clone(), generation);
+                            let recheck = self.publish_replacement(listing_id, prepared.clone(), read.generation());
+                            if !recheck.is_nothing() {
+                                // A strong handle: the settle ends.
+                                let (engine, listing_id) = (Arc::clone(self), listing_id.clone());
+                                self.runtime
+                                    .spawn(async move { engine.settle_patches(&listing_id, recheck).await });
+                            }
                         }
                     }
                     // An overlay applies here, and this arm can't wait on it: re-read
@@ -220,12 +229,20 @@ impl Inner {
     /// mid-write, self-notify lost the race against `insert_entry_sorted`'s
     /// duplicate guard).
     pub(crate) fn notify_added(&self, listing_id: &str, entry: FileEntry) {
+        self.upsert_entry(listing_id, entry, None);
+    }
+
+    /// [`Self::notify_added`]'s upsert, skipped when `since` says a newer patch
+    /// already wrote the name (`Inner::insert_entry_sorted_since`).
+    pub(crate) fn upsert_entry(&self, listing_id: &str, mut entry: FileEntry, since: Option<ReadGeneration>) {
         if self.has_entry(listing_id, &entry.path) {
-            self.notify_modified(listing_id, entry);
+            // Preserve already-loaded Finder tags across this re-stat (see `carry_forward_deferred`).
+            self.carry_forward_deferred(listing_id, &mut entry);
+            let _ = self.update_entry_sorted_since(listing_id, entry, since);
             return;
         }
 
-        let _ = self.insert_entry_sorted(listing_id, entry);
+        let _ = self.insert_entry_sorted_since(listing_id, entry, since);
     }
 
     /// Removes the entry named `name` from the cache and queues a single-remove change.

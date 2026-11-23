@@ -9,10 +9,27 @@ use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
 use crate::Inner;
 use crate::diff::{DiffChange, PaneRows};
+use crate::patch_log::Observed;
+use crate::read_generation::ReadGeneration;
 use crate::sorting::{entry_comparator, sort_key_changed};
 use cmdr_fs::entry::{FileEntry, TagRef};
 
 impl Inner {
+    /// [`Self::insert_entry_sorted_since`] for a patch: never skipped.
+    pub(crate) fn insert_entry_sorted(&self, listing_id: &str, entry: FileEntry) -> Option<PaneRows> {
+        self.insert_entry_sorted_since(listing_id, entry, None)
+    }
+
+    /// [`Self::update_entry_sorted_since`] for a patch: never skipped.
+    pub(crate) fn update_entry_sorted(&self, listing_id: &str, new_entry: FileEntry) -> Option<PaneRows> {
+        self.update_entry_sorted_since(listing_id, new_entry, None)
+    }
+
+    /// [`Self::remove_entry_by_name_since`] for a patch: never skipped.
+    pub(crate) fn remove_entry_by_name(&self, listing_id: &str, name: &str) -> Option<(PaneRows, FileEntry)> {
+        self.remove_entry_by_name_since(listing_id, name, None)
+    }
+
     /// Inserts a `FileEntry` into a cached listing at the correct sorted position.
     ///
     /// Uses `partition_point` with the listing's sort comparator to find the insertion index.
@@ -23,14 +40,29 @@ impl Inner {
     /// ❗ Every helper here reads the pane's rows off the map as it stood BEFORE its own
     /// patch, while that map is still standing: the patch drops it, and rebuilding it
     /// per patch would make a burst of adds rebuild it once per add.
-    pub(crate) fn insert_entry_sorted(&self, listing_id: &str, entry: FileEntry) -> Option<PaneRows> {
+    ///
+    /// `since` is for a check after a re-read (`settle.rs`), which started at `since`:
+    /// it skips the patch (`None`) when the name was patched at or after that, since
+    /// that patch saw a newer disk. Every other caller goes through the plain name.
+    pub(crate) fn insert_entry_sorted_since(
+        &self,
+        listing_id: &str,
+        entry: FileEntry,
+        since: Option<ReadGeneration>,
+    ) -> Option<PaneRows> {
         // Both resolved before the lock: each asks the host.
         let visibility = self.scratch_visibility();
         let collator = self.collator();
         let mut cache = self.write_cache();
         let (listing, publish) = cache.get_mut(listing_id)?;
+        if listing.patched_since(&entry.name, since) {
+            return None;
+        }
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
+        listing.note_patch(&entry.name, self.read_generation_now(), || {
+            Observed::Present(Box::new(entry.clone()))
+        });
 
         // Don't insert if an entry with this path already exists. Asked BEFORE
         // `entries_mut` drops the path map, so the guard rides one when it's there.
@@ -76,11 +108,33 @@ impl Inner {
         listing.touch();
 
         let path_strings: Vec<String> = paths.iter().map(|path| path.to_string_lossy().into_owned()).collect();
-        let mut doomed: Vec<usize> = listing
-            .indices_of_paths(path_strings.iter().map(String::as_str))
-            .into_iter()
-            .flatten()
-            .collect();
+        let found = listing.indices_of_paths(path_strings.iter().map(String::as_str));
+        // Every path, held or not: a re-read in flight may have seen one this
+        // listing never held, and its landing must check it again. A held one goes
+        // by its row's own name and path. An unheld one goes by the watcher's, and
+        // only when that's plain UTF-8: a lossy name would check the wrong item, so
+        // its landing re-reads instead.
+        if listing.tracks_patches() {
+            let noted: Vec<Option<(String, String)>> = paths
+                .iter()
+                .zip(&found)
+                .map(|(path, index)| match index {
+                    Some(index) => {
+                        let row = &listing.entries()[*index];
+                        Some((row.name.clone(), row.path.clone()))
+                    }
+                    None => Some((path.file_name()?.to_str()?.to_owned(), path.to_str()?.to_owned())),
+                })
+                .collect();
+            let now = self.read_generation_now();
+            for noted in noted {
+                match noted {
+                    Some((name, path)) => listing.note_patch(&name, now, || Observed::Gone { path: Some(path) }),
+                    None => listing.patch_log.note_unnamed(now),
+                }
+            }
+        }
+        let mut doomed: Vec<usize> = found.into_iter().flatten().collect();
         // Highest first, and each row at most once: a repeated path in `paths` must
         // not take a second, innocent row down with it.
         doomed.sort_unstable_by(|a, b| b.cmp(a));
@@ -128,16 +182,29 @@ impl Inner {
     /// inner path (`/Documents/notes.txt`) while `notify_mutation` reports the parent
     /// at the `mtp://…` URL, so a full-path match would drop the removal. Local and
     /// SMB entries share the notifier's spelling, where name matching is equivalent.
-    pub(crate) fn remove_entry_by_name(&self, listing_id: &str, name: &str) -> Option<(PaneRows, FileEntry)> {
+    ///
+    /// `since`: as on [`Self::insert_entry_sorted_since`].
+    pub(crate) fn remove_entry_by_name_since(
+        &self,
+        listing_id: &str,
+        name: &str,
+        since: Option<ReadGeneration>,
+    ) -> Option<(PaneRows, FileEntry)> {
         let visibility = self.scratch_visibility();
         let mut cache = self.write_cache();
         let (listing, publish) = cache.get_mut(listing_id)?;
+        if listing.patched_since(name, since) {
+            return None;
+        }
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
-        let idx = listing
-            .entries()
-            .iter()
-            .position(|e| last_name(&e.path) == Some(name))?;
+        let found = listing.entries().iter().position(|e| last_name(&e.path) == Some(name));
+        // A held row is checked through its own path; an unheld name only by
+        // trusting this patch, since the notifier's parent may be spelled
+        // differently from the listing's (MTP).
+        let row_path = found.map(|idx| listing.entries()[idx].path.clone());
+        listing.note_patch(name, self.read_generation_now(), || Observed::Gone { path: row_path });
+        let idx = found?;
         let rows = PaneRows {
             before: listing.pane_rows().row_of_entry(idx),
             after: None,
@@ -166,15 +233,26 @@ impl Inner {
     /// (`sort_key_changed`), removes the old entry and re-inserts at the correct
     /// sorted position. Otherwise updates in place.
     /// Returns the rows the pane showed it on before and shows it on after, or `None` if
-    /// the listing or entry wasn't found.
-    pub(crate) fn update_entry_sorted(&self, listing_id: &str, new_entry: FileEntry) -> Option<PaneRows> {
+    /// the listing or entry wasn't found. `since`: as on [`Self::insert_entry_sorted_since`].
+    pub(crate) fn update_entry_sorted_since(
+        &self,
+        listing_id: &str,
+        new_entry: FileEntry,
+        since: Option<ReadGeneration>,
+    ) -> Option<PaneRows> {
         // Both resolved before the lock: each asks the host.
         let visibility = self.scratch_visibility();
         let collator = self.collator();
         let mut cache = self.write_cache();
         let (listing, publish) = cache.get_mut(listing_id)?;
+        if listing.patched_since(&new_entry.name, since) {
+            return None;
+        }
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
+        listing.note_patch(&new_entry.name, self.read_generation_now(), || {
+            Observed::Present(Box::new(new_entry.clone()))
+        });
 
         let sort = listing.effective();
         let cmp = entry_comparator(Arc::clone(&collator), sort);

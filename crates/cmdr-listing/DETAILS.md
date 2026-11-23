@@ -1213,9 +1213,48 @@ When each one takes it, because a generation taken too early drops a FRESHER rea
 
 Equal generations both land: the respell writes one read twice when the spelling changed.
 
-**Incremental patches take none and bump none.** A re-read that started before an `Added`, `Removed`, `Modified`, or
-`observe_children` patch can still land after it and carry the older state, as it always could; bumping on every patch
-would drop every re-read during a busy burst. Don't "fix" it silently.
+Every full re-read starts through `Inner::start_read(listing_ids)`, which hands out its generation under the cache write
+lock and answers a `ReadInFlight` guard that counts the read on each listing (`reads_in_flight`) until it drops, however
+the read ends: landed, superseded, failed, or a host `ReadTicket` never handed over. When a listing's last read ends,
+its patch log empties.
+
+**Incremental patches take none and bump none**: bumping on every patch would drop every re-read during a busy burst.
+Instead, a re-read's landing checks again what was patched while it read (`patch_log.rs`, `settle.rs`, #1342). Without
+that, a re-read that started before an `Added`, `Removed`, `Modified`, or `observe_children` patch and landed after it
+carried the older state, and nothing corrected it: a 3,000-file `cmd` loop on Windows left a pane at 3,000 of 3,002.
+
+- **Noting.** Every patch helper in `mutate.rs` calls `CachedListing::note_patch` under the write lock, with the last
+  generation handed out as its stamp and what the patch saw (`Observed`: the entry, or gone with the row's path). It
+  notes only while `reads_in_flight > 0`, so the normal case costs one comparison. A remove notes even a name the
+  listing never held, since the read may have seen it; `observe_children` routes such a gone child through the remove
+  only while a read is in flight, so the normal case still takes no lock and doesn't `touch()` a background listing. A
+  name that isn't plain UTF-8 can't be checked on its own, so it's noted as "unnamed" and forces a re-read.
+- **Why the stamp works.** `start_read` hands out generations under the same lock patches stamp under, so a read with
+  generation `G` started before every patch stamped `G` or later. On landing, `PatchLog::landing(G)` owes the names
+  stamped `>= G` and keeps only those stamped `> G`, for a newer read still in flight.
+- **The check is a read too.** `settle_patches` (no lock held) takes its own `ReadInFlight` at generation `R`, stats
+  each owed name, and applies through the `_since(R)` helpers, which skip any name patched at or after `R`: that patch
+  saw a newer disk than the stat did (a stat that found a file must not bring it back over a newer remove, nor the
+  reverse). A held name is statted through its row's own path.
+- **Bounds.** At most `MAX_TRACKED_PATCHES` (32) names, since each is a round trip on a network volume; past it, or for
+  an unnamed patch, or two owed names that differ only in case (a case-only rename, where a stat finds both spellings),
+  the landing re-reads the folder once more instead. A volume whose stat lists the parent
+  (`Volume::stat_lists_the_parent`, MTP) always re-reads instead. The `FullRefresh` and the respell settle after
+  releasing the folder's turn, and each stat pass waits at most 2 s on stats spawned on their own tasks (never dropped
+  mid-call, so an MTP phone or SMB session isn't cut off).
+- **Can't tell.** A stat that fails with anything but `NotFound`, or runs out of time, gets one retry; then the patch's
+  own observation stands, with no re-read. So does every owed name when nothing serves the volume (the host's `std::fs`
+  read): a change after the patch sends its own event. Only a landing that owed a re-read answers `NoVolume` there, and
+  the watcher reads again at most three times.
+- **Known gap.** A backend's `Replaced` is dated on arrival (above), so a patch that landed while the backend itself was
+  reading isn't owed a check: #1415.
+- **Module shape.** `read_generation.rs` and `patch_log.rs` are pure-data leaves; the listing holds a `PatchLog`, and
+  `settle.rs` acts on what a landing owes. Keep it that way: `CachedListing` methods in `patch_log.rs` closed a
+  `cached_listing` / `patch_log` / `reread` cycle that `module-cycles` rejects.
+- **Pinned by** `reread_patch_race_test.rs`: add, remove (held and unheld), modify, a name the read also saw, the check
+  racing a newer patch both ways, overlapping reads in both landing orders, the `FullRefresh`, respell, and `Replaced`
+  paths, the overflow, unnamed, case-only, and stat-lists-the-parent fallbacks, a stat that can't tell, stats that never
+  answer, a failed read and a dropped ticket, the host read, and the quiet cases.
 
 **Why not put `refresh` through the turnstile.** Three breaks: `notify_full_refresh` returns early when the waiting
 berth is taken, so an awaited ⌘R would return before its read landed and E2E's `flush_file_watcher` would go flaky; a

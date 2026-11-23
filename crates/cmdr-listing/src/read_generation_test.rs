@@ -8,10 +8,10 @@
 
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
-use std::collections::VecDeque;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -28,7 +28,7 @@ use super::Listings;
 use super::testing::{TestEngine, TestListing};
 use cmdr_fs::testing::wait_until_async;
 
-fn entry(dir: &AppPath, name: &str) -> FileEntry {
+pub(super) fn entry(dir: &AppPath, name: &str) -> FileEntry {
     FileEntry::new(
         name.to_string(),
         dir.join(AppName::from_app_spelling(name).expect("one plain name"))
@@ -41,19 +41,31 @@ fn entry(dir: &AppPath, name: &str) -> FileEntry {
 
 /// One scripted `list_directory` answer: the entries, and a gate the read waits
 /// on before it answers (`None` answers at once).
-struct Read {
-    gate: Option<Arc<Notify>>,
-    entries: Vec<FileEntry>,
+pub(super) struct Read {
+    pub(super) gate: Option<Arc<Notify>>,
+    pub(super) entries: Vec<FileEntry>,
 }
 
 /// A volume whose reads answer from a script, each one optionally held open
 /// until the test releases it, counting how many reads have started. That
 /// makes "the read that started first finishes last" an ordering the test
-/// drives, with no timing in it.
-struct GatedListVolume {
+/// drives, with no timing in it. A single stat answers from `disk`, the
+/// directory as it stands at the moment of the stat, whatever the scripted reads
+/// said; a stat can be held open on `stat_gate` too, after it answered.
+pub(super) struct GatedListVolume {
     inner: InMemoryVolume,
-    script: Mutex<VecDeque<Read>>,
+    pub(super) script: Mutex<VecDeque<Read>>,
     started: AtomicUsize,
+    disk: Mutex<HashMap<String, FileEntry>>,
+    /// How many of the next reads fail, ahead of the script.
+    pub(super) failing_reads: AtomicUsize,
+    /// Paths whose stat can't tell (a refusal-like error, never `NotFound`).
+    pub(super) unanswerable: Mutex<HashSet<String>>,
+    /// Held stats wait here once they've looked at the disk.
+    pub(super) stat_gate: Mutex<Option<Arc<Notify>>>,
+    stats: AtomicUsize,
+    /// What `stat_lists_the_parent` answers.
+    pub(super) stat_lists_the_parent: AtomicBool,
 }
 
 impl GatedListVolume {
@@ -62,11 +74,32 @@ impl GatedListVolume {
             inner: InMemoryVolume::new("gated"),
             script: Mutex::new(script.into()),
             started: AtomicUsize::new(0),
+            disk: Mutex::new(HashMap::new()),
+            failing_reads: AtomicUsize::new(0),
+            unanswerable: Mutex::new(HashSet::new()),
+            stat_gate: Mutex::new(None),
+            stats: AtomicUsize::new(0),
+            stat_lists_the_parent: AtomicBool::new(false),
         }
     }
 
-    fn started(&self) -> usize {
+    pub(super) fn started(&self) -> usize {
         self.started.load(Ordering::SeqCst)
+    }
+
+    /// How many stats have looked at the disk.
+    pub(super) fn stats(&self) -> usize {
+        self.stats.load(Ordering::SeqCst)
+    }
+
+    /// Puts `entry` on the disk a stat sees, replacing what was there.
+    pub(super) fn put(&self, entry: FileEntry) {
+        self.disk.lock_ignore_poison().insert(entry.path.clone(), entry);
+    }
+
+    /// Takes the entry at `path` off the disk a stat sees.
+    pub(super) fn delete(&self, path: &str) {
+        self.disk.lock_ignore_poison().remove(path);
     }
 }
 
@@ -88,8 +121,15 @@ impl Volume for GatedListVolume {
         _path: &'a AppPath,
         _on_progress: Option<&'a (dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
-        let next = self.script.lock_ignore_poison().pop_front();
         self.started.fetch_add(1, Ordering::SeqCst);
+        let fails = self
+            .failing_reads
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
+            .is_ok();
+        if fails {
+            return Box::pin(async { Err(VolumeError::NotSupported) });
+        }
+        let next = self.script.lock_ignore_poison().pop_front();
         Box::pin(async move {
             let Some(read) = next else {
                 return Ok(Vec::new());
@@ -105,7 +145,26 @@ impl Volume for GatedListVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        self.inner.get_metadata(path)
+        let answer = if self.unanswerable.lock_ignore_poison().contains(path.as_str()) {
+            Err(VolumeError::NotSupported)
+        } else {
+            match self.disk.lock_ignore_poison().get(path.as_str()) {
+                Some(entry) => Ok(entry.clone()),
+                None => Err(VolumeError::NotFound(path.as_str().to_owned())),
+            }
+        };
+        self.stats.fetch_add(1, Ordering::SeqCst);
+        let gate = self.stat_gate.lock_ignore_poison().clone();
+        Box::pin(async move {
+            if let Some(gate) = gate {
+                gate.notified().await;
+            }
+            answer
+        })
+    }
+
+    fn stat_lists_the_parent(&self) -> bool {
+        self.stat_lists_the_parent.load(Ordering::SeqCst)
     }
 
     fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
@@ -154,7 +213,7 @@ impl Volume for GatedListVolume {
 }
 
 /// An engine with a fresh volume id and directory, the volume registered under it.
-fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
+pub(super) fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
     let volume_id = unique_test_id(&format!("{tag}-vol"));
     let dir = super::testing::app_text(&format!("/test/{}", unique_test_id(&format!("{tag}-dir"))));
     let volume = Arc::new(GatedListVolume::new(script));
@@ -165,7 +224,7 @@ fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Ar
 }
 
 /// `engine`'s `FullRefresh` of `dir` for `listing_id`, on a task of its own.
-fn spawn_full_refresh(
+pub(super) fn spawn_full_refresh(
     engine: &Listings,
     volume_id: &str,
     dir: &AppPath,
@@ -176,7 +235,7 @@ fn spawn_full_refresh(
     tokio::spawn(async move { inner.notify_full_refresh(volume_id, dir, listings).await })
 }
 
-fn names(entries: Vec<FileEntry>) -> Vec<String> {
+pub(super) fn names(entries: Vec<FileEntry>) -> Vec<String> {
     entries.into_iter().map(|e| e.name).collect()
 }
 

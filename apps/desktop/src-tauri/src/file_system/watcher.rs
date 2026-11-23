@@ -661,28 +661,42 @@ pub async fn handle_directory_change(listing_id: &str) {
 }
 
 /// The re-read for a listing whose volume nothing serves any more: `std::fs`,
-/// handed to the engine. The ticket is taken BEFORE the read, so it dates the read.
+/// handed to the engine. The engine answers `NoVolume` again when more patches
+/// landed during the read than it checks one by one (`cmdr-listing`'s
+/// `patch_log.rs`), so this reads again, at most [`STD_FS_REREAD_ROUNDS`] times:
+/// a folder written to without pause must not keep it reading forever, and the
+/// writes past the last round send their own events.
 async fn reread_with_std_fs(listings: &Listings, id: &ListingId) {
-    let Some(ticket) = listings.begin_read(id) else {
-        return;
-    };
+    for _ in 0..STD_FS_REREAD_ROUNDS {
+        if reread_with_std_fs_once(listings, id).await != Some(RefreshOutcome::NoVolume) {
+            return;
+        }
+    }
+}
+
+/// How many `std::fs` reads one re-read may take, the first one included.
+const STD_FS_REREAD_ROUNDS: usize = 3;
+
+/// One `std::fs` re-read. The ticket is taken BEFORE the read, so it dates the read.
+async fn reread_with_std_fs_once(listings: &Listings, id: &ListingId) -> Option<RefreshOutcome> {
+    let ticket = listings.begin_read(id)?;
     // `std::fs` reads native paths: a listing with none (a server URL whose volume
     // is gone) has nothing to read here, and waits for its volume to come back.
     let Ok(native) = ticket.path().to_native_plain() else {
-        return;
+        return None;
     };
     match list_directory_core(&native, &crate::listing_host::backends::AppListings) {
-        Ok(entries) => {
-            listings.refresh_from_entries(ticket, entries).await;
-        }
+        Ok(entries) => Some(listings.refresh_from_entries(ticket, entries).await),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             let path = ticket.path().to_owned();
             directory_deleted(id.as_str(), &path);
+            None
         }
         Err(e) => {
             if e.kind() != std::io::ErrorKind::PermissionDenied {
                 log::warn!("Watcher: Failed to re-read directory: {}", e);
             }
+            None
         }
     }
 }

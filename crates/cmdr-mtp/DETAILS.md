@@ -121,7 +121,9 @@ listings; in-flight USB calls always finish before cancellation returns.
 
 **❗ `get_metadata` is expensive, always.** It lists the entire parent directory and searches by name, because MTP has
 no stat. `notify_mutation` pays it after each self-mutation (create, delete, rename), which is fine because those are
-infrequent. ❌ Never call it in a hot path.
+infrequent. ❌ Never call it in a hot path. `stat_lists_the_parent` says so to callers: the listing engine re-reads the
+folder once instead of statting what a watcher patched during a re-read (`crates/cmdr-listing/DETAILS.md` § "Read
+generations").
 
 **A dropped read stream is safe.** `MtpReadStream` reads at most `MTP_READ_PACING.call_limit` (8 MiB) per call, from
 time-paced `GetPartialObject64` windows or, on a device without partial reads, one held-open `GetObject` whose session

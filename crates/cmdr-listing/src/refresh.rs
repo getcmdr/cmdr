@@ -11,8 +11,10 @@ use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 
 use crate::Inner;
+use crate::patch_log::Recheck;
 use crate::pipeline::{Prepared, ReadBy};
-use crate::reread::ReadGeneration;
+use crate::read_generation::ReadGeneration;
+use crate::reread::ReadInFlight;
 
 /// One directory's refresh turnstile: an async lock plus a flag saying whether a
 /// refresh is already queued behind the running one.
@@ -99,18 +101,30 @@ impl Inner {
     /// replaces, not just safer.
     ///
     /// `pub(super)` so a test can await one directly rather than through the spawn.
-    pub(crate) async fn notify_full_refresh(&self, volume_id: String, parent_path: AppPathBuf, listings: Vec<String>) {
+    pub(crate) async fn notify_full_refresh(
+        self: &Arc<Self>,
+        volume_id: String,
+        parent_path: AppPathBuf,
+        listings: Vec<String>,
+    ) {
         let slot = self.refresh_slot(&volume_id, &parent_path);
         // Claim the single waiting berth. Losing the race means somebody is already queued
         // to read AFTER the current refresh, which covers this request too.
         if slot.queued.swap(true, Ordering::AcqRel) {
             return;
         }
-        let _turn = slot.lock.lock().await;
+        let turn = slot.lock.lock().await;
         // The berth is free again the moment this refresh OWNS the turn: its own read is
         // still ahead, so a request arriving now must be allowed to queue behind it.
         slot.queued.store(false, Ordering::Release);
-        self.notify_full_refresh_locked(volume_id, parent_path, listings).await;
+        let (read, landed) = self.notify_full_refresh_locked(volume_id, parent_path, listings).await;
+        // The checks after the landing stat through the volume, so they run with the
+        // turn released: a mount dying right then must not hold up the next refresh.
+        drop(turn);
+        for (listing_id, recheck) in landed {
+            self.settle_patches(&listing_id, recheck).await;
+        }
+        drop(read);
     }
 
     /// Makes `entries` the contents of `listing_id` and queues what changed for the
@@ -128,13 +142,27 @@ impl Inner {
     /// `.git/` listing that regained its six virtual rows in this refresh must not
     /// read as authoritative to a walker afterwards (`host/overlays.rs`). Callers
     /// prepare ONCE per directory rather than once per listing. Dropped when the
-    /// listing already published a re-read newer than `generation`.
-    pub(crate) fn publish_replacement(&self, listing_id: &str, prepared: Prepared, generation: ReadGeneration) {
-        self.update_listing_entries(listing_id, prepared, generation);
+    /// listing already published a re-read newer than `generation`. Answers what
+    /// the landing owes the patches that landed while it read
+    /// ([`Self::settle_patches`]).
+    pub(crate) fn publish_replacement(
+        &self,
+        listing_id: &str,
+        prepared: Prepared,
+        generation: ReadGeneration,
+    ) -> Recheck {
+        self.update_listing_entries(listing_id, prepared, generation).1
     }
 
-    /// The body of one refresh, with the directory's turn already held.
-    async fn notify_full_refresh_locked(&self, volume_id: String, parent_path: AppPathBuf, listings: Vec<String>) {
+    /// The body of one refresh, with the directory's turn already held. Answers the
+    /// read, still in flight, and what each listing's landing owes, for the caller
+    /// to settle once it released the turn.
+    async fn notify_full_refresh_locked(
+        self: &Arc<Self>,
+        volume_id: String,
+        parent_path: AppPathBuf,
+        listings: Vec<String>,
+    ) -> (Option<ReadInFlight>, Vec<(String, Recheck)>) {
         // Re-resolve from `(volume_id, parent_path)` so a `.zip`-crossing listing hits
         // the same `ArchiveVolume` the read used (the cache keys on the parent drive
         // id, and a re-resolve re-registers a lazily-evicted archive).
@@ -144,12 +172,12 @@ impl Inner {
             Some(v) => v,
             None => {
                 log::warn!("notify_directory_changed: volume `{}` not found", volume_id);
-                return;
+                return (None, Vec::new());
             }
         };
 
         // After the turn, right before the read (`reread.rs`).
-        let generation = self.next_read_generation();
+        let read = self.start_read(listings.iter().map(String::as_str));
         let new_entries = match vol.list_directory(&parent_path, None).await {
             Ok(entries) => entries,
             Err(e) => {
@@ -158,7 +186,8 @@ impl Inner {
                     LogPrivate::dir_path(parent_path.as_str()),
                     LogError(&e)
                 );
-                return;
+                // Dropping the read ends it, so its listings stop noting patches.
+                return (None, Vec::new());
             }
         };
 
@@ -168,9 +197,14 @@ impl Inner {
         };
         let prepared = self.prepare(read_by, &volume_id, &parent_path, new_entries).await;
 
-        for listing_id in &listings {
-            self.publish_replacement(listing_id, prepared.clone(), generation);
-        }
+        let landed = listings
+            .into_iter()
+            .map(|listing_id| {
+                let recheck = self.publish_replacement(&listing_id, prepared.clone(), read.generation());
+                (listing_id, recheck)
+            })
+            .collect();
+        (Some(read), landed)
     }
 
     /// Finds every cached listing at or inside `root` on `volume_id`.
@@ -207,7 +241,7 @@ impl Inner {
     /// rather than blanking the pane, and the next change event retries. The FE only
     /// surfaces the damaged-archive banner at navigation time, never from this
     /// refresh path.
-    pub(crate) async fn refresh_archive_listings(&self, volume_id: &str, archive_path: &AppPath) {
+    pub(crate) async fn refresh_archive_listings(self: &Arc<Self>, volume_id: &str, archive_path: &AppPath) {
         let listings = self.find_listings_under_path_on_volume(volume_id, archive_path);
         for (listing_id, path) in listings {
             // Each inner listing lives at its own path, so refresh per listing path

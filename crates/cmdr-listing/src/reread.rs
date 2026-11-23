@@ -17,21 +17,27 @@
 //! [`ReadGeneration`] when it STARTS reading, and [`Inner::update_listing_entries`],
 //! the one step that stores a re-read, drops it under the cache write lock when
 //! the listing already published a newer one. Incremental patches take none and
-//! bump none: a re-read that started before a patch can still land after it and
-//! carry the older state, since bumping would drop every re-read during a busy
-//! burst. `DETAILS.md` § "Read generations".
+//! bump none, since bumping would drop every re-read during a busy burst.
+//! Instead a patch that lands while a re-read is in flight notes its name, and
+//! the re-read's landing stats those names again (`patch_log.rs`). `DETAILS.md`
+//! § "Read generations".
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Weak};
 
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::volume::VolumeError;
 
 use super::Inner;
 use super::listing_id::ListingId;
+use super::patch_log::Recheck;
 use super::pipeline::{OverlayRows, Prepared, ReadBy};
+use super::read_generation::ReadGeneration;
+use super::settle::Settled;
 use super::sorting::sort_entries;
 
 /// How a full re-read of one listing ended.
@@ -63,18 +69,34 @@ pub struct ReadTicket {
     id: ListingId,
     volume_id: String,
     path: AppPathBuf,
+    read: ReadInFlight,
+}
+
+/// A read of some listings in flight, from [`Inner::start_read`] until dropped:
+/// a full re-read, or the check after one (`settle.rs`). While any is in flight
+/// for a listing, its patches get noted (`patch_log.rs`); when the last one
+/// ends, however it ends, the listing forgets them. ❗ Never drop one under the
+/// cache lock: ending takes it.
+#[derive(Debug)]
+pub(crate) struct ReadInFlight {
+    engine: Weak<Inner>,
+    listing_ids: Vec<String>,
     generation: ReadGeneration,
 }
 
-/// When a full re-read started reading, from its engine's one counter: a later
-/// start has a higher generation. A listing remembers the newest one it
-/// published, and a re-read older than that is dropped.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct ReadGeneration(u64);
+impl ReadInFlight {
+    /// When this read started.
+    pub(crate) fn generation(&self) -> ReadGeneration {
+        self.generation
+    }
+}
 
-impl ReadGeneration {
-    /// What the streaming read's cache insert publishes, so any later re-read wins.
-    pub(crate) const INSERT: Self = Self(0);
+impl Drop for ReadInFlight {
+    fn drop(&mut self) {
+        if let Some(engine) = self.engine.upgrade() {
+            engine.end_read(&self.listing_ids);
+        }
+    }
 }
 
 impl ReadTicket {
@@ -89,10 +111,52 @@ impl Inner {
     /// before the read, after any turn or volume lookup it waits on: one taken
     /// while queued would lose to a read that started later.
     pub(crate) fn next_read_generation(&self) -> ReadGeneration {
-        ReadGeneration(self.read_generations.fetch_add(1, Ordering::Relaxed) + 1)
+        ReadGeneration::of_count(self.read_generations.fetch_add(1, Ordering::SeqCst) + 1)
     }
 
-    pub(crate) async fn refresh(&self, id: &ListingId) -> RefreshOutcome {
+    /// [`Self::next_read_generation`] for a read of `listing_ids`, marking each
+    /// as having one in flight until the answer drops, so the patches that land
+    /// meanwhile get noted for its landing (`patch_log.rs`). Under the cache
+    /// write lock, the lock every patch stamps under, so a patch is either
+    /// before this read or noted.
+    pub(crate) fn start_read<'a>(self: &Arc<Self>, listing_ids: impl IntoIterator<Item = &'a str>) -> ReadInFlight {
+        let mut cache = self.write_cache();
+        let generation = self.next_read_generation();
+        let mut started = Vec::new();
+        for listing_id in listing_ids {
+            if let Some((listing, _)) = cache.get_mut(listing_id) {
+                listing.reads_in_flight += 1;
+                started.push(listing_id.to_owned());
+            }
+        }
+        ReadInFlight {
+            engine: Arc::downgrade(self),
+            listing_ids: started,
+            generation,
+        }
+    }
+
+    /// Ends a read [`Self::start_read`] started, landed or not. A listing with
+    /// no read left in flight forgets its patches: nothing can undo them now.
+    fn end_read(&self, listing_ids: &[String]) {
+        let mut cache = self.write_cache();
+        for listing_id in listing_ids {
+            if let Some((listing, _)) = cache.get_mut(listing_id) {
+                listing.reads_in_flight = listing.reads_in_flight.saturating_sub(1);
+                if listing.reads_in_flight == 0 {
+                    listing.patch_log.clear();
+                }
+            }
+        }
+    }
+
+    /// The last generation handed out, which stamps a patch. Read it under the
+    /// cache write lock, where [`Self::start_read`] hands one out.
+    pub(crate) fn read_generation_now(&self) -> ReadGeneration {
+        ReadGeneration::of_count(self.read_generations.load(Ordering::SeqCst))
+    }
+
+    pub(crate) async fn refresh(self: &Arc<Self>, id: &ListingId) -> RefreshOutcome {
         let Some((volume_id, path)) = self.get_listing_volume_id_and_path(id.as_str()) else {
             return RefreshOutcome::ListingGone;
         };
@@ -105,7 +169,7 @@ impl Inner {
             return RefreshOutcome::NoVolume;
         };
 
-        let generation = self.next_read_generation();
+        let read = self.start_read([id.as_str()]);
         // A re-read comes because someone thinks the cache is stale, so it asks the
         // volume's refresh listing, which reads past a lag the plain one tolerates
         // (`Volume::list_directory_for_refresh`).
@@ -127,10 +191,13 @@ impl Inner {
             routed: is_routed,
         };
         let prepared = self.prepare(read_by, &volume_id, &path, entries).await;
-        self.update_listing_entries(id.as_str(), prepared, generation)
+        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, read.generation());
+        // Awaited, so a ⌘R or E2E's watcher flush returns with the patches settled.
+        self.settle_patches(id.as_str(), recheck).await;
+        outcome
     }
 
-    pub(crate) fn begin_read(&self, id: &ListingId) -> Option<ReadTicket> {
+    pub(crate) fn begin_read(self: &Arc<Self>, id: &ListingId) -> Option<ReadTicket> {
         let (volume_id, path) = self.get_listing_volume_id_and_path(id.as_str())?;
         Some(ReadTicket {
             id: id.clone(),
@@ -138,25 +205,37 @@ impl Inner {
             path,
             // Taken here, before the host reads, so it dates the read rather
             // than the hand-over.
-            generation: self.next_read_generation(),
+            read: self.start_read([id.as_str()]),
         })
     }
 
-    pub(crate) async fn refresh_from_entries(&self, ticket: ReadTicket, entries: Vec<FileEntry>) -> RefreshOutcome {
+    pub(crate) async fn refresh_from_entries(
+        self: &Arc<Self>,
+        ticket: ReadTicket,
+        entries: Vec<FileEntry>,
+    ) -> RefreshOutcome {
         let ReadTicket {
             id,
             volume_id,
             path,
-            generation,
+            read,
         } = ticket;
         let prepared = self.prepare(ReadBy::StdFs, &volume_id, &path, entries).await;
-        self.update_listing_entries(id.as_str(), prepared, generation)
+        let (outcome, recheck) = self.update_listing_entries(id.as_str(), prepared, read.generation());
+        match self.settle_patches(id.as_str(), recheck).await {
+            Settled::Done => outcome,
+            // Too much changed to check one by one, and nothing serves the
+            // volume to re-read through: the host reads again.
+            Settled::NeedsHostRead => RefreshOutcome::NoVolume,
+        }
     }
 
     /// Replaces a listing's entries with a re-read's (`pipeline.rs`), re-sorted
     /// the listing's way, and publishes what changed: THE step every full
     /// re-read lands through. Drops the re-read when the listing already
-    /// published one that started later than `generation`.
+    /// published one that started later than `generation`. Answers what the
+    /// landing owes the patches that landed while it read, for the caller to
+    /// hand to [`Self::settle_patches`] once no lock is held.
     ///
     /// A volume re-read also refreshes the dates the listing's volume records,
     /// BEFORE the sort, so a backend swap that gains or loses a date re-sorts
@@ -166,7 +245,7 @@ impl Inner {
         listing_id: &str,
         prepared: Prepared,
         generation: ReadGeneration,
-    ) -> RefreshOutcome {
+    ) -> (RefreshOutcome, Recheck) {
         let indexed = prepared.indexed();
         let (entries, overlay_rows, dates) = prepared.into_parts();
         // Both resolved before the lock: each asks the host.
@@ -174,16 +253,17 @@ impl Inner {
         let collator = self.collator();
         let mut cache = self.write_cache();
         let Some((listing, publish)) = cache.get_mut(listing_id) else {
-            return RefreshOutcome::ListingGone;
+            return (RefreshOutcome::ListingGone, Recheck::Nothing);
         };
         if listing.published_generation > generation {
             log::debug!(
                 target: "listing",
                 "listing {listing_id}: dropping a re-read that a newer one already superseded"
             );
-            return RefreshOutcome::Superseded;
+            return (RefreshOutcome::Superseded, Recheck::Nothing);
         }
         listing.published_generation = generation;
+        let recheck = listing.patch_log.landing(generation);
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
         let effective_moved = listing.set_listed_dates(dates);
@@ -205,7 +285,7 @@ impl Inner {
         if indexed {
             self.enrich_index_sizes(listing_id);
         }
-        RefreshOutcome::Landed
+        (RefreshOutcome::Landed, recheck)
     }
 
     pub(crate) fn observe_children(&self, id: &ListingId, children: Vec<(PathBuf, Option<FileEntry>)>) {
@@ -217,14 +297,19 @@ impl Inner {
         let mut adds: Vec<FileEntry> = Vec::new();
         let mut removes: Vec<PathBuf> = Vec::new();
         let mut modifies: Vec<FileEntry> = Vec::new();
+        let read_in_flight = self.listing_tracks_patches(listing_id);
         for (path, stat) in children {
             let in_cache = self.has_entry(listing_id, &path.to_string_lossy());
             match (in_cache, stat) {
                 (true, Some(entry)) => modifies.push(entry),
                 (true, None) => removes.push(path),
-                (false, Some(entry)) => adds.push(entry),
-                // Not in the listing and gone from disk: nothing to do.
+                // Gone from disk and not in the listing: nothing to do, unless a
+                // read in flight may have seen the child. Then it goes through
+                // the remove, which moves no row but notes the name for that
+                // read's landing.
+                (false, None) if read_in_flight => removes.push(path),
                 (false, None) => {}
+                (false, Some(entry)) => adds.push(entry),
             }
         }
         if adds.is_empty() && removes.is_empty() && modifies.is_empty() {
@@ -236,7 +321,9 @@ impl Inner {
         // batch resolves one parent.
         let added = adds.len();
         let mut batch: Vec<FileEntry> = adds.into_iter().chain(modifies).collect();
-        self.index.enrich(&volume_id, &mut batch);
+        if !batch.is_empty() {
+            self.index.enrich(&volume_id, &mut batch);
+        }
         let modifies = batch.split_off(added);
         let adds = batch;
 
@@ -256,5 +343,11 @@ impl Inner {
             self.carry_forward_deferred(listing_id, &mut entry);
             let _ = self.update_entry_sorted(listing_id, entry);
         }
+    }
+
+    /// Whether a read of `listing_id` is in flight, so its patches get noted.
+    fn listing_tracks_patches(&self, listing_id: &str) -> bool {
+        let cache = self.cache.read_ignore_poison();
+        cache.get(listing_id).is_some_and(|listing| listing.tracks_patches())
     }
 }

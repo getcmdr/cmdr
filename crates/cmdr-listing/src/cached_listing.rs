@@ -18,10 +18,11 @@ use crate::Inner;
 use crate::diff_emitter::{CacheWrite, Publish};
 use crate::host::{ListingVolumes, ScratchVisibility};
 use crate::name_filter::NameFilter;
+use crate::patch_log::{Observed, PatchLog};
 use crate::path_index::PathIndexCache;
 pub(crate) use crate::pipeline::OverlayRows;
 use crate::pipeline::{ListedDates, Prepared};
-use crate::reread::ReadGeneration;
+use crate::read_generation::ReadGeneration;
 use crate::sorting::{EffectiveSort, sort_entries};
 use crate::visible_rows::{ScratchProjection, VisibleRows, VisibleRowsCache};
 use cmdr_collation::NameCollator;
@@ -192,6 +193,13 @@ pub(crate) struct CachedListing {
     /// The newest full re-read that landed here, by when it started reading.
     /// A re-read older than this is dropped (`reread.rs`).
     pub(crate) published_generation: ReadGeneration,
+    /// How many reads of this listing are in flight: full re-reads and the
+    /// checks after them (`ReadInFlight`). Only while it's above zero does a
+    /// patch go in `patch_log`, which empties when it's back to zero.
+    pub(crate) reads_in_flight: u32,
+    /// The names patched while a read was in flight, for its landing to check
+    /// again (`patch_log.rs`).
+    pub(crate) patch_log: PatchLog,
     /// The hidden count ([`Self::hidden_count`]) the pane last heard, from any
     /// answer that carries one. A change that moves no row publishes only when
     /// its count moved off this, so a dotfile coming or going in a folder that
@@ -254,6 +262,8 @@ impl CachedListing {
             epoch: engine.epoch,
             overlay_rows,
             published_generation: ReadGeneration::INSERT,
+            reads_in_flight: 0,
+            patch_log: PatchLog::default(),
             reported_hidden_count: 0,
         }
     }
@@ -267,6 +277,26 @@ impl CachedListing {
     /// the directory.
     pub(crate) fn set_overlay_rows(&mut self, count: usize) {
         self.overlay_rows = count;
+    }
+
+    /// Whether a read of this listing is in flight, so a patch must be noted
+    /// (`patch_log.rs`). False in the normal case, where noting costs nothing.
+    pub(crate) fn tracks_patches(&self) -> bool {
+        self.reads_in_flight > 0
+    }
+
+    /// Notes a patch to `name` that saw `observed`, if a read is in flight.
+    /// Call it under the cache write lock with `Inner::read_generation_now` as
+    /// `now`; `observed` runs only when the patch is noted.
+    pub(crate) fn note_patch(&mut self, name: &str, now: ReadGeneration, observed: impl FnOnce() -> Observed) {
+        if self.tracks_patches() {
+            self.patch_log.note(name, now, observed());
+        }
+    }
+
+    /// Whether a patch to `name` landed at or after `since` (`PatchLog::patched_since`).
+    pub(crate) fn patched_since(&self, name: &str, since: Option<ReadGeneration>) -> bool {
+        since.is_some_and(|since| self.patch_log.patched_since(name, since))
     }
 
     /// Whether a listing overlay contributed any of these rows.
