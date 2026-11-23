@@ -1945,12 +1945,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Une nouvelle limite non nulle prend effet au prochain démarrage de Cmdr.",
+  "settings.advanced.maxLogStorageMb.description": "Réglez sur 0 pour ne garder aucun journal, mais Cmdr ne pourra alors plus envoyer de rapports d’incident.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Réglez sur 0 pour ne garder aucun journal, mais Cmdr ne pourra alors plus envoyer de rapports d’incident.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "journal, journaux, logs, stockage, disque, espace, plafond, limite, rotation, erreur, rapport, confidentialité",
@@ -3403,10 +3399,6 @@
   "settings.advanced.defaultPrefix": "Par défaut :",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Redémarrez Cmdr pour appliquer le changement de stockage des journaux.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} image indexée sur {totalText} dans vos dossiers couverts} other {{enrichedText} images indexées sur {totalText} dans vos dossiers couverts} many {{enrichedText} images indexées sur {totalText} dans vos dossiers couverts}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

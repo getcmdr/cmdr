@@ -282,7 +282,9 @@ counting past the ceiling either way, which is what lets the UI say "first N of 
 Two TYPED sibling fields on `SearchResult` (callers branch on emptiness, never string-match), for the two ways a scoped
 search returns nothing for a STRUCTURAL reason rather than a genuine "no matches". Both the dialog
 (`apps/desktop/src/lib/search/CoverageNote.svelte`) and MCP (`tools/actions/search/result.rs`) render them, with distinct copy per
-field:
+field. Both are built from `Target::include_paths`, which both doors (`resolve_target`, `target_on`) keep one of each
+(`one_of_each`): the dialog keys every coverage list by path, so a scope naming a folder twice closed Search with
+`each_key_duplicate` (cmdr-reports#114).
 
 - **`uncovered_scopes`** — a `from_scope` target whose volume has no persisted index (`VolumeLoad::NotIndexed`). An
   unscoped search never fills this: nobody named the boot volume, so there's no user intent to report against. The

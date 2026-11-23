@@ -2279,14 +2279,9 @@
     "description": "Advanced-section label for the number input capping log-file disk usage. \"(MB)\" is the decimal (base 1000) megabyte symbol: write it as your translation of common.sizeUnit.megabyte.",
     "screenshot": "settings-advanced.png"
   },
-  "settings.advanced.maxLogStorageMb.description": "A new non-zero limit takes effect the next time Cmdr starts.",
+  "settings.advanced.maxLogStorageMb.description": "Set to 0 to keep no logs, but then error reports can’t be sent.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "description": "The longer text behind the ⓘ after the max-log-storage label (advanced). Says a changed limit (other than 0) applies only after Cmdr restarts. \"Cmdr\" is the app name, keep it.",
-    "screenshot": "settings-advanced.png"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Set to 0 to keep no logs, but then error reports can’t be sent.",
-  "@settings.advanced.maxLogStorageMb.summary": {
-    "description": "Short line under the max-log-storage label (Settings > Advanced). \"0\" is a literal value the user types to turn log storage off; keep the digit. Warns that without logs Cmdr can’t send error reports.",
+    "description": "Description under the max-log-storage label (Settings > Advanced). \"0\" is a literal value the user types to turn log storage off; keep the digit. Warns that without logs Cmdr can’t send error reports.",
     "screenshot": "settings-advanced.png"
   },
   "settings.advanced.maxLogStorageMb.keywords": "log, storage, disk, cap, rotation, error, report, privacy",
@@ -4113,10 +4108,6 @@
   "@settings.advanced.defaultPrefix": {
     "description": "Label preceding a setting's default value in the Advanced section. Followed by the value. Keep the trailing colon.",
     "screenshot": "settings-advanced.png"
-  },
-  "settings.applier.logStorageRestart": "Restart Cmdr to apply the log storage change.",
-  "@settings.applier.logStorageRestart": {
-    "description": "Toast shown after the log-storage setting changes, telling the user a restart is needed for it to take effect. \"Cmdr\" is the product name; keep it."
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} of {totalText} image in your covered folders} other {{enrichedText} of {totalText} images in your covered folders}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

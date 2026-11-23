@@ -1939,12 +1939,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "新设的非零上限会在 Cmdr 下次启动时生效。",
+  "settings.advanced.maxLogStorageMb.description": "设为 0 则不保留日志，但这样就无法发送错误报告。",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "设为 0 则不保留日志，但这样就无法发送错误报告。",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "日志、存储空间、磁盘、空间、上限、轮转、错误报告、报告、隐私",
@@ -3391,10 +3387,6 @@
   "settings.advanced.defaultPrefix": "默认：",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "重启 Cmdr 以应用日志存储的更改。",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, other {覆盖范围内的 {totalText} 张图像中，已索引 {enrichedText} 张}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

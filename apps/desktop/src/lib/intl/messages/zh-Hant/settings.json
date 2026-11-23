@@ -1939,12 +1939,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "新的非零上限會在下次啟動 Cmdr 時生效。",
+  "settings.advanced.maxLogStorageMb.description": "設為 0 就不保留記錄檔，但這樣就無法傳送錯誤報告。",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "設為 0 就不保留記錄檔，但這樣就無法傳送錯誤報告。",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "記錄, 日誌, 記錄檔, 儲存空間, 磁碟, 上限, 輪替, 錯誤, 報告, 隱私",
@@ -3391,10 +3387,6 @@
   "settings.advanced.defaultPrefix": "預設值：",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "重新啟動 Cmdr 來套用記錄檔儲存的更改。",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, other {涵蓋範圍內的 {totalText} 張影像中，已有 {enrichedText} 張建立索引}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

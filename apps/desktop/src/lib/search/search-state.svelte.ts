@@ -311,3 +311,16 @@ export function clearSearchState(): void {
   core.clearCore()
   extras.clearExtras()
 }
+
+/**
+ * Forgets the session after the dialog threw, so the next open starts clean.
+ *
+ * The session survives a close on purpose (a reopen lands on the same results), which
+ * also means it survives the close a crash forces: whatever state made the dialog throw
+ * renders again on the next ⌘F and throws again, for the rest of the app's life
+ * (ERR-TWEGW, cmdr-reports#114). The search dialog's `DialogBoundary` calls this; a
+ * user's close never does.
+ */
+export function resetSearchAfterCrash(): void {
+  clearSearchState()
+}

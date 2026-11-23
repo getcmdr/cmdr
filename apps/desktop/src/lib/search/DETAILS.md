@@ -576,6 +576,10 @@ there are no results:
   `SearchSnapshot`, pins it via `setLastAttemptId`, and adds the query to recent searches; the wrapper hands the
   snapshot id to the host and closes the dialog. The host routes the active pane to `search-results://<id>`. State is
   preserved across close + reopen, so `⌘F` reopens to the same results.
+- **A crash is the one close that forgets.** The page's search `DialogBoundary` closes through `resetSearchAfterCrash()`
+  (`clearSearchState()` under a name that says why): the surviving session is what made the dialog throw, so keeping it
+  made every later `⌘F` throw again in the same millisecond (ERR-TWEGW, cmdr-reports#114). Regression anchor:
+  `SearchDialog.crash-reset.svelte.test.ts`.
 
 Both buttons are hidden (not just disabled) on empty/idle state. Empty + idle inputs disable both (index not ready).
 

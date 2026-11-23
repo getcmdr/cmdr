@@ -152,6 +152,29 @@ fn scoped_local_paths_collapse_into_one_root_target() {
     assert!(target.from_scope);
 }
 
+/// Regression anchor (cmdr-reports#114): every coverage-note list is built from the
+/// target's include paths, and the dialog keys each list by path, so a scope naming a
+/// folder twice (`~/a, ~/a`, or `~/a` beside its expansion) threw Svelte's
+/// `each_key_duplicate` and closed Search. Both doors to a target keep one of each.
+#[test]
+fn a_scope_naming_one_folder_twice_targets_it_once() {
+    let query = SearchQuery {
+        include_paths: Some(vec![
+            "/Users/me/a".to_string(),
+            "/Users/me/b".to_string(),
+            "/Users/me/a".to_string(),
+        ]),
+        ..plain_query("report")
+    };
+    let expected = vec!["/Users/me/a".to_string(), "/Users/me/b".to_string()];
+
+    let routed = resolve_target(&query).expect("local paths route to the one root volume");
+    assert_eq!(routed.include_paths, expected);
+
+    let placed = target_on(&query, ROOT_VOLUME_ID);
+    assert_eq!(placed.include_paths, expected);
+}
+
 #[test]
 fn an_unscoped_query_targets_the_boot_volume() {
     // With one volume as the ceiling, "no scope" means the boot volume rather than

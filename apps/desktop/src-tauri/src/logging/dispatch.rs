@@ -18,7 +18,7 @@
 //! └── file chain
 //!       .level(Debug)                      // always, regardless of RUST_LOG/verbose
 //!       .level_for("mdns_sd", Info)        // its dumps were most of the file
-//!       .chain(<RotatingFile writer>)      // 50 MB per file, KeepN
+//!       .chain(<LiveStorage writer>)       // 50 MB per file, KeepN read live
 //! ```
 //!
 //! Both chains render `HH:MM:SS.mmm LEVEL target  message`. The terminal chain adds ANSI
@@ -30,9 +30,8 @@
 //!
 //! - **Stdout level** flips between Info and Debug via [`set_stdout_threshold`]. An `AtomicU8`
 //!   consulted by the chain's filter, no dispatch rebuild, no log lines lost.
-//! - **File rotation cap** is fixed at startup (the `RotatingFile` is built once).
-//!   `set_keep_count` + `eager_prune` in the parent module already covered this. Same
-//!   restart-required envelope as the plugin had.
+//! - **Log storage cap** (`set_keep_count`) is read on every file write by `LiveStorage`, so
+//!   turning storage off, on, or resizing it applies right away, no dispatch rebuild.
 
 use jiff::Timestamp;
 use jiff::tz::TimeZone;
@@ -89,11 +88,9 @@ fn level_filter_from_u8(v: u8) -> log::LevelFilter {
 
 /// Initialization options assembled in `lib.rs` before the dispatch is built.
 pub struct InitOptions {
-    /// Where rotated log files live. `None` disables the file chain entirely
-    /// (matches `advanced.maxLogStorageMb = 0`).
+    /// Where rotated log files live. `None` leaves the file chain out. With a dir, the chain is
+    /// always installed and follows the live keep-count (`0` = storage off, no file written).
     pub log_dir: Option<PathBuf>,
-    /// Total log files kept, live one included (`ceil(cap_mb / 50)`).
-    pub keep_count: usize,
     /// Optional `RUST_LOG` value. When `None` we apply our defaults
     /// (Info on stdout, Debug on the file chain) plus the noise overrides.
     pub rust_log: Option<String>,
@@ -174,15 +171,11 @@ pub fn init(opts: InitOptions) -> Result<(), fern::InitError> {
     // Build the root.
     let mut root = root_dispatch().chain(stdout_chain);
 
-    // File chain: always Debug, plain text (no ANSI), rotated by `RotatingFile`.
-    if let Some(dir) = opts.log_dir.as_ref()
-        && opts.keep_count > 0
-    {
-        std::fs::create_dir_all(dir).ok();
-        let log_path = dir.join("cmdr.log");
+    // File chain: always Debug, plain text (no ANSI), rotated by `RotatingFile` under
+    // `LiveStorage`, which follows the live storage cap (off included) without a rebuild.
+    if let Some(dir) = opts.log_dir.as_ref() {
         // 50 MB per file: the live file + N-1 rotated copies = N total.
-        let rotated_extras = opts.keep_count.saturating_sub(1).max(1);
-        let rotator = super::rotating_file::RotatingFile::new(log_path, rotated_extras, 50_000_000);
+        let rotator = super::live_storage::LiveStorage::new(dir.join("cmdr.log"), 50_000_000, &super::KEEP_COUNT);
         // The coalescing writer prepends the ISO timestamp itself (so the dedup key stays
         // timestamp-free) and collapses identical-line floods so a runaway loop can't peg a
         // core through the log file. It needs no interior mutex: fern serializes every

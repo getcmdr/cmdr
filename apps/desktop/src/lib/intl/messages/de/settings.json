@@ -1942,12 +1942,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Ein neues Limit ungleich 0 greift beim nächsten Start von Cmdr.",
+  "settings.advanced.maxLogStorageMb.description": "Mit 0 behält Cmdr keine Protokolle, dann lassen sich aber keine Fehlerberichte senden.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Mit 0 behält Cmdr keine Protokolle, dann lassen sich aber keine Fehlerberichte senden.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "Protokoll, Log, Speicher, Speicherplatz, Festplatte, Obergrenze, Rotation, Fehler, Bericht, Datenschutz",
@@ -3401,10 +3397,6 @@
   "settings.advanced.defaultPrefix": "Standard:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Starte Cmdr neu, um die Änderung der Protokollspeicherung anzuwenden.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} von {totalText} Bild in deinen abgedeckten Ordnern indiziert} other {{enrichedText} von {totalText} Bildern in deinen abgedeckten Ordnern indiziert}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

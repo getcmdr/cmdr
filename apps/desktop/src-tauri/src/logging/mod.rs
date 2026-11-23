@@ -12,15 +12,16 @@
 //! - **Resolved log dir cache** ([`set_log_dir`] / [`log_dir`]): the path is derived in `lib.rs`
 //!   from `CMDR_LOG_DIR` / `CMDR_DATA_DIR` / the Tauri default. The error reporter bundle builder
 //!   needs the same path without re-deriving the env-var logic.
-//! - **Live keep-count** ([`set_keep_count`] / [`keep_count`]): the rotation keep-N value the file
-//!   chain was built with. The rotator is one-shot; changing this at runtime does NOT reconfigure
-//!   the chain, but [`eager_prune`] uses it to delete excess archived files immediately when the
-//!   user lowers the cap.
+//! - **Live keep-count** ([`set_keep_count`] / [`keep_count`]): the rotation keep-N the file
+//!   chain reads on every write (`live_storage`), so a cap change applies right away; `0` turns
+//!   storage off. [`eager_prune`] deletes excess archived files immediately when the user lowers
+//!   the cap.
 //! - **One-shot pruner** ([`eager_prune`]): for the user-lowered-the-cap case.
 //! - **Listing helper** ([`list_recent_log_files`]): for bundle building and diagnostics.
 
 mod coalesce;
 pub mod dispatch;
+mod live_storage;
 pub(crate) mod provenance;
 pub mod ram_gauge;
 pub(crate) mod rotating_file;
@@ -36,7 +37,7 @@ mod tests;
 
 static LOG_DIR: OnceLock<PathBuf> = OnceLock::new();
 static KEEP_COUNT: AtomicUsize = AtomicUsize::new(0);
-static FILE_LOGGING_ACTIVE: AtomicBool = AtomicBool::new(false);
+static FILE_CHAIN_INSTALLED: AtomicBool = AtomicBool::new(false);
 
 /// Records the resolved log directory once, at plugin-build time.
 ///
@@ -52,19 +53,20 @@ pub fn log_dir() -> Option<&'static Path> {
     LOG_DIR.get().map(PathBuf::as_path)
 }
 
-/// Records whether startup installed the file chain, so this session writes `cmdr.log`.
-pub fn set_file_logging_active(active: bool) {
-    FILE_LOGGING_ACTIVE.store(active, Ordering::Relaxed);
+/// Records whether startup installed the file chain. It's installed whatever the cap, so this is
+/// `false` only when the logger couldn't be installed at all.
+pub fn set_file_chain_installed(installed: bool) {
+    FILE_CHAIN_INSTALLED.store(installed, Ordering::Relaxed);
 }
 
-/// The debug log this session writes, or `None` when it writes none.
-///
-/// Reads the startup flag, not the live [`keep_count`]: turning storage on at runtime raises the
-/// keep-count but installs no file chain until a restart, so the `cmdr.log` on disk would be an
-/// older session's, and the viewer would show it as if it were current.
+/// The debug log this session writes, or `None` when it writes none: no file chain, or storage
+/// turned off (a [`keep_count`] of `0`), which leaves any `cmdr.log` on disk an older one.
 /// No filesystem probe: the viewer owns file opening and any missing-file refusal.
 pub fn debug_log_path() -> Option<PathBuf> {
-    debug_log_path_for(log_dir(), FILE_LOGGING_ACTIVE.load(Ordering::Relaxed))
+    debug_log_path_for(
+        log_dir(),
+        FILE_CHAIN_INSTALLED.load(Ordering::Relaxed) && keep_count() > 0,
+    )
 }
 
 fn debug_log_path_for(log_dir: Option<&Path>, file_logging_active: bool) -> Option<PathBuf> {
@@ -82,7 +84,7 @@ pub fn set_keep_count(n: usize) {
 /// Current keep-count.
 ///
 /// Used by [`eager_prune`] callers and reported in diagnostics. `0` means "log storage
-/// disabled" (the `Folder` target was dropped at build time).
+/// off": the file chain stays installed but writes nothing.
 pub fn keep_count() -> usize {
     KEEP_COUNT.load(Ordering::Relaxed)
 }

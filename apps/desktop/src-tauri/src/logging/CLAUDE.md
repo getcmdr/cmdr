@@ -11,7 +11,7 @@ filtering**: the file is locked at Debug, the terminal defaults to Info.
 - **`provenance.rs`**: the `·` own-code tag on file lines, read back by error reports
 - **`coalesce.rs`**: `CoalescingWriter`, the file chain's writer; collapses identical-line floods
 - **`target_style.rs`**: the terminal target column. **`ram_gauge.rs`**: optional per-line RAM prefix
-- **`rotating_file.rs`**: `RotatingFile`, the size rotation under `CoalescingWriter`
+- **`live_storage.rs`**: `LiveStorage`, follows the live cap. **`rotating_file.rs`**: `RotatingFile`, size rotation
 
 Dispatch-tree shape, why fern, timestamp formats, and decisions: `DETAILS.md`.
 
@@ -42,9 +42,9 @@ Dispatch-tree shape, why fern, timestamp formats, and decisions: `DETAILS.md`.
   gates the terminal chain only; `RUST_LOG` sets the startup threshold.
 - **The file chain's ISO timestamp is prepended by `CoalescingWriter`, NOT the fern `.format()` closure.** ❌ Don't move
   `file_timestamp()` back: the dedup key must stay timestamp-free or identical lines a millisecond apart never coalesce.
-- **ANSI is terminal-only, resolved once at startup.** ❌ `is_terminal()` can't decide it alone: under `pnpm dev` the
-  Tauri CLI hands us a piped stderr, so `tauri-wrapper.ts` sets `CLICOLOR_FORCE`; `NO_COLOR` outranks both.
-- **Cap = 0 disables the file chain**; the bundle's `logs/` is then empty.
+- **ANSI is terminal-only, resolved once.** ❌ Not `is_terminal()` alone: `pnpm dev` pipes stderr, so
+  `tauri-wrapper.ts` sets `CLICOLOR_FORCE`; `NO_COLOR` outranks both.
+- **The storage cap applies live, 0 included** (`LiveStorage` reads it per write). ❌ No restart-to-apply path.
 - **`RotatingFile` never panics or caches the directory's state**: logging runs on every thread, and other processes
   change the files (CRASH-EC4QS killed the index writer). It renames only the file its fd still holds
   (#812). ❌ `keep_count()` never means "this session writes a file": `debug_log_path()` does.

@@ -34,16 +34,12 @@ pub fn init() {
     let resolved_log_dir = crate::config::app_log_dir();
 
     // Read the log-storage cap from settings.json *before* the AppHandle is
-    // wired into the rest of setup. 0 = disabled (drop the file chain entirely).
+    // wired into the rest of setup. 0 = storage off (the file chain writes nothing).
     // None = no setting yet → 200 MB default. Any other value = N MB cap, mapped
-    // to keep-N where N = ceil(N / 50).
+    // to keep-N where N = ceil(N / 50). The file chain reads this keep-count live,
+    // so `set_max_log_storage_mb` changes it without a restart.
     let cap_mb = settings::early_load_max_log_storage_mb().unwrap_or(200);
-    let file_logging_enabled = cap_mb > 0;
-    let keep_count: usize = if file_logging_enabled {
-        cap_mb.div_ceil(50) as usize
-    } else {
-        0
-    };
+    let keep_count = cap_mb.div_ceil(50) as usize;
 
     // Cache for the rest of the app (error-report bundle builder, eager-prune callers).
     logging::set_log_dir(resolved_log_dir.clone());
@@ -56,8 +52,7 @@ pub fn init() {
     let verbose_default = settings::early_load_verbose_logging().unwrap_or(false);
 
     let init_result = logging::dispatch::init(logging::dispatch::InitOptions {
-        log_dir: file_logging_enabled.then_some(resolved_log_dir),
-        keep_count,
+        log_dir: Some(resolved_log_dir),
         rust_log: std::env::var("RUST_LOG").ok(),
     });
     // Apply verbose default after init (init resets the threshold from RUST_LOG).
@@ -66,7 +61,7 @@ pub fn init() {
         logging::dispatch::set_stdout_threshold(log::LevelFilter::Debug);
     }
     // A logger collision installs nothing, file chain included.
-    logging::set_file_logging_active(file_logging_enabled && init_result.is_ok());
+    logging::set_file_chain_installed(init_result.is_ok());
     if let Err(err) = init_result {
         // Don't panic. A logger collision (rare; tests, double-init) is recoverable.
         // The `log` macros become no-ops, which is exactly the behavior callers expect

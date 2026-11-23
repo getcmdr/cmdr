@@ -1942,12 +1942,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "En ny gräns över noll börjar gälla nästa gång Cmdr startar.",
+  "settings.advanced.maxLogStorageMb.description": "Ställ in på 0 för att inte spara några loggar, men då kan Cmdr inte skicka felrapporter.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Ställ in på 0 för att inte spara några loggar, men då kan Cmdr inte skicka felrapporter.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "logg, loggfil, lagring, disk, tak, gräns, rotation, fel, rapport, integritet",
@@ -3399,10 +3395,6 @@
   "settings.advanced.defaultPrefix": "Standard:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Starta om Cmdr för att tillämpa ändringen av logglagringen.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} av {totalText} bild indexerad i dina täckta mappar} other {{enrichedText} av {totalText} bilder indexerade i dina täckta mappar}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {

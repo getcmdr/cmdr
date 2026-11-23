@@ -13,10 +13,10 @@ root Dispatch (level Trace: pure ceiling, per-chain filters do real gating)
 │     .level_for(<from RUST_LOG>, ...)    // per-module overrides (stdout only)
 │     .filter(stdout-threshold AtomicU8)  // verbose-toggle gate, no rebuild
 │     .chain(io::stderr())
-└── file chain (skipped when advanced.maxLogStorageMb = 0)
+└── file chain (always installed; writes nothing while advanced.maxLogStorageMb = 0)
       .level(Debug)                      // always, regardless of RUST_LOG/verbose
       .level_for("mdns_sd", Info)        // the one crate held back (below)
-      .chain(RotatingFile(50 MB, KeepN)) // N = ceil(cap_mb / 50)
+      .chain(CoalescingWriter(LiveStorage(RotatingFile(50 MB, KeepN)))) // N = ceil(cap_mb / 50), read live
 ```
 
 Per-output filtering matters because error-report bundles need debug context regardless of the dev's `RUST_LOG`. With a
@@ -74,14 +74,14 @@ into the release app's folder and rotated its files (#812, #820). The early-load
 
 - **`set_log_dir(path)` / `log_dir()`**: cache the resolved dir at logger-init; the error-report bundle builder reads it
   back.
-- **`set_file_logging_active(bool)` / `debug_log_path()`**: `init` records whether it installed the file chain, and
-  `debug_log_path()` answers the directory's `cmdr.log` only then, else `None`. It reads that startup flag, not the
-  live keep-count: storage turned on at runtime raises the keep-count but installs no chain until a restart, so the
-  `cmdr.log` on disk is an older session's. No filesystem probe; the viewer owns opening the file.
+- **`set_file_chain_installed(bool)` / `debug_log_path()`**: `init` records whether the logger (and so the file chain)
+  installed, and `debug_log_path()` answers the directory's `cmdr.log` only while it did AND the live keep-count is
+  non-zero, else `None`: with storage off, any `cmdr.log` on disk is older. No filesystem probe; the viewer owns
+  opening the file.
   `commands/logging.rs::get_debug_log_path` exposes it over typed IPC, and because it reuses `log_dir()`, Help > View
   debug log opens whatever file the writer writes in every mode (prod, plain dev, a worktree slug, E2E).
-- **`set_keep_count(n)` / `keep_count()`**: the live keep-N, set at startup and again on every cap change. It doesn't
-  say whether a file chain exists; `debug_log_path()` above has that.
+- **`set_keep_count(n)` / `keep_count()`**: the live keep-N, set at startup and again on every cap change, and read
+  by `LiveStorage` on every file write. Whether this session writes a file is `debug_log_path()` above.
 - **`list_recent_log_files(dir)`**: active log files newest-first by mtime. The active-file pattern is
   `^cmdr\.log(\.\d+)?$` (case-insensitive); anything else, legacy `Cmdr_<timestamp>.log` included, is rejected.
 - **`eager_prune(dir, keep_n)`**: one-shot delete of everything beyond `keep_n` newest. Used after the user lowers the
@@ -191,20 +191,21 @@ over at runtime if clicked.
 
 ## Cap = 0 (log storage disabled)
 
-`init` skips the file chain entirely when `keep_count == 0`. stdout and the verbose toggle still work. The error
-reporter produces a bundle with empty `logs/`; upload still goes through, just less useful. The settings UI documents
-this.
+The file chain stays installed; `LiveStorage` (`live_storage.rs`) drops its rotator, closing `cmdr.log`, and accepts
+lines into nothing. stdout and the verbose toggle still work. The error reporter produces a bundle with empty `logs/`;
+upload still goes through, just less useful. The settings UI says so.
 
 ## Cap changes at runtime
 
-`set_keep_count(n)` updates the in-RAM count. `eager_prune(dir, n)`, called by `set_max_log_storage_mb`, deletes excess
-archived files immediately so the user sees the change. `RotatingFile` itself isn't reconfigured: the keep-N baked in at
-startup stays. Restart-to-apply is documented in the settings UI for `0 ↔ non-zero` transitions and for raising the cap
-above the baked-in value.
+**Decision**: every cap change applies live, `0 ↔ non-zero` included. **Why**: the settings contract says every setting
+applies without a restart (#1251). The chain is built once, so the sink under `CoalescingWriter` reads the live
+keep-count on every write, one atomic load: `0` closes the file, off → on reopens `cmdr.log` (appending), and any other
+change resizes the rotator from its next rotation on (`RotatingFile::set_rotated_keep`). A dispatch rebuild was the
+other way, rejected because it drops records mid-swap.
 
-`eager_prune(dir, 0)` (storage turned off) deletes the live `cmdr.log` too. The open handle keeps taking writes into
-the now-unlinked file, so nothing visible stays on disk, and at the next 50 MB the writer finds no `cmdr.log`, renames
-nothing, and starts a fresh one (pinned by `a_live_file_deleted_underneath_rotates_without_an_error`).
+`set_max_log_storage_mb` updates the count, then `eager_prune(dir, n)` deletes excess archived files immediately so
+the user sees the change; the resized rotator keeps them from coming back. `eager_prune(dir, 0)` (storage turned off)
+deletes the live `cmdr.log` too, and the next line closes the sink's handle to it.
 
 ## Timestamp formats
 

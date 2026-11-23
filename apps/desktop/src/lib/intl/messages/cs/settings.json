@@ -1938,12 +1938,8 @@
   "@settings.advanced.maxLogStorageMb.label": {
     "sourceHash": "d6af6b4"
   },
-  "settings.advanced.maxLogStorageMb.description": "Nový nenulový limit začne platit při příštím spuštění Cmdru.",
+  "settings.advanced.maxLogStorageMb.description": "Když nastavíte 0, žádné protokoly se neukládají, ale pak nejde odesílat zprávy o chybách.",
   "@settings.advanced.maxLogStorageMb.description": {
-    "sourceHash": "16616b2"
-  },
-  "settings.advanced.maxLogStorageMb.summary": "Když nastavíte 0, žádné protokoly se neukládají, ale pak nejde odesílat zprávy o chybách.",
-  "@settings.advanced.maxLogStorageMb.summary": {
     "sourceHash": "2efc7db"
   },
   "settings.advanced.maxLogStorageMb.keywords": "protokol, log, úložiště, disk, limit, rotace, chyba, zpráva, soukromí",
@@ -3390,10 +3386,6 @@
   "settings.advanced.defaultPrefix": "Výchozí:",
   "@settings.advanced.defaultPrefix": {
     "sourceHash": "d1f6d9e"
-  },
-  "settings.applier.logStorageRestart": "Znovu spusťte Cmdr, aby se změna ukládání protokolů použila.",
-  "@settings.applier.logStorageRestart": {
-    "sourceHash": "b833dee"
   },
   "settings.mediaIndex.progress.coveredOfTotal": "{total, plural, one {{enrichedText} z {totalText} obrázku v zahrnutých složkách} few {{enrichedText} z {totalText} obrázků v zahrnutých složkách} many {{enrichedText} z {totalText} obrázku v zahrnutých složkách} other {{enrichedText} z {totalText} obrázků v zahrnutých složkách}}",
   "@settings.mediaIndex.progress.coveredOfTotal": {
