@@ -528,3 +528,10 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   desktop". Gotcha: an always-on-top Task Manager covered the dialogs, so the run moved Cmdr's own window aside
   (`MoveWindow` from a desktop job) rather than touch it. Fixtures, the mount point, and the run's Recycle Bin item are
   gone; `cmdr-m6` is back on `origin/main`, clean.
+- **2026-11-23, the day's PRs on the desktop** (`14311db169`, the warm pair, `CARGO_BUILD_JOBS=2`, a debug app build 23
+  min after a dependency refresh, no local allows needed; driven by Cmdr's MCP server over `ssh -L`):
+  `real-windows-check-2026-11-23.md`. Gotchas: an `await operations_idle` can answer while the finished transfer's
+  progress dialog is still up, and the next `copy` / `move` / `delete` then refuses ("the transfer-progress dialog is
+  open"), so wait for `cmdr://state` dialogs to empty; and `[IO.File]::Open` with `ReadWrite` sharing reads a held
+  file's live length for comparing against the pane. Fixtures, the mount point, and the data dir are gone; `cmdr-m6` is
+  back on `origin/main`, clean.
