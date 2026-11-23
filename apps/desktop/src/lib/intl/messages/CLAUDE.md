@@ -7,10 +7,10 @@ boundary: `../CLAUDE.md`.
 ## Layout
 
 - `en/<area>.json`: messages for one area. The key prefix maps 1:1 to the filename (`settings.fsWatch.title` →
-  `settings.json`), so an agent editing one feature touches one file. `common.json` holds truly shared strings.
-- `screenshots/`: capture artifacts referenced by `@key.screenshot` (`@key.screenshotNote` for stand-ins); one file
-  serves many keys. PNGs are **gitignored**; `capture-report.json` + `coverage-report.md` are tracked. Don't hand-edit
-  those `@key` fields or commit PNGs; regenerate with `pnpm i18n:shots`. `DETAILS.md` § Screenshots.
+  `settings.json`), so one feature touches one file. `common.json` holds truly shared strings.
+- `screenshots/`: capture artifacts referenced by `@key.screenshot`; one file serves many keys. PNGs are **gitignored**
+  (stored in the main clone); the two reports are tracked. Don't hand-edit those `@key` fields or commit PNGs;
+  regenerate with `pnpm i18n:shots`. `DETAILS.md` § Screenshots.
 - `en-XA/`: the generated **pseudolocale** (accented, expanded, structure-preserving) for overflow testing.
   **Gitignored, regenerable** with `pnpm i18n:pseudo`; never hand-edit or hand-justify it (it auto-emits
   `sameAsSourceJustification`). Fixture: `test/fixtures/i18n-pseudolocale/`. `docs/guides/i18n.md` § Pseudolocale.

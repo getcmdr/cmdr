@@ -5,10 +5,11 @@ a project can warm or hand back its own caches without the scripts knowing anyth
 
 ## Module map
 
-- `post-create`: seeds the new worktree's Linux target volume from the main clone's.
+- `post-create`: copies the translator screenshots in from the main clone (`apps/desktop/scripts/screenshot-store.ts`),
+  then seeds the new worktree's Linux target volume from the main clone's.
 - `pre-remove`: promotes a merged worktree's Linux target volume to the main clone's.
-- Both sweep the copy on the way (`scripts/check/targetsweep/`) and are thin wrappers over `go run ./linux-cache` in
-  `scripts/check/`; the logic is `scripts/check/linux-cache/handoff.go`.
+- The Linux-volume parts of both sweep the copy on the way (`scripts/check/targetsweep/`) and are thin wrappers over
+  `go run ./linux-cache` in `scripts/check/`; the logic is `scripts/check/linux-cache/handoff.go`.
 
 ## The contract
 

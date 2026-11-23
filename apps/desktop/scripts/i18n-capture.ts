@@ -20,6 +20,8 @@
  *      which drives the surfaces, records keys, and writes the screenshots +
  *      `screenshots/capture-report.json`.
  *   6. stop ONLY the app WE launched (its pid), always, even on failure.
+ *   7. on a green finish, copy the PNGs into the main clone's folder, the
+ *      machine-wide store, so they outlive a worktree (`screenshot-store.ts`).
  *
  * Usage:
  *   pnpm i18n:shots                        # capture, then write the `@key.screenshot` couplings
@@ -60,6 +62,7 @@ import {
   createTrackedArtifactGuard,
 } from './capture-runtime.ts'
 import { startCaptureStopwatch } from './capture-countdown.ts'
+import { publishScreenshots, screenshotStoreDir } from './screenshot-store.ts'
 import type { CaptureKind } from './capture-countdown.ts'
 import { EN_US_LOCALE_ARGS, OVERLAY_SCROLLBAR_ARGS, pinUiLanguage } from '../test/e2e-shared/pin-locale.ts'
 
@@ -384,6 +387,14 @@ async function main() {
   stopwatch.recordSuccess()
 
   formatTrackedArtifacts()
+  // The PNGs are gitignored, so in a worktree they'd go with it. Copy this green run's set into
+  // the main clone's folder, the machine-wide store (`screenshot-store.ts`).
+  const published = publishScreenshots(screenshotsBaseDir, screenshotStoreDir())
+  if (published > 0) {
+    console.log(
+      `[i18n-capture] copied ${String(published)} screenshot(s) into the main clone's store, so they outlive this worktree.`,
+    )
+  }
   console.log('[i18n-capture] done. Next: `pnpm i18n:couple` to write @key.screenshot couplings.')
 }
 
