@@ -35,17 +35,23 @@ export interface DeleteSourceItem {
 export type CloudOnlineOnlyExtent = 'all' | 'mixed'
 
 /**
+ * Whether the delete removes `item` as a folder, with everything in it. A link counts as a
+ * file, even one to a folder (a junction): only the link goes, and the scan's count line
+ * counts it as one file, so the title and the row say the same (#1432).
+ */
+export function deletesAsFolder(item: DeleteSourceItem): boolean {
+  return item.isDirectory && !item.isSymlink
+}
+
+/**
  * Generates the dialog title based on the selection source and item counts.
  *
  * Selected items:  "Delete 3 selected files and 1 folder"
  * Cursor item:     "Delete 1 file under cursor" / "Delete 1 folder under cursor"
  */
 export function generateDeleteTitle(items: DeleteSourceItem[], isFromCursor: boolean): string {
-  // A link counts as a file, even one to a folder (a junction): only the link goes, and the
-  // scan's count line counts it as one file, so the title says the same (#1432).
-  const isFolder = (i: DeleteSourceItem) => i.isDirectory && !i.isSymlink
-  const fileCount = items.filter((i) => !isFolder(i)).length
-  const folderCount = items.filter(isFolder).length
+  const fileCount = items.filter((i) => !deletesAsFolder(i)).length
+  const folderCount = items.filter(deletesAsFolder).length
 
   if (isFromCursor) {
     if (folderCount > 0) return tString('fileOperations.delete.titleCursorFolder')

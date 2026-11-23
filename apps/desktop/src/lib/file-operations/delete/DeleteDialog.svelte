@@ -6,6 +6,7 @@
     import Switch from '#lib/ui/Switch.svelte'
     import {
         generateDeleteTitle,
+        deletesAsFolder,
         abbreviatePath,
         getSymlinkNotice,
         MAX_VISIBLE_ITEMS,
@@ -334,7 +335,8 @@
      *  through the delete dialog infrastructure for a transient confirmation dialog). */
     function itemSizeBytes(item: DeleteSourceItem): number | null {
         // Group A wire-format: IPC sends `null` for absent fields, not `undefined`.
-        if (!item.isDirectory) return item.size ?? null
+        // A link to a folder is the link alone (`deletesAsFolder`), ❌ never its target's size.
+        if (!deletesAsFolder(item)) return item.size ?? null
         // A folder's size is the drive index's, so it reads the way the listing
         // reads it: nothing counted yet is no size at all, and a partial count is
         // a `≥` floor (`itemSizeIsLowerBound`), ❌ never a bare number someone
@@ -344,11 +346,11 @@
     }
 
     function itemSizeIsLowerBound(item: DeleteSourceItem): boolean {
-        return item.isDirectory && getDirSizeDisplayState(item.recursiveSize, item.recursiveSizeComplete) === 'lower-bound'
+        return deletesAsFolder(item) && getDirSizeDisplayState(item.recursiveSize, item.recursiveSizeComplete) === 'lower-bound'
     }
 
     function itemFileCountLabel(item: DeleteSourceItem): string {
-        if (!item.isDirectory) return ''
+        if (!deletesAsFolder(item)) return ''
         const fileCount = item.recursiveFileCount
         if (fileCount == null) return ''
         return `${formatNumber(fileCount)} ${tString('fileOperations.delete.scanFile', { count: fileCount })}`
@@ -444,7 +446,7 @@
                 {#each visibleItems as item, index (sourcePaths[index] ?? index)}
                     <div class="file-list-item" role="listitem">
                         <span class="item-icon" aria-hidden="true">
-                            <Icon name={item.isDirectory ? 'folder' : 'file'} size={14} />
+                            <Icon name={deletesAsFolder(item) ? 'folder' : 'file'} size={14} />
                         </span>
                         <!-- `sourcePaths` is index-aligned with `sourceItems` at both call
                              sites, so the row's own full path is what hovering reveals. -->
