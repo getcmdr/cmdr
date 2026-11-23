@@ -10,7 +10,8 @@ Three submodules carry their own docs: `volume/`, `sync_status/` (the cloud badg
 restic backup's snapshots: the overlay row, the parked hub, and the write guards). The leaves beside them:
 
 - `watcher.rs`: OS-driven listing updates: the OS half (rebasing, the stat, the full-re-read decision, the `std::fs`
-  fallback on `RefreshOutcome::NoVolume`, `directory-deleted`) over the engine's `observe_children` and `refresh`. Its
+  fallback on `RefreshOutcome::NoVolume`, repeated while the hand-over answers `NoVolume` again because a patch landed
+  mid-read, `directory-deleted`) over the engine's `observe_children` and `refresh`. Its
   per-platform streams speak one `ListingChange`: `watcher/fsevents.rs` (macOS, our `cmdr-fsevent-stream` fork, with
   its own debounce window) and `watcher/notify_stream.rs` (elsewhere, `notify-debouncer-full` over inotify).
 - `index_provider.rs`: the app's `VolumeProvider`, so the index never has to import `VolumeManager`. Its

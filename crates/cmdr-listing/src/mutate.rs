@@ -31,6 +31,7 @@ impl Inner {
         let (listing, publish) = cache.get_mut(listing_id)?;
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
+        listing.note_patch(&entry.name, self.read_generation_now());
 
         // Don't insert if an entry with this path already exists. Asked BEFORE
         // `entries_mut` drops the path map, so the guard rides one when it's there.
@@ -76,11 +77,25 @@ impl Inner {
         listing.touch();
 
         let path_strings: Vec<String> = paths.iter().map(|path| path.to_string_lossy().into_owned()).collect();
-        let mut doomed: Vec<usize> = listing
-            .indices_of_paths(path_strings.iter().map(String::as_str))
-            .into_iter()
-            .flatten()
-            .collect();
+        let found = listing.indices_of_paths(path_strings.iter().map(String::as_str));
+        // Every path, held or not: a re-read in flight may have seen one this
+        // listing never held, and its landing must stat it again. A held one goes
+        // by its entry's name, which a non-UTF-8 name needs.
+        if listing.tracks_patches() {
+            let names: Vec<String> = paths
+                .iter()
+                .zip(&found)
+                .filter_map(|(path, index)| match index {
+                    Some(index) => Some(listing.entries()[*index].name.clone()),
+                    None => path.file_name().map(|name| name.to_string_lossy().into_owned()),
+                })
+                .collect();
+            let now = self.read_generation_now();
+            for name in &names {
+                listing.note_patch(name, now);
+            }
+        }
+        let mut doomed: Vec<usize> = found.into_iter().flatten().collect();
         // Highest first, and each row at most once: a repeated path in `paths` must
         // not take a second, innocent row down with it.
         doomed.sort_unstable_by(|a, b| b.cmp(a));
@@ -134,6 +149,7 @@ impl Inner {
         let (listing, publish) = cache.get_mut(listing_id)?;
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
+        listing.note_patch(name, self.read_generation_now());
         let idx = listing
             .entries()
             .iter()
@@ -175,6 +191,7 @@ impl Inner {
         let (listing, publish) = cache.get_mut(listing_id)?;
         listing.reconcile_scratch(listing_id, visibility, &publish);
         listing.touch();
+        listing.note_patch(&new_entry.name, self.read_generation_now());
 
         let sort = listing.effective();
         let cmp = entry_comparator(Arc::clone(&collator), sort);

@@ -170,7 +170,7 @@ pub(crate) fn replace_entries(
     prepared: crate::pipeline::Prepared,
 ) -> crate::RefreshOutcome {
     let generation = engine.inner.next_read_generation();
-    engine.inner.update_listing_entries(listing_id, prepared, generation)
+    engine.inner.update_listing_entries(listing_id, prepared, generation).0
 }
 
 /// Hands `entries` to `listing_id` on `engine` the way a backend's `Replaced`

@@ -197,14 +197,19 @@ impl Inner {
     }
 
     /// One listing's respell; `pub(super)` so a test can await it directly.
-    pub(crate) async fn respell_listing(&self, volume_id: String, listing_id: String, path: AppPathBuf) {
+    pub(crate) async fn respell_listing(
+        self: &std::sync::Arc<Self>,
+        volume_id: String,
+        listing_id: String,
+        path: AppPathBuf,
+    ) {
         let _turn = self.refresh_turn(&volume_id, &path).await;
         let resolved = self.volumes.resolve(&volume_id, &path).await;
         let is_routed = resolved.is_routed();
         let Some(volume) = resolved.volume else {
             return;
         };
-        let generation = self.next_read_generation();
+        let generation = self.start_read([listing_id.as_str()]);
         let listed = match list_as_stored(volume.as_ref(), &path, None, None).await {
             Ok(listed) => listed,
             Err(e) => {
@@ -227,10 +232,12 @@ impl Inner {
         // it can't see every path changing spelling. The replace step writes the
         // entries whole whatever the diff holds, so the new spellings land, and the
         // pane refetches its rows when it adopts the new spelling.
-        self.update_listing_entries(&listing_id, prepared, generation);
+        let (_, recheck) = self.update_listing_entries(&listing_id, prepared, generation);
         if stored != path {
             self.rekey_listing(&listing_id, &volume_id, &stored);
         }
+        // After the rekey, so the stats go through the new spelling.
+        self.settle_patches(&listing_id, recheck).await;
     }
 
     /// Moves `listing_id` to `stored`, the same directory in its volume's spelling,

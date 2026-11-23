@@ -8,7 +8,7 @@
 
 use cmdr_fs::app_path::AppPathBuf;
 use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -28,7 +28,7 @@ use super::Listings;
 use super::testing::{TestEngine, TestListing};
 use cmdr_fs::testing::wait_until_async;
 
-fn entry(dir: &AppPath, name: &str) -> FileEntry {
+pub(super) fn entry(dir: &AppPath, name: &str) -> FileEntry {
     FileEntry::new(
         name.to_string(),
         dir.join(AppName::from_app_spelling(name).expect("one plain name"))
@@ -41,19 +41,21 @@ fn entry(dir: &AppPath, name: &str) -> FileEntry {
 
 /// One scripted `list_directory` answer: the entries, and a gate the read waits
 /// on before it answers (`None` answers at once).
-struct Read {
-    gate: Option<Arc<Notify>>,
-    entries: Vec<FileEntry>,
+pub(super) struct Read {
+    pub(super) gate: Option<Arc<Notify>>,
+    pub(super) entries: Vec<FileEntry>,
 }
 
 /// A volume whose reads answer from a script, each one optionally held open
 /// until the test releases it, counting how many reads have started. That
 /// makes "the read that started first finishes last" an ordering the test
-/// drives, with no timing in it.
-struct GatedListVolume {
+/// drives, with no timing in it. A single stat answers from `disk`, the
+/// directory as it stands now, whatever the scripted reads said.
+pub(super) struct GatedListVolume {
     inner: InMemoryVolume,
-    script: Mutex<VecDeque<Read>>,
+    pub(super) script: Mutex<VecDeque<Read>>,
     started: AtomicUsize,
+    disk: Mutex<HashMap<String, FileEntry>>,
 }
 
 impl GatedListVolume {
@@ -62,11 +64,22 @@ impl GatedListVolume {
             inner: InMemoryVolume::new("gated"),
             script: Mutex::new(script.into()),
             started: AtomicUsize::new(0),
+            disk: Mutex::new(HashMap::new()),
         }
     }
 
-    fn started(&self) -> usize {
+    pub(super) fn started(&self) -> usize {
         self.started.load(Ordering::SeqCst)
+    }
+
+    /// Puts `entry` on the disk a stat sees, replacing what was there.
+    pub(super) fn put(&self, entry: FileEntry) {
+        self.disk.lock_ignore_poison().insert(entry.path.clone(), entry);
+    }
+
+    /// Takes the entry at `path` off the disk a stat sees.
+    pub(super) fn delete(&self, path: &str) {
+        self.disk.lock_ignore_poison().remove(path);
     }
 }
 
@@ -105,7 +118,13 @@ impl Volume for GatedListVolume {
         &'a self,
         path: &'a AppPath,
     ) -> Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
-        self.inner.get_metadata(path)
+        match self.disk.lock_ignore_poison().get(path.as_str()) {
+            Some(entry) => {
+                let entry = entry.clone();
+                Box::pin(async move { Ok(entry) })
+            }
+            None => self.inner.get_metadata(path),
+        }
     }
 
     fn exists<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
@@ -154,7 +173,7 @@ impl Volume for GatedListVolume {
 }
 
 /// An engine with a fresh volume id and directory, the volume registered under it.
-fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
+pub(super) fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
     let volume_id = unique_test_id(&format!("{tag}-vol"));
     let dir = super::testing::app_text(&format!("/test/{}", unique_test_id(&format!("{tag}-dir"))));
     let volume = Arc::new(GatedListVolume::new(script));
@@ -165,7 +184,7 @@ fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Ar
 }
 
 /// `engine`'s `FullRefresh` of `dir` for `listing_id`, on a task of its own.
-fn spawn_full_refresh(
+pub(super) fn spawn_full_refresh(
     engine: &Listings,
     volume_id: &str,
     dir: &AppPath,
@@ -176,7 +195,7 @@ fn spawn_full_refresh(
     tokio::spawn(async move { inner.notify_full_refresh(volume_id, dir, listings).await })
 }
 
-fn names(entries: Vec<FileEntry>) -> Vec<String> {
+pub(super) fn names(entries: Vec<FileEntry>) -> Vec<String> {
     entries.into_iter().map(|e| e.name).collect()
 }
 

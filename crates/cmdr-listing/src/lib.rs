@@ -54,6 +54,7 @@ mod mutate;
 mod name_filter;
 mod operations;
 mod orphan_reaper;
+mod patch_log;
 mod path_index;
 mod pipeline;
 mod quick_filter;
@@ -322,6 +323,8 @@ mod path_index_test;
 mod probe_test_support;
 #[cfg(test)]
 mod read_generation_test;
+#[cfg(test)]
+mod reread_patch_race_test;
 #[cfg(test)]
 mod row_beside_test;
 #[cfg(test)]

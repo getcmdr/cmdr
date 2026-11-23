@@ -7,11 +7,11 @@ Tauri-free; Cmdr hosts it from `apps/desktop/src-tauri/src/listing_host/`.
 
 - **lib.rs** (`Inner`, the engine's state, and the API re-exports), **engine/** (`Listings`, one file per caller group),
   **host/** (the seams, see `src/host/CLAUDE.md`), **testing/** (fixtures).
-- Read: **streaming.rs**, **stall.rs**, **pipeline.rs**, **reread.rs**, **refresh.rs**, **foreign_path.rs**. Cache:
-  **cached_listing.rs**, **caching.rs** (lookups, change intake), **mutate.rs**, **authoritative.rs**,
-  **operations.rs**. Rows: **visible_rows.rs**, **path_index.rs**, **quick_filter.rs**, **diff.rs**,
-  **diff_emitter.rs**. Sort: **sorting.rs**, **search_rows.rs** (a results pane's order) (names collate through
-  `cmdr-collation`; the vocabulary is `cmdr-sort`'s, re-exported).
+- Read: **streaming.rs**, **stall.rs**, **pipeline.rs**, **reread.rs**, **patch_log.rs** (patches during a re-read),
+  **refresh.rs**, **foreign_path.rs**. Cache: **cached_listing.rs**, **caching.rs** (lookups, change intake),
+  **mutate.rs**, **authoritative.rs**, **operations.rs**. Rows: **visible_rows.rs**, **path_index.rs**,
+  **quick_filter.rs**, **diff.rs**, **diff_emitter.rs**. Sort: **sorting.rs**, **search_rows.rs** (a results pane's
+  order) (names collate through `cmdr-collation`; the vocabulary is `cmdr-sort`'s, re-exported).
 
 ## Must-knows
 
@@ -27,8 +27,9 @@ Tauri-free; Cmdr hosts it from `apps/desktop/src-tauri/src/listing_host/`.
 - **Only `Publish` (borrowed from `write_cache`) enqueues diffs.** Reconcile scratch drift before an entry mutation or a
   guarded index read, then check the expected revision; quick-filter changes share that revision. `DETAILS.md` § "Diff
   event coalescing".
-- **No full re-read lands after a newer one** (§ "Read generations"). Overlays fold in only through `Prepared`, and
-  observers hear a close AFTER the cache removal.
+- **No full re-read lands after a newer one** (§ "Read generations"). A read starts through `start_read`, every patch
+  helper calls `note_patch`, and a landing's `Recheck` goes to `settle_patches`, or a burst drops files (#1342).
+  Overlays fold in only through `Prepared`, and observers hear a close AFTER the cache removal.
 - ❌ **Never abort a read**: cancel detaches (an abort wedges an MTP phone), and a stall reports and keeps waiting.
 - **ONE comparator**, `entry_comparator`; a sort change bumps the frontend's `cacheGeneration`. Names collate through
   `cmdr-collation`, whose must-knows apply here (`crates/cmdr-collation/CLAUDE.md`).

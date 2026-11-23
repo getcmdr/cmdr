@@ -1213,9 +1213,33 @@ When each one takes it, because a generation taken too early drops a FRESHER rea
 
 Equal generations both land: the respell writes one read twice when the spelling changed.
 
-**Incremental patches take none and bump none.** A re-read that started before an `Added`, `Removed`, `Modified`, or
-`observe_children` patch can still land after it and carry the older state, as it always could; bumping on every patch
-would drop every re-read during a busy burst. Don't "fix" it silently.
+Every read-start site takes its generation through `Inner::start_read(listing_ids)`, which also raises each listing's
+`started_generation`, under the cache write lock.
+
+**Incremental patches take none and bump none**: bumping on every patch would drop every re-read during a busy burst.
+Instead, a re-read's landing re-checks what was patched while it read (`patch_log.rs`, #1342). Without that, a re-read
+that started before an `Added`, `Removed`, `Modified`, or `observe_children` patch and landed after it carried the older
+state, and nothing corrected it: a 3,000-file `cmd` loop on Windows left a pane at 3,000 of 3,002.
+
+- **Noting.** Every patch helper in `mutate.rs` (insert, update, remove by name, remove by paths) calls
+  `CachedListing::note_patch(name, read_generation_now())` under the write lock. It notes only while
+  `started_generation > published_generation` (a read may be in flight), so the normal case costs one comparison. A
+  remove notes even a name the listing never held, and `observe_children` routes a gone-and-unheld child through the
+  remove for that reason: the read in flight may have seen it.
+- **Why the stamp works.** A patch is stamped with the last generation handed out. `start_read` hands one out under the
+  same lock, so a read with generation `G` started before every patch stamped `G` or later, and after every other one.
+  On landing, `PatchLog::landing(G)` owes the names stamped `>= G` and keeps only those stamped `> G`, for a newer read
+  still in flight.
+- **Settling.** `update_listing_entries` hands back a `Recheck`, and its caller runs `settle_patches` with no lock held:
+  it stats each owed name through the volume (16 at a time) and patches it again through `notify_added` (an upsert that
+  carries tags forward) or `notify_removed`. `refresh`, `refresh_from_entries`, the `FullRefresh`, and the respell await
+  it, so ⌘R and E2E's flush return settled; a backend's `Replaced` spawns it.
+- **Fallback.** Past `MAX_TRACKED_PATCHES` (1,024) names, or a stat that can't tell (anything but `NotFound`), settling
+  schedules one more full re-read instead, so correctness never rests on the bound. With no volume to stat through (the
+  host's `std::fs` read), `refresh_from_entries` answers `NoVolume` and the host reads again; the watcher loops until a
+  read lands unpatched.
+- **Pinned by** `reread_patch_race_test.rs`: add, remove (held and unheld), modify, a name the read also saw, the
+  `FullRefresh` path, the overflow fallback, the host read, and the quiet case.
 
 **Why not put `refresh` through the turnstile.** Three breaks: `notify_full_refresh` returns early when the waiting
 berth is taken, so an awaited ⌘R would return before its read landed and E2E's `flush_file_watcher` would go flaky; a

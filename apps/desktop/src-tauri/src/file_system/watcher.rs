@@ -661,28 +661,34 @@ pub async fn handle_directory_change(listing_id: &str) {
 }
 
 /// The re-read for a listing whose volume nothing serves any more: `std::fs`,
-/// handed to the engine. The ticket is taken BEFORE the read, so it dates the read.
+/// handed to the engine, again for as long as the engine answers `NoVolume`: it
+/// does when a patch landed during the read and it has no volume to stat that
+/// patch through. Each round reads the folder anew, so it ends once a read goes
+/// unpatched.
 async fn reread_with_std_fs(listings: &Listings, id: &ListingId) {
-    let Some(ticket) = listings.begin_read(id) else {
-        return;
-    };
+    while reread_with_std_fs_once(listings, id).await == Some(RefreshOutcome::NoVolume) {}
+}
+
+/// One `std::fs` re-read. The ticket is taken BEFORE the read, so it dates the read.
+async fn reread_with_std_fs_once(listings: &Listings, id: &ListingId) -> Option<RefreshOutcome> {
+    let ticket = listings.begin_read(id)?;
     // `std::fs` reads native paths: a listing with none (a server URL whose volume
     // is gone) has nothing to read here, and waits for its volume to come back.
     let Ok(native) = ticket.path().to_native_plain() else {
-        return;
+        return None;
     };
     match list_directory_core(&native, &crate::listing_host::backends::AppListings) {
-        Ok(entries) => {
-            listings.refresh_from_entries(ticket, entries).await;
-        }
+        Ok(entries) => Some(listings.refresh_from_entries(ticket, entries).await),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             let path = ticket.path().to_owned();
             directory_deleted(id.as_str(), &path);
+            None
         }
         Err(e) => {
             if e.kind() != std::io::ErrorKind::PermissionDenied {
                 log::warn!("Watcher: Failed to re-read directory: {}", e);
             }
+            None
         }
     }
 }

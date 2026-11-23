@@ -8,6 +8,7 @@ use cmdr_fs::ignore_poison::RwLockIgnorePoison;
 
 use crate::Inner;
 use crate::listing_id::ListingId;
+use crate::patch_log::Recheck;
 use cmdr_fs::entry::FileEntry;
 pub(crate) use cmdr_fs::volume::DirectoryChange;
 
@@ -178,11 +179,17 @@ impl Inner {
                 // it for: prepare once for the volume, then publish per listing. This is
                 // where the diffing a device backend used to do for itself lives now.
                 // Dated on arrival: the backend serializes its own re-reads.
-                let generation = self.next_read_generation();
+                let generation = self.start_read(listings.iter().map(String::as_str));
                 match self.prepare_handed_over(volume_id, parent_path, entries) {
                     Some(prepared) => {
                         for listing_id in &listings {
-                            self.publish_replacement(listing_id, prepared.clone(), generation);
+                            let recheck = self.publish_replacement(listing_id, prepared.clone(), generation);
+                            if recheck != Recheck::Nothing {
+                                // A strong handle: the settle ends.
+                                let (engine, listing_id) = (Arc::clone(self), listing_id.clone());
+                                self.runtime
+                                    .spawn(async move { engine.settle_patches(&listing_id, recheck).await });
+                            }
                         }
                     }
                     // An overlay applies here, and this arm can't wait on it: re-read
