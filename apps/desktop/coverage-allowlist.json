@@ -1,17 +1,11 @@
 {
   "$comment": "Files listed here are exempt from coverage thresholds. Each entry needs a reason naming the specific untestable API. The svelte-tests check shrink-wraps this list: it removes entries whose file no longer exists (local runs) and warns when a file now clears the threshold with margin to spare — remove those entries or update their reason.",
   "files": {
-    "accent-color.ts": {
-      "reason": "Depends on Tauri invoke and listen APIs"
-    },
     "app-status-store.ts": {
       "reason": "Depends on Tauri APIs"
     },
     "benchmark.ts": {
       "reason": "Dev tooling, not critical path"
-    },
-    "debug/debug-window.ts": {
-      "reason": "Depends on Tauri WebviewWindow API; dev-only"
     },
     "file-explorer/drag/DragOverlay.svelte": {
       "reason": "UI overlay component, state tested in drag-overlay tests"
@@ -87,9 +81,6 @@
     },
     "settings/sections/AiLocalSection.svelte": {
       "reason": "UI section, depends on Tauri commands and event listeners"
-    },
-    "settings/sections/LicenseSection.svelte": {
-      "reason": "UI section, pure logic extracted to license-section-utils.ts and tested"
     },
     "settings/sections/MtpSection.svelte": {
       "reason": "UI section, simple rendering"
