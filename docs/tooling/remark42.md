@@ -64,7 +64,8 @@ deliberately not Cloudflare-proxied, so `{remote_host}` at Caddy is the real cli
 - **Google**: client named `Cmdr Remark42` in Google Cloud project `cmdr-490722` (Cmdr's project; the consent screen is
   "Cmdr comments", In production). Manage it under Google Auth Platform → Clients. Its secret lives only in the server
   `.env`; the console can't show it again, so replace it by rotating. Google keys users on their account's `sub`, the
-  same for every client, so switching clients keeps commenters' identity. Project map: `infra` repo, `gcp/CLAUDE.md`.
+  same for every client, so switching clients keeps commenters' identity. Project map:
+  `~/projects-git/vdavid/infra/gcp/CLAUDE.md`.
 - **GitHub**: OAuth app `Ov23lihhp2lm7WROt4VX`.
 
 **Guardrail**: Google auto-deletes an OAuth client after six months with no token request and no settings change, which
