@@ -36,24 +36,55 @@ fn a_socks_answer_is_a_socks_entry() {
     );
 }
 
-/// The versioned keywords (`SOCKS5`, `SOCKS4`, Chrome's and Firefox's extensions) are WinHTTP's
-/// to read: the Windows 10 22H2 builder's typed answer carries them, and the hosted runner's
-/// Windows Server 2025 drops `SOCKS5` from the list (CI run 45158786958, 2026-11-23), as
-/// CFNetwork drops both on macOS. Either way Cmdr goes where the OS's own clients go, and a
-/// keyword it does read is never anything but SOCKS.
+/// This Windows build (`10.0.<build>`), from `ver`: WinHTTP's PAC keywords differ by build.
+fn windows_build() -> u32 {
+    let out = std::process::Command::new("cmd")
+        .args(["/c", "ver"])
+        .output()
+        .expect("`ver` runs");
+    let text = String::from_utf8_lossy(&out.stdout);
+    let version = text
+        .rsplit("Version ")
+        .next()
+        .and_then(|rest| rest.split(']').next())
+        .expect("`ver` prints `[Version 10.0.<build>.<rev>]`");
+    version
+        .split('.')
+        .nth(2)
+        .and_then(|build| build.parse().ok())
+        .expect("a numeric build")
+}
+
+/// The first build whose WinHTTP drops a PAC's `SOCKS5` entry: 26100, Windows Server 2025 (the
+/// hosted runner, CI run 45158786958, 2026-11-23) and, by the same build number, Windows 11 24H2.
+/// Windows 10 22H2 (19045, the builder) still reads it.
+const DROPS_SOCKS5: u32 = 26_100;
+
+/// `SOCKS5` is WinHTTP's to read, and which build reads it is pinned here: Windows 10 22H2's typed
+/// answer carries it, and build 26100's drops it from the list, so Cmdr goes DIRECT around the
+/// user's SOCKS proxy there (#1421). A change either way (a fix, or an older build dropping it too)
+/// turns this red.
 #[test]
-fn a_versioned_socks_answer_is_socks_or_dropped_as_the_os_drops_it() {
+fn a_socks5_answer_is_read_up_to_the_build_that_drops_it() {
     let five = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS5 s.test:1081; DIRECT"; }"#);
-    assert!(
-        five == Some(vec![socks("s.test", 1081), Entry::Direct]) || five == Some(vec![Entry::Direct]),
-        "{five:?}"
+    let expected = if windows_build() >= DROPS_SOCKS5 {
+        vec![Entry::Direct]
+    } else {
+        vec![socks("s.test", 1081), Entry::Direct]
+    };
+    assert_eq!(five, Some(expected), "build {}", windows_build());
+}
+
+/// `SOCKS4` comes through as SOCKS4, ❌ never a SOCKS5 entry it can't speak.
+#[test]
+fn a_socks4_answer_is_a_socks4_entry() {
+    assert_eq!(
+        pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#),
+        Some(vec![Entry::Socks4 {
+            host: "s.test".into(),
+            port: 1082,
+        }])
     );
-    let four = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#);
-    let read = Some(vec![Entry::Socks4 {
-        host: "s.test".into(),
-        port: 1082,
-    }]);
-    assert!(four == read || four == Some(vec![]), "{four:?}");
 }
 
 /// `HTTPS host:port` is a TLS proxy, ❌ never a plain HTTP one on its TLS port.
