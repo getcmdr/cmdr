@@ -6,7 +6,7 @@
 # ❗ Pinned to the same Alpine as the SFTP fixture. The cells assert on server
 # behaviour (READDIRPLUS, the per-call `secure` check, wcc_data), and a base bump
 # is a fixture change to review, not to inherit.
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+FROM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
 
 # `python3` writes `large.bin` and the one name that isn't UTF-8.
 RUN apk add --no-cache nfs-utils rpcbind python3

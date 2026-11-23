@@ -9,7 +9,7 @@
 # SQLite, so the fixture is ONE container. Nextcloud's own guidance is a real
 # database for a real deployment; what these cells read is sabre/dav's HTTP
 # behaviour, which the storage engine underneath doesn't reach.
-FROM nextcloud:35.0.1-apache@sha256:8f2f0e93aca5e9457019933936dea1f313052e72c696b4aecb31580a208b859f
+FROM nextcloud:35.0.3-apache@sha256:f22d1dd63844bd15bbf6c2019149653c3d1c775ba48b173b56c3c6ad5f386196
 
 # Runs inside the image's own entrypoint on EVERY start, after any first-boot
 # `occ maintenance:install` and BEFORE apache binds a port. ❗ Both halves
