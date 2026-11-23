@@ -41,8 +41,11 @@ export type CloudOnlineOnlyExtent = 'all' | 'mixed'
  * Cursor item:     "Delete 1 file under cursor" / "Delete 1 folder under cursor"
  */
 export function generateDeleteTitle(items: DeleteSourceItem[], isFromCursor: boolean): string {
-  const fileCount = items.filter((i) => !i.isDirectory).length
-  const folderCount = items.filter((i) => i.isDirectory).length
+  // A link counts as a file, even one to a folder (a junction): only the link goes, and the
+  // scan's count line counts it as one file, so the title says the same (#1432).
+  const isFolder = (i: DeleteSourceItem) => i.isDirectory && !i.isSymlink
+  const fileCount = items.filter((i) => !isFolder(i)).length
+  const folderCount = items.filter(isFolder).length
 
   if (isFromCursor) {
     if (folderCount > 0) return tString('fileOperations.delete.titleCursorFolder')
@@ -83,6 +86,8 @@ export function countSymlinks(items: DeleteSourceItem[]): number {
  *
  * - Single symlink: "This item is a symlink. Only the link will be deleted, not its target."
  * - Multiple: "Your selection includes N symlinks. Only the links themselves will be deleted, not their targets."
+ *
+ * On Windows both read "link": a junction and a symlink look the same in the listing (#1432).
  */
 export function getSymlinkNotice(items: DeleteSourceItem[]): string | null {
   const count = countSymlinks(items)

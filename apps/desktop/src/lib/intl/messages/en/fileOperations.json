@@ -197,15 +197,15 @@
     },
     "screenshot": "delete-confirmation-trash-many.png"
   },
-  "fileOperations.delete.symlinkNoticeSingle": "This item is a symlink. Only the link will be deleted, not its target.",
+  "fileOperations.delete.symlinkNoticeSingle": "{platform, select, windows {This item is a link. Only the link will be deleted, not what it points to.} other {This item is a symlink. Only the link will be deleted, not its target.}}",
   "@fileOperations.delete.symlinkNoticeSingle": {
-    "description": "Notice in the delete dialog when the only selected item is a symbolic link. Reassures that the link is removed, not the file it points to. 'symlink'/'target' are filesystem terms.",
+    "description": "Notice in the delete dialog when the only selected item is a symbolic link. Reassures that the link is removed, not the file it points to. 'symlink'/'target' are filesystem terms. The windows branch says 'link', since there the item may be a junction or a symlink and the listing can't tell which; use the word Windows users know for both.",
     "screenshot": "delete-confirm.png",
     "screenshotNote": "The delete confirmation dialog, pictured here. Your string is one of its variants: a different item count, an archive or symlink warning, or the progress line it shows while scanning."
   },
-  "fileOperations.delete.symlinkNoticeMany": "Your selection includes {countText} {count, plural, one {symlink} other {symlinks}}. Only the links themselves will be deleted, not their targets.",
+  "fileOperations.delete.symlinkNoticeMany": "{platform, select, windows {Your selection includes {countText} {count, plural, one {link} other {links}}. Only the links themselves will be deleted, not what they point to.} other {Your selection includes {countText} {count, plural, one {symlink} other {symlinks}}. Only the links themselves will be deleted, not their targets.}}",
   "@fileOperations.delete.symlinkNoticeMany": {
-    "description": "Notice in the delete dialog when the selection contains one or more symbolic links among other items. Reassures that only the links are removed. 'symlink'/'target' are filesystem terms.",
+    "description": "Notice in the delete dialog when the selection contains one or more symbolic links among other items. Reassures that only the links are removed. 'symlink'/'target' are filesystem terms. The windows branch says 'link', since there an item may be a junction or a symlink and the listing can't tell which.",
     "placeholders": {
       "countText": "how many symlinks (plain number, not grouped)",
       "count": "the same number of symlinks (drives the singular/plural noun)"
