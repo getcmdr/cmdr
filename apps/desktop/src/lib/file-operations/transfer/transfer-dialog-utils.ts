@@ -3,13 +3,13 @@
  * resolves through the i18n catalog (`fileOperations.transferDialog.*`).
  */
 
-import type { TransferOperationType } from '#lib/file-explorer/types.js'
+import type { TransferOperationType, VolumeInfo } from '#lib/file-explorer/types.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import type { WriteConflictEvent } from '#lib/ipc/bindings.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { isPathOnVolume, isPlainFilesystemPath, parentOf, toCanonical } from '#lib/path/canonical.js'
 import { suggestCompressArchiveName } from './transfer-compress-name'
-import { isLocalPath, joinPath, parsePath, typedSeparators } from '#lib/path/grammar.js'
+import { isLocalPath, joinPath, parsePath, rootOf, typedSeparators } from '#lib/path/grammar.js'
 
 /**
  * Generates a dialog title with proper pluralization for files and folders.
@@ -177,9 +177,19 @@ export function toBackendSelectionOrCursor(
 }
 
 /**
- * Strips the volume prefix to get a volume-relative path. Always returns a
- * `/`-prefixed string, which is what the destination box's absolute-path check
- * demands.
+ * On Windows a POSIX `/Users/x` is a drive's or share's own (`wire_path::anchored` reads it
+ * as `C:/Users/x` on `C:/`), already volume-relative: collapsed, it copied into the root.
+ */
+function isPosixOnADrive(fullPath: string, volumePath: string): boolean {
+  const rootKind = parsePath(volumePath)?.kind
+  return (rootKind === 'drive' || rootKind === 'unc') && fullPath.startsWith('/') && !fullPath.startsWith('//')
+}
+
+/**
+ * Strips the volume prefix to get a volume-relative path: a `/`-prefixed string, which
+ * is what the destination box's absolute-path check demands, a drive or share path off
+ * the volume kept whole (the backend refuses it as another volume's), or `''` for a path
+ * with no spelling on this volume, which the box refuses as empty.
  *
  * ❗ **Trim the volume root's trailing slash before slicing.** A remote volume is
  * rooted at `<prefix><server-side root>`, so one rooted at `/` (the DEFAULT for
@@ -197,11 +207,21 @@ export function toVolumeRelativePath(fullPath: string, volumePath: string): stri
   // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- a root's trailing slash is trimmed so the volume-relative rest keeps its leading `/` (`C:/Users` → `/Users`)
   const root = volumePath.endsWith('/') ? volumePath.slice(0, -1) : volumePath
   if (isPathOnVolume(fullPath, root)) return fullPath.slice(root.length) || '/'
+  // A drive or share path names its own root, so off this volume it stays whole and the
+  // backend refuses it as another volume's (#1384: collapsed to `/`, a share folder read as
+  // the boot drive's root, `C:/`).
+  const kind = parsePath(fullPath)?.kind
+  if (kind === 'drive' || kind === 'unc') return fullPath
+  if (isPosixOnADrive(fullPath, volumePath)) return fullPath
   // A non-local volume whose caller already spelled the path volume-relative
   // ("/DCIM" against "mtp://device/storage"). Another volume's URL is not ours,
   // and echoing it into the box would just fail the absolute-path check.
   if (root.includes('://') && fullPath.startsWith('/') && !fullPath.includes('://')) return fullPath
-  return '/'
+  // Any other path off this volume (a POSIX `/Users/x` against `/Volumes/USB`, another
+  // volume's URL) has NO spelling here: `/` would read as this volume's root, and the
+  // whole path as a folder below it (`anchor_at_root` hangs a POSIX path off the root).
+  // Both put the copy in the wrong folder, so the box stays empty and refuses to confirm.
+  return ''
 }
 
 /**
@@ -260,7 +280,8 @@ export function initialEditedPath(
     singleTransfer && isPlainFilesystemPath(volumePath)
       ? destinationPath
       : toVolumeRelativePath(destinationPath, volumePath)
-  if (operationType !== 'compress' && !singleTransfer) return folder
+  // No place on the volume (`toVolumeRelativePath`): an empty box, never a leaf at its root.
+  if (folder === '' || (operationType !== 'compress' && !singleTransfer)) return folder
   const name = singleTransfer
     ? getFolderName(sourcePaths[0])
     : suggestCompressArchiveName(sourcePaths, sourceFolderPath)
@@ -371,4 +392,24 @@ export function editedPathAfterOperationChange(args: {
     folder = `${volumePath.replace(/\/+$/, '')}/${folder.replace(/^\/+/, '')}`
   }
   return initialEditedPath(nextOperationType, folder, volumePath, sourcePaths, sourceFolderPath)
+}
+
+/**
+ * The volume picker's rows: the pickable volumes, plus the one the destination resolved to
+ * when it isn't among them, so the picker names where the copy goes. A share's row (`network`
+ * category, a mapped drive or a macOS share) isn't pickable but can be the target, and a share
+ * nobody mapped has no row at all: it reads as its root (`//localhost/C$`). Without this the
+ * picker read "Choose…" while the copy went to the share (#1384).
+ */
+export function volumePickerItems(
+  pickable: readonly VolumeInfo[],
+  all: readonly VolumeInfo[],
+  target: { volumeId: string; path: string },
+): { value: string; label: string }[] {
+  const items = pickable.map((v) => ({ value: v.id, label: v.name }))
+  if (items.some((item) => item.value === target.volumeId)) return items
+  const row = all.find((v) => v.id === target.volumeId)
+  const root = rootOf(target.path)
+  const label = row?.name ?? (root !== null && root !== '/' ? root.replace(/\/+$/, '') : null)
+  return label === null ? items : [...items, { value: target.volumeId, label }]
 }

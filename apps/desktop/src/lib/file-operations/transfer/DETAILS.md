@@ -168,9 +168,22 @@ on the destination volume for every probe and start alike (`commands/DETAILS.md`
 location" warning and the rename-in-place routing compare text, so a `..` after a name leaves both to the backend. On
 Windows a typed `\` separates like `/` (`typedSeparators`), and a drive or share path (`D:\backup\x`, `\\nas\share\x`)
 is absolute and always this machine's, whatever volume is picked, so its root survives the split; `\\nas` with no share
-is refused with its own message (`validateShareNamed`, #1118). Empty leaves and final `.` / `..` components cannot
-confirm. A folder copy names the copied or moved folder itself. Multiple selections still target a directory, preserving
-each selected item's name.
+is refused with its own message (`validateShareNamed`, #1118). **Such a path's volume is the listed one whose root holds
+it, a share's row included** (a mapped drive's row is a `network` one, read off the row by `volumeKindOf`); a share
+nobody mapped has no row, so the picked volume (the destination pane's share) stays. ❌ Never fall back to the boot
+drive and hang the path off its root: `toVolumeRelativePath` keeps a drive or share path off the volume WHOLE, and the
+backend refuses it as another volume's. #1384: a copy into `\\localhost\C$\…\dst` targeted `C:/`, because only
+local-kind rows qualified and the off-volume path collapsed to `/`. A POSIX `/Users/x` on a drive or share is that
+volume's own (`C:/Users/x`, as `wire_path::anchored` reads it). Any other path off its volume (a POSIX `/Users/x`
+against `/Volumes/USB`, another device's URL) has no spelling there: `toVolumeRelativePath` answers `''`, so the box
+prefills empty, the target resolves to none, and a skipped dialog (`confirmation-skip.ts`) shows instead, ❌ never `/`
+(the volume's root) or the whole POSIX path (`anchor_at_root` hangs it off the root): both copy into the wrong folder.
+**Decision/Why the frontend picks the volume**: the picker, the probes, and the conflict scan re-run per keystroke
+against a volume id, and the volume list (`listedOsVolumeHolding`, shared with navigation) answers synchronously; the
+backend still has the last word, since `anchor_at_root` refuses every drive, share, or scheme path off the volume it's
+sent with. What only the backend knows (a share's UNC spelling is its mapped drive's volume, a macOS share's second
+mount) is #1391. Empty leaves and final `.` / `..` components cannot confirm. A folder copy names the copied or moved
+folder itself. Multiple selections still target a directory, preserving each selected item's name.
 
 **A trailing slash means "into this folder"**: `/Users/me/Documents/` keeps the item's own name inside `Documents`.
 Without it the last segment is always the new name, so a pasted folder path would rename the item after that folder: a

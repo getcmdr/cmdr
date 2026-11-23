@@ -15,12 +15,14 @@ import { createInitialTabState } from './tab-operations'
 import type { FilePaneAPI } from './types'
 import type { ConnectionState } from '../types'
 import type { DetermineNavigationPathArgs } from '../navigation/path-navigation'
+import { isPathOnVolume } from '#lib/path/canonical.js'
 
 /** A live volume map the fake deps resolve paths/names against (a Map so misses are `undefined`). */
 const VOLUMES = new Map<string, { id: string; name: string; path: string }>([
   ['root', { id: 'root', name: 'Macintosh HD', path: '/' }],
   ['ext', { id: 'ext', name: 'Ext', path: '/Volumes/Ext' }],
   ['network', { id: 'network', name: 'Network', path: 'smb://' }],
+  ['mtp-dev:65537', { id: 'mtp-dev:65537', name: 'Phone', path: 'mtp://dev/65537' }],
   [
     'sftp-nas-local-22-test_user_1',
     { id: 'sftp-nas-local-22-test_user_1', name: 'Testnas', path: 'sftp://test_user_1@testnas.local:22/srv/data' },
@@ -150,6 +152,10 @@ export function makeHarness(opts?: HarnessOpts): Harness {
     ...makeStoreDeps(managers, paneState, tab),
     setFocusedPane,
     getVolumePathById: (volumeId) => VOLUMES.get(volumeId)?.path,
+    getVolumeIdHolding: (path) =>
+      [...VOLUMES.values()]
+        .filter((v) => !v.path.includes('://') && isPathOnVolume(path, v.path))
+        .sort((a, b) => b.path.length - a.path.length)[0]?.id,
     getVolumeLandingById: (volumeId) => LANDINGS.get(volumeId),
     getVolumeConnectionStateById: (volumeId) => CONNECTION_STATES.get(volumeId),
     determineNavigationPath,

@@ -6,20 +6,24 @@
 
 use super::super::OsErrorClass;
 
-const WIN32: [(i32, OsErrorClass); 40] = [
-    (2, OsErrorClass::NotFound),               // ERROR_FILE_NOT_FOUND
-    (3, OsErrorClass::NotFound),               // ERROR_PATH_NOT_FOUND
-    (5, OsErrorClass::AccessDenied),           // ERROR_ACCESS_DENIED
-    (8, OsErrorClass::OutOfMemory),            // ERROR_NOT_ENOUGH_MEMORY
-    (14, OsErrorClass::OutOfMemory),           // ERROR_OUTOFMEMORY
-    (17, OsErrorClass::CrossDevice),           // ERROR_NOT_SAME_DEVICE
-    (19, OsErrorClass::ReadOnlyFilesystem),    // ERROR_WRITE_PROTECT
-    (21, OsErrorClass::NoDevice),              // ERROR_NOT_READY
-    (23, OsErrorClass::Io),                    // ERROR_CRC
-    (32, OsErrorClass::InUseByAnotherApp),     // ERROR_SHARING_VIOLATION
-    (33, OsErrorClass::InUseByAnotherApp),     // ERROR_LOCK_VIOLATION
-    (39, OsErrorClass::NoSpace),               // ERROR_HANDLE_DISK_FULL
-    (50, OsErrorClass::Unsupported),           // ERROR_NOT_SUPPORTED
+const WIN32: [(i32, OsErrorClass); 41] = [
+    (2, OsErrorClass::NotFound),            // ERROR_FILE_NOT_FOUND
+    (3, OsErrorClass::NotFound),            // ERROR_PATH_NOT_FOUND
+    (5, OsErrorClass::AccessDenied),        // ERROR_ACCESS_DENIED
+    (8, OsErrorClass::OutOfMemory),         // ERROR_NOT_ENOUGH_MEMORY
+    (14, OsErrorClass::OutOfMemory),        // ERROR_OUTOFMEMORY
+    (17, OsErrorClass::CrossDevice),        // ERROR_NOT_SAME_DEVICE
+    (19, OsErrorClass::ReadOnlyFilesystem), // ERROR_WRITE_PROTECT
+    (21, OsErrorClass::NoDevice),           // ERROR_NOT_READY
+    (23, OsErrorClass::Io),                 // ERROR_CRC
+    (32, OsErrorClass::InUseByAnotherApp),  // ERROR_SHARING_VIOLATION
+    (33, OsErrorClass::InUseByAnotherApp),  // ERROR_LOCK_VIOLATION
+    (39, OsErrorClass::NoSpace),            // ERROR_HANDLE_DISK_FULL
+    (50, OsErrorClass::Unsupported),        // ERROR_NOT_SUPPORTED
+    // ERROR_INVALID_FUNCTION: what a filesystem answers for an operation it doesn't do (a share's
+    // folder flush, verified on Windows 10 22H2 against `\\localhost\C$`, 2026-11-22). After 50,
+    // so `Unsupported`'s own code stays ERROR_NOT_SUPPORTED.
+    (1, OsErrorClass::Unsupported),
     (53, OsErrorClass::HostUnreachable),       // ERROR_BAD_NETPATH
     (64, OsErrorClass::ConnectionReset),       // ERROR_NETNAME_DELETED
     (80, OsErrorClass::AlreadyExists),         // ERROR_FILE_EXISTS

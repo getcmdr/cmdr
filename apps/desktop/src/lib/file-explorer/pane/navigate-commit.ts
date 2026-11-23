@@ -132,6 +132,11 @@ export interface NavigateDeps {
   /** The volume's mount path by id, or undefined when not in the live list. */
   getVolumePathById: (volumeId: string) => string | undefined
   /**
+   * The listed volume whose root holds OS path `path`, among the rows whose paths are OS
+   * paths (local drives and shares, `volume-holding.ts`), or undefined when none does.
+   */
+  getVolumeIdHolding: (path: string) => string | undefined
+  /**
    * Where the volume lands when nothing is remembered about it, when that isn't
    * its root: a server place's start folder (`VolumeInfo.landingPath`). The
    * background correction takes it as its last default.

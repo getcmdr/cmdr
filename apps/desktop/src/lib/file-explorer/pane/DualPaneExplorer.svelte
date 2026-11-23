@@ -33,6 +33,7 @@
     import { ensureFontMetricsLoaded } from '#lib/font-metrics/index.js'
     import { determineNavigationPath } from '../navigation/path-navigation'
     import { createVolumeRootFollow } from './volume-root-follow'
+    import { listedOsVolumeHolding } from './volume-holding'
     import { createMountScope } from '#lib/utils/mount-scope.js'
 
     import { canGoBack, getCurrentEntry } from '../navigation/navigation-history'
@@ -398,6 +399,7 @@
         },
         getPaneRef,
         getVolumePathById: (volumeId) => volumes.find((v) => v.id === volumeId)?.path,
+        getVolumeIdHolding: (path) => listedOsVolumeHolding(path, volumes)?.id,
         getVolumeLandingById: (volumeId) => volumes.find((v) => v.id === volumeId)?.landingPath,
         getVolumeConnectionStateById: (volumeId) => volumes.find((v) => v.id === volumeId)?.connectionState,
         determineNavigationPath: (args) => determineNavigationPath(args),

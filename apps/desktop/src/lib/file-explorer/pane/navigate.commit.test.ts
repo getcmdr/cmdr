@@ -17,6 +17,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { navigate, commitPathFromListing } from './navigate'
 import { flush, makeHarness, type Harness } from './navigate.test-fixtures'
 import type { DetermineNavigationPathArgs } from '../navigation/path-navigation'
+import type { FilePaneAPI } from './types'
+
+/** Makes the stubbed FilePane report the volume and folder it shows. */
+function shows(ref: FilePaneAPI, volumeId: string, path: string): void {
+  Object.assign(ref, { getVolumeId: () => volumeId, getCurrentPath: () => path })
+}
 
 let h: Harness
 beforeEach(() => {
@@ -337,6 +343,52 @@ describe('commitPathFromListing — stale-listing drop policy (L6, token + forei
     h = makeHarness({ left: { path: 'search-results://sr-1', volumeId: 'search-results' } })
     expect(commitPathFromListing(h.deps, 'left', '/Library/x')).toBe(false)
     expect(h.tab('left').path).toBe('search-results://sr-1')
+  })
+
+  // #1385: a pane that SHOWS a folder its tab can't take (a volume reached by a second
+  // mount path its row doesn't name) used to keep it on screen while the tab, and so the
+  // transfer dialog, held the old folder. The pane goes back to what the tab holds.
+  it('sends a pane showing the dropped folder back to the folder its tab holds', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    shows(pane.ref, 'ext', '/Volumes/Ext-1/docs/sub')
+    expect(commitPathFromListing(h.deps, 'left', '/Volumes/Ext-1/docs/sub')).toBe(false)
+    expect(h.tab('left').path).toBe('/Volumes/Ext/docs')
+    expect(pane.navigateToPath).toHaveBeenCalledWith('/Volumes/Ext/docs')
+  })
+
+  // The stale-listing-after-volume-switch race: the tab already holds the new volume, the
+  // FilePane still shows the old one's folder until its props catch up. A send-back then
+  // would list the new volume's path against the old volume; the switch's own load wins.
+  it('leaves a pane alone that has not taken a just-committed volume switch yet', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    shows(pane.ref, 'root', '/Users/me/deep')
+    expect(commitPathFromListing(h.deps, 'left', '/Users/me/deep')).toBe(false)
+    expect(pane.navigateToPath).not.toHaveBeenCalled()
+  })
+
+  // A phone's folder entered with Enter lands on the row's inner path (`/Documents`), a
+  // spelling its `mtp://` root can't prefix. The send-back is for OS-path volumes only:
+  // here it yanked the pane back to the storage root (mtp-rename.spec.ts, PR #1389).
+  it('leaves a phone pane on the inner path Enter landed it on', () => {
+    h = makeHarness({ left: { path: 'mtp://dev/65537', volumeId: 'mtp-dev:65537' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    shows(pane.ref, 'mtp-dev:65537', '/Documents')
+    commitPathFromListing(h.deps, 'left', '/Documents')
+    expect(pane.navigateToPath).not.toHaveBeenCalled()
+  })
+
+  it('leaves a pane alone when the dropped listing is a stale one it no longer shows', () => {
+    h = makeHarness({ left: { path: '/Volumes/Ext/docs', volumeId: 'ext' } })
+    const pane = h.paneState.left.paneRef
+    if (!pane) throw new Error('the harness builds a pane')
+    shows(pane.ref, 'ext', '/Volumes/Ext/docs')
+    expect(commitPathFromListing(h.deps, 'left', '/Users/me/deep')).toBe(false)
+    expect(pane.navigateToPath).not.toHaveBeenCalled()
   })
 
   it('commits a non-stale path that IS on the current volume', () => {

@@ -254,3 +254,44 @@ Cmdr's window was moved beside it for screenshots.
   two files compress to a zip on `D:` and extract back to `C:` with their bytes; the volume list reads `C:`,
   `build (D:)`, and Servers with `C:` indexing; a same-drive move's undo puts the file back. "Go to Recycle Bin" not
   re-run (keys sent through `run-on-desktop.sh` went to Task Manager, which held the foreground).
+
+## PR #1389's share and folder-mount fixes on the desktop (2026-11-22)
+
+A debug build of `16ba1be9ed` in `D:\src\cmdr-m6` (13m 44s warm, #1382's two dead-code items allowed locally, then
+reverted), driven by Cmdr's MCP server over `ssh -L` (`CMDR_MCP_DIRECT_MODE=1`), indexing on. Fixtures under
+`C:\Users\Admin\r1389` and `D:\r1389`, removed after. `D:` mounted a second time at `C:\Users\Admin\r1389\dmount`
+(`mountvol`, David's one approved change, 15:17:02–15:18:15, removed with `mountvol /D`).
+
+- Pass (#1384): a copy of `C:\…\src\share-src.txt` into a pane on `\\localhost\C$\Users\Admin\r1389\dst` (a share nobody
+  mapped) opens with no "no permission" line and Copy live, the box reading
+  `//localhost/C$/Users/Admin/r1389/dst/share-src.txt`; confirmed, it lands in `…\r1389\dst` with its bytes, nothing at
+  `C:\share-src.txt`. The log reads `dest=//localhost/C$/` (it read `dest=C:/` before).
+- Pass (#1385): `list_volumes` reads `C:`, `build (D:)` once, and Servers. `nav_to_path` to `…\dmount\r1389\same` lands
+  with the tab, path, and `volumeId: root` agreeing; Enter on `dmount`, then `r1389`, then `same` (`open_under_cursor`)
+  does too. F5 from the other pane offers `C:/Users/Admin/r1389/dmount/r1389/same/s.txt`, and the file lands in
+  `D:\r1389\same`.
+- Seen, not chased: the picker reads "Choose…" for the unmapped share (it has no row), and "C:" with `C:`'s free space
+  for the folder below the mount. After the share copy, a toast said Cmdr couldn't confirm the copies were fully written
+  to `//localhost/C$` (the durability barrier on a share).
+
+## PR #1389's review fixes on the desktop (2026-11-22)
+
+A debug build of `960bd9302c` (the review's first fix commit; 12m 0s warm, #1382's two allows local, then reverted),
+driven by Cmdr's MCP server over `ssh -L`, indexing on. Fixtures under `C:\Users\Admin\r1389c` and `D:\r1389c`, removed
+after. `D:` mounted a second time at `C:\Users\Admin\r1389c\dmount` (`mountvol`, David's one approved change,
+16:08:35–16:14:34, removed with `mountvol /D`).
+
+- Pass: below the mount, the tab, path, and `volumeId: root` agree; F5 of `D:\r1389c\x.txt` there lands in
+  `D:\r1389c\same`.
+- Pass, data safety: a copy of `D:\r1389c\x.txt` into `…\dmount\r1389c` (the same folder by another path) with
+  "Overwrite all" lands as `x (1).txt`, the source intact; a move of `D:\r1389c\mv\m.txt` into `…\dmount\r1389c\mv` (the
+  same file) is a no-op, the file intact; a move into `…\dmount\r1389c\same` is a rename (`fsutil file queryfileid`
+  unchanged).
+- Pass: a file trashed below the mount lands in `D:`'s Recycle Bin (the run's item removed after); the listing watch
+  below the mount shows a new file within 4 s, no refresh.
+- Pass: the picker for a copy into `\\localhost\C$\…\dst` reads `//localhost/C$` (it read "Choose…"), and the copy
+  lands.
+- Found: that copy's "couldn't confirm the copies are fully written" toast is a share refusing the folder flush with
+  `ERROR_INVALID_FUNCTION` (1), which the durability pass didn't read as "not offered"
+  (`flush: couldn't fsync the directory …: Incorrect function. (os error 1)`); classed `Unsupported` in the next commit,
+  proven by its Windows test cell rather than a second desktop build.

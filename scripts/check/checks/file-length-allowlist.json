@@ -253,6 +253,10 @@
       "lines": 1073,
       "reason": "TODO: the `impl Volume for LocalPosixVolume` block plus the query and mutation bodies it can't spread across files. `scan` and `streams` already moved to `local_posix/`; the mutation bodies (create, delete, rename, `apply_metadata`) should follow into `local_posix/mutations.rs` as `pub(crate)` inherent methods with one-line delegators here, the shape `cmdr-sftp` and `cmdr-smb` use. (The crate-root `mutation.rs` is the listing patch, a different concern.) Moved here from the crate root when `LocalWindowsVolume` became its sibling under `platform/`."
     },
+    "crates/cmdr-local/src/platform/local_windows.rs": {
+      "lines": 812,
+      "reason": "TODO: the `impl Volume for LocalWindowsVolume` block, the Windows twin of `local_posix.rs`. Split it the same way: the mutation bodies (create, delete, rename, `apply_metadata`) into a `local_windows/mutations.rs` as `pub(crate)` inherent methods with one-line delegators here, as `links`, `paths`, and `rename` already are."
+    },
     "crates/cmdr-mtp/src/connection/directory_ops.rs": {
       "lines": 983,
       "reason": "TODO: split; two blocks aren't directory ops at all. `handle_device_disconnected` plus the `disconnect_test_hooks` tally (roughly 90 lines) is session teardown and belongs beside its documented counterpart in `session_reset.rs`, and `clear_all_listing_caches` / `clear_listing_caches_for_device` / `invalidate_listing_cache` (roughly 55 lines) belong in `cache.rs`, which already owns `ListingCache`. Then move the background scan path (`list_directory_for_scan` and `list_directory_inner_with_progress`, roughly 270 lines of yield-point and metadata-batch work that foreground listings deliberately avoid) to a sibling `scan_listing.rs`, leaving the foreground path with `fresh_cached_listing`, `finalize_listing`, and `entry_for_object` at roughly 530 lines."

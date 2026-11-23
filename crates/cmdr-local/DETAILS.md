@@ -256,6 +256,13 @@ paths.
 `space.rs` holds it, beside `get_space_info_for_path` (what `Volume::get_space_info` returns) and the `statvfs` reading
 Linux uses and macOS falls back to.
 
+**Decision**: both local volumes answer `get_space_info_at(path)` for the nearest folder at or above `path` that exists
+(`space_info_at_nearest_folder`), ❌ never the root's figure. **Why (#1385)**: below a mount inside the volume (a folder
+mount of `D:` on `C:`, a share's second mount on macOS, which panes reach on the boot disk) the root's free space is
+another disk's, and the transfer pre-flight (`dest_space_if_known`) let a copy start that couldn't fit, or refused one
+that could. `GetDiskFreeSpaceExW` and `statvfs` both follow the mount. The pane's readout still reads the volume's
+figure (the space poller is per volume, #1392).
+
 **Decision**: on Linux, `get_volume_space` is THE `statvfs` call: the app's `volumes` seam re-exports it for the IPC
 command, and the space poller's unregistered-path fallback calls it, so ❌ never write a second `statvfs` in the app.
 **Why**: the app once kept its own copy, which derived `used` as `total - available` (counting root-reserved blocks as

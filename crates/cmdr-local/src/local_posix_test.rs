@@ -543,3 +543,31 @@ fn a_destination_we_could_not_stat_is_never_treated_as_a_free_name() {
     );
     assert!(source.exists(), "nothing moved");
 }
+
+/// A folder on another filesystem below the root (a share's second mount; `/dev` here)
+/// answers for THAT filesystem, so the transfer pre-flight judges a copy against the disk
+/// it lands on, ❌ never the root's (#1385: a copy into a folder mount got `C:`'s figure).
+/// A folder that doesn't exist yet answers for the nearest one above it.
+#[tokio::test]
+async fn space_at_a_folder_is_the_filesystem_that_holds_it() {
+    let volume = LocalPosixVolume::local_folder("Root", Path::new("/"), VolumeHost::detached());
+    let root = volume.get_space_info().await.expect("the root's space");
+    let dev = volume
+        .get_space_info_at(&at(&volume, "dev/not-there-yet"))
+        .await
+        .expect("the space of the filesystem `/dev` is on");
+    assert_ne!(
+        dev.total_bytes(),
+        root.total_bytes(),
+        "`/dev` is its own filesystem, not the root's"
+    );
+
+    let dir = TestDir::new("space_at_nearest_folder");
+    let folder = LocalPosixVolume::local_folder("Dir", &*dir, VolumeHost::detached());
+    let below = folder
+        .get_space_info_at(&at(&folder, "not/there/yet"))
+        .await
+        .expect("a folder still to be made answers for the one above it");
+    let own = folder.get_space_info().await.expect("the folder's space");
+    assert_eq!(below.total_bytes(), own.total_bytes());
+}

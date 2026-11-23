@@ -36,6 +36,9 @@ import {
   type ConfirmFn,
 } from './test-transfer-dialog-harness'
 import { DEST_CHECK_DEBOUNCE_MS } from './transfer-dest-exists.svelte'
+
+/** A destination on the harness's `ext` volume (`/Volumes/External`): one off it has no place there. */
+const EXT_DEST = '/Volumes/External/dest'
 it('shows a conflict spinner beside the file count only after 100 ms, without a checking row', async () => {
   vi.useFakeTimers()
   try {
@@ -296,14 +299,14 @@ describe('TransferDialog MCP preset payload', () => {
 
 describe('TransferDialog same-volume move scan gating', () => {
   it('does NOT start the deep scan preview for a same-volume move', async () => {
-    mountDialog({ operationType: 'move', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    mountDialog({ operationType: 'move', sourceVolumeId: 'ext', currentVolumeId: 'ext', destinationPath: EXT_DEST })
     await flushMicrotasks()
 
     expect(startScanPreviewMock, 'a same-volume move must skip the deep byte scan').not.toHaveBeenCalled()
   })
 
   it('still starts the deep scan for a same-volume COPY (copy needs byte totals)', async () => {
-    mountDialog({ operationType: 'copy', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    mountDialog({ operationType: 'copy', sourceVolumeId: 'ext', currentVolumeId: 'ext', destinationPath: EXT_DEST })
     await flushMicrotasks()
 
     expect(startScanPreviewMock, 'a copy always needs the byte scan').toHaveBeenCalledTimes(1)
@@ -323,6 +326,7 @@ describe('TransferDialog same-volume move scan gating', () => {
       operationType: 'move',
       sourceVolumeId: 'ext',
       currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
       onConfirm,
     })
     await flushMicrotasks()
@@ -341,7 +345,12 @@ describe('TransferDialog same-volume move scan gating', () => {
     // preview runs. Flipping the destination is awkward in a unit test, so start
     // as a Copy on the same volume (preview runs), then flip to Move (same
     // volume) and assert the preview is cancelled.
-    const target = mountDialog({ operationType: 'copy', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    const target = mountDialog({
+      operationType: 'copy',
+      sourceVolumeId: 'ext',
+      currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
+    })
     await flushMicrotasks()
     expect(startScanPreviewMock).toHaveBeenCalledTimes(1)
 
@@ -352,7 +361,12 @@ describe('TransferDialog same-volume move scan gating', () => {
   })
 
   it('restarts the preview when flipping back from a same-volume move to copy', async () => {
-    const target = mountDialog({ operationType: 'move', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    const target = mountDialog({
+      operationType: 'move',
+      sourceVolumeId: 'ext',
+      currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
+    })
     await flushMicrotasks()
     // Move on same volume → no scan yet.
     expect(startScanPreviewMock).not.toHaveBeenCalled()
@@ -483,7 +497,12 @@ describe('TransferDialog data-scan-state marker', () => {
   it('reads "skipped" for a same-volume move (no deep scan ever runs)', async () => {
     // A same-volume move renames server-side (zero bytes); the deep scan is
     // skipped, so the tallies legitimately stay at 0 and must say so.
-    const target = mountDialog({ operationType: 'move', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    const target = mountDialog({
+      operationType: 'move',
+      sourceVolumeId: 'ext',
+      currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
+    })
     await flushMicrotasks()
 
     expect(startScanPreviewMock, 'same-volume move skips the scan').not.toHaveBeenCalled()
@@ -540,7 +559,12 @@ describe('TransferDialog data-scan-state marker', () => {
   })
 
   it('still reaches "done" for a same-volume COPY (copy scans even on one volume)', async () => {
-    const target = mountDialog({ operationType: 'copy', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    const target = mountDialog({
+      operationType: 'copy',
+      sourceVolumeId: 'ext',
+      currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
+    })
     await flushMicrotasks()
     expect(scanState(target)).toBe('counting')
 
@@ -557,7 +581,12 @@ describe('TransferDialog data-scan-state marker', () => {
   })
 
   it('flips counting → skipped when toggling a same-volume copy to move', async () => {
-    const target = mountDialog({ operationType: 'copy', sourceVolumeId: 'ext', currentVolumeId: 'ext' })
+    const target = mountDialog({
+      operationType: 'copy',
+      sourceVolumeId: 'ext',
+      currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
+    })
     await flushMicrotasks()
     expect(scanState(target)).toBe('counting')
 
@@ -891,6 +920,7 @@ describe('TransferDialog confirm without waiting for the conflict check', () => 
       operationType: 'move',
       sourceVolumeId: 'ext',
       currentVolumeId: 'ext',
+      destinationPath: EXT_DEST,
       onConfirm,
     })
     await flushMicrotasks()
