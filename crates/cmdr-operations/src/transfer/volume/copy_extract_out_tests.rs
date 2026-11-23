@@ -107,6 +107,60 @@ async fn extract_out_copies_a_file_and_a_directory_subtree_out_of_a_zip() {
     assert_eq!(complete[0].bytes_processed, 5 + 3 + 3, "all inner-file bytes copied");
 }
 
+/// An archive volume reached by its inner paths lists RELATIVE rows (`docs/a.txt`): the
+/// walk reads each through its typed door and walks it as the bridge passed it, ❌ never
+/// refusing it as a row that names no place (it failed every SFTP and SMB zip extract
+/// with "not a single filename").
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn extract_out_walks_a_folder_whose_rows_are_relative_to_the_archive() {
+    use cmdr_archive::{ArchiveFormat, ArchiveVolume};
+    use cmdr_fs::volume::host::VolumeHost;
+
+    let engine = TestOperations::new();
+    // The zip on a volume with no local path (a server), at a volume-relative path as a
+    // share suite names it, so its rows are relative too.
+    let (_tmp, zip_on_disk) = build_extract_out_fixture();
+    let parent = Arc::new(InMemoryVolume::new("Server"));
+    parent
+        .create_file(
+            cmdr_fs::app_path!("/bundle.zip"),
+            &std::fs::read(&zip_on_disk).expect("the zip's bytes"),
+        )
+        .await
+        .expect("seeding the zip");
+    let source: Arc<dyn Volume> = Arc::new(ArchiveVolume::new(
+        parent as Arc<dyn Volume>,
+        PathBuf::from("bundle.zip"),
+        ArchiveFormat::Zip,
+        VolumeHost::detached(),
+    ));
+    let dest: Arc<dyn Volume> = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
+    let state = make_state(&engine);
+    let config = VolumeCopyConfig {
+        progress_interval_ms: 0,
+        ..VolumeCopyConfig::default()
+    };
+
+    let result = copy_volumes_with_progress(
+        Arc::new(CollectorEventSink::new()),
+        "extract-out-relative-op",
+        &state,
+        Arc::clone(&source),
+        &[PathBuf::from("docs")],
+        Arc::clone(&dest),
+        Path::new("/"),
+        &config,
+    )
+    .await;
+
+    assert!(
+        result.is_ok(),
+        "extract-out by an inner path should succeed: {result:?}"
+    );
+    assert_eq!(read_dest_file(&dest, "/docs/a.txt").await, b"aaa");
+    assert_eq!(read_dest_file(&dest, "/docs/b.txt").await, b"bbb");
+}
+
 /// A script extracted out of a release zip has to still RUN. The archive records
 /// the mode and the volume reports it; the copy engine is the layer that has to
 /// put it on what lands.

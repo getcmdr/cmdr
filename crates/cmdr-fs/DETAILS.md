@@ -177,12 +177,12 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   (pinned by `bridge_test.rs::a_listed_name_joins_as_the_bridge_spelled_the_path_join`), and `from_app_spelling` once
   they are. `AppPath::from_listed_row(&str)` is the same door for a row's own PATH (`FileEntry.path`, which a walk
   descends into: an MTP twin's path isn't its folder joined with its name): for canonical text the bridge's value byte
-  for byte, borrowed when plain; loose text (`//x`) reads as the place it names, a POSIX `/x` stays POSIX on Windows,
-  and a relative or `..` row is refused (pinned by
-  `bridge_test.rs::a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb`). `volume::ChildName` (over `&OsStr`)
-  is the `std::path` world's name and has NO app-path join: reading its text as app spelling respells nothing today but
-  would, once escapes exist, turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a different
-  name. The wrong combination has no API.
+  for byte, borrowed when plain; loose text (`//x`) reads as the place it names, a POSIX `/x` stays POSIX on Windows, an
+  archive's relative row of plain names (`dir/a.txt`) is the bridge value it always was, and a `..` row is refused
+  (pinned by `bridge_test.rs::a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb`). `volume::ChildName` (over
+  `&OsStr`) is the `std::path` world's name and has NO app-path join: reading its text as app spelling respells nothing
+  today but would, once escapes exist, turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a
+  different name. The wrong combination has no API.
 - **A listed escape-range name has one spelling both ways while escapes aren't live** (#1310, Decision/Why): a backend's
   own listing text (a server path, a device's storage path) enters typed only through the listed-text door
   (`AppName::from_listed_text`, `AppPathBuf::from_listed_text`), which escapes a literal escape-range code point through

@@ -440,8 +440,10 @@ impl AppPath {
     ///
     /// # Errors
     ///
-    /// [`NotAnAppPath`] for text that names no place: relative, empty, or holding a `..`
-    /// name (a hostile server's row climbing out of the folder it listed).
+    /// [`NotAnAppPath`] for text that names no place: empty, holding a `..` name (a hostile
+    /// server's row climbing out of the folder it listed), or relative with any name that
+    /// isn't plain. A relative row of plain names (an archive's inner `dir/a.txt`) is a bridge
+    /// value, unnormalized, as [`AppPath::legacy_unchecked`] passed it.
     pub fn from_listed_row(text: &str) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
         let spelled: Cow<'_, str> = if super::ESCAPES_LIVE {
             Cow::Borrowed(text)
@@ -462,6 +464,25 @@ impl AppPath {
             PathFlavor::Windows if spelled.starts_with('/') && !spelled.starts_with("//") => PathFlavor::Posix,
             host => host,
         };
-        AppPathBuf::parse(&spelled, flavor).map(Cow::Owned)
+        match AppPathBuf::parse(&spelled, flavor) {
+            Ok(parsed) => Ok(Cow::Owned(parsed)),
+            // A volume whose rows are relative to it (an archive's inner paths, `dir/a.txt`)
+            // walks them as the bridge always passed them: a bridge value, unnormalized,
+            // going with the bridge. Only plain names, so a row can't climb (`../x`).
+            Err(NotAnAppPath::Relative) if is_plain_relative_row(&spelled) => Ok(match spelled {
+                Cow::Borrowed(plain) => Cow::Borrowed(AppPath::new_unchecked(plain)),
+                Cow::Owned(literal) => Cow::Owned(AppPathBuf(literal)),
+            }),
+            Err(why) => Err(why),
+        }
     }
+}
+
+/// Whether `text` is a relative row of plain names: no root, no empty, `.`, or `..` name,
+/// no NUL, and (on Windows) no drive.
+fn is_plain_relative_row(text: &str) -> bool {
+    !text.is_empty()
+        && !text.contains('\0')
+        && !(PathFlavor::HOST == PathFlavor::Windows && text.as_bytes().get(1) == Some(&b':'))
+        && text.split(['/', '\\']).all(|name| !matches!(name, "" | "." | ".."))
 }

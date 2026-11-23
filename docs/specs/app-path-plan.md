@@ -1924,9 +1924,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     text while escapes aren't live, `from_normalized`'s once they are. Through
     `transfer/volume/listed_name.rs::listed_path`: the merge walk (its source level typed too), the rename-merge, the
     move's sweep and `stamp_source`, `remove_tree`, the volume delete's scan, the scan oracle, and `hidden_links`. A row
-    naming no place (relative, a hostile `../x`) is refused as that child, never walked: the sweep and `remove_tree`
-    keep it, the delete scan and the scan stop. The bodies past the walk still take `std::path`, so they get the read's
-    own buffer (`into_std`).
+    naming no place (a hostile `../x`) is refused as that child, never walked (an archive's relative inner row walks as
+    the bridge passed it): the sweep and `remove_tree` keep it, the delete scan and the scan stop. The bodies past the
+    walk still take `std::path`, so they get the read's own buffer (`into_std`).
   - **`resolve_dest_path` anchors typed** (`anchor_at_root`, answering an `AppPathBuf`), the destination's literal
     escape-range code points spelled as the bridge spelled them; `resolve_destination`, the compress start, the
     rename-as-move, and the conflict scan anchor on the drive first and ask the route question with the typed value. The
