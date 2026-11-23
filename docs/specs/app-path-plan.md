@@ -1936,16 +1936,16 @@ included; the hidden couplings it found are why waves B and C differ from round 
     conflict scan anchors before its route question, as the start does (#1369's shape); a trailing-`/` trim keeps the
     kept text as text, so `/a//b/` stays `/a//b` (it was `/a/b`, the same place) and on Windows `/x/link/` stays
     `/x/link` (it was `/x\link`, one name no volume holds).
-  - **Windows cells** (by cause): `wire_paths`' two, and `failure_side_tests`' five (their fixture joined `/t0` and
-    `nested` with `Path::join`).
+  - **Windows cells** (by cause): `wire_paths`' two, `failure_side_tests`' five (their fixture joined `/t0` and `nested`
+    with `Path::join`), and the separator-shaped siblings: `unique_name.rs::sibling_in` joins a recovered or ` (N)` name
+    with its folder's own separator (`/dest\notes (recovered).txt` on Windows was a name no remote volume holds), and
+    `cmdr-listing-wasm`'s `folder_sizes.rs` joins its POSIX rows with `/`.
   - **Left in 10a** (sizes are guesses): the leaf bodies past the walk (`copy_leaf`, `LeafPool` rows, `RefusedChild` /
     `RefusedLeaf`, `stream_pipe_file`, `land_link`, the staged write's `Spelled`, `ResolvedConflict.write_path`,
-    `CreatedPaths`, `recovered_name.rs`'s `recovered_sibling` / `NameCandidates`, which make Windows'
-    `/dest\notes (recovered).txt`), then `native_join_refuses`' deletion (L, one cascade); the drivers' sources and
-    destination (`copy_volumes_with_progress` / `move_volumes_with_progress` and ~110 test call sites, L); the create,
+    `CreatedPaths`), then `native_join_refuses`' deletion (L, one cascade); the drivers' sources and destination
+    (`copy_volumes_with_progress` / `move_volumes_with_progress` and ~110 test call sites, L); the create,
     rename-validity, and conflict-preflight-sources entry points, `leaf_validation` / `target_names` / `transfer_leaves`
-    (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 10 `seam_path` crossings;
-    `cmdr-listing-wasm`'s `folder_sizes.rs` joins (S, its cluster-S cells).
+    (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 10 `seam_path` crossings.
 
 ### 10b. `cmdr-index`
 

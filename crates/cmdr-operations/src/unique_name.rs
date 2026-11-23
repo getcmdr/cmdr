@@ -176,8 +176,10 @@ impl<'a> NameCandidates<'a> {
 
     /// The candidate to try right now.
     pub(super) fn current(&self) -> PathBuf {
-        self.parent
-            .join(numbered_name(&self.base, self.extension.as_deref(), self.counter))
+        sibling_in(
+            self.parent,
+            &numbered_name(&self.base, self.extension.as_deref(), self.counter),
+        )
     }
 
     /// Moves past a candidate the caller found taken.
@@ -294,7 +296,27 @@ pub(super) fn recovered_sibling(orig: &Path) -> PathBuf {
         // will fail and report where the data actually is.
         (None, _) => format!("cmdr{RECOVERED_SUFFIX}"),
     };
-    parent.join(name)
+    sibling_in(parent, &name)
+}
+
+/// `name` in `parent`, joined with the separator `parent` is spelled with. A
+/// remote or in-memory volume's `/dest` is `/`-separated on every host, and on
+/// Windows `Path::join` put a `\` into it (`/dest\notes (recovered).txt`, one name
+/// no such volume holds, so the rescue landed beside the folder's view of it); a
+/// native `C:\x` keeps its `\`. On macOS and Linux this is `Path::join` exactly.
+fn sibling_in(parent: &Path, name: &str) -> PathBuf {
+    match parent.to_str() {
+        Some(text) if !text.is_empty() && !text.contains('\\') => {
+            let mut joined = String::with_capacity(text.len() + 1 + name.len());
+            joined.push_str(text);
+            if !text.ends_with('/') {
+                joined.push('/');
+            }
+            joined.push_str(name);
+            PathBuf::from(joined)
+        }
+        _ => parent.join(name),
+    }
 }
 
 /// Claims the next free ` (N)` name as a DIRECTORY, creating it. The `create_dir`

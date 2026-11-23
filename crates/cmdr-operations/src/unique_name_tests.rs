@@ -16,6 +16,23 @@ use tempfile::TempDir;
 // the next copy / rename would silently clobber it. The fix atomically reserves
 // the chosen name via O_EXCL.
 
+/// A POSIX volume's folder keeps its `/` on every host: on Windows `Path::join` made the
+/// rescue `/dest\notes (recovered).txt` and the next pick `/dest\notes (1).txt`, names no
+/// remote or in-memory volume holds. A native `C:\x` folder keeps its own `\`.
+#[test]
+fn a_sibling_joins_with_its_folders_own_separator() {
+    assert_eq!(
+        recovered_sibling(Path::new("/dest/notes.txt")).to_str(),
+        Some("/dest/notes (recovered).txt")
+    );
+    let picks = NameCandidates::for_file(Path::new("sftp://h/srv/a.jpg"));
+    assert_eq!(picks.current().to_str(), Some("sftp://h/srv/a (1).jpg"));
+    assert_eq!(
+        recovered_sibling(Path::new("C:\\x\\notes.txt")).to_str(),
+        Some("C:\\x\\notes (recovered).txt")
+    );
+}
+
 #[test]
 fn reserves_the_chosen_name_on_disk() {
     let temp = TempDir::new().unwrap();

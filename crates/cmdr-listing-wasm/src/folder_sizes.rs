@@ -92,9 +92,9 @@ impl FolderSizes {
             DirectoryChange::Added(entry) | DirectoryChange::Modified(entry) => {
                 forget_subtree(Path::new(&entry.path));
             }
-            DirectoryChange::Removed(name) => forget_subtree(&parent.join(name)),
+            DirectoryChange::Removed(name) => forget_subtree(&child_of(parent, name)),
             DirectoryChange::Renamed { old_name, new_entry } => {
-                forget_subtree(&parent.join(old_name));
+                forget_subtree(&child_of(parent, old_name));
                 forget_subtree(Path::new(&new_entry.path));
             }
             DirectoryChange::Replaced(_) | DirectoryChange::FullRefresh => forget_subtree(parent),
@@ -153,7 +153,7 @@ impl FolderSizes {
                 };
                 touched = true;
                 if let Some(first) = below.components().next() {
-                    rows.insert(open.join(first));
+                    rows.insert(child_of(&open, first));
                 }
             }
             if !touched {
@@ -332,4 +332,16 @@ impl OperationIndex for FolderSizes {
     fn search_leaves(&self, _volume_id: &str, _abs_source: &Path, _cap: usize) -> BufferedLeaves {
         BufferedLeaves::downgraded(SearchCoverageReason::IndexAbsent)
     }
+}
+
+/// `name` in the demo volume's folder `parent`, `/`-joined: the in-memory volume's paths are
+/// POSIX in every host's test build, and a Windows `Path::join` made `/Users/you\Documents`,
+/// a row no pane holds.
+fn child_of(parent: &Path, name: impl AsRef<std::ffi::OsStr>) -> PathBuf {
+    let mut joined = parent.as_os_str().to_os_string();
+    if !joined.as_encoded_bytes().ends_with(b"/") {
+        joined.push("/");
+    }
+    joined.push(name);
+    PathBuf::from(joined)
 }
