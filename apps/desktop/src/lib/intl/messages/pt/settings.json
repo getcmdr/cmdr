@@ -1364,6 +1364,18 @@
   "@settings.network.requireSmbEncryption.keywords": {
     "sourceHash": "1fc0e27"
   },
+  "settings.network.showShareParentRow.label": "Show “..” in each share’s top folder",
+  "@settings.network.showShareParentRow.label": {
+    "sourceHash": "4f3f7b4"
+  },
+  "settings.network.showShareParentRow.description": "“..” takes you to the server’s list of shares. Change it per share from its menu in the volume switcher.",
+  "@settings.network.showShareParentRow.description": {
+    "sourceHash": "0cb9461"
+  },
+  "settings.network.showShareParentRow.keywords": "parent, up, back, other shares, top folder, root, server, sibling, double dot",
+  "@settings.network.showShareParentRow.keywords": {
+    "sourceHash": "3d7f35d"
+  },
   "settings.network.shareCacheDuration.label": "Duração do cache de compartilhamentos",
   "@settings.network.shareCacheDuration.label": {
     "sourceHash": "ff627cd"
@@ -2365,6 +2377,18 @@
   "@settings.behavior.serversPinHintSeen.description": {
     "sourceHash": "5527df2"
   },
+  "settings.behavior.shareParentRowHintSeen.label": "Suppress the “..” in share top folders hint",
+  "@settings.behavior.shareParentRowHintSeen.label": {
+    "sourceHash": "15d8995"
+  },
+  "settings.behavior.shareParentRowHintSeen.description": "The first time “..” takes you from a share’s top folder to the server’s shares, Cmdr explains it. Turn this off to see the explanation once more.",
+  "@settings.behavior.shareParentRowHintSeen.description": {
+    "sourceHash": "8a4fb17"
+  },
+  "settings.behavior.shareParentRowHintSeen.keywords": "share, server, parent, top folder, hint, toast",
+  "@settings.behavior.shareParentRowHintSeen.keywords": {
+    "sourceHash": "6b1ec34"
+  },
   "settings.behavior.serversPinHintSeen.keywords": "servidor, servidores, fixar, desafixar, rede, seletor, lista, dica",
   "@settings.behavior.serversPinHintSeen.keywords": {
     "sourceHash": "64da081"
@@ -3146,6 +3170,10 @@
   "settings.network.card.connection": "Conexão",
   "@settings.network.card.connection": {
     "sourceHash": "639a40e"
+  },
+  "settings.network.card.behavior": "Behavior",
+  "@settings.network.card.behavior": {
+    "sourceHash": "edf8d3f"
   },
   "settings.network.card.performanceAndTimeouts": "Desempenho e tempos limite",
   "@settings.network.card.performanceAndTimeouts": {
