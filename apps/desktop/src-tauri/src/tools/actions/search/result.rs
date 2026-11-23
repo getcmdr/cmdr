@@ -277,10 +277,7 @@ fn coverage_notes(answer: &LiveAnswer, system_dirs_excluded: bool) -> Vec<String
             notes.push(refusal_note(&coverage.permission_denied, full_disk_access_would_help()));
         }
         if !coverage.off_limits.is_empty() {
-            notes.push(format!(
-                "Note: the OS keeps {} closed to Cmdr (folders only the system or another account may read, or protected by macOS itself). Nothing Cmdr can be granted opens them.",
-                coverage.off_limits.join(", ")
-            ));
+            notes.push(off_limits_note(&coverage.off_limits, std::env::consts::OS));
         }
         if !coverage.declined.is_empty() {
             notes.push(format!(
@@ -384,6 +381,34 @@ fn refusal_note(paths: &[String], offer_full_disk_access: bool) -> String {
         );
     }
     refused
+}
+
+/// How many off-limits folders the note names inline; the rest are in `offLimits`.
+const OFF_LIMITS_NAMED: usize = 10;
+
+/// The line for folders the OS keeps closed for good, on `os` (`std::env::consts::OS`): only
+/// macOS names its own system protection (SIP), ❌ never on another OS (#1434). A fresh Windows
+/// index meets about a hundred admin-only folders, so the note names the first few and
+/// points at the `offLimits` field for the rest.
+fn off_limits_note(paths: &[String], os: &str) -> String {
+    let named = paths
+        .iter()
+        .take(OFF_LIMITS_NAMED)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(", ");
+    let rest = paths.len().saturating_sub(OFF_LIMITS_NAMED);
+    let folders = if rest > 0 {
+        format!("{named}, and {} more (all listed in offLimits)", grouped(rest as u64))
+    } else {
+        named
+    };
+    let why = if os == "macos" {
+        "folders only the system or another account may read, or protected by macOS itself"
+    } else {
+        "folders only the system or another account may read"
+    };
+    format!("Note: the OS keeps {folders} closed to Cmdr ({why}). Nothing Cmdr can be granted opens them.")
 }
 
 #[cfg(test)]
