@@ -239,6 +239,10 @@ mod hostile_names_tests;
 /// The same rule on a backend whose `is_directory` follows a link (ADB, SFTP).
 #[cfg(test)]
 mod link_following_backend_tests;
+/// What each walker does with a listing row's own path: a `..` row is refused, a name
+/// holding `\` is one name.
+#[cfg(test)]
+mod listed_row_tests;
 /// A copy's own scan over a share that drops mid-walk waits for it.
 #[cfg(test)]
 mod preflight_outage_tests;

@@ -40,6 +40,16 @@ use crate::types::WriteOperationError;
 /// or UNC root), or holding a `..`, which the app resolves on its volume before a
 /// start sends the box (`commands/wire_path.rs::transfer_destination`).
 pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Result<AppPathBuf, AnchorRefusal> {
+    resolve_dest_path_as(dest_volume, dest_path, PathFlavor::HOST)
+}
+
+/// [`resolve_dest_path`] reading native text as `flavor`'s host does, so the Windows
+/// readings are testable on every OS.
+pub(super) fn resolve_dest_path_as(
+    dest_volume: &Arc<dyn Volume>,
+    dest_path: &str,
+    flavor: PathFlavor,
+) -> Result<AppPathBuf, AnchorRefusal> {
     let expanded: Cow<'_, str> = if dest_volume.local_path().is_some() {
         Cow::Owned(cmdr_fs::tilde::expand_tilde(dest_path))
     } else {
@@ -52,7 +62,7 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
     // still that place, as `Path::join`'s absolute-wins took it (a suite's `/`-rooted local
     // volume on Windows).
     let native = if dest_volume.local_path().is_some() {
-        AppPathBuf::from_external_text(&expanded, PathFlavor::HOST, Namer::HOST)
+        AppPathBuf::from_external_text(&expanded, flavor, Namer::HOST)
             .ok()
             .filter(|path| matches!(path.kind(), PathKind::Drive | PathKind::Unc))
     } else {
@@ -61,6 +71,8 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
     let typed = match native {
         Some(native) => match cmdr_fs::volume::anchor_at_root(root, native.as_str()) {
             Err(AnchorRefusal::OffVolume) => Ok(native),
+            // A POSIX root hung the drive path under itself as names (`/C:/x`): off it too.
+            Ok(anchored) if anchored.kind() != native.kind() => Ok(native),
             anchored => anchored,
         },
         None => cmdr_fs::volume::anchor_at_root(root, &literal_names(&expanded)),
@@ -70,7 +82,9 @@ pub fn resolve_dest_path(dest_volume: &Arc<dyn Volume>, dest_path: &str) -> Resu
         // `C:\x` on Windows, which no backend but a suite's in-memory one is): the
         // `std::path` anchor's place, as it always was, through the engine's named crossing.
         // Goes with the bridge. ❌ Never for a `..` or another volume's path: those refuse.
-        Err(AnchorRefusal::NotAppPath(why)) if why != NotAnAppPath::DotName => {
+        Err(AnchorRefusal::NotAppPath(why))
+            if why != NotAnAppPath::DotName && !expanded.split(['/', std::path::MAIN_SEPARATOR]).any(|n| n == "..") =>
+        {
             let anchored = cmdr_fs::volume::root_anchored(&super::std_root(root), Path::new(expanded.as_ref()));
             Ok(crate::wire_paths::seam_path(&anchored).into_owned())
         }

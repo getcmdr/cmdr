@@ -223,8 +223,8 @@ pub(super) async fn scan_volume_recursive(
         // is asked `entry_kind` before the walk descends it.
         let listings_mark_links = volume.backend_kind().listings_mark_links();
         for child in &children {
-            // The child as its listing row names it, typed. A row naming no place
-            // under this folder (a hostile `../x`) stops the delete before anything
+            // The child as its listing row names it, typed. A row holding a `..` name
+            // (a hostile `../x`) stops the delete before anything
             // goes, ❌ never walked: it would delete outside the selection.
             let child_path_app =
                 listed_path(child).map_err(|e| map_volume_error(&path.display().to_string(), PathRole::Source, e))?;

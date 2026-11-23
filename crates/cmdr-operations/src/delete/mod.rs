@@ -71,6 +71,9 @@ mod local_link_delete_tests;
 mod preview_binding_tests;
 // The nested-mount pins (macOS, `#[ignore]`d, run by `pnpm check disk-images`). The
 // `macos` gate is load-bearing: the harness is macOS-only.
+/// The volume delete's scan refuses a climbing row and deletes a `foo\..` file as one name.
+#[cfg(test)]
+mod listed_row_tests;
 #[cfg(all(test, target_os = "macos"))]
 mod real_image;
 #[cfg(test)]

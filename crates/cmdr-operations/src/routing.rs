@@ -39,6 +39,8 @@ use cmdr_operation_log::types::Initiator;
 use destination::ResolvedDestination;
 use destination::no_such_destination;
 pub use destination::resolve_dest_path;
+#[cfg(test)]
+use destination::resolve_dest_path_as;
 
 /// The folder a transfer's sources land in, as its engine takes it: a zip's
 /// inner path as anchored on its drive (the archive driver splits it at the

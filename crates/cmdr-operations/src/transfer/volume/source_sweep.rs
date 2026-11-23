@@ -187,13 +187,13 @@ async fn sweep_level(
     for entry in &entries {
         // The entry as its listing row names it, typed, made once for its stat,
         // its delete, and the batch delete (a borrow until a batch keeps it). A
-        // row naming no place in this folder (a hostile `../x`) is never
+        // row holding a `..` name (a hostile `../x`) is never
         // deleted: it stays, like anything the sweep can't vouch for.
         let path_app = match listed_path(entry) {
             Ok(path_app) => path_app,
             Err(e) => {
                 log::warn!(
-                    "move sweep: kept a listed entry that names no place under {}: {}",
+                    "move sweep: kept a listed entry whose path climbs, under {}: {}",
                     LogPrivate::path(dir),
                     LogError(&e)
                 );

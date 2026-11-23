@@ -103,6 +103,31 @@ fn a_literal_escape_range_code_point_anchors_as_the_bridge_spelled_it() {
     assert_eq!(anchored(&volume, text), listed.as_str());
 }
 
+/// A local volume's destination spelled as a Windows host's drive path is outside text a
+/// machine handed over, read as that host reads it; off a `/`-rooted local volume (a suite's
+/// root on every host) it's still that drive's place, as `Path::join`'s absolute-wins took it.
+#[test]
+fn a_native_drive_destination_off_a_local_volume_is_that_drives_place() {
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
+        "Root",
+        "/",
+        crate::host::testing::pane_order_host(),
+    ));
+    let anchored = super::resolve_dest_path_as(&volume, "C:\\x\\dst", cmdr_fs::app_path::PathFlavor::Windows)
+        .expect("a native drive path");
+    assert_eq!(anchored.as_str(), "C:/x/dst");
+}
+
+/// A root the typed anchor has no reading for (a relative one, as a Windows suite's native
+/// tempdir root reads on the bridge) keeps the `std::path` anchor's place, as it always did.
+#[test]
+fn a_root_no_typed_reading_answers_keeps_the_path_anchor() {
+    let volume = share_at("rel/root");
+    assert_eq!(anchored(&volume, "/photos"), "rel/root/photos");
+    // ❌ Never for a climb, though: that refuses whatever the root.
+    assert!(resolve_dest_path(&volume, "/photos/../x").is_err());
+}
+
 fn anchored(volume: &Arc<dyn Volume>, text: &str) -> String {
     resolve_dest_path(volume, text)
         .unwrap_or_else(|e| panic!("{text}: {e:?}"))

@@ -179,7 +179,8 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   descends into: an MTP twin's path isn't its folder joined with its name): for canonical text the bridge's value byte
   for byte, borrowed when plain, and `from_normalized`'s once escapes are live; any other row (an archive's relative
   `dir/a.txt`, a Windows archive's native `C:\x\a.zip\dir`, a loose `//x`) is the bridge value it always was, and an
-  empty or `..` row is refused (pinned by
+  empty or `..` row is refused, `\` separating only in a Windows host's native rows (`from_listed_row_as` takes the
+  flavor); an absolute row outside the listed folder passes (#1444) (pinned by
   `bridge_test.rs::a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb`). `volume::ChildName` (over `&OsStr`)
   is the `std::path` world's name and has NO app-path join: reading its text as app spelling respells nothing today but
   would, once escapes exist, turn a live escape into a literal one and land a copy of `caf\xE9.txt` under a different

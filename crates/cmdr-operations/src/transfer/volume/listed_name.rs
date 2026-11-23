@@ -77,9 +77,10 @@ pub(super) fn join_under(dir: &ListedFolder<'_>, name: &AppName) -> Result<AppPa
 /// back, which re-escapes a live escape as literal text once escapes are live.
 /// Borrowed for a plain row; byte for byte the bridge's value of canonical text.
 ///
-/// A row naming no place (a climbing path a hostile server or archive listed) is
+/// A row holding a `..` name (a climbing path a hostile server or archive listed) is
 /// refused as that child's name, ❌ never walked. An archive's relative inner row
-/// (`dir/a.txt`) walks as the bridge passed it.
+/// (`dir/a.txt`) walks as the bridge passed it. ❗ An absolute row outside the listed
+/// folder passes as it always did (#1444).
 pub(crate) fn listed_path(entry: &FileEntry) -> Result<Cow<'_, AppPath>, VolumeError> {
     AppPath::from_listed_row(&entry.path).map_err(|_| VolumeError::from(NotAChildName(entry.name.clone())))
 }

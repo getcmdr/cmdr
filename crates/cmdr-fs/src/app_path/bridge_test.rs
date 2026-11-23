@@ -351,15 +351,33 @@ fn a_listed_row_reads_as_the_bridge_reads_it_and_refuses_a_climb() {
         let row = AppPath::from_listed_row(loose).unwrap_or_else(|e| panic!("{loose:?}: {e}"));
         assert_eq!(row.as_str(), bridge(loose).as_str(), "{loose:?}");
     }
-    for refused in [
-        "",
-        "../x",
-        "a/../b",
-        "/a/../b",
-        "C:\\x\\..\\y",
-        "sftp://u@h:22/srv/../x",
-    ] {
+    for refused in ["", "../x", "a/../b", "/a/../b", "sftp://u@h:22/srv/../x"] {
         assert!(AppPath::from_listed_row(refused).is_err(), "{refused:?}");
+    }
+}
+
+/// `\` is a name character in a POSIX-shaped or scheme row on every host (APFS, Linux over
+/// SFTP, and MTP hold a one-name `foo\..`), and a separator only in a Windows host's native
+/// row: a POSIX reading never refuses such a file as a climb.
+#[test]
+fn a_backslash_climbs_only_where_the_rows_host_separates_with_it() {
+    for flavor in [PathFlavor::Posix, PathFlavor::Windows] {
+        for one_name in ["/x/foo\\..", "/x/..\\bar", "sftp://u@h:22/srv/foo\\.."] {
+            let row = AppPath::from_listed_row_as(one_name, flavor)
+                .unwrap_or_else(|e| panic!("{flavor:?} {one_name:?}: {e}"));
+            assert_eq!(row.as_str(), bridge(one_name).as_str(), "{flavor:?} {one_name:?}");
+        }
+        assert!(AppPath::from_listed_row_as("/x/../y", flavor).is_err(), "{flavor:?}");
+    }
+    for native in ["C:\\x\\..\\y", "dir\\..\\y"] {
+        assert!(
+            AppPath::from_listed_row_as(native, PathFlavor::Windows).is_err(),
+            "{native:?}"
+        );
+        assert!(
+            AppPath::from_listed_row_as(native, PathFlavor::Posix).is_ok(),
+            "{native:?}"
+        );
     }
 }
 

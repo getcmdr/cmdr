@@ -114,7 +114,7 @@ pub(super) async fn scan_subtree_with_oracle(
         if let Some(pause) = pause {
             pause.park_while_paused_async().await;
         }
-        // The child as its listing row names it, typed (a row naming no place, a
+        // The child as its listing row names it, typed (a row holding a `..` name, a
         // hostile `../x`, stops the scan rather than walk it); the recursion and
         // the recorder still key on `std::path`, so they get the read's own buffer.
         let child_path: PathBuf = into_std(listed_path(&entry)?.into_owned());

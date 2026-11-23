@@ -831,9 +831,10 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   never `Path::new(&entry.path)` and the bridge back, which re-escapes a live escape as literal text once escapes are
   live: the merge walk's source side (`merge_level` holds its source level typed too), the rename-merge, the move's
   source sweep and `stamp_source`, `cleanup.rs::remove_tree`, and, outside this module, the volume delete's scan, the
-  scan oracle, and `hidden_links`. A row naming no place (a hostile `../x`) is refused as that child (an archive's
-  relative inner row walks as the bridge passed it), ❌ never walked: the sweep and `remove_tree` keep it (and its
-  folder), the delete scan and the scan stop.
+  scan oracle, and `hidden_links`. A row holding a `..` name (a hostile `../x`; `\` separates only in a Windows host's
+  native rows) is refused as that child; ❗ an absolute row OUTSIDE the listed folder passes, as it always did (#1444)
+  (an archive's relative inner row walks as the bridge passed it), ❌ never walked: the sweep and `remove_tree` keep it
+  (and its folder), the delete scan and the scan stop.
 - **`listed_name.rs` is a leaf** (no engine module): the stale-temp reaps in `cleanup.rs` and the remote zip edit join
   through it, and importing it from `landing.rs` closed a module cycle (`landing` → `transfer_driver` → `staged_write` →
   `cleanup`).

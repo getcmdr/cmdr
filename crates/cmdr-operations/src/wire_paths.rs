@@ -34,7 +34,9 @@ pub(crate) fn without_trailing_separators(path: &Path) -> Cow<'_, Path> {
     // `\` between a POSIX volume's folder and the name on Windows (`/x/link/` came back
     // `/x\link`, a name no volume holds). A trailing `..` keeps what it names, as below.
     if let Some(kept) = path.to_str().map(|text| &text[..end]) {
-        return match kept.rsplit(['/', '\\']).next() {
+        // The last name as this host splits it: a `\` is a name character on macOS and
+        // Linux (`/a/x\..` ends in the one name `x\..`).
+        return match kept.rsplit(['/', std::path::MAIN_SEPARATOR]).next() {
             Some("..") => Cow::Borrowed(path),
             _ => Cow::Owned(PathBuf::from(kept)),
         };
@@ -151,11 +153,23 @@ mod tests {
         assert_eq!(trimmed("/x/link/../"), "/x/link/../");
     }
 
+    /// On macOS and Linux a `\` is a name character, so `x\..` is one name, ❌ never a
+    /// trailing `..`: its trailing `/` goes like any other name's.
+    #[test]
+    #[cfg(unix)]
+    fn a_name_holding_a_backslash_dot_dot_trims_like_any_name() {
+        assert_eq!(trimmed("/a/x\\../"), "/a/x\\..");
+        assert_eq!(trimmed("/a/..\\b/"), "/a/..\\b");
+    }
+
     /// The kept text is cut out as text, so a POSIX volume's path keeps its `/` on every
     /// host: a Windows `Path::join` of its parent and name made `/x\link`, one name no
     /// volume holds (a delete of `/x/link/` on a share asked for the wrong file).
     #[test]
     fn the_kept_text_keeps_its_own_separators_on_every_host() {
+        // An interior `//` or `/./` stays as sent (the same place); only what trails goes.
+        assert_eq!(trimmed("/a//b/"), "/a//b");
+        assert_eq!(trimmed("/a/./b/."), "/a/./b");
         assert_eq!(trimmed("/x/link/"), "/x/link");
         assert_eq!(trimmed("sftp://h/srv/a b/"), "sftp://h/srv/a b");
         assert_eq!(trimmed("/x/cafe\u{301}/."), "/x/cafe\u{301}");

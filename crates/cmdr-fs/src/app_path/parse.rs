@@ -440,9 +440,22 @@ impl AppPath {
     ///
     /// # Errors
     ///
-    /// [`NotAnAppPath::DotName`] for a row that names no place under its folder: empty, or
-    /// holding a `..` name (a hostile server's or archive's row climbing out of what it listed).
+    /// [`NotAnAppPath::DotName`] for an empty row or one holding a `..` name (a hostile
+    /// server's or archive's row climbing). ❗ That's all it checks: an absolute row that
+    /// isn't under the listed folder passes, as it always did.
     pub fn from_listed_row(text: &str) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
+        Self::from_listed_row_as(text, PathFlavor::HOST)
+    }
+
+    /// [`Self::from_listed_row`] for `flavor`'s host, so every host's reading is testable on
+    /// every OS: `\` separates names only in a Windows host's native rows (drive, UNC, or
+    /// relative); in a POSIX-shaped `/x` or a scheme row it's a name character, so APFS's,
+    /// SFTP's, or MTP's one-name `foo\..` is no climb.
+    ///
+    /// # Errors
+    ///
+    /// As [`Self::from_listed_row`].
+    pub fn from_listed_row_as(text: &str, flavor: PathFlavor) -> Result<Cow<'_, AppPath>, NotAnAppPath> {
         let spelled: Cow<'_, str> = if super::ESCAPES_LIVE {
             Cow::Borrowed(text)
         } else {
@@ -452,7 +465,7 @@ impl AppPath {
         // relative inner `dir/a.txt`, a Windows archive's native `C:\x\a.zip\dir`, a loose
         // `//x`) is the bridge value it always was, unnormalized, going with the bridge. Only
         // a climb is refused.
-        if climbs(&spelled) {
+        if climbs(&spelled, flavor) {
             return Err(NotAnAppPath::DotName);
         }
         Ok(match spelled {
@@ -462,8 +475,10 @@ impl AppPath {
     }
 }
 
-/// Whether a listed row names no place under the folder that listed it: empty, or with a
-/// `..` name (either separator), which a hostile server or archive lists to reach outside.
-fn climbs(text: &str) -> bool {
-    text.is_empty() || text.split(['/', '\\']).any(|name| name == "..")
+/// Whether a listed row is empty or climbs: a `..` name, split where `flavor`'s host
+/// splits this row (`\` too only for a Windows host's native, non-POSIX, non-scheme row).
+fn climbs(text: &str, flavor: PathFlavor) -> bool {
+    let backslash_separates = flavor == PathFlavor::Windows && !text.starts_with('/') && !is_scheme_url(text);
+    let mut names = text.split(|c: char| c == '/' || (backslash_separates && c == '\\'));
+    text.is_empty() || names.any(|name| name == "..")
 }
