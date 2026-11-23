@@ -222,3 +222,55 @@ fn a_source_folder_kept_by_a_newcomer_keeps_its_os_junk_files() {
         .expect("the newcomer is reported");
     assert_eq!(appeared.item_count, 1, "only the newcomer is news, never the metadata");
 }
+
+/// A folder holding only junk, the first of which the OS won't let go of, and
+/// the sweep's husk step run over it with that refusal (`code`).
+fn sweep_husk_refusing(code: i32) -> (tempfile::TempDir, PathBuf, std::io::Result<()>) {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("only-junk");
+    fs::create_dir(&dir).unwrap();
+    fs::write(dir.join(JUNK[0]), b"held").unwrap();
+    fs::write(dir.join(JUNK[1]), b"free").unwrap();
+    let result = source_sweep::remove_husk_with(&dir, OsJunkFiles::Skip, |path| {
+        if path.file_name() == Some(std::ffi::OsStr::new(JUNK[0])) {
+            Err(std::io::Error::from_raw_os_error(code))
+        } else {
+            fs::remove_file(path)
+        }
+    });
+    (tmp, dir, result)
+}
+
+/// A junk file the OS holds (Explorer's `Thumbs.db`, an open `.nfs*` on Linux)
+/// keeps its folder, with no error: it's junk the person asked to skip (#1305).
+#[test]
+fn a_junk_file_the_os_holds_keeps_its_folder_without_an_error() {
+    use cmdr_fs::os_error::OsErrorClass;
+
+    let refusals: Vec<i32> = [
+        OsErrorClass::AccessDenied,
+        OsErrorClass::NotPermitted,
+        OsErrorClass::Busy,
+        OsErrorClass::InUseByAnotherApp,
+    ]
+    .into_iter()
+    .filter_map(OsErrorClass::host_code)
+    .collect();
+    assert!(!refusals.is_empty(), "this OS names at least one refusal");
+    for code in refusals {
+        let (_tmp, dir, result) = sweep_husk_refusing(code);
+        assert!(result.is_ok(), "code {code}: a held junk file is no error");
+        assert!(dir.join(JUNK[0]).is_file(), "code {code}: the held file stays");
+        assert!(dir.is_dir(), "code {code}: and so does its folder");
+    }
+}
+
+/// Anything but a refusal (a failing disk) still stops the sweep.
+#[test]
+fn a_junk_file_that_fails_otherwise_still_stops_the_sweep() {
+    let io = cmdr_fs::os_error::OsErrorClass::Io
+        .host_code()
+        .expect("every OS has an I/O error code");
+    let (_tmp, _dir, result) = sweep_husk_refusing(io);
+    assert!(result.is_err());
+}

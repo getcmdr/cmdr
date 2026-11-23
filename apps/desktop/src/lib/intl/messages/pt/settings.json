@@ -505,11 +505,11 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorar arquivos ocultos exclusivos do Mac} windows {Skip Windows thumbnail caches} other {Skip Linux leftover files}}",
+  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorar arquivos ocultos exclusivos do Mac} windows {Skip Windows thumbnail files} other {Skip Linux leftover files}}",
   "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "be693c6"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignora os arquivos .DS_Store e ._* ao copiar, mover ou comprimir.} windows {Skips Thumbs.db, ehthumbs.db, and ehthumbs_vista.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips the .nfs* and .fuse_hidden* files Linux keeps for deleted files that are still open, when copying, moving, or compressing.}}",
+  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignora os arquivos .DS_Store e ._* ao copiar, mover ou comprimir.} windows {Skips Thumbs.db and ehthumbs*.db files when copying, moving, or compressing. Windows rebuilds them when it needs them.} other {Skips .nfs* and .fuse_hidden* files when copying, moving, or compressing. Linux keeps them for deleted files that are still open.}}",
   "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "02578a7"
   },

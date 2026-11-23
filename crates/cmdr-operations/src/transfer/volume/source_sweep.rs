@@ -31,6 +31,7 @@ use std::sync::Arc;
 
 use super::super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::super::state::WriteOperationState;
+use super::super::left_in_source::junk_volume_delete_refused;
 use super::super::volume_outage::through_outages;
 use super::transfer_error::{AtPath, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
@@ -248,13 +249,27 @@ async fn sweep_level(
     }
     // Everything the move carried is gone, so the folder goes too, and the
     // OS junk files it held with it: ❌ never a husk folder in the source.
+    // A junk file the source won't let go of (`junk_volume_delete_refused`:
+    // Explorer holding `Thumbs.db`, an open `.nfs*`, a share's sharing
+    // violation) stays, and so does its folder, with no error (#1305).
     if !husk.is_empty() {
+        let mut held = false;
         for (path, result) in husk.iter().zip(volume.delete_files(&husk_app).await) {
             match result {
                 Ok(()) => {}
                 Err(VolumeError::NotFound(_)) => left.read_gone = true,
+                Err(e) if junk_volume_delete_refused(&e) => {
+                    log::info!(
+                        "move sweep: the source kept a skipped junk file, so its folder stays ({error})",
+                        error = LogError(&e)
+                    );
+                    held = true;
+                }
                 Err(e) => return Err(e).at_source(path),
             }
+        }
+        if held {
+            return Ok(true);
         }
     }
     // ❗ As a folder, never `delete`: once such a folder's last file goes, a

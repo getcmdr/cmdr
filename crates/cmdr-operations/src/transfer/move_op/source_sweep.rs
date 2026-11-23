@@ -22,6 +22,7 @@ use std::collections::HashSet;
 use std::fs;
 
 use cmdr_fs::apple_double::SidecarRule;
+use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::os_junk_files::OsJunkFiles;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -33,6 +34,7 @@ use crate::ledger::{NodeId, WrittenIdentity};
 use crate::locked_sources::LockedPlan;
 use crate::state::ScanResult;
 use crate::state::WriteOperationState;
+use crate::transfer::left_in_source::junk_delete_refused;
 use crate::transfer_sides::{MoveSourceCounts, TransferSide};
 use crate::types::{
     CancelRollback, SourceItemOutcome, WriteCancelledEvent, WriteOperationError, WriteOperationPhase,
@@ -522,7 +524,21 @@ fn remove_swept_dir(dir: &Path, drive: &SourceDrive<'_>, os_junk: OsJunkFiles) -
 /// Anything else in there (a newcomer, a Skip) keeps the folder AND its OS junk
 /// files: the folder stays, and its metadata still describes it. Under `Include`
 /// the scan carried those files, so this never runs on one it left behind.
+///
+/// A junk file the OS won't let go of (`left_in_source::junk_delete_refused`:
+/// Explorer holding `Thumbs.db`, an open `.nfs*`) stays, and so does its
+/// folder, with no error: the move took everything the person wanted moved.
 fn remove_husk(dir: &Path, os_junk: OsJunkFiles) -> std::io::Result<()> {
+    remove_husk_with(dir, os_junk, |file| fs::remove_file(file))
+}
+
+/// [`remove_husk`] with the unlink as a seam, so a test can make the OS refuse
+/// it on any OS.
+pub(super) fn remove_husk_with(
+    dir: &Path,
+    os_junk: OsJunkFiles,
+    remove_file: impl Fn(&Path) -> std::io::Result<()>,
+) -> std::io::Result<()> {
     if os_junk == OsJunkFiles::Include {
         return Ok(());
     }
@@ -535,11 +551,23 @@ fn remove_husk(dir: &Path, os_junk: OsJunkFiles) -> std::io::Result<()> {
         }
         husk.push(entry.path());
     }
+    let mut held = false;
     for file in &husk {
-        match fs::remove_file(file) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(e),
-            _ => {}
+        match remove_file(file) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) if junk_delete_refused(OsErrorClass::of_io(&e)) => {
+                log::info!(
+                    "move sweep: the OS kept a skipped junk file ({class:?}), so its folder stays",
+                    class = OsErrorClass::of_io(&e)
+                );
+                held = true;
+            }
+            Err(e) => return Err(e),
         }
+    }
+    if held {
+        return Ok(());
     }
     match fs::remove_dir(dir) {
         // Something landed between the listing and here: it stays, and so does

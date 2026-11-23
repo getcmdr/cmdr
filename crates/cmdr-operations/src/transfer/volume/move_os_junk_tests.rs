@@ -174,3 +174,51 @@ async fn a_volume_move_keeps_the_metadata_of_a_folder_that_stays() {
         "a folder that went took its metadata along"
     );
 }
+
+/// A junk file the source won't let go of (Explorer holding `Thumbs.db`, an open
+/// `.nfs*` on Linux, a share's sharing violation) keeps its folder, and the move
+/// still succeeds: it's junk the person asked to skip, ❌ never a failure (#1305).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_junk_file_the_source_holds_keeps_its_folder_and_the_move_succeeds() {
+    use super::super::faulty_volume::{FaultyOp, FaultyVolume};
+    use cmdr_fs::volume::{InMemoryVolume, VolumeError};
+
+    let held = junk_in("/work/only-metadata", 0);
+    for refusal in [
+        VolumeError::FileInUse(held.as_str().to_owned()),
+        VolumeError::PermissionDenied {
+            path: held.as_str().to_owned(),
+            raw_os_error: None,
+        },
+    ] {
+        let engine = TestOperations::new();
+        let inner = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
+        seed(&(Arc::clone(&inner) as Arc<dyn Volume>)).await;
+        let refusing = FaultyVolume::wrapping(Arc::clone(&inner))
+            .failing_call_at(FaultyOp::Delete, held.as_str(), 1, refusal)
+            .arc();
+        let (_, dest) = make_volumes();
+
+        let events = Arc::new(CollectorEventSink::new());
+        move_volumes_with_progress(
+            events.clone(),
+            "op-volume-move-held-junk",
+            &skipping_state(&engine),
+            Arc::clone(&refusing) as Arc<dyn Volume>,
+            &[PathBuf::from("/work")],
+            Arc::clone(&dest),
+            Path::new("/"),
+            &skipping_config(),
+        )
+        .await
+        .expect("a held junk file is no failure");
+
+        assert!(refusing.fault_fired(FaultyOp::Delete), "the refusal reached the sweep");
+        assert_lands_without_os_junk_files(&dest).await;
+        assert!(inner.exists(&held).await, "the held file stays");
+        assert!(
+            !inner.exists(app_path!("/work/notes")).await,
+            "every other folder still went"
+        );
+    }
+}

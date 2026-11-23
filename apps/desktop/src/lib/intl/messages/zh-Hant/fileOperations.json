@@ -403,7 +403,7 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {略過 Mac 專用的隱藏檔案（.DS_Store、._*）} windows {Skip Windows thumbnail caches (Thumbs.db, ehthumbs.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {略過 Mac 專用的隱藏檔案（.DS_Store、._*）} windows {Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)} other {Skip Linux leftover files (.nfs*, .fuse_hidden*)}}",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "0f28753"
   },

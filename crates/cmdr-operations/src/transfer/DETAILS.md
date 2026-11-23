@@ -1073,6 +1073,11 @@ always goes.
   keeps its metadata, and none of it counts as "appeared". Pinned by `move_op/move_os_junk_tests.rs` and
   `volume/move_os_junk_tests.rs`. Those tests write the running OS's own names (`JunkOs::sample_junk_names`), so each CI
   OS checks its own set.
+- **A junk file the OS won't delete keeps its folder, ❌ never a failed move** (#1305): Explorer holds `Thumbs.db` open
+  (a sharing violation), and unlinking an open `.nfs*` gives `EBUSY`. Both sweeps classify by type
+  (`left_in_source::junk_delete_refused` / `junk_volume_delete_refused`: access, permission, busy, in use, delete
+  pending), leave the folder standing, and carry on. Any other failure (a failing disk, a dropped share) still stops the
+  sweep, so the outage wait keeps working. No count reaches the completion message: it's junk the person asked to skip.
 - **A compress on a Mac also drops every `__MACOSX` sidecar** it would write from a local source's xattrs
   (`FreshPlan.sidecars`, `FreshZipSource::LocalWithoutSidecar`, `OsJunkFiles::leaves_out_apple_double_sidecars`): on
   another system those are the same `._` clutter. Skipping Windows' or Linux's set keeps them.

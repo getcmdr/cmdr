@@ -144,8 +144,8 @@ describe('the toggle starts from the setting', () => {
 
 describe('each OS names its own junk', () => {
   it.each([
-    ['macos', 'Skip Mac-only hidden files (.DS_Store, ._*)'],
-    ['windows', 'Skip Windows thumbnail caches (Thumbs.db, ehthumbs.db)'],
+    ['macos', 'Skip Mac hidden files (.DS_Store, ._*)'],
+    ['windows', 'Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)'],
     ['linux', 'Skip Linux leftover files (.nfs*, .fuse_hidden*)'],
   ] as const)('on %s the toggle reads “%s”', async (platform, label) => {
     onTestFinished(withPlatform(platform))

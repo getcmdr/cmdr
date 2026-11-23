@@ -10,6 +10,9 @@
 
 use std::path::Path;
 
+use cmdr_fs::os_error::OsErrorClass;
+use cmdr_fs::volume::VolumeError;
+
 use crate::types::AppearedDuringMove;
 
 /// The running tally across one move's top-level sources.
@@ -66,4 +69,31 @@ fn folder_holding(source: &Path, source_is_dir: bool) -> String {
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| folder.display().to_string())
+}
+
+/// Whether a move's sweep may leave an OS junk file it skipped (#314, #1305) in
+/// place, with its folder, because the OS refused the delete: Explorer holding
+/// `Thumbs.db` open (a sharing violation), an open `.nfs*` on Linux (`EBUSY`), a
+/// permission. It's junk the person asked to skip, so a refusal is ❌ never a
+/// failed move. Anything else (a failing disk, a dropped share) still stops the
+/// sweep, so the outage wait and the error path keep working.
+pub(crate) fn junk_delete_refused(class: Option<OsErrorClass>) -> bool {
+    matches!(
+        class,
+        Some(
+            OsErrorClass::AccessDenied
+                | OsErrorClass::NotPermitted
+                | OsErrorClass::Busy
+                | OsErrorClass::InUseByAnotherApp
+        )
+    )
+}
+
+/// [`junk_delete_refused`] for a backend's answer: its typed refusals, or the
+/// OS class it carries.
+pub(crate) fn junk_volume_delete_refused(error: &VolumeError) -> bool {
+    matches!(
+        error,
+        VolumeError::FileInUse(_) | VolumeError::DeletePending(_) | VolumeError::PermissionDenied { .. }
+    ) || junk_delete_refused(error.os_class())
 }

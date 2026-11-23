@@ -722,11 +722,11 @@ through `resetRememberedConflictPolicy` (`test/e2e-playwright/conflict-helpers.t
 ### "Skip this OS's junk files" (#314, #1305)
 
 The "To" card ends with a checkbox and a link. Its label is one `{platform, select, …}` message, so each OS names its
-own set ("Skip Mac-only hidden files", "Skip Windows thumbnail caches", "Skip Linux leftover files"); the backend skips
-the RUNNING OS's set, and the label reads the same platform, so the two agree (the browser demo is the exception: its
-engine answers Linux whatever the visitor's OS). The rules live in `os-junk-files.ts`; which names match, and what a
-transfer then does with them (the walks, the totals, a move's husk folders, a zip's `__MACOSX` sidecars), is the
-backend's: `crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out".
+own set ("Skip Mac hidden files", "Skip Windows thumbnail files", "Skip Linux leftover files"); the backend skips the
+RUNNING OS's set, and the label reads the same platform, so the two agree (the browser demo is the exception: its engine
+answers Linux whatever the visitor's OS). The rules live in `os-junk-files.ts`; which names match, and what a transfer
+then does with them (the walks, the totals, a move's husk folders, a zip's `__MACOSX` sidecars), is the backend's:
+`crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out".
 
 - **It starts from `fileOperations.osJunkFiles`** (`include` / `skip` / `ask`, default `ask`): ticked only on `skip`. It
   was `fileOperations.macOnlyFiles` until #1305; settings migration 11 carries a stored choice across. The link names
