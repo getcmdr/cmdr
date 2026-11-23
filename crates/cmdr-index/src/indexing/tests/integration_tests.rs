@@ -37,6 +37,12 @@ fn open_temp_store() -> (IndexStore, Connection, tempfile::TempDir) {
 }
 
 /// Helper: create a FileEntry for testing enrichment.
+/// `rel` on the boot volume, as a pane on `root` spells it: `/rel` here, `C:/rel` on Windows,
+/// where a POSIX `/rel` lies off the boot volume and routes nowhere.
+fn on_root(rel: &str) -> String {
+    format!("{}{rel}", cmdr_fs::mount_layout::boot_volume_root())
+}
+
 fn make_file_entry(name: &str, path: &str, is_directory: bool) -> FileEntry {
     FileEntry {
         size: if is_directory { None } else { Some(100) },
@@ -228,7 +234,7 @@ fn enrich_entries_fallback_individual_paths() {
     IndexStore::insert_entries_v2_batch(&conn, &entries).expect("insert");
     aggregator::compute_all_aggregates(&conn).expect("aggregates");
 
-    let mut file_entries = vec![make_file_entry("docs", "/docs", true)];
+    let mut file_entries = vec![make_file_entry("docs", &on_root("docs"), true)];
 
     // Use the individual path fallback
     enrich_via_individual_paths_on(ROOT_VOLUME_ID, &mut file_entries, store.read_conn(), 1);
@@ -552,7 +558,7 @@ fn enrichment_under_contention() {
     acquired_rx.recv().unwrap();
 
     // Enrich on this thread; must succeed despite INDEX_REGISTRY being locked
-    let mut entries = vec![make_file_entry("projects", "/projects", true)];
+    let mut entries = vec![make_file_entry("projects", &on_root("projects"), true)];
     enrich_entries_with_index_on_volume(ROOT_VOLUME_ID, &mut entries);
 
     release_tx.send(()).unwrap();
@@ -892,8 +898,15 @@ fn read_pool_over_a_recreated_database_never_serves_the_old_one() {
         .expect("read the original");
     assert!(rows_before > 1, "test setup: the original index holds rows");
 
-    // The file goes, and a fresh one takes its place.
+    // The file goes, and a fresh one takes its place. On POSIX an unlink under the
+    // cached connection, so the generation key alone has to keep it from answering.
+    // Windows refuses to unlink a file a handle holds (os error 32), so there the old
+    // inode can't outlive its name: it goes the product's way, closing the cached
+    // connections first.
+    #[cfg(unix)]
     std::fs::remove_file(&db_path).expect("delete the database");
+    #[cfg(not(unix))]
+    cmdr_fs::sqlite_util::delete_database(&db_path).expect("delete the database");
     drop(IndexStore::open(&db_path).expect("recreate the database"));
 
     let second = ReadPool::new(db_path.clone()).expect("create the successor pool");
