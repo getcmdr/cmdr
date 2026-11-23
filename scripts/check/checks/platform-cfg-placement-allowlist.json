@@ -88,9 +88,6 @@
     "apps/desktop/src-tauri/src/drop_in/mod.rs": {
       "outsideSeam": 3
     },
-    "apps/desktop/src-tauri/src/error_reporter/preview_file.rs": {
-      "outsideSeam": 1
-    },
     "apps/desktop/src-tauri/src/favorites/store.rs": {
       "outsideSeam": 1
     },
@@ -209,9 +206,6 @@
     "apps/desktop/src-tauri/src/logging/mod.rs": {
       "outsideSeam": 1
     },
-    "apps/desktop/src-tauri/src/mcp/port_file.rs": {
-      "outsideSeam": 1
-    },
     "apps/desktop/src-tauri/src/menu/context_menu_header.rs": {
       "outsideSeam": 2
     },
@@ -299,9 +293,6 @@
     },
     "apps/desktop/src-tauri/src/secrets/mod.rs": {
       "outsideSeam": 2
-    },
-    "apps/desktop/src-tauri/src/secrets/plain_file.rs": {
-      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/spotlight.rs": {
       "negated": 1,
@@ -477,7 +468,7 @@
       "outsideSeam": 4
     },
     "crates/cmdr-multi-rename/src/names_file.rs": {
-      "outsideSeam": 8
+      "outsideSeam": 7
     },
     "crates/cmdr-operations/src/delete/cloud_trash.rs": {
       "outsideSeam": 6

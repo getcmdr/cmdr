@@ -3,14 +3,15 @@
 //! readers (the `scripts/mcp-call.sh` CLI, E2E fixtures, agent helpers) discover the actual
 //! bound port and token by reading `<data_dir>/<name>` rather than guessing. The in-process
 //! FE keeps using the `get_mcp_port` / `get_mcp_token` IPC (same in-process state). All
-//! files are written 0o600 (owner-only): the token is a secret, and an attacker who can
-//! read it already has the user's filesystem access. See `docs/tooling/instance-isolation.md`
+//! files are private to the current user from their first byte (`cmdr_fs::private_file`: 0o600
+//! on unix, an owner-only DACL on Windows): the token is a secret, and an attacker who can read
+//! it already has the user's filesystem access. See `docs/tooling/instance-isolation.md`
 //! § "Per-resource breakdown" (Cmdr MCP HTTP port row) for the full contract.
 //!
 //! Write protocol:
-//!   1. Write the ASCII port + `\n` to `<dir>/<name>.tmp.<pid>`.
+//!   1. Write the contents to a fresh, owner-only `<dir>/<name>.cmdr-tmp-<uuid>`.
 //!   2. `fsync` so the bytes hit the disk before the rename.
-//!   3. `rename` to `<dir>/<name>` (POSIX-atomic on the same filesystem).
+//!   3. `rename` to `<dir>/<name>` (atomic on the same filesystem), replacing any leftover.
 //!
 //! Read protocol:
 //!   - Single read. Callers that want to wait for the file to appear poll externally
@@ -18,10 +19,8 @@
 //!     atomic rename, so a zero-byte read is impossible: either the file isn't there yet
 //!     (`NotFound`) or it has the full content.
 
-use std::fs::{self, File, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::process;
 
 /// Errors that can surface from the port file. Typed so call sites can branch without
 /// substring matching the message (AGENTS.md "no string-matching error classification").
@@ -69,56 +68,22 @@ pub fn port_file_path(dir: &Path, name: &str) -> PathBuf {
     dir.join(name)
 }
 
-/// Create a tempfile for the atomic write with owner-only perms baked in (0o600 on unix,
-/// no umask window). The atomic rename preserves the tempfile's mode, so the final file
-/// lands 0o600 too. On Windows it's a plain create, inheriting the data folder's ACL, which
-/// isn't owner-only (#1425). This
-/// is the single create point shared by `write_port_file` and `write_secret_file`; the
-/// reference for the 0o600 pattern is `secrets/plain_file.rs`.
-fn create_owner_only(tmp_path: &Path) -> std::io::Result<File> {
-    let mut open_opts = OpenOptions::new();
-    open_opts.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        open_opts.mode(0o600);
-    }
-    open_opts.open(tmp_path)
-}
-
-/// Atomically write `contents` to `<dir>/<name>` via tempfile + fsync + rename, with the
-/// tempfile created 0o600 (owner-only) so the rename leaves an owner-only final file.
-/// Creates `dir` if it doesn't already exist. On any error the partial tempfile is
-/// best-effort removed so a crashed write doesn't leave junk behind.
+/// Atomically write `contents` to `<dir>/<name>`, private to the current user from its first
+/// byte (`cmdr_fs::private_file`: mode 0o600 on unix, an owner-only DACL on Windows). Creates
+/// `dir` if it doesn't already exist.
 fn write_owner_only(dir: &Path, name: &str, contents: &[u8]) -> Result<(), PortDiscoveryError> {
     fs::create_dir_all(dir)?;
-    let final_path = port_file_path(dir, name);
-    let tmp_path = dir.join(format!("{name}.tmp.{}", process::id()));
-
-    let result = (|| -> std::io::Result<()> {
-        let mut file = create_owner_only(&tmp_path)?;
-        file.write_all(contents)?;
-        file.sync_all()?;
-        drop(file);
-        fs::rename(&tmp_path, &final_path)?;
-        Ok(())
-    })();
-
-    if let Err(err) = result {
-        let _ = fs::remove_file(&tmp_path); // best-effort cleanup
-        return Err(PortDiscoveryError::Io(err));
-    }
-    Ok(())
+    cmdr_fs::private_file::write_atomically(&port_file_path(dir, name), contents).map_err(PortDiscoveryError::Io)
 }
 
-/// Atomically write `port` to `<dir>/<name>` via tempfile + rename, 0o600 (owner-only).
+/// Atomically write `port` to `<dir>/<name>` via tempfile + rename, owner-only.
 /// Creates `dir` if it doesn't already exist.
 pub fn write_port_file(dir: &Path, name: &str, port: u16) -> Result<(), PortDiscoveryError> {
     write_owner_only(dir, name, format!("{port}\n").as_bytes())
 }
 
 /// Atomically write a secret string (e.g. the MCP bearer token) to `<dir>/<name>` via
-/// tempfile + rename, 0o600 (owner-only). No trailing newline: the token is read back
+/// tempfile + rename, owner-only. No trailing newline: the token is read back
 /// verbatim by external clients (`scripts/mcp-call.sh`, the E2E harness). Same atomic +
 /// owner-only guarantees as `write_port_file`.
 pub fn write_secret_file(dir: &Path, name: &str, secret: &str) -> Result<(), PortDiscoveryError> {
@@ -210,30 +175,33 @@ mod tests {
         assert_eq!(read_port_file(dir.path(), "mcp.port").unwrap(), 42);
     }
 
-    #[cfg(unix)]
     #[test]
     fn written_port_file_is_owner_only() {
-        use std::os::unix::fs::PermissionsExt;
         let dir = tempdir().unwrap();
         write_port_file(dir.path(), "mcp.port", 12345).unwrap();
-        let mode = fs::metadata(port_file_path(dir.path(), "mcp.port"))
-            .unwrap()
-            .permissions()
-            .mode();
-        assert_eq!(mode & 0o777, 0o600, "port file must be 0o600 (owner-only)");
+        assert_owner_only(&port_file_path(dir.path(), "mcp.port"));
     }
 
-    #[cfg(unix)]
     #[test]
     fn written_secret_file_is_owner_only() {
-        use std::os::unix::fs::PermissionsExt;
         let dir = tempdir().unwrap();
         write_secret_file(dir.path(), "mcp.token", "deadbeefcafef00d").unwrap();
-        let mode = fs::metadata(port_file_path(dir.path(), "mcp.token"))
-            .unwrap()
-            .permissions()
-            .mode();
-        assert_eq!(mode & 0o777, 0o600, "token file must be 0o600 (owner-only)");
+        assert_owner_only(&port_file_path(dir.path(), "mcp.token"));
+    }
+
+    /// Private to this user on every OS (the exact Windows DACL is `cmdr_fs::private_file`'s
+    /// test), and exactly 0o600 where files carry a mode.
+    fn assert_owner_only(path: &Path) {
+        assert!(
+            cmdr_fs::private_file::is_private_to_current_user(path).expect("read its access"),
+            "{path:?} must be owner-only"
+        );
+        #[cfg(unix)] // POSIX modes.
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(path).expect("stat").permissions().mode();
+            assert_eq!(mode & 0o777, 0o600, "{path:?} must be 0o600");
+        }
     }
 
     #[test]

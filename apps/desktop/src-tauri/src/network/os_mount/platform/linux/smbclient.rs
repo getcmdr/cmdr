@@ -160,9 +160,9 @@ impl Drop for AuthFile {
 /// argv (which is world-readable via `ps aux` / `/proc/<pid>/cmdline`). The returned `AuthFile`
 /// unlinks the file on drop, so the secret-bearing file lives only as long as the handle.
 ///
-/// The file is created with `O_CREAT | O_EXCL` (via `create_new`) so we never reuse or clobber
-/// an existing path, and on Unix the create mode is 0o600 so it's owner-only from the first byte
-/// (no world-readable window between create and chmod).
+/// The file comes from `cmdr_fs::private_file::create_new`: `O_CREAT | O_EXCL` so we never reuse
+/// or clobber an existing path (or follow a planted link), at mode 0o600 so it's owner-only from
+/// the first byte (no world-readable window between create and chmod).
 fn write_smbclient_auth_file(username: &str, password: &str) -> std::io::Result<AuthFile> {
     // Unique filename: PID + a monotonic counter keep concurrent callers in the same process
     // from colliding, and `create_new` guarantees we fail rather than reuse if the name exists.
@@ -172,14 +172,7 @@ fn write_smbclient_auth_file(username: &str, password: &str) -> std::io::Result<
     let filename = format!("cmdr-smb-auth-{}-{}", std::process::id(), seq);
     let path = std::env::temp_dir().join(filename);
 
-    let mut opts = std::fs::OpenOptions::new();
-    opts.write(true).create_new(true);
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        opts.mode(0o600);
-    }
-
-    let mut file = opts.open(&path)?;
+    let mut file = cmdr_fs::private_file::create_new(&path)?;
     let guard = AuthFile { path };
 
     file.write_all(build_smbclient_auth_file_contents(username, password).as_bytes())?;

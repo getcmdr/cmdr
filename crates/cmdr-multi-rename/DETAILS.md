@@ -164,10 +164,11 @@ it today), "next step" chaining, and editing names in an editor.
   its rename. Dropping a `Written` deletes the file, so close, eviction, and clear tidy up. The file is read outside the
   sessions lock. Ported from PR #386 (Jiri Slovacek), whose read-back was process-wide.
 - **Decision/Why: the Results folder is the user's alone.** `names_file::write` makes `multi-rename/` with mode `0700`
-  and refuses one that's a symlink, someone else's, or open to others; the file is `create_new` + `O_NOFOLLOW`, `0600`,
-  and a stale one is removed first only if it's a regular file. `read` won't follow a link or open a named pipe. Why: in
-  a shared `/tmp` on Linux, another account could pre-create the folder, plant a link at the guessable name so the write
-  overwrote the user's own file, swap in its own names, or read the user's (issue #546).
+  and refuses one that's a symlink, someone else's, or open to others; the file is `cmdr_fs::private_file::create_new`
+  (`O_EXCL`, `0600`; a user-only DACL on Windows), and a stale one is removed first only if it's a regular file. `read`
+  won't follow a link or open a named pipe. Why: in a shared `/tmp` on Linux, another account could pre-create the
+  folder, plant a link at the guessable name so the write overwrote the user's own file, swap in its own names, or read
+  the user's (issue #546).
 - Plain search: a `*` is lazy (`IMG_*_` ends at the first `_`) except a trailing one, which runs to the end. Search and
   names are composed (NFC) first, so `é` typed finds the decomposed `é` an SMB share stores.
 - A single search takes its replacement literally (`|` included); only a list pairs with a list. A list of nothing (`|`)

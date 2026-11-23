@@ -412,8 +412,8 @@ risk.
     2026-10-16).
   - **Secrets** are kept apart from all this: SMB, SFTP, WebDAV, and S3 passwords, cloud AI API keys, and the license
     key are in the Keychain (`apps/desktop/src-tauri/src/secrets/CLAUDE.md`,
-    `apps/desktop/src-tauri/src/licensing/DETAILS.md` § Key storage), and the MCP token is an owner-only `0600` file
-    (`apps/desktop/src-tauri/src/mcp/auth.rs`).
+    `apps/desktop/src-tauri/src/licensing/DETAILS.md` § Key storage), and the MCP token is an owner-only file (`0600`,
+    or a user-only DACL on Windows: `docs/security.md` § Files only the user can open).
 - **Mitigations**: as above, and none of this is transmitted (`docs/security.md` § Folder-importance visit signal, §
   Operation log). Time Machine skips `~/Library/Caches`, so the drive index never reaches a backup (verified with
   `tmutil isexcluded`, macOS 27.0.1, 2026-10-16).

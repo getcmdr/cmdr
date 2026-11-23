@@ -233,11 +233,9 @@ fn remove_stale(path: &Path) -> io::Result<()> {
     }
 }
 
-/// A new `0600` file at `path`, failing if anything appeared there since [`remove_stale`].
+/// A new file at `path` only this user can open (`cmdr_fs::private_file`: `0600` on Unix, an
+/// owner-only DACL on Windows), failing if anything appeared there since [`remove_stale`], a link
+/// included.
 fn create_new(path: &Path) -> io::Result<File> {
-    let mut options = OpenOptions::new();
-    options.write(true).create_new(true);
-    #[cfg(unix)]
-    options.mode(0o600).custom_flags(libc::O_NOFOLLOW);
-    options.open(path)
+    cmdr_fs::private_file::create_new(path)
 }

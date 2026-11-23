@@ -132,6 +132,15 @@ fn an_old_name_matches_in_either_unicode_form() {
     assert_eq!(edits.get(decomposed), Some("Zadost.pdf"));
 }
 
+/// The Results file holds the user's file names, so it's theirs alone on every OS (#1425).
+#[test]
+fn the_results_file_is_private_to_the_user() {
+    let dir = TestDir::new("multi-rename-names-owner-only");
+    let path = dir.join("results").join("names.txt");
+    let _written = write(&path, &[row("a.txt", "b.txt")]).expect("writes");
+    assert!(cmdr_fs::private_file::is_private_to_current_user(&path).expect("reads its access"));
+}
+
 /// Issue #546: the Results folder and file are the user's alone, and nothing planted at their
 /// names is followed or overwritten.
 #[cfg(unix)]

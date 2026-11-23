@@ -150,9 +150,16 @@ exacl = "0.13"
 
 [target.'cfg(windows)'.dependencies]
 # The Win32 flags the Windows arms pass to `std`'s `OpenOptionsExt`
-# (`metadata/platform/windows.rs`). Already in the graph through `tokio`, `mio`, and
-# friends, at this version.
-windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_System_Threading"] }
+# (`metadata/platform/windows.rs`), and the owner-only security descriptor
+# `private_file/platform/windows.rs` creates files with and reads back (the `Security`
+# features). Already in the graph through `tokio`, `mio`, and friends, at this version.
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Threading",
+] }
 # `testing` only: one load-time hook (`testing::scratch_root`) points `tempfile`'s
 # default folder at `TEMP` spelled long, so a test's `tempfile::tempdir()` names the
 # folder the way a Windows volume lists it. Already in the graph through
