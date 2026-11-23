@@ -131,9 +131,24 @@ fn resolve_target(query: &SearchQuery) -> Result<Target, ScopeError> {
         can_be_indexed: volume_can_be_indexed(&volume_id, &paths[0]),
         namespace: crate::search::index_source::path_namespace(&volume_id),
         volume_id,
-        include_paths: paths.clone(),
+        include_paths: one_of_each(paths),
         from_scope: true,
     })
+}
+
+/// The scope paths with each one kept once, in first-seen order.
+///
+/// Every coverage list a run reports (`uncovered_scopes`, `unresolved_scopes`) is built
+/// from these, and the dialog keys each list by path: a scope naming one folder twice
+/// threw Svelte's `each_key_duplicate` and closed Search (cmdr-reports#114). Walking
+/// or asking about the same folder twice buys nothing anyway.
+fn one_of_each(paths: &[String]) -> Vec<String> {
+    let mut seen = std::collections::HashSet::with_capacity(paths.len());
+    paths
+        .iter()
+        .filter(|path| seen.insert(path.as_str()))
+        .cloned()
+        .collect()
 }
 
 /// The target for a query its caller already placed on one volume's index
@@ -144,7 +159,7 @@ fn resolve_target(query: &SearchQuery) -> Result<Target, ScopeError> {
 /// disk once nothing is mounted there, so only the caller's resolution reaches the
 /// share's index on disk. Empty include paths are the whole volume, as unscoped is.
 fn target_on(query: &SearchQuery, volume_id: &str) -> Target {
-    let include_paths = query.include_paths.clone().unwrap_or_default();
+    let include_paths = query.include_paths.as_deref().map(one_of_each).unwrap_or_default();
     Target {
         can_be_indexed: volume_can_be_indexed(volume_id, include_paths.first().map_or("", String::as_str)),
         namespace: crate::search::index_source::path_namespace(volume_id),

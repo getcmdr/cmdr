@@ -15,6 +15,7 @@
     import LicenseKeyDialog from '#lib/licensing/LicenseKeyDialog.svelte'
     import CommandPalette from '#lib/command-palette/CommandPalette.svelte'
     import SearchDialog from '#lib/search/SearchDialog.svelte'
+    import { resetSearchAfterCrash } from '#lib/search/search-state.svelte.js'
     import SelectionDialog from '#lib/selection-dialog/SelectionDialog.svelte'
     import MultiRenameDialog from '#lib/multi-rename/MultiRenameDialog.svelte'
     import type { MultiRenameRun } from '#lib/multi-rename/last-run.svelte.js'
@@ -583,6 +584,12 @@
         showSearchDialog = false
     }
 
+    /** The search dialog threw: close it AND forget its session, or the next ⌘F renders the same state and throws again. */
+    function handleSearchDialogCrash() {
+        resetSearchAfterCrash()
+        showSearchDialog = false
+    }
+
     function handleGoToPathDialogClose() {
         showGoToPathDialog = false
         explorerRef?.refocus()
@@ -884,7 +891,7 @@
             {/if}
         </DialogBoundary>
 
-        <DialogBoundary name="search" onClose={handleSearchDialogClose}>
+        <DialogBoundary name="search" onClose={handleSearchDialogCrash}>
             {#if showSearchDialog}
                 <SearchDialog
                     onNavigate={handleSearchNavigate}
