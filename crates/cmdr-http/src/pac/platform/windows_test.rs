@@ -34,17 +34,26 @@ fn a_socks_answer_is_a_socks_entry() {
         pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS s.test:1080"; }"#),
         Some(vec![socks("s.test", 1080)])
     );
-    assert_eq!(
-        pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS5 s.test:1081; DIRECT"; }"#),
-        Some(vec![socks("s.test", 1081), Entry::Direct])
+}
+
+/// The versioned keywords (`SOCKS5`, `SOCKS4`, Chrome's and Firefox's extensions) are WinHTTP's
+/// to read: the Windows 10 22H2 builder's typed answer carries them, and the hosted runner's
+/// Windows Server 2025 drops `SOCKS5` from the list (CI run 45158786958, 2026-11-23), as
+/// CFNetwork drops both on macOS. Either way Cmdr goes where the OS's own clients go, and a
+/// keyword it does read is never anything but SOCKS.
+#[test]
+fn a_versioned_socks_answer_is_socks_or_dropped_as_the_os_drops_it() {
+    let five = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS5 s.test:1081; DIRECT"; }"#);
+    assert!(
+        five == Some(vec![socks("s.test", 1081), Entry::Direct]) || five == Some(vec![Entry::Direct]),
+        "{five:?}"
     );
-    assert_eq!(
-        pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#),
-        Some(vec![Entry::Socks4 {
-            host: "s.test".into(),
-            port: 1082
-        }])
-    );
+    let four = pac_answer(r#"function FindProxyForURL(url, host) { return "SOCKS4 s.test:1082"; }"#);
+    let read = Some(vec![Entry::Socks4 {
+        host: "s.test".into(),
+        port: 1082,
+    }]);
+    assert!(four == read || four == Some(vec![]), "{four:?}");
 }
 
 /// `HTTPS host:port` is a TLS proxy, ❌ never a plain HTTP one on its TLS port.

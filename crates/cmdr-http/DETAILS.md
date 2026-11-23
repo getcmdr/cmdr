@@ -119,7 +119,9 @@ answer with a `socks…://` URL. Sources:
   reads them back: `SOCKS` and `SOCKS5` → `socks5h://`, `SOCKS4` → `socks4a://` (the proxy resolving names, for the
   reason below), `HTTPS` → an `https://` proxy, spoken to over TLS
   (`lib_test.rs::a_system_https_proxy_is_spoken_to_over_tls`). ❌ Never direct, never plain HTTP to a TLS port; anything
-  unreadable is `Entry::Unsupported`, skipped like FTP.
+  unreadable is `Entry::Unsupported`, skipped like FTP. Windows Server 2025 (the hosted CI runner) drops `SOCKS5` from
+  the list instead, as CFNetwork does (CI run 45158786958, 2026-11-23), so
+  `a_versioned_socks_answer_is_socks_or_dropped_as_the_os_drops_it` takes either answer.
 
 **Decision: SOCKS5 with remote DNS (`socks5h`) for anything macOS hands over.** CFNetwork's SOCKS entry names no
 version, and macOS's own stack speaks SOCKS5 to it. Remote resolution because a network that forces traffic through

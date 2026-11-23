@@ -41,6 +41,7 @@ The one door every Cmdr HTTP client is built through: `client_builder()` is `req
   resolver keeps SOCKS and `HTTPS` typed.
 - ❗ **A SOCKS proxy from macOS (the manual setting or a PAC) becomes `socks5h://`**: the proxy resolves names, as
   macOS's own stack does. An env var's `socks5://` (local DNS) vs `socks5h://` is kept as typed. FTP entries are
-  skipped. CFNetwork drops a PAC's `SOCKS5` / `SOCKS4` answers; Windows keeps them, and `HTTPS` as a TLS proxy.
+  skipped. CFNetwork drops a PAC's `SOCKS5` / `SOCKS4` answers; Windows 10 keeps them (Server 2025 drops `SOCKS5`), and
+  `HTTPS` as a TLS proxy.
 
 Decision order, the CFNetwork answer's shape, PAC mechanics, and measurements: `DETAILS.md`.

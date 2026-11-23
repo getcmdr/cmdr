@@ -14,6 +14,12 @@ fn whole_seconds_have_no_decimal_point() {
 
 #[test]
 fn nanoseconds_survive_and_trailing_zeros_drop() {
+    // Windows' `SystemTime` counts 100 ns ticks, so it holds seven fraction digits.
+    assert_eq!(
+        format_mtime(UNIX_EPOCH + Duration::new(1_354_040_105, 123_456_700)),
+        "1354040105.1234567"
+    );
+    #[cfg(unix)]
     assert_eq!(
         format_mtime(UNIX_EPOCH + Duration::new(1_354_040_105, 123_456_789)),
         "1354040105.123456789"
