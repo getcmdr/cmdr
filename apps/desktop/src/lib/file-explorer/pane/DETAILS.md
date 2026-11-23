@@ -549,6 +549,25 @@ volume-id string. The record has two halves, and which half answers is the whole
   exists), so it escaped a walk-up only because the volume root "missed" too, and once the row left the list the
   `volumePath` fell back to `/` and the poll re-listed the gone place every few seconds. Whether a phone or server pane
   should notice its folder being deleted on the device is an open product question, not something this gate answers.
+- **`deleted-dir-poll.ts` asks the pane's OWN volume (`getVolumeId`), ❌ never the boot disk**, for the folder, the
+  volume root, and the walk-up's `resolveValidPath` (with `connectionState`, so a live session's rungs get the session
+  wait). The `smb` kind polls whether the share is on the kernel mount or a direct session, and a direct pane's path is
+  the server's own bytes, which smbfs can't always resolve: an NFD folder name (common on a Synology a Mac wrote to
+  through AFP, Synology Drive, or Photos) isn't listed by smbfs and `stat`s ENOENT in both spellings, and a name smbfs
+  looked up and missed stays invisible for 2–5 s (once over 20 s) after another client creates it. Asking the boot disk
+  read those as "deleted" twice and bounced the pane to the parent 2–4 s after entering (#1338; verified on the Docker
+  `smb-consumer-unicode` fixture against a plain `mount_smbfs`, macOS 27, 2026-11-23). A local or kernel-mounted volume
+  still answers with a local `stat` (`LocalPosixVolume` has a `local_path`); a direct `SmbVolume` answers with
+  `Volume::presence`, byte-exact.
+  - **Cost on a direct share**: one smb2 `stat` compound (CREATE + two QUERY_INFO + CLOSE, ONE round trip) every 2 s per
+    pane showing a folder there (at most two panes), on the existing session (`clone_session` leases it, no new
+    connection); the volume root needs no round trip. Under `io_budget` a stalled server gets 10 s
+    (`SESSION_IO_TIMEOUT`), then "couldn't tell", which resets the miss counter; a refusal or a dropped session is
+    "couldn't tell" too, so a slow or flaky NAS can't cause a bounce. The kernel `stat` it replaces went over the wire
+    as well, through smbfs.
+  - **The poll doesn't pause when the window is hidden or the app isn't frontmost**: a plain `setInterval`, only stopped
+    on pane destroy. Not polling direct SMB panes at all would lose "deleted by another client" detection, since the
+    share's `CHANGE_NOTIFY` reports that removal only to the PARENT's listing.
 - **`rowIsOsVisible(volumeId, rowPath)`** answers ONE row's "is there a real file behind this", the gate behind the
   context menu's `Share` (see § "Sharing a row" below). ❌ It is NOT `capabilitiesForPane`: that one uses the WIDE
   archive check, so it would call a `.zip` FILE unshareable, and sharing a freshly-made archive is the point.

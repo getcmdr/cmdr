@@ -62,6 +62,8 @@ describe('createDeletedDirPoll', () => {
       getFolderIsPolled: () => state.folderIsPolled,
       getCurrentPath: () => state.currentPath,
       getVolumePath: () => state.volumePath,
+      getVolumeId: () => 'root',
+      getConnectionState: () => undefined,
       navigateToFallback,
     }
   })
@@ -89,14 +91,14 @@ describe('createDeletedDirPoll', () => {
 
   // Regression anchor: the demo's volume once answered "missing" for `/`, and this walked the
   // pane home after two ticks. The host's half is pinned in `cmdr-listing-wasm`'s
-  // `the_path_questions_see_every_write`, which asks exactly `path_exists("/")` with no volume id.
+  // `the_path_questions_see_every_write`, which asks `path_exists("/")` on the demo's volume.
   it('keeps a pane on the root folder past many ticks', async () => {
     state.currentPath = '/'
     const poll = createDeletedDirPoll(deps)
     poll.start()
 
     await tick(10)
-    expect(ipc.pathExistsChecked).toHaveBeenCalledWith('/')
+    expect(ipc.pathExistsChecked).toHaveBeenCalledWith('/', 'root')
     expect(navigateToFallback).not.toHaveBeenCalled()
     poll.stop()
   })
@@ -225,6 +227,8 @@ describe('createDeletedDirPoll', () => {
       await tick(2)
       expect(resolution.resolveValidPath).toHaveBeenCalledWith('/Volumes/Ext/photos', {
         volumeRoot: '/Volumes/Ext',
+        volumeId: 'root',
+        connectionState: undefined,
         keepSilentVolume: true,
       })
       expect(navigateToFallback).toHaveBeenCalledWith('/Volumes/Ext')
