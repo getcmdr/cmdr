@@ -210,7 +210,8 @@ mod typed {
                 anchored(drive, "c:/Users/test_user_1/x").as_deref(),
                 Ok("C:/Users/test_user_1/x")
             );
-            let unc = root("//testnas.local/Share", PathFlavor::Windows);
+            // A share's root is canonical with its `/`, as a drive's is (`C:/`).
+            let unc = root("//testnas.local/Share/", PathFlavor::Windows);
             assert_eq!(
                 anchored(unc, "//TESTNAS.local/share/x").as_deref(),
                 Ok("//TESTNAS.local/share/x"),

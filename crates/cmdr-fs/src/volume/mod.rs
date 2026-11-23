@@ -2502,7 +2502,21 @@ pub fn root_anchored(root: &Path, path: &Path) -> PathBuf {
     if path.starts_with(root) {
         return path.to_path_buf();
     }
-    root.join(path.strip_prefix("/").unwrap_or(path))
+    let rel = path.strip_prefix("/").unwrap_or(path);
+    // A root spelled with `/` alone (a remote `sftp://…/srv`, an in-memory `/srv`, a
+    // drive's app spelling `C:/x`) takes the rest with a `/`, as POSIX's `Path::join` did:
+    // Windows' join put a `\` into it (`sftp://…/srv\photos`), which no remote root reads
+    // back. A native root holding `\` keeps the native join.
+    match (root.to_str(), rel.to_str()) {
+        (Some(root_text), Some(rel_text)) if !root_text.contains('\\') && rel.is_relative() && !rel.has_root() => {
+            if root_text.is_empty() || root_text.ends_with('/') {
+                PathBuf::from(format!("{root_text}{rel_text}"))
+            } else {
+                PathBuf::from(format!("{root_text}/{rel_text}"))
+            }
+        }
+        _ => root.join(rel),
+    }
 }
 
 /// [`root_anchored`] for wire text and a typed root: the same three rules, answering a

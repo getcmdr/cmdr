@@ -106,8 +106,10 @@ impl AppPath {
 ///   join, so a remote or in-memory child never gains a Windows `\` and `/dot/.` or `/top/`
 ///   lose their spelling.
 /// - A bridge value with none (a relative `src/album` a local engine hands its backend, a
-///   `..` spelling) joins as `Path::join` joined it, through the bridge: the typed join has
-///   no place to answer, and refusing would drop a walk's children or a pane's patch.
+///   `..` spelling) joins as POSIX's `Path::join` joined it, by text with a `/`: the typed
+///   join has no place to answer, and refusing would drop a walk's children or a pane's
+///   patch. By text so a Windows host joins with the app's `/` too, where its `Path::join`
+///   put a `\` into the app path (`rel/dir\x`).
 ///
 /// Goes with the bridge, once no caller hands a walk or a patch a folder with no canonical
 /// twin.
@@ -115,7 +117,7 @@ pub struct ListedFolder<'a>(Joins<'a>);
 
 enum Joins<'a> {
     Typed(Cow<'a, AppPath>),
-    Native(Cow<'a, Path>),
+    Bridge(&'a AppPath),
 }
 
 impl<'a> ListedFolder<'a> {
@@ -123,7 +125,7 @@ impl<'a> ListedFolder<'a> {
     pub fn new(dir: &'a AppPath) -> Self {
         match dir.to_canonical() {
             Ok(canonical) => Self(Joins::Typed(canonical)),
-            Err(_) => Self(Joins::Native(dir.as_std_legacy())),
+            Err(_) => Self(Joins::Bridge(dir)),
         }
     }
 
@@ -136,10 +138,24 @@ impl<'a> ListedFolder<'a> {
     pub fn join(&self, name: &AppName) -> Result<AppPathBuf, NotAnAppPath> {
         match &self.0 {
             Joins::Typed(dir) => dir.join_canonical_text(name.as_str()),
-            Joins::Native(dir) => {
-                let child = dir.join(platform::app_to_os(name.as_str()));
-                Ok(AppPath::legacy_unchecked(&child).into_owned())
-            }
+            Joins::Bridge(dir) => Ok(AppPathBuf(bridge_join_text(dir.as_str(), name.as_str()))),
         }
+    }
+}
+
+/// `name` under the bridge folder `dir`, as POSIX's `Path::join` spells it: no separator after
+/// an empty folder or one that already ends in one. Escapes ride as text, so on a Unix host
+/// this is exactly the bridge round trip of `Path::join`. On Windows a folder spelled with `/`
+/// alone (`rel/dir`, a remote root) joins with `/` too, and one still spelled natively (it
+/// holds a `\`) keeps `Path::join`'s `\`.
+fn bridge_join_text(dir: &str, name: &str) -> String {
+    let native = cfg!(windows) && dir.contains('\\');
+    let ends_in_separator = dir.ends_with('/') || (native && dir.ends_with('\\'));
+    if dir.is_empty() || ends_in_separator {
+        format!("{dir}{name}")
+    } else if native {
+        format!("{dir}\\{name}")
+    } else {
+        format!("{dir}/{name}")
     }
 }

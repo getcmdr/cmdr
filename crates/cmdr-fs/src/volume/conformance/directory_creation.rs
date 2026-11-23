@@ -6,8 +6,19 @@
 //! to "a name on the way is already taken", and a backend that gets one wrong
 //! usually got it wrong by not asking what took the name.
 
-use crate::app_path::AppPath;
+use crate::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
 use std::path::Path;
+
+/// `names` under `dir`, joined as app paths with `/`: a `std::path` join puts a `\` into a
+/// remote path on Windows (`adb://…/notes.txt\inside`), one legal name on a phone.
+fn below(dir: &Path, names: &[&str]) -> AppPathBuf {
+    let mut at = AppPath::legacy_unchecked(dir).into_owned();
+    for name in names {
+        let name = AppName::from_app_spelling(name).expect("a plain name");
+        at = ListedFolder::new(&at).join(name).expect("joins");
+    }
+    at
+}
 
 use crate::volume::{DirectoryCreation, EntryKind, Volume, VolumeError};
 
@@ -73,15 +84,16 @@ pub async fn assert_create_directory_all_refuses_a_file_in_the_way(volume: &dyn 
         .file_name()
         .expect("fixture precondition: the blocking file must have a final component");
 
-    let below = file.join("inside");
-    let deeper = below.join("deeper");
-    for asked in [file, below.as_path(), deeper.as_path()] {
-        let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(asked)).await;
+    let own = AppPath::legacy_unchecked(file).into_owned();
+    let inside = below(file, &["inside"]);
+    let deeper = below(file, &["inside", "deeper"]);
+    for asked in [&own, &inside, &deeper] {
+        let outcome = volume.create_directory_all(asked).await;
         let Err(VolumeError::NotADirectory(carried)) = outcome else {
             panic!(
                 "create_directory_all({}) on {} must refuse with NotADirectory, because the FILE {} is in the way; \
                  got {outcome:?}",
-                asked.display(),
+                asked.as_str(),
                 volume.name(),
                 file.display(),
             );
@@ -92,7 +104,7 @@ pub async fn assert_create_directory_all_refuses_a_file_in_the_way(volume: &dyn 
             "NotADirectory must carry the path of the thing IN THE WAY ({}), and for create_directory_all({}) \
              {} carried {carried:?}. The frontend renders that string as the file to move aside.",
             file.display(),
-            asked.display(),
+            asked.as_str(),
             volume.name(),
         );
     }
@@ -163,18 +175,18 @@ pub async fn assert_create_directory_all_goes_through_a_link_to_a_folder(
         target.display(),
     );
 
-    let asked = link.join("made-through-the-link").join("deeper");
-    let outcome = volume.create_directory_all(&AppPath::legacy_unchecked(&asked)).await;
+    let asked = below(link, &["made-through-the-link", "deeper"]);
+    let outcome = volume.create_directory_all(&asked).await;
     assert!(
         matches!(outcome, Ok(DirectoryCreation::Created)),
         "create_directory_all({}) on {} must create the folder through the link. Got {outcome:?}",
-        asked.display(),
+        asked.as_str(),
         volume.name(),
     );
-    let landed = target.join("made-through-the-link").join("deeper");
+    let landed = below(target, &["made-through-the-link", "deeper"]);
     assert!(
-        matches!(volume.is_directory(&AppPath::legacy_unchecked(&landed)).await, Ok(true)),
+        matches!(volume.is_directory(&landed).await, Ok(true)),
         "the folder asked for through the link must exist inside its target, at {}",
-        landed.display(),
+        landed.as_str(),
     );
 }
