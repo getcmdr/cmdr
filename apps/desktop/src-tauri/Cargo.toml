@@ -387,11 +387,13 @@ windows-sys = { version = "0.61", features = [
 # the accent color and its shades, the transparency-effects switch, and their change events. The
 # version tao, wry, and tauri already link, so nothing new enters the lockfile. Also the file
 # icons' Shell lookup (`icons/platform/windows/shell_image.rs`): `IShellItemImageFactory` in a
-# COM apartment, read back through GDI's `GetDIBits`.
+# COM apartment, read back through GDI's `GetDIBits`, and a shortcut's places read through
+# `IShellLinkW::GetPath`, whose find-data type is `Win32_Storage_FileSystem`'s.
 windows = { version = "0.62", features = [
     "UI_ViewManagement",
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
+    "Win32_Storage_FileSystem",
     "Win32_System_Com",
     "Win32_UI_Shell",
 ] }

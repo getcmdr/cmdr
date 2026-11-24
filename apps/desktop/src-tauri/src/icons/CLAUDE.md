@@ -30,8 +30,8 @@ Full details: `DETAILS.md`.
 - **Gold recolors a custom icon only if `followsAccent`**; an emoji folder is gold `dir` plus the emoji on top.
 - **`dir` / `symlink-dir` sample a Cmdr-owned empty temp folder, ❌ never `~`**: macOS bakes the home folder's house
   badge into the bitmap.
-- **Real-place fetches run on 8 MB-stack OS threads (`platform/icon_threads.rs`), never rayon**: a FileProvider XPC
-  chain or a Windows icon handler overflows rayon's 2 MB stack. Extension samples stay on rayon.
+- **Real-place fetches run on 8 MB-stack OS threads, never rayon**, and in `get_icons` AFTER the type ids, through
+  `per_place_fetch` (bounded wait, capped in flight): one slow place must cost only its own icon, ❌ never the batch.
 - **All NSWorkspace fetches are FDA-gated in `commands/icons.rs`**; the FE re-requests once the gate clears.
 - **Bounded vs unbounded key lifecycle**: `dir` / `ext:*` / `file` / `symlink*` / `special:*` persist to localStorage,
   so changing how one is PRODUCED needs a `CACHE_SCHEMA` bump in `#lib/icon-cache`. `path:*` / `pkg:*` are
@@ -41,8 +41,8 @@ Full details: `DETAILS.md`.
 - **Every cache write is epoch-guarded** (`cache_icon(epoch, ..)`, FE `applyIconsToCache(.., epoch)`), epoch taken
   BEFORE asking the OS. `DETAILS.md` § Flushes.
 - **Disk-cache staleness token is the place's mtime**, ❌ not a watcher: Finder bumps it when re-iconing.
-- **Windows asks a real place only if `may_read_own_icon` says it's local and holds its bytes** (no share, no cloud
-  placeholder, nothing inside an archive); else its type's icon stands in (`own_icons::stand_in_icon_id`), memory only,
-  ❌ never the disk tier (its mtime read reaches the place). `DETAILS.md` § Asking Windows for the pixels.
+- **Windows asks a real place only if `may_read_own_icon` says it's local and holds its bytes**, and a `.lnk` only if
+  its icon location and target are too; else its type's icon stands in, memory only, ❌ never the disk tier. ❌ No
+  `.url`. `DETAILS.md` § Asking Windows for the pixels.
 - **Providers live in `platform/`**; on Linux `special:*` degrades to the generic folder. The macOS fetch is ours
   (`platform/macos/workspace.rs`), not a crate: a crate can hard-link a framework newer than our floor.

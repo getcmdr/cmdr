@@ -3,6 +3,7 @@
 
 pub(crate) const FOLDER_NAMES_MAKE_PACKAGES: bool = false;
 
-/// Programs (`exe`, `scr`, `cpl`), shortcuts (`lnk`, `url`, ClickOnce's `appref-ms`), and icon
-/// and cursor files (`ico`, `cur`, `ani`).
-pub(crate) const OWN_ICON_EXTENSIONS: &[&str] = &["ani", "appref-ms", "cpl", "cur", "exe", "ico", "lnk", "scr", "url"];
+/// Programs (`exe`, `scr`, `cpl`), shortcuts (`lnk`, ClickOnce's `appref-ms`), and icon and
+/// cursor files (`ico`, `cur`, `ani`). ❌ Not `url`: an Internet shortcut's `IconFile=` can name
+/// `\\host\…`, and drawing it would open an SMB connection (and offer credentials) on listing.
+pub(crate) const OWN_ICON_EXTENSIONS: &[&str] = &["ani", "appref-ms", "cpl", "cur", "exe", "ico", "lnk", "scr"];

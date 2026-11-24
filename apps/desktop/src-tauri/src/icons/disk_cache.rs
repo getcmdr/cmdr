@@ -24,6 +24,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
@@ -113,6 +114,41 @@ pub fn store(icon_id: &str, real_path: &str, variant: IconVariant, data_url: &st
         return;
     };
     store_in(dir, icon_id, real_path, variant, data_url);
+    if STORES.fetch_add(1, Ordering::Relaxed) % PRUNE_EVERY == PRUNE_EVERY - 1 {
+        prune_in(dir, MAX_ENTRIES);
+    }
+}
+
+/// Entries the tier keeps, oldest written dropped first. Folders alone rarely reach it, but
+/// on Windows every program and icon file visited is an entry of its own (`path:{file}`).
+/// A few KB each, so the cap holds the tier to some tens of MB.
+const MAX_ENTRIES: usize = 4_096;
+
+/// How many stores pass between prunes: a prune lists the directory, so not on every write.
+const PRUNE_EVERY: usize = 64;
+
+/// Stores since the process started, to pace the prunes.
+static STORES: AtomicUsize = AtomicUsize::new(0);
+
+/// Removes the oldest-written entries of `dir` past `keep`. Best-effort: an entry that won't
+/// list, stat, or delete is skipped.
+fn prune_in(dir: &Path, keep: usize) {
+    let Ok(listing) = fs::read_dir(dir) else {
+        return;
+    };
+    let mut entries: Vec<(std::time::SystemTime, PathBuf)> = listing
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "json"))
+        .filter_map(|entry| Some((entry.metadata().ok()?.modified().ok()?, entry.path())))
+        .collect();
+    if entries.len() <= keep {
+        return;
+    }
+    entries.sort();
+    let surplus = entries.len() - keep;
+    for (_, path) in entries.into_iter().take(surplus) {
+        let _ = fs::remove_file(path);
+    }
 }
 
 /// Pure `load` against an explicit cache dir. Public-in-module so tests can run
@@ -366,5 +402,29 @@ mod tests {
             load_in(&fx.cache_dir, &id, &fx.folder, IconVariant::default()).as_deref(),
             Some("icon")
         );
+    }
+
+    /// The tier can't grow forever: past the cap, the oldest-written entries go.
+    #[test]
+    fn a_prune_keeps_only_the_newest_entries() {
+        let base = TestDir::new("icon_disk_prune");
+        let epoch = std::time::SystemTime::UNIX_EPOCH;
+        for n in 0..5u64 {
+            let path = base.join(format!("{n}.json"));
+            fs::write(&path, b"{}").expect("write entry");
+            let file = fs::File::options().write(true).open(&path).expect("open entry");
+            file.set_modified(epoch + std::time::Duration::from_secs(1_000 + n))
+                .expect("set mtime");
+        }
+        fs::write(base.join("not-an-entry.tmp"), b"").expect("write stray file");
+
+        prune_in(&base, 3);
+
+        let mut left: Vec<String> = fs::read_dir(&*base)
+            .expect("list")
+            .filter_map(|e| e.ok()?.file_name().into_string().ok())
+            .collect();
+        left.sort();
+        assert_eq!(left, ["2.json", "3.json", "4.json", "not-an-entry.tmp"]);
     }
 }

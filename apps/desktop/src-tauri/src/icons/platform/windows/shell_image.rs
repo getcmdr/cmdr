@@ -6,12 +6,11 @@ use std::path::Path;
 
 use image::RgbaImage;
 use image::imageops::FilterType;
-use windows::Win32::Foundation::{RPC_E_CHANGED_MODE, SIZE};
+use windows::Win32::Foundation::SIZE;
 use windows::Win32::Graphics::Gdi::{
     BI_RGB, BITMAP, BITMAPINFO, BITMAPINFOHEADER, CreateCompatibleDC, DIB_RGB_COLORS, DeleteDC, DeleteObject,
     GetDIBits, GetObjectW, HBITMAP, HDC, HGDIOBJ,
 };
-use windows::Win32::System::Com::{COINIT_DISABLE_OLE1DDE, COINIT_MULTITHREADED, CoInitializeEx, CoUninitialize};
 use windows::Win32::UI::Shell::{IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_ICONONLY};
 use windows::core::HSTRING;
 
@@ -21,7 +20,7 @@ use windows::core::HSTRING;
 /// `SIIGBF_ICONONLY` keeps it to the icon: never a thumbnail, which would read the file's
 /// content (and on a cloud placeholder, download it).
 pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
-    let _apartment = Apartment::enter();
+    super::apartment::ensure();
     let side = i32::try_from(size).ok()?;
     // SAFETY: the path is a live, NUL-terminated `HSTRING` for the whole call, and no bind
     // context is passed (`None`), which the API documents as allowed.
@@ -34,7 +33,7 @@ pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
     // selected into any DC (`read_bitmap` reads it through `GetDIBits`, which needs no select).
     let _ = unsafe { DeleteObject(HGDIOBJ::from(bitmap)) };
     let (width, height, bgra) = pixels?;
-    let img = RgbaImage::from_raw(width, height, bgra_to_straight_rgba(bgra))?;
+    let img = RgbaImage::from_raw(width, height, bgra_to_straight_rgba(bgra)?)?;
     Some(if (width, height) == (size, size) {
         img
     } else {
@@ -103,8 +102,12 @@ fn read_rows(dc: HDC, bitmap: HBITMAP, width: u32, height: u32) -> Option<Vec<u8
 /// GDI's BGRA as straight-alpha RGBA. The Shell hands icons back premultiplied, so each color
 /// is divided by its alpha; a buffer where some color exceeds its alpha can't be premultiplied
 /// and is taken as straight already. An icon with no alpha at all (every alpha 0, an old
-/// 24-bit icon) is opaque.
-pub(super) fn bgra_to_straight_rgba(mut pixels: Vec<u8>) -> Vec<u8> {
+/// 24-bit icon) is opaque. A buffer of nothing but zero bytes is no icon at all (`None`), not
+/// a black square: the Shell drew nothing.
+pub(super) fn bgra_to_straight_rgba(mut pixels: Vec<u8>) -> Option<Vec<u8>> {
+    if pixels.iter().all(|&byte| byte == 0) {
+        return None;
+    }
     let no_alpha = pixels.as_chunks::<4>().0.iter().all(|px| px[3] == 0);
     let premultiplied = !no_alpha
         && pixels
@@ -123,35 +126,5 @@ pub(super) fn bgra_to_straight_rgba(mut pixels: Vec<u8>) -> Vec<u8> {
             }
         }
     }
-    pixels
-}
-
-/// A multithreaded COM apartment on this thread for the call, left on drop. Multithreaded,
-/// not single: the lookup runs on rayon workers, the blocking pool, and the icon threads, none
-/// of which pumps messages, so an apartment-threaded icon handler loads in a COM-run host
-/// apartment that does, where in an STA of ours a cross-apartment call back would hang.
-struct Apartment {
-    entered: bool,
-}
-
-impl Apartment {
-    /// Enters one (`S_FALSE`, already in one, counts and is balanced the same). A thread
-    /// already in a single-threaded apartment (`RPC_E_CHANGED_MODE`) keeps it, unbalanced.
-    fn enter() -> Self {
-        // SAFETY: initializing COM on the calling thread; a success is balanced by `Drop`.
-        let hr = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE) };
-        Self {
-            entered: hr.is_ok() && hr != RPC_E_CHANGED_MODE,
-        }
-    }
-}
-
-impl Drop for Apartment {
-    fn drop(&mut self) {
-        if self.entered {
-            // SAFETY: balances the successful `CoInitializeEx` in `enter`, on the same thread
-            // (`Apartment` is built and dropped inside one call frame).
-            unsafe { CoUninitialize() };
-        }
-    }
+    Some(pixels)
 }

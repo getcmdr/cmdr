@@ -32,9 +32,35 @@ pub fn stand_in_icon_id(icon_id: &str) -> String {
     }
 }
 
+/// Shortcut kinds whose icon belongs to another file (the target, the deployed app), so the
+/// shortcut's own mtime can't say when its icon changed.
+const POINTS_ELSEWHERE: &[&str] = &["lnk", "appref-ms"];
+
+/// Whether a real-place icon id may live in the on-disk tier, whose staleness token is the
+/// place's own mtime: every one but a shortcut's (`path:…/Docs.lnk`), whose icon follows a
+/// file the token can't see.
+pub fn keeps_on_disk(icon_id: &str) -> bool {
+    let name = icon_id
+        .strip_prefix(PATH_KEY_PREFIX)
+        .and_then(|path| path.rsplit('/').next());
+    !name
+        .and_then(|name| name.rsplit_once('.'))
+        .is_some_and(|(_, ext)| POINTS_ELSEWHERE.iter().any(|kind| ext.eq_ignore_ascii_case(kind)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_shortcut_stays_out_of_the_disk_tier() {
+        assert!(!keeps_on_disk("path:C:/x/Docs.LNK"));
+        assert!(!keeps_on_disk("path:C:/x/app.appref-ms"));
+        assert!(keeps_on_disk("path:C:/x/tool.exe"));
+        assert!(keeps_on_disk("path:/Users/x/Custom Folder"));
+        assert!(keeps_on_disk("special:downloads"));
+        assert!(keeps_on_disk("pkg:/Applications/Safari.app"));
+    }
 
     #[test]
     fn own_icon_id_uses_the_path_prefix_and_full_path() {
