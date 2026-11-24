@@ -1005,6 +1005,10 @@ Every one is a pure name and path predicate with no I/O, a hard requirement sinc
 - `icons/special_folders.rs` is whole here; its only non-`std` dependency is `dirs`.
 - `icons/packages.rs` holds the package half of the per-path classification. The custom-icon half stays app-side: it
   needs a `getxattr` syscall, which is why it never runs during a listing in the first place.
+- `src/icons/own_icons.rs` keys a file that carries its own icon (Windows: `.exe`, `.lnk`, `.ico`, by
+  `file_extension::has_own_icon`, whose list sits in `file_extension/platform/`) by its path, and names the type icon
+  that stands in when the app may not read the place. The read itself and that decision stay app-side
+  (`apps/desktop/src-tauri/src/icons/DETAILS.md` § Asking Windows for the pixels).
 - `has_supported_archive_extension` delegates to `format_for_name`, so the whole name → format vocabulary is here
   (`ArchiveFormat`, `TarCodec`, `format_for_name`, `format_for_path`, `is_sequential`). The decoders that unwrap a tar's
   outer compression stay with the archive reading core. The split line is "naming vs machinery", and it keeps

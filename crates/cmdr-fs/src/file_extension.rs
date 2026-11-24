@@ -89,6 +89,17 @@ pub fn has_package_suffix(name: &str) -> bool {
     last_segment(name).is_some_and(|ext| PACKAGE_EXTENSIONS.iter().any(|known| ext.eq_ignore_ascii_case(known)))
 }
 
+/// Whether this OS draws a FILE named `name` with an icon of its own rather than its type's
+/// (Windows: `tool.exe`, `Docs.lnk`). Pure and case-insensitive, so it runs for every listed
+/// entry. Read as a file name; a folder is never asked.
+pub fn has_own_icon(name: &str) -> bool {
+    last_segment(name).is_some_and(|ext| {
+        platform::OWN_ICON_EXTENSIONS
+            .iter()
+            .any(|own| ext.eq_ignore_ascii_case(own))
+    })
+}
+
 /// Whether only macOS can say if a folder named `name` is a package: it has a
 /// dotted suffix the list doesn't know. A name with no such suffix isn't asked.
 /// Only the macOS app asks, so this reads the name alone.

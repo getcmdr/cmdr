@@ -385,8 +385,16 @@ windows-sys = { version = "0.61", features = [
 ] }
 # The system look's WinRT half (`system_look/platform/windows/ui_settings.rs`): `UISettings` for
 # the accent color and its shades, the transparency-effects switch, and their change events. The
-# version tao, wry, and tauri already link, so nothing new enters the lockfile.
-windows = { version = "0.62", features = ["UI_ViewManagement"] }
+# version tao, wry, and tauri already link, so nothing new enters the lockfile. Also the file
+# icons' Shell lookup (`icons/platform/windows/shell_image.rs`): `IShellItemImageFactory` in a
+# COM apartment, read back through GDI's `GetDIBits`.
+windows = { version = "0.62", features = [
+    "UI_ViewManagement",
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+] }
 # Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend
 # from the same maintainers as the Linux Secret Service one, so both arms share one API.
 keyring-core = "1"

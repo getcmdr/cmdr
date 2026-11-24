@@ -19,6 +19,23 @@ unrelated.)
 
 Decision/Why: this replaced the `file_icon_provider` crate, which did the same drawing but also reached `UTType` from a caching struct Cmdr never constructed. That reference alone hard-linked `UniformTypeIdentifiers.framework` into the binary, and since that framework arrived in macOS 11, dyld refused to launch Cmdr at all on the 10.15 floor `tauri.macos.conf.json` promises. Sixty lines of `NSWorkspace` we own beats a dependency that can put a framework in the binary for code we don't run, and it drops `gio`, `gtk`, and `windows` from the macOS graph as a side effect. `desktop-macos-framework-floor` now fails the build on any framework newer than the floor; the version evidence is in `docs/notes/system-requirements-and-es2025.md`.
 
+## Asking Windows for the pixels (`platform/windows/`)
+
+`shell_image.rs` asks `IShellItemImageFactory::GetImage(32×32, SIIGBF_ICONONLY)` on a Shell item made from the path, and reads the `HBITMAP` back with `GetDIBits` as 32-bit top-down BGRA, then converts premultiplied BGRA to straight RGBA. Every arm then encodes at `ICON_SIZE` (32), which the list draws at 16 CSS px, so 100–200% scaling is covered as on macOS.
+
+- **Decision/Why `IShellItemImageFactory`, not `SHGetFileInfoW`**: `GetImage` hands back exactly the size asked for, picking the icon resource's own frame for it (the hand-drawn 32 px frame, not a resample), whatever the process's DPI. `SHGetFileInfoW` only knows the system's small and large sizes (`SM_CXICON`, which moves with DPI), and its `SHGetImageList(SHIL_JUMBO)` route draws a type with no 256 px frame as a 48 px icon in the corner of a 256 px canvas. (Microsoft Learn: `IShellItemImageFactory::GetImage`, `SHGetImageList`, read 2026-11-24; the pixels are unverified on hardware, see the real-Windows checklist in #942 task 41.)
+- **`SIIGBF_ICONONLY`, always**: a thumbnail would read the file's content, and on a cloud placeholder start a download.
+- **Premultiplied unless proven straight**: the Shell's 32-bit icons come back premultiplied, so each color is divided by its alpha. A buffer where some color exceeds its alpha can't be premultiplied and is taken as straight; a buffer with every alpha 0 (an old 24-bit icon) is opaque. Pinned by the `bgra_*` tests.
+- **A multithreaded COM apartment per lookup** (`Apartment`): our threads (rayon, the blocking pool, the icon threads) pump no messages, so an apartment-threaded icon handler loads in a COM-run host apartment rather than one of ours, where a call back would hang.
+- **Type ids ask Cmdr's own samples**, as on macOS: `ext:{x}` an empty `<temp>/cmdr-icon-samples/sample.{x}`, `dir` the sample folder, and `file` / `symlink*` an extensionless `sample-file` (the Unix arms' `/etc/hosts` has no Windows twin). So a type lookup never touches a user's file.
+
+**Files with their own icon (`path:{file}`).** Explorer draws a program, a shortcut, and an icon file with the icon it holds or points at, so `file_extension::has_own_icon` (a pure name check, `crates/cmdr-fs/src/file_extension/platform/windows.rs` holds the list) gives such a file its `path:` key during listing (`cmdr_fs::icons::own_icons`). It shares the `path:` lifecycle (LRU-capped, never in localStorage) and the disk tier, whose mtime token tracks a rebuilt `.exe`.
+
+**The no-touch rule (`place.rs`, `may_read_own_icon`).** The Shell reads the file to draw its own icon, so a real place is asked only when it sits on a fixed, removable, or RAM drive (`GetDriveTypeW` on the letter; a UNC path answers no lexically, a mapped drive from its letter's kind, both without reaching the server) and holds its bytes (`GetFileAttributesW` shows no `OFFLINE` / `RECALL_ON_OPEN` / `RECALL_ON_DATA_ACCESS`; reading attributes opens no stream, so it starts no download). A path that doesn't exist (inside an archive, on a phone or a protocol share whose path has no native form) answers no too. `get_icons` asks this BEFORE the disk tier and shows the type's icon instead (`stand_in_icon_id`: `ext:{x}` for an own-icon file, `dir` for a folder id), cached in memory under the original id only.
+
+- Known gap: a `.lnk` on a local drive whose target sits on a dead share can still make the Shell reach for the target. The 8 MB thread and the 2 s IPC deadline absorb it; the row keeps its fallback glyph.
+- Special folders work through the same path: `real_path_for_real_folder_id` hands their location over as app text (`of_native`), since Windows names it `C:\Users\…`.
+
 ## Cache tiers and persistence
 
 `mod.rs` holds the fetch paths; the hot in-memory tier (`IconCache`, its LRU, the `clear_*` entry points) lives in

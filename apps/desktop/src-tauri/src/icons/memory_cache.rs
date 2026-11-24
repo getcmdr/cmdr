@@ -6,13 +6,14 @@ use crate::ignore_poison::RwLockIgnorePoison;
 use std::collections::{HashMap, VecDeque};
 use std::sync::{LazyLock, RwLock};
 
-/// Prefix marking per-path (per-folder) icon keys. Unlike `dir` / `ext:*` / `file`
-/// (an inherently bounded set), `path:` keys grow with the number of distinct
-/// directories visited, so they're capped by an LRU backstop (see `PATH_KEY_CAP`).
-pub(super) const PATH_KEY_PREFIX: &str = "path:";
+/// Prefix marking per-path icon keys (custom-icon folders, and on Windows the files that
+/// carry their own icon). Unlike `dir` / `ext:*` / `file` (an inherently bounded set),
+/// `path:` keys grow with the number of distinct places visited, so they're capped by an
+/// LRU backstop (see `PATH_KEY_CAP`).
+pub(super) use cmdr_fs::icons::own_icons::PATH_KEY_PREFIX;
 
-/// True for the unbounded Tier-C keys (`path:*` custom-icon folders + `pkg:*`
-/// package bundles). Both share the same lifecycle: LRU-capped in memory, backed
+/// True for the unbounded Tier-C keys (`path:*` custom-icon folders and own-icon files,
+/// `pkg:*` package bundles). All share the same lifecycle: LRU-capped in memory, backed
 /// by the on-disk cache, never persisted to localStorage on the FE. `.app` icons
 /// are per-app and custom-folder icons are per-folder, so both grow with browsing.
 fn is_per_path_key(icon_id: &str) -> bool {

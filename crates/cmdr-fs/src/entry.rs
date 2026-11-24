@@ -78,6 +78,10 @@ pub fn is_hidden_by_name(name: &str) -> bool {
 /// (`icons::custom_folder_icon_ids`), which the frontend drives only for visible
 /// directory rows.
 ///
+/// A file this OS draws with its own icon (Windows: `tool.exe`, `Docs.lnk`, by
+/// `file_extension::has_own_icon`, another pure name check) gets a `path:{path}`
+/// key (`icons::own_icons`).
+///
 /// Symlinks (even to a special location) keep their `symlink-dir` icon: the link
 /// badge is the salient signal, and following a symlink to classify it would
 /// cost a syscall per entry.
@@ -98,6 +102,9 @@ pub fn get_icon_id(is_dir: bool, is_symlink: bool, name: &str, path: &str) -> St
             return crate::icons::packages::package_icon_id(path);
         }
         return "dir".to_string();
+    }
+    if crate::file_extension::has_own_icon(name) {
+        return crate::icons::own_icons::own_icon_id(path);
     }
     // Extract extension
     if let Some(ext) = Path::new(name).extension() {
@@ -391,6 +398,35 @@ mod icon_id_tests {
             get_icon_id(false, false, "notes.txt", "/some/where/Downloads/notes.txt"),
             "ext:txt"
         );
+    }
+
+    /// A program, shortcut, or icon file is drawn with its own icon on Windows, so its key
+    /// is its path; everything else, folders and links included, keeps its usual key.
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn on_windows_a_file_with_its_own_icon_gets_a_path_key() {
+        assert_eq!(
+            get_icon_id(false, false, "tool.exe", "C:/Tools/tool.exe"),
+            "path:C:/Tools/tool.exe"
+        );
+        assert_eq!(
+            get_icon_id(false, false, "Docs.LNK", "C:/x/Docs.LNK"),
+            "path:C:/x/Docs.LNK"
+        );
+        assert_eq!(
+            get_icon_id(false, false, "a.ico", "//nas/share/a.ico"),
+            "path://nas/share/a.ico"
+        );
+        assert_eq!(get_icon_id(false, false, "notes.txt", "C:/x/notes.txt"), "ext:txt");
+        assert_eq!(get_icon_id(true, false, "odd.exe", "C:/x/odd.exe"), "dir");
+        assert_eq!(get_icon_id(false, true, "link.exe", "C:/x/link.exe"), "symlink-file");
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn off_windows_a_program_file_routes_by_its_extension() {
+        assert_eq!(get_icon_id(false, false, "tool.exe", "/tmp/tool.exe"), "ext:exe");
+        assert_eq!(get_icon_id(false, false, "Docs.lnk", "/tmp/Docs.lnk"), "ext:lnk");
     }
 }
 

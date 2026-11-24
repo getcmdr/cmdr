@@ -10,6 +10,7 @@ pub mod per_path;
 mod platform;
 // The special-folder classifier moved to `cmdr-fs`, where `FileEntry::new` can
 // reach it. Aliased so `icons::special_folders::…` keeps resolving.
+use cmdr_fs::icons::own_icons;
 pub use cmdr_fs::icons::special_folders;
 pub use memory_cache::{clear_directory_icon_cache, clear_extension_icon_cache};
 
@@ -181,14 +182,15 @@ fn icon_sample_path(ext: &str) -> Option<PathBuf> {
 /// Resolves a real-folder icon id (one fetched from an actual filesystem path) to
 /// that path. Covers all three Tier-B/C kinds:
 ///
-/// - `special:{name}` → the special folder's resolved standard location.
+/// - `special:{name}` → the special folder's resolved standard location, as app text (on
+///   Windows the OS names it `C:\Users\…`, which no app-text door reads).
 /// - `pkg:{path}` / `path:{path}` → the embedded path verbatim.
 ///
-/// Returns `None` for the bounded sample-based ids (`dir`, `ext:*`, `file`,
-/// `symlink*`), which fetch from sample paths, not real user folders.
+/// Every answer is app text. Returns `None` for the bounded sample-based ids (`dir`,
+/// `ext:*`, `file`, `symlink*`), which fetch from sample paths, not real user places.
 fn real_path_for_real_folder_id(icon_id: &str) -> Option<String> {
     if icon_id.starts_with(special_folders::SPECIAL_KEY_PREFIX) {
-        return special_folders::real_path_for_icon_id(icon_id).map(|p| p.to_string_lossy().into_owned());
+        return special_folders::real_path_for_icon_id(icon_id).and_then(|p| crate::app_text::of_native(&p));
     }
     if let Some(path) = icon_id.strip_prefix(per_path::PKG_KEY_PREFIX) {
         return Some(path.to_string());
@@ -268,12 +270,25 @@ pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> Ha
     let mut remaining = Vec::with_capacity(icon_ids.len());
     // (original_icon_id, real_path) pairs to fetch via the 8 MB threads.
     let mut per_path_to_fetch: Vec<(String, String)> = Vec::new();
+    // (original_icon_id, stand_in_id) for real places the OS may not be asked about.
+    let mut stand_ins: Vec<(String, String)> = Vec::new();
     for icon_id in icon_ids {
         if let Some(cached) = get_cached_icon(&icon_id) {
             result.insert(icon_id, cached);
             continue;
         }
         if let Some(real_path) = real_path_for_real_folder_id(&icon_id) {
+            // A share, a cloud placeholder, or a place inside an archive: its own icon would
+            // reach the network, start a download, or name nothing, so its type's icon stands
+            // in. Asked before the disk cache too, whose mtime read would reach the place.
+            if !platform::may_read_own_icon(&real_path) {
+                let stand_in = own_icons::stand_in_icon_id(&icon_id);
+                if !remaining.contains(&stand_in) && get_cached_icon(&stand_in).is_none() {
+                    remaining.push(stand_in.clone());
+                }
+                stand_ins.push((icon_id, stand_in));
+                continue;
+            }
             if let Some(url) = disk_cache::load(&icon_id, &real_path, epoch.variant) {
                 // Warm-tier hit: promote into the hot in-memory cache and return.
                 cache_icon(epoch, icon_id.clone(), url.clone());
@@ -323,6 +338,15 @@ pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> Ha
         if let Some(data_url) = fetched {
             cache_icon(epoch, icon_id.clone(), data_url.clone());
             result.insert(icon_id, data_url);
+        }
+    }
+
+    // Each unreadable place shows its stand-in's pixels under its own id, in memory only:
+    // nothing on disk, since the place's mtime is exactly what mustn't be read.
+    for (icon_id, stand_in) in stand_ins {
+        if let Some(url) = result.get(&stand_in).cloned().or_else(|| get_cached_icon(&stand_in)) {
+            cache_icon(epoch, icon_id.clone(), url.clone());
+            result.insert(icon_id, url);
         }
     }
 
