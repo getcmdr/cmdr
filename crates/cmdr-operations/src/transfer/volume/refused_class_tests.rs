@@ -180,14 +180,16 @@ async fn a_cross_volume_move_refuses_a_name_the_destination_refuses_and_keeps_it
     run_case(Driver::CrossVolumeMove).await;
 }
 
-/// ❗ A remote name holding `:` or `\` (`12:00 notes`) can't take Windows' native join, which
-/// the engines still use: it's asked about per item like any refused name, ❌ never ending
-/// the whole transfer as a hostile listing does. Windows' join is preset, so every OS runs
-/// it; the source is a POSIX server's tree, the destination another remote.
-async fn run_native_join_case(driver: Driver) {
+/// ❗ A remote name holding `:` or `\` (`12:00 notes`, `back\slash.txt`, a folder `a:b`) is
+/// one name on every host: the walk joins it typed and the leaf bodies take the app path,
+/// so it lands whole on a remote destination, and a destination whose rules refuse those
+/// characters (a local NTFS disk, here preset as FAT's) asks about it per item, ❌ never
+/// ending the transfer as a hostile listing does, and ❌ never landing it as a subfolder or
+/// a stream. The source is a POSIX server's tree, the destination another remote.
+async fn run_remote_names_case(driver: Driver, refusing: bool) {
     let at = |text: &'static str| AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text}: {why}"));
     let source = Arc::new(InMemoryVolume::new("Server").with_space_info(10_000_000, 10_000_000));
-    for dir in ["/album", "/album/a:b"] {
+    for dir in ["/album", "/album/a:b", "/album/a"] {
         source.create_directory(at(dir)).await.unwrap();
     }
     for file in [
@@ -195,20 +197,21 @@ async fn run_native_join_case(driver: Driver) {
         "/album/12:00 notes.txt",
         "/album/back\\slash.txt",
         "/album/a:b/x.txt",
+        // `a\b.txt` beside a real folder `a` holding `b.txt`: two files, ❌ never one.
+        "/album/a\\b.txt",
+        "/album/a/b.txt",
     ] {
-        source.create_file(at(file), b"incoming").await.unwrap();
+        source.create_file(at(file), file.as_bytes()).await.unwrap();
     }
-    let mut sources = vec![PathBuf::from("/album")];
-    if driver != Driver::SerialCopy {
-        source.create_file(app_path!("/top:1.txt"), b"incoming").await.unwrap();
-        sources.push(PathBuf::from("/top:1.txt"));
-    }
+    let sources = vec![PathBuf::from("/album")];
     let dest = Arc::new(InMemoryVolume::new("Other server").with_space_info(10_000_000, 10_000_000));
     dest.create_directory(app_path!("/inbox")).await.unwrap();
 
     let engine = TestOperations::new();
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
-    state.destination_names.join_as(cmdr_fs::volume::NameFlavor::Windows);
+    if refusing {
+        state.destination_names.resolve(fat_on_linux);
+    }
     let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Skip, false));
     let config = VolumeCopyConfig::default();
     let (src, dst) = (
@@ -242,51 +245,100 @@ async fn run_native_join_case(driver: Driver) {
         .await
         .map(|_| ()),
     };
-    result.unwrap_or_else(|f| panic!("{driver:?}: one unusable name must not end the transfer: {:?}", f.error));
+    result.unwrap_or_else(|f| panic!("{driver:?}: a remote name must not end the transfer: {:?}", f.error));
 
-    assert!(
-        dest.exists(app_path!("/inbox/album/ok.txt")).await,
-        "{driver:?}: ok.txt"
-    );
-    for refused in [
-        "/inbox/album/12:00 notes.txt",
-        "/inbox/album/back\\slash.txt",
-        "/inbox/album/a:b",
-        "/inbox/top:1.txt",
+    let read = |path: &'static str| {
+        let dest = Arc::clone(&dest);
+        async move {
+            let mut stream = dest.open_read_stream(at(path)).await.ok()?;
+            let mut bytes = Vec::new();
+            while let Some(chunk) = stream.next_chunk().await {
+                bytes.extend_from_slice(&chunk.ok()?);
+            }
+            Some(bytes)
+        }
+    };
+    for (landed, from) in [
+        ("/inbox/album/ok.txt", "/album/ok.txt"),
+        ("/inbox/album/a/b.txt", "/album/a/b.txt"),
     ] {
-        assert!(!dest.exists(at(refused)).await, "{driver:?}: {refused} landed");
+        assert_eq!(
+            read(landed).await.as_deref(),
+            Some(from.as_bytes()),
+            "{driver:?}: {landed}"
+        );
     }
+    let named = [
+        ("/inbox/album/12:00 notes.txt", "/album/12:00 notes.txt"),
+        ("/inbox/album/back\\slash.txt", "/album/back\\slash.txt"),
+        ("/inbox/album/a:b/x.txt", "/album/a:b/x.txt"),
+        ("/inbox/album/a\\b.txt", "/album/a\\b.txt"),
+    ];
     let prompts = events.inner.conflicts.lock_ignore_poison().clone();
-    let expected = if driver == Driver::SerialCopy { 3 } else { 4 };
-    assert_eq!(
-        prompts.len(),
-        expected,
-        "{driver:?}: one prompt per refused name: {prompts:?}"
-    );
-    assert!(
-        prompts
-            .iter()
-            .all(|p| p.refused_name == Some(RefusedNameReason::NotAllowed)),
-        "{driver:?}: {prompts:?}"
-    );
-    if driver == Driver::CrossVolumeMove {
-        for kept in ["/album/12:00 notes.txt", "/album/a:b/x.txt", "/top:1.txt"] {
-            assert!(source.exists(at(kept)).await, "a move keeps a skipped source: {kept}");
+    if refusing {
+        for (refused, _) in named {
+            assert!(!dest.exists(at(refused)).await, "{driver:?}: {refused} landed");
+        }
+        assert!(
+            !dest.exists(app_path!("/inbox/album/a:b")).await,
+            "{driver:?}: a:b landed"
+        );
+        assert_eq!(prompts.len(), 4, "{driver:?}: one prompt per refused name: {prompts:?}");
+        assert!(
+            prompts
+                .iter()
+                .all(|p| p.refused_name == Some(RefusedNameReason::NotAllowed)),
+            "{driver:?}: {prompts:?}"
+        );
+        if driver == Driver::CrossVolumeMove {
+            for (_, kept) in named {
+                assert!(source.exists(at(kept)).await, "a move keeps a skipped source: {kept}");
+            }
+        }
+    } else {
+        for (landed, from) in named {
+            assert_eq!(
+                read(landed).await.as_deref(),
+                Some(from.as_bytes()),
+                "{driver:?}: {landed}"
+            );
+        }
+        assert!(prompts.is_empty(), "{driver:?}: nothing to ask about: {prompts:?}");
+        if driver == Driver::CrossVolumeMove {
+            assert!(
+                !source.exists(app_path!("/album")).await,
+                "a move takes its source along"
+            );
         }
     }
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn a_serial_copy_asks_about_a_name_the_native_join_refuses() {
-    run_native_join_case(Driver::SerialCopy).await;
+async fn a_serial_copy_lands_a_remote_name_holding_a_colon_or_backslash_whole() {
+    run_remote_names_case(Driver::SerialCopy, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn a_concurrent_copy_asks_about_a_name_the_native_join_refuses() {
-    run_native_join_case(Driver::ConcurrentCopy).await;
+async fn a_concurrent_copy_lands_a_remote_name_holding_a_colon_or_backslash_whole() {
+    run_remote_names_case(Driver::ConcurrentCopy, false).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn a_cross_volume_move_asks_about_a_name_the_native_join_refuses_and_keeps_its_source() {
-    run_native_join_case(Driver::CrossVolumeMove).await;
+async fn a_cross_volume_move_lands_a_remote_name_holding_a_colon_or_backslash_whole() {
+    run_remote_names_case(Driver::CrossVolumeMove, false).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_serial_copy_asks_about_a_colon_or_backslash_name_the_destination_refuses() {
+    run_remote_names_case(Driver::SerialCopy, true).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_concurrent_copy_asks_about_a_colon_or_backslash_name_the_destination_refuses() {
+    run_remote_names_case(Driver::ConcurrentCopy, true).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_cross_volume_move_asks_about_a_colon_or_backslash_name_the_destination_refuses_and_keeps_its_source() {
+    run_remote_names_case(Driver::CrossVolumeMove, true).await;
 }

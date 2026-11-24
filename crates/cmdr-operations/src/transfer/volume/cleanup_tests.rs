@@ -93,16 +93,17 @@ async fn roll_back(
     copied_paths: &[PathBuf],
     created_dirs: &[PathBuf],
 ) -> CancelRollback {
-    let mut ledger: Vec<WrittenFile> = Vec::new();
+    let mut ledger: Vec<WrittenFile<AppPathBuf>> = Vec::new();
     for path in copied_paths {
-        let size = volume
-            .get_metadata(&AppPath::legacy_unchecked(path))
-            .await
-            .ok()
-            .and_then(|e| e.size)
-            .unwrap_or(0);
-        ledger.push(WrittenFile::volume(path.clone(), size));
+        let path = crate::testing::app_path_of(path);
+        let size = volume.get_metadata(&path).await.ok().and_then(|e| e.size).unwrap_or(0);
+        ledger.push(WrittenFile::volume_at(path, size));
     }
+    let created_dirs: Vec<AppPathBuf> = created_dirs
+        .iter()
+        .map(|dir| crate::testing::app_path_of(dir))
+        .collect();
+    let created_dirs = &created_dirs[..];
     let events = CollectorEventSink::new();
     let state = make_state(engine);
     volume_rollback_with_progress(
@@ -205,7 +206,7 @@ async fn rollback_leaves_a_file_the_backend_now_reports_at_another_size() {
             .unwrap()
             .size
             .unwrap();
-        ledger.push(WrittenFile::volume(path, size));
+        ledger.push(WrittenFile::volume_at(crate::testing::app_path_of(&path), size));
     }
     // Something else changes one of them while the copy was running.
     vol.set_reported_size(Path::new("/album/theirs.jpg"), 4096);
@@ -315,7 +316,7 @@ async fn a_stopped_volume_reversal_leaves_the_ledger_claiming_what_is_still_ther
         vol.create_file(&AppPath::legacy_unchecked(&path), b"payload")
             .await
             .unwrap();
-        ledger.push(WrittenFile::volume(path, 7));
+        ledger.push(WrittenFile::volume_at(crate::testing::app_path_of(&path), 7));
     }
     let volume: Arc<dyn Volume> = vol.clone();
 
@@ -348,9 +349,9 @@ async fn a_stopped_volume_reversal_leaves_the_ledger_claiming_what_is_still_ther
     assert_eq!(ledger.len(), 4, "nothing was reversed, so nothing left the ledger");
     for entry in &ledger {
         assert!(
-            vol.exists(&AppPath::legacy_unchecked(&entry.path)).await,
+            vol.exists(&entry.path).await,
             "{} is still claimed, so it must still be on the volume",
-            entry.path.display()
+            entry.path
         );
     }
 }

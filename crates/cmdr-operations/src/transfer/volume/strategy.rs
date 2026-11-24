@@ -16,6 +16,7 @@ use super::super::super::state::WriteOperationState;
 // this module's API) name the staging choice without a second import path.
 pub(super) use super::super::staged_write::{LandingName, Replaces, WriteStaging, resolve_staging, staging_for};
 use super::super::transfer_driver::{LeafProgressLedger, SourceProgress};
+use super::listed_name::on_volume;
 use super::merge::copy_directory_streaming;
 use super::merge_ctx::{CreatedPaths, MergeCtx};
 use super::preflight::SourceFileFacts;
@@ -109,6 +110,9 @@ pub(super) async fn copy_single_path(
         ))
         .at_destination(dest_path);
     }
+    // The driver still hands `std::path` values in; from here every body takes
+    // the app paths, made once (a borrow for UTF-8).
+    let (source_app, dest_app) = (on_volume(source_path), on_volume(dest_path));
 
     // A selected link this copy carries is a leaf, whatever the scan or a hint
     // says it points at. It joins the source's ledger like a walked leaf (a
@@ -121,15 +125,15 @@ pub(super) async fn copy_single_path(
         let leaf = progress.begin_leaf(progress.node());
         land_link(
             source_volume,
-            source_path,
+            &source_app,
             target,
             dest_volume,
-            dest_path,
+            &dest_app,
             state,
             staging,
         )
         .await?;
-        created.record_link(dest_path.to_path_buf(), target.to_path_buf());
+        created.record_link(dest_app.into_owned(), target.to_path_buf());
         leaf.complete(0);
         return Ok(0);
     }
@@ -144,7 +148,7 @@ pub(super) async fn copy_single_path(
         // extract O(n²). Route it to the one-pass extractor instead, which decodes
         // the stream once. Random-access sources (a folder on any real FS, a plain
         // `.tar`, a zip) keep the per-entry walk below — zero regression.
-        if source_volume.extraction_is_sequential(&AppPath::legacy_unchecked(source_path)) {
+        if source_volume.extraction_is_sequential(&source_app) {
             return Box::pin(super::sequential_extract::extract_sequential_subtree(
                 source_volume,
                 source_path,
@@ -189,10 +193,10 @@ pub(super) async fn copy_single_path(
         // undo's own recheck (`journal_landed::LandedReadBack`), so only its bytes go up.
         let bytes = stream_pipe_file(
             source_volume,
-            source_path,
+            &source_app,
             source_facts,
             dest_volume,
-            dest_path,
+            &dest_app,
             state,
             &on_chunk,
             staging,

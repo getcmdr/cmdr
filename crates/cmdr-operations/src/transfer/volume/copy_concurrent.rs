@@ -53,6 +53,7 @@ use super::super::transfer_probe::OperationProbe;
 use super::copy::CopyCells;
 use super::copy::drain_deadline as drain_deadline_for;
 use super::copy_concurrent_task::{CopyTask, CopyTaskEnd, CopyTaskFailure, CopyTaskSuccess, run_copy_task};
+use super::listed_name::on_volume;
 use super::merge_ctx::CreatedPaths;
 use super::preflight::SourceHint;
 use super::transfer_error::WriteFailure;
@@ -658,7 +659,7 @@ impl Settlements {
             ctx.cells
                 .copied_paths
                 .lock_ignore_poison()
-                .push(WrittenFile::volume(recorded_path, bytes));
+                .push(WrittenFile::volume_at(on_volume(&recorded_path).into_owned(), bytes));
         }
         // Per-file milestone emit. The task's `on_file_complete` bumped
         // the ledger's `files_done`; the FE's files-axis needs a Copying event that

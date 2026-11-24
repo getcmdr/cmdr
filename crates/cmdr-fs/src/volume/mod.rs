@@ -2660,7 +2660,7 @@ pub mod host;
 
 pub use capabilities::VolumeCapabilities;
 pub use channel_stream::ChannelReadStream;
-pub use child_name::{ChildName, NameFlavor, NotAChildName, only_native_join_refuses};
+pub use child_name::{ChildName, NameFlavor, NotAChildName};
 pub use connection::{BackendKind, ConnectionState, DeviceReadiness, DeviceUnavailableReason, MountClass, SignInShape};
 pub use connection_cell::{CellState, ConnectionCell};
 pub use connection_reporter::{ConnectionReporter, ReportedState};

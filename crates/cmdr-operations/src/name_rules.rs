@@ -20,7 +20,7 @@ use cmdr_fs::filesystem_kind::FilesystemKind;
 use cmdr_fs::validation::{
     HOST_PATH_LIMIT, LengthLimit, NameRules, PortabilityWarning, ValidationError, validate_filename,
 };
-use cmdr_fs::volume::{BackendKind, NameFlavor, Volume, only_native_join_refuses};
+use cmdr_fs::volume::{BackendKind, Volume};
 
 use super::host::EngineHost;
 use super::mutation_error::MutationError;
@@ -140,38 +140,22 @@ pub(crate) fn name_rules_on(volume: &dyn Volume, dir: &Path) -> NameRules {
 /// sibling, `docs/notes/windows-port/name-rules-on-a-mac-2026-11-18.md`), so the
 /// engine must refuse them before any write, ❌ never leave them to the landing.
 /// Length and the rest stay the destination's to answer, as before.
-/// Unresolved (a test, an operation that never set it) refuses nothing by its rules.
+/// Unresolved (a test, an operation that never set it) refuses nothing.
 ///
-/// ❗ Resolved or not, it also refuses a name only this host's native join can't keep a
-/// direct child (`cmdr_fs::volume::only_native_join_refuses`: on Windows a remote name
-/// holding `\` or `:`, `12:00 notes`), since the engines still join names with `std::path`.
-/// So such an item is asked about like any refused name, ❌ never ending the transfer.
-/// Always `false` on macOS and Linux.
+/// A remote name holding `\` or `:` (`12:00 notes`) is no refusal of its own: the engines
+/// join names typed (`AppPath::join`), so it lands whole on a remote destination, and a
+/// local NTFS one refuses it by its rules (`NameRules::for_host_local_disk`).
 // DEFAULT-OK: the zero value is an unresolved cell, which claims no rules about the disk; it
 // refuses nothing more than before this check existed, and the landing still answers for itself.
 #[derive(Default)]
 pub(crate) struct DestinationNames {
     rules: OnceLock<NameRules>,
-    /// Whose native join the engine's `std::path` joins follow: this host's, unless a test
-    /// presets Windows' to drive that refusal on any OS.
-    join: OnceLock<NameFlavor>,
 }
 
 impl DestinationNames {
     /// Resolves the rules once; a second call (or a test's preset) keeps the first.
     pub(crate) fn resolve(&self, rules: impl FnOnce() -> NameRules) {
         let _ = self.rules.get_or_init(rules);
-    }
-
-    /// Presets the native join's flavor, so a test drives Windows' join refusal on any OS.
-    #[cfg(test)]
-    pub(crate) fn join_as(&self, flavor: NameFlavor) {
-        let _ = self.join.set(flavor);
-    }
-
-    /// Whether this host's native join refuses `name`, which POSIX keeps whole.
-    pub(crate) fn native_join_refuses(&self, name: &(impl AsRef<OsStr> + ?Sized)) -> bool {
-        only_native_join_refuses(name, self.join.get().copied().unwrap_or(NameFlavor::HOST))
     }
 
     /// [`Self::resolve`] for a destination volume, its local probe on the
@@ -191,12 +175,8 @@ impl DestinationNames {
         self.resolve(|| rules);
     }
 
-    /// Whether the destination refuses `name` (one path segment): by its rules, or because
-    /// this host's native join can't keep the name whole ([`Self::native_join_refuses`]).
+    /// Whether the destination refuses `name` (one path segment) by its rules.
     pub(crate) fn refuses(&self, name: &OsStr) -> bool {
-        if self.native_join_refuses(name) {
-            return true;
-        }
         let Some(rules) = self.rules.get() else {
             return false;
         };

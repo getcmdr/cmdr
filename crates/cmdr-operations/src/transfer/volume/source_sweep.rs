@@ -33,7 +33,7 @@ use super::super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::super::state::WriteOperationState;
 use super::super::left_in_source::junk_volume_delete_refused;
 use super::super::volume_outage::through_outages;
-use super::listed_name::{into_std, listed_path, on_volume, std_of};
+use super::listed_name::{listed_path, on_volume, std_of};
 use super::transfer_error::{AtPath, PathedVolumeError, failed_native};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
@@ -75,8 +75,11 @@ impl SourceStamp {
 // over it removes nothing.
 #[derive(Default)]
 pub(crate) struct SourceLedger {
-    files: HashMap<PathBuf, SourceStamp>,
-    walked_dirs: HashSet<PathBuf>,
+    /// Keyed by app path, compared as text: on Windows a `std::path` key reads
+    /// a POSIX server's `a\b` as the file `b` in a folder `a`, and would vouch
+    /// for that other file.
+    files: HashMap<AppPathBuf, SourceStamp>,
+    walked_dirs: HashSet<AppPathBuf>,
     /// What the walk left out (`WriteOperationState::os_junk`): a folder that
     /// holds nothing else once its carried files are gone goes WITH them.
     os_junk: OsJunkFiles,
@@ -91,21 +94,21 @@ impl SourceLedger {
         }
     }
 
-    pub(super) fn record_walked_dir(&mut self, dir: PathBuf) {
+    pub(super) fn record_walked_dir(&mut self, dir: AppPathBuf) {
         self.walked_dirs.insert(dir);
     }
 
-    pub(super) fn record_carried_file(&mut self, file: PathBuf, stamp: SourceStamp) {
+    pub(super) fn record_carried_file(&mut self, file: AppPathBuf, stamp: SourceStamp) {
         self.files.insert(file, stamp);
     }
 
     /// Takes back a file the walk recorded as carried but never landed.
-    pub(super) fn forget_carried_file(&mut self, file: &Path) {
+    pub(super) fn forget_carried_file(&mut self, file: &AppPath) {
         self.files.remove(file);
     }
 
     /// Whether the move carried this path, as a file or as a folder it walked.
-    fn carried(&self, path: &Path) -> bool {
+    fn carried(&self, path: &AppPath) -> bool {
         self.files.contains_key(path) || self.walked_dirs.contains(path)
     }
 }
@@ -140,7 +143,7 @@ async fn sweep_moved_folder(
     volume: &Arc<dyn Volume>,
     folder: &Path,
     ledger: &SourceLedger,
-    skipped: &HashSet<PathBuf>,
+    skipped: &HashSet<AppPathBuf>,
     locked: &LockedPlan,
 ) -> Result<FolderLeftovers, PathedVolumeError> {
     let mut left = FolderLeftovers::default();
@@ -154,7 +157,7 @@ async fn sweep_level(
     volume: &Arc<dyn Volume>,
     dir: &Path,
     ledger: &SourceLedger,
-    skipped: &HashSet<PathBuf>,
+    skipped: &HashSet<AppPathBuf>,
     locked: &LockedPlan,
     left: &mut FolderLeftovers,
 ) -> Result<bool, PathedVolumeError> {
@@ -203,25 +206,25 @@ async fn sweep_level(
         };
         // The same entry for the ledgers, which key on `std::path`.
         let path = std_of(&path_app).into_owned();
-        let outcome = if skipped.contains(&path) {
+        let outcome = if skipped.contains(&*path_app) {
             Ok(true)
         } else {
             match kind_of(volume, entry, &path_app).await {
                 Err(e) => Err(e),
-                Ok(EntryKind::Directory) if ledger.walked_dirs.contains(&path) => {
+                Ok(EntryKind::Directory) if ledger.walked_dirs.contains(&*path_app) => {
                     Box::pin(sweep_level(volume, &path, ledger, skipped, locked, left)).await
                 }
                 // A link the move carried goes as the link, ❌ never through it:
                 // on a backend whose listing follows links the walk copied what
                 // it points at, and that target is not the user's selection.
-                Ok(EntryKind::Symlink) if ledger.carried(&path) => {
+                Ok(EntryKind::Symlink) if ledger.carried(&path_app) => {
                     volume.delete(&path_app).await.at_source(&*path_app).map(|()| false)
                 }
                 Ok(EntryKind::Directory | EntryKind::Symlink) => {
                     left.appeared += 1;
                     Ok(true)
                 }
-                Ok(EntryKind::File) => match ledger.files.get(&path) {
+                Ok(EntryKind::File) => match ledger.files.get(&*path_app) {
                     // An OS junk file the move left out (#314, #1305): this folder's
                     // own metadata, so it goes if the folder does.
                     None if ledger.os_junk.leaves_out_str(&entry.name, false) => {
@@ -362,13 +365,13 @@ pub(crate) async fn stamp_source(volume: &Arc<dyn Volume>, source: &Path) -> Res
             let path = listed_path(&entry).at_source(&*dir)?.into_owned();
             match kind_of(volume, &entry, &path).await? {
                 EntryKind::Directory => pending.push(path),
-                EntryKind::File => ledger.record_carried_file(into_std(path), SourceStamp::of(&entry)),
+                EntryKind::File => ledger.record_carried_file(path, SourceStamp::of(&entry)),
                 // A link is never walked through (it could loop, and a move
                 // carries a link as itself); unrecorded, it stays in the source.
                 EntryKind::Symlink => {}
             }
         }
-        ledger.record_walked_dir(into_std(dir));
+        ledger.record_walked_dir(dir);
     }
     Ok(CarriedSource::Folder(ledger))
 }
@@ -389,7 +392,7 @@ pub(crate) async fn sweep_carried_source(
     volume: &Arc<dyn Volume>,
     source: &Path,
     carried: &CarriedSource,
-    skipped: &HashSet<PathBuf>,
+    skipped: &HashSet<AppPathBuf>,
     locked: &LockedPlan,
 ) -> Result<FolderLeftovers, PathedVolumeError> {
     let mut runs = 0_u32;
@@ -407,7 +410,7 @@ async fn sweep_once(
     volume: &Arc<dyn Volume>,
     source: &Path,
     carried: &CarriedSource,
-    skipped: &HashSet<PathBuf>,
+    skipped: &HashSet<AppPathBuf>,
     locked: &LockedPlan,
     after_a_wait: bool,
 ) -> Result<FolderLeftovers, PathedVolumeError> {

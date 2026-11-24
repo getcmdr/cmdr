@@ -171,19 +171,14 @@ pub(super) struct CompareStopped;
 /// `Err` when `stop` fired first (see [`holds_the_source`]).
 pub(super) async fn settle_unanswered_create(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     size: u64,
     dest_volume: &Arc<dyn Volume>,
-    final_path: &Path,
+    final_path: &AppPath,
     stop: &CancellationToken,
 ) -> Result<Option<WriteStamp>, CompareStopped> {
-    let (source_path, final_path) = (
-        AppPath::legacy_unchecked(source_path),
-        AppPath::legacy_unchecked(final_path),
-    );
     unless_stopped(stop, async {
-        let (ours, at_the_name) =
-            same_size_streams(source_volume, &source_path, size, dest_volume, &final_path).await?;
+        let (ours, at_the_name) = same_size_streams(source_volume, source_path, size, dest_volume, final_path).await?;
         // Read before the compare consumes the stream: the open already holds it.
         let stamp = WriteStamp::of(&*ours, &**dest_volume);
         same_bytes(ours, at_the_name).await.then_some(stamp)

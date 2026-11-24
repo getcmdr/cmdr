@@ -10,12 +10,11 @@
 //! redirects the operation: a stat that fails records no identity, and the row
 //! keeps the checks a row from before identities gets.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
-use std::ffi::OsStr;
 use std::fs::Metadata;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cmdr_fs::volume::{LandedModified, MountClass, NodeIdentity, Volume};
 
@@ -73,24 +72,27 @@ pub(crate) fn landed_node(scope: &OpScope, landed_at: &Path, metadata: Option<&M
 // the size-only check the row had before; it claims no time and no node for any file.
 #[derive(Debug, Default)]
 pub(crate) struct LandedReadBack {
-    modified: HashMap<PathBuf, i64>,
-    nodes: HashMap<PathBuf, NodeIdentity>,
+    /// Keyed by app path, compared as text: on Windows a `std::path` key would
+    /// read a POSIX server's `a\b` as the file `b` in a folder `a`.
+    modified: HashMap<AppPathBuf, i64>,
+    nodes: HashMap<AppPathBuf, NodeIdentity>,
 }
 
 impl LandedReadBack {
     /// Read back what one top-level source landed: `landed` for a FILE source,
     /// every `files` entry for a DIRECTORY source (its time only when its write
-    /// reported none).
+    /// reported none). The walk holds each file as the app path it joined.
     pub(crate) async fn read_back(
         scope: &OpScope,
         dest: &dyn Volume,
         landed: &Path,
         source_is_dir: bool,
-        files: &[WrittenFile],
+        files: &[WrittenFile<AppPathBuf>],
     ) -> Self {
+        let landed_app = on_dest(landed);
         Self {
-            modified: Self::modified_times(dest, landed, source_is_dir, files).await,
-            nodes: Self::nodes(scope, dest, landed, source_is_dir, files).await,
+            modified: Self::modified_times(dest, &landed_app, source_is_dir, files).await,
+            nodes: Self::nodes(scope, dest, landed, &landed_app, source_is_dir, files).await,
         }
     }
 
@@ -100,21 +102,22 @@ impl LandedReadBack {
         scope: &OpScope,
         dest: &dyn Volume,
         landed: &Path,
+        landed_app: &AppPath,
         source_is_dir: bool,
-        files: &[WrittenFile],
-    ) -> HashMap<PathBuf, NodeIdentity> {
+        files: &[WrittenFile<AppPathBuf>],
+    ) -> HashMap<AppPathBuf, NodeIdentity> {
         let mut nodes = HashMap::new();
         if !scope.records_landed_nodes(|| volume_keeps_landed_nodes(dest, landed)) {
             return nodes;
         }
-        let paths: Vec<&Path> = if source_is_dir {
-            files.iter().map(|file| file.path.as_path()).collect()
+        let paths: Vec<&AppPath> = if source_is_dir {
+            files.iter().map(|file| file.path.as_app_path()).collect()
         } else {
-            vec![landed]
+            vec![landed_app]
         };
         for path in paths {
-            if let Ok(Some(node)) = dest.node_identity(&on_dest(path)).await {
-                nodes.insert(path.to_path_buf(), node);
+            if let Ok(Some(node)) = dest.node_identity(path).await {
+                nodes.insert(path.to_owned(), node);
             }
         }
         nodes
@@ -122,26 +125,29 @@ impl LandedReadBack {
 
     async fn modified_times(
         dest: &dyn Volume,
-        landed: &Path,
+        landed: &AppPath,
         source_is_dir: bool,
-        files: &[WrittenFile],
-    ) -> HashMap<PathBuf, i64> {
+        files: &[WrittenFile<AppPathBuf>],
+    ) -> HashMap<AppPathBuf, i64> {
         let mut times = HashMap::new();
         if !source_is_dir {
             if let Some(secs) = dest
-                .get_metadata(&on_dest(landed))
+                .get_metadata(landed)
                 .await
                 .ok()
                 .and_then(|entry| entry.modified_at)
                 .and_then(|secs| i64::try_from(secs).ok())
             {
-                times.insert(landed.to_path_buf(), secs);
+                times.insert(landed.to_owned(), secs);
             }
             return times;
         }
-        // Each folder's landed files by name. A listed name is only ever matched
-        // against these, never joined onto a path.
-        let mut by_folder: BTreeMap<&Path, HashMap<&OsStr, &WrittenFile>> = BTreeMap::new();
+        // Each folder's landed files by name, split as the walk joined them (the
+        // app path's own split, so a POSIX server's `a\b` stays one name on
+        // Windows). A listed name is only ever matched against these, in the
+        // walk's own spelling of a listed name (`AppName::from_listed_text`),
+        // never joined onto a path.
+        let mut by_folder: BTreeMap<&AppPath, HashMap<&str, &WrittenFile<AppPathBuf>>> = BTreeMap::new();
         for file in files
             .iter()
             .filter(|file| file.landed_modified == LandedModified::Unknown)
@@ -151,11 +157,14 @@ impl LandedReadBack {
             }
         }
         for (folder, wanted) in by_folder {
-            let Ok(entries) = dest.list_directory(&on_dest(folder), None).await else {
+            let Ok(entries) = dest.list_directory(folder, None).await else {
                 continue;
             };
             for entry in &entries {
-                let Some(file) = wanted.get(OsStr::new(&entry.name)) else {
+                let Ok(listed) = AppName::from_listed_text(&entry.name) else {
+                    continue;
+                };
+                let Some(file) = wanted.get(listed.as_str()) else {
                     continue;
                 };
                 // What landed has to be what's listed: a link for a link this
@@ -174,19 +183,19 @@ impl LandedReadBack {
     }
 
     /// The landed mtime read back for `path`, if one was.
-    pub(crate) fn modified(&self, path: &Path) -> Option<i64> {
+    pub(crate) fn modified(&self, path: &AppPath) -> Option<i64> {
         self.modified.get(path).copied()
     }
 
     /// The node `path` landed as, if one was read back.
-    pub(crate) fn node(&self, path: &Path) -> Option<NodeIdentity> {
+    pub(crate) fn node(&self, path: &AppPath) -> Option<NodeIdentity> {
         self.nodes.get(path).copied()
     }
 }
 
-/// A landed path as the app path the destination volume takes. The transfer hands its
-/// landed paths over as `std::path` values (the journal's rows are built from them), so
-/// each volume read crosses here, losslessly: the module's one crossing.
+/// A landed path as the app path the destination volume takes. The transfer hands a
+/// source's landed root over as a `std::path` value, so it crosses here, losslessly:
+/// the module's one crossing.
 fn on_dest(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }

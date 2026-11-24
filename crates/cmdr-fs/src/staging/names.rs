@@ -37,7 +37,7 @@ use std::path::{Path, PathBuf};
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::{STAGING_DELETING_MARKER, STAGING_TEMP_MARKER, UUID_TEXT_LEN};
+use super::{STAGING_ASIDE_MARKER, STAGING_DELETING_MARKER, STAGING_TEMP_MARKER, UUID_TEXT_LEN};
 
 /// The longest scratch filename Cmdr creates, in UTF-8 bytes: eCryptfs's
 /// 143-byte name limit (Synology encrypted shares), the strictest a write meets.
@@ -60,6 +60,22 @@ pub fn temp_sibling_name(file_name: &str) -> String {
 /// UUID: `album.cmdr-deleting-<uuid>`, shortened the same way.
 pub fn deleting_sibling_name(folder_name: &str) -> String {
     scratch_name(folder_name, STAGING_DELETING_MARKER, uuid::Uuid::new_v4())
+}
+
+/// [`temp_sibling_name`] with the UUID chosen by the caller: the name
+/// [`StagingTemp::mint_with_uuid`](super::StagingTemp::mint_with_uuid) gives a
+/// temp beside a file called `file_name`, for a caller that joins it under the
+/// folder itself (an app path's typed join) and registers it with
+/// [`StagingTemp::adopt_named`](super::StagingTemp::adopt_named).
+pub fn temp_sibling_name_with_uuid(file_name: &str, uuid: uuid::Uuid) -> String {
+    scratch_name(file_name, STAGING_TEMP_MARKER, uuid)
+}
+
+/// The name [`StagingTemp::mint_aside`](super::StagingTemp::mint_aside) gives a
+/// safe-overwrite's aside beside a file called `file_name`, for the same callers
+/// as [`temp_sibling_name_with_uuid`].
+pub fn aside_sibling_name_with_uuid(file_name: &str, uuid: uuid::Uuid) -> String {
+    scratch_name(file_name, STAGING_ASIDE_MARKER, uuid)
 }
 
 /// [`temp_sibling_name`] as a path in `final_path`'s directory.

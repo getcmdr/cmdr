@@ -32,9 +32,10 @@ use crate::event_sinks::CollectorEventSink;
 use crate::ledger::{WrittenFile, WrittenIdentity};
 use crate::testing::TestOperations;
 use crate::transfer::transfer_driver::LeafProgressLedger;
+use crate::transfer::volume::into_std;
 use crate::types::{ConflictResolution, WriteOperationError, WriteOperationType};
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::staging::STAGING_TEMP_MARKER;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError, VolumeReadStream};
 use std::collections::HashSet;
@@ -225,7 +226,14 @@ impl Harness {
         DriverRun {
             outcome,
             copied: self.cells.copied_paths.lock_ignore_poison().clone(),
-            created_dirs: self.cells.created_dirs.lock_ignore_poison().clone(),
+            // In the `std::path` spelling the cells below compare.
+            created_dirs: self
+                .cells
+                .created_dirs
+                .lock_ignore_poison()
+                .iter()
+                .map(|dir| into_std(dir.clone()))
+                .collect(),
         }
     }
 
@@ -266,7 +274,7 @@ impl Harness {
 /// ledgers the phase runner reads after it returns.
 struct DriverRun {
     outcome: ConcurrentOutcome,
-    copied: Vec<WrittenFile>,
+    copied: Vec<WrittenFile<AppPathBuf>>,
     created_dirs: Vec<PathBuf>,
 }
 
@@ -274,7 +282,7 @@ impl DriverRun {
     /// Just the paths of the rollback ledger, for the assertions that are about
     /// WHICH destinations were recorded.
     fn copied_paths(&self) -> Vec<PathBuf> {
-        self.copied.iter().map(|entry| entry.path.clone()).collect()
+        self.copied.iter().map(|entry| into_std(entry.path.clone())).collect()
     }
 }
 
@@ -404,7 +412,7 @@ async fn every_recorded_destination_carries_the_size_it_was_written_with() {
             entry.identity,
             WrittenIdentity::VolumeFile { size: 20_000 },
             "{} lost the size it was written with",
-            entry.path.display()
+            entry.path
         );
     }
 }

@@ -52,6 +52,7 @@ use super::super::scratch_dir::ScratchDir;
 use super::super::state::WriteOperationState;
 use super::super::transfer::StagedWrite;
 use super::super::transfer::retry::after_a_cut_off_landing_wait;
+use super::super::transfer::staged_write::announce_app_on;
 use super::super::transfer::staged_write::{LandingError, LandingSource, Resumed};
 use super::super::transfer::volume::{ListedName, PathRole};
 use super::super::transfer::volume_outage::{OutageEnd, StartedOn, lost_connection, wait_after_failure};
@@ -208,7 +209,8 @@ async fn place_local_file(
         }
         // A fresh uuid each attempt, so a leftover from a crashed prior edit (an
         // abandoned upload; the original is intact) is never mistaken for this one.
-        let target = state.scope().host().announce_on(parent.as_ref(), remote_path);
+        let remote_app = crate::transfer::volume::on_volume(remote_path);
+        let target = announce_app_on(state.scope().host(), parent.as_ref(), &remote_app);
         let staged = StagedWrite::begin_over_original(state, parent.as_ref(), target, parent_volume_id);
         let started_on = StartedOn::now(&volumes);
         if let Err(failed) =

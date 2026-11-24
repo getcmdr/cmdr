@@ -8,12 +8,12 @@
 //! it: the same staged, retrying, mid-file-cancelable streaming every cross-volume
 //! copy uses, plus the source-side removal that makes it a move.
 
-use cmdr_fs::app_path::AppPath;
 use std::ops::ControlFlow;
 use std::path::Path;
 use std::sync::Arc;
 
 use super::super::super::state::WriteOperationState;
+use super::listed_name::on_volume;
 use super::preflight::SourceFileFacts;
 use super::strategy::WriteStaging;
 use super::stream_pipe::stream_pipe_file;
@@ -46,9 +46,11 @@ pub(crate) async fn move_file_across_volumes(
     state: &Arc<WriteOperationState>,
     on_file_progress: &(dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
 ) -> Result<u64, VolumeError> {
+    // The rollback engine still hands `std::path` values in.
+    let (source_app, dest_app) = (on_volume(source_path), on_volume(dest_path));
     let bytes = stream_pipe_file(
         source_volume,
-        source_path,
+        &source_app,
         // No size hint: the stream reports the REAL length, so a source whose
         // listed metadata size lies still moves its true bytes. No mode either,
         // so a local destination spends one stat on it after the bytes land —
@@ -56,7 +58,7 @@ pub(crate) async fn move_file_across_volumes(
         // what it wore.
         SourceFileFacts::default(),
         dest_volume,
-        dest_path,
+        &dest_app,
         state,
         on_file_progress,
         // Nothing was pre-staged for us, so the temp-and-land is ours to do.
@@ -68,6 +70,6 @@ pub(crate) async fn move_file_across_volumes(
     // either: `new_data_at` is `None` on every failure this call can produce.
     .map_err(|f| f.error)?
     .bytes;
-    source_volume.delete(&AppPath::legacy_unchecked(source_path)).await?;
+    source_volume.delete(&source_app).await?;
     Ok(bytes)
 }

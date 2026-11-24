@@ -24,7 +24,8 @@ use futures_util::stream;
 use tokio::sync::OnceCell;
 
 use super::super::super::state::{ScanResult, WriteOperationState};
-use super::super::staged_write::{StagedWrite, WriteStaging};
+use super::super::staged_write::{StagedWrite, WriteStaging, announce_app_on};
+use super::listed_name::{ListedName, on_volume};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -158,8 +159,15 @@ impl LinkCarry {
 /// the sweep clears. Any refusal counts as "no": one that's about the folder
 /// rather than links meets the real writes too, with the item's own name on it.
 async fn prove_it_holds_links(state: &Arc<WriteOperationState>, dest_volume: &Arc<dyn Volume>, folder: &Path) -> bool {
-    let final_name = folder.join("link-probe");
-    let announced = state.scope().host().announce_on(&**dest_volume, &final_name);
+    // The probe's name joins the folder as any listed name does, typed, so a
+    // remote folder's text keeps its `/`.
+    let Ok(final_name) = ListedName::new("link-probe").and_then(|name| {
+        name.under(&on_volume(folder))
+            .map_err(|_| cmdr_fs::volume::NotAChildName("link-probe".into()))
+    }) else {
+        return false;
+    };
+    let announced = announce_app_on(state.scope().host(), &**dest_volume, &final_name);
     let staged = StagedWrite::begin(state, &**dest_volume, announced, WriteStaging::Stage);
     let made = dest_volume.create_symlink(staged.target_app(), Path::new(".")).await;
     staged.abandon(dest_volume).await;

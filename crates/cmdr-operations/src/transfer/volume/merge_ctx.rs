@@ -7,8 +7,9 @@
 //! bytes: these types are what `merge.rs`, both copy drivers, both moves,
 //! `naming.rs`, and `sequential_extract.rs` import.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use super::super::super::conflict::ApplyToAll;
@@ -168,12 +169,18 @@ pub(super) struct MergeProbe {
 ///   creation order (shallowest first). Rollback removes these with a
 ///   non-recursive delete (empty-only on real backends), deepest first, so a
 ///   directory that still holds a pre-existing sibling survives.
+///
+/// Every path is an app path, as the walk joined it: on Windows a POSIX
+/// server's `a\b` is one name, which a `std::path` value would split (into a
+/// folder `a`, or in a journal row's folder and name). The driver hands each
+/// ledger on in the `std::path` spelling the in-flight reversal reads, once
+/// the journal has its rows (`WrittenFile::map_path`).
 // DEFAULT-OK: an empty ledger is an operation that has created nothing yet, which is the
 // one state where rollback correctly has nothing to undo.
 #[derive(Default)]
 pub(super) struct CreatedPaths {
-    pub files: Mutex<Vec<WrittenFile>>,
-    pub dirs: Mutex<Vec<PathBuf>>,
+    pub files: Mutex<Vec<WrittenFile<AppPathBuf>>>,
+    pub dirs: Mutex<Vec<AppPathBuf>>,
     // Children a DEEP merge resolved to Skip (a conflict the user/policy
     // declined). Invisible to the top-level driver, so tallied here; the
     // move-out op reads the count to keep a not-fully-extracted source in the
@@ -184,7 +191,7 @@ pub(super) struct CreatedPaths {
     // the destination, so the source copy is the only one: a MOVE sweeps its
     // source folder while preserving exactly these (see
     // `skipped_source_paths`).
-    pub skipped_sources: Mutex<Vec<PathBuf>>,
+    pub skipped_sources: Mutex<Vec<AppPathBuf>>,
     // Deep-merge children that REPLACED an existing dest file. The operation-log
     // capture reads this per source (`overwrote_count`) so a copy / move whose
     // subtree overwrote anything finalizes `not_rollbackable` — deleting the
@@ -209,20 +216,20 @@ impl CreatedPaths {
     }
 
     /// Notes a source folder the copy walk listed. A no-op on a copy.
-    pub(super) fn record_walked_source_dir(&self, dir: &Path) {
+    pub(super) fn record_walked_source_dir(&self, dir: &AppPath) {
         if let Some(ledger) = &self.source_ledger {
-            ledger.lock_ignore_poison().record_walked_dir(dir.to_path_buf());
+            ledger.lock_ignore_poison().record_walked_dir(dir.to_owned());
         }
     }
 
     /// Notes a source file the copy walk is carrying, stamped from the listing
     /// that found it. The walk reads that listing BEFORE the copy, so a save
     /// during the copy counts as a change too. A no-op on a copy.
-    pub(super) fn record_carried_source(&self, file: &Path, listed: &cmdr_fs::entry::FileEntry) {
+    pub(super) fn record_carried_source(&self, file: &AppPath, listed: &cmdr_fs::entry::FileEntry) {
         if let Some(ledger) = &self.source_ledger {
             ledger
                 .lock_ignore_poison()
-                .record_carried_file(file.to_path_buf(), SourceStamp::of(listed));
+                .record_carried_file(file.to_owned(), SourceStamp::of(listed));
         }
     }
 
@@ -230,7 +237,7 @@ impl CreatedPaths {
     /// person skipped), so nothing about it reads as carried. The sweep spares
     /// a skipped path whatever the ledger says; this keeps the ledger true as
     /// well. A no-op on a copy.
-    pub(super) fn forget_carried_source(&self, file: &Path) {
+    pub(super) fn forget_carried_source(&self, file: &AppPath) {
         if let Some(ledger) = &self.source_ledger {
             ledger.lock_ignore_poison().forget_carried_file(file);
         }
@@ -246,33 +253,33 @@ impl CreatedPaths {
     }
     /// Notes a file the copy landed at `path`, with the landed modified time
     /// its write reported (`LandedModified::Unknown` when it reported none).
-    pub(super) fn record_file(&self, path: PathBuf, size: u64, landed: cmdr_fs::volume::LandedModified) {
+    pub(super) fn record_file(&self, path: AppPathBuf, size: u64, landed: cmdr_fs::volume::LandedModified) {
         self.files
             .lock_ignore_poison()
-            .push(WrittenFile::volume(path, size).landed_at(landed));
+            .push(WrittenFile::volume_at(path, size).landed_at(landed));
     }
 
     /// Notes a symlink the copy landed at `path`, holding `target`.
-    pub(super) fn record_link(&self, path: PathBuf, target: PathBuf) {
+    pub(super) fn record_link(&self, path: AppPathBuf, target: PathBuf) {
         self.files
             .lock_ignore_poison()
             .push(WrittenFile::volume_link(path, target));
     }
 
-    pub(super) fn record_dir(&self, path: PathBuf) {
+    pub(super) fn record_dir(&self, path: AppPathBuf) {
         self.dirs.lock_ignore_poison().push(path);
     }
 
     /// Tally one child a deep merge skipped (conflict resolved to Skip), and
     /// remember its SOURCE path so a move's source sweep can spare it.
-    pub(super) fn record_skip(&self, source: PathBuf, size: u64) {
+    pub(super) fn record_skip(&self, source: AppPathBuf, size: u64) {
         self.record_skipped_subtree(source, 1, size);
     }
 
     /// [`record_skip`](Self::record_skip) for a whole subtree left out at once
     /// (a folder whose own name the destination refused): `files` leaves of
     /// `bytes` under `source`, which a move's sweep then spares whole.
-    pub(super) fn record_skipped_subtree(&self, source: PathBuf, files: usize, bytes: u64) {
+    pub(super) fn record_skipped_subtree(&self, source: AppPathBuf, files: usize, bytes: u64) {
         use std::sync::atomic::Ordering;
         self.skipped_files.fetch_add(files, Ordering::Relaxed);
         self.skipped_bytes.fetch_add(bytes, Ordering::Relaxed);
@@ -308,7 +315,7 @@ impl CreatedPaths {
     /// `remove_tree` so its source sweep spares the
     /// children that never landed at the destination — deleting them would
     /// destroy the user's only copy.
-    pub(super) fn skipped_source_paths(&self) -> std::collections::HashSet<PathBuf> {
+    pub(super) fn skipped_source_paths(&self) -> std::collections::HashSet<AppPathBuf> {
         self.skipped_sources.lock_ignore_poison().iter().cloned().collect()
     }
 }

@@ -33,6 +33,7 @@ use super::super::transfer_driver::{
 };
 use super::super::transfer_probe::{DriverPhase, OperationProbe, TaskRole, TaskRow};
 use super::copy::CopyCells;
+use super::listed_name::on_volume;
 use super::preflight::SourceFileFacts;
 use super::preflight::SourceHint;
 use super::refused_item::{RefusalSubject, has_no_content, skip_if_refused};
@@ -482,9 +483,10 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                                         source_overwrote,
                                     );
                                 }
-                                copied_paths
-                                    .lock_ignore_poison()
-                                    .push(WrittenFile::volume(landed_path, bytes_copied));
+                                copied_paths.lock_ignore_poison().push(WrittenFile::volume_at(
+                                    on_volume(&landed_path).into_owned(),
+                                    bytes_copied,
+                                ));
                             }
                             // Fold this source's deep-merge skips into the op-wide
                             // tally; a source that landed with ZERO skips is fully

@@ -127,7 +127,11 @@ async fn a_cancel_during_a_cut_off_landings_byte_compare_stops_it_and_keeps_the_
     let dest: Arc<dyn Volume> = Arc::new(RenamesThenLosesTheReply {
         inner: Arc::clone(&inner),
     });
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
+    let staged = StagedWrite::begin_unannounced(
+        &state,
+        cmdr_fs::app_path!("/notes.txt"),
+        WriteStaging::StageOntoClaimedName,
+    );
     let temp = staged.target().to_path_buf();
     inner.create_file(staged.target_app(), b"THE NEW BYTES").await.unwrap();
     let Err(LandingError::CutOff(cut_off)) = staged.commit(&dest, 13).await else {

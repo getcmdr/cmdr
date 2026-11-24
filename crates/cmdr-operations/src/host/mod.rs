@@ -47,6 +47,7 @@ mod volumes;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::rt::Runtime as Handle;
 use cmdr_fs::volume::Volume;
 use cmdr_fs::volume::host::VolumeHost;
@@ -62,6 +63,7 @@ use name_order::EnglishNameOrder;
 pub use name_order::NameOrder;
 pub use operation_sink::OperationEventSink;
 pub(crate) use operation_sink::SinkDecorator;
+pub(crate) use own_writes::AnnouncedOnVolume;
 use own_writes::NoOwnWrites;
 pub use own_writes::{Announced, OwnWrites};
 use pacing::NoPacing;
@@ -218,6 +220,20 @@ impl EngineHost {
                 .announce(&cmdr_fs::volume::root_anchored(&root.as_std_legacy(), path));
         }
         Announced::new(path)
+    }
+
+    /// [`Self::announce_on`] for `path` as `volume` addresses it, whose
+    /// `std::path` spelling (`AppPath::as_std_legacy`, byte for byte) the caller
+    /// already holds as `native`: the host hears the same local twin, and the
+    /// answer vouches for the app path the volume engine's writers take.
+    pub(crate) fn announce_spelled_on<'a>(
+        &self,
+        volume: &dyn Volume,
+        path: &'a AppPath,
+        native: &Path,
+    ) -> AnnouncedOnVolume<'a> {
+        self.announce_on(volume, native);
+        AnnouncedOnVolume::new(path)
     }
 
     /// What the drive index knows.

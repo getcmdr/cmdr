@@ -10,6 +10,7 @@
 //! `../DETAILS.md` § Durability,
 //! "Cross-volume move".
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -41,15 +42,15 @@ pub(super) struct HeldSource {
     /// What the copy carried, which is all the sweep may remove.
     pub(super) carried: CarriedSource,
     /// The merge's Skips under it, which stay.
-    pub(super) skipped: HashSet<PathBuf>,
+    pub(super) skipped: HashSet<AppPathBuf>,
     /// Where it landed: the original's own name after an overwrite, a folder's
     /// destination root otherwise.
     pub(super) landed: PathBuf,
     /// The verdict its first `write-source-item-done` already gave.
     pub(super) verdict: SourceItemOutcome,
     /// The files and folders the copy created, for the journal.
-    pub(super) created_files: Vec<WrittenFile>,
-    pub(super) created_dirs: Vec<PathBuf>,
+    pub(super) created_files: Vec<WrittenFile<AppPathBuf>>,
+    pub(super) created_dirs: Vec<AppPathBuf>,
     /// The bytes a FILE source's copy wrote, for its journal row.
     pub(super) bytes: u64,
     /// Whether it replaced anything at the destination (move eligibility).

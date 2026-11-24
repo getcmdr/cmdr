@@ -16,7 +16,7 @@
 //! the active one just aren't necessarily next. `volume/DETAILS.md` §
 //! "Processing order".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -24,10 +24,11 @@ use std::sync::{Arc, Mutex};
 use super::super::super::state::WriteOperationState;
 use super::super::super::transfer_tree::NodeId;
 use super::super::retry::after_a_cut_off_landing_wait;
-use super::super::staged_write::{LandingError, Resumed, StagedWrite};
+use super::super::staged_write::{LandingError, Resumed, StagedWrite, announce_app_on};
 use super::super::transfer_driver::SourceProgress;
 use super::super::volume_outage::{self, OutageEnd, OutageFailure, StartedOn, lost_connection, wait_after_failure};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
+use super::listed_name::std_of;
 use super::merge::copy_directory_streaming;
 use super::merge_ctx::{CreatedPaths, MergeCtx};
 use super::piped_file::landed_at_final_name;
@@ -40,7 +41,7 @@ use cmdr_fs::volume::{Volume, VolumeError};
 /// what that does to a file at the name (for a file→file Overwrite
 /// safe-replace, the original to swap the temp over once written).
 pub(super) struct PlannedWrite {
-    pub(super) dest_path: PathBuf,
+    pub(super) dest_path: AppPathBuf,
     pub(super) replaces: Replaces,
     /// Whether a conflict resolution picked `dest_path`, which is what the
     /// landing needs to tell its own placeholder from the user's file
@@ -171,7 +172,10 @@ pub(super) async fn extract_sequential_subtree(
         let staging = resolve_staging(staging_for(&planned.replaces, planned.landing), lands_whole);
         // Register the destination before the write, exactly as `stream_pipe_file`
         // does (covers a Downloads-landing local dest; a no-op for MTP/SMB).
-        let announced_dest = state.scope().host().announce_on(&**dest_volume, &planned.dest_path);
+        let announced_dest = announce_app_on(state.scope().host(), &**dest_volume, &planned.dest_path);
+        // The destination's `std::path` spelling, for the text exits and the
+        // claimed-name ledger: a borrow for UTF-8.
+        let dest_std = std_of(&planned.dest_path);
         let staged = StagedWrite::begin(state, &**dest_volume, announced_dest, staging);
         // The member reports its own mode off the archive's index; an extract
         // adds the archive's quarantine to its xattrs (`extract_quarantine.rs`).
@@ -192,16 +196,17 @@ pub(super) async fn extract_sequential_subtree(
             Ok(written) => written,
             Err(e) => {
                 staged.abandon(dest_volume).await;
-                return Err(source_reads.label(e, &member_path, &planned.dest_path));
+                return Err(source_reads.label(e, &member_path, &dest_std));
             }
         };
-        let landed = landed_at_final_name(&written, staged.target(), &planned.dest_path);
-        land_member(state, dest_volume, staged, written.bytes, &planned.dest_path).await?;
+        let landed = landed_at_final_name(&written, staged.target(), &dest_std);
+        land_member(state, dest_volume, staged, written.bytes, &dest_std).await?;
         // Landed, so the ` (N)` placeholder the plan pass reserved here is filled.
         // Every one this pass never reaches (a failure, a cancel between members)
         // stays on the op's ledger for the post-loop to take back
         // (`naming.rs::take_back_unfilled_reservations`).
-        state.claimed_names.release_placeholder(&planned.dest_path);
+        state.claimed_names.release_placeholder(&dest_std);
+        drop(dest_std);
         // What the destination refused on the way joins what its caps couldn't
         // hold.
         state.metadata_losses.note_file(lost.union(written.refused()));

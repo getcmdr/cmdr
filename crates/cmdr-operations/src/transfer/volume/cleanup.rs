@@ -10,7 +10,7 @@
 //! from reaching a recursive delete: on the cleanup path there isn't one in
 //! scope. `DETAILS.md` § "Three ways to delete, and who may use each".
 
-use cmdr_fs::app_path::{AppName, AppPath};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, UNIX_EPOCH};
@@ -77,8 +77,8 @@ const STALE_TEMP_MIN_AGE: Duration = Duration::from_secs(60 * 60);
 )]
 pub(super) async fn volume_rollback_with_progress(
     volume: &Arc<dyn Volume>,
-    copied_paths: &mut Vec<WrittenFile>,
-    created_dirs: &[PathBuf],
+    copied_paths: &mut Vec<WrittenFile<AppPathBuf>>,
+    created_dirs: &[AppPathBuf],
     events: &dyn OperationEventSink,
     operation_id: &str,
     wind_down: &WindDown,
@@ -130,15 +130,14 @@ pub(super) async fn volume_rollback_with_progress(
         // Rechecked here, one item before the act — ❌ never in a batch, where a
         // verification would age while other items were processed.
         let result = reverse_written_file(&runtime, volume, &entry).await;
-        tally.record(result, &entry.path);
+        tally.record(result, &std_of(&entry.path));
 
         // Throttled progress events with decreasing values. The counters advance
         // for every entry the reversal walked past, removed or not.
         if crate::rt::since(last_progress_time) >= wind_down.progress_interval() {
             let (files_left, bytes_left) =
                 drained(files_at_cancel, bytes_at_cancel, tally.processed(), paths_to_process);
-            let current_file_name = entry
-                .path
+            let current_file_name = std_of(&entry.path)
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default();
@@ -160,7 +159,7 @@ pub(super) async fn volume_rollback_with_progress(
             tally.mark_canceled();
             return tally;
         }
-        tally.record(prune_created_dir_if_empty(&runtime, volume, dir).await, dir);
+        tally.record(prune_created_dir_if_empty(&runtime, volume, dir).await, &std_of(dir));
     }
 
     // The frame that lands on zero, so a run whose last items fell inside the
@@ -171,28 +170,35 @@ pub(super) async fn volume_rollback_with_progress(
 
 /// Remove ONE destination file this operation wrote, if the backend still reports
 /// the file this operation wrote.
-async fn reverse_written_file(runtime: &Handle, volume: &Arc<dyn Volume>, entry: &WrittenFile) -> ItemResult {
+async fn reverse_written_file(
+    runtime: &Handle,
+    volume: &Arc<dyn Volume>,
+    entry: &WrittenFile<AppPathBuf>,
+) -> ItemResult {
+    // The text exits (the logs, the tally, the blocker-clearing delete) read the
+    // `std::path` spelling, a borrow for UTF-8.
+    let entry_std = std_of(&entry.path);
     let couldnt_recheck = |e: &VolumeError| match e {
         // Already gone ⇒ the end state we wanted already holds.
         VolumeError::NotFound(_) => ItemResult::Skipped(SkipReason::AlreadyGone),
         e => {
             log::warn!(
                 "volume_rollback_with_progress: couldn't recheck {}: {e}",
-                LogPrivate::file_path(&entry.path),
+                LogPrivate::file_path(&*entry_std),
                 e = LogError(e)
             );
             ItemResult::Skipped(SkipReason::UnverifiablePrecondition)
         }
     };
-    let written_at = AppPath::legacy_unchecked(&entry.path);
+    let written_at = &entry.path;
     let recheck = if let WrittenIdentity::VolumeLink { target } = &entry.identity {
-        match volume.read_link_target(&written_at).await {
+        match volume.read_link_target(written_at).await {
             Ok(live) => recheck_volume_link(target, live.as_deref()),
             Err(e) => return couldnt_recheck(&e),
         }
     } else {
-        match volume.get_metadata(&written_at).await {
-            Ok(live) => recheck_volume(entry, live.size),
+        match volume.get_metadata(written_at).await {
+            Ok(live) => recheck_volume(&entry.identity, live.size, &entry_std),
             Err(e) => return couldnt_recheck(&e),
         }
     };
@@ -201,7 +207,7 @@ async fn reverse_written_file(runtime: &Handle, volume: &Arc<dyn Volume>, entry:
         PresentRecheck::Skip(reason) => {
             log::info!(
                 "volume_rollback_with_progress: leaving {} alone ({reason:?})",
-                LogPrivate::file_path(&entry.path)
+                LogPrivate::file_path(&*entry_std)
             );
             return ItemResult::Skipped(reason);
         }
@@ -209,8 +215,8 @@ async fn reverse_written_file(runtime: &Handle, volume: &Arc<dyn Volume>, entry:
     // One node each: these are the FILES this operation wrote, verified just
     // above, so a Locked one is ours to unlock (invariant 9).
     removal_result(
-        &entry.path,
-        delete_clearing_blockers(runtime, volume, &entry.path, NodeKind::File).await,
+        &entry_std,
+        delete_clearing_blockers(runtime, volume, &entry_std, NodeKind::File).await,
     )
 }
 
@@ -472,8 +478,11 @@ pub(super) async fn reap_stale_transfer_temps(
 ///
 /// Best-effort and quiet — a directory kept because it still holds something is
 /// the normal outcome, not a failure.
-async fn prune_created_dir_if_empty(runtime: &Handle, volume: &Arc<dyn Volume>, dir: &Path) -> ItemResult {
-    match volume.list_directory(&AppPath::legacy_unchecked(dir), None).await {
+async fn prune_created_dir_if_empty(runtime: &Handle, volume: &Arc<dyn Volume>, dir_app: &AppPath) -> ItemResult {
+    // The text exits read the `std::path` spelling, a borrow for UTF-8.
+    let dir_std = std_of(dir_app);
+    let dir: &Path = &dir_std;
+    match volume.list_directory(dir_app, None).await {
         // Verified empty and ours, so a Locked one is ours to unlock (invariant 9).
         Ok(entries) if entries.is_empty() => {
             match delete_clearing_blockers(runtime, volume, dir, NodeKind::Directory).await {

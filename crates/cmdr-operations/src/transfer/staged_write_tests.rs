@@ -43,7 +43,10 @@ async fn land_unrecorded(
 ) -> Result<(), FinalizeFailure> {
     let engine = TestOperations::new();
     let state = state(&engine);
-    let temp = Temp::new(StagingTemp::adopt(temp.to_path_buf(), state.liveness_token()));
+    let temp = Temp::adopt(cmdr_fs::staging::StagingTemp::adopt(
+        temp.to_path_buf(),
+        state.liveness_token(),
+    ));
     let size = dest
         .get_metadata(temp.app())
         .await
@@ -51,11 +54,39 @@ async fn land_unrecorded(
         .and_then(|entry| entry.size)
         .unwrap_or(0);
     let home_volume = state.dest_volume_id().map(str::to_owned);
-    let final_path = Spelled::new(final_path);
+    let final_path = Spelled::new(&crate::testing::app_path_of(final_path));
     match land(dest, Landing::new(&state, temp, final_path, landing, size, home_volume)).await {
         Ok(()) => Ok(()),
         Err(LandingError::Failed(failure)) => Err(failure),
         Err(LandingError::CutOff(cut_off)) => cut_off.give_up(dest).await,
+    }
+}
+
+/// A temp is minted beside its final name by the app path's own split, on every host: a
+/// POSIX server's `a\b`, `foo\..`, and `..\bar` each stay ONE name, so the temp is their
+/// sibling in the same folder (on Windows a `std::path` split read `foo\..` as a climb and
+/// `a\b` as a file in a folder `a`), and the in-flight registry hides it under the name the
+/// destination's listing shows.
+#[test]
+fn a_temp_beside_a_backslash_name_is_its_sibling_on_every_host() {
+    use cmdr_fs::app_path::{AppPath, PathArithmetic, PathFlavor};
+    let engine = TestOperations::new();
+    let state = state(&engine);
+    for name in [r"a\b", r"foo\..", r"..\bar"] {
+        let text = format!("/dst/{name}");
+        let final_path = AppPath::from_normalized_as(&text, PathFlavor::Posix).expect("a canonical path");
+        let staged = StagedWrite::begin_unannounced(&state, final_path, WriteStaging::Stage);
+        let temp = staged.target_app();
+        assert_eq!(temp.parent().map(AppPath::as_str), Some("/dst"), "{name:?}: {temp}");
+        let temp_name = temp.file_name().expect("a temp has a name");
+        assert!(
+            temp_name.starts_with(&format!("{name}.cmdr-tmp-")),
+            "{name:?}: {temp_name:?}"
+        );
+        assert!(
+            cmdr_fs::staging::is_staging_temp_in_flight(temp_name),
+            "{name:?}: the pane hides the temp by its listed name"
+        );
     }
 }
 
@@ -65,7 +96,7 @@ async fn land_unrecorded(
 fn staging_writes_to_a_recognizable_temp_sibling() {
     let engine = TestOperations::new();
     let state = state(&engine);
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/dir/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/dir/notes.txt"), WriteStaging::Stage);
     assert_ne!(staged.target(), Path::new("/dir/notes.txt"));
     assert_eq!(staged.target().parent(), Some(Path::new("/dir")));
     assert!(
@@ -91,7 +122,7 @@ fn a_write_over_an_original_stages_and_is_never_single_shot() {
     for single_shot in [false, true] {
         let staging = resolve_staging(WriteStaging::StageOverOriginal, single_shot);
         assert_eq!(staging, WriteStaging::StageOverOriginal, "single-shot: {single_shot}");
-        let staged = StagedWrite::begin_unannounced(&state, Path::new("/dir/notes.txt"), staging);
+        let staged = StagedWrite::begin_unannounced(&state, app_path!("/dir/notes.txt"), staging);
         assert_ne!(staged.target(), Path::new("/dir/notes.txt"));
         assert_eq!(staged.target().parent(), Some(Path::new("/dir")));
         assert!(staged.target().to_string_lossy().contains(".cmdr-tmp-"));
@@ -183,7 +214,7 @@ async fn a_swap_moves_the_original_aside_first_and_never_renames_with_force() {
     let (inner, log) = CallLog::over_an_original(false).await;
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::StageOverOriginal);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"NEW").await.unwrap();
     staged.commit(&dest, 3).await.expect("the swap lands");
@@ -233,7 +264,7 @@ async fn a_swap_on_an_atomic_replace_backend_lands_in_one_replacing_rename() {
     let (inner, log) = CallLog::over_an_original(true).await;
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::StageOverOriginal);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
     staged.commit(&dest, 13).await.expect("the swap lands");
@@ -275,7 +306,7 @@ async fn a_refused_replacing_rename_leaves_the_original_and_takes_the_temp_away(
         replaces_atomically: true,
     });
     let dest: Arc<dyn Volume> = Arc::clone(&log) as Arc<dyn Volume>;
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::StageOverOriginal);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
 
@@ -307,7 +338,7 @@ async fn a_single_shot_write_targets_the_final_name_and_needs_no_landing() {
 
     let staged = StagedWrite::begin_unannounced(
         &state,
-        Path::new("/notes.txt"),
+        app_path!("/notes.txt"),
         WriteStaging::SingleShot(LandingName::ExpectedFree),
     );
     assert_eq!(staged.target(), Path::new("/notes.txt"));
@@ -329,7 +360,7 @@ fn only_a_single_shot_write_onto_a_name_expected_free_must_create_new() {
     let engine = TestOperations::new();
     let state = state(&engine);
     let mode_for = |requested: WriteStaging, single_shot: bool| {
-        StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), resolve_staging(requested, single_shot))
+        StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), resolve_staging(requested, single_shot))
             .write_mode()
     };
 
@@ -375,7 +406,7 @@ async fn commit_lands_the_bytes_and_stops_tracking_them() {
     let inner = Arc::new(InMemoryVolume::new("dest"));
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"NEW").await.unwrap();
 
@@ -610,7 +641,7 @@ async fn abandon_removes_the_partial() {
     let inner = Arc::new(InMemoryVolume::new("dest"));
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"half").await.unwrap();
 
@@ -631,7 +662,7 @@ async fn a_cut_off_upload_that_lands_after_the_abandon_is_taken_on_the_recheck()
     let inner = Arc::new(InMemoryVolume::new("dest").with_cut_off_writes_landing_late());
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
     let temp_app = staged.target_app().to_owned();
     // Nothing there yet: the server hasn't got to the dropped upload.
@@ -661,7 +692,7 @@ async fn an_abandon_the_destination_refuses_keeps_the_temp_listed() {
     let inner = Arc::new(InMemoryVolume::new("dest").with_delete_failing());
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"half").await.unwrap();
@@ -686,7 +717,7 @@ async fn a_refused_landing_takes_its_temp_away_and_stops_tracking_it() {
         .await
         .unwrap();
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"NEW").await.unwrap();
 
@@ -722,7 +753,12 @@ async fn a_refused_displacement_preserves_the_original_and_cleans_the_generated_
         .create_file(app_path!("/notes.txt"), b"THE USER'S FILE")
         .await
         .unwrap();
-    let staged = StagedWrite::begin_generated(&state, dest.as_ref(), Announced::assumed(Path::new("/notes.txt")), true);
+    let staged = StagedWrite::begin_generated(
+        &state,
+        dest.as_ref(),
+        AnnouncedOnVolume::assumed(app_path!("/notes.txt")),
+        true,
+    );
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"NEW").await.unwrap();
 
@@ -777,7 +813,7 @@ async fn a_landing_dropped_midway_leaves_its_temp_to_the_abandoned_write_sweep()
         inner: Arc::clone(&inner),
     });
 
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::Stage);
+    let staged = StagedWrite::begin_unannounced(&state, app_path!("/notes.txt"), WriteStaging::Stage);
     let temp = staged.target().to_path_buf();
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"NEW").await.unwrap();
