@@ -19,13 +19,12 @@ use cmdr_operation_log::types::{
     ArchiveSubkind, EntryType, ExecutionStatus, Initiator, ItemOutcome, NotRollbackableReason, OpKind,
 };
 use cmdr_operation_log::writer::{JournalItem, OpenOperation};
-use std::borrow::Cow;
 
 use super::journal_landed::LandedReadBack;
 use super::ledger::WrittenFile;
 use super::scope::OpScope;
 use super::types::{WriteOperationError, WriteOperationType};
-use super::wire_paths::seam_path;
+use super::wire_paths::{engine_path, seam_path};
 use cmdr_operation_log::types::{SearchCoverage, SearchCoverageReason};
 
 /// Record item rows for the scope's operation (buffered and batched by the journal).
@@ -292,25 +291,43 @@ pub(super) fn record_volume_transfer_source(
     // `dest_root` rebases onto `source_root` by whole app names: a POSIX
     // server's `a\b` stays one name on Windows, where `std::path` split it.
     let (source_app, dest_app) = (seam_path(source_root), seam_path(dest_root));
+    // Only between canonical roots: a volume-relative root (a share suite's
+    // `cmdr-test-…/tree`) or another bridge value has no typed place, so its
+    // leaves rebase by `std::path` as they always did.
+    let typed_roots = source_app.is_canonical() && dest_app.is_canonical();
     if source_is_dir {
         for leaf in created_files {
-            // A selected link is its own one leaf, with nothing to join; a leaf
-            // outside the root is its own source, as `Path::join` of an absolute
-            // tail answered.
-            let source_leaf = match leaf.path.strip_prefix(&dest_app) {
-                Some(rel) if rel.is_empty() => Cow::Borrowed(&*source_app),
+            let ends = match typed_roots.then(|| leaf.path.strip_prefix(&dest_app)).flatten() {
+                // A selected link is its own one leaf, with nothing to join.
+                Some(rel) if rel.is_empty() => Some(journal_split_app(&source_app)),
                 Some(rel) => source_app
                     .join_relative(&rel)
-                    .map_or(Cow::Borrowed(leaf.path.as_app_path()), Cow::Owned),
-                None => Cow::Borrowed(leaf.path.as_app_path()),
+                    .ok()
+                    .map(|source| journal_split_app(&source)),
+                None => None,
+            };
+            let (source_ends, dest_ends) = match ends {
+                Some(source_ends) => (source_ends, journal_split_app(&leaf.path)),
+                None => {
+                    // A leaf outside the root is its own source, as `Path::join`
+                    // of an absolute tail answered.
+                    let leaf_std = engine_path(&leaf.path);
+                    let rel = leaf_std.strip_prefix(dest_root).unwrap_or(&leaf_std);
+                    let source_leaf = if rel.as_os_str().is_empty() {
+                        source_root.to_path_buf()
+                    } else {
+                        source_root.join(rel)
+                    };
+                    (journal_split(&source_leaf), journal_split(&leaf_std))
+                }
             };
             record_split_row(
                 scope,
                 EntryType::File,
                 RowRole::RollbackUnit,
                 source_volume_id,
-                journal_split_app(&source_leaf),
-                Some((dest_volume_id, journal_split_app(&leaf.path))),
+                source_ends,
+                Some((dest_volume_id, dest_ends)),
                 leaf.identity.recorded_size().and_then(|size| i64::try_from(size).ok()),
                 match leaf.landed_modified {
                     LandedModified::Known(secs) => secs.and_then(|secs| i64::try_from(secs).ok()),

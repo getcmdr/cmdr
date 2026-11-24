@@ -26,7 +26,7 @@ use super::types::RecoveredOriginal;
 /// One destination path this operation put on disk, with the identity a reversal
 /// rechecks before removing it or renaming it back.
 ///
-/// Build one through [`WrittenFile::local_stat`] or [`WrittenFile::volume`]: each
+/// Build one through [`WrittenFile::local_stat`] or [`WrittenFile::volume_at`]: each
 /// names the kind of write it describes, and neither can produce a local entry
 /// missing its node id.
 ///
@@ -77,8 +77,7 @@ impl WrittenFile {
         }
     }
 
-    /// A complete file written through a `Volume` backend, with the byte count
-    /// the leaf copier piped into it.
+    /// [`Self::volume_at`] at a `std::path` value, for a test.
     #[cfg(test)]
     pub(crate) fn volume(path: PathBuf, size: u64) -> Self {
         WrittenFile::<PathBuf>::volume_at(path, size)
@@ -86,7 +85,8 @@ impl WrittenFile {
 }
 
 impl<P> WrittenFile<P> {
-    /// [`WrittenFile::volume`] at a path held as `P`.
+    /// A complete file written through a `Volume` backend, at a path held as `P`, with the byte
+    /// count the leaf copier piped into it.
     pub(crate) fn volume_at(path: P, size: u64) -> Self {
         Self {
             path,

@@ -848,9 +848,11 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   `a\b` equal to `a/b`), and the journal rows (`journal_split.rs::journal_split_app`, `LandedReadBack`). So it lands
   whole on a remote destination, and a local NTFS one refuses it by its rules, per item
   (`name_rules::DestinationNames`). Pinned by `refused_class_tests.rs`' `run_remote_names_case` (both ways, every
-  driver) and `listed_row_tests.rs`' `a_backslash_name_copies_and_moves_as_one_name`. ❗ A TOP-LEVEL source's name still
-  splits through the driver's `std::path` (`landing.rs::landing_at`, `ListedName::native`, which keeps `ChildName`'s
-  host refusal): the drivers' sources and destination are the plan's next pass (`docs/specs/app-path-plan.md` § 10a).
+  driver) and `listed_row_tests.rs`' `a_backslash_name_copies_and_moves_as_one_name`, whose `\` names run on macOS and
+  Linux only: `InMemoryVolume` keys its store by `PathBuf`, which on Windows splits them. ❗ A TOP-LEVEL source's name
+  still splits through the driver's `std::path` (`landing.rs::landing_at`, `ListedName::native`, which keeps
+  `ChildName`'s host refusal): the drivers' sources and destination are the plan's next pass
+  (`docs/specs/app-path-plan.md` § 10a).
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in

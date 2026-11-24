@@ -1973,8 +1973,15 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **`native_join_refuses` is deleted** (with `only_native_join_refuses`, `DestinationNames::join_as`, and their
     cells): `ListedName::new` refuses only what's no plain name on any host, so a POSIX server's `a\b` or `12:00 notes`
     lands whole on a remote destination, and a local NTFS one refuses it by its rules, per item. The cells:
-    `refused_class_tests.rs::run_remote_names_case` (both ways, all three drivers, `a\b.txt` beside a real `a/b.txt`),
-    and `listed_row_tests.rs`' backslash cell runs on Windows again.
+    `refused_class_tests.rs::run_remote_names_case` (both ways, all three drivers, `a\b.txt` beside a real `a/b.txt`).
+    ❗ Its `\` names and `listed_row_tests.rs`' backslash cell still run on macOS and Linux only, for the TEST DOUBLE:
+    `InMemoryVolume` keys its store by `PathBuf` (`in_memory.rs`, on the 10f list), so on Windows it lists `a\b.txt` as
+    `b.txt` in `a` and can't hold `foo\..` or both `a\b.txt` and `a/b.txt` (the lane's first run, 45467575511, read
+    exactly that). Typing its store is what re-enables them; the engine's side is pinned on every host by the typed temp
+    cell (`staged_write_tests.rs`) and the journal's split under both flavors (`journal_split_tests.rs`).
+  - **A journal rebase between canonical roots only**: a volume-relative root (a share suite's `cmdr-test-…/tree`, a
+    local tree's `tree`) rebases its leaves by `std::path` as before; the first run's typed-only rebase wrote such a
+    leaf's DEST as its source, and the SMB and S3 fixtures' undo cells caught it (`UnverifiablePrecondition`).
   - **Byte-exact on macOS and Linux** by construction, no differential harness this pass: a typed temp is minted only
     for a canonical final path holding no escape-range code point, whose split and join there equal `Path`'s (anything
     else mints through `std::path` as before, so a non-UTF-8 Linux name keeps its lossy temp); a typed journal end

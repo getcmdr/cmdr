@@ -243,10 +243,13 @@ async fn hidden_links_refuses_a_climbing_folder_row() {
     assert!(matches!(result, Err(VolumeError::InvalidName(_))), "{result:?}");
 }
 
-/// A name holding `\` is one name on a POSIX volume, on every host: a folder holding
-/// `foo\..` and `..\bar` copies and moves whole, and the move's sweep takes them along. On
-/// Windows too, as the walk joins it typed and the leaf bodies take the app path (a
-/// `std::path` reading there splits `foo\..` into a climb).
+/// A name holding `\` is one name on a POSIX volume: a folder holding `foo\..` and
+/// `..\bar` copies and moves whole, and the move's sweep takes them along. macOS and Linux
+/// only, for the test double: `InMemoryVolume` keys its store by `PathBuf`, so on Windows
+/// it can't hold `foo\..` (the plan's 10f list, `in_memory.rs`). The engine's side is
+/// typed end to end on every host (the walk's reading is pinned in `cmdr-fs`, the temp's
+/// and the journal's split in `staged_write_tests.rs` and `journal_split_tests.rs`).
+#[cfg(unix)]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_backslash_name_copies_and_moves_as_one_name() {
     let engine = TestOperations::new();

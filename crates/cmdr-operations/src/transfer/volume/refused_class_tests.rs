@@ -186,21 +186,35 @@ async fn a_cross_volume_move_refuses_a_name_the_destination_refuses_and_keeps_it
 /// characters (a local NTFS disk, here preset as FAT's) asks about it per item, ❌ never
 /// ending the transfer as a hostile listing does, and ❌ never landing it as a subfolder or
 /// a stream. The source is a POSIX server's tree, the destination another remote.
+///
+/// ❗ The `\` names run on macOS and Linux only: `InMemoryVolume` keys its store by
+/// `PathBuf`, so on Windows it reads `a\b.txt` as `b.txt` in a folder `a` and can't hold
+/// both (the plan's 10f list, `in_memory.rs`); the engine's own handling is pinned on
+/// every host by the typed temp and journal cells. The `:` names run everywhere.
 async fn run_remote_names_case(driver: Driver, refusing: bool) {
     let at = |text: &'static str| AppPath::from_normalized(text).unwrap_or_else(|why| panic!("{text}: {why}"));
     let source = Arc::new(InMemoryVolume::new("Server").with_space_info(10_000_000, 10_000_000));
     for dir in ["/album", "/album/a:b", "/album/a"] {
         source.create_directory(at(dir)).await.unwrap();
     }
+    let backslash_names: &[(&str, &str)] = if cfg!(unix) {
+        &[
+            ("/inbox/album/back\\slash.txt", "/album/back\\slash.txt"),
+            // `a\b.txt` beside a real folder `a` holding `b.txt`: two files, ❌ never one.
+            ("/inbox/album/a\\b.txt", "/album/a\\b.txt"),
+        ]
+    } else {
+        &[]
+    };
     for file in [
         "/album/ok.txt",
         "/album/12:00 notes.txt",
-        "/album/back\\slash.txt",
         "/album/a:b/x.txt",
-        // `a\b.txt` beside a real folder `a` holding `b.txt`: two files, ❌ never one.
-        "/album/a\\b.txt",
         "/album/a/b.txt",
-    ] {
+    ]
+    .into_iter()
+    .chain(backslash_names.iter().map(|(_, from)| *from))
+    {
         source.create_file(at(file), file.as_bytes()).await.unwrap();
     }
     let sources = vec![PathBuf::from("/album")];
@@ -268,22 +282,28 @@ async fn run_remote_names_case(driver: Driver, refusing: bool) {
             "{driver:?}: {landed}"
         );
     }
-    let named = [
+    let named: Vec<(&'static str, &'static str)> = [
         ("/inbox/album/12:00 notes.txt", "/album/12:00 notes.txt"),
-        ("/inbox/album/back\\slash.txt", "/album/back\\slash.txt"),
         ("/inbox/album/a:b/x.txt", "/album/a:b/x.txt"),
-        ("/inbox/album/a\\b.txt", "/album/a\\b.txt"),
-    ];
+    ]
+    .into_iter()
+    .chain(backslash_names.iter().copied())
+    .collect();
     let prompts = events.inner.conflicts.lock_ignore_poison().clone();
     if refusing {
-        for (refused, _) in named {
+        for &(refused, _) in &named {
             assert!(!dest.exists(at(refused)).await, "{driver:?}: {refused} landed");
         }
         assert!(
             !dest.exists(app_path!("/inbox/album/a:b")).await,
             "{driver:?}: a:b landed"
         );
-        assert_eq!(prompts.len(), 4, "{driver:?}: one prompt per refused name: {prompts:?}");
+        // One per refused file, plus the folder `a:b`.
+        assert_eq!(
+            prompts.len(),
+            named.len(),
+            "{driver:?}: one prompt per refused name: {prompts:?}"
+        );
         assert!(
             prompts
                 .iter()
@@ -291,12 +311,12 @@ async fn run_remote_names_case(driver: Driver, refusing: bool) {
             "{driver:?}: {prompts:?}"
         );
         if driver == Driver::CrossVolumeMove {
-            for (_, kept) in named {
+            for &(_, kept) in &named {
                 assert!(source.exists(at(kept)).await, "a move keeps a skipped source: {kept}");
             }
         }
     } else {
-        for (landed, from) in named {
+        for &(landed, from) in &named {
             assert_eq!(
                 read(landed).await.as_deref(),
                 Some(from.as_bytes()),
