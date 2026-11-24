@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Les autres apps ne peuvent pas ouvrir le fichier « {fileName} » par son chemin. Le chemin dépasse la longueur que gèrent les apps Windows, ou un nom qu’il contient se termine par un point ou un espace, ou est un nom réservé comme CON. Raccourcissez le chemin ou renommez le fichier ou le dossier, ou visualisez-le dans Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} s’ouvre…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

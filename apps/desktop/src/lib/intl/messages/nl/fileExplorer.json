@@ -334,6 +334,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Andere apps kunnen {fileName} niet via het pad openen. Het pad is langer dan Windows-apps aankunnen, of een naam erin eindigt op een punt of spatie, of is een gereserveerde naam zoals CON. Maak het pad korter of wijzig de naam van het bestand of de map, of toon het in Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} openen…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

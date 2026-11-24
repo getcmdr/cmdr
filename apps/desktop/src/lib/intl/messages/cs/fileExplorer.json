@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Ostatní aplikace nedokážou soubor {fileName} otevřít podle jeho cesty. Cesta je delší, než aplikace pro Windows zvládnou, nebo některý název v ní končí tečkou či mezerou, případně je to vyhrazený název jako CON. Zkraťte cestu nebo přejmenujte soubor či složku, případně si soubor zobrazte v Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "Otevírá se {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

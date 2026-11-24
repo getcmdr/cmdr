@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Andra appar kan inte öppna {fileName} via sökvägen. Sökvägen är längre än Windows-appar klarar, eller så slutar ett namn i den med punkt eller mellanslag, eller är ett reserverat namn som CON. Korta sökvägen eller byt namn på filen eller mappen, eller visa filen i Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "Öppnar {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

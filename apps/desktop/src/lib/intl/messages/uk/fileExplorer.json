@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Інші програми не можуть відкрити файл {fileName} за його шляхом. Шлях довший, ніж підтримують програми Windows, або якась назва в ньому закінчується крапкою чи пробілом або є зарезервованою, як-от CON. Скоротіть шлях, перейменуйте файл чи папку або перегляньте файл у Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "Відкриття «{fileName}»…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

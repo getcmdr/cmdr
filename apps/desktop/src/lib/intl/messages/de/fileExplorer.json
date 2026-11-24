@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Andere Apps können {fileName} nicht über den Pfad öffnen. Der Pfad ist zu lang für Windows-Apps, oder ein Name darin endet auf einen Punkt oder ein Leerzeichen oder ist ein reservierter Name wie CON. Kürze den Pfad oder benenne Datei oder Ordner um, oder sieh dir die Datei in Cmdr an.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} wird geöffnet …",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

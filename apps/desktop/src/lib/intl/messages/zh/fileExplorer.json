@@ -331,6 +331,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "其他 App 无法通过路径打开“{fileName}”。路径超出了 Windows App 能处理的长度，或者路径中某个名称以句点或空格结尾，或者是 CON 这类保留名称。请缩短路径、重命名文件或文件夹，或者在 Cmdr 中查看。",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "正在打开 {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

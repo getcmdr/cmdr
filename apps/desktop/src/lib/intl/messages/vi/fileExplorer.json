@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Các ứng dụng khác không mở được “{fileName}” theo đường dẫn. Đường dẫn dài hơn mức ứng dụng Windows chấp nhận, hoặc một tên trong đó kết thúc bằng dấu chấm hay dấu cách, hoặc là tên dành riêng như CON. Hãy rút ngắn đường dẫn, đổi tên tệp hay thư mục, hoặc xem tệp trong Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "Đang mở “{fileName}”…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

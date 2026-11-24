@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Другие приложения не могут открыть файл {fileName} по его пути. Путь длиннее, чем допускают приложения Windows, или какое-то имя в нём заканчивается точкой или пробелом либо зарезервировано, как CON. Сократите путь, переименуйте файл или папку либо просмотрите файл в Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "Открытие «{fileName}»…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

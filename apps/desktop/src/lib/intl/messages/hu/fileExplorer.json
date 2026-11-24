@@ -333,6 +333,10 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Más appok az útvonala alapján nem tudják megnyitni ezt a fájlt: „{fileName}”. Az útvonal hosszabb, mint amit a Windows-appok kezelnek, vagy egy benne lévő név pontra vagy szóközre végződik, esetleg fenntartott név, például CON. Rövidítsd le az útvonalat, nevezd át a fájlt vagy a mappát, vagy tekintsd meg a Cmdrben.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} megnyitása…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"
