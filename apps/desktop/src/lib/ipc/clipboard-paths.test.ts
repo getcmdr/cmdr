@@ -31,16 +31,28 @@ describe('commands.copyPathsToClipboard', () => {
     })
   })
 
-  it('surfaces a string error when the backend rejects an empty list', async () => {
+  it('surfaces a typed refusal when the backend rejects an empty list', async () => {
     const ipc = installIpcMock()
     ipc.mock('copy_paths_to_clipboard', () => {
-      throw 'No files to copy'
+      throw { type: 'nothingToCopy' }
     })
 
     const out = await commands.copyPathsToClipboard([])
 
     expect(out.status).toBe('error')
-    if (out.status === 'error') expect(out.error).toBe('No files to copy')
+    if (out.status === 'error') expect(out.error).toEqual({ type: 'nothingToCopy' })
+  })
+
+  it('carries a refused path in camelCase fields', async () => {
+    const ipc = installIpcMock()
+    ipc.mock('copy_paths_to_clipboard', () => {
+      throw { type: 'noPlainPath', path: 'C:/x/dup.' }
+    })
+
+    const out = await commands.copyPathsToClipboard(['C:/x/dup.'])
+
+    if (out.status === 'error') expect(out.error).toEqual({ type: 'noPlainPath', path: 'C:/x/dup.' })
+    else expect.unreachable('a refusal')
   })
 })
 

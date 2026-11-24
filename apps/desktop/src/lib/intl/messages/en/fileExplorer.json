@@ -1298,6 +1298,13 @@
       "name": "the file or folder name that couldn't go on the clipboard"
     }
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr can’t tell which file “{path}” on the clipboard means, so nothing was pasted. Rename it in the app you copied it from, then copy it again.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "description": "Warning toast after the paste shortcut on Windows, when another app put a path on the clipboard that Windows itself would read as a different file or none: a name ending in a dot or space, a reserved device name like CON or NUL, or a path that isn't complete. Pasting could move or copy the wrong file, so Cmdr pasted none of the files.",
+    "placeholders": {
+      "path": "the path on the clipboard, exactly as the other app wrote it (a Windows path like C:\\folder\\name.)"
+    }
+  },
   "fileExplorer.clipboard.busy": "Another app is holding the clipboard. Try again in a moment.",
   "@fileExplorer.clipboard.busy": {
     "description": "Warning toast after the copy, cut, or paste shortcut, when another app kept the system clipboard locked through every retry, so Cmdr couldn't read or write it. Usually clears up within seconds."

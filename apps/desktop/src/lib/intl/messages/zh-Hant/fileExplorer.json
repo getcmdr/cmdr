@@ -839,6 +839,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr 無法判斷剪貼板上的「{path}」指的是哪個檔案，所以沒有貼上任何內容。請在你複製它的 App 裡重新命名，然後再複製一次。",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "另一個 App 正在佔用剪貼板。請稍後再試一次。",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

@@ -841,6 +841,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr не может определить, какой файл означает «{path}» в буфере обмена, поэтому ничего не вставлено. Переименуйте его в приложении, из которого вы его скопировали, и скопируйте снова.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Буфер обмена сейчас занят другим приложением. Повторите попытку чуть позже.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

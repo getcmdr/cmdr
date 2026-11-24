@@ -842,6 +842,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr kan inte avgöra vilken fil ”{path}” i urklipp syftar på, så inget blev inklistrat. Byt namn på den i appen du kopierade den från, och kopiera den sedan igen.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "En annan app håller i urklipp just nu. Försök igen om en stund.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

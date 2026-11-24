@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::clipboard::{self, ClipboardFiles, ClipboardFilesError, ClipboardIntent};
-use cmdr_fs::app_path::{AppPathBuf, NativeRefusal};
+use cmdr_fs::app_path::NativeRefusal;
 use cmdr_operations::MutationError;
 
 #[derive(serde::Serialize, specta::Type)]
@@ -44,13 +44,42 @@ fn native_row(row: &str) -> Result<PathBuf, ClipboardFilesError> {
     }
 }
 
-/// The app path the frontend works in for a native path the clipboard held (`C:\x` is `C:/x`).
-/// A path no app path holds without an escape keeps its native text, lossily, as before typed
-/// crossings: it still names the file on macOS and Linux, and a move refuses it typed.
-fn app_text(native: &std::path::Path) -> String {
-    AppPathBuf::from_native_unicode(native)
-        .map(AppPathBuf::into_string)
-        .unwrap_or_else(|_| native.to_string_lossy().into_owned())
+/// The app paths the frontend works in for the native paths the clipboard held (`C:\x` is
+/// `C:/x`), through `read` (the OS arm's `app_text`). One that names no file for certain refuses
+/// the WHOLE paste, naming it: pasting the rest would move or copy a subset under a toast saying
+/// the paste happened.
+fn app_texts(
+    natives: &[PathBuf],
+    read: impl Fn(&std::path::Path) -> Option<String>,
+) -> Result<Vec<String>, ClipboardFilesError> {
+    natives
+        .iter()
+        .map(|native| {
+            read(native).ok_or_else(|| {
+                log::warn!(
+                    target: "clipboard",
+                    "Refused a paste: a path names no file for certain: {}",
+                    cmdr_fs::log_private::LogPrivate::path(native)
+                );
+                ClipboardFilesError::UnreadablePath {
+                    path: native.to_string_lossy().into_owned(),
+                }
+            })
+        })
+        .collect()
+}
+
+/// A cut that didn't reach the clipboard leaves no earlier cut armed: Cmdr's cut state goes, and
+/// so does the clipboard's move mark while it still holds that earlier cut of Cmdr's, so the next
+/// paste copies (or finds the clipboard empty) instead of moving files the person moved on from.
+async fn disarm_earlier_cut() {
+    let Some(earlier) = clipboard::get_cut_state() else {
+        return;
+    };
+    clipboard::clear_cut_state();
+    if let Err(error) = off_runtime(move || clipboard::platform::drop_cut_mark(earlier)).await {
+        log::warn!(target: "clipboard", "Couldn't drop the earlier cut's mark: {error:?}");
+    }
 }
 
 /// Runs a blocking clipboard call off the async runtime: the OS answers at once, or after the
@@ -71,10 +100,26 @@ async fn write_rows(
     rows: &[String],
     intent: ClipboardIntent,
 ) -> Result<usize, ClipboardFilesError> {
-    let paths = native_rows(rows)?;
+    let written = match native_rows(rows) {
+        Ok(paths) => {
+            let to_write = paths.clone();
+            off_runtime(move || clipboard::platform::write_file_urls(app, to_write, intent))
+                .await
+                .map(|()| paths)
+        }
+        Err(refused) => Err(refused),
+    };
+    let paths = match written {
+        Ok(paths) => paths,
+        Err(refused) => {
+            if intent == ClipboardIntent::Cut {
+                disarm_earlier_cut().await;
+            }
+            return Err(refused);
+        }
+    };
     let count = paths.len();
     let cut_paths = paths.clone();
-    off_runtime(move || clipboard::platform::write_file_urls(app, paths, intent)).await?;
     match intent {
         ClipboardIntent::Copy => clipboard::clear_cut_state(),
         ClipboardIntent::Cut => clipboard::set_cut_state(cut_paths),
@@ -131,7 +176,7 @@ pub async fn read_clipboard_files(app: tauri::AppHandle) -> Result<ClipboardRead
     };
     let is_cut = marked_cut || cut_by_cmdr;
 
-    let paths: Vec<String> = clipboard_paths.iter().map(|p| app_text(p)).collect();
+    let paths = app_texts(&clipboard_paths, clipboard::platform::app_text)?;
     // A cut the clipboard marks owes its source a word once a move takes it all.
     clipboard::cut_paste::note_read(&paths, &clipboard_paths, marked_cut);
 
@@ -193,7 +238,7 @@ pub fn clear_clipboard_cut_state() {
 
 #[cfg(test)]
 mod tests {
-    use super::{ClipboardFilesError, app_text, native_rows};
+    use super::{ClipboardFilesError, app_texts, disarm_earlier_cut, native_rows};
 
     /// Every row crosses, in order; one row with no native file (a server's, a `..`) refuses the
     /// whole set, ❌ never a quiet subset under a "copied" toast.
@@ -237,6 +282,36 @@ mod tests {
         let dir = crate::test_support::AppTestDir::new("clipboard_app_text");
         let app = format!("{}/a.txt", dir.app_path().as_str());
         let native = dir.app_path().to_native().expect("native").join("a.txt");
-        assert_eq!(app_text(&native), app);
+        assert_eq!(
+            app_texts(std::slice::from_ref(&native), crate::clipboard::platform::app_text),
+            Ok(vec![app])
+        );
+    }
+
+    /// One path that names no file for certain refuses the whole paste, naming it: ❌ never a
+    /// silent subset.
+    #[test]
+    fn one_unreadable_path_refuses_the_whole_paste() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_unreadable");
+        let native = dir.app_path().to_native().expect("native");
+        let fine = native.join("a.txt");
+        let odd = native.join("odd");
+        let read = |p: &std::path::Path| (!p.ends_with("odd")).then(|| p.to_string_lossy().into_owned());
+        assert_eq!(
+            app_texts(&[fine, odd.clone()], read),
+            Err(ClipboardFilesError::UnreadablePath {
+                path: odd.to_string_lossy().into_owned()
+            })
+        );
+    }
+
+    /// A refused cut leaves no earlier cut armed: the next paste mustn't move the files cut
+    /// before it.
+    #[tokio::test]
+    async fn a_refused_cut_disarms_the_earlier_cut() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_disarm");
+        crate::clipboard::set_cut_state(vec![dir.app_path().to_native().expect("native").join("earlier.txt")]);
+        disarm_earlier_cut().await;
+        assert_eq!(crate::clipboard::get_cut_state(), None);
     }
 }

@@ -149,6 +149,9 @@ function clipboardFilesRefusalMessage(error: unknown): string | null {
     const name = basenameInVolume(refusal.path) ?? refusal.path
     return tString('fileExplorer.clipboard.noPlainPath', { name })
   }
+  if (refusal?.type === 'unreadablePath') {
+    return tString('fileExplorer.clipboard.unreadablePath', { path: refusal.path })
+  }
   if (refusal?.type === 'busy') return tString('fileExplorer.clipboard.busy')
   return null
 }

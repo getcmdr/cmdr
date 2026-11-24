@@ -3,6 +3,12 @@
 //! carry, and the paths as `CF_UNICODETEXT`. Pure, so every OS's tests pin the layout; only
 //! the Windows arm (`platform/windows.rs`) puts them on a clipboard.
 
+use cmdr_fs::app_path::AppPath;
+
+/// `DROPEFFECT_NONE`: the target did nothing the source has to finish (an optimized move's
+/// `Performed DropEffect`).
+#[cfg_attr(test, allow(dead_code, reason = "used by the Windows arm only"))]
+pub(crate) const DROPEFFECT_NONE: u32 = 0;
 /// `DROPEFFECT_COPY`: the files go on paste as a copy.
 pub(crate) const DROPEFFECT_COPY: u32 = 1;
 /// `DROPEFFECT_MOVE`: the files were cut, so a paste moves them.
@@ -10,6 +16,16 @@ pub(crate) const DROPEFFECT_MOVE: u32 = 2;
 
 /// `sizeof(DROPFILES)`: `pFiles` (u32), `pt` (two i32), `fNC` (BOOL), `fWide` (BOOL).
 const DROPFILES_HEADER: usize = 20;
+
+/// Whether a `CF_HDROP` block holds its whole header and its list starts inside it: another
+/// app's malformed block would send `DragQueryFileW` reading past the end.
+pub(crate) fn dropfiles_header_fits(block: &[u8]) -> bool {
+    let Some(p_files) = block.first_chunk::<4>() else {
+        return false;
+    };
+    let p_files = u32::from_le_bytes(*p_files) as usize;
+    block.len() >= DROPFILES_HEADER && p_files >= DROPFILES_HEADER && p_files < block.len()
+}
 
 /// The `CF_HDROP` block for `paths` (each a path's UTF-16 units, no NUL): the `DROPFILES`
 /// header with `pFiles` pointing just past it and `fWide` set, then each path NUL-terminated,
@@ -28,6 +44,16 @@ pub(crate) fn dropfiles_block(paths: &[Vec<u16>]) -> Vec<u8> {
     }
     out.extend_from_slice(&[0, 0]);
     out
+}
+
+/// Whether a native path another app put in `CF_HDROP`, already crossed to `app`, names that
+/// file for certain: a verbatim `\\?\` path (`units`) names exactly its file; a PLAIN one only
+/// when its plain form is the same file (`C:\x\a.` is `C:\x\a` to Win32, `C:\x\CON` the device,
+/// past 259 units an API may truncate). Pure, so every OS's tests pin it; the crossing itself
+/// (`from_native_unicode`, which refuses a device, `C:foo`, a relative path) is the caller's.
+pub(crate) fn names_its_file(units: &[u16], app: &AppPath) -> bool {
+    let verbatim: Vec<u16> = r"\\?\".encode_utf16().collect();
+    units.starts_with(&verbatim) || app.to_native_windows_plain().is_ok()
 }
 
 /// A `DROPEFFECT` value as the four bytes its clipboard format holds.
@@ -102,6 +128,49 @@ mod tests {
             &[0x3E, 0xD8, 0x80, 0xDD],
             "U+1F980 as D83E DD80, little-endian"
         );
+    }
+
+    /// Whether the native `plain` (as another app wrote it), crossed to `app`, names its file.
+    fn names(native: &str, app: &str) -> bool {
+        let app =
+            cmdr_fs::app_path::AppPathBuf::parse(app, cmdr_fs::app_path::PathFlavor::Windows).expect("an app path");
+        names_its_file(&units(native), &app)
+    }
+
+    #[test]
+    fn a_plain_path_naming_its_file_passes() {
+        assert!(names(r"C:\Users\test_user_1\a.txt", "C:/Users/test_user_1/a.txt"));
+        assert!(names(r"\\testnas.local\share\b.txt", "//testnas.local/share/b.txt"));
+    }
+
+    /// Win32 reads these plain paths as another file or none, so the paste mustn't guess.
+    #[test]
+    fn a_plain_path_win32_reads_as_another_file_is_refused() {
+        assert!(!names(r"C:\x\a.", "C:/x/a."), "trailing dot: Win32 opens `a`");
+        assert!(!names(r"C:\x\a ", "C:/x/a "), "trailing space");
+        assert!(!names(r"C:\x\CON", "C:/x/CON"), "the console device");
+        assert!(!names(r"C:\x\nul.txt", "C:/x/nul.txt"), "the null device");
+        let long = "a".repeat(300);
+        assert!(!names(&format!(r"C:\{long}"), &format!("C:/{long}")), "past 259 units");
+    }
+
+    /// A verbatim path names exactly its file, trailing dot and all.
+    #[test]
+    fn a_verbatim_path_passes_as_it_is() {
+        assert!(names(r"\\?\C:\x\a.", "C:/x/a."));
+    }
+
+    #[test]
+    fn a_block_whose_list_starts_past_its_end_doesnt_fit() {
+        let block = dropfiles_block(&[units(r"C:\a")]);
+        assert!(dropfiles_header_fits(&block));
+        assert!(!dropfiles_header_fits(&block[..12]), "shorter than its header");
+        let mut past = block.clone();
+        past[..4].copy_from_slice(&(block.len() as u32).to_le_bytes());
+        assert!(!dropfiles_header_fits(&past), "pFiles at the end");
+        let mut inside = block;
+        inside[..4].copy_from_slice(&4u32.to_le_bytes());
+        assert!(!dropfiles_header_fits(&inside), "pFiles inside the header");
     }
 
     #[test]

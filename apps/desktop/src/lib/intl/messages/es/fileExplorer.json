@@ -842,6 +842,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr no puede saber a qué archivo se refiere “{path}” en el portapapeles, así que no se ha pegado nada. Renómbralo en la app desde la que lo copiaste y vuelve a copiarlo.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Otra app está usando el portapapeles. Vuelve a intentarlo en un momento.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

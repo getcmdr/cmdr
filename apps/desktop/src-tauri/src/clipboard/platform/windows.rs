@@ -21,18 +21,20 @@ use std::time::Duration;
 
 use tauri::AppHandle;
 use windows::Win32::Foundation::{GlobalFree, HANDLE, HGLOBAL};
-use windows::Win32::System::Com::{DVASPECT_CONTENT, FORMATETC, STGMEDIUM, STGMEDIUM_0, TYMED_HGLOBAL};
+use windows::Win32::System::Com::{DVASPECT_CONTENT, FORMATETC, IDataObject, STGMEDIUM, STGMEDIUM_0, TYMED_HGLOBAL};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, GetClipboardData, GetClipboardSequenceNumber, IsClipboardFormatAvailable,
     OpenClipboard, RegisterClipboardFormatW, SetClipboardData,
 };
 use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock};
 use windows::Win32::System::Ole::{CF_HDROP, CF_UNICODETEXT, OleGetClipboard, OleInitialize, OleUninitialize};
-use windows::Win32::UI::Shell::{CFSTR_PASTESUCCEEDED, CFSTR_PREFERREDDROPEFFECT, DragQueryFileW, HDROP};
+use windows::Win32::UI::Shell::{
+    CFSTR_PASTESUCCEEDED, CFSTR_PERFORMEDDROPEFFECT, CFSTR_PREFERREDDROPEFFECT, DragQueryFileW, HDROP,
+};
 use windows::core::PCWSTR;
 
 use super::super::{ClipboardFiles, ClipboardFilesError, ClipboardIntent};
-use super::shell_formats::{self, DROPEFFECT_COPY, DROPEFFECT_MOVE};
+use super::shell_formats::{self, DROPEFFECT_COPY, DROPEFFECT_MOVE, DROPEFFECT_NONE};
 
 pub(crate) use super::arboard_text::read_text;
 pub(crate) use super::unsupported::paste_as_file;
@@ -156,14 +158,23 @@ fn read_format(_open: &OpenClipboardGuard, format: u32) -> Option<Vec<u8>> {
 }
 
 /// The files on the open clipboard, as `DragQueryFileW` lists them (wide or ANSI `CF_HDROP`).
-fn read_files(_open: &OpenClipboardGuard) -> Result<Vec<PathBuf>, ClipboardFilesError> {
+fn read_files(open: &OpenClipboardGuard) -> Result<Vec<PathBuf>, ClipboardFilesError> {
     let format = u32::from(CF_HDROP.0);
-    // SAFETY: the clipboard is open on this thread (`_open`); the call takes no pointers.
+    // SAFETY: the clipboard is open on this thread (`open`); the call takes no pointers.
     if unsafe { IsClipboardFormatAvailable(format) }.is_err() {
         return Ok(Vec::new());
     }
     // SAFETY: as above; the handle stays the clipboard's while it's open.
     let handle = unsafe { GetClipboardData(format) }.map_err(|e| unexpected("GetClipboardData(CF_HDROP)", &e))?;
+    // A block too small for its own header, or whose list starts past its end, is another app's
+    // bug: `DragQueryFileW` would read past it.
+    let Some(header) = read_format(open, format) else {
+        return Ok(Vec::new());
+    };
+    if !shell_formats::dropfiles_header_fits(&header) {
+        log::warn!(target: "clipboard", "Ignored a malformed CF_HDROP ({} bytes)", header.len());
+        return Ok(Vec::new());
+    }
     let drop = HDROP(handle.0);
     // SAFETY: `drop` is the clipboard's live `CF_HDROP`; index `u32::MAX` with no buffer asks
     // for the count.
@@ -172,11 +183,16 @@ fn read_files(_open: &OpenClipboardGuard) -> Result<Vec<PathBuf>, ClipboardFiles
     for i in 0..count {
         // SAFETY: as above; no buffer asks for the length in units, NUL excluded.
         let len = unsafe { DragQueryFileW(drop, i, None) } as usize;
+        if len == 0 {
+            continue;
+        }
         let mut buffer = vec![0u16; len + 1];
         // SAFETY: as above; `buffer` holds the path and its NUL, and its length is the `cch`.
         let copied = unsafe { DragQueryFileW(drop, i, Some(&mut buffer)) } as usize;
         buffer.truncate(copied);
-        paths.push(PathBuf::from(OsString::from_wide(&buffer)));
+        if !buffer.is_empty() {
+            paths.push(PathBuf::from(OsString::from_wide(&buffer)));
+        }
     }
     Ok(paths)
 }
@@ -227,6 +243,25 @@ fn read_marked_files(open: &OpenClipboardGuard, effect_format: u32) -> Result<Cl
     Ok(ClipboardFiles { paths, marked_cut })
 }
 
+/// The app path for a path another app put in `CF_HDROP`, or `None` when it names no file for
+/// certain: the crossing refuses a device, a drive-relative `C:foo`, a relative path, and a name
+/// needing an escape; `shell_formats::names_its_file` refuses a plain path Win32 reads as another.
+pub(crate) fn app_text(native: &std::path::Path) -> Option<String> {
+    let app = cmdr_fs::app_path::AppPathBuf::from_native_unicode(native).ok()?;
+    shell_formats::names_its_file(&units(native), &app).then(|| app.into_string())
+}
+
+/// Empties the clipboard when it still holds exactly Cmdr's earlier cut of `paths`.
+pub(crate) fn drop_cut_mark(paths: Vec<PathBuf>) -> Result<(), ClipboardFilesError> {
+    let effect_format = registered_format(CFSTR_PREFERREDDROPEFFECT)?;
+    let open = OpenClipboardGuard::acquire()?;
+    if holds_cut(&open, effect_format, &paths)? {
+        // SAFETY: the clipboard is open on this thread (`open`).
+        unsafe { EmptyClipboard() }.map_err(|e| unexpected("EmptyClipboard", &e))?;
+    }
+    Ok(())
+}
+
 /// Tells the source of a cut that the paste moved everything, on a thread of its own.
 pub(crate) fn after_cut_paste(paths: Vec<PathBuf>) {
     let spawned = std::thread::Builder::new()
@@ -243,12 +278,16 @@ pub(crate) fn after_cut_paste(paths: Vec<PathBuf>) {
 
 /// The delete-on-paste handshake's target half
 /// (learn.microsoft.com/windows/win32/shell/datascenarios § "Handling Delete-on-Paste Operations"):
-/// Cmdr's move already took the files (an "optimized move"), so the source gets `Paste
-/// Succeeded` = `DROPEFFECT_MOVE` and NO `Performed DropEffect` (that pair would ask it to delete
-/// the originals itself). Then, if the cut is still on the clipboard, it goes: a cut pastes once.
+/// Cmdr's move already took the files (an "optimized move"), so the source gets `Performed
+/// DropEffect` = `DROPEFFECT_NONE`, then `Paste Succeeded` = `DROPEFFECT_MOVE`. ❌ Never `Performed
+/// DropEffect` = move: with `Paste Succeeded` that asks the source to delete the originals itself.
+/// Then, if the cut is still on the clipboard, it goes: a cut pastes once.
 fn settle_cut(paths: &[PathBuf]) -> Result<(), ClipboardFilesError> {
     let effect_format = registered_format(CFSTR_PREFERREDDROPEFFECT)?;
-    let succeeded_format = registered_format(CFSTR_PASTESUCCEEDED)?;
+    let formats = SettleFormats {
+        performed: registered_format(CFSTR_PERFORMEDDROPEFFECT)?,
+        succeeded: registered_format(CFSTR_PASTESUCCEEDED)?,
+    };
     // The clipboard must still hold this very cut: a person who copied something since gets
     // their new clipboard left alone.
     let sequence = {
@@ -259,7 +298,7 @@ fn settle_cut(paths: &[PathBuf]) -> Result<(), ClipboardFilesError> {
         // SAFETY: takes no arguments.
         unsafe { GetClipboardSequenceNumber() }
     };
-    if let Err(error) = tell_paste_succeeded(succeeded_format) {
+    if let Err(error) = tell_paste_succeeded(formats, sequence) {
         // A source that wrote with the plain API (Cmdr itself, many apps) has no data object
         // to tell; the emptying below still ends the cut.
         log::debug!(target: "clipboard", "The cut's source took no `Paste Succeeded`: {error:?}");
@@ -284,38 +323,31 @@ fn holds_cut(open: &OpenClipboardGuard, effect_format: u32, paths: &[PathBuf]) -
     Ok(on.marked_cut && held == wanted)
 }
 
-/// `Paste Succeeded` = `DROPEFFECT_MOVE` on the clipboard's data object, in an OLE apartment
-/// this thread enters and leaves around the call.
-fn tell_paste_succeeded(format: u32) -> Result<(), ClipboardFilesError> {
+/// The two registered formats the handshake sets on the source's data object.
+#[derive(Clone, Copy)]
+struct SettleFormats {
+    performed: u32,
+    succeeded: u32,
+}
+
+/// `Performed DropEffect` = `DROPEFFECT_NONE`, then `Paste Succeeded` = `DROPEFFECT_MOVE`, on the
+/// clipboard's data object, in an OLE apartment this thread enters and leaves around the call.
+/// Only when the clipboard is still the one `sequence` names: another cut that took its place
+/// between the check and `OleGetClipboard` never hears a paste it didn't get.
+fn tell_paste_succeeded(formats: SettleFormats, sequence: u32) -> Result<(), ClipboardFilesError> {
     // SAFETY: enters an STA on this dedicated thread; a success is balanced below on it.
     unsafe { OleInitialize(None) }.map_err(|e| unexpected("OleInitialize", &e))?;
     let told = (|| {
         // SAFETY: OLE is initialized on this thread (above).
         let data = unsafe { OleGetClipboard() }.map_err(|e| unexpected("OleGetClipboard", &e))?;
-        let block = global_with(&shell_formats::effect_bytes(DROPEFFECT_MOVE))?;
-        let format_etc = FORMATETC {
-            cfFormat: u16::try_from(format).map_err(|_| ClipboardFilesError::Unexpected {
-                detail: format!("registered format {format} past u16"),
-            })?,
-            ptd: std::ptr::null_mut(),
-            dwAspect: DVASPECT_CONTENT.0,
-            lindex: -1,
-            tymed: TYMED_HGLOBAL.0 as u32,
-        };
-        let medium = STGMEDIUM {
-            tymed: TYMED_HGLOBAL.0 as u32,
-            u: STGMEDIUM_0 { hGlobal: block },
-            pUnkForRelease: std::mem::ManuallyDrop::new(None),
-        };
-        // SAFETY: `format_etc` and `medium` live across the call; `fRelease = true` hands the
-        // data object `block` on success.
-        if let Err(error) = unsafe { data.SetData(&format_etc, &medium, true) } {
-            // SAFETY: refused, so `block` is still ours to free.
-            // the refusal is what the caller hears.
-            let _ = unsafe { GlobalFree(Some(block)) };
-            return Err(unexpected("IDataObject::SetData(Paste Succeeded)", &error));
+        // SAFETY: takes no arguments.
+        if unsafe { GetClipboardSequenceNumber() } != sequence {
+            return Err(ClipboardFilesError::Unexpected {
+                detail: "the clipboard changed before the source could be told".into(),
+            });
         }
-        Ok(())
+        set_effect(&data, formats.performed, DROPEFFECT_NONE)?;
+        set_effect(&data, formats.succeeded, DROPEFFECT_MOVE)
     })();
     // SAFETY: balances the successful `OleInitialize` above, on this same thread, after the
     // data object (dropped inside the closure) is released.
@@ -323,9 +355,56 @@ fn tell_paste_succeeded(format: u32) -> Result<(), ClipboardFilesError> {
     told
 }
 
+/// Sets the registered `format` to the `DROPEFFECT` value `effect` on `data`.
+fn set_effect(data: &IDataObject, format: u32, effect: u32) -> Result<(), ClipboardFilesError> {
+    let block = global_with(&shell_formats::effect_bytes(effect))?;
+    let format_etc = FORMATETC {
+        cfFormat: u16::try_from(format).map_err(|_| ClipboardFilesError::Unexpected {
+            detail: format!("registered format {format} past u16"),
+        })?,
+        ptd: std::ptr::null_mut(),
+        dwAspect: DVASPECT_CONTENT.0,
+        lindex: -1,
+        tymed: TYMED_HGLOBAL.0 as u32,
+    };
+    let medium = STGMEDIUM {
+        tymed: TYMED_HGLOBAL.0 as u32,
+        u: STGMEDIUM_0 { hGlobal: block },
+        pUnkForRelease: std::mem::ManuallyDrop::new(None),
+    };
+    // SAFETY: `format_etc` and `medium` live across the call; `fRelease = true` hands the data
+    // object `block` on success.
+    if let Err(error) = unsafe { data.SetData(&format_etc, &medium, true) } {
+        // SAFETY: refused, so `block` is still ours to free. The refusal is what the caller hears.
+        let _ = unsafe { GlobalFree(Some(block)) };
+        return Err(unexpected("IDataObject::SetData", &error));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A clipboard path reads as its app path only when it names its file for certain.
+    #[test]
+    fn an_incoming_path_reads_as_its_app_path_only_when_it_names_its_file() {
+        let read = |p: PathBuf| app_text(&p);
+        assert_eq!(
+            read(PathBuf::from(r"C:\Users\test_user_1\a.txt")).as_deref(),
+            Some("C:/Users/test_user_1/a.txt")
+        );
+        assert_eq!(
+            read(PathBuf::from(r"\\?\C:\x\a.")).as_deref(),
+            Some("C:/x/a."),
+            "verbatim: exactly its file"
+        );
+        assert_eq!(read(PathBuf::from(r"C:\x\a.")), None, "Win32 opens `a`");
+        assert_eq!(read(PathBuf::from(r"C:\x\CON")), None, "the console device");
+        assert_eq!(read(PathBuf::from(r"C:foo")), None, "drive-relative");
+        assert_eq!(read(PathBuf::from(r"foo\bar")), None, "relative");
+        assert_eq!(read(PathBuf::from(r"\\.\PhysicalDrive0")), None, "a device");
+    }
 
     fn read_back() -> ClipboardFiles {
         let effect_format = registered_format(CFSTR_PREFERREDDROPEFFECT).expect("registered");
@@ -336,9 +415,13 @@ mod tests {
     /// and they'd share the one clipboard): a cut reads back as a cut with the same paths in
     /// order, a copy as no cut, the text as one path per line; a settled cut leaves the
     /// clipboard (Cmdr's own, written with the plain API, has no data object to tell), and a
-    /// settle finding a copy instead leaves it alone. Clobbers the runner's clipboard.
+    /// settle finding a copy instead leaves it alone. Clobbers the clipboard, so it runs on CI
+    /// only (`CI` set), never over a developer's own clipboard.
     #[test]
     fn cut_copy_and_settle_round_trip_through_the_real_clipboard() {
+        if std::env::var_os("CI").is_none() {
+            return;
+        }
         let paths = vec![
             PathBuf::from(r"C:\Users\test_user_1\a.txt"),
             PathBuf::from(r"\\testnas.local\share\folder with spaces\b 🦀.txt"),

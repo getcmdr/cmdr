@@ -841,6 +841,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr nepozná, o jaký soubor jde u „{path}“ ve schránce, proto se nic nevložilo. Přejmenujte ho v aplikaci, ze které jste ho zkopírovali, a zkopírujte ho znovu.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Schránku právě drží jiná aplikace. Zkuste to za chvíli znovu.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

@@ -2282,6 +2282,7 @@ export type MessageKey =
   | 'fileExplorer.clipboard.pastedAsFileSettings'
   | 'fileExplorer.clipboard.selectionChanged'
   | 'fileExplorer.clipboard.stillPasting'
+  | 'fileExplorer.clipboard.unreadablePath'
   | 'fileExplorer.columns.added'
   | 'fileExplorer.columns.created'
   | 'fileExplorer.columns.dateSortMenu'

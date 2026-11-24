@@ -841,6 +841,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "A Cmdr nem tudja eldönteni, melyik fájlra utal ez a vágólapon: „{path}”, ezért semmi sem lett beillesztve. Nevezd át abban az appban, ahonnan kimásoltad, aztán másold ki újra.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Egy másik app fogja a vágólapot. Próbáld újra egy pillanat múlva.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

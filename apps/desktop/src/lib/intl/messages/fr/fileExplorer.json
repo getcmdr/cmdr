@@ -842,6 +842,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr ne sait pas à quel fichier correspond « {path} » dans le presse-papiers, donc rien n’a été collé. Renommez-le dans l’app d’où vous l’avez copié, puis copiez-le à nouveau.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Une autre app bloque le presse-papiers. Réessayez dans un instant.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

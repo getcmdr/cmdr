@@ -842,6 +842,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "O Cmdr não consegue identificar a qual arquivo “{path}” na área de transferência se refere, então nada foi colado. Renomeie o item no app de onde você o copiou e copie-o novamente.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Outro app está segurando a área de transferência. Tente novamente em instantes.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

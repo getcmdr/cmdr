@@ -110,10 +110,10 @@ impl TerminalEffects for AppTerminalEffects<'_> {
     }
 }
 
-/// Whether a completed operation took every item it was given: nothing skipped on a conflict,
-/// and no Locked item kept in place.
+/// Whether a completed operation took every item it was given: nothing skipped on a conflict, no
+/// Locked item kept in place, and nothing that appeared mid-move left in the source.
 fn took_everything(event: &WriteCompleteEvent) -> bool {
-    event.files_skipped == 0 && event.locked_kept.is_none()
+    event.files_skipped == 0 && event.locked_kept.is_none() && event.appeared_during_move.is_none()
 }
 
 /// `write-complete`: analytics, then the ring, the drop-folder release, the clipboard cut's

@@ -57,6 +57,16 @@ pub(crate) fn read_file_urls(app: AppHandle) -> Result<ClipboardFiles, Clipboard
 /// Nothing to tell: the pasteboard never marks files cut, so no paste claims one.
 pub(crate) fn after_cut_paste(_paths: Vec<PathBuf>) {}
 
+/// The file URL's path as an app path, or its lossy text when no app path holds it unescaped.
+pub(crate) fn app_text(native: &std::path::Path) -> Option<String> {
+    Some(super::posix_app_text(native))
+}
+
+/// Nothing to drop: Finder's pasteboard carries no cut mark (the cut lives in `state.rs`).
+pub(crate) fn drop_cut_mark(_paths: Vec<PathBuf>) -> Result<(), ClipboardFilesError> {
+    Ok(())
+}
+
 /// Reads the plain text on the main thread.
 pub(crate) fn read_text(app: AppHandle) -> Result<Option<String>, String> {
     let (tx, rx) = std::sync::mpsc::channel();

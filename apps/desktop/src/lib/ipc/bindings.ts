@@ -8678,6 +8678,16 @@ export type ClipboardFilesError =
       // The path, for the toast to name.
       path: string
     }
+  /**
+   *  A path another app put on the clipboard that names no file for certain (Windows: `C:\x\a.`
+   *  is `C:\x\a` to Win32, `C:\x\CON` a device, `C:foo` a drive's current folder), so the paste
+   *  takes none of the set rather than the wrong file or a silent subset.
+   */
+  | {
+      type: 'unreadablePath'
+      // The path as the clipboard held it, for the toast to name.
+      path: string
+    }
   // Another app held the clipboard open through every retry.
   | { type: 'busy' }
   // Files on the clipboard aren't supported on this OS yet.

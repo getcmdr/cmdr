@@ -25,8 +25,11 @@ move-vs-copy decision happens at paste time: a cut is Cmdr's own flag on macOS (
 - **Paths come back as app paths** (`C:\x` → `C:/x`) in `read_clipboard_files`, so the move the paste starts names
   what `cut_paste.rs` noted. ❌ Don't hand the frontend native text.
 - **A paste-as-move of a marked cut owes its source a word**: `move_files` / `move_between_volumes` claim it,
-  `operations_host::terminal_effects` settles it. Windows then sends `Paste Succeeded` (never `Performed DropEffect`:
-  that asks Explorer to delete) and empties a cut nobody else ended. `DETAILS.md` § Windows.
+  `operations_host::terminal_effects` settles it. Windows then sends `Performed DropEffect` = NONE and `Paste
+  Succeeded` = MOVE (❌ never `Performed DropEffect` = MOVE: that asks Explorer to delete) and empties a cut nobody else
+  ended. `DETAILS.md` § Windows.
+- **Paths coming IN pass the plain-form rule too**: a plain `C:\x\a.` or `C:\x\CON` from another app refuses the whole
+  paste (`UnreadablePath`), ❌ never a subset. A refused cut disarms the earlier one, so Ctrl+V never moves stale files.
 - **Cut state lives in Rust, not the frontend**. A clipboard that no longer matches the cut-state paths clears the
   stale state and pastes as a copy, so the wrong files never move.
 - **Both files and plain text are written**, so pasting into a text editor gives the paths, one per line.

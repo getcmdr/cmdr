@@ -234,6 +234,15 @@ describe('clipboard refusals a person can act on', () => {
     })
   })
 
+  it('names the clipboard path that names no file for certain, and pastes nothing', async () => {
+    readClipboardFilesSpy.mockRejectedValue(await failure({ type: 'unreadablePath', path: 'C:\\x\\a.' }))
+
+    await createClipboardOperations(buildAccess(), buildDialogs()).pasteFromClipboard(false)
+
+    expect(addToastSpy).toHaveBeenCalledWith(expect.stringContaining('“C:\\x\\a.”'), { level: 'warn' })
+    expect(dialogsStub.startTransferProgress).not.toHaveBeenCalled()
+  })
+
   it('keeps a refusal the gates already explain to the log', async () => {
     resolveSnapshotPathsSpy.mockReturnValue(['/a.txt'])
     copyPathsToClipboardSpy.mockRejectedValue(await failure({ type: 'nothingToCopy' }))

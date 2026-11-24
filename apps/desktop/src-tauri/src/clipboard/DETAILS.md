@@ -28,6 +28,9 @@ What goes on the clipboard (`platform/windows.rs`, the bytes in `platform/shell_
 - `OleSetClipboard` needs an STA thread that pumps messages for as long as Cmdr owns the clipboard, plus a hand-written
   `IDataObject`. What it buys is hearing `Paste Succeeded` back, which only matters to a source that ghosts its cut
   items until the paste lands. Cmdr doesn't ghost them (the frontend says "N items ready to move" instead).
+- The cost: a delete-on-paste target that COPIES instead of moving (a zip folder, Explorer's phone or FTP namespaces,
+  Outlook) tells the source through `SetData`, and Cmdr has no data object to hear it, so a Cmdr cut pasted there ends
+  as a copy and the originals stay.
 - No owner window: everything is rendered immediately, so nothing ever sends `WM_RENDERFORMAT`. This is what
   `clipboard-win` (under `arboard`) does too.
 - Evidence: Microsoft's delete-on-paste procedure (learn.microsoft.com/windows/win32/shell/datascenarios § "Handling
@@ -40,15 +43,30 @@ starts on exactly those paths claims it (`move_files`, `move_between_volumes`), 
 completion with nothing skipped (`files_skipped == 0`, no Locked item kept) runs `settle_cut` on its own thread:
 
 1. Confirm the clipboard still holds that very cut (a person who copied something since keeps their clipboard).
-2. `OleGetClipboard` → `IDataObject::SetData(Paste Succeeded = DROPEFFECT_MOVE)`, so Explorer clears its ghosted icons.
-   Cmdr's move already took the files (an "optimized move"), so ❌ never `Performed DropEffect = DROPEFFECT_MOVE`: that
-   pair tells the source to delete the originals itself. A source that wrote with the plain API has no data object to
-   take it; that refusal is logged at debug and changes nothing.
+2. `OleGetClipboard`, then the sequence number again (a new cut that took the clipboard since step 1 mustn't hear a
+   paste it didn't get), then `SetData(Performed DropEffect = DROPEFFECT_NONE)` and `SetData(Paste Succeeded =
+   DROPEFFECT_MOVE)`, so Explorer clears its ghosted icons. Cmdr's move already took the files (an "optimized move"):
+   `NONE` first, as Microsoft's optimized-move procedure does, so a source holding an earlier `Performed DropEffect` of
+   move can't read `Paste Succeeded` as "delete now"; ❌ never `Performed DropEffect = DROPEFFECT_MOVE`. A source that
+   wrote with the plain API has no data object to take it; that refusal is logged at debug and changes nothing.
 3. If the clipboard is unchanged since step 1 (sequence number) and still holds the cut, empty it: a cut pastes once,
    as in Explorer, and a second Ctrl+V doesn't try to move files that are gone.
 
 A cancel, a failure, or a completion that skipped something forgets the claim. A one-file rename can finish before its
 start returns, so the ledger remembers the last 64 unclaimed endings, as `drop_in/folders.rs` does.
+
+**A refused cut disarms the earlier one** (`commands/clipboard.rs::disarm_earlier_cut`): a Ctrl+X that ends `Busy` or
+`NoPlainPath` leaves the clipboard as it was, so without this the next Ctrl+V would move the files cut BEFORE it. Cmdr's
+cut state goes, and on Windows the clipboard is emptied when it still holds exactly that earlier Cmdr cut. An
+Explorer cut is never touched (it isn't in Cmdr's cut state).
+
+**Paths coming in are held to the same plain-form rule** (`platform/windows.rs::app_text`, the pure half
+`platform/shell_formats.rs::names_its_file`): another app's
+plain `C:\x\a.` is `C:\x\a` to Win32 and `C:\x\CON` the device, but the app path would keep the dot and the verbatim
+crossing would move a different file. A plain path whose plain form fails `to_native_windows_plain`, a device path, a
+drive-relative `C:foo`, a relative path, or a name needing an escape refuses the WHOLE paste as `UnreadablePath`,
+naming it (a subset would paste under a toast saying the paste happened). A verbatim `\\?\` path names exactly its file
+and passes. `CF_HDROP` blocks whose `pFiles` falls outside the block read as no files, and empty entries are skipped.
 
 **Why plain paths**: `CF_HDROP` readers (Explorer, `DragQueryFileW`, most apps) take the classic form. A verbatim
 `\\?\` path would reach some and break others, and stripping the prefix by hand can name another file (Win32 strips a

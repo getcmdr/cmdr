@@ -842,6 +842,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr kann nicht erkennen, welche Datei „{path}“ in der Zwischenablage meint, deshalb wurde nichts eingesetzt. Benenne sie in der App um, aus der du sie kopiert hast, und kopiere sie dann erneut.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Eine andere App blockiert gerade die Zwischenablage. Versuche es gleich noch einmal.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"

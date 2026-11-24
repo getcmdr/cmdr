@@ -844,6 +844,10 @@
   "@fileExplorer.clipboard.noPlainPath": {
     "sourceHash": "5cb921d"
   },
+  "fileExplorer.clipboard.unreadablePath": "Cmdr kan niet bepalen welk bestand ‘{path}’ op het klembord bedoelt, dus er is niets geplakt. Wijzig de naam in de app waaruit je het hebt gekopieerd, en kopieer het opnieuw.",
+  "@fileExplorer.clipboard.unreadablePath": {
+    "sourceHash": "60b3e8c"
+  },
   "fileExplorer.clipboard.busy": "Een andere app houdt het klembord bezet. Probeer het zo meteen opnieuw.",
   "@fileExplorer.clipboard.busy": {
     "sourceHash": "c9833a6"
