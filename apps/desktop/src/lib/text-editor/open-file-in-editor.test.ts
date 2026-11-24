@@ -248,6 +248,18 @@ describe('openFileInEditor: a launch that never started', () => {
     )
   })
 
+  // Windows: a path no editor reads as this file (too long, a trailing dot, `CON`).
+  it('words a path with no plain spelling as Enter does', async () => {
+    openInEditor.mockRejectedValue(new FakeOpenInEditorFailure({ type: 'noPlainPath' }))
+
+    await expect(openFileInEditor(FILE)).resolves.toBe(false)
+
+    expect(addToast).toHaveBeenCalledWith(
+      'fileExplorer.open.noPlainPath',
+      expect.objectContaining({ id: TOAST_ID, level: 'error' }),
+    )
+  })
+
   it('never rejects, even on a throw that carries no typed reason', async () => {
     openInEditor.mockRejectedValue(new Error('the IPC bridge went away'))
 

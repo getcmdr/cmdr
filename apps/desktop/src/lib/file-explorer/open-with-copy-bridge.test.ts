@@ -9,6 +9,7 @@ import type {
   OpenWithCopyRefusal,
   OpenWithCopyRefused,
   OpenWithCopySource,
+  OpenWithNoPlainPath,
   OpenWithNotOnThisMac,
 } from '#lib/ipc/bindings.js'
 
@@ -29,7 +30,12 @@ const unlisten = vi.fn()
 const unlistenLaunched = vi.fn()
 let emitNotOnThisMac: (payload: OpenWithNotOnThisMac) => void
 const unlistenNotOnThisMac = vi.fn()
+let emitNoPlainPath: (payload: OpenWithNoPlainPath) => void
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  onOpenWithNoPlainPath: (handler: (payload: OpenWithNoPlainPath) => void) => {
+    emitNoPlainPath = handler
+    return Promise.resolve(vi.fn())
+  },
   onOpenWithNotOnThisMac: (handler: (payload: OpenWithNotOnThisMac) => void) => {
     emitNotOnThisMac = handler
     return Promise.resolve(unlistenNotOnThisMac)
@@ -187,5 +193,28 @@ describe('the open-with not-on-this-Mac notice', () => {
     expect(message).toBe(
       'Preview can’t open this file, because it isn’t a regular file on your computer. View it in Cmdr with the View command instead.',
     )
+  })
+
+  // Windows' "Choose another app" hadn't picked an app yet, so the notice names none.
+  it('words it without an app when the OS dialog was asked', () => {
+    emitNotOnThisMac({ appName: null })
+
+    const [message, options] = addToast.mock.calls[0]
+    expect(message).toContain('Cmdr can’t open this file in another app yet')
+    expect(message).toContain('F3')
+    expect(options.level).toBe('info')
+  })
+})
+
+describe('the open-with no-plain-path notice', () => {
+  // Windows: past 259 characters, a name ending in a dot or space, or a device name like CON.
+  it('names the file in Enter’s own words, as a warning', () => {
+    emitNoPlainPath({ fileName: 'CON.txt' })
+
+    expect(addToast).toHaveBeenCalledTimes(1)
+    const [message, options] = addToast.mock.calls[0]
+    expect(message).toContain('Other apps can’t open CON.txt by its path.')
+    expect(options.level).toBe('warn')
+    expect(options.id).toBe('open-with-no-plain-path')
   })
 })

@@ -86,11 +86,13 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
   submenus, `SlotGroup` rows, revealed by the live menu), plus `find_title_run`, which both a `SlotGroup` and
   `context_menu_icons.rs` use to find their rows in the live `NSMenu`. A leaf below the sub-builders and the live menu,
   so none of them cycles through another.
-- `open_with.rs` (macOS): `build_open_with_submenu` for the file context menu's "Open with"
-  submenu (`OPEN_WITH_SUBMENU_ID`). Returns the submenu plus a `bundle_id → app_path` map that callers stash in
-  `MenuState.context.open_with_apps` so `on_menu_event` can resolve dynamic `open-with:<bundle-id>`
-  click targets. `build_pending_open_with_submenu` / `fill_open_with_submenu` are the late pair, and `launch_with` runs
-  a click.
+- `open_with/` (macOS and Windows): the file menu's "Open with". `mod.rs` runs a pick (`handle_pick`, `launch_with`)
+  for both; `platform/` draws it per OS and says what "Other…" is (`OpenWithTarget`, `other_target`). macOS's arm builds
+  the native submenu (`OPEN_WITH_SUBMENU_ID`; `build_pending_open_with_submenu` / `fill_open_with_submenu` are the late
+  pair), Windows' the page rows (`page_open_with_submenu`). Each answers the `id → app path` map stashed in
+  `MenuState.context.open_with_apps`, so a pick resolves its `open-with:<id>` target without a path in the id.
+- `page_slots/`: the OS-filled slots of a page-drawn right-click menu, a platform seam: Windows reads and draws "Open
+  with", macOS and Linux fill nothing (their menus are native).
 - `share_submenu.rs` (macOS): `build_share_submenu` for the file context menu's `Share` (`SHARE_SUBMENU_ID`), one
   plain item per service in `FileContextInfo::share_services`, plus the `share-service:<index>` id
   pair (`share_service_id` / `share_service_index`). `build_pending_share_submenu` / `fill_share_submenu` are the late
@@ -394,11 +396,12 @@ each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks 
 - **The answer** is `InPageContextMenu { token, rows, anchor }`: `cmdr_menu::page::context::page_rows_with` over the
   same `ContextRow`s, OS slots left out except the one Windows fills, and the caller's anchor handed back (a
   keyboard-opened menu opens at the row, Shift+F10 and the Menu key included; `None` opens at the pointer).
-- **Windows' "Open with" is the one slot a page fills**: the command waits (at most 1.5 s, `open_with_for`) for the
-  Shell's handlers (`file_system/DETAILS.md` § "Open with on Windows"), and `page_context::open` draws them through
-  `open_with::page_open_with_submenu`: one row per app with its icon (`Row::Item.icon`, a data URL), the default
-  marked, then "Choose another app" (`open-with-other`). It stores the `id → app` map in
-  `MenuState.context.open_with_apps`, so a pick runs `open_with::handle_pick` exactly as a native one does.
+- **Windows' "Open with" is the one slot a page fills** (`page_slots/`): the command waits (at most 1.5 s, `read`) for
+  the Shell's handlers (`file_system/DETAILS.md` § "Open with on Windows"), and `page_context::open` draws them through
+  `PageSlots::fill`, which calls `open_with::platform::page_open_with_submenu`: one row per app with its icon (`Row::Item.icon`, a data URL), the default
+  marked, then "Choose another app" (`open-with-other`). `PageSlots::keep` stores the `id → app` map in
+  `MenuState.context.open_with_apps` after the stash, so a pick runs `open_with::handle_pick` exactly as a native one
+  does.
 - **A pick names its menu**: `pick_context_menu_item(token, menuId)` answers `ContextPickOutcome::{Ran, Stale}`. Every
   menu that opens, native (`note_native_popup` at the top of each `show_*`) or page, moves the token and replaces the
   pickable ids, so a pick from a menu another right-click replaced (its facts are gone from `MenuState`) runs nothing,

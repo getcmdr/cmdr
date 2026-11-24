@@ -41,7 +41,7 @@ use super::context_menu_icons::{land_open_with_icons, land_provider_logos, land_
 use super::context_menu_slots::{Placeheld, SlotGroup};
 use super::file_provider_items::group_entries;
 use super::macos_appkit::{observe_menu_tracking, tracking_menu};
-use super::open_with::fill_open_with_submenu;
+use super::open_with::platform::fill_open_with_submenu;
 use super::share_submenu::fill_share_submenu;
 use crate::file_system::sync_status::SyncStatus;
 use crate::ignore_poison::IgnorePoison as _;

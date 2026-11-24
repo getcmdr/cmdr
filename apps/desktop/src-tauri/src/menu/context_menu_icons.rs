@@ -57,7 +57,8 @@ use super::file_provider_items::file_provider_action_id;
 use super::macos_appkit::{
     find_ns_submenu, menu_item_text, observe_menu_tracking, set_menu_item_image, sf_symbol_image, tracking_menu,
 };
-use super::open_with::{LabelPart, OPEN_WITH_ID_PREFIX, OPEN_WITH_SUBMENU_ID, default_label};
+use super::open_with::platform::{LabelPart, default_label};
+use super::open_with::{OPEN_WITH_ID_PREFIX, OPEN_WITH_SUBMENU_ID};
 use super::provider_logos::{ProviderLogo, logo_for_provider};
 use super::share_submenu::{SHARE_SUBMENU_ID, share_service_id};
 use super::tag_row::SWATCHES;

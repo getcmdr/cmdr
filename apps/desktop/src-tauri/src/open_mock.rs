@@ -2,7 +2,7 @@
 //!
 //! Every action that hands a path to another app records here instead of
 //! launching it: `open_path` (`file_system/default_app.rs`), `open_in_editor`
-//! (`file_system/text_editor.rs` on macOS, the command's own arm elsewhere), and
+//! (`file_system/text_editor/` on macOS, the command's own arm elsewhere), and
 //! "open terminal here" (`file_system/terminal/`). The suite creates files and
 //! opens them, and it has no way to close a TextEdit or terminal window, so real
 //! launches would pile up unbounded across runs.

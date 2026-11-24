@@ -165,7 +165,6 @@ const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
   'settings.navigationAndFileOps.card.terminal':
     '`openTerminalHere` (macOS and Windows): “Terminal” is the generic kind of app here, the word Windows Terminal uses too',
   'commands.handler.getInfo.': '`getInfo`: Finder’s Get Info, macOS only',
-  'settings.behavior.textEditorApp.description': '`textEditorChoice`: the setting needs the capability',
   'downloads.fda.': '`fullDiskAccess`: the Full Disk Access prompt is macOS only',
   'onboarding.fdaBadge.': '`fullDiskAccess`: the badge needs the capability',
   'onboarding.stepFda.': '`fullDiskAccess`: Linux and Windows skip the step',

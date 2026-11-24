@@ -7,8 +7,9 @@
 //! frontend owns the settings store.
 //!
 //! The wire types compile on every platform: Linux's `xdg-open` arm and the
-//! off-macOS `playwright-e2e` arm of `open_in_editor` (`commands/file_actions/platform/linux.rs`)
-//! answer with them too. Everything else is macOS only, in `text_editor_macos.rs`.
+//! `playwright-e2e` arms of `open_in_editor` (`commands/file_actions/platform/`) answer with them
+//! too. Each OS's list and launch is in `platform/`: LaunchServices on macOS, the Shell's
+//! plain-text handlers on Windows, nothing on Linux.
 //!
 //! Evidence, the pick canonicalization, and what's verified about `open -t`:
 //! `DETAILS.md` § "Text editor".
@@ -54,10 +55,6 @@ pub enum OpenInEditorError {
     /// Windows: the file's path has no plain spelling an editor reads as this same file (past
     /// 259 characters, a name ending in a dot or space, a device name like `CON`). Nothing
     /// launched.
-    #[cfg_attr(
-        not(target_os = "windows"),
-        allow(dead_code, reason = "only Windows apps need the plain spelling")
-    )]
     NoPlainPath,
 }
 
@@ -113,22 +110,6 @@ pub struct TextEditorList {
     pub chosen_id: Option<String>,
 }
 
-#[cfg(target_os = "macos")]
-#[path = "text_editor_macos.rs"]
-mod imp;
+mod platform;
 
-#[cfg(target_os = "macos")]
-pub use imp::{list_text_editors, open_in_editor};
-
-#[cfg(target_os = "windows")]
-#[path = "text_editor_windows.rs"]
-mod imp;
-
-#[cfg(target_os = "windows")]
-pub use imp::{list_text_editors, open_in_editor};
-
-/// Windows' editor rules, pure so they're tested on every OS (`text_editor_windows.rs` asks the
-/// Shell).
-#[cfg(any(target_os = "windows", test))]
-#[path = "text_editor_windows_rules.rs"]
-pub(crate) mod windows_rules;
+pub use platform::*;

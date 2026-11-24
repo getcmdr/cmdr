@@ -800,7 +800,7 @@ macro_rules! ipc_command_manifest {
                 dispatch_only: []
             }
             // The text editors F4 can open a file in: LaunchServices' answer on macOS, the
-            // Shell's plain-text handlers on Windows (`file_system/text_editor.rs`), while
+            // Shell's plain-text handlers on Windows (`file_system/text_editor/`), while
             // `open_in_editor` itself answers on every platform.
             cfg(any(target_os = "macos", target_os = "windows")) {
                 typed: [

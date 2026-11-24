@@ -106,7 +106,7 @@ export const CAPABILITIES_POSSIBLE_ON: Readonly<Record<Platform, readonly Capabi
     'cpuDiagnostics',
     'globalShortcuts',
   ],
-  windows: ['openTerminalHere', 'fullScreen', 'hideableMenuBar', 'globalShortcuts'],
+  windows: ['openTerminalHere', 'textEditorChoice', 'fullScreen', 'hideableMenuBar', 'globalShortcuts'],
   // `imageIndexing` follows the `playwright-e2e` feature, `globalShortcuts` an X11 session.
   linux: ['imageIndexing', 'fullScreen', 'hideableMenuBar', 'globalShortcuts', 'cpuDiagnostics'],
 }

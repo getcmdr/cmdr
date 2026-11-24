@@ -593,8 +593,8 @@ volume-id string. The record has two halves, and which half answers is the whole
   row, and so classifies as `local` here (`apps/desktop/src-tauri/src/file_system/default_app.rs`). Its `notOnThisMac`
   gets the same toast, `notOpened` / `launchRefused` get `fileExplorer.open.didNotOpen`, and `timedOut` only logs (the
   app may still open). Every refusal toast reuses the "Opening…" toast's id and waits for it to land, so the reason
-  replaces it rather than the other way round. "Open with" is decided in Rust (`menu/open_with.rs::launch_with` asks the
-  listing's volume) and announced through `open-with-copy-bridge.ts`.
+  replaces it rather than the other way round. "Open with" is decided in Rust (`menu/open_with/mod.rs::launch_with` asks
+  the listing's volume) and announced through `open-with-copy-bridge.ts`.
 - **❗ Nothing switches exhaustively over `VolumeKind`.** Every consumer is a positive-list comparison, so a new member
   compiles clean everywhere and silently falls out of each list. The five to walk when you add one:
   `pane/clipboard-operations.ts` (the system-clipboard refusal — a missed kind puts an unusable scheme path on the OS

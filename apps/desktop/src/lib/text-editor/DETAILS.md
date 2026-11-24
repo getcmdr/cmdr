@@ -126,7 +126,7 @@ Edges that behave as they did before the setting existed, on purpose:
   mocks every setting as `100`, which reads as a spent hint; the second mocks the hint spent. Both `openInEditor` mocks
   resolve an `opened` report, because this module reads it.
 - No Playwright spec of its own: the `playwright-e2e` build records only the file path into `open_mock`, so which app
-  would have launched is a Rust unit test (`text_editor.rs`). The "New file round-trip" test in
+  would have launched is a Rust unit test (`text_editor/`). The "New file round-trip" test in
   `apps/desktop/test/e2e-playwright/file-operations.spec.ts` spends `behavior.textEditorHintSeen` before its ⇧F4:
   whether the hint fires depends on the editors on the machine running the suite, and the global `afterEach` fails a
   test that leaves a toast up.

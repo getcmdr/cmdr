@@ -121,9 +121,6 @@
       "negated": 1,
       "outsideSeam": 17
     },
-    "apps/desktop/src-tauri/src/file_system/text_editor.rs": {
-      "outsideSeam": 2
-    },
     "apps/desktop/src-tauri/src/file_system/volume/drive_release/mod.rs": {
       "negated": 2,
       "outsideSeam": 3
@@ -226,10 +223,7 @@
     },
     "apps/desktop/src-tauri/src/menu/mod.rs": {
       "negated": 1,
-      "outsideSeam": 46
-    },
-    "apps/desktop/src-tauri/src/menu/open_with.rs": {
-      "outsideSeam": 5
+      "outsideSeam": 44
     },
     "apps/desktop/src-tauri/src/menu/rebuild.rs": {
       "negated": 1,

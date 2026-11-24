@@ -1,5 +1,5 @@
 //! Windows' F4 rules, pure: what the stored `behavior.textEditorApp` value names among the plain
-//! text handlers the Shell lists, and what F4 does when that's gone. `text_editor_windows.rs`
+//! text handlers the Shell lists, and what F4 does when that's gone. `windows.rs`
 //! asks the Shell and launches; this decides.
 //!
 //! One string holds every shape, told apart without any I/O but the one `program_exists` answer:
@@ -7,7 +7,7 @@
 //! app's program path or a packaged app's app id), or an absolute program path a "Choose an
 //! app…" pick stored. A listed id wins over a path: a classic handler's id IS its program's path.
 
-use super::{EditorOpenOutcome, SYSTEM_DEFAULT_CHOICE};
+use super::super::{EditorOpenOutcome, SYSTEM_DEFAULT_CHOICE};
 
 /// What F4 hands the file to.
 #[derive(Debug, Clone, PartialEq, Eq)]

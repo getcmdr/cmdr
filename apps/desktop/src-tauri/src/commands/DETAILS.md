@@ -333,7 +333,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   recipes, and the volume gate. The chosen app arrives as an argument because the frontend owns the settings store.
   The display-name lookup is I/O-free on purpose: the toast that needs it fires exactly when the app it names has been
   uninstalled, so the table is all that's left to read a name from. `open_in_editor(path, app_choice,
-  ask_about_other_editors)` is F4's launch, passing through to `../file_system/text_editor.rs`: async on macOS (5 s),
+  ask_about_other_editors)` is F4's launch, passing through to `../file_system/text_editor/`: async on macOS (5 s),
   answering an `EditorOpenReport` or a typed `OpenInEditorError`, and a sync `xdg-open` with a plain report on Linux.
   Beside it sits the macOS-only `list_text_editors(app_choice)` (2 s, `TimedOut`). `open_path(path, volume_id)` is the
   default-app open, async on every platform and passing through to `../file_system/default_app.rs`, answering a typed

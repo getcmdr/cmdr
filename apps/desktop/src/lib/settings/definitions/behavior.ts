@@ -287,7 +287,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     terms: ['F4', 'Sublime Text', 'VS Code', 'BBEdit', 'TextEdit'],
     type: 'string',
     // Mirrors `SYSTEM_DEFAULT_EDITOR_CHOICE` in `#lib/text-editor/text-editor-choice.ts`
-    // and `SYSTEM_DEFAULT_CHOICE` in `src-tauri/src/file_system/text_editor.rs`.
+    // and `SYSTEM_DEFAULT_CHOICE` in `src-tauri/src/file_system/text_editor/`.
     default: 'system',
     // The options are whatever macOS lists right now, so they can't be registry
     // constants.

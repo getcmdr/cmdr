@@ -39,7 +39,7 @@ use super::context_rows::{MenuParent, append_rows};
 #[cfg(target_os = "macos")]
 use super::file_provider_items::{append_file_provider_group, append_pending_file_provider_group};
 #[cfg(target_os = "macos")]
-use super::open_with::{build_open_with_submenu, build_pending_open_with_submenu};
+use super::open_with::platform::{build_open_with_submenu, build_pending_open_with_submenu};
 #[cfg(target_os = "macos")]
 use super::share_submenu::{build_pending_share_submenu, build_share_submenu};
 

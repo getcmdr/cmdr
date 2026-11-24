@@ -3531,6 +3531,7 @@ export type MessageKey =
   | 'menu.context.makeAvailableOffline'
   | 'menu.context.openInGoogleDrive'
   | 'menu.context.openWith'
+  | 'menu.context.openWithChooseAnother'
   | 'menu.context.openWithDefault'
   | 'menu.context.openWithLoading'
   | 'menu.context.openWithOther'

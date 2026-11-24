@@ -37,7 +37,7 @@ Sync status, volume management, and file watching. The engines are crates: listi
   read. `volume/DETAILS.md` § "Trait capability model".
 - **"Open terminal here" probes known apps, ❌ never scans a folder.** Windows: the folder is the working directory, ❌
   never argv (`wt` splits on `;`). § "Open terminal here".
-- **F4's editors come from LaunchServices' editor-ROLE plain-text query** (`text_editor.rs`): ❌ never the UTI crate
+- **F4's editors come from LaunchServices' editor-ROLE plain-text query** (`text_editor/`): ❌ never the UTI crate
   (10.15 floor) or a made-up `.txt` URL (no apps). § "Text editor".
 - **Windows' Open with and F4 use the Shell's `IAssocHandler`s** (`../platform/windows/assoc.rs`): `app_path` holds the
   handler's id, ❌ not a file; files go as a data object, ❌ never a command line. § "Open with on Windows".

@@ -1,4 +1,4 @@
-//! The macOS half of `text_editor.rs`: asking LaunchServices for the text editors,
+//! The macOS half of `text_editor/mod.rs`: asking LaunchServices for the text editors,
 //! canonicalizing a pick, and handing a file to the chosen one with `open`.
 
 use std::path::{Path, PathBuf};
@@ -10,7 +10,7 @@ use core_services::{
     LSCopyAllRoleHandlersForContentType, LSCopyDefaultRoleHandlerForContentType, kLSRolesAll, kLSRolesEditor,
 };
 
-use super::{
+use super::super::{
     EditorOpenOutcome, EditorOpenReport, OpenInEditorError, SYSTEM_DEFAULT_CHOICE, TextEditorApp, TextEditorList,
 };
 use crate::file_system::open_with::{
@@ -411,5 +411,5 @@ fn launch(_argv: &[String], file: &Path) -> Result<(), OpenInEditorError> {
 }
 
 #[cfg(test)]
-#[path = "text_editor_test.rs"]
+#[path = "macos_test.rs"]
 mod tests;

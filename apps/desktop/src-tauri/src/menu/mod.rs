@@ -39,7 +39,7 @@
 //!   period. `context_menu_live.rs` fills in the ones that answered after the menu went up.
 //! - `context_menu_slots.rs` (macOS): the parts a builder makes for a fact still out (`Placeheld`
 //!   submenus, `SlotGroup` rows), and `find_title_run`, which finds rows in the live menu by title.
-//! - `open_with.rs` (macOS): "Open with" submenu builder.
+//! - `open_with/` (macOS and Windows): "Open with", a pick and each OS's submenu. `page_slots/`: a page menu's OS-filled slots.
 //! - `context_menu_icons.rs` (macOS): every image on right-click items (SF Symbols, provider
 //!   logos, app icons, share icons, tag circles), which needs the tracking notification because
 //!   Tauri exposes no `NSMenu` for a context menu.
@@ -84,6 +84,7 @@ mod menu_structure;
 pub mod open_with;
 pub(crate) mod page_bar;
 pub(crate) mod page_context;
+pub(crate) mod page_slots;
 #[cfg(target_os = "macos")]
 mod provider_logos;
 mod rebuild;
@@ -108,7 +109,6 @@ use cmdr_menu::spec as menu_spec;
 
 use self::menu_spec::{Platform, display_accelerator_label};
 use crate::ignore_poison::IgnorePoison as _;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
@@ -253,8 +253,7 @@ pub struct MenuContext {
     /// Map of bundle ID → app path for the most-recent "Open with" submenu. Populated
     /// when the context menu is built; consumed when the user clicks an
     /// `open-with:<bundle-id>` item. On Windows the key and the path are both the Shell
-    /// handler's id, filled by the page's menu (`commands/menu_in_page.rs`).
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    /// handler's id, filled by the page's menu (`menu/page_slots/`).
     pub open_with_apps: HashMap<String, PathBuf>,
     /// The File Provider actions the most recent file context menu offered, which an
     /// `fp-action:<index>` click indexes into. Set when the menu is built.

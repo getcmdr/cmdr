@@ -1,4 +1,4 @@
-//! The Windows half of `text_editor.rs`: the plain-text handlers the Shell lists (File
+//! The Windows half of `text_editor/mod.rs`: the plain-text handlers the Shell lists (File
 //! Explorer's "Open with" for a `.txt`), and handing a file to the chosen one.
 //!
 //! - The list is `platform::assoc::apps_for("txt")`; its marked default is the "System default
@@ -11,12 +11,12 @@
 //!
 //! `DETAILS.md` § "Text editor".
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use super::windows_rules::{WindowsEditor, chosen_id, resolve};
-use super::{
+use super::super::{
     EditorOpenOutcome, EditorOpenReport, OpenInEditorError, SYSTEM_DEFAULT_CHOICE, TextEditorApp, TextEditorList,
 };
+use super::windows_rules::{WindowsEditor, chosen_id, resolve};
 use crate::platform::assoc::{self, AssocApp};
 
 /// The type whose handlers F4 offers.
@@ -34,15 +34,21 @@ fn ids(apps: &[AssocApp]) -> Vec<&str> {
     apps.iter().map(|app| app.id.as_str()).collect()
 }
 
-fn is_program(path: &str) -> bool {
-    Path::new(path).is_file()
+/// The stored choice is the native path the OS's file picker handed over ("Choose an app…"),
+/// never app text, so it becomes a `PathBuf` as it is.
+fn program_path(stored: &str) -> PathBuf {
+    PathBuf::from(stored)
+}
+
+fn is_program(stored: &str) -> bool {
+    program_path(stored).is_file()
 }
 
 /// A program's name for a row: its file name without `.exe`.
-fn program_name(path: &str) -> String {
-    Path::new(path)
+fn program_name(stored: &str) -> String {
+    program_path(stored)
         .file_stem()
-        .map_or_else(|| path.to_string(), |stem| stem.to_string_lossy().into_owned())
+        .map_or_else(|| stored.to_string(), |stem| stem.to_string_lossy().into_owned())
 }
 
 fn icon_url(app: &AssocApp) -> Option<String> {
@@ -79,7 +85,7 @@ pub fn list_text_editors(setting: &str) -> TextEditorList {
                 None => TextEditorApp {
                     id: id.clone(),
                     display_name: program_name(id),
-                    icon: crate::icons::get_icon_for_native(Path::new(id)),
+                    icon: crate::icons::get_icon_for_native(&program_path(id)),
                 },
             });
         }
@@ -188,7 +194,7 @@ fn launch(
             apps.iter().find(|app| &app.id == id).map(|app| app.name.clone())
         }
         WindowsEditor::Program(program) => {
-            let mut command = std::process::Command::new(program);
+            let mut command = std::process::Command::new(program_path(program));
             command.arg(native);
             if let Some(folder) = native.parent() {
                 command.current_dir(folder);

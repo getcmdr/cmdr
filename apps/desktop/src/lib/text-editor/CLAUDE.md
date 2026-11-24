@@ -1,7 +1,7 @@
 # Text editor (frontend)
 
 Which app F4 opens a file in, and everything said around that launch. Backend counterpart:
-`src-tauri/src/file_system/text_editor.rs`. Whether a row has a real file at all is the pane's call
+`src-tauri/src/file_system/text_editor/`. Whether a row has a real file at all is the pane's call
 (`file-explorer/pane/editor-open.ts`); the Settings row is
 `apps/desktop/src/lib/settings/sections/TextEditorSelect.svelte`.
 

@@ -162,7 +162,7 @@ the reasons; the shape:
   reverse.
 - **The cap is `OPEN_WITH_CAP_BYTES` (2 GiB)**, refused from the declared size before a byte is written, like the
   viewer's 256 MiB preview cap: what people open in a real app (a video, a big PDF) runs bigger than what they preview.
-- **The launch path.** `../menu/open_with.rs::launch_with` keeps an ordinary launch synchronous on the main thread. When
+- **The launch path.** `../menu/open_with/mod.rs::launch_with` keeps an ordinary launch synchronous on the main thread. When
   any row routes, it pulls on the blocking pool and hops back to the main thread for `open_paths_with`. The volume
   under the path is `mount_id_for_path` (else the default volume), since the menu carries paths only and a route rides
   on its parent drive's volume.

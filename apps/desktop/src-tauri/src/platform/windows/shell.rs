@@ -43,10 +43,12 @@ pub(crate) fn blocking_on_shell_thread<T: Send + 'static>(
     match joined {
         Ok(Ok(Ok(answer))) => Some(answer),
         Ok(Ok(Err(hresult))) => {
+            // allowed-log-private: `name` is our own fixed thread name, and `hresult` a typed code
             log::warn!(target: "file_actions", "{name}: no COM apartment ({hresult:#010x})");
             None
         }
         Ok(Err(_panicked)) => {
+            // allowed-log-private: `name` is our own fixed thread name
             log::warn!(target: "file_actions", "{name}: the Shell thread panicked");
             None
         }

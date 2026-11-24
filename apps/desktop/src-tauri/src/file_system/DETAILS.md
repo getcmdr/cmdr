@@ -37,8 +37,8 @@ restic backup's snapshots: the overlay row, the parked hub, and the write guards
   (the macOS arm holds the pool, budget, and `is_package_to_macos`; Linux and Windows answer from the list alone), lined
   up with `cmdr-fs`'s `file_extension/platform/`. The rule: `crates/cmdr-fs/DETAILS.md` § "What counts as an
   extension".
-- `tags.rs`: Finder tags, the pure half. `tags_io.rs`: their I/O, through the volume. `tags_journal.rs`: a tag write's operation-log entry, for undo. `terminal/`: "open terminal here" (macOS and Windows). `text_editor.rs`: which app F4 opens a file in (wire
-  types; the macOS half in `text_editor_macos.rs`, its tests in `text_editor_test.rs`).
+- `tags.rs`: Finder tags, the pure half. `tags_io.rs`: their I/O, through the volume. `tags_journal.rs`: a tag write's operation-log entry, for undo. `terminal/`: "open terminal here" (macOS and Windows). `text_editor/`: which app F4 opens a file in (wire
+  types; each OS's list and launch in `text_editor/platform/`).
 
 ## Local disk or not (`filesystem_kind.rs`)
 
@@ -364,7 +364,7 @@ already provider-agnostic: a streamed Drive file carries `SF_DATALESS` like any 
   plain form (past 259 units, a name ending in a dot or space, a device name like `CON`) is refused as `NoPlainPath`
   before anything launches, ❌ never sent verbatim or with `\\?\` stripped. The same check backs "Show in File
   Explorer" (`../commands/file_actions/platform/windows.rs`).
-- "Open with" (`menu/open_with.rs::launch_with`) asks the same question through `listing_paths_reach_other_apps`, since
+- "Open with" (`menu/open_with/mod.rs::launch_with`) asks the same question through `listing_paths_reach_other_apps`, since
   the menu knows the pane's listing, not its volume, and announces a refusal as `OpenWithNotOnThisMac`. Rows that need
   extraction (an archive's insides, a `.git` snapshot, a backup) skip it: the copy is what the app opens.
 - The `playwright-e2e` build asks the volume the same way, then records into `crate::open_mock` instead of launching.
@@ -509,7 +509,7 @@ the per-app window-vs-tab survey) is `docs/notes/terminal-launch-sources-2026-09
 - **A "path to a binary" custom option.** A bare binary path doesn't say how to pass the folder. The right shape is a
   command template with a `{path}` placeholder, split into argv without a shell.
 
-## Text editor (`text_editor.rs`)
+## Text editor (`text_editor/`)
 
 Which app F4 opens a file in: the regular pane, the search-results pane, and the ⇧F4 new-file auto-open all reach
 `open_in_editor`. The stored choice (`behavior.textEditorApp`) arrives as an argument, like the terminal's.
@@ -568,22 +568,22 @@ Which app F4 opens a file in: the regular pane, the search-results pane, and the
   LaunchServices call. `list_text_editors` with six apps, the default, names, and icons took 371 ms in a cold test
   process and 57 ms warm, nearly all of it icon decoding.
 - The `playwright-e2e` build records the FILE into `crate::open_mock` instead of launching, whatever the choice, so
-  every `e2e_opened_paths` consumer is untouched.
+  every `e2e_opened_paths` consumer is untouched. On macOS that's `text_editor/platform/macos.rs`'s own `launch`; off
+  macOS it's the command's E2E arm.
 
-### Text editor on Windows (`text_editor_windows.rs`)
+### Text editor on Windows (`text_editor/platform/windows.rs`)
 
 - **The list is the Shell's plain-text handlers** (`assoc::apps_for("txt")`, what File Explorer's "Open with" offers for
   a `.txt`); its marked default is the "System default (…)" row. `system` opens the file in that default whatever the
   file's own type, as `open -t` does; with no plain-text handler at all, the file's own default app.
-- **Three shapes in one string, decided in `text_editor_windows_rules.rs`** (pure, tested everywhere): the sentinel, a
+- **Three shapes in one string, decided in `text_editor/platform/windows_rules.rs`** (pure, tested everywhere): the sentinel, a
   listed handler's id, or an absolute program path from "Choose an app…". A listed id wins, since a classic handler's
   id IS its program's path, so a pick of a listed program stores the handler. A choice naming nothing any more (an
   uninstalled handler, a deleted program, a macOS bundle id) falls back to the default with
   `chosen_app_missing_opened_default_instead`.
 - **A handler gets the file through `IAssocHandler::Invoke`; a picked program starts with the file as its one
   argument**, quoted by `std::process::Command`, in the file's folder. ❌ Never a hand-built command line.
-- A path with no plain spelling is `OpenInEditorError::NoPlainPath` before anything launches, worded as Enter's. On macOS that's `text_editor_macos.rs`'s own `launch`; off macOS it's the
-  command's E2E arm.
+- A path with no plain spelling is `OpenInEditorError::NoPlainPath` before anything launches, worded as Enter's.
 
 ## Finder tags (`tags.rs`, `tags_io.rs`)
 

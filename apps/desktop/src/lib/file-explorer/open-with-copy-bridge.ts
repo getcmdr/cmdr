@@ -20,7 +20,7 @@
  * own for the same refusal.
  *
  * The click lands on the native context menu, which Rust handles end to end
- * (`menu/open_with.rs::launch_with`), so the frontend never sees the launch: the
+ * (`menu/open_with/mod.rs::launch_with`), so the frontend never sees the launch: the
  * events are its only way to hear about it. Keyed per file, so clicking again replaces
  * the notice instead of stacking a copy. Mounted from `routes/(main)/window-services.ts`
  * beside the other event bridges.

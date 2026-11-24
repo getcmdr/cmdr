@@ -562,7 +562,6 @@ pub(super) fn stash_file_context<R: Runtime>(
     // The native menu fills both from the facts that answered in time, and later the live menu
     // from the ones that didn't; Windows' page menu fills the apps. Cleared first, so a click can
     // never reach the last menu's apps or provider actions.
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
     context.open_with_apps.clear();
     #[cfg(target_os = "macos")]
     {

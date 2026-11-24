@@ -103,7 +103,7 @@ fn paths_reach_other_apps(id: &str) -> bool {
 }
 
 /// [`paths_reach_other_apps`] for the volume a listing reads through, the question
-/// an "Open with" click asks (`menu/open_with.rs::launch_with`): the menu knows the
+/// an "Open with" click asks (`menu/open_with/mod.rs::launch_with`): the menu knows the
 /// pane's listing, not its volume. An empty id or a listing that's gone answers
 /// `true`, leaving the launch to go ahead as it always did. macOS and Windows, like "Open with".
 #[cfg(any(target_os = "macos", target_os = "windows"))]

@@ -139,7 +139,7 @@ fn shell_items(paths: &[PathBuf]) -> Result<Vec<Vec<u16>>, OpenWithLaunchError> 
     paths
         .iter()
         .map(|path| {
-            let app_path = AppPathBuf::from_native(path).map_err(|_| OpenWithLaunchError::NoPath)?;
+            let app_path = AppPathBuf::from_native_unicode(path).map_err(|_| OpenWithLaunchError::NoPath)?;
             crate::platform::windows_shell_path::shell_path(&app_path).map_err(|why| match why {
                 NativeRefusal::NotPlainSafe(_) => OpenWithLaunchError::NoPlainPath,
                 _ => OpenWithLaunchError::NoPath,
@@ -218,9 +218,11 @@ fn on_own_thread(
         .stack_size(crate::platform::shell::SHELL_THREAD_STACK)
         .spawn(move || match crate::platform::apartment::in_apartment(call) {
             Ok(Ok(())) | Ok(Err(ShellRefusal::Win32(ERROR_CANCELLED))) => {}
+            // allowed-log-private: `name` is our own fixed thread name, and `answer` a typed code
             answer => log::warn!(target: "open_with", "{name}: the Shell didn't open the file: {answer:?}"),
         });
     spawned.map(|_| ()).map_err(|e| {
+        // allowed-log-private: `name` is our own fixed thread name, and `e` the OS's spawn refusal
         log::warn!(target: "open_with", "{name}: couldn't start a thread: {e}");
         OpenWithLaunchError::NotLaunched
     })

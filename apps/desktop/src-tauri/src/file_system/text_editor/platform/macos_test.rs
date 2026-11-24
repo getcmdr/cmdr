@@ -1,4 +1,4 @@
-//! Tests for `text_editor.rs`: reading the stored choice, the launch argv, the
+//! Tests for `text_editor/mod.rs`: reading the stored choice, the launch argv, the
 //! fallback when the chosen app is gone, the editor list, and pick canonicalization,
 //! all against a `FakeMac`, plus one question put to the real LaunchServices.
 

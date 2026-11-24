@@ -8,7 +8,7 @@ mod disk_cache;
 mod memory_cache;
 pub mod per_path;
 mod per_place_fetch;
-mod platform;
+pub(crate) mod platform;
 // The special-folder classifier moved to `cmdr-fs`, where `FileEntry::new` can
 // reach it. Aliased so `icons::special_folders::…` keeps resolving.
 use cmdr_fs::icons::own_icons;
@@ -29,11 +29,6 @@ use std::time::{Duration, Instant};
 // macOS asks NSWorkspace; Linux asks the XDG icon theme, because a GTK lookup wants the
 // main thread and fails silently from a rayon or tokio worker. Both in `platform/`.
 use platform::{fetch_icon_for_path, fetch_path_icons};
-
-/// The icon a Windows app declares for itself (`IAssocHandler::GetIconLocation`), `size` ×
-/// `size` straight-alpha RGBA (`platform/windows/shell_image.rs`).
-#[cfg(target_os = "windows")]
-pub(crate) use platform::app_icon_at;
 
 /// The macOS display options that change the pixels `NSWorkspace` draws for an icon.
 /// Every cached icon belongs to one variant: the in-memory tier flushes when it

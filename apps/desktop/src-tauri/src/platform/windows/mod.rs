@@ -27,7 +27,7 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         get_info: false,
         // Windows Terminal, PowerShell, and Command Prompt (`file_system/terminal/`).
         open_terminal_here: true,
-        // The Shell's plain-text handlers, F4 through `IAssocHandler` (`file_system/text_editor_windows.rs`).
+        // The Shell's plain-text handlers, F4 through `IAssocHandler` (`file_system/text_editor/platform/windows.rs`).
         text_editor_choice: true,
         cloud_file_actions: false,
         color_tags: false,

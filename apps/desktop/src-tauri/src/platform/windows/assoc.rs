@@ -126,7 +126,7 @@ fn icon_of(handler: &IAssocHandler, size: u32) -> Option<RgbaImage> {
     // SAFETY: both out-pointers are live locals; the path comes back COM-allocated (`take`).
     unsafe { handler.GetIconLocation(&raw mut location, &raw mut index) }.ok()?;
     let location = take(location)?;
-    crate::icons::app_icon_at(&location, index, size)
+    crate::icons::platform::app_icon_at(&location, index, size)
 }
 
 /// `AssocQueryStringW` for the type's default verb, or `None` when the Shell has no answer.

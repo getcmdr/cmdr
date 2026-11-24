@@ -50,7 +50,7 @@ fn every_icon_names_an_item_the_context_menu_builds() {
 /// would mint a random one, and `arm` would find no host and drop the run silently.
 #[test]
 fn the_submenus_holding_runs_are_built_with_their_ids() {
-    assert!(include_str!("open_with.rs").contains("Submenu::with_id(app, OPEN_WITH_SUBMENU_ID"));
+    assert!(include_str!("open_with/platform/macos.rs").contains("Submenu::with_id(app, OPEN_WITH_SUBMENU_ID"));
     assert!(include_str!("share_submenu.rs").contains("Submenu::with_id(app, SHARE_SUBMENU_ID"));
 }
 

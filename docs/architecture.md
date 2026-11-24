@@ -198,7 +198,7 @@ All under `apps/desktop/src-tauri/src/`.
 - `file_system/terminal/`: "Open terminal here" on macOS and Windows: which terminal apps Cmdr knows per OS, how each
   one takes a folder, and whether a pane's folder has a path a shell can reach. Rationale: the module's own docs; the
   sources behind the table: `docs/notes/terminal-launch-sources-2026-09-04.md`
-- `file_system/text_editor.rs`: which app F4 opens a file in: the text editors LaunchServices lists, the stored choice
+- `file_system/text_editor/`: which app F4 opens a file in: the text editors LaunchServices lists, the stored choice
   (the system default, a bundle id, or a picked `.app`), and the fallback when that app is gone. Rationale: the module's
   own docs
 - `about/`: the host behind "Tell me about this": routes a card by volume, runs one budgeted job per planned row on its

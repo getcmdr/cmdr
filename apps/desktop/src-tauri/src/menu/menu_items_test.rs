@@ -161,7 +161,10 @@ fn menu_labels_use_the_ellipsis_character() {
         ),
         ("menu_structure.rs", include_str!("menu_structure.rs")),
         ("file_context_menu.rs", include_str!("file_context_menu.rs")),
-        ("open_with.rs", include_str!("open_with.rs")),
+        (
+            "open_with/platform/macos.rs",
+            include_str!("open_with/platform/macos.rs"),
+        ),
     ];
 
     for (name, source) in SOURCES {
