@@ -60,6 +60,14 @@ mod platform;
 #[cfg(all(test, target_os = "linux"))]
 pub(crate) use platform::overflow_events_for_test;
 
+/// Whether a watcher that failed to START counts as a lost watch, so the volume's live
+/// loop asks for a re-arm (`LiveLoopEnd::WatchLost`) once its scan ends. Windows only:
+/// a `ReadDirectoryChangesW` start fails on a root that doesn't answer right now; an
+/// FSEvents or inotify one doesn't fail in a way a retry fixes (`platform/`).
+pub(crate) fn a_failed_start_is_a_lost_watch() -> bool {
+    platform::A_FAILED_START_IS_A_LOST_WATCH
+}
+
 /// What every OS's watcher does once started. The start itself is per OS (`platform/`),
 /// because what a start takes differs: a journal position, or a set of branches.
 pub(crate) trait WatcherBackend: Send {
@@ -74,6 +82,16 @@ pub(crate) trait WatcherBackend: Send {
     fn is_running(&self) -> bool;
     /// The flag the backend sets when its stream overflowed and events were dropped.
     fn overflow_flag(&self) -> Arc<AtomicBool>;
+    /// The flag the backend sets when the OS ended its watch on its own (a read error,
+    /// a watched root gone), just before it closes the event channel. A closed channel
+    /// with this flag down is a [`stop`](Self::stop); with it up, nothing watches the
+    /// volume any more, so its live loop asks for a re-arm (`LiveLoopEnd::WatchLost`).
+    ///
+    /// Never set by default: an FSEvents stream doesn't end while its volume is
+    /// mounted. The `notify` backend overrides it, where `ReadDirectoryChangesW` does.
+    fn ended_flag(&self) -> Arc<AtomicBool> {
+        Arc::new(AtomicBool::new(false))
+    }
 }
 
 /// Watches a volume for filesystem changes, forwarding them as [`FsChangeEvent`]s over an
@@ -132,6 +150,13 @@ impl DriveWatcher {
     /// A shared handle to the overflow flag, for passing to async tasks.
     pub fn overflow_flag(&self) -> Arc<AtomicBool> {
         self.backend.overflow_flag()
+    }
+
+    /// A shared handle to the flag that says the OS ended this watch on its own
+    /// ([`WatcherBackend::ended_flag`]), for the live loop to read when its channel
+    /// closes.
+    pub fn ended_flag(&self) -> Arc<AtomicBool> {
+        self.backend.ended_flag()
     }
 }
 

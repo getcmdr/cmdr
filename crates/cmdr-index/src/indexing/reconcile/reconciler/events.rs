@@ -340,13 +340,28 @@ fn handle_removal(
         }
     };
 
-    if event.flags.item_is_dir {
-        deletes.push(WriteMessage::DeleteSubtreeById(entry_id));
-    } else {
-        deletes.push(WriteMessage::DeleteEntryById(entry_id));
-    }
+    deletes.push(delete_for(conn, entry_id, event));
 
     Some(origins)
+}
+
+/// The delete for a row whose path is gone: its whole subtree when the event says it
+/// was a folder OR the row is one.
+///
+/// ⚠️ The row is what knows. A removal reports a path that's already gone, so
+/// nothing can stat its type, and `ReadDirectoryChangesW` (`FILE_ACTION_REMOVED`,
+/// `FILE_ACTION_RENAMED_OLD_NAME`) and inotify's `notify` translation carry none:
+/// trusting the flag alone deleted just a folder's row, orphaning its children and
+/// leaving their bytes in every ancestor (#1363). A read that fails falls back to the
+/// flag.
+fn delete_for(conn: &Connection, id: i64, event: &FsChangeEvent) -> WriteMessage {
+    let is_dir = event.flags.item_is_dir
+        || matches!(IndexStore::get_entry_by_id(conn, id), Ok(Some(entry)) if entry.is_directory);
+    if is_dir {
+        WriteMessage::DeleteSubtreeById(id)
+    } else {
+        WriteMessage::DeleteEntryById(id)
+    }
 }
 
 /// Handle file/directory creation, modification, or rename.
@@ -383,13 +398,7 @@ fn handle_creation_or_modification(
             // journal replay may coalesce child events into a parent dir event,
             // leaving orphaned children without a subtree delete.
             match space.resolve_abs(conn, normalized) {
-                Ok(Some(id)) => {
-                    if event.flags.item_is_dir {
-                        deletes.push(WriteMessage::DeleteSubtreeById(id));
-                    } else {
-                        deletes.push(WriteMessage::DeleteEntryById(id));
-                    }
-                }
+                Ok(Some(id)) => deletes.push(delete_for(conn, id, event)),
                 Ok(None) => {
                     // Not in DB either -- nothing to do
                 }

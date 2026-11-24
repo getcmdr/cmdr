@@ -86,18 +86,18 @@ pub(crate) struct IndexManager {
     pub(super) work: VolumeWork,
     /// FSEvents watcher (started alongside scan, persists after scan completes)
     drive_watcher: Option<DriveWatcher>,
-    /// Whether the watcher above covers only what a search walk covered, rather
-    /// than the whole volume.
-    ///
-    /// The two are mutually exclusive by construction — `plan_branch_watch`
-    /// declines when a watcher is already running, and `start_scan` retires the
-    /// branch set — so this says which of them is up, never both.
+    /// Whether the watcher above covers only what a search walk covered, rather than the
+    /// whole volume. The two are mutually exclusive by construction (`plan_branch_watch`
+    /// declines when a watcher is already running, and `start_scan` retires the branch
+    /// set), so this says which of them is up, never both.
     pub(super) branch_watched: bool,
     /// Whether a branch watch start is in flight off the registry lock
     /// (`manager/branch_watch.rs`), so a second caller doesn't start another.
     /// Shared with the start, which clears it however it ends, and compared by
     /// pointer at install, which is what tells this manager from a successor.
     branch_watch_starting: Arc<AtomicBool>,
+    /// The re-arm backoff for a watch the OS ended (`manager/watch_rearm.rs`).
+    rearm_backoff: watch_rearm::RearmBackoff,
     /// Live event processing task (runs after reconciliation completes).
     /// Shared with spawned async tasks so they can store the handle.
     live_event_task: Arc<std::sync::Mutex<Option<tokio::task::JoinHandle<()>>>>,
@@ -330,6 +330,7 @@ impl IndexManager {
             drive_watcher: None,
             branch_watched: false,
             branch_watch_starting: Arc::new(AtomicBool::new(false)),
+            rearm_backoff: watch_rearm::RearmBackoff::default(),
             live_event_task: Arc::new(std::sync::Mutex::new(None)),
             events,
             ground_in_flux: Arc::new(AtomicBool::new(false)),
@@ -786,6 +787,7 @@ mod phased;
 mod registry_rescan;
 mod root;
 mod start;
+mod watch_rearm;
 
 pub(in crate::indexing) use branch_watch::BranchWatchStart;
 

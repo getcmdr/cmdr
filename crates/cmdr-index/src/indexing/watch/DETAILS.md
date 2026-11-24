@@ -325,6 +325,60 @@ that overflows during every scan would repeat back to back.
 An anchor that arrives DURING a scan is kept, on every OS: see the rescan doc's § "An anchor that arrives during a
 scan".
 
+### When the OS ends the watch
+
+A `ReadDirectoryChangesW` watch can end while its volume stays registered: a read error (a pulled drive, a detached VHD,
+a dropped `subst` target), a re-arm the OS refuses, or the watched root itself going away. The vendored `notify` reports
+each, then unwatches (`vendor/notify/CMDR-PATCH.md`). The index used to log the error at `debug` and keep reading a
+channel nothing would write to again, so the drive's index read live and stopped changing for the session (#1363).
+
+**Decision: a watch the OS ended is the watch's END, said in a typed way, and the lifecycle re-arms it.** **Why**: the
+loop sits below the registry and can't restart its own watcher (§ "A loop needing a rescan SAYS so" in `CLAUDE.md`), and
+re-arming inside the backend races the vendored backend's own queued unwatch of the same path.
+
+- **The backend** (`watcher/platform/notify_backend/forward.rs`): on Windows (`ROOT_LOSS_ENDS_THE_WATCH`) an `Err`, or a
+  `Remove` naming a watched root, raises `ended_flag` and returns, which drops the sender and closes the channel. The
+  flag goes up FIRST, so a loop that sees the close always sees why. ❌ A root's removal is never forwarded: the root of
+  a whole-volume watch is the volume, and its row going would empty the index of a drive that may only be unplugged.
+  Linux keeps logging its errors: inotify's name a subdirectory it couldn't watch, and a removed branch root is an
+  ordinary removal.
+- **The loop** (`event_loop/live.rs`): a close with the flag up returns `LiveLoopEnd::WatchLost`; with it down, a stop.
+- **A watcher that fails to START counts too, on Windows** (`watcher::a_failed_start_is_a_lost_watch`): the vendored
+  `notify` fails `watch` when the first read is refused, `start_scan` hands the loop an already-raised flag, and the
+  loop ends `WatchLost` once its scan does, so a refused restart retries through the backoff instead of leaving the
+  volume unwatched. macOS and Linux keep "scan without a watcher".
+- **The lifecycle** (`../lifecycle/manager/watch_rearm.rs`, through `after_live_loop`) catches up the way a launch
+  would, since nothing watched in between and `notify` keeps no journal:
+  - **It re-arms only the LOST watch.** Each attempt first checks the manager still has no watcher or the dead one (its
+    `ended_flag` up) and that no walk owns the volume. A "Rescan now" or a replugged drive during the wait brings up a
+    healthy watcher, and retiring it would leave the volume unwatched for the session (or rescan it for nothing).
+  - A whole-watched volume rescans through `cover_or_scan` (which starts a fresh watcher); a branch-watched one
+    re-watches its branches with `resuming`, so its rows render stale. Whether it was branch-watched is read once, at
+    the first attempt: retiring the watcher clears the manager's flag.
+  - **A root that doesn't answer** (`Path::is_dir` is false on any error: a pulled drive, a locked BitLocker volume, a
+    transient I/O failure) marks the rows stale once and asks again on the next backoff step. Windows sends no removal
+    or arrival notice yet, so this timer is what notices a drive coming back under the same id; ⚠️ task 39's device
+    notifications (`docs/specs/windows-port-plan.md`) replace it.
+  - A rescan refused because a walk holds the ground (`GroundBeingWalked`, `GroundBeingRewritten`), or a branch watch
+    that didn't start, retries the same way.
+  - **Backoff** (`RearmBackoff`, on the manager, so it goes with it): a watch whose live loop ran 10 min or more re-arms
+    at once; otherwise each attempt waits twice the last, from 30 s up to 30 min. ⚠️ Timed from the LOOP's start
+    (`LiveLoopEnd::WatchLost { lived }`), ❌ never from the last re-arm: a loop starts only once its scan ends, so a
+    scan longer than the window made every loss look healthy and rescanned a big drive back to back. One timer per wait,
+    dropped with the volume's work (its cancel token) or the runtime; nothing polls.
+- **macOS** never raises it: an FSEvents stream doesn't end while its volume is mounted, so `ended_flag` defaults to a
+  flag nobody sets.
+
+**Cells**: the classification and the loop end run on every OS (`watcher/platform/notify_backend/forward.rs` tests,
+`event_loop/tests/watch_lost.rs`); one Windows cell deletes a watched folder under a real `ReadDirectoryChangesW` watch
+and expects the end. The vendored refused-read path (`start_read` failing on a re-arm or a first read) has no reliable
+trigger on a hosted runner, so it's checked on real Windows: pull a USB stick or detach a VHD that's being indexed, and
+look for "the watch ended on a read error" and a "Watch re-arm" line; plug it back and look for the re-arm once the root
+answers.
+
+Not covered here: the open root handle vetoing "Safely remove" of a removable drive (#1363 part 2), which waits on the
+device-notification work (`docs/specs/windows-port-plan.md` task 39).
+
 ## Data flow (live + replay)
 
 ```
@@ -507,6 +561,13 @@ onto a freed inode, so the pre-pass would FALSE-MATCH it as a move and re-home t
 unrelated file. Every local write path stores `inode: None` on such a `LocalExternal` volume, making
 `find_entry_by_inode` inert and every change fall back to the safe delete+create. The volume-level trust decision
 (`trust_inode` / `inodes_trustworthy`) is canonical in `../paths/DETAILS.md`.
+
+**Windows stores no inode at all** today: `std::fs::Metadata` carries no file id there (`cmdr_fs::file_identity`,
+`FileId::of` answers `None`; only the handle-opening `FileId::at` does), so the pre-pass is inert on every Windows
+volume, as on FAT. A rename arrives as two typeless events (`RENAMED_OLD_NAME`, `RENAMED_NEW_NAME`): the old path's row
+goes as a SUBTREE because the delete reads the row's own type, not the event's
+(`../reconcile/reconciler/events.rs:delete_for`), and the new folder lands unlisted and queues its walk. Correct, at the
+cost of re-walking a renamed folder; storing a file id from the scanner is what would make it a `MoveEntryV2`.
 
 **A trusted inode can still be RECYCLED.** ext4 and friends reuse a freed inode for a later create, so a stale row (its
 removal not yet applied) can carry the inode of a path that now sits INSIDE that row's own subtree, for example the old

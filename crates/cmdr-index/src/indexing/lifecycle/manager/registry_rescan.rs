@@ -60,5 +60,8 @@ pub(in crate::indexing::lifecycle) fn after_live_loop(volume_id: String, end: Li
                 perform_registry_rescan(&volume_id, "ingestion backlog").await;
             });
         }
+        LiveLoopEnd::WatchLost { lived } => {
+            crate::indexing::host::runtime::spawn(super::watch_rearm::rearm_after_watch_lost(volume_id, lived));
+        }
     }
 }

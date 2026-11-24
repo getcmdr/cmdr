@@ -18,8 +18,10 @@ event loop that turns its stream into index writes.
 
 - **A loop needing a rescan SAYS so** (`LiveLoopEnd`, `fallback_tx`); its lifecycle spawner runs it. ❌ No
   `lifecycle::manager` / `state` import here: it welds `watch` into the lifecycle's cycle.
-- **The watcher→loop channel is UNBOUNDED.** ❌ Don't re-bound it: backpressure overflowed FSEvents into a forced full
-  scan. The LOOP bounds memory (`classify_ingestion_pressure`, `INGESTION_HARD_CAP`).
+- **A watch the OS ENDED is `WatchLost`, not a stop** (`ended_flag`, up before the channel closes). ❌ Never forward a
+  watched ROOT's removal. `DETAILS.md` § "When the OS ends the watch".
+- **The watcher→loop channel is UNBOUNDED.** ❌ Don't re-bound it (backpressure forced full scans); the LOOP bounds
+  memory (`INGESTION_HARD_CAP`).
 - **A replay commits in CHUNKS, ❌ never one transaction** (that filled a nearly full disk with WAL). The position moves
   only at a WHOLE-window drain, with the deferred rescans. `DETAILS.md` § "A replay commits in chunks".
 - **`process_live_batch` is three-phase, flushing between phases** so later phases see committed state: (1) dir
@@ -31,10 +33,9 @@ event loop that turns its stream into index writes.
 - **A removal storm coalesces to subtree rescans** (`storm.rs`), anchored at each storm CLUSTER's deepest common
   ancestor, ❌ never the capped grouping prefix, and never widened by a few stray deletes (that walked whole worktrees).
   Only STRICT descendants drop, and each dropped event re-queues the anchor.
-- **Both observers hook BOTH live loops, by construction**: `process_live_batch` takes `BatchObservers` (churn + the
-  activity tap) by `&mut`, and two scanners key on `BatchObservers::from_env(`.
-- **The activity tap reads the CORRECTED stream**, where renames, storm removals, and dir creations are already gone, so
-  each is wired in explicitly. Break one and a rename-only batch reports nothing. `DETAILS.md` § "The activity tap".
+- **Both observers hook BOTH live loops, by construction** (`process_live_batch` takes `BatchObservers` by `&mut`).
+- **The activity tap reads the CORRECTED stream** (renames, storm removals, dir creations gone), so each is wired in
+  explicitly. `DETAILS.md` § "The activity tap".
 - **Every live loop carries a `WatchScope`, and an event in ground a cover walk is covering RIGHT NOW is BUFFERED, not
   written** — on a scanned volume too. Writing it orphans a subtree (`INSERT OR IGNORE` drops the walker's fresh ids);
   discarding it drifts the branch's sizes silently. ❌ Never let the whole-volume arm skip the branch set.
@@ -49,5 +50,4 @@ event loop that turns its stream into index writes.
 - **Background verification is post-replay and boot-disk only.** Cost-bounding (`verify_guard.rs`) is canonical in
   `../reconcile/DETAILS.md`.
 
-Architecture, the ingestion-pressure trend model, removal storms, rename-by-inode, the activity tap, and verification:
-`DETAILS.md`. Read it before any non-trivial work here.
+Depth on all of it: `DETAILS.md`. Read it before any non-trivial work here.

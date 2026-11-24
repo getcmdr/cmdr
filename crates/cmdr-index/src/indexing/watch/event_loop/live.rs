@@ -156,6 +156,10 @@ pub(in crate::indexing) struct LiveConfig {
     /// The watcher's overflow flag, or `None` when no watcher started. Set means
     /// events were dropped before reaching us, and only a rescan recovers.
     pub(in crate::indexing) watcher_overflow: Option<Arc<AtomicBool>>,
+    /// The watcher's ended flag (`DriveWatcher::ended_flag`), or `None` when no
+    /// watcher started. Up when the channel closes means the OS ended the watch, so
+    /// the loop ends with [`LiveLoopEnd::WatchLost`] rather than as a stop.
+    pub(in crate::indexing) watch_ended: Option<Arc<AtomicBool>>,
     /// How much of the volume this loop answers for.
     pub(in crate::indexing) scope: WatchScope,
     /// The stored id a resumed `sinceWhen` stream replays from, when its first
@@ -180,6 +184,14 @@ pub(in crate::indexing) enum LiveLoopEnd {
     /// The ingestion queue passed its hard cap and the loop threw the backlog away,
     /// so the volume needs a fresh scan.
     IngestionBacklog,
+    /// The OS ended the watch on its own (a read error, its root gone), so nothing
+    /// watches the volume: its watcher has to be re-armed, and what changed while
+    /// nothing watched caught up (#1363).
+    WatchLost {
+        /// How long this loop ran, which the re-arm's backoff times the watch's health
+        /// by. A loop starts once its scan ends, so a long scan doesn't count.
+        lived: Duration,
+    },
 }
 
 /// Process FSEvents in real time after scan + reconciliation completes.
@@ -201,10 +213,12 @@ pub(in crate::indexing) async fn run_live_event_loop(
         volume_id,
         space,
         watcher_overflow,
+        watch_ended,
         scope,
         mut history_check,
     } = config;
     log::info!("Live event processing: started");
+    let started = Instant::now();
     log::info!(target: "stall_probe::reconciler", "live_event_loop_started");
 
     // Open a read-only connection for path resolution (integer-keyed lookups).
@@ -329,6 +343,12 @@ pub(in crate::indexing) async fn run_live_event_loop(
                             let changed = mark_pending_and_drain(&volume_id, &mut pending_origins);
                             lifecycle_bus::publish_dirs_changed(&volume_id, &changed.origins);
                             let _ = writer.send(WriteMessage::EmitDirUpdated(changed.with_ancestors));
+                        }
+                        // Read after the close: the backend raises it before it drops
+                        // its sender, so a close it caused always finds it up.
+                        if watch_ended.as_ref().is_some_and(|ended| ended.load(Ordering::Acquire)) {
+                            log::warn!("Live event processing: the watch ended under the loop; asking for a re-arm");
+                            end = LiveLoopEnd::WatchLost { lived: started.elapsed() };
                         }
                         break;
                     }

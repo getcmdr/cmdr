@@ -33,6 +33,7 @@ mod rename;
 mod replay;
 mod replay_chunks;
 mod split_parent;
+mod watch_lost;
 
 /// Shared across the `merge` and `rename` clusters.
 fn make_event(path: &str, event_id: u64, flags: watcher::FsEventFlags) -> watcher::FsChangeEvent {

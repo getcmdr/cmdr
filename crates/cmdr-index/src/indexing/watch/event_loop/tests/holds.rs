@@ -35,6 +35,7 @@ async fn the_live_loop_holds_its_volume_until_it_ends() {
             volume_id: volume_id.to_string(),
             space: IndexPathSpace::root(),
             watcher_overflow: None,
+            watch_ended: None,
             scope: WatchScope::WholeVolume(branches::live_for(volume_id)),
             history_check: None,
         },

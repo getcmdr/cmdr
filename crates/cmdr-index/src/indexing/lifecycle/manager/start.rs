@@ -451,17 +451,22 @@ impl IndexManager {
             .unwrap_or_else(|| local_root.clone());
         let scan_start_event_id = watcher::current_event_id(&watcher_root);
 
-        // watcher_overflow is None if the watcher failed to start (non-fatal).
+        // Both flags are None if the watcher failed to start (non-fatal).
         let watcher_overflow: Option<Arc<AtomicBool>>;
+        let watch_ended: Option<Arc<AtomicBool>>;
         match DriveWatcher::start(&watcher_root, 0, event_tx) {
             Ok(watcher) => {
                 watcher_overflow = Some(watcher.overflow_flag());
+                watch_ended = Some(watcher.ended_flag());
                 self.drive_watcher = Some(watcher);
                 DEBUG_STATS.watcher_active.store(true, Ordering::Relaxed);
                 log::info!("Scan: watcher started (scan_start_event_id={scan_start_event_id})");
             }
             Err(e) => {
                 watcher_overflow = None;
+                // Already ended where a failed start is a lost watch: the channel closed
+                // with the failed start, so the live loop asks for a re-arm.
+                watch_ended = watcher::a_failed_start_is_a_lost_watch().then(|| Arc::new(AtomicBool::new(true)));
                 // Watcher failure is non-fatal: scan works without it, just no live updates
                 log::warn!(
                     "Failed to start DriveWatcher (scan will proceed without watcher): {}",
@@ -593,6 +598,7 @@ impl IndexManager {
         let freshness = Arc::clone(&self.freshness);
         let live_event_task_slot = Arc::clone(&self.live_event_task);
         let watcher_overflow_flag = watcher_overflow;
+        let watch_ended_flag = watch_ended;
         crate::indexing::host::runtime::spawn(super::super::scan_completion::run_scan_completion(
             super::super::scan_completion::ScanCompletion {
                 join_handle,
@@ -601,6 +607,7 @@ impl IndexManager {
                 ground,
                 event_rx,
                 watcher_overflow_flag,
+                watch_ended_flag,
                 volume_id,
                 space,
                 events,

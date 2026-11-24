@@ -20,6 +20,7 @@ type Started = Result<Box<dyn WatcherBackend>, WatcherError>;
 const _: fn(&Path, u64, mpsc::UnboundedSender<FsChangeEvent>) -> Started = start;
 const _: fn(&Path, &[PathBuf], u64, mpsc::UnboundedSender<FsChangeEvent>) -> Started = start_branches;
 const _: bool = SUPPORTS_EVENT_REPLAY;
+const _: bool = A_FAILED_START_IS_A_LOST_WATCH;
 
 /// Starts a watcher over `root`, replaying from `since_when` where the OS keeps a journal.
 pub(super) use imp::start;
@@ -31,6 +32,9 @@ pub(super) use imp::start_branches;
 
 /// Whether this OS's watcher keeps a journal of event IDs a restart replays from.
 pub(super) use imp::SUPPORTS_EVENT_REPLAY;
+
+/// Whether a watcher that failed to start counts as a lost watch (`watcher::a_failed_start_is_a_lost_watch`).
+pub(super) use imp::A_FAILED_START_IS_A_LOST_WATCH;
 
 /// What a queue overflow puts on the channel, where `notify` is the backend.
 #[cfg(all(test, target_os = "linux"))]

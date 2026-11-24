@@ -49,6 +49,7 @@ async fn epochs_after_first_event(name: &str, history_check: Option<u64>, first_
             volume_id: name.to_string(),
             space: IndexPathSpace::root(),
             watcher_overflow: None,
+            watch_ended: None,
             scope: WatchScope::WholeVolume(branches::live_for(name)),
             history_check,
         },

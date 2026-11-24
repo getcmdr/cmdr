@@ -294,6 +294,13 @@ is what remembers them for the rebuild marker.
 and quietly stop the index converging, so `reconciler/tests/delete_gates.rs` pairs each one with a drive that is still
 listed and still reaps.
 
+**An event's delete takes a folder's whole subtree when the ROW is a folder** (`reconciler/events.rs:delete_for`), not
+only when the event says so. A removal names a path that's already gone, so nothing can stat its type, and
+`ReadDirectoryChangesW` (`FILE_ACTION_REMOVED`, `FILE_ACTION_RENAMED_OLD_NAME`) and our `notify` translation carry none.
+Trusting the flag alone deleted just a folder's row, orphaning its children under a dead id and leaving their bytes in
+every ancestor: on Windows, every deleted or renamed folder (#1363). The flag still wins when the row read fails. Pinned
+by `reconciler/tests/live_events.rs` (`a_folder_*_without_a_type_deletes_its_subtree`).
+
 ## No completion marker on an empty root
 
 A scan whose ROOT listing yields ZERO children does NOT report a clean completion. The network walkers

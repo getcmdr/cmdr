@@ -52,6 +52,7 @@ impl Fixture {
             ground: cover::Claim::take(volume_id, vec!["/".to_string()], cover::Holder::Rewriting),
             event_rx: self.event_rx.take().expect("one completion per fixture"),
             watcher_overflow_flag: None,
+            watch_ended_flag: None,
             volume_id: volume_id.to_string(),
             space: IndexPathSpace::root(),
             events: Arc::clone(&self.events) as Arc<dyn EventSink>,
