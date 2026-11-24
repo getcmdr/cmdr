@@ -15,6 +15,14 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "a0004bb"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder no pudo mostrar este elemento. Puede que se haya movido, o que su disco o servidor no esté disponible.} windows {El Explorador de archivos no pudo mostrar este elemento. Puede que se haya movido, o que su unidad o recurso compartido de red no esté disponible.} other {Tu administrador de archivos no pudo mostrar este elemento. Puede que se haya movido, o que su disco o servidor no esté disponible.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "e510865"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Este elemento no es un archivo normal de tu Mac, así que Finder no puede mostrarlo.} windows {Este elemento no es un archivo normal de tu PC, así que el Explorador de archivos no puede mostrarlo.} other {Este elemento no es un archivo normal de tu computadora, así que tu administrador de archivos no puede mostrarlo.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "b27a9fa"
+  },
   "fileExplorer.openWith.copyRefused.notEnoughSpace": "{platform, select, macos {El disco de tu Mac no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.} windows {Tu PC no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.} other {El disco de tu computadora no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.}}",
   "@fileExplorer.openWith.copyRefused.notEnoughSpace": {
     "sourceHash": "c024a6a"
