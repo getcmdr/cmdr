@@ -1,9 +1,9 @@
 /**
- * The "skip this OS's junk files" choice (#314, #1305): how the `fileOperations.osJunkFiles`
+ * The "skip system clutter files" choice (#314, #1305, #1416): how the `fileOperations.osJunkFiles`
  * setting turns into the copy, move, and compress dialog's toggle and link, and into what
- * an operation sends. The backend owns the rest: which names match (the RUNNING OS's set:
- * `.DS_Store` and `._*` on macOS, `Thumbs.db` and friends on Windows, `.nfs*` and
- * `.fuse_hidden*` on Linux; `cmdr_fs::os_junk_files`), and leaving them out of every walk, the totals, and a move's source.
+ * an operation sends. The backend owns the rest: which names match (one merged set on every
+ * OS: macOS's `.DS_Store` and `._*`, Windows' `Thumbs.db` and friends, Linux's `.nfs*` and
+ * `.fuse_hidden*`; `cmdr_fs::os_junk_files`), and leaving them out of every walk, the totals, and a move's source.
  *
  * The toggle is always a one-off override: flipping it never writes the setting. Only the
  * link opens the setting row.

@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Ignorar arquivos ocultos exclusivos do Mac (.DS_Store, ._*)} windows {Ignorar arquivos de miniaturas do Windows (Thumbs.db, ehthumbs*.db)} other {Ignorar arquivos residuais do Linux (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Ignorar arquivos inúteis do sistema (.DS_Store, Thumbs.db e outros)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Não perguntar de novo",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

@@ -919,10 +919,11 @@ Slow network / Custom) and `network.customTimeout` (seconds) into the one `netwo
 timeout each person ran with (Normal 15 s writes nothing as it's the default, Slow network 45 s, Custom its own number
 clamped to the stepper's range) and deleting both legacy keys. Only the frontend reads the timeout (it rides each
 network IPC call), so v10 needs no Rust-side rule. v11 (#1305) moves `fileOperations.macOnlyFiles` to
-`fileOperations.osJunkFiles` (the toggle now skips each OS's own junk), carrying a valid `include` / `skip` / `ask`
-unless the new key already holds one, and deletes the old key. A settings file is one machine's, and a Mac's set is the
-files it skipped before, so a Mac's choice keeps its meaning. Only the frontend reads it (it rides each transfer's IPC
-call), so v11 needs no Rust-side rule either.
+`fileOperations.osJunkFiles` (the toggle skips one merged set of macOS, Windows, and Linux clutter on every OS, #1416),
+carrying a valid `include` / `skip` / `ask` unless the new key already holds one, and deletes the old key. The merged
+set holds the `.DS_Store` and `._*` the old key skipped, so every machine's choice keeps its meaning (a `skip` widens to
+the other OSes' names, which needs no further step). Only the frontend reads it (it rides each transfer's IPC call), so
+v11 needs no Rust-side rule either.
 
 A migration that changes a BACKEND-read setting also needs the same rule applied Rust-side (v3:
 `media_index::gate::scope_from_settings`), because the backend reads `settings.json` at startup and would otherwise see

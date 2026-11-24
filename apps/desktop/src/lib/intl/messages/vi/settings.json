@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac} windows {Bỏ qua tệp hình thu nhỏ của Windows} other {Bỏ qua tệp sót lại của Linux}}",
+  "settings.fileOperations.osJunkFiles.label": "Bỏ qua tệp rác hệ thống",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Bỏ qua các tệp .DS_Store và ._* khi sao chép, di chuyển hoặc nén.} windows {Bỏ qua các tệp Thumbs.db và ehthumbs*.db khi sao chép, di chuyển hoặc nén. Windows sẽ tạo lại chúng khi cần.} other {Bỏ qua các tệp .nfs* và .fuse_hidden* khi sao chép, di chuyển hoặc nén. Linux giữ chúng lại cho các tệp đã xóa nhưng vẫn đang mở.}}",
+  "settings.fileOperations.osJunkFiles.description": "Bỏ qua các tệp mà hệ điều hành để lại bên cạnh tệp của bạn khi sao chép, di chuyển hoặc nén: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* và .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Bao gồm",
   "@settings.fileOperations.osJunkFiles.opt.include": {

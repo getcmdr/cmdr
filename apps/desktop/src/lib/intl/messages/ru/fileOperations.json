@@ -404,9 +404,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Пропускать скрытые файлы только для Mac (.DS_Store, ._*)} windows {Пропускать файлы эскизов Windows (Thumbs.db, ehthumbs*.db)} other {Пропускать остаточные файлы Linux (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Пропускать ненужные служебные файлы (.DS_Store, Thumbs.db и другие)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Больше не спрашивать",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

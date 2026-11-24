@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { defaultOsJunkFiles, osJunkFilesFor, osJunkLinkKey, osJunkToggleStartsOn } from './os-junk-files'
 
-describe('the “skip this OS’s junk files” setting', () => {
+describe('the “skip system clutter files” setting', () => {
   it('ticks the toggle only for a skip default; “Always ask” starts it off', () => {
     expect(osJunkToggleStartsOn('skip')).toBe(true)
     expect(osJunkToggleStartsOn('include')).toBe(false)

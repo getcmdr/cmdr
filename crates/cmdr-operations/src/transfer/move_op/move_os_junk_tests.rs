@@ -1,4 +1,4 @@
-//! A local copy or cross-filesystem move that leaves the running OS's junk files out
+//! A local copy or cross-filesystem move that leaves OS junk files out
 //! (#314, #1305): they never reach the destination or the totals, and a move
 //! takes them with the folders that moved, so it never leaves a husk behind.
 
@@ -9,18 +9,20 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::transfer::copy::copy_files_with_progress_inner;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_fs::os_junk_files::{JunkOs, OsJunkFiles};
+use cmdr_fs::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
 
-/// The running OS's junk names, so the test checks the set this OS skips.
-const JUNK: [&str; 2] = JunkOs::current().sample_junk_names();
+/// Junk names from all three OSes, so each OS checks it skips another's junk too (#1416).
+/// `JUNK[0]` is the `._*` prefix match, written in every folder.
+const JUNK: [&str; 4] = SAMPLE_JUNK_NAMES;
 
 /// `work/` with the OS's junk at every level, and one folder holding nothing else.
 fn seed(src_root: &Path) -> PathBuf {
     let work = src_root.join("work");
     fs::create_dir_all(work.join("notes")).unwrap();
     fs::create_dir_all(work.join("only-metadata")).unwrap();
-    fs::write(work.join(JUNK[0]), vec![0u8; 6_148]).unwrap();
-    fs::write(work.join(JUNK[1]), vec![0u8; 4_096]).unwrap();
+    for junk in JUNK {
+        fs::write(work.join(junk), vec![0u8; 4_096]).unwrap();
+    }
     fs::write(work.join("report.txt"), b"one").unwrap();
     fs::write(work.join("notes").join(JUNK[0]), vec![0u8; 6_148]).unwrap();
     fs::write(work.join("notes/todo.md"), b"two").unwrap();
@@ -40,7 +42,7 @@ fn assert_no_os_junk_files_under(root: &Path) {
     for entry in walkdir::WalkDir::new(root) {
         let entry = entry.unwrap();
         assert!(
-            !cmdr_fs::os_junk_files::is_os_junk_file_name(JunkOs::current(), entry.file_name()),
+            !cmdr_fs::os_junk_files::is_os_junk_file_name(entry.file_name()),
             "{} reached the destination",
             entry.path().display()
         );
@@ -100,10 +102,11 @@ fn a_copy_that_includes_os_junk_files_writes_them_like_any_other() {
     )
     .expect("the copy");
 
-    assert!(dst.join("work").join(JUNK[0]).is_file());
-    assert!(dst.join("work").join(JUNK[1]).is_file());
+    for junk in JUNK {
+        assert!(dst.join("work").join(junk).is_file(), "{junk}");
+    }
     assert!(dst.join("work/only-metadata").join(JUNK[0]).is_file());
-    assert_eq!(events.complete.lock_ignore_poison()[0].files_processed, 6);
+    assert_eq!(events.complete.lock_ignore_poison()[0].files_processed, 8);
 }
 
 /// The folders moved, so their junk files go with them: no husk of

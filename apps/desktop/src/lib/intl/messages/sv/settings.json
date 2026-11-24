@@ -506,13 +506,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Hoppa över Mac-specifika dolda filer} windows {Hoppa över Windows-miniatyrfiler} other {Hoppa över kvarlämnade Linux-filer}}",
+  "settings.fileOperations.osJunkFiles.label": "Hoppa över skräpfiler från systemet",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Hoppar över filerna .DS_Store och ._* när du kopierar, flyttar eller komprimerar.} windows {Hoppar över filerna Thumbs.db och ehthumbs*.db när du kopierar, flyttar eller komprimerar. Windows skapar dem igen när det behöver dem.} other {Hoppar över filerna .nfs* och .fuse_hidden* när du kopierar, flyttar eller komprimerar. Linux behåller dem för raderade filer som fortfarande är öppna.}}",
+  "settings.fileOperations.osJunkFiles.description": "Hoppar över filer som operativsystem lämnar bredvid dina egna när du kopierar, flyttar eller komprimerar: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* och .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Ta med",
   "@settings.fileOperations.osJunkFiles.opt.include": {

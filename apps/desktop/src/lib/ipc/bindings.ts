@@ -1500,7 +1500,7 @@ export const commands = {
        *  something a person asks for.
        */
       | 'include'
-      // Leave every listed junk file of the running OS out of the destination.
+      // Leave every listed junk file, whichever OS's, out of the destination.
       | 'skip'
       | null,
   ) =>
@@ -16985,14 +16985,14 @@ export type OriginalsStillInPlace = {
   count: number
 }
 
-// Whether a transfer writes the running OS's junk files to its destination.
+// Whether a transfer writes OS junk files to its destination.
 export type OsJunkFiles =
   /**
    *  Copy them like any other file. The default: leaving a file out is
    *  something a person asks for.
    */
   | 'include'
-  // Leave every listed junk file of the running OS out of the destination.
+  // Leave every listed junk file, whichever OS's, out of the destination.
   | 'skip'
 
 /**

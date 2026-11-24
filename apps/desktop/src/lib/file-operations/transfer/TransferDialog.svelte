@@ -216,7 +216,7 @@
     // "Remember this choice": ticked when a choice is saved; a confirm saves by it.
     let rememberConflictChoice = $state(rememberStartsTicked(savedConflictPolicy))
 
-    // "skip this OS's junk files" (#314): starts from the setting, and is always a one-off
+    // "skip system clutter files" (#314): starts from the setting, and is always a one-off
     // override for this operation (flipping it never writes the setting; the link opens it).
     // Until the person touches it, it follows a default they change through that link.
     let osJunkPolicy = $state(getSetting(OS_JUNK_FILES_SETTING))

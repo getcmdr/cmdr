@@ -505,13 +505,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Omitir archivos ocultos propios del Mac} windows {Omitir archivos de miniaturas de Windows} other {Omitir archivos residuales de Linux}}",
+  "settings.fileOperations.osJunkFiles.label": "Omitir archivos basura del sistema",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Omite los archivos .DS_Store y ._* al copiar, mover o comprimir.} windows {Omite los archivos Thumbs.db y ehthumbs*.db al copiar, mover o comprimir. Windows los vuelve a crear cuando los necesita.} other {Omite los archivos .nfs* y .fuse_hidden* al copiar, mover o comprimir. Linux los conserva para archivos eliminados que siguen abiertos.}}",
+  "settings.fileOperations.osJunkFiles.description": "Omite los archivos que los sistemas operativos dejan junto a los tuyos al copiar, mover o comprimir: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* y .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Incluir",
   "@settings.fileOperations.osJunkFiles.opt.include": {

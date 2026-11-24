@@ -190,15 +190,15 @@ async fn the_walk_records_every_entry_under_the_callers_paths() {
     );
 }
 
-/// A transfer that skips the running OS's junk files counts and records none of
+/// A transfer that skips OS junk files counts and records none of
 /// them, at any depth, while a FOLDER of such a name and a selected one still
 /// count (#314, #1305).
 #[tokio::test]
 async fn a_walk_leaving_out_os_junk_files_neither_counts_nor_records_them() {
-    use crate::os_junk_files::{JunkOs, OsJunkFiles};
+    use crate::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
     use crate::testing::scan_recording::{Recorded, ScanRecording};
 
-    let [junk, other_junk] = JunkOs::current().sample_junk_names();
+    let [junk, other_junk, ..] = SAMPLE_JUNK_NAMES;
     let junk_folder = format!("/top/{other_junk}");
     let picked = format!("/picked/{junk}");
     let tree = FakeTree::new()

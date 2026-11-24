@@ -88,8 +88,8 @@ the next section.
   behind it (and behind `temp_sibling_name` / `_path` / `_prefix` for the backends that name their own upload temps).
 - Leaves: `apple_double.rs` (whether a listed `._name` is the AppleDouble sidecar the kernel serves as `name`'s xattrs
   on a volume with none of its own, so a copy walk leaves it out), `os_junk_files.rs` (`OsJunkFiles`: whether a transfer
-  leaves the running OS's junk FILES out, the person's per-operation choice; every copy-scan walk asks it of each listed
-  child through `ScanBoundary::leaves_out`; the sets: § "OS junk files"; what a transfer does with them:
+  leaves OS junk FILES out, one merged set on every OS, the person's per-operation choice; every copy-scan walk asks it
+  of each listed child through `ScanBoundary::leaves_out`; the sets: § "OS junk files"; what a transfer does with them:
   `crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out"), `archive_format.rs` (sole
   source of truth for archive detection, and the extension-only split of a path at its archive component),
   `file_extension.rs` (what counts as a name's extension, product-wide: § "What counts as an extension"),
@@ -549,16 +549,19 @@ extension is the truth, and a bogus one only finds no match.
 
 ## OS junk files
 
-`os_junk_files::OsJunkFiles::Skip` leaves out the RUNNING OS's junk set (`JunkOs::current()`, from
-`std::env::consts::OS`, no `cfg`; the wasm demo answers Linux). The matcher takes the OS as a value
-(`is_os_junk_file_name(os, name)`, `leaves_out_on`), so `os_junk_files_test.rs` pins all three sets on every CI OS, and
-the transfer tests write `JunkOs::sample_junk_names()` so each OS's walks skip its own. Only FILES match.
+`os_junk_files::OsJunkFiles::Skip` leaves out ONE merged set, the union of the three below, on every OS (#1416): a USB
+stick or a NAS share carries what every system that touched it wrote, so Windows and Linux skip a Mac's `.DS_Store` too,
+and a Mac skips `Thumbs.db`. `os_junk_files_test.rs` pins all three parts on every CI OS, and the transfer tests write
+`SAMPLE_JUNK_NAMES`: `._photo.jpg` (the prefix match that can meet a real name, so it sits in every folder),
+`Thumbs.db`, `.DS_Store`, and an `.nfs` name, so each CI OS checks it skips another's junk too. Only FILES match. The
+one per-OS rule is the zip's `__MACOSX` sidecars (`leaves_out_apple_double_sidecars`, macOS only: `RUNNING_ON_MACOS`,
+from `std::env::consts::OS`, no `cfg`).
 
 The rule for a set: a regenerated cache or an OS dropping, ❌ never the person's data, a folder setting, or a folder.
 
 - **macOS**: `.DS_Store` (byte-exact) and `._` + at least one byte (AppleDouble). Finder metadata and xattr carriers,
-  meaningful only to a Mac. Skipping them on a Mac also drops a zip's `__MACOSX` sidecars
-  (`leaves_out_apple_double_sidecars`); the other sets keep them.
+  meaningful only to a Mac. Skipping on a Mac also drops a zip's `__MACOSX` sidecars
+  (`leaves_out_apple_double_sidecars`); skipping on Windows or Linux keeps them.
 - **Windows**: `Thumbs.db`, `ehthumbs.db`, `ehthumbs_vista.db`, ASCII-case-insensitive (Windows file systems ignore
   case). Explorer's and Windows Media Center's thumbnail caches; Explorer recreates `Thumbs.db` on demand, and a Group
   Policy turns it off outright (verified against learn.microsoft.com "Policy CSP - ADMX_Thumbnails",
@@ -568,7 +571,9 @@ The rule for a set: a regenerated cache or an OS dropping, ❌ never the person'
   file deleted while open to `.nfs<16-hex fileid><8-hex counter>` (`fs/nfs/unlink.c`, `SILLYNAME_PREFIX "%0*llx%0*x"`),
   libfuse to `.fuse_hidden%08x%08x` (`lib/fuse.c`); both vanish when the last handle closes. The exact shape keeps a
   person's `.nfsconfig` theirs (verified against torvalds/linux `master` and libfuse `master`, 2026-11-23; both are in
-  `github/gitignore` `Global/Linux.gitignore`).
+  `github/gitignore` `Global/Linux.gitignore`). A skipping move from an NFS export takes an `.nfs<24 hex>` file away
+  with its folder (the husk sweep). That file is another Linux client's open-but-deleted file, so that client then sees
+  a stale-file error (`ESTALE`), the same as when any other client deletes the folder.
 
 Left out on purpose:
 

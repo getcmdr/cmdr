@@ -191,7 +191,7 @@ export interface TransferProgressPropsData {
   /** Source filenames known to conflict at dest (from pre-flight scan).
    *  Forwarded to the BE so it can bulk-skip them upfront under `Skip all`. */
   preKnownConflicts?: string[]
-  /** Copy, move, compress: the dialog's "skip this OS's junk files" answer, if it showed. */
+  /** Copy, move, compress: the dialog's "skip system clutter files" answer, if it showed. */
   osJunkFiles?: OsJunkFiles
   /** Copy only: `proceed` when the person chose "Copy anyway" after a space shortfall. */
   spaceShortfall?: SpaceShortfall

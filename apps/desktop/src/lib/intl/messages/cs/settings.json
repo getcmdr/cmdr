@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Přeskočit skryté soubory jen pro Mac} windows {Přeskočit soubory miniatur Windows} other {Přeskočit zbytkové soubory Linuxu}}",
+  "settings.fileOperations.osJunkFiles.label": "Přeskočit nepotřebné systémové soubory",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Při kopírování, přesouvání nebo komprimování přeskočí soubory .DS_Store a ._*.} windows {Při kopírování, přesouvání nebo komprimování přeskočí soubory Thumbs.db a ehthumbs*.db. Windows si je v případě potřeby vytvoří znovu.} other {Při kopírování, přesouvání nebo komprimování přeskočí soubory .nfs* a .fuse_hidden*. Linux je uchovává pro smazané soubory, které jsou stále otevřené.}}",
+  "settings.fileOperations.osJunkFiles.description": "Při kopírování, přesouvání nebo komprimování přeskočí soubory, které operační systémy odkládají vedle vašich vlastních: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* a .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Zahrnout",
   "@settings.fileOperations.osJunkFiles.opt.include": {

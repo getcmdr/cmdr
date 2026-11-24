@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Mac-specifieke verborgen bestanden overslaan (.DS_Store, ._*)} windows {Windows-miniatuurbestanden overslaan (Thumbs.db, ehthumbs*.db)} other {Achtergebleven Linux-bestanden overslaan (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Rommelbestanden van het systeem overslaan (.DS_Store, Thumbs.db en meer)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Niet meer vragen",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

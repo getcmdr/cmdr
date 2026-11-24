@@ -152,9 +152,10 @@ async function foldNetworkTimeoutModeIntoOneTimeout(store: Store): Promise<boole
 
 /**
  * Migration 11 (#1305): "Skip Mac-only hidden files" (`fileOperations.macOnlyFiles`) became
- * "skip this OS's junk files" (`fileOperations.osJunkFiles`), each OS skipping its own set. A
- * settings file belongs to one machine, and the Mac set is the same `.DS_Store` and `._*` it
- * skipped before, so a Mac keeps the choice it made. A value the setting never had drops to the
+ * "skip system clutter files" (`fileOperations.osJunkFiles`), one merged set on every OS
+ * (#1416). That set holds the same `.DS_Store` and `._*` the old key skipped, so every machine
+ * keeps the choice it made; `skip` now also leaves out the Windows and Linux names, which the
+ * same value covers without another step. A value the setting never had drops to the
  * default, and a value already under the new key wins.
  *
  * Idempotent: it only acts while the legacy key is present, and deletes it, which the sparse

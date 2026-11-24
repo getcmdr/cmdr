@@ -18,6 +18,7 @@ by hand or edit the comment's `Rating:` line; the cron never overwrites a field 
 - **`security-gap`** (`getcmdr/cmdr-reports`): a known weakness in Cmdr or its servers that `docs/threat-model.md` only
   calls "tracked privately". Every release lists the open ones (`docs/guides/releasing.md`, step 1). Not for error
   reports, crashes, feedback, or account-hygiene tasks. It stays on the issue after closing, as history.
+- **`windows`** (`getcmdr/cmdr`): the Windows port and Windows-only behavior; the umbrella is #942.
 
 ## Severity
 

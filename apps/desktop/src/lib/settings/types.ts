@@ -359,7 +359,7 @@ export type ExtensionChangePolicy = 'yes' | 'no' | 'ask'
 /** What ⌘V does in a pane when the clipboard holds no file URLs but has pasteable content (text, image, PDF). */
 export type PasteClipboardAsFileMode = 'doNothing' | 'createFile' | 'createFileAndRename'
 /**
- * Whether copy, move, and compress leave the running OS's junk files out
+ * Whether copy, move, and compress leave OS junk files out
  * (#314): the default the dialog's toggle starts from, or `ask` to start it off with a
  * "Don't ask again" link. The backend matches the names (`cmdr_fs::os_junk_files`).
  */

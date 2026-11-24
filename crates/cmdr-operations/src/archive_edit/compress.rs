@@ -80,7 +80,7 @@ impl crate::Operations {
     /// Starts one managed fresh compression. Nothing at the destination changes
     /// until the producer has closed, byte counts agree, and the staged ZIP parses.
     ///
-    /// `os_junk` says whether to leave out the running OS's junk files below the
+    /// `os_junk` says whether to leave out OS junk files below the
     /// selection; on a Mac, with them every `__MACOSX` sidecar the zip would
     /// otherwise carry, which a person on another system sees as the same clutter
     /// (#314, #1305, `OsJunkFiles::leaves_out_apple_double_sidecars`).

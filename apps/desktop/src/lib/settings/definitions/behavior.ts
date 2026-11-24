@@ -183,7 +183,7 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     },
   },
   {
-    // FE-owned: the copy, move, and compress dialog's "skip this OS's junk files"
+    // FE-owned: the copy, move, and compress dialog's "skip system clutter files"
     // toggle starts from it, and a confirm the dialog never showed dispatches it
     // (`file-operations/transfer/os-junk-files.ts`). The backend matches the names.
     id: 'fileOperations.osJunkFiles',

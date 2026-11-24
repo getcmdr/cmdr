@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Mac-spezifische verborgene Dateien überspringen (.DS_Store, ._*)} windows {Windows-Miniaturansichtsdateien überspringen (Thumbs.db, ehthumbs*.db)} other {Linux-Restdateien überspringen (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Unnütze Dateien von Betriebssystemen überspringen (.DS_Store, Thumbs.db und mehr)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Nicht mehr fragen",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

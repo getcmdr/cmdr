@@ -504,13 +504,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Mac-specifikus rejtett fájlok átugrása} windows {Windows-miniatűrfájlok átugrása} other {Linux által hátrahagyott fájlok átugrása}}",
+  "settings.fileOperations.osJunkFiles.label": "Rendszerek hagyta kacatfájlok átugrása",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .DS_Store, ._*.} windows {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: Thumbs.db, ehthumbs*.db. A Windows szükség esetén újra létrehozza őket.} other {Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja ezeket a fájlokat: .nfs*, .fuse_hidden*. A Linux a törölt, de még megnyitott fájlok miatt tartja meg őket.}}",
+  "settings.fileOperations.osJunkFiles.description": "Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja azokat a fájlokat, amelyeket az operációs rendszerek a saját fájljaid mellé raknak: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* és .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Belefoglalás",
   "@settings.fileOperations.osJunkFiles.opt.include": {

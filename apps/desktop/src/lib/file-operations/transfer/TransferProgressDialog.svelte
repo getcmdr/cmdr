@@ -89,7 +89,7 @@
         /** Source filenames known to conflict at dest (from TransferDialog's pre-flight scan).
          *  Forwarded to the BE so it can bulk-skip them upfront under `Skip all`. */
         preKnownConflicts?: string[]
-        /** Copy, move, compress: the setup dialog's "skip this OS's junk files" answer. */
+        /** Copy, move, compress: the setup dialog's "skip system clutter files" answer. */
         osJunkFiles?: OsJunkFiles
         /** Copy only: `proceed` when the person chose "Copy anyway" after a space shortfall. */
         spaceShortfall?: SpaceShortfall

@@ -504,13 +504,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {跳过 Mac 专用的隐藏文件} windows {跳过 Windows 缩略图文件} other {跳过 Linux 遗留文件}}",
+  "settings.fileOperations.osJunkFiles.label": "跳过系统垃圾文件",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {拷贝、移动或压缩时跳过 .DS_Store 和 ._* 文件。} windows {拷贝、移动或压缩时跳过 Thumbs.db 和 ehthumbs*.db 文件。Windows 需要时会重新生成它们。} other {拷贝、移动或压缩时跳过 .nfs* 和 .fuse_hidden* 文件。Linux 会为已删除但仍处于打开状态的文件保留它们。}}",
+  "settings.fileOperations.osJunkFiles.description": "拷贝、移动或压缩时跳过操作系统在你的文件旁留下的文件：.DS_Store、._*、Thumbs.db、ehthumbs*.db、.nfs* 和 .fuse_hidden*。",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "包含",
   "@settings.fileOperations.osJunkFiles.opt.include": {

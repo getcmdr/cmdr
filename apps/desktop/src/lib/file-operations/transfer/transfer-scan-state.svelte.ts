@@ -326,7 +326,7 @@ export function createTransferScanState(deps: TransferScanStateDeps) {
     }
   })
 
-  // The "skip this OS's junk files" toggle: the walk leaves out what the transfer will, so a
+  // The "skip system clutter files" toggle: the walk leaves out what the transfer will, so a
   // flip walks again with the new choice (the old preview is freed, its tallies reset). Like
   // the toggle effect above, created in the factory body (L3) and skipping its first run,
   // which `start()` owns. A same-volume move has no preview to redo.
