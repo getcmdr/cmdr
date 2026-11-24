@@ -4,9 +4,12 @@
 # Only the targets we ship. Tauri drags in the whole GTK3 stack for Linux, which
 # carries ~11 permanently-unmaintained advisories and, at times, real CVEs in crates
 # no macOS build ever links (`quick-xml` via `wayland-scanner`, for two). Vetting them
-# buried the findings that do reach users. Add a triple here the moment we ship one.
+# buried the findings that do reach users. Add a triple here the moment we build a
+# release for it: Windows is in since its release build exists (task 53a of the Windows
+# port), so its tree is vetted before the first Windows release ships. The third-party
+# notices read this same list (`scripts/check/checks/desktop-third-party-notices.go`).
 [graph]
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
 
 [advisories]
 version = 2

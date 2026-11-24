@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -329,5 +330,19 @@ func TestFirstNonEmpty(t *testing.T) {
 	}
 	if got := firstNonEmpty("", ""); got != "" {
 		t.Errorf("got %q, want empty", got)
+	}
+}
+
+func TestParseDenyTargetsReadsOneLineAndSeveral(t *testing.T) {
+	oneLine := "[graph]\ntargets = [\"aarch64-apple-darwin\", \"x86_64-pc-windows-msvc\"]\n\n[advisories]\n"
+	several := "[graph]\ntargets = [\n  \"aarch64-apple-darwin\",\n  \"x86_64-pc-windows-msvc\", # Windows\n]\n"
+	want := []string{"aarch64-apple-darwin", "x86_64-pc-windows-msvc"}
+	for name, deny := range map[string]string{"one line": oneLine, "several": several} {
+		if got := parseDenyTargets(deny); !slices.Equal(got, want) {
+			t.Errorf("%s: got %v, want %v", name, got, want)
+		}
+	}
+	if got := parseDenyTargets("[bans]\n"); len(got) != 0 {
+		t.Errorf("no targets: got %v", got)
 	}
 }
