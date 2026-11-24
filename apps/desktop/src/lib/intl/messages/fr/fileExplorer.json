@@ -337,6 +337,18 @@
   "@fileExplorer.open.noPlainPath": {
     "sourceHash": "f51a142"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Le Finder n’a pas pu afficher cet élément. Il a peut-être été déplacé, ou son disque ou serveur est peut-être hors ligne.} windows {L’Explorateur de fichiers n’a pas pu afficher cet élément. Il a peut-être été déplacé, ou son lecteur ou partage réseau est peut-être hors ligne.} other {Votre gestionnaire de fichiers n’a pas pu afficher cet élément. Il a peut-être été déplacé, ou son disque ou serveur est peut-être hors ligne.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Cet élément n’est pas un fichier ordinaire de votre Mac, le Finder ne peut donc pas l’afficher.} windows {Cet élément n’est pas un fichier ordinaire de votre PC, l’Explorateur de fichiers ne peut donc pas l’afficher.} other {Cet élément n’est pas un fichier ordinaire de votre ordinateur, votre gestionnaire de fichiers ne peut donc pas l’afficher.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "L’Explorateur de fichiers ne peut pas afficher cet élément par son chemin. Le chemin dépasse la longueur que gèrent les apps Windows, ou un nom qu’il contient se termine par un point ou un espace, ou est un nom réservé comme CON. Raccourcissez le chemin ou renommez le fichier ou le dossier, puis réessayez.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} s’ouvre…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

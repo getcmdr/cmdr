@@ -337,6 +337,18 @@
   "@fileExplorer.open.noPlainPath": {
     "sourceHash": "f51a142"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder tuto položku nedokázal zobrazit. Možná byla přesunuta, nebo je její disk či server offline.} windows {Průzkumník souborů tuto položku nedokázal zobrazit. Možná byla přesunuta, nebo je její jednotka či sdílená složka offline.} other {Váš správce souborů tuto položku nedokázal zobrazit. Možná byla přesunuta, nebo je její disk či server offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Tato položka není běžný soubor na vašem Macu, takže ji Finder nedokáže zobrazit.} windows {Tato položka není běžný soubor na vašem počítači, takže ji Průzkumník souborů nedokáže zobrazit.} other {Tato položka není běžný soubor na vašem počítači, takže ji váš správce souborů nedokáže zobrazit.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "Průzkumník souborů nedokáže tuto položku zobrazit podle její cesty. Cesta je delší, než aplikace pro Windows zvládnou, nebo některý název v ní končí tečkou či mezerou, případně je to vyhrazený název jako CON. Zkraťte cestu nebo přejmenujte soubor či složku a zkuste to znovu.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "Otevírá se {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

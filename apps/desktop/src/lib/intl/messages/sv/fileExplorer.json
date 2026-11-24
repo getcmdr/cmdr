@@ -337,6 +337,18 @@
   "@fileExplorer.open.noPlainPath": {
     "sourceHash": "f51a142"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder kunde inte visa det här objektet. Det kan ha flyttats, eller så är enheten eller servern offline.} windows {Utforskaren kunde inte visa det här objektet. Det kan ha flyttats, eller så är enheten eller den delade mappen offline.} other {Din filhanterare kunde inte visa det här objektet. Det kan ha flyttats, eller så är enheten eller servern offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Det här objektet är inte en vanlig fil på din Mac, så Finder kan inte visa det.} windows {Det här objektet är inte en vanlig fil på din dator, så Utforskaren kan inte visa det.} other {Det här objektet är inte en vanlig fil på din dator, så din filhanterare kan inte visa det.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "Utforskaren kan inte visa det här objektet via sökvägen. Sökvägen är längre än Windows-appar klarar, eller så slutar ett namn i den med punkt eller mellanslag, eller är ett reserverat namn som CON. Korta sökvägen eller byt namn på filen eller mappen, och försök igen.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "Öppnar {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

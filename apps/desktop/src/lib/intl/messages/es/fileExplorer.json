@@ -337,6 +337,18 @@
   "@fileExplorer.open.noPlainPath": {
     "sourceHash": "f51a142"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder no ha podido mostrar este elemento. Puede que se haya movido, o que su disco o servidor no esté disponible.} windows {El Explorador de archivos no ha podido mostrar este elemento. Puede que se haya movido, o que su unidad o recurso compartido de red no esté disponible.} other {Tu gestor de archivos no ha podido mostrar este elemento. Puede que se haya movido, o que su disco o servidor no esté disponible.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Este elemento no es un archivo normal de tu Mac, así que Finder no puede mostrarlo.} windows {Este elemento no es un archivo normal de tu PC, así que el Explorador de archivos no puede mostrarlo.} other {Este elemento no es un archivo normal de tu ordenador, así que tu gestor de archivos no puede mostrarlo.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "El Explorador de archivos no puede mostrar este elemento por su ruta. La ruta es más larga de lo que admiten las apps de Windows, o un nombre en ella termina en punto o espacio, o es un nombre reservado como CON. Acorta la ruta o renombra el archivo o la carpeta, y vuelve a intentarlo.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "Abriendo {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

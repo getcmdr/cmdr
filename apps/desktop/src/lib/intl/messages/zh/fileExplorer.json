@@ -335,6 +335,18 @@
   "@fileExplorer.open.noPlainPath": {
     "sourceHash": "f51a142"
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder 无法显示这个项目。它可能已被移动，或者所在的磁盘或服务器已离线。} windows {文件资源管理器无法显示这个项目。它可能已被移动，或者所在的驱动器或网络共享已离线。} other {你的文件管理器无法显示这个项目。它可能已被移动，或者所在的磁盘或服务器已离线。}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {这个项目不是你 Mac 上的普通文件，所以 Finder 无法显示它。} windows {这个项目不是你电脑上的普通文件，所以文件资源管理器无法显示它。} other {这个项目不是你电脑上的普通文件，所以你的文件管理器无法显示它。}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "文件资源管理器无法通过路径显示这个项目。路径超出了 Windows App 能处理的长度，或者路径中某个名称以句点或空格结尾，或者是 CON 这类保留名称。请缩短路径，或重命名文件或文件夹，然后重试。",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "正在打开 {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"
