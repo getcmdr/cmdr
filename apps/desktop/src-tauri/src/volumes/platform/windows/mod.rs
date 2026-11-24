@@ -5,12 +5,13 @@
 //! (`volumes/DETAILS.md` § "Windows: a volume per drive"). `drives.rs` holds the Win32 reads; the
 //! id ladder and the drive table's pure rules are `cmdr_fs::volume::windows_volume_ids`.
 //!
-//! The drive table is read at startup, on every switcher refresh (`list_locations`), and again
-//! when a path names a root it doesn't hold; ❌ no arrival watcher yet (task 39), so a drive
-//! plugged in later shows on the next refresh. A mapped drive's UNC spelling registers as an
-//! alias root of the same volume, so `Z:/x` and `//server/share/x` land on one id.
+//! The drive table is read at startup, on every switcher refresh (`list_locations`), when a
+//! path names a root it doesn't hold, and whenever Windows says a drive came or went
+//! (`watcher/`, task 39). A mapped drive's UNC spelling registers as an alias root of the same
+//! volume, so `Z:/x` and `//server/share/x` land on one id.
 
 mod drives;
+pub(crate) mod watcher;
 
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -65,6 +66,14 @@ fn drive_table() -> Arc<Vec<WindowsDrive>> {
     let drives = Arc::new(drives::enumerate(&system_drive_root()));
     *cached = Some((Instant::now(), Arc::clone(&drives)));
     drives
+}
+
+/// The drive table, read now, or `None` when the mount table wouldn't answer: the watcher's
+/// read, where ❌ an empty table would read as every drive gone.
+fn listed_drive_table() -> Option<Arc<Vec<WindowsDrive>>> {
+    let drives = Arc::new(drives::enumerate_listed(&system_drive_root())?);
+    *TABLE.lock_ignore_poison() = Some((Instant::now(), Arc::clone(&drives)));
+    Some(drives)
 }
 
 /// The drive table, read now.
@@ -312,15 +321,6 @@ pub(crate) fn mount_type_and_source_for(path: &Path) -> Option<(String, String)>
 
 pub(crate) fn live_volume_space(_path: &str) -> Option<SpaceInfo> {
     None
-}
-
-/// No mount watching yet (task 39): a drive that arrives shows on the next switcher refresh.
-pub(crate) mod watcher {
-    use tauri::AppHandle;
-
-    pub(crate) fn start_volume_watcher(_app: &AppHandle) {}
-
-    pub(crate) fn stop_volume_watcher() {}
 }
 
 #[cfg(test)]

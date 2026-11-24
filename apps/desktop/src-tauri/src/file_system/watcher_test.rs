@@ -655,6 +655,45 @@ fn a_write_at_or_above_a_watched_folder_releases_its_watch_until_the_writes_go_q
     }
 }
 
+/// A drive's removal query (Windows, task 39) holds every watch on the drive with no timer:
+/// they stay let go, claiming nothing, until the removal is refused and they're taken back.
+#[test]
+fn a_held_drive_keeps_its_watches_let_go_until_they_are_taken_back() {
+    use crate::file_system::watcher::release::{hold_at_or_below, take_back_after};
+    use crate::file_system::watcher::{coverage_for_listings, start_watching, stop_watching};
+    use crate::test_support::{TestDir, wait_until};
+    use cmdr_fs::testing::unique_test_id;
+    use cmdr_fs::volume::WatchCoverage;
+    use std::time::Duration;
+
+    let drive = TestDir::new("held-drive");
+    let shown = drive.join("shown");
+    std::fs::create_dir_all(&shown).expect("mkdir");
+    let (root_id, shown_id) = (unique_test_id("held-root"), unique_test_id("held-shown"));
+    start_watching(&root_id, &drive).expect("arm");
+    start_watching(&shown_id, &shown).expect("arm");
+    let coverage = |id: &String| coverage_for_listings(std::slice::from_ref(id));
+
+    let held = hold_at_or_below(&drive).expect("two watches on the drive");
+    assert_eq!(held.len(), 2);
+    // allowed-test-sleep: a negative assertion over a window; nothing may re-arm a held watch
+    std::thread::sleep(Duration::from_millis(1_500));
+    assert_eq!(coverage(&root_id), WatchCoverage::None, "no quiet timer brings it back");
+    assert_eq!(coverage(&shown_id), WatchCoverage::None);
+
+    take_back_after(held, Duration::ZERO);
+    wait_until(Duration::from_secs(10), "both watches re-arm", || {
+        coverage(&root_id) == WatchCoverage::EveryWriter && coverage(&shown_id) == WatchCoverage::EveryWriter
+    });
+    assert!(
+        hold_at_or_below(&drive.join("elsewhere")).is_none(),
+        "a drive with no watch holds nothing"
+    );
+
+    stop_watching(&root_id);
+    stop_watching(&shown_id);
+}
+
 /// A released watch whose folder went away with the write (its parent renamed) can't re-arm:
 /// it keeps claiming nothing, and the re-read it asks for is what lands the pane on a parent.
 /// A later release supersedes an earlier one's timer, and a closed listing never comes back.

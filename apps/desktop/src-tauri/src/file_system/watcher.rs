@@ -37,7 +37,7 @@ use cmdr_local::reading::{get_single_entry, list_directory_core};
 mod fsevents;
 #[cfg(not(target_os = "macos"))]
 mod notify_stream;
-mod release;
+pub(crate) mod release;
 #[cfg(target_os = "macos")]
 pub(super) use fsevents::WatchRoot;
 #[cfg(all(test, target_os = "macos"))]

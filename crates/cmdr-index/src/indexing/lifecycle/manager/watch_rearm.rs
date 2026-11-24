@@ -6,10 +6,12 @@
 //! Nothing watched the volume between the loss and the re-arm, and `notify` keeps no
 //! journal, so the re-arm also catches up the way a launch would: a whole-watched
 //! volume rescans, a branch-watched one watches its branches again with its rows
-//! marked stale (`ensure_branch_watch(resuming)`). A volume whose root doesn't answer
-//! has its rows marked stale and its root asked again on the next backoff step, since
-//! Windows tells us nothing yet when a drive comes back (`watch/DETAILS.md` § "When
-//! the OS ends the watch").
+//! marked stale (`ensure_branch_watch(resuming)`). A drive that LEFT never waits here:
+//! the host's removal notice (Windows' device notifications, task 39) stops its index,
+//! which cancels this wait, and a replug is the user's to index again, as on macOS. So a
+//! root that doesn't answer here is one still listed (a transient I/O error, a locked
+//! BitLocker volume): its rows are marked stale and its root asked again on the next
+//! backoff step (`watch/DETAILS.md` § "When the OS ends the watch").
 //!
 //! Each attempt first checks that the watch it replaces is still the lost one: a
 //! "Rescan now" or a replugged drive during the wait brings up a healthy watcher, and

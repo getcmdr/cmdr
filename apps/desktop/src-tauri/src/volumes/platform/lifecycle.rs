@@ -1,9 +1,11 @@
-//! What a volume's mount, unmount, and rename mean to Cmdr (macOS).
+//! What a volume's mount, unmount, and rename mean to Cmdr (macOS and Windows).
 //!
-//! `watcher.rs` observes the `NSWorkspace` notifications and hands each volume path here. These
+//! Each arm's `watcher` hears the OS (macOS: the `NSWorkspace` notifications; Windows: the
+//! device and Shell notifications, `windows/watcher/`) and hands each volume root here. These
 //! handlers register and unregister the volume, stop or move its index, try the SMB upgrade, and
-//! tell the frontend. Why a renamed volume moves rather than leaving and arriving:
-//! `../file_system/volume/DETAILS.md` § "A renamed drive".
+//! tell the frontend. Why a renamed volume moves rather than leaving and arriving (macOS only:
+//! a Windows drive's letter doesn't move with its label): `../file_system/volume/DETAILS.md` §
+//! "A renamed drive".
 
 use cmdr_fs::log_private::LogPrivate;
 use log::{debug, error};
@@ -11,8 +13,12 @@ use std::sync::OnceLock;
 use tauri::AppHandle;
 use tauri_specta::Event;
 
-use crate::file_system::volume::manager::{RootMove, RootRemoval};
-use crate::volume_broadcast::{RootChangeKind, VolumeMounted, VolumeRootChanged, VolumeUnmounted};
+#[cfg(target_os = "macos")]
+use crate::file_system::volume::manager::RootMove;
+use crate::file_system::volume::manager::RootRemoval;
+#[cfg(target_os = "macos")]
+use crate::volume_broadcast::{RootChangeKind, VolumeRootChanged};
+use crate::volume_broadcast::{VolumeMounted, VolumeUnmounted};
 
 /// Global app handle for emitting events from the handlers.
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
@@ -32,7 +38,8 @@ pub(crate) fn handle_volume_mounted(volume_path: &str) {
     // Another account's own mount is nothing this account can open, so it's not
     // news here: no registration, no event, no refresh. The startup sweep and
     // discovery skip the same rows (`mounts::mount_is_private_to_another_user`).
-    if super::is_private_to_another_user(volume_path) {
+    #[cfg(target_os = "macos")]
+    if super::imp::is_private_to_another_user(volume_path) {
         debug!(
             "Another account's mount appeared; leaving it alone: {}",
             LogPrivate::dir_path(volume_path)
@@ -112,7 +119,12 @@ pub(crate) fn handle_volume_unmounted(volume_path: &str) {
             // A local drive's index read the gone root itself, so it restarts at the
             // survivor, the same as after a rename. Off this main-thread observer: the
             // restart drains.
+            #[cfg(target_os = "macos")]
             std::thread::spawn(move || follow_with_the_index(&id));
+            // On Windows the one promotion is a mapped drive's UNC alias taking over its
+            // letter's root, a share whose index never read through that root.
+            #[cfg(target_os = "windows")]
+            drop(id);
         }
         RootRemoval::ActiveRootStranded { id } => {
             log::warn!(
@@ -164,6 +176,7 @@ pub(crate) fn handle_volume_unmounted(volume_path: &str) {
 ///
 /// Public for tests so the handler logic can be exercised without posting real
 /// `NSWorkspace` notifications.
+#[cfg(target_os = "macos")]
 pub(crate) fn handle_volume_will_unmount(volume_path: &str) {
     debug!("Volume will unmount: {}", LogPrivate::dir_path(volume_path));
     // The volume is still mounted here, so look it up by root the same way the
@@ -326,6 +339,7 @@ fn try_upgrade_smb_mount(volume_path: &str) {
 /// Blocking (an NSURL read for the id, then the index's drain): the observer runs it on a thread
 /// of its own. Public for tests so the handler logic can be exercised without posting real
 /// `NSWorkspace` notifications.
+#[cfg(target_os = "macos")]
 pub(crate) fn handle_volume_renamed(old_path: &str, new_path: &str) {
     debug!(
         "Volume renamed: {old_path} -> {new_path}",
@@ -373,6 +387,7 @@ pub(crate) fn handle_volume_renamed(old_path: &str, new_path: &str) {
     crate::volume_broadcast::emit_volumes_changed();
 }
 
+#[cfg(target_os = "macos")]
 /// Restart a renamed drive's index at its new root, through the drive-release gate: an eject
 /// landing beside the rename must not find a watcher this restart stood up behind its stop.
 fn follow_with_the_index(volume_id: &str) {
@@ -404,6 +419,9 @@ mod tests {
         assert!(json.contains("/Volumes/MyDrive"));
     }
 
+    // A macOS mount path; the Windows arm's own cells inject drive roots
+    // (`windows/watcher/tests.rs`).
+    #[cfg(target_os = "macos")]
     #[test]
     fn handle_volume_mounted_registers_with_volume_manager() {
         use crate::file_system::volume::manager::get_volume_manager;
@@ -429,6 +447,9 @@ mod tests {
         get_volume_manager().unregister(&volume_id);
     }
 
+    // A macOS mount path; the Windows arm's own cells inject drive roots
+    // (`windows/watcher/tests.rs`).
+    #[cfg(target_os = "macos")]
     #[test]
     fn handle_volume_unmounted_unregisters_from_volume_manager() {
         use crate::file_system::volume::manager::get_volume_manager;
@@ -458,6 +479,9 @@ mod tests {
         );
     }
 
+    // A macOS mount path; the Windows arm's own cells inject drive roots
+    // (`windows/watcher/tests.rs`).
+    #[cfg(target_os = "macos")]
     #[test]
     fn unmounting_the_active_root_promotes_a_surviving_sibling() {
         use crate::file_system::volume::manager::get_volume_manager;
@@ -501,6 +525,9 @@ mod tests {
         assert!(manager.get(volume_id).is_none(), "the last root gone means gone");
     }
 
+    // A macOS mount path; the Windows arm's own cells inject drive roots
+    // (`windows/watcher/tests.rs`).
+    #[cfg(target_os = "macos")]
     #[test]
     fn mount_then_unmount_round_trip_leaves_no_registration() {
         use crate::file_system::volume::manager::get_volume_manager;

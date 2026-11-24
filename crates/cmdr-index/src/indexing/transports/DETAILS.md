@@ -314,7 +314,7 @@ re-enable reconciles in place). Idempotent, so overlapping hooks are safe. All t
 their own disconnect paths, and stopping them here would fight that. It answers once the index has LET GO of the drive,
 not once the stop was asked: a stop landing while the index is still starting, or while a scan start or another teardown
 holds its manager, returns with the watcher still up (`../lifecycle/DETAILS.md` § "When a volume has been let go"). The
-hooks themselves live in `file_system/volume/eject/mod.rs` and `volumes/platform/macos/lifecycle.rs`.
+hooks themselves live in `file_system/volume/eject/mod.rs` and `volumes/platform/lifecycle.rs`.
 
 - **Cmdr's own eject (`file_system/volume/eject/mod.rs`) — the reliable wedge-safe point.** For a
   `DiskutilUnmount`/`DiskutilEject`, the eject releases the volume through the app's drive-release gate (so a start

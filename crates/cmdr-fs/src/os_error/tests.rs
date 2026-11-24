@@ -120,3 +120,26 @@ fn a_share_refusing_a_folder_flush_is_a_sync_it_does_not_offer() {
         "ERROR_NOT_SUPPORTED stays the class's code"
     );
 }
+
+/// A drive pulled under a running copy answers its open handles with one of these, and each
+/// must read as the drive going away (task 39), ❌ never a generic I/O error.
+#[cfg(windows)]
+#[test]
+fn a_drive_that_went_away_reads_as_no_device() {
+    for (code, class) in [
+        (21, OsErrorClass::NoDevice),
+        (55, OsErrorClass::NoDevice),
+        (1006, OsErrorClass::NoDevice),
+        (1112, OsErrorClass::NoDevice),
+        (1167, OsErrorClass::DeviceNotConfigured),
+        (1617, OsErrorClass::DeviceNotConfigured),
+    ] {
+        let gone = std::io::Error::from_raw_os_error(code);
+        assert_eq!(OsErrorClass::of_io(&gone), Some(class), "error {code}");
+    }
+    assert_eq!(
+        OsErrorClass::NoDevice.host_code(),
+        Some(21),
+        "ERROR_NOT_READY stays the class's code"
+    );
+}

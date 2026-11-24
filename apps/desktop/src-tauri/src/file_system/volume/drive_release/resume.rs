@@ -1,8 +1,11 @@
 //! Handing back what a stop let go of: [`DriveRelease::resume`], and the unmount-pending flag an
 //! unmount's owner sets and clears.
 #![cfg_attr(
-    all(not(test), not(target_os = "macos")),
-    expect(dead_code, reason = "only the macOS unmount approver resumes through the gate")
+    all(not(test), not(any(target_os = "macos", target_os = "windows"))),
+    expect(
+        dead_code,
+        reason = "only the macOS unmount approver and the Windows drive watcher resume through the gate"
+    )
 )]
 
 use std::collections::HashSet;

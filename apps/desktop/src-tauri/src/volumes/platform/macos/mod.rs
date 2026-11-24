@@ -23,7 +23,8 @@ mod mounts;
 mod nsurl;
 mod smb;
 
-mod lifecycle;
+/// The mount, unmount, and rename handlers, shared with the Windows arm.
+use super::lifecycle;
 #[cfg(test)]
 mod rename_real_image;
 

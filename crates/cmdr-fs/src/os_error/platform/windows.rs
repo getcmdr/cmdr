@@ -9,7 +9,7 @@ use super::super::OsErrorClass;
 /// `ERROR_BUSY`, `ERROR_DISK_QUOTA_EXCEEDED`, and `ERROR_CANT_RESOLVE_FILENAME` (a link
 /// loop) give those classes a host code, so a class another OS's error carries (an Android
 /// phone's `EBUSY` through ADB) survives on a Windows host instead of turning classless.
-const WIN32: [(i32, OsErrorClass); 44] = [
+const WIN32: [(i32, OsErrorClass); 49] = [
     (2, OsErrorClass::NotFound),            // ERROR_FILE_NOT_FOUND
     (3, OsErrorClass::NotFound),            // ERROR_PATH_NOT_FOUND
     (5, OsErrorClass::AccessDenied),        // ERROR_ACCESS_DENIED
@@ -18,11 +18,20 @@ const WIN32: [(i32, OsErrorClass); 44] = [
     (17, OsErrorClass::CrossDevice),        // ERROR_NOT_SAME_DEVICE
     (19, OsErrorClass::ReadOnlyFilesystem), // ERROR_WRITE_PROTECT
     (21, OsErrorClass::NoDevice),           // ERROR_NOT_READY
-    (23, OsErrorClass::Io),                 // ERROR_CRC
-    (32, OsErrorClass::InUseByAnotherApp),  // ERROR_SHARING_VIOLATION
-    (33, OsErrorClass::InUseByAnotherApp),  // ERROR_LOCK_VIOLATION
-    (39, OsErrorClass::NoSpace),            // ERROR_HANDLE_DISK_FULL
-    (50, OsErrorClass::Unsupported),        // ERROR_NOT_SUPPORTED
+    // A drive that went away under a running read or write: a pulled stick's open handle
+    // (ERROR_DEVICE_NOT_CONNECTED, ERROR_DEVICE_REMOVED), a dismounted volume's
+    // (ERROR_FILE_INVALID), a letter whose device is gone (ERROR_DEV_NOT_EXIST), a card reader
+    // whose card left (ERROR_NO_MEDIA_IN_DRIVE). All read as "the drive went away" (task 39).
+    (55, OsErrorClass::NoDevice),              // ERROR_DEV_NOT_EXIST
+    (1006, OsErrorClass::NoDevice),            // ERROR_FILE_INVALID
+    (1112, OsErrorClass::NoDevice),            // ERROR_NO_MEDIA_IN_DRIVE
+    (1167, OsErrorClass::DeviceNotConfigured), // ERROR_DEVICE_NOT_CONNECTED
+    (1617, OsErrorClass::DeviceNotConfigured), // ERROR_DEVICE_REMOVED
+    (23, OsErrorClass::Io),                    // ERROR_CRC
+    (32, OsErrorClass::InUseByAnotherApp),     // ERROR_SHARING_VIOLATION
+    (33, OsErrorClass::InUseByAnotherApp),     // ERROR_LOCK_VIOLATION
+    (39, OsErrorClass::NoSpace),               // ERROR_HANDLE_DISK_FULL
+    (50, OsErrorClass::Unsupported),           // ERROR_NOT_SUPPORTED
     // ERROR_INVALID_FUNCTION: what a filesystem answers for an operation it doesn't do (a share's
     // folder flush, verified on Windows 10 22H2 against `\\localhost\C$`, 2026-11-22). After 50,
     // so `Unsupported`'s own code stays ERROR_NOT_SUPPORTED.

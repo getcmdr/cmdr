@@ -875,9 +875,11 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
   then blocks on a `configure` round trip, which the same thread answers after it. A released watch's coverage is
   `None`; after 1 s with no further announce at or above it, it re-arms and re-reads (the pane lands on a parent if
   its folder went with the write). An announce inside a watched folder (every file of a copy) releases nothing and
-  costs a read lock. Another program's rename of an ancestor still fails, and so does "Safely remove" of a USB drive
-  a pane shows (Cmdr has no Windows eject yet, and the device query-remove notification is the drives task in
-  `docs/specs/windows-port-plan.md`): both stay on #1340.
+  costs a read lock. Another program's rename of an ancestor still fails (#1340, decided: live with it).
+- **A drive's removal query holds its watches** (`hold_at_or_below` / `take_back_after`, the same pair a write's release runs): the same close, under one
+  generation, with NO quiet timer, so "Safely remove" of a drive a pane shows goes through. The Windows drive watcher
+  (`volumes/DETAILS.md` § "Windows: drive arrival and removal") takes them back only if the removal is refused; a
+  removal that went through moves the pane, which closes the listing.
 - **A watch the OS stopped** (a fatal completion error, which the patched notify now reports): notify unwatches after
   it, so `notify_stream::arm`'s `lost` hook drops the listing's coverage at once and re-arms after the same quiet
   period. Without it the listing kept `EveryWriter` over a dead watch.

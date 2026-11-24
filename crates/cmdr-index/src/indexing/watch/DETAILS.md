@@ -355,10 +355,14 @@ re-arming inside the backend races the vendored backend's own queued unwatch of 
   - A whole-watched volume rescans through `cover_or_scan` (which starts a fresh watcher); a branch-watched one
     re-watches its branches with `resuming`, so its rows render stale. Whether it was branch-watched is read once, at
     the first attempt: retiring the watcher clears the manager's flag.
-  - **A root that doesn't answer** (`Path::is_dir` is false on any error: a pulled drive, a locked BitLocker volume, a
-    transient I/O failure) marks the rows stale once and asks again on the next backoff step. Windows sends no removal
-    or arrival notice yet, so this timer is what notices a drive coming back under the same id; ⚠️ task 39's device
-    notifications (`docs/specs/windows-port-plan.md`) replace it.
+  - **A drive that left is the removal notice's, not this timer's.** Windows' device notifications
+    (`apps/desktop/src-tauri/src/volumes/platform/windows/watcher/`) unregister a pulled or safely removed drive, and
+    the shared unmount handler stops its index (`Index::stop_removable_volume`), which cancels the re-arm's wait. A
+    replug doesn't restart it: indexing a non-boot drive again is the user's call (`../lifecycle/DETAILS.md` § "What a
+    launch deliberately does NOT start").
+  - **A root that doesn't answer while its drive is still listed** (`Path::is_dir` is false on any error: a locked
+    BitLocker volume, a transient I/O failure, a `subst` target deleted under its letter) marks the rows stale once and
+    asks again on the next backoff step: no notice comes for any of these.
   - A rescan refused because a walk holds the ground (`GroundBeingWalked`, `GroundBeingRewritten`), or a branch watch
     that didn't start, retries the same way.
   - **Backoff** (`RearmBackoff`, on the manager, so it goes with it): a watch whose live loop ran 10 min or more re-arms
@@ -376,8 +380,9 @@ trigger on a hosted runner, so it's checked on real Windows: pull a USB stick or
 look for "the watch ended on a read error" and a "Watch re-arm" line; plug it back and look for the re-arm once the root
 answers.
 
-Not covered here: the open root handle vetoing "Safely remove" of a removable drive (#1363 part 2), which waits on the
-device-notification work (`docs/specs/windows-port-plan.md` task 39).
+The open root handle no longer vetoes "Safely remove" of a removable drive (#1363 part 2): the app's drive watcher hears
+the removal query and stops the index first (`apps/desktop/src-tauri/src/volumes/DETAILS.md` § "Windows: drive arrival
+and removal").
 
 ## Data flow (live + replay)
 

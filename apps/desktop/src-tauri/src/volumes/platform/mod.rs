@@ -13,6 +13,11 @@ use crate::volumes::{LocationInfo, NetworkMount, SmbMountInfo, VolumeInfo};
 #[cfg(unix)]
 mod unix;
 
+/// What a mount, an unmount, and a rename mean to Cmdr: the handlers both the macOS and the
+/// Windows watcher feed. Linux's watcher keeps its own (`linux/watcher.rs`).
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod lifecycle;
+
 #[cfg_attr(target_os = "macos", path = "macos/mod.rs")]
 #[cfg_attr(target_os = "linux", path = "linux/mod.rs")]
 #[cfg_attr(target_os = "windows", path = "windows/mod.rs")]

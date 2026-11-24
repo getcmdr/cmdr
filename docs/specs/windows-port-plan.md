@@ -261,21 +261,22 @@ owns its real body. Remove a line when its body lands.
   for the fixtures only they use. Each file un-gates as `LocalWindowsVolume` grows.
 - Tests ignored on Windows by issue: 24 app-path tests in `cmdr-fs` (#1225, app paths through `std::path`) and one
   `sqlite_util` deletion test (#1226). `cmdr-index`'s suite isn't green there yet: 158 of 1,911 fail, filed as #1232.
-- The drive table on Windows (`volumes/platform/windows/`), task 39: read at startup and on each switcher refresh, with
-  no arrival or removal watcher, so a drive plugged in later shows on the next refresh and one pulled stays registered
-  until then. A mapped share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45).
-  `live_volume_space`, `mount_identity_at`, and `network_mount_under` answer nothing (task 35; the mount table they'd
-  read is `cmdr_local::mounts`, real since 2026-11-21).
-- The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39: nothing reads as ejectable, so a
-  local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
+- The drive table on Windows (`volumes/platform/windows/`), task 39a: read at startup, on each switcher refresh, and
+  whenever the drive watcher (`volumes/platform/windows/watcher/`) hears a drive come or go, which also lets go of a
+  drive's handles on Windows' removal query (`volumes/DETAILS.md` § "Windows: drive arrival and removal"). A mapped
+  share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45). `live_volume_space`,
+  `mount_identity_at`, and `network_mount_under` answer nothing (task 35; the mount table they'd read is
+  `cmdr_local::mounts`, real since 2026-11-21).
+- The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39b: nothing reads as ejectable, so
+  a local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
   tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
   session, as on Linux. MTP, ADB, SFTP, and WebDAV ejects are every-OS code and work.
 - Code only the missing Windows arms will call is dead there, held by one crate-root
-  `cfg_attr(target_os = "windows", expect(dead_code, unused_imports))` in the app's `lib.rs`: the unmount watcher's
-  handling (`VolumeManager::remove_root`, `os_mount_notice::forget_unmounted_volume`; task 39), stored favorites in the
-  switcher (`favorites::target::{on_disk, FavoriteTarget::discovered}`: Windows lists three home folders and the root,
-  never the favorites store), and the native-crash conversion (`next_launch::to_iso8601`, `symbolicate`; task 47).
-  `expect`, so the build fails once nothing's dead and the line can go.
+  `cfg_attr(target_os = "windows", expect(dead_code))` in the app's `lib.rs` (plus `unused_imports` in the test build,
+  for imports only the macOS and Linux cells use): stored favorites in the switcher
+  (`favorites::target::{on_disk, FavoriteTarget::discovered}`: Windows lists three home folders and the root, never the
+  favorites store), and the native-crash conversion (`next_launch::to_iso8601`, `symbolicate`; task 47). `expect`, so
+  the build fails once nothing's dead and the line can go.
 - App tests on Windows: 31 test files are `#![cfg(unix)]` and 36 more gate their POSIX-only cells (and helpers) with
   `#[cfg(unix)]`, each for `LocalPosixVolume`, POSIX modes, inodes, `libc` errnos, or `std::os::unix`. Each un-gates as
   `LocalWindowsVolume` grows (task 35) or app paths go through the volume (#1225).

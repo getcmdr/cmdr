@@ -77,8 +77,8 @@ tested on every OS.
   server round trip), and for a local drive only `GetVolumeInformationW` (label, filesystem, read-only). What each call
   answers on Windows 10 22H2 sits in that file's header, with its evidence anchor.
 - **When it's read**: at startup (`register_every_mount` through `registrable_mount_roots`), on every switcher refresh
-  (`list_locations` reads it fresh), and when a path names a root the cached table (2 s) doesn't hold. ❌ No arrival
-  watcher yet: task 39's `CM_Register_Notification`. A drive plugged in later shows on the next refresh.
+  (`list_locations` reads it fresh), when a path names a root the cached table (2 s) doesn't hold, and whenever the
+  drive watcher hears a drive come or go (next section).
 - **Alias roots**: `registrable_mount_roots` lists a mapped drive's root (`Z:/`) AND its UNC spelling
   (`//server/share/`). Both derive one id, so the registry's double-mount rule records the UNC one as a fallback root of
   the same volume, and the switcher publishes one row (the mapped drive, `canonical_root`'s shortest root).
@@ -107,6 +107,72 @@ tested on every OS.
     and re-key the tab for good.
   - The arrival listener only notes a root in memory; the `volume-roots` thread writes the file, debounced 2 s, pruned
     to 256 volumes seen within a year (a shared one kept longest).
+
+## Windows: drive arrival and removal
+
+`platform/windows/watcher/` (task 39a): a drive arriving or leaving reaches the volume list, the panes, and the index by
+subscription, and Windows' "Safely remove" goes through while Cmdr shows the drive.
+
+- **Shape.** A `drive-events` thread owns a hidden top-level window (`window.rs`); a `drive-events-worker` thread does
+  every read (`worker.rs`). The window reads nothing from a drive (a dead network drive would hang the procedure, and
+  Windows' broadcast with it): each signal becomes a job. Arrival and removal signals settle 250 ms into ONE re-read of
+  the drive table, diffed by `(root, id)` (`cmdr_fs::volume::windows_device_change::diff_drives`), and each root that
+  left or arrived goes to the SHARED lifecycle (`platform/lifecycle.rs`, the handlers macOS feeds): registration, the
+  index stop on removal, `volume-mounted` / `volume-unmounted`, a fresh volume list. The panes' fallback and the
+  running operations' "drive went away" wording come from there and from `cmdr_fs::os_error` (a pulled drive's handles
+  answer `ERROR_DEVICE_NOT_CONNECTED`, `ERROR_FILE_INVALID`, `ERROR_DEV_NOT_EXIST`, `ERROR_NO_MEDIA_IN_DRIVE`, or
+  `ERROR_DEVICE_REMOVED`, all `NoDevice` / `DeviceNotConfigured`, so `DeviceDisconnected`).
+  - **Decision/Why: a hidden top-level window, ❌ not a message-only one (`HWND_MESSAGE`).** Message-only windows get no
+    broadcasts, and `DBT_DEVTYP_VOLUME` and `WM_SETTINGCHANGE` are broadcasts (learn.microsoft.com "Window Features §
+    Message-Only Windows", read 2026-11-25). `CM_Register_Notification` was the plan's pick, but it reports device
+    interfaces with no drive letter yet assigned, and still needs a handle for the removal query; the window covers
+    both with documented, letter-bearing messages.
+  - **Decision/Why: every signal ends in a re-read of the table, ❌ never acting on a message's letters.** The sources
+    overlap and none is complete (next list), a letter can be reused by another disk, and an unreadable table
+    (`enumerate_listed` answers `None`) keeps the drives as they were, ❌ never "every drive gone".
+- **Which source covers which case** (docs read 2026-11-25; the `subst` case is also a Windows CI cell, the rest are
+  on the real-Windows checklist below):
+  - **USB stick, external disk, mounted VHD or ISO, card reader's card, optical media**: `WM_DEVICECHANGE`
+    `DBT_DEVICEARRIVAL` / `DBT_DEVICEREMOVECOMPLETE` with `DBT_DEVTYP_VOLUME`, broadcast with the letters in
+    `dbcv_unitmask`; a card or disc in a drive that stays carries `DBTF_MEDIA` (learn.microsoft.com
+    `DEV_BROADCAST_VOLUME`, `DBT_DEVICEARRIVAL`). Media messages come only for drives with a soft eject.
+  - **Mapped network drive** (`net use`, Explorer's "Map network drive"): NOT the volume broadcast, which is sent "when
+    network connections will disappear as the result of a hardware event", not for network commands
+    (`DEV_BROADCAST_VOLUME` remarks). The Shell's `SHCNE_DRIVEADD` / `SHCNE_DRIVEREMOVED` (`SHChangeNotifyRegister`,
+    `SHCNRF_NewDelivery`) is what Explorer's own mapping raises. ⚠️ Unverified whether `net use` from a console
+    raises it; if not, such a drive shows on the next switcher refresh, as before.
+  - **`subst` drive**: `DefineDosDevice` broadcasts `WM_SETTINGCHANGE` unless told not to
+    (`DDD_NO_BROADCAST_SYSTEM`, learn.microsoft.com `DefineDosDeviceW`), which the window re-reads on. Proved by
+    `watcher/tests.rs::a_subst_drive_arriving_and_leaving_reaches_the_watcher` on the Windows lane.
+  - **Media inserted or removed** also arrives as `SHCNE_MEDIAINSERTED` / `SHCNE_MEDIAREMOVED`, a second source for the
+    same re-read.
+- **Safe removal (#1363 part 2, #1340).** Windows asks a handle holder before removing a device only if it registered
+  that handle (`DBT_DEVTYP_HANDLE`), and Cmdr's own (the index's root watch, a pane's listing watch) live inside
+  `notify`. So the worker opens one more handle on each local drive's root (`hears_removal_queries`: fixed, removable,
+  or optical, not the system drive, a share, a `subst`, or a RAM disk) and registers it ("Processing a Request to Remove
+  a Device", learn.microsoft.com, read 2026-11-25).
+  - `DBT_DEVICEQUERYREMOVE`, or a volume lock (`DBT_CUSTOMEVENT` `GUID_IO_VOLUME_LOCK`: format, `chkdsk /f`): the window
+    waits (8 s at most) while the worker closes its handle, marks an unmount pending at the drive-release gate, stops
+    the index (`stop_removable_volume`, 6 s), and lets go of every listing watch on the drive
+    (`file_system::watcher::release::hold_at_or_below`); then it answers `TRUE`. A handle still open past the wait makes
+    Windows refuse the removal honestly ("in use").
+  - `DBT_DEVICEQUERYREMOVEFAILED`, `GUID_IO_VOLUME_LOCK_FAILED`, `GUID_IO_VOLUME_UNLOCK`: the handle reopens, the
+    watches re-arm and re-read (`take_back_after`), and an index the query stopped resumes through the gate
+    (`DriveRelease::resume`, the worker as `ResumeOwner`), which still checks intent and presence.
+  - `DBT_DEVICEREMOVEPENDING` / `DBT_DEVICEREMOVECOMPLETE` on the handle: the handle closes, the registration ends, and
+    the table is re-read.
+  - Proved on the Windows lane by `a_removal_query_lets_go_of_the_drive_and_a_refusal_takes_it_back` (NTFS refuses to
+    rename a folder above an open handle, so the rename going through proves both handles closed). The query itself
+    needs a real removable device.
+- **Eject from Cmdr is task 39b**: `is_ejectable` stays `false` and the eject refuses as `NotEjectable`; the real one is
+  `CM_Request_Device_EjectW` beside this watcher.
+- **Real-Windows checklist** (a USB stick, not yet run): plug in, the stick's row appears with no refresh; open it in a
+  pane, "Safely remove" from the tray succeeds and the pane falls back with the removal wording; plug in and turn on
+  indexing, "Safely remove" still succeeds (log: "Letting go of … for its removal"); copy a big file onto it and
+  "Safely remove" mid-copy: Windows says it's in use, and the pane and index come back (log: "Taking … back"); pull it
+  mid-copy: the copy ends with "the drive went away" wording, no hang; `net use Z: \\localhost\C$` and `net use Z:
+  /delete` in a console: the row comes and goes (or not: the `net use` line above); mount and eject an ISO from
+  Explorer; insert and remove an SD card in a reader.
 
 ## Location categories
 

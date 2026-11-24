@@ -8,9 +8,9 @@ Linux's: `platform/linux/CLAUDE.md`.
 
 `model.rs`: the published model. `mount_text.rs`: mount text to `Path`. `platform/mod.rs`: the pinned fn set. `platform/macos/`: `mod.rs` (orchestrators),
 `ids.rs`, `fs_type.rs` (non-blocking `statfs`), `nsurl.rs` (blocking enrichment), `mounts.rs` (`getfsstat` rows),
-`smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` + `lifecycle.rs` (the `NSWorkspace` observer), `disk_units.rs`,
-`unmount_approver/`. `platform/unix.rs`: the POSIX local volume. `platform/windows/`: the drive table (DETAILS §
-Windows).
+`smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` (the `NSWorkspace` observer), `disk_units.rs`,
+`unmount_approver/`. `platform/lifecycle.rs`: mount/unmount handlers (macOS, Windows). `platform/unix.rs`: the POSIX
+local volume. `platform/windows/`: the drive table and its `watcher/` (DETAILS § Windows).
 
 ## Must-knows
 
@@ -42,12 +42,11 @@ Windows).
 - **Only `enrich_from_volume_registry` copies registry state onto a `LocationInfo`** (`capabilities` +
   `connection_state`), once per arm, ❌ never a discovery constructor. `volume_listing::complete` assembles the
   published list, owning its order and the only `append_device_volumes` call.
-- **Wrap every objc-touching `spawn_blocking` body in `objc2::rc::autoreleasepool`**, or the objects leak. Keep
-  `watcher.rs`’s observer block cheap: main thread, no I/O.
-- **Six more rules each own a `DETAILS.md` section to read first**: which mounts get a row, another account's mounts,
-  cloud-drive prefixes ahead of `statfs` in `resolve_path_volume_fast`, the unmount path's `remove_root` (deriving an ID
-  for a gone mount lands on the wrong one), the FDA gate in front of launch-time icon / LaunchServices / TCC reads (or
-  onboarding stacks popups), and the DiskArbitration unmount approver (❌ no filesystem, SQLite, or second pre-unmount
-  hook on the ask path).
+- **Wrap every objc-touching `spawn_blocking` body in `objc2::rc::autoreleasepool`**; keep `watcher.rs`’s observer
+  block cheap (main thread, no I/O).
+- **Six more rules own a `DETAILS.md` section each**: which mounts get a row, another account's mounts, cloud-drive
+  prefixes ahead of `statfs`, the unmount path's `remove_root` (an ID derived for a gone mount is wrong), the FDA gate on
+  launch-time icon / LaunchServices / TCC reads, and the DiskArbitration unmount approver (❌ no filesystem, SQLite, or
+  second pre-unmount hook on the ask path).
 
 Decisions, edge cases, the servers arm: `DETAILS.md`. Read it before non-trivial work.

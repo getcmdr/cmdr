@@ -50,8 +50,38 @@ pub(crate) fn release_watches_at_or_below(announced: &Path) {
 }
 
 /// [`release_watches_at_or_below`] with the quiet period passed in, answering how many
-/// watches it let go.
+/// watches it let go: a hold, taken back once the writes go quiet.
 pub(crate) fn release_with(announced: &Path, quiet: Duration) -> usize {
+    let Some(held) = hold_at_or_below(announced) else {
+        return 0;
+    };
+    let count = held.len();
+    take_back_after(held, quiet);
+    count
+}
+
+/// Listing watches let go until someone hands them back: a write's quiet period
+/// ([`release_with`]), or a drive's removal or lock query (Windows,
+/// `volumes/platform/windows/watcher/`), which takes them back only if the removal is refused.
+/// Dropping it re-arms nothing: a drive that left takes its panes elsewhere, which closes the
+/// listings.
+#[derive(Debug)]
+pub(crate) struct HeldWatches {
+    generation: u64,
+    listing_ids: Vec<String>,
+}
+
+impl HeldWatches {
+    /// How many watches it holds.
+    pub(crate) fn len(&self) -> usize {
+        self.listing_ids.len()
+    }
+}
+
+/// Closes every listing watch on `root` or a folder below it, synchronously, under one fresh
+/// generation, with no timer to bring them back: [`take_back_after`] does, or nothing. `None`
+/// when no watch was there, without taking the write lock.
+pub(crate) fn hold_at_or_below(announced: &Path) -> Option<HeldWatches> {
     let target = cmdr_local::reading::listing_spelling_of(announced);
     let any_below = WATCHER_MANAGER
         .read_ignore_poison()
@@ -59,7 +89,7 @@ pub(crate) fn release_with(announced: &Path, quiet: Duration) -> usize {
         .values()
         .any(|w| releasable(w, &target));
     if !any_below {
-        return 0;
+        return None;
     }
 
     let generation = next_release();
@@ -78,16 +108,16 @@ pub(crate) fn release_with(announced: &Path, quiet: Duration) -> usize {
     };
 
     // Outside the lock: closing waits on the OS backend's thread.
-    let count = released.len();
+    let mut listing_ids = Vec::with_capacity(released.len());
     for (id, path, stream) in released {
-        log::debug!(
-            "Watcher: releasing {} for a write at or above it",
-            LogPrivate::dir_path(&path)
-        );
+        log::debug!("Watcher: letting go of {}", LogPrivate::dir_path(&path));
         close_now(stream);
-        schedule_rearm(id, generation, quiet);
+        listing_ids.push(id);
     }
-    count
+    Some(HeldWatches {
+        generation,
+        listing_ids,
+    })
 }
 
 /// A watch on `target` or below it whose stream pins its ancestors. A released one counts
@@ -119,6 +149,14 @@ fn close_now(stream: WatchStream) {
     match stream {
         WatchStream::Os(watch) => watch.close_now(),
         other => drop(other),
+    }
+}
+
+/// After `quiet` (zero for a refused removal), re-arms what [`hold_at_or_below`] let go and
+/// re-reads each listing, skipping one a later release or a close took over.
+pub(crate) fn take_back_after(held: HeldWatches, quiet: Duration) {
+    for id in held.listing_ids {
+        schedule_rearm(id, held.generation, quiet);
     }
 }
 

@@ -9,19 +9,23 @@
 // live in `crate_deps.rs`.
 #![warn(unused_crate_dependencies)]
 // Windows, while its port is in progress: code that only the macOS and Linux arms call today, and
-// a Windows arm will once it lands, is dead there. Exactly three features, each a stub in
-// `docs/specs/windows-port-plan.md` § "Windows build state": the mount watcher's unmount handling
-// (`VolumeManager::remove_root`, `os_mount_notice::forget_unmounted_volume`; the drives task),
-// stored favorites in the switcher (`favorites::target::{on_disk, FavoriteTarget::discovered}`),
-// and the native-crash report's conversion (`next_launch::to_iso8601`, `symbolicate`; the
-// minidumps task). `expect`, so the build says when it can go.
+// a Windows arm will once it lands, is dead there. Exactly two features, each a stub in
+// `docs/specs/windows-port-plan.md` § "Windows build state": stored favorites in the switcher
+// (`favorites::target::{on_disk, FavoriteTarget::discovered}`), and the native-crash report's
+// conversion (`next_launch::to_iso8601`, `symbolicate`; the minidumps task). `expect`, so the
+// build says when it can go.
 #![cfg_attr(
     target_os = "windows",
     expect(
         dead_code,
-        unused_imports,
-        reason = "Windows arms still missing: the unmount watcher, stored favorites, native-crash reports"
+        reason = "Windows arms still missing: stored favorites, native-crash reports"
     )
+)]
+// The test build on Windows also carries imports only the macOS and Linux cells use, which this
+// held hidden alongside the unmount watcher's: they want sorting per cell, a cleanup of its own.
+#![cfg_attr(
+    all(target_os = "windows", test),
+    expect(unused_imports, reason = "test imports only the macOS and Linux cells use")
 )]
 
 // An unknown target is one outside macOS, Linux, and Windows (`cmdr_host`, set by `build.rs`

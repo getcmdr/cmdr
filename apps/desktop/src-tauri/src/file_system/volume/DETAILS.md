@@ -887,10 +887,10 @@ hook is only cleanup (the volume's already gone), not wedge-prevention. See `cra
 `drive_release/` is the one door for every app-side index stop of a removable drive Cmdr decides on, and every app-side
 start of a non-root index. Stops: the eject's pre-stop (`stop_index_blocking`), the DiskArbitration unmount approver's
 ask (`volumes/platform/macos/unmount_approver/`, which also sets the unmount-pending flag and resumes what it stopped), and the
-`WillUnmount` / `DidUnmount` hooks (`volumes/platform/macos/lifecycle.rs`; BOTH stand down while the approver is installed, and stand in
+`WillUnmount` / `DidUnmount` hooks (`volumes/platform/lifecycle.rs`; BOTH stand down while the approver is installed, and stand in
 only for one that couldn't). Starts: `enable_drive_index` and `rescan_drive_index` (IPC and MCP), the master switch's
 resume loop in `set_indexing_enabled`, a search's `Index::cover` (`search/execute/live_run.rs`), and a renamed drive's restart
-(`Index::follow_volume_move`, `volumes/platform/macos/lifecycle.rs`). The user's
+(`Index::follow_volume_move`, `volumes/platform/lifecycle.rs`). The user's
 `disable_drive_index` goes through it too. The boot disk's launch and FDA starts stay outside, and the gate passes `root`
 straight through: it never unmounts.
 
@@ -1156,7 +1156,7 @@ FAT32 disk images under a Swift `NSWorkspace` observer while `diskutil rename` r
 registry stayed rooted at a path that no longer existed, so listings, the index, and the panes all failed until a
 restart. Unmount plus mount would stop the drive's index and send every pane on it home, for a drive that never left.
 
-What `volumes/platform/macos/lifecycle.rs::handle_volume_renamed` does with it:
+What `volumes/platform/lifecycle.rs::handle_volume_renamed` does with it:
 
 - **Only when the id survives.** The new root has to derive the same id the old one is registered under (a UUID-keyed
   local volume does). A volume with no UUID keys on its path, so its rename IS a new id, and unmount plus mount is the

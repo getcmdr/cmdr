@@ -56,8 +56,15 @@ const GUID_PATH_LEN: usize = 50;
 /// mapped drive's UNC spelling as an alias of the same volume. `system_root` is the system
 /// drive's app root (`C:/`), which gets `root`.
 pub(super) fn enumerate(system_root: &str) -> Vec<WindowsDrive> {
+    enumerate_listed(system_root).unwrap_or_default()
+}
+
+/// [`enumerate`], or `None` when the mount table wouldn't answer: the drive watcher's read,
+/// where ❌ an empty table would read as every drive gone.
+pub(super) fn enumerate_listed(system_root: &str) -> Option<Vec<WindowsDrive>> {
+    let points = mount_points()?;
     let mut drives: Vec<WindowsDrive> = Vec::new();
-    for letter in drive_letters() {
+    for letter in points.iter().filter_map(|point| letter_of_root(point)) {
         if let Some(drive) = letter_drive(letter, system_root) {
             if let Some(share_root) = drive.share_root.clone() {
                 drives.push(WindowsDrive {
@@ -70,8 +77,8 @@ pub(super) fn enumerate(system_root: &str) -> Vec<WindowsDrive> {
             drives.push(drive);
         }
     }
-    drives.extend(folder_mounts(system_root));
-    drives
+    drives.extend(folder_mounts(&points, system_root));
+    Some(drives)
 }
 
 /// The facts for the UNC root `root` (`//server/share/`) nobody mapped: a share of its own,
@@ -96,25 +103,19 @@ pub(super) fn unc_drive(root: &str, system_root: &str) -> Option<WindowsDrive> {
 }
 
 /// Every mount point in the mount table (`cmdr_local::mounts::list`), natively spelled with
-/// a trailing `\` (`C:\`, `C:\Mnt\Data\`), none when it can't be read.
-fn mount_points() -> Vec<String> {
-    cmdr_local::mounts::list()
-        .unwrap_or_default()
-        .iter()
-        .map(|mount| {
-            let text = mount.to_string_lossy();
-            let plain = text.strip_prefix(r"\\?\").unwrap_or(&text);
-            format!("{}\\", plain.trim_end_matches('\\'))
-        })
-        .collect()
-}
-
-/// The letters in use (`C:\`, `D:\`, …), mapped and `subst` drives included.
-fn drive_letters() -> Vec<char> {
-    mount_points()
-        .iter()
-        .filter_map(|point| letter_of_root(point))
-        .collect()
+/// a trailing `\` (`C:\`, `C:\Mnt\Data\`), `None` when it can't be read. Its letters are
+/// the drives in use, mapped and `subst` drives included.
+fn mount_points() -> Option<Vec<String>> {
+    Some(
+        cmdr_local::mounts::list()?
+            .iter()
+            .map(|mount| {
+                let text = mount.to_string_lossy();
+                let plain = text.strip_prefix(r"\\?\").unwrap_or(&text);
+                format!("{}\\", plain.trim_end_matches('\\'))
+            })
+            .collect(),
+    )
 }
 
 /// The letter of a bare drive root (`D:\`), `None` for a folder mount.
@@ -180,17 +181,17 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
 /// gets ONE root (`is_volume_root`): a folder where a volume that also has a letter (or a
 /// shorter folder) is mounted again is a plain folder of the drive holding it, as in
 /// Explorer, so its id never names two roots (#1385).
-fn folder_mounts(system_root: &str) -> Vec<WindowsDrive> {
+fn folder_mounts(points: &[String], system_root: &str) -> Vec<WindowsDrive> {
     // Every mount point with its volume's GUID path and app root (`D:/`, `C:/Mnt/Data`).
-    let located: Vec<(String, String, String)> = mount_points()
-        .into_iter()
+    let located: Vec<(String, String, String)> = points
+        .iter()
         .filter_map(|point| {
-            let guid_path = volume_guid_path(&wide(&point))?;
-            let root = match letter_of_root(&point) {
+            let guid_path = volume_guid_path(&wide(point))?;
+            let root = match letter_of_root(point) {
                 Some(letter) => format!("{letter}:/"),
                 None => uppercase_drive(point.replace('\\', "/").trim_end_matches('/')),
             };
-            Some((point, root, guid_path))
+            Some((point.clone(), root, guid_path))
         })
         .collect();
     let mounts: Vec<VolumeMountPath<'_>> = located
