@@ -54,3 +54,37 @@ async fn an_unregistered_volume_leaves_the_answer_to_the_opener() {
     let answer = open_with_default_app(MISSING.to_string(), Some("default-app-test-nobody-here".to_string())).await;
     assert!(matches!(answer, Err(OpenPathError::NotOpened { .. })), "got {answer:?}");
 }
+
+/// Windows: a path whose plain spelling would name another file, or that runs past what
+/// apps take, is refused before the Shell sees it.
+#[cfg(all(target_os = "windows", not(feature = "playwright-e2e")))]
+#[tokio::test]
+async fn a_path_with_no_plain_form_is_refused_before_launching() {
+    let long = format!("C:/{}/never-here.txt", "a".repeat(300));
+    assert_eq!(open_with_default_app(long, None).await, Err(OpenPathError::NoPlainPath));
+    let device = "C:/nonexistent-cmdr-default-app-test/con.txt".to_string();
+    assert_eq!(
+        open_with_default_app(device, None).await,
+        Err(OpenPathError::NoPlainPath)
+    );
+}
+
+/// Windows: the Shell's refusal of a missing file comes back typed, its Win32 code in place
+/// of an exit code. `SEE_MASK_FLAG_NO_UI` keeps it from showing a box, so it's safe on CI.
+#[cfg(all(target_os = "windows", not(feature = "playwright-e2e")))]
+#[tokio::test]
+async fn the_shells_refusal_of_a_missing_file_comes_back_typed() {
+    const ERROR_FILE_NOT_FOUND: i32 = 2;
+    const ERROR_PATH_NOT_FOUND: i32 = 3;
+    let missing = "C:/nonexistent-cmdr-default-app-test/never-here.txt".to_string();
+    let answer = open_with_default_app(missing, None).await;
+    assert!(
+        matches!(
+            answer,
+            Err(OpenPathError::NotOpened {
+                exit_code: Some(ERROR_FILE_NOT_FOUND | ERROR_PATH_NOT_FOUND)
+            })
+        ),
+        "got {answer:?}"
+    );
+}

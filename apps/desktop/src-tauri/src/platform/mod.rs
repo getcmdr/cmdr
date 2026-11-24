@@ -28,6 +28,10 @@ pub(crate) mod startup;
 #[cfg(any(target_os = "windows", test))]
 mod windows_version;
 
+// Pure text too: the path the Shell takes for an app path.
+#[cfg(any(target_os = "windows", test))]
+pub(crate) mod windows_shell_path;
+
 const _: fn() -> String = os_version;
 const _: fn(i64, i64) -> bool = macos_at_least;
 const _: fn() -> PlatformCapabilities = capabilities;
@@ -79,6 +83,10 @@ pub(crate) use imp::distro::LinuxDistro;
 /// Registry reads in the 64-bit view, for the Windows arms of other seams (managed policy).
 #[cfg(target_os = "windows")]
 pub(crate) use imp::registry;
+
+/// The Shell calls that open a file in its default app and show one in File Explorer.
+#[cfg(target_os = "windows")]
+pub(crate) use imp::shell;
 
 #[cfg(test)]
 mod tests {

@@ -1,11 +1,11 @@
-//! Windows: no reveal, Get Info, or editor launch yet (`SHOpenFolderAndSelectItems` and
-//! `ShellExecuteW` are the ones to add), so each answers as before it had an arm. The Recycle
-//! Bin opens in File Explorer (`open_trash_view`).
+//! Windows: reveals select the item in File Explorer (`SHOpenFolderAndSelectItems`, through
+//! `platform::shell`), and the Recycle Bin opens there too (`open_trash_view`). No Get Info or
+//! editor launch yet (task 44b of #942), so those answer as before they had an arm.
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_operations::MutationError;
 
-use super::TrashView;
+use super::{RevealError, TrashView};
 use crate::file_system::get_info::GetInfoError;
 use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 
@@ -35,9 +35,12 @@ pub(crate) fn open_trash_view(path: &AppPath) -> Result<TrashView, MutationError
     {
         // A thread of its own, so the Shell gets the single-threaded apartment it asks for
         // whatever the caller's thread already joined.
-        std::thread::spawn(open_recycle_bin)
-            .join()
-            .unwrap_or(Err(E_UNEXPECTED))
+        std::thread::Builder::new()
+            .name("open-recycle-bin".to_string())
+            .stack_size(crate::platform::shell::SHELL_THREAD_STACK)
+            .spawn(open_recycle_bin)
+            .map_err(|_| E_UNEXPECTED)
+            .and_then(|thread| thread.join().unwrap_or(Err(E_UNEXPECTED)))
             .map(|()| TrashView::Opened)
             .map_err(|hr| MutationError::Unexpected {
                 detail: format!(
@@ -57,31 +60,24 @@ const E_UNEXPECTED: i32 = 0x8000_FFFF_u32.cast_signed();
 /// apartment it enters and leaves on this thread. Returns once Explorer has the request.
 #[cfg(not(feature = "playwright-e2e"))]
 fn open_recycle_bin() -> Result<(), i32> {
-    use windows_sys::Win32::System::Com::{
-        COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoInitializeEx, CoTaskMemFree, CoUninitialize,
-    };
+    crate::platform::shell::in_apartment(open_recycle_bin_in_apartment).and_then(|opened| opened)
+}
+
+/// [`open_recycle_bin`]'s Shell calls, inside the apartment.
+#[cfg(not(feature = "playwright-e2e"))]
+fn open_recycle_bin_in_apartment() -> Result<(), i32> {
+    use windows_sys::Win32::System::Com::CoTaskMemFree;
     use windows_sys::Win32::UI::Shell::{
         FOLDERID_RecycleBinFolder, KF_FLAG_DEFAULT, SEE_MASK_FLAG_NO_UI, SEE_MASK_IDLIST, SHELLEXECUTEINFOW,
         SHGetKnownFolderIDList, ShellExecuteExW,
     };
     use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
-    // SAFETY: a fresh thread joins a single-threaded apartment; a success (`S_OK` or
-    // `S_FALSE`) is balanced by the `CoUninitialize` below, on this same thread.
-    let entered = unsafe {
-        CoInitializeEx(
-            std::ptr::null(),
-            (COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE).cast_unsigned(),
-        )
-    };
-    if entered < 0 {
-        return Err(entered);
-    }
     let mut folder = std::ptr::null_mut();
     // SAFETY: `folder` receives an ID list the Shell allocates, freed below after the one
     // call that reads it; the struct's other pointers are null (the default verb, no file),
     // and `info` outlives the call.
-    let opened = unsafe {
+    unsafe {
         let found = SHGetKnownFolderIDList(
             &FOLDERID_RecycleBinFolder,
             KF_FLAG_DEFAULT.cast_unsigned(),
@@ -106,15 +102,66 @@ fn open_recycle_bin() -> Result<(), i32> {
             CoTaskMemFree(folder.cast_const().cast());
             result
         }
-    };
-    // SAFETY: balances the successful `CoInitializeEx` above, on the same thread.
-    unsafe { CoUninitialize() };
-    opened
+    }
 }
 
-/// Not available yet.
-pub(crate) fn reveal_in_file_manager(_path: String) -> Result<(), String> {
-    Err("Show in file manager is not available on this platform".to_string())
+/// How long a reveal waits for the Shell's answer. Finding the item is one parse, fast on a
+/// healthy disk; a dead share holds it far longer, and then the wait ends quietly (logged): the
+/// window may still open.
+#[cfg(not(feature = "playwright-e2e"))]
+const REVEAL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Shows `path` selected in File Explorer, reusing a window already on its folder, and says why
+/// not when it didn't, typed, for the frontend's toast.
+///
+/// [`RevealError::NoPlainPath`] up front, with nothing asked, for a path the Shell can't take
+/// (`platform::windows_shell_path`: past 259 units, a name ending in a dot or space, a device
+/// name). Otherwise the Shell calls run on a thread of their own (`platform::shell`), waited on
+/// for at most [`REVEAL_TIMEOUT`]; a refusal there (the item is gone) is
+/// [`RevealError::NotShown`]. The E2E build records the path instead: Explorer would take the
+/// front.
+pub(crate) async fn reveal_in_file_manager(path: String) -> Result<(), RevealError> {
+    use cmdr_fs::app_path::NativeRefusal;
+
+    let app_path = crate::commands::wire_path::app_path(&path)
+        .ok()
+        .flatten()
+        .ok_or(RevealError::NoPath)?;
+    let wide = crate::platform::windows_shell_path::shell_path(&app_path).map_err(|why| match why {
+        NativeRefusal::NotPlainSafe(_) => RevealError::NoPlainPath,
+        _ => RevealError::NoPath,
+    })?;
+    #[cfg(feature = "playwright-e2e")]
+    {
+        let _ = wide;
+        crate::open_mock::record(path);
+        Ok(())
+    }
+    #[cfg(not(feature = "playwright-e2e"))]
+    {
+        use crate::platform::shell::{ShellWait, on_shell_thread, reveal};
+
+        let wait = on_shell_thread("reveal-in-explorer", REVEAL_TIMEOUT, move || reveal(&wide)).await;
+        let shown = match wait {
+            ShellWait::Answered(Ok(())) => Ok(()),
+            // Explorer may still show it; no answer is no refusal to report.
+            ShellWait::TimedOut => Ok(()),
+            ShellWait::Answered(Err(_)) | ShellWait::NoApartment(_) | ShellWait::NoThread => Err(RevealError::NotShown),
+        };
+        match &shown {
+            Ok(()) => log::debug!(
+                target: "reveal",
+                "Showed {} in File Explorer ({wait:?})",
+                cmdr_fs::log_private::LogPrivate::path(&path)
+            ),
+            Err(_) => log::warn!(
+                target: "reveal",
+                "File Explorer didn't show {}: {wait:?}",
+                cmdr_fs::log_private::LogPrivate::path(&path)
+            ),
+        }
+        shown
+    }
 }
 
 /// No Get Info window; a no-op.

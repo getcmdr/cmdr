@@ -331,6 +331,22 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "其他 App 無法透過路徑開啟「{fileName}」。路徑超過 Windows App 能處理的長度，或路徑中某個名稱以句點或空格結尾，或是 CON 這類保留名稱。請縮短路徑、將檔案或資料夾重新命名，或在 Cmdr 中檢視。",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder 無法顯示這個項目。它可能已被移動，或所在的磁碟或伺服器已離線。} windows {檔案總管無法顯示這個項目。它可能已被移動，或所在的磁碟機或共享資料夾已離線。} other {你的檔案管理程式無法顯示這個項目。它可能已被移動，或所在的磁碟或伺服器已離線。}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {這個項目不是你 Mac 上的一般檔案，所以 Finder 無法顯示它。} windows {這個項目不是你電腦上的一般檔案，所以檔案總管無法顯示它。} other {這個項目不是你電腦上的一般檔案，所以你的檔案管理程式無法顯示它。}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "檔案總管無法透過路徑顯示這個項目。路徑超過 Windows App 能處理的長度，或路徑中某個名稱以句點或空格結尾，或是 CON 這類保留名稱。請縮短路徑，或將檔案或資料夾重新命名，然後再試一次。",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "正在開啟「{fileName}」⋯",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

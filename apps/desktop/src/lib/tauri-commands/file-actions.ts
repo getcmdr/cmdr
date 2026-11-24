@@ -13,6 +13,7 @@ import {
   type OpenPathError,
   type OpenTerminalError,
   type OpenTerminalOutcome,
+  type RevealError,
   type TerminalAppList,
   type TextEditorList,
   type TimedOut,
@@ -32,6 +33,7 @@ export type {
   OpenPathError,
   OpenTerminalError,
   OpenTerminalOutcome,
+  RevealError,
   TerminalApp,
   TerminalAppList,
   TextEditorApp,
@@ -333,13 +335,15 @@ export async function showParentRowContextMenu(parentPath: string, anchor: MenuA
 }
 
 /**
- * Show a file in the system file manager (reveal in parent folder).
- * On macOS, reveals in Finder. On Linux, uses the default file manager.
+ * Show a file in the system file manager: selected in Finder on macOS and in File Explorer on
+ * Windows, its parent folder in the default file manager on Linux.
  * @param path - Absolute path to the file.
+ * @returns `null` once the file manager was asked, else the typed reason it wasn't or said no,
+ *   for `showInFileManagerOrExplain` to word.
  */
-export async function showInFinder(path: string): Promise<void> {
+export async function showInFinder(path: string): Promise<RevealError | null> {
   const res = await commands.revealInFileManager(path)
-  if (res.status === 'error') throwIpcError(res.error)
+  return res.status === 'error' ? res.error : null
 }
 
 /**

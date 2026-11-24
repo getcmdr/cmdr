@@ -2,6 +2,7 @@
 
 mod keymenu;
 pub(crate) mod registry;
+pub(crate) mod shell;
 mod version;
 mod webview;
 

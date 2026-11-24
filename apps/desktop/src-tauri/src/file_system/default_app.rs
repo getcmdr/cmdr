@@ -16,13 +16,17 @@
 //! ❌ Never read `open`'s stderr to tell those apart: its wording is the OS's, and
 //! a missing file and an app-less one both exit 1. The exit code is the answer.
 //!
+//! Windows has no opener program: the Shell's default verb runs in-process
+//! (`platform::shell`), on its own thread under the same deadline, and its Win32 error
+//! code stands in for the exit code. The path goes over in its plain spelling, so one
+//! with none (too long, a trailing dot, `CON`) is refused as `NoPlainPath` first.
+//!
 //! The `playwright-e2e` build asks the same volume question, then records the path
 //! in `crate::open_mock` instead of launching, so a suite run piles up no windows.
 
 /// How long `open` gets to say whether LaunchServices took the file. A normal open
 /// answers in well under a second; a wedged mount can hold LaunchServices' read of
 /// the file far longer, and then no answer is coming.
-#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[cfg(not(feature = "playwright-e2e"))]
 const OPEN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
@@ -41,7 +45,15 @@ pub enum OpenPathError {
     /// The opener didn't answer inside the deadline and was stopped. The app may
     /// still open the file.
     TimedOut,
-    /// There's no opener on this platform.
+    /// Windows: the path has no plain spelling another app reads as this same file (past 259
+    /// characters, a name ending in a dot or space, or a device name like `CON`), so nothing
+    /// was launched (`platform::windows_shell_path`).
+    NoPlainPath,
+    /// Windows: the person said no on the way (a cancelled UAC prompt, a dismissed "How do you
+    /// want to open this file?" picker). They know; nothing to say.
+    Cancelled,
+    /// There's no opener on this platform. No desktop build answers it any more; the browser
+    /// demo does (`lib/demo/answers.ts`), so the shape stays shared.
     Unsupported,
 }
 
@@ -53,6 +65,8 @@ impl std::fmt::Display for OpenPathError {
             Self::NotOpened { exit_code } => write!(f, "the opener refused (exit code {exit_code:?})"),
             Self::LaunchRefused { errno } => write!(f, "the opener couldn't start (errno {errno:?})"),
             Self::TimedOut => f.write_str("the opener didn't answer in time"),
+            Self::NoPlainPath => f.write_str("the path has no plain form other apps read"),
+            Self::Cancelled => f.write_str("the person cancelled on the way"),
             Self::Unsupported => f.write_str("no opener on this platform"),
         }
     }
@@ -123,9 +137,10 @@ async fn launch(path: String) -> Result<(), OpenPathError> {
     run_opener("xdg-open", path).await
 }
 
-#[cfg(all(not(any(target_os = "macos", target_os = "linux")), not(feature = "playwright-e2e")))]
-async fn launch(_path: String) -> Result<(), OpenPathError> {
-    Err(OpenPathError::Unsupported)
+/// The Shell's default verb, under [`OPEN_TIMEOUT`] (`platform::shell::launch_default_app`).
+#[cfg(all(target_os = "windows", not(feature = "playwright-e2e")))]
+async fn launch(path: String) -> Result<(), OpenPathError> {
+    crate::platform::shell::launch_default_app(path, OPEN_TIMEOUT).await
 }
 
 /// E2E: record the open request instead of launching an external app, so the suite

@@ -333,6 +333,22 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Các ứng dụng khác không mở được “{fileName}” theo đường dẫn. Đường dẫn dài hơn mức ứng dụng Windows chấp nhận, hoặc một tên trong đó kết thúc bằng dấu chấm hay dấu cách, hoặc là tên dành riêng như CON. Hãy rút ngắn đường dẫn, đổi tên tệp hay thư mục, hoặc xem tệp trong Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder không hiển thị được mục này. Có thể mục đã bị di chuyển, hoặc ổ đĩa hay máy chủ chứa mục đang ngoại tuyến.} windows {File Explorer không hiển thị được mục này. Có thể mục đã bị di chuyển, hoặc ổ đĩa hay mục chia sẻ mạng chứa mục đang ngoại tuyến.} other {Trình quản lý tệp của bạn không hiển thị được mục này. Có thể mục đã bị di chuyển, hoặc ổ đĩa hay máy chủ chứa mục đang ngoại tuyến.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Mục này không phải là tệp thông thường trên máy Mac của bạn, nên Finder không thể hiển thị mục.} windows {Mục này không phải là tệp thông thường trên PC của bạn, nên File Explorer không thể hiển thị mục.} other {Mục này không phải là tệp thông thường trên máy tính của bạn, nên trình quản lý tệp của bạn không thể hiển thị mục.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "File Explorer không thể hiển thị mục này theo đường dẫn. Đường dẫn dài hơn mức ứng dụng Windows chấp nhận, hoặc một tên trong đó kết thúc bằng dấu chấm hay dấu cách, hoặc là tên dành riêng như CON. Hãy rút ngắn đường dẫn hoặc đổi tên tệp hay thư mục, rồi thử lại.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "Đang mở “{fileName}”…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

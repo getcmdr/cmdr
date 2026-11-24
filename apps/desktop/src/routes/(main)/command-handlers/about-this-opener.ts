@@ -16,7 +16,8 @@ import { capabilitiesFor } from '#lib/file-explorer/pane/volume-capabilities.js'
 import { getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
 import { lastName, parentOrRoot } from '#lib/path/grammar.js'
 import { getAppLogger } from '#lib/logging/logger.js'
-import { openExternalUrl, showInFinder } from '#lib/tauri-commands/index.js'
+import { openExternalUrl } from '#lib/tauri-commands/index.js'
+import { showInFileManagerOrExplain } from '#lib/file-explorer/file-manager-reveal.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import type { ExplorerAPI } from '../explorer-api'
 import { detached } from './detached'
@@ -102,7 +103,7 @@ async function act(explorer: ExplorerAPI | undefined, action: AboutAction, subje
       if (explorer && (await cursorStillOn(explorer, subject))) await explorer.openItemUnderCursor()
       return
     case 'showInFileManager':
-      await showInFinder(subject.path)
+      await showInFileManagerOrExplain(subject.path)
       return
     case 'openDownloadPage':
       // Rust parsed it, kept it to `http(s)`, and wrote it back out; the button showed its host.

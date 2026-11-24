@@ -9,7 +9,6 @@
  * copy-path accepts the `..` row (as the pane's own directory).
  */
 import {
-  showInFinder,
   copyToClipboard,
   quickLookOpen,
   quickLookClose,
@@ -19,6 +18,7 @@ import {
   openExternalUrl,
 } from '#lib/tauri-commands/index.js'
 import { quickLookState } from '#lib/file-explorer/quick-look/quick-look-state.svelte.js'
+import { showInFileManagerOrExplain } from '#lib/file-explorer/file-manager-reveal.js'
 import { addToast } from '#lib/ui/toast/index.js'
 import CopiedPathToastContent from '#lib/file-explorer/CopiedPathToastContent.svelte'
 import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
@@ -262,7 +262,10 @@ export const fileHandlers = {
     )
   },
 
-  'file.showInFinder': (hctx) => withEntryUnderCursor(hctx, (entry) => showInFinder(entry.path)),
+  'file.showInFinder': (hctx) =>
+    withEntryUnderCursor(hctx, async (entry) => {
+      await showInFileManagerOrExplain(entry.path)
+    }),
 
   'file.openTerminalHere': async ({ explorerRef }) => {
     // Not `withEntryUnderCursor`: this acts on a FOLDER, and every cursor state

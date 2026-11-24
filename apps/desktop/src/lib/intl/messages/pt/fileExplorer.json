@@ -333,6 +333,22 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Outros apps não conseguem abrir o arquivo {fileName} pelo caminho. O caminho é mais longo do que os apps do Windows aceitam, ou um nome nele termina em ponto ou espaço, ou é um nome reservado como CON. Encurte o caminho ou renomeie o arquivo ou a pasta, ou visualize o arquivo no Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {O Finder não conseguiu mostrar este item. Ele pode ter sido movido, ou o disco ou servidor dele pode estar offline.} windows {O Explorador de Arquivos não conseguiu mostrar este item. Ele pode ter sido movido, ou a unidade ou o compartilhamento de rede dele pode estar offline.} other {Seu gerenciador de arquivos não conseguiu mostrar este item. Ele pode ter sido movido, ou o disco ou servidor dele pode estar offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Este item não é um arquivo comum do seu Mac, então o Finder não consegue mostrá-lo.} windows {Este item não é um arquivo comum do seu PC, então o Explorador de Arquivos não consegue mostrá-lo.} other {Este item não é um arquivo comum do seu computador, então seu gerenciador de arquivos não consegue mostrá-lo.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "O Explorador de Arquivos não consegue mostrar este item pelo caminho. O caminho é mais longo do que os apps do Windows aceitam, ou um nome nele termina em ponto ou espaço, ou é um nome reservado como CON. Encurte o caminho ou renomeie o arquivo ou a pasta e tente novamente.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "Abrindo {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

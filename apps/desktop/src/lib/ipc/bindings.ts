@@ -2668,10 +2668,13 @@ export const commands = {
   showQueueRowContextMenu: (entries: QueueRowMenuEntry[], shortcuts: ContextMenuShortcuts) =>
     typedError<null, string>(__TAURI_INVOKE('show_queue_row_context_menu', { entries, shortcuts })),
   /**
-   *  Reveals a file in the OS's file manager: Finder on macOS, the default file manager (its parent
-   *  folder) on Linux.
+   *  Reveals a file in the OS's file manager: Finder on macOS, File Explorer with the item selected
+   *  on Windows, the default file manager (its parent folder) on Linux. Answers a typed
+   *  [`RevealError`] the frontend words when nothing showed. Async, so the Windows arm's wait for
+   *  the Shell (5 s at most) never holds the IPC thread.
    */
-  revealInFileManager: (path: string) => typedError<null, string>(__TAURI_INVOKE('reveal_in_file_manager', { path })),
+  revealInFileManager: (path: string) =>
+    typedError<null, RevealError>(__TAURI_INVOKE('reveal_in_file_manager', { path })),
   /**
    *  Open (or re-open) Quick Look on the given path. Answers whether the panel opened: `false`
    *  for a volume whose paths macOS can't preview, so the frontend drops its optimistic
@@ -16557,7 +16560,21 @@ export type OpenPathError =
    *  still open the file.
    */
   | { type: 'timedOut' }
-  // There's no opener on this platform.
+  /**
+   *  Windows: the path has no plain spelling another app reads as this same file (past 259
+   *  characters, a name ending in a dot or space, or a device name like `CON`), so nothing
+   *  was launched (`platform::windows_shell_path`).
+   */
+  | { type: 'noPlainPath' }
+  /**
+   *  Windows: the person said no on the way (a cancelled UAC prompt, a dismissed "How do you
+   *  want to open this file?" picker). They know; nothing to say.
+   */
+  | { type: 'cancelled' }
+  /**
+   *  There's no opener on this platform. No desktop build answers it any more; the browser
+   *  demo does (`lib/demo/answers.ts`), so the shape stays shared.
+   */
   | { type: 'unsupported' }
 
 /**
@@ -19031,6 +19048,27 @@ export type RetryOutcome =
  *  and a second copy of them would be a second thing that can disagree.
  */
 export type RevealDelivered = Record<string, never>
+
+/**
+ *  Why a file didn't show in the OS's file manager. The frontend words every variant
+ *  (`lib/file-explorer/file-manager-reveal.ts`).
+ */
+export type RevealError =
+  /**
+   *  The path names nothing the file manager can show: a `..` name, a scheme path, or text
+   *  that's no app path. Nothing was asked.
+   */
+  | { type: 'noPath' }
+  /**
+   *  Windows: the path has no plain spelling the Shell reads as this same item (past 259
+   *  characters, a name ending in a dot or space, a device name like `CON`). Nothing was asked.
+   */
+  | { type: 'noPlainPath' }
+  /**
+   *  The file manager was asked and said no: the item is gone or its share unreachable, or the
+   *  launch couldn't start.
+   */
+  | { type: 'notShown' }
 
 // Why Cmdr won't take the `NSFileViewer` key right now.
 export type RevealHandlerBlocker =

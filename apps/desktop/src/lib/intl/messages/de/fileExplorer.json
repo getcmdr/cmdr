@@ -333,6 +333,22 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Andere Apps können {fileName} nicht über den Pfad öffnen. Der Pfad ist zu lang für Windows-Apps, oder ein Name darin endet auf einen Punkt oder ein Leerzeichen oder ist ein reservierter Name wie CON. Kürze den Pfad oder benenne Datei oder Ordner um, oder sieh dir die Datei in Cmdr an.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Der Finder konnte dieses Objekt nicht anzeigen. Vielleicht wurde es bewegt, oder sein Laufwerk oder Server ist offline.} windows {Der Datei-Explorer konnte dieses Objekt nicht anzeigen. Vielleicht wurde es bewegt, oder sein Laufwerk oder seine Netzwerkfreigabe ist offline.} other {Dein Dateimanager konnte dieses Objekt nicht anzeigen. Vielleicht wurde es bewegt, oder sein Laufwerk oder Server ist offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Dieses Objekt ist keine normale Datei auf deinem Mac, daher kann der Finder es nicht anzeigen.} windows {Dieses Objekt ist keine normale Datei auf deinem PC, daher kann der Datei-Explorer es nicht anzeigen.} other {Dieses Objekt ist keine normale Datei auf deinem Computer, daher kann dein Dateimanager es nicht anzeigen.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "Der Datei-Explorer kann dieses Objekt nicht über den Pfad anzeigen. Der Pfad ist zu lang für Windows-Apps, oder ein Name darin endet auf einen Punkt oder ein Leerzeichen oder ist ein reservierter Name wie CON. Kürze den Pfad oder benenne Datei oder Ordner um, und versuche es dann erneut.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} wird geöffnet …",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

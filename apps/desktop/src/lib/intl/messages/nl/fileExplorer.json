@@ -334,6 +334,22 @@
   "@fileExplorer.open.didNotOpen": {
     "sourceHash": "5df1868"
   },
+  "fileExplorer.open.noPlainPath": "Andere apps kunnen {fileName} niet via het pad openen. Het pad is langer dan Windows-apps aankunnen, of een naam erin eindigt op een punt of spatie, of is een gereserveerde naam zoals CON. Maak het pad korter of wijzig de naam van het bestand of de map, of toon het in Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "sourceHash": "f51a142"
+  },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder kon dit onderdeel niet tonen. Het is misschien verplaatst, of de schijf of server is offline.} windows {Verkenner kon dit onderdeel niet tonen. Het is misschien verplaatst, of de schijf of gedeelde map is offline.} other {Je bestandsbeheerder kon dit onderdeel niet tonen. Het is misschien verplaatst, of de schijf of server is offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "sourceHash": "d44a645"
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {Dit onderdeel is geen gewoon bestand op je Mac, dus Finder kan het niet tonen.} windows {Dit onderdeel is geen gewoon bestand op je pc, dus Verkenner kan het niet tonen.} other {Dit onderdeel is geen gewoon bestand op je computer, dus je bestandsbeheerder kan het niet tonen.}}",
+  "@fileExplorer.reveal.noPath": {
+    "sourceHash": "2931363"
+  },
+  "fileExplorer.reveal.noPlainPath": "Verkenner kan dit onderdeel niet via het pad tonen. Het pad is langer dan Windows-apps aankunnen, of een naam erin eindigt op een punt of spatie, of is een gereserveerde naam zoals CON. Maak het pad korter of wijzig de naam van het bestand of de map, en probeer het opnieuw.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "sourceHash": "786da65"
+  },
   "fileExplorer.openingToast.noApp": "{fileName} openen…",
   "@fileExplorer.openingToast.noApp": {
     "sourceHash": "45d83ec"

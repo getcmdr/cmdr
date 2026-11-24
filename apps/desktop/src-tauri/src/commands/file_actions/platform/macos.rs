@@ -23,7 +23,11 @@ pub(crate) fn open_trash_view(
 
 /// Reveals `path` in Finder. The E2E build records it instead: Finder would take the front
 /// position and write a `.DS_Store` into the fixture tree.
-pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
+/// Finder shows it from a thread of its own, so this answers once that thread has started.
+pub(crate) async fn reveal_in_file_manager(path: String) -> Result<(), super::RevealError> {
+    // A path with no native form (a scheme path, a `..`) names nothing Finder can show.
+    let native = crate::commands::wire_path::native(&path).map_err(|_| super::RevealError::NoPath)?;
+    let path = native.to_string_lossy().into_owned();
     #[cfg(feature = "playwright-e2e")]
     {
         crate::open_mock::record(path);
@@ -31,7 +35,10 @@ pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
     }
     #[cfg(not(feature = "playwright-e2e"))]
     {
-        crate::reveal::finder_handoff::reveal_in_finder(&path)
+        crate::reveal::finder_handoff::reveal_in_finder(&path).map_err(|why| {
+            log::warn!(target: "reveal", "Finder wasn't asked to show the item: {why}");
+            super::RevealError::NotShown
+        })
     }
 }
 
