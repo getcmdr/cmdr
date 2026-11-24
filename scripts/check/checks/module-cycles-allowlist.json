@@ -1,6 +1,6 @@
 {
   "$comment": "Accepted module tangles per home, re-seeded on 2026-10-16 from the measured state (David approved the re-seed on 2026-10-13; #421 cut every entry but one, and the target is an empty list). The one left, `cmdr-index::indexing::lifecycle`, is accepted: the registry owns the manager, which owns the phase machine, and detached work re-enters through the registry by volume id because the registry is the liveness authority (#375); its full reason is in crates/cmdr-index/src/indexing/lifecycle/DETAILS.md. A home is the longest module path every member of a tangle shares; the list is the sizes of the tangles living there, largest first, counted AFTER parent-child hubs collapse (so splitting a file into submodules adds nothing here). A strict ratchet: local runs lower a list to what's measured and drop a home that comes clean, and raising one needs David's OK (scripts/check/checks/DETAILS.md § Allowlist consent). The fix for a home over its numbers is to cut an edge, not to bump the number. `toolVersion` is the cargo-modules release these numbers came from; the check refuses to compare against a different one.",
-  "toolVersion": "0.27.0",
+  "toolVersion": "0.28.0",
   "tangles": {
     "cmdr-index::indexing::lifecycle": [4]
   }

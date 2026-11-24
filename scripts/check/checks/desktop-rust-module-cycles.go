@@ -36,7 +36,7 @@ import (
 //
 // To bump: edit this line, install it, run `pnpm check module-cycles`, and re-seed
 // the allowlist deliberately with the numbers the new version reports.
-const cargoModulesVersion = "0.27.0"
+const cargoModulesVersion = "0.28.0"
 
 // CargoModulesVersion exposes the pin to the CLI (`--print-cargo-modules-version`).
 func CargoModulesVersion() string { return cargoModulesVersion }
