@@ -28,12 +28,14 @@ interface ToastOptionsLike {
   toastGroup?: string
 }
 
-const { listenMock, addToastMock } = vi.hoisted(() => ({
+const { listenMock, addToastMock, endNativeDragMock } = vi.hoisted(() => ({
   listenMock: vi.fn<(event: string, cb: unknown) => Promise<() => void>>(),
   addToastMock: vi.fn<(content: string, options?: ToastOptionsLike) => string>(() => 'toast-id'),
+  endNativeDragMock: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: listenMock }))
+vi.mock('./drag-drop', () => ({ endNativeDrag: endNativeDragMock }))
 vi.mock('#lib/ui/toast/index.js', () => ({ addToast: addToastMock }))
 vi.mock('#lib/logging/logger.js', () => ({
   getAppLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -48,6 +50,7 @@ import { startDragOutEventBridge } from './drag-out-event-bridge'
 async function mountBridge(): Promise<{
   started: Listener<StartedPayload>
   complete: Listener<CompletePayload>
+  ended: Listener<Record<string, never>>
 }> {
   const callbacks: Record<string, unknown> = {}
   listenMock.mockImplementation((event: string, cb: unknown) => {
@@ -58,8 +61,18 @@ async function mountBridge(): Promise<{
   return {
     started: callbacks['drag-out-session-started'] as Listener<StartedPayload>,
     complete: callbacks['drag-out-session-complete'] as Listener<CompletePayload>,
+    ended: callbacks['drag-out-ended'] as Listener<Record<string, never>>,
   }
 }
+
+describe('drag-out-ended (Windows)', () => {
+  it('ends our side of the drag, however the drag ended', async () => {
+    endNativeDragMock.mockClear()
+    const { ended } = await mountBridge()
+    ended({ payload: {} })
+    expect(endNativeDragMock).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('drag-out event bridge', () => {
   beforeEach(() => {

@@ -7,7 +7,7 @@
 //! Cmdr's also carries [`CMDR_DRAG_FORMAT`], so Cmdr's drop target knows its own drag, even one
 //! that offers other apps nothing (a phone, search results, inside an archive).
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::path::{Path, PathBuf};
 use std::ptr::NonNull;
@@ -20,8 +20,8 @@ use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc};
 use windows::Win32::System::Ole::{CF_HDROP, ReleaseStgMedium};
 use windows::Win32::UI::Shell::Common::ITEMIDLIST;
 use windows::Win32::UI::Shell::{
-    BHID_DataObject, DragQueryFileW, HDROP, ILCreateFromPathW, ILFree, IShellItemArray, SHCreateDataObject,
-    SHCreateShellItemArrayFromIDLists,
+    BHID_DataObject, DragQueryFileW, HDROP, ILFree, IShellItemArray, SHCreateDataObject,
+    SHCreateShellItemArrayFromIDLists, SHParseDisplayName,
 };
 use windows::core::{HSTRING, PCWSTR};
 
@@ -39,14 +39,22 @@ unsafe impl Send for OwnedPidl {}
 
 impl OwnedPidl {
     /// The ID list for the file or folder at `native`, or `None` when the Shell can't name it
-    /// (gone, or no access). Asks the file system, so ❌ never on the UI thread; the calling
-    /// thread must be in a COM apartment.
+    /// (gone, no access, or a path the Shell won't parse). Tries each of [`shell_spellings`] in
+    /// turn. Asks the file system, so ❌ never on the UI thread; the calling thread must be in a
+    /// COM apartment.
     pub(super) fn for_path(native: &Path) -> Option<Self> {
-        let wide: Vec<u16> = native.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
-        // SAFETY: `wide` is a NUL-terminated UTF-16 buffer that outlives the call; the returned
-        // list (or null) is ours to free.
-        let pidl = unsafe { ILCreateFromPathW(PCWSTR::from_raw(wide.as_ptr())) };
-        NonNull::new(pidl).map(Self)
+        shell_spellings(native)
+            .iter()
+            .find_map(|spelling| Self::parse(spelling))
+    }
+
+    fn parse(text: &OsStr) -> Option<Self> {
+        let wide: Vec<u16> = text.encode_wide().chain(std::iter::once(0)).collect();
+        let mut pidl: *mut ITEMIDLIST = std::ptr::null_mut();
+        // SAFETY: `wide` is a NUL-terminated UTF-16 buffer that outlives the call, and `pidl` a
+        // live local the call fills; on success the list is ours to free.
+        let parsed = unsafe { SHParseDisplayName(PCWSTR::from_raw(wide.as_ptr()), None, &mut pidl, 0, None) };
+        parsed.ok().and(NonNull::new(pidl)).map(Self)
     }
 
     fn as_ptr(&self) -> *const ITEMIDLIST {
@@ -56,20 +64,52 @@ impl OwnedPidl {
 
 impl Drop for OwnedPidl {
     fn drop(&mut self) {
-        // SAFETY: the list came from `ILCreateFromPathW` and is freed exactly once, here.
+        // SAFETY: the list came from `SHParseDisplayName` and is freed exactly once, here.
         unsafe { ILFree(Some(self.as_ptr())) };
+    }
+}
+
+/// How the Shell may spell `native`, most likely first. A `\\?\` path, which the Shell doesn't
+/// always parse, also gets its plain form first (`C:\…`, `\\server\share\…`). Pure text.
+pub(super) fn shell_spellings(native: &Path) -> Vec<OsString> {
+    let text = native.as_os_str();
+    let plain = text.to_str().and_then(|s| s.strip_prefix(r"\\?\")).and_then(|rest| {
+        if let Some(share) = rest.strip_prefix(r"UNC\") {
+            Some(format!(r"\\{share}"))
+        } else if rest.as_bytes().get(1) == Some(&b':') {
+            Some(rest.to_owned())
+        } else {
+            // A volume GUID or device path: no plain form.
+            None
+        }
+    });
+    match plain {
+        Some(plain) => vec![OsString::from(plain), text.to_owned()],
+        None => vec![text.to_owned()],
     }
 }
 
 /// The Shell's data object for `items`, the one Explorer drags. The Shell copies the lists, so
 /// `items` may go once this returns. UI thread (the object is apartment-threaded).
+///
+/// Items from one folder go through a Shell item array, Explorer's own path. Items from several
+/// folders (where that object doesn't carry them all) go as absolute lists under the desktop,
+/// which names any file. Either way the object is checked to carry every item as `CF_HDROP`.
 pub(super) fn files_data_object(items: &[OwnedPidl]) -> windows::core::Result<IDataObject> {
     let lists: Vec<*const ITEMIDLIST> = items.iter().map(OwnedPidl::as_ptr).collect();
     // SAFETY: every pointer is a live ID list owned by `items`, which outlives both calls.
-    unsafe {
-        let array: IShellItemArray = SHCreateShellItemArrayFromIDLists(&lists)?;
-        array.BindToHandler(None, &BHID_DataObject)
+    let from_array: windows::core::Result<IDataObject> = unsafe {
+        SHCreateShellItemArrayFromIDLists(&lists)
+            .and_then(|array: IShellItemArray| array.BindToHandler(None, &BHID_DataObject))
+    };
+    if let Ok(data) = &from_array
+        && dropped_files(data).map(|files| files.len()) == Some(items.len())
+    {
+        return from_array;
     }
+    // SAFETY: no parent folder (the desktop), so each absolute list is its own child; they live
+    // through the call, and the Shell copies them.
+    unsafe { SHCreateDataObject(None, Some(&lists), None) }
 }
 
 /// An empty Shell data object: a drag that offers other apps nothing, which Cmdr's own drop

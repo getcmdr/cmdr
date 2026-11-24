@@ -717,8 +717,8 @@ export function createDragDropController(deps: DragDropControllerDeps) {
         if (getIsDraggingFromSelf() && !matchesSelfDragFingerprint(paths)) {
           storeSelfDragFingerprint(paths)
         }
-        // Another app's drag starts with nothing resolved natively (Windows forgets on enter).
-        if (!getIsDraggingFromSelf()) lastPushedSelfDragOp = null
+        // Every enter pushes its first op afresh: the last drag's may not hold natively.
+        lastPushedSelfDragOp = null
         currentDragSourcePaths = paths
         handleDragEnter(paths, toViewportPosition(event.position))
       } else if (type === 'over') {
@@ -760,9 +760,8 @@ export function createDragDropController(deps: DragDropControllerDeps) {
         externalDragHasLargeImage = false
         currentDragSourcePaths = []
         lastDragPosition = null
-        // Keep lastPushedSelfDragOp set so re-entry doesn't redundantly re-push the
-        // same op. clear_self_drag_state on the native side resets the AtomicU8 too.
-        // Do NOT clear the fingerprint here; that's the key to re-entry detection
+        // lastPushedSelfDragOp resets on the next enter. Do NOT clear the fingerprint
+        // here; that's the key to re-entry detection
       }
     })
   }

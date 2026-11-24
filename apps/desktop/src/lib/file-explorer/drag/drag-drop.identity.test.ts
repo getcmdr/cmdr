@@ -25,7 +25,17 @@ vi.mock('#lib/settings/settings-store.js', () => ({ getSetting: vi.fn(() => 5) }
 vi.mock('../rename/rename-activation', () => ({ cancelClickToRename: vi.fn() }))
 vi.mock('./drag-image-renderer', () => ({ renderDragImage: vi.fn() }))
 
-import { recordSelfDragIdentity, getSelfDragIdentity, clearSelfDragIdentity, cancelDragTracking } from './drag-drop'
+import {
+  recordSelfDragIdentity,
+  getSelfDragIdentity,
+  clearSelfDragIdentity,
+  cancelDragTracking,
+  endNativeDrag,
+  getIsDraggingFromSelf,
+  markAsSelfDrag,
+  matchesSelfDragFingerprint,
+  storeSelfDragFingerprint,
+} from './drag-drop'
 
 describe('self-drag identity lifecycle', () => {
   beforeEach(() => {
@@ -67,5 +77,21 @@ describe('self-drag identity lifecycle', () => {
     recordSelfDragIdentity('mtp-dev:65537', ['/photos/x.jpg'])
     cancelDragTracking()
     expect(getSelfDragIdentity()).toBeNull()
+  })
+})
+
+/**
+ * A drag out that never started (Windows: the button came up during the item lookup) or that the
+ * OS finished: left set, the next drop from Explorer would read as ours and move the OLD selection.
+ */
+describe('endNativeDrag', () => {
+  it('forgets the self-drag flag, identity, and fingerprint', async () => {
+    recordSelfDragIdentity('root', ['C:/Users/test_user_1/old.txt'])
+    markAsSelfDrag()
+    storeSelfDragFingerprint(['C:/Users/test_user_1/old.txt'])
+    await endNativeDrag()
+    expect(getIsDraggingFromSelf()).toBe(false)
+    expect(getSelfDragIdentity()).toBeNull()
+    expect(matchesSelfDragFingerprint(['C:/Users/test_user_1/old.txt'])).toBe(false)
   })
 })

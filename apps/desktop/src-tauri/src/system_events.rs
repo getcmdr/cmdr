@@ -170,6 +170,14 @@ pub enum NativeDragDrop {
     Leave,
 }
 
+/// `drag-out-ended`: a drag out of Cmdr's main window is over, however it ended (dropped,
+/// cancelled, or never started: the button came up first, an item had no Shell name, or a newer
+/// drag took over is the one case not sent). Windows only
+/// (`commands/file_system/drag/platform/windows/drag_out.rs`); the frontend ends its self-drag
+/// state on it, which a drag that never started would otherwise leave set.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Event)]
+pub struct DragOutEnded {}
+
 /// A point in the webview's client area, in PHYSICAL pixels, as Windows reports it; the
 /// frontend divides by `devicePixelRatio` for CSS pixels.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, specta::Type)]

@@ -109,8 +109,8 @@ use crate::quick_look::{QuickLookClosed, QuickLookKeyEvent};
 use crate::quit::{QuitCalledOff, QuitRequested};
 use crate::restricted_paths::RestrictedPathsChangedPayload;
 use crate::system_events::{
-    AccentColorChanged, DisplayAccessibilityChanged, DragImageSize, DragModifiers, GlassTintChanged, MenuBarRebuilt,
-    NativeDragDrop, OsLocalesChanged, SessionCompleteEvent, SessionStartedEvent, SystemTextSizeChanged,
+    AccentColorChanged, DisplayAccessibilityChanged, DragImageSize, DragModifiers, DragOutEnded, GlassTintChanged,
+    MenuBarRebuilt, NativeDragDrop, OsLocalesChanged, SessionCompleteEvent, SessionStartedEvent, SystemTextSizeChanged,
 };
 
 /// Every IPC command the app exposes, written once, grouped by the `#[cfg]` predicate that
@@ -1243,6 +1243,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             DragImageSize,
             DragModifiers,
             NativeDragDrop,    // emit_to(webview label), Windows only
+            DragOutEnded,      // emit_to("main"), Windows only
             QuickLookKeyEvent, // event_name = "quick-look-key"
             QuickLookClosed,   // payloadless
             // Directory watcher (file_system/watcher.rs, listing/diff_emitter.rs).

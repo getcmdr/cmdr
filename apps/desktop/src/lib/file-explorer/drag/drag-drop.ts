@@ -25,6 +25,7 @@ import {
   clearSelfDragOverlay,
   setSelfDragResolvedOperation,
 } from '#lib/tauri-commands/index.js'
+import { getAppLogger } from '#lib/logging/logger.js'
 import { getSetting } from '#lib/settings/settings-store.js'
 import { readPressedRows, type PressedPane } from '../pane/pressed-rows'
 import { cancelClickToRename } from '../rename/rename-activation'
@@ -239,6 +240,31 @@ export async function endSelfDragSession(): Promise<void> {
   pendingImageCleanup = null
   await clearSelfDragOverlay()
   if (cleanup) await cleanup()
+}
+
+/**
+ * Ends every trace of a drag of ours the OS is done with, or never began: the self-drag flag,
+ * the recorded identity, the re-entry fingerprint, and the session. Left set, a later drop from
+ * another app would read as ours and move the old selection. Runs when the start is refused and
+ * on Windows' `drag-out-ended`. Leaves press tracking alone: a new press may already be live.
+ */
+export async function endNativeDrag(): Promise<void> {
+  draggingFromSelf = false
+  clearSelfDragIdentity()
+  clearSelfDragFingerprint()
+  await endSelfDragSession()
+}
+
+const log = getAppLogger('drag')
+
+/** Starts the OS drag, ending our side of it if the backend refuses. */
+async function startNativeDrag(paths: string[], iconPath: string, sourceVolumeId: string): Promise<void> {
+  try {
+    await startDragPaths(paths, iconPath, sourceVolumeId)
+  } catch (error: unknown) {
+    log.warn('The drag didn’t start: {error}', { error })
+    await endNativeDrag()
+  }
 }
 
 /** Global state for active drag operation */
@@ -508,7 +534,7 @@ async function performSingleFileDrag(
   // Don't reset draggingFromSelf after the start call; it resolves before the
   // OS delivers drop/leave events. The flag is cleared by the drop handler.
   draggingFromSelf = true
-  await startDragPaths([filePath], resolved.path, sourceVolumeId)
+  await startNativeDrag([filePath], resolved.path, sourceVolumeId)
 }
 
 /**
@@ -546,7 +572,7 @@ async function performSelectionDrag(context: SelectionDragContext): Promise<void
 
   // Don't reset draggingFromSelf after startDrag; see performSingleFileDrag comment.
   draggingFromSelf = true
-  await startDragPaths(sourcePaths, resolved.path, context.sourceVolumeId)
+  await startNativeDrag(sourcePaths, resolved.path, context.sourceVolumeId)
 }
 
 /**
@@ -569,5 +595,5 @@ async function performPathsDrag(context: PathsDragContext): Promise<void> {
   await setSelfDragResolvedOperation('move')
 
   draggingFromSelf = true
-  await startDragPaths(context.paths, resolved.path, context.sourceVolumeId)
+  await startNativeDrag(context.paths, resolved.path, context.sourceVolumeId)
 }

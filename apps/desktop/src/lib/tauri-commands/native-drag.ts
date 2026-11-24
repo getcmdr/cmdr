@@ -47,6 +47,16 @@ export function onDragOutSessionComplete(handler: (payload: SessionCompleteEvent
   })
 }
 
+/**
+ * A drag out of the main window is over, however it ended, started or not (Windows,
+ * `drag/platform/windows/drag_out.rs`).
+ */
+export function onDragOutEnded(handler: () => void): Promise<UnlistenFn> {
+  return events.dragOutEnded.listen(() => {
+    handler()
+  })
+}
+
 /** What an incoming drag carries, read on drag enter (before wry's own enter event). */
 export function onDragPayloadKind(handler: (kind: DragPayloadKind) => void): Promise<UnlistenFn> {
   return events.dragPayloadKind.listen((event) => {

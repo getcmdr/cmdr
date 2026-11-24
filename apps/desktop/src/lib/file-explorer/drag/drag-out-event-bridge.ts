@@ -24,7 +24,8 @@ import { type UnlistenFn } from '@tauri-apps/api/event'
 import { addToast } from '#lib/ui/toast/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { pluralize } from '#lib/utils/pluralize.js'
-import { onDragOutSessionComplete, onDragOutSessionStarted } from '#lib/tauri-commands/index.js'
+import { onDragOutEnded, onDragOutSessionComplete, onDragOutSessionStarted } from '#lib/tauri-commands/index.js'
+import { endNativeDrag } from './drag-drop'
 import { composeDragOutCompleteToast, type DragOutSessionComplete } from './drag-out-toast'
 import { reportDragOutCompleted } from './drag-analytics'
 
@@ -53,10 +54,16 @@ export async function startDragOutEventBridge(): Promise<UnlistenFn> {
   const unlistenComplete = await onDragOutSessionComplete((payload) => {
     handleSessionComplete(payload)
   })
+  // Windows tells every end of a drag out, started or not; a drag that never started would
+  // otherwise leave our self-drag state set for the next drop from another app.
+  const unlistenEnded = await onDragOutEnded(() => {
+    void endNativeDrag()
+  })
   log.debug('Drag-out event bridge mounted')
   return () => {
     unlistenStarted()
     unlistenComplete()
+    unlistenEnded()
   }
 }
 

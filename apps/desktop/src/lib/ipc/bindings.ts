@@ -6444,6 +6444,7 @@ export const events = {
   downloadDetected: makeEvent<DownloadDetectedEvent>('download-detected'),
   dragImageSize: makeEvent<DragImageSize>('drag-image-size'),
   dragModifiers: makeEvent<DragModifiers>('drag-modifiers'),
+  dragOutEnded: makeEvent<DragOutEnded>('drag-out-ended'),
   dragOutSessionComplete: makeEvent<SessionCompleteEvent>('drag-out-session-complete'),
   dragOutSessionStarted: makeEvent<SessionStartedEvent>('drag-out-session-started'),
   dragPayloadKind: makeEvent<DragPayloadKindEvent>('drag-payload-kind'),
@@ -10223,6 +10224,15 @@ export type DragModifiers = {
   ctrlHeld: boolean
   shiftHeld: boolean
 }
+
+/**
+ *  `drag-out-ended`: a drag out of Cmdr's main window is over, however it ended (dropped,
+ *  cancelled, or never started: the button came up first, an item had no Shell name, or a newer
+ *  drag took over is the one case not sent). Windows only
+ *  (`commands/file_system/drag/platform/windows/drag_out.rs`); the frontend ends its self-drag
+ *  state on it, which a drag that never started would otherwise leave set.
+ */
+export type DragOutEnded = Record<string, never>
 
 // What an incoming drag carries, as far as a drop into Cmdr goes.
 export type DragPayloadKind =

@@ -14,13 +14,15 @@ use windows::Win32::System::Ole::{
 use windows::Win32::System::SystemServices::{MK_CONTROL, MK_LBUTTON, MK_SHIFT, MODIFIERKEYS_FLAGS};
 
 use super::data_object::{
-    OwnedPidl, dropped_files, empty_data_object, files_data_object, is_cmdr_drag, mark_as_cmdr_drag,
+    OwnedPidl, dropped_files, empty_data_object, files_data_object, is_cmdr_drag, mark_as_cmdr_drag, shell_spellings,
 };
+use super::drag_out::{DragOutEnd, item_lists};
 use super::drop_target::{TargetEvent, drop_target_for};
 use super::effects::{
     DropIntent, OFFERED_EFFECTS, clear_intent, drop_effect, hover_effect, intent, modifiers_of, set_intent,
 };
-use super::{crossed, in_apartment, native_drag_drop};
+use super::{crossed, native_drag_drop};
+use crate::platform::shell::in_apartment;
 use crate::system_events::{DragModifiers, NativeDragDrop};
 use crate::test_support::TestDir;
 
@@ -58,9 +60,116 @@ fn an_effect_the_source_forbids_falls_back_to_one_it_allows() {
 /// A source told Move may delete its originals before the person confirms Cmdr's dialog.
 #[test]
 fn a_drop_answers_copy_at_most_and_never_move() {
-    assert_eq!(drop_effect(OFFERED_EFFECTS), DROPEFFECT_COPY);
-    assert_eq!(drop_effect(COPY_OR_MOVE), DROPEFFECT_COPY);
-    assert_eq!(drop_effect(DROPEFFECT_MOVE), DROPEFFECT_NONE);
+    assert_eq!(drop_effect(Some(DropIntent::Move), OFFERED_EFFECTS), DROPEFFECT_COPY);
+    assert_eq!(drop_effect(None, COPY_OR_MOVE), DROPEFFECT_COPY);
+    assert_eq!(drop_effect(Some(DropIntent::Move), DROPEFFECT_MOVE), DROPEFFECT_NONE);
+}
+
+/// The frontend found no drop target there: the source hears nothing happened.
+#[test]
+fn a_drop_where_nothing_can_be_dropped_answers_none() {
+    assert_eq!(drop_effect(Some(DropIntent::Refuse), OFFERED_EFFECTS), DROPEFFECT_NONE);
+}
+
+// --- Drag out ---
+
+#[test]
+fn a_verbatim_path_is_offered_to_the_shell_in_its_plain_form_first() {
+    let spell = |text: &str| -> Vec<String> {
+        shell_spellings(Path::new(text))
+            .into_iter()
+            .map(|s| s.to_string_lossy().into_owned())
+            .collect()
+    };
+    assert_eq!(spell(r"C:\a\b.txt"), vec![r"C:\a\b.txt"]);
+    assert_eq!(spell(r"\\?\C:\a\b.txt"), vec![r"C:\a\b.txt", r"\\?\C:\a\b.txt"]);
+    assert_eq!(
+        spell(r"\\?\UNC\server\share\x"),
+        vec![r"\\server\share\x", r"\\?\UNC\server\share\x"]
+    );
+    assert_eq!(spell(r"\\?\Volume{0}\x"), vec![r"\\?\Volume{0}\x"]);
+}
+
+#[test]
+fn every_end_but_a_superseded_one_reaches_the_frontend() {
+    assert!(DragOutEnd::Finished.tells_frontend());
+    assert!(DragOutEnd::ButtonUp.tells_frontend());
+    assert!(DragOutEnd::Broken.tells_frontend());
+    assert!(DragOutEnd::Unnamed(vec!["a.txt".into()]).tells_frontend());
+    assert!(!DragOutEnd::Superseded.tells_frontend());
+}
+
+/// A released button (or a newer drag) stops the lookups before the first one.
+#[test]
+fn a_released_button_stops_the_item_lookup() {
+    in_apartment(|| {
+        let dir = TestDir::new("drag_out_button_up");
+        let items = sample_items(&dir);
+        let built = item_lists(&items, || Some(DragOutEnd::ButtonUp));
+        assert!(matches!(built, Err(DragOutEnd::ButtonUp)));
+    })
+    .expect("enters an apartment");
+}
+
+/// An item the Shell can't name refuses the drag, naming it, rather than dropping it quietly.
+#[test]
+fn an_unnamed_item_refuses_the_drag_and_names_it() {
+    in_apartment(|| {
+        let dir = TestDir::new("drag_out_unnamed");
+        let mut items = sample_items(&dir);
+        items.push(dir.join("never-made.txt"));
+        let built = item_lists(&items, || None);
+        assert_eq!(
+            built.err(),
+            Some(DragOutEnd::Unnamed(vec!["never-made.txt".to_string()]))
+        );
+    })
+    .expect("enters an apartment");
+}
+
+/// Past `MAX_PATH`, in both the plain and the `\\?\` spelling.
+#[test]
+fn a_path_longer_than_max_path_still_drags() {
+    in_apartment(|| {
+        let dir = TestDir::new("drag_out_long");
+        let mut deep = dir.join("x");
+        while deep.as_os_str().len() < 300 {
+            deep = deep.join("a_folder_name_of_forty_characters_long__");
+        }
+        std::fs::create_dir_all(&deep).expect("makes a deep folder");
+        let file = deep.join("deep.txt");
+        std::fs::write(&file, b"deep").expect("writes past MAX_PATH");
+        let verbatim = PathBuf::from(format!(r"\\?\{}", file.display()));
+        for spelling in [file.clone(), verbatim] {
+            let item = OwnedPidl::for_path(&spelling).expect("the Shell names a long path");
+            let data = files_data_object(std::slice::from_ref(&item)).expect("a data object");
+            let read = dropped_files(&data).expect("CF_HDROP");
+            assert_eq!(read.len(), 1);
+            assert!(
+                same_file(&read[0], &file),
+                "{} came back as {}",
+                file.display(),
+                read[0].display()
+            );
+        }
+    })
+    .expect("enters an apartment");
+}
+
+/// Items from several folders (two panes can't make one, but a drag of paths can) all arrive.
+#[test]
+fn items_from_several_folders_all_arrive_as_cf_hdrop() {
+    in_apartment(|| {
+        let one = TestDir::new("drag_out_folder_one");
+        let two = TestDir::new("drag_out_folder_two");
+        std::fs::write(one.join("a.txt"), b"a").expect("writes a.txt");
+        std::fs::write(two.join("b.txt"), b"b").expect("writes b.txt");
+        let items = [one.join("a.txt"), two.join("b.txt")];
+        let read = dropped_files(&files_object(&items)).expect("CF_HDROP");
+        assert_eq!(read.len(), 2);
+        assert!(same_file(&read[0], &items[0]) && same_file(&read[1], &items[1]));
+    })
+    .expect("enters an apartment");
 }
 
 #[test]

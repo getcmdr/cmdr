@@ -198,9 +198,10 @@ impl IDropTarget_Impl for DropTarget_Impl {
             paths,
             position: self.client_position(pt),
         });
+        let answered = drop_effect(intent(), offered);
         clear_intent();
         // SAFETY: as above.
-        unsafe { answer(pdweffect, drop_effect(offered)) };
+        unsafe { answer(pdweffect, answered) };
         Ok(())
     }
 }

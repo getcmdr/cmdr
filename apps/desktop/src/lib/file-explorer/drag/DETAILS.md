@@ -463,11 +463,17 @@ shared with macOS (`apps/desktop/src-tauri/src/commands/file_system/drag/platfor
 - **Cursor**: the frontend pushes its resolved op for every drag (`setSelfDragResolvedOperation`, `none` where nothing
   can be dropped), and `DragOver` shows it, falling back to an effect the source allows. Nothing pushed yet reads Copy.
   Another app's drag starts with nothing resolved; Cmdr's own keeps the `move` seeded at drag start.
-- **Drop answers Copy at most** (`effects::drop_effect`). Cmdr's dialog does the move itself after the person confirms;
-  telling the source Move would let it delete the originals first (the Shell's non-optimized move).
+- **Drop answers Copy at most** (`effects::drop_effect`), and nothing where the frontend resolved no target. Cmdr's
+  dialog does the move itself after the person confirms; telling the source Move would let it delete the originals first
+  (the Shell's non-optimized move).
 - **Taken drags**: `CF_HDROP`, or anything carrying Cmdr's private format (a phone or search-results self-drag offers no
   files). Text, links, and browser images (`CFSTR_FILEDESCRIPTOR`) are refused, as wry did; the Windows twin of macOS's
   promise drops is open work.
+- **Temp-backed sources** (7-Zip and archivers like it extract to `%TEMP%` for the drag and delete the files once their
+  `DoDragDrop` returns, which is right after our `Drop`): the dialog opens on paths that are already gone. The kind
+  probe reads them as unknown (approximate counts), and the transfer stops with the copy engine's "source is gone"
+  dialog. Honest, not useful; copying such a drop needs the bytes taken during `Drop` (with `CFSTR_FILEDESCRIPTOR`, open
+  work). Unverified on a real Windows machine.
 - **UI thread**: every `IDropTarget` method runs there, inside the source's drag loop: it reads the data object (memory)
   and emits, with no disk I/O. Emits from the UI thread run at once (tauri-runtime-wry's `send_user_message`).
 
@@ -476,16 +482,32 @@ shared with macOS (`apps/desktop/src-tauri/src/commands/file_system/drag/platfor
 - **`SHDoDragDrop` with the Shell's own data object** (`BHID_DataObject` on a Shell item array of the dragged items' ID
   lists): the object Explorer drags, so every target that takes an Explorer drag takes Cmdr's (`CF_HDROP`, the ID list,
   drop descriptions), and the Shell draws Explorer's drag image (thumbnails, count). No `DROPFILES` is written. The
-  frontend's PNG drag image is unused on Windows.
+  frontend's PNG drag image is unused on Windows. Items from several folders: `files_data_object` checks the object
+  carries every item as `CF_HDROP` and else builds it from absolute ID lists under the desktop
+  (`SHCreateDataObject(NULL, …)`); a test drags two folders' files. Search results drag as a virtual session today
+  (macOS parity), so a pane never sends several folders yet.
 - **Offered effects**: Copy, Move, and Link, Explorer's own set; the target picks by its rules and the keys (Explorer:
-  Move on the same drive, Copy across, Ctrl copies, Shift moves, Alt makes a shortcut). The target does the file
-  operation itself; Cmdr deletes nothing when the drag returns.
+  Move on the same drive, Copy across, Ctrl copies, Shift moves, Alt makes a shortcut). Explorer does the file operation
+  itself. A target that does a non-optimized move (copies, then leaves the delete to its source) gets a copy: Cmdr
+  deletes nothing when the drag returns.
 - **Threads**: `start_drag_paths` returns at once (the frontend expects that, as on macOS). The ID lists
-  (`ILCreateFromPathW`, which asks the file system and can wait on a share) are built on a fresh 8 MB-stack thread in an
-  STA; the drag then runs on the UI thread through `run_on_main_thread`. `SHDoDragDrop` is modal and pumps messages, so
-  the window paints and IPC answers (wry completes requests through its window's messages); events other threads post
-  through Tauri's event loop wait for the drop. A missing item cancels the whole drag (logged), and a mouse button
-  released during the thread hop cancels it too, since starting then would drop wherever the cursor is.
+  (`SHParseDisplayName`, which asks the file system and can wait on a share) are built on a fresh 8 MB-stack thread in
+  an STA (`platform::shell::in_apartment`); the drag then runs on the UI thread through `run_on_main_thread`.
+  `SHDoDragDrop` is modal and pumps messages, so the window paints and IPC answers (wry completes requests through its
+  window's messages); events other threads post through Tauri's event loop wait for the drop.
+- **Every end reaches the frontend** (`drag_out.rs::DragOutEnd`, event `drag-out-ended`, handled by
+  `drag-out-event-bridge.ts` → `drag-drop.ts::endNativeDrag`): dropped, cancelled, or never started. A drag that never
+  started otherwise left the self-drag flag and identity set, and the next drop from Explorer moved the OLD selection.
+  It never starts when the button came up during the lookup (checked before each item and again before the drag, since
+  starting then would drop wherever the cursor is), when the apartment, window, or data object fails, or when an item
+  has no Shell name: that refuses the whole drag with the existing drag-out failure toast naming it
+  (`drag-out-session-complete`, nothing copied), ❌ never a drag that quietly leaves it out. A drag still looking up
+  items when a newer one starts gives way silently (a generation counter), so two modal drags never queue; the newer one
+  owns the frontend's state. A refused `startDragPaths` ends it the same way (`startNativeDrag`).
+- **Long and verbatim paths**: each item is parsed in its plain form first (`C:\…`, `\\server\share\…`), then as sent
+  (`data_object.rs::shell_spellings`); a test drags a file past `MAX_PATH` in both spellings.
+- **Drop targets are revoked** when their window is destroyed (`WindowEvent::Destroyed`; a child already gone answers an
+  error, harmlessly).
 - **Virtual sessions** (phone, search results, inside an archive or a repo's history): an empty Shell data object
   carrying only Cmdr's private format. Cmdr's own panes take the drop (recorded self-drag identity); other apps see
   nothing to take, where macOS fulfils a file promise. Task 43 (`CFSTR_FILEDESCRIPTOR`) is that half.

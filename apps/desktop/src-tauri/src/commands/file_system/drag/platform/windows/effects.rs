@@ -83,13 +83,14 @@ pub(super) fn hover_effect(intent: Option<DropIntent>, allowed: DROPEFFECT) -> D
         .unwrap_or(DROPEFFECT_NONE)
 }
 
-/// The effect a drop on Cmdr answers its source: Copy when the source allows it, else nothing.
+/// The effect a drop on Cmdr answers its source: nothing where the frontend resolved no drop
+/// target, else Copy when the source allows it, else nothing.
 ///
 /// ❌ Never Move, even for a move: the drop only opens Cmdr's transfer dialog, and Cmdr moves the
 /// files itself once the person confirms. A source told Move may delete its originals as soon as
 /// `DoDragDrop` returns (the shell's "non-optimized move"), before the person has said yes.
-pub(super) fn drop_effect(allowed: DROPEFFECT) -> DROPEFFECT {
-    if allowed.0 & DROPEFFECT_COPY.0 != 0 {
+pub(super) fn drop_effect(intent: Option<DropIntent>, allowed: DROPEFFECT) -> DROPEFFECT {
+    if intent != Some(DropIntent::Refuse) && allowed.0 & DROPEFFECT_COPY.0 != 0 {
         DROPEFFECT_COPY
     } else {
         DROPEFFECT_NONE

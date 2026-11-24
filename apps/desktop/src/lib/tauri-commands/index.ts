@@ -674,6 +674,7 @@ export {
   onDragModifiers,
   onDragOutSessionStarted,
   onDragOutSessionComplete,
+  onDragOutEnded,
   onDragPayloadKind,
   onPromiseDropStarted,
   onPromiseDropReady,
