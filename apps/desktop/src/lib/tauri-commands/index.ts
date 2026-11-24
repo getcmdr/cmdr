@@ -947,8 +947,9 @@ export {
   readClipboardText,
   clearClipboardCutState,
   pasteClipboardAsFile,
+  asClipboardFilesError,
 } from './clipboard-files'
-export type { ClipboardReadResult, PastedClipboardFile } from './clipboard-files'
+export type { ClipboardFilesError, ClipboardReadResult, PastedClipboardFile } from './clipboard-files'
 
 // Search (whole-drive file search)
 export {

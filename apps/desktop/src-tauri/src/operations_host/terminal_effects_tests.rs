@@ -28,6 +28,8 @@ enum Fired {
     Retained,
     SpaceHint,
     DropReleased,
+    /// The clipboard cut's settle, and whether it reported everything moved.
+    CutSettled(bool),
     Emitted,
 }
 
@@ -63,6 +65,9 @@ impl TerminalEffects for Recorder {
     }
     fn release_drop_folder(&self, _operation_id: &str) {
         self.push(Fired::DropReleased);
+    }
+    fn settle_clipboard_cut(&self, _operation_id: &str, moved_all: bool) {
+        self.push(Fired::CutSettled(moved_all));
     }
 }
 
@@ -133,6 +138,7 @@ fn complete_fires_its_category_then_the_ring_then_the_emit_for_every_progressed_
                 Fired::Analytics(Some(category)),
                 Fired::Terminal(TerminalStatus::Completed),
                 Fired::DropReleased,
+                Fired::CutSettled(true),
                 Fired::Emitted
             ],
             "write-complete for {operation_type:?}"
@@ -160,9 +166,21 @@ fn cancel_fires_the_ring_and_the_drop_release_then_the_emit() {
         vec![
             Fired::Terminal(TerminalStatus::Cancelled),
             Fired::DropReleased,
+            Fired::CutSettled(false),
             Fired::Emitted
         ]
     );
+}
+
+/// A move that skipped something on a conflict left part of the cut in its source: the source
+/// app isn't told the paste took it all.
+#[test]
+fn a_complete_that_skipped_something_settles_the_cut_as_not_all_moved() {
+    let fx = Recorder::default();
+    let mut event = complete_event("op-skipped", WriteOperationType::Move);
+    event.files_skipped = 1;
+    terminal_effects::complete(&fx, event, |_| fx.push(Fired::Emitted));
+    assert!(fx.fired().contains(&Fired::CutSettled(false)));
 }
 
 #[test]
@@ -173,6 +191,7 @@ fn error_fires_the_ring_the_warning_and_the_retained_failure_before_the_emit_and
         fx.fired(),
         vec![
             Fired::Terminal(TerminalStatus::Failed),
+            Fired::CutSettled(false),
             Fired::Warned,
             Fired::Retained,
             Fired::Emitted

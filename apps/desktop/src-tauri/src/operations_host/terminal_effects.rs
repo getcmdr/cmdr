@@ -3,6 +3,7 @@
 //! `TauriEventSink`'s four terminal emits (`write-complete`, `write-cancelled`,
 //! `write-error`, `write-settled`) each carry app side effects: the completion
 //! analytics, the MCP terminal ring, the failure `warn!`, the retained failure,
+//! the drop-folder release, the clipboard cut's settle (`clipboard/cut_paste.rs`),
 //! and the free-space hint. The order is part of the contract (the ring and the
 //! retained failure must land BEFORE the frontend hears, see each function), so
 //! it lives here, once, as plain functions over a [`TerminalEffects`] port. The
@@ -33,6 +34,9 @@ pub(crate) trait TerminalEffects {
     fn expect_space_change(&self);
     /// A promised drop's folder the operation read from goes (`drop_in/folders.rs`).
     fn release_drop_folder(&self, operation_id: &str);
+    /// A paste of a clipboard-marked cut (Explorer's Ctrl+X) settles: told to the source when the
+    /// move took everything (`moved_all`), forgotten otherwise (`clipboard/cut_paste.rs`).
+    fn settle_clipboard_cut(&self, operation_id: &str, moved_all: bool);
 }
 
 /// The production effects, retaining failures on `operations` (`None` only
@@ -100,9 +104,20 @@ impl TerminalEffects for AppTerminalEffects<'_> {
     fn release_drop_folder(&self, operation_id: &str) {
         crate::drop_in::folders::release_for_operation(operation_id);
     }
+
+    fn settle_clipboard_cut(&self, operation_id: &str, moved_all: bool) {
+        crate::clipboard::cut_paste::settle_for_operation(operation_id, moved_all);
+    }
 }
 
-/// `write-complete`: analytics, then the ring, the drop-folder release, then the emit.
+/// Whether a completed operation took every item it was given: nothing skipped on a conflict,
+/// and no Locked item kept in place.
+fn took_everything(event: &WriteCompleteEvent) -> bool {
+    event.files_skipped == 0 && event.locked_kept.is_none()
+}
+
+/// `write-complete`: analytics, then the ring, the drop-folder release, the clipboard cut's
+/// settle, then the emit.
 pub(crate) fn complete(fx: &impl TerminalEffects, event: WriteCompleteEvent, emit: impl FnOnce(WriteCompleteEvent)) {
     // Categorical only (op, a count bucket, a bool); never names or paths. Fires
     // before the emit so it can read the event the emit moves.
@@ -113,20 +128,24 @@ pub(crate) fn complete(fx: &impl TerminalEffects, event: WriteCompleteEvent, emi
     fx.record_terminal(&event.operation_id, event.operation_type, TerminalStatus::Completed);
     // The copy out of a promised drop's folder is done with it.
     fx.release_drop_folder(&event.operation_id);
+    // A paste of an Explorer cut tells Explorer, off this thread.
+    fx.settle_clipboard_cut(&event.operation_id, took_everything(&event));
     emit(event);
 }
 
-/// `write-cancelled`: the ring, the drop-folder release, then the emit.
+/// `write-cancelled`: the ring, the drop-folder release, the clipboard cut forgotten, then the emit.
 pub(crate) fn cancelled(fx: &impl TerminalEffects, event: WriteCancelledEvent, emit: impl FnOnce(WriteCancelledEvent)) {
     fx.record_terminal(&event.operation_id, event.operation_type, TerminalStatus::Cancelled);
     fx.release_drop_folder(&event.operation_id);
+    fx.settle_clipboard_cut(&event.operation_id, false);
     emit(event);
 }
 
-/// `write-error`: the ring, the `warn!`, the retained failure, then the emit. A failed
-/// copy KEEPS its drop folder, so the error dialog's Retry still finds the files.
+/// `write-error`: the ring, the `warn!`, the retained failure, the clipboard cut forgotten, then
+/// the emit. A failed copy KEEPS its drop folder, so the error dialog's Retry still finds the files.
 pub(crate) fn error(fx: &impl TerminalEffects, event: WriteErrorEvent, emit: impl FnOnce(WriteErrorEvent)) {
     fx.record_terminal(&event.operation_id, event.operation_type, TerminalStatus::Failed);
+    fx.settle_clipboard_cut(&event.operation_id, false);
     fx.warn_failure(&event);
     // Retained so the failure outlives the record the manager is about to
     // remove: a backgrounded operation that fails while the queue window is

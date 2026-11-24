@@ -303,10 +303,10 @@ async fn move_files_with(
 
     // Same-`root` local move (the FE uses `move_between_volumes` whenever the
     // source and destination volumes differ), so no ejectable volume here.
-    engine
+    let started = engine
         .move_files_start(
             events,
-            sources,
+            sources.clone(),
             destination,
             config,
             vec![],
@@ -318,7 +318,8 @@ async fn move_files_with(
             // boot volume and no drive can leave under it.
             None,
         )
-        .await
+        .await;
+    crate::clipboard::cut_paste::claimed_by_start(started, &sources)
 }
 
 /// Recursively deletes files and directories. Same events as `move_files`.

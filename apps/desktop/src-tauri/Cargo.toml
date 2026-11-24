@@ -353,8 +353,8 @@ freedesktop-icons = "0.4"
 arboard = { version = "3.7", default-features = false, features = ["wayland-data-control"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), as on Linux. Task 42's files
-# (`CF_HDROP`, `Preferred DropEffect`) go through `windows-sys` beside it.
+# The clipboard's plain text (`clipboard/platform/arboard_text.rs`), as on Linux. Its files
+# (`CF_HDROP`, `Preferred DropEffect`) go through `windows` below.
 arboard = { version = "3.7", default-features = false }
 # Win32 calls behind the app's `platform/` seams: the registry (device id, OS names, managed
 # policy and its change watch), `RtlGetVersion`, the memory counters, the instance lock's
@@ -395,6 +395,13 @@ windows = { version = "0.62", features = [
     "Win32_Graphics_Gdi",
     "Win32_Storage_FileSystem",
     "Win32_System_Com",
+    # The file clipboard (`clipboard/platform/windows.rs`): `CF_HDROP` and `Preferred DropEffect`
+    # through the plain clipboard API, and `Paste Succeeded` on the source's `IDataObject`, whose
+    # `STGMEDIUM` needs `StructuredStorage` (and Gdi, above).
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
     "Win32_UI_Shell",
 ] }
 # Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend

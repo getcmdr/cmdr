@@ -4,9 +4,61 @@ Depth and rationale. `CLAUDE.md` holds the must-knows; this is the decision reco
 
 ## Copy-at-source, decide-at-paste
 
-Follows Finder's model. Cmd+X sets an internal cut flag; the move-vs-copy decision happens at paste time. The cut state
-is Cmdr-internal only, so pasting Cmdr-cut files in Finder does a copy (Finder doesn't know about our flag). This
-matches third-party file managers (Path Finder, ForkLift).
+Follows Finder's model. Cmd+X sets an internal cut flag; the move-vs-copy decision happens at paste time. On macOS the
+cut state is Cmdr-internal only, so pasting Cmdr-cut files in Finder does a copy (Finder doesn't know about our flag).
+This matches third-party file managers (Path Finder, ForkLift). On Windows the clipboard itself carries the cut
+(below), so Explorer moves a Cmdr cut and Cmdr moves an Explorer cut.
+
+## Windows
+
+What goes on the clipboard (`platform/windows.rs`, the bytes in `platform/shell_formats.rs`):
+
+- `CF_HDROP`: a `DROPFILES` header (`pFiles` = 20, `fWide` = 1) then each plain path, NUL-terminated, then a closing
+  NUL.
+- The registered `Preferred DropEffect`: `DROPEFFECT_MOVE` (2) on a cut, `DROPEFFECT_COPY` (1) on a copy. A read counts
+  the files as cut when the move bit is set and the copy bit isn't: Explorer's Ctrl+X writes 2, its Ctrl+C writes 5
+  (copy and link).
+- `CF_UNICODETEXT`: the paths, one per line (CRLF), as macOS writes `public.utf8-plain-text`.
+
+**Decision: the plain clipboard API (`OpenClipboard` / `SetClipboardData`), not `OleSetClipboard` with an
+`IDataObject`.** Why:
+
+- Explorer reads a cut from `Preferred DropEffect` whichever API wrote it: the paste target reads the formats, and the
+  plain API renders them up front, so nothing has to stay alive to answer later.
+- `OleSetClipboard` needs an STA thread that pumps messages for as long as Cmdr owns the clipboard, plus a hand-written
+  `IDataObject`. What it buys is hearing `Paste Succeeded` back, which only matters to a source that ghosts its cut
+  items until the paste lands. Cmdr doesn't ghost them (the frontend says "N items ready to move" instead).
+- No owner window: everything is rendered immediately, so nothing ever sends `WM_RENDERFORMAT`. This is what
+  `clipboard-win` (under `arboard`) does too.
+- Evidence: Microsoft's delete-on-paste procedure (learn.microsoft.com/windows/win32/shell/datascenarios § "Handling
+  Delete-on-Paste Operations", read 2026-11-24) names the formats and who does what, and the round trip of these
+  formats through the real clipboard is pinned by `platform/windows.rs`'s test on the Windows CI lane. Explorer itself
+  honoring a plain-API cut is unverified on a real machine as of 2026-11-24 (issue #942, task 42a's checklist).
+
+**The handshake after Cmdr pastes an Explorer cut** (`cut_paste.rs`): the read notes a marked cut, the move that
+starts on exactly those paths claims it (`move_files`, `move_between_volumes`), and `terminal_effects` settles it. A
+completion with nothing skipped (`files_skipped == 0`, no Locked item kept) runs `settle_cut` on its own thread:
+
+1. Confirm the clipboard still holds that very cut (a person who copied something since keeps their clipboard).
+2. `OleGetClipboard` → `IDataObject::SetData(Paste Succeeded = DROPEFFECT_MOVE)`, so Explorer clears its ghosted icons.
+   Cmdr's move already took the files (an "optimized move"), so ❌ never `Performed DropEffect = DROPEFFECT_MOVE`: that
+   pair tells the source to delete the originals itself. A source that wrote with the plain API has no data object to
+   take it; that refusal is logged at debug and changes nothing.
+3. If the clipboard is unchanged since step 1 (sequence number) and still holds the cut, empty it: a cut pastes once,
+   as in Explorer, and a second Ctrl+V doesn't try to move files that are gone.
+
+A cancel, a failure, or a completion that skipped something forgets the claim. A one-file rename can finish before its
+start returns, so the ledger remembers the last 64 unclaimed endings, as `drop_in/folders.rs` does.
+
+**Why plain paths**: `CF_HDROP` readers (Explorer, `DragQueryFileW`, most apps) take the classic form. A verbatim
+`\\?\` path would reach some and break others, and stripping the prefix by hand can name another file (Win32 strips a
+trailing dot, opens `CON` as a device). So the command crosses each row with `to_native_plain` and refuses the set as
+`NoPlainPath`, naming the path, when one has no plain form. Long-path support in Explorer's paste is a later
+improvement if it proves reliable.
+
+**OLE vs COM apartments**: `OleGetClipboard` needs `OleInitialize` (an STA with OLE's extras), so `settle_cut` enters
+and leaves one on its dedicated thread. The Shell helpers elsewhere (`icons/platform/windows/apartment.rs`) use
+`CoInitializeEx`; OLE's clipboard functions are documented to need `OleInitialize` itself.
 
 ## Direct NSPasteboard via `objc2`, not a Tauri plugin
 

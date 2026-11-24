@@ -6,7 +6,9 @@ import {
   clearClipboardCutState,
   resolvePathVolume,
   storedSpellings,
+  asClipboardFilesError,
 } from '#lib/tauri-commands/index.js'
+import { basenameInVolume } from '#lib/path/grammar.js'
 import { addToast, addToastForPane } from '#lib/ui/toast/index.js'
 import { getSnapshot, resolveSnapshotPaths, snapshotIdFromPanePath } from '#lib/search/snapshot-store.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
@@ -134,6 +136,28 @@ function moveOutRefusalToast(family: ClipboardRefusalFamily | null): string {
   if (family === 'device') return tString('fileExplorer.clipboard.moveFromDevice', { moveKey })
   if (family === 'server') return tString('fileExplorer.clipboard.moveFromServer', { moveKey })
   return tString('fileExplorer.clipboard.moveFromUnknown', { moveKey })
+}
+
+/**
+ * The toast for a clipboard refusal a person can act on, or `null` for one only the log needs
+ * (nothing to copy, which the gates above already explain; an OS without a file clipboard; an
+ * OS failure).
+ */
+function clipboardFilesRefusalMessage(error: unknown): string | null {
+  const refusal = asClipboardFilesError(error)
+  if (refusal?.type === 'noPlainPath') {
+    const name = basenameInVolume(refusal.path) ?? refusal.path
+    return tString('fileExplorer.clipboard.noPlainPath', { name })
+  }
+  if (refusal?.type === 'busy') return tString('fileExplorer.clipboard.busy')
+  return null
+}
+
+/** Tells the person about a clipboard refusal they can act on, and logs every one. */
+function reportClipboardFailure(what: string, error: unknown): void {
+  const message = clipboardFilesRefusalMessage(error)
+  if (message !== null) addToast(message, { level: 'warn' })
+  log.error('{what} failed: {error}', { what, error })
 }
 
 /**
@@ -332,7 +356,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
         const count = await copyPathsToClipboard(snapshotClip.paths)
         addToast(tString('fileExplorer.clipboard.copied', { countText: formatNumber(count), count }), { level: 'info' })
       } catch (error) {
-        log.error('Clipboard copy from snapshot failed: {error}', { error })
+        reportClipboardFailure('Clipboard copy from snapshot', error)
       }
       return
     }
@@ -358,7 +382,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
       const count = await copyPathsToClipboard(paths)
       addToast(tString('fileExplorer.clipboard.copied', { countText: formatNumber(count), count }), { level: 'info' })
     } catch (error) {
-      log.error('Clipboard copy failed: {error}', { error })
+      reportClipboardFailure('Clipboard copy', error)
     }
   }
 
@@ -377,7 +401,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
           level: 'info',
         })
       } catch (error) {
-        log.error('Clipboard cut from snapshot failed: {error}', { error })
+        reportClipboardFailure('Clipboard cut from snapshot', error)
       }
       return
     }
@@ -405,7 +429,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
         level: 'info',
       })
     } catch (error) {
-      log.error('Clipboard cut failed: {error}', { error })
+      reportClipboardFailure('Clipboard cut', error)
     }
   }
 
@@ -531,7 +555,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
         void clearClipboardCutState()
       }
     } catch (error) {
-      log.error('Clipboard paste failed: {error}', { error })
+      reportClipboardFailure('Clipboard paste', error)
     }
   }
 

@@ -383,8 +383,10 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   typed kind, failure-silent by contract. Rationale: `importance/DETAILS.md` § "The visit signal".
 - **`clipboard.rs`**: `copy_paths_to_clipboard` / `cut_paths_to_clipboard` (paths by value: the frontend resolves a
   pane selection through the revision-checked `get_selection_snapshot` first, never sends row numbers),
-  `read_clipboard_files`, `clear_clipboard_cut_state`. macOS uses NSPasteboard via `clipboard::pasteboard`; non-macOS
-  stubs return errors. `read_clipboard_files` returns `ClipboardReadResult { paths, is_cut, is_directory }` where
+  `read_clipboard_files`, `clear_clipboard_cut_state`, each refusing with `ClipboardFilesError`. Each OS's clipboard is
+  `clipboard::platform` (NSPasteboard on macOS, `CF_HDROP` on Windows, unsupported on Linux), called in
+  `spawn_blocking`. `read_clipboard_files` returns `ClipboardReadResult { paths, is_cut, is_directory }` (app paths;
+  `is_cut` from Cmdr's cut state or the clipboard's own cut mark) where
   `is_directory` is an index-aligned `Vec<Option<bool>>` from a batched off-main-thread `stat_paths_kinds_blocking`, so
   the paste toast can split files vs. folders without walking trees.
 - **`crash_reporter.rs`**: `check_pending_crash_report`, `dismiss_crash_report`, `send_crash_report`. Send passes only
@@ -527,7 +529,8 @@ A path the frontend sends is read as an app path at the command edge, `wire_path
   else the volume by id); `stat_paths_kinds` routes a route-served path through `app_path`. The scan preview's route
   reads its first source through `app_path` too (text that is no app path scans through the parent).
 - **An OS integration takes the native file** (`native`: `app_path`, then `to_native`): Finder's Get Info, the
-  editor and terminal launches, iCloud's download and eviction, Google Drive links, the clipboard's file URLs, the
+  editor and terminal launches, iCloud's download and eviction, Google Drive links, the clipboard's files (in their
+  PLAIN form, `to_native_plain`, which other apps read: `clipboard/DETAILS.md` § Windows), the
   context menu's services and facts, the git chip, the viewer's Save as, the media thumbnail, a favorite's mount
   lookup. Text with no native file (a `..`, relative text, a scheme path) is refused typed (`NoNativePath`), and each
   command answers it as "nothing to open there" in its own vocabulary: the terminal's `NotALocalPath`, an empty link,

@@ -1,22 +1,32 @@
 //! The answers of an OS with no clipboard to reach yet: each says it isn't supported here.
-//! Shared by the Linux and Windows arms.
-
-use std::path::PathBuf;
+//! Linux's file clipboard, and paste-content-as-file on Linux and Windows.
 
 use cmdr_operations::MutationError;
 use tauri::AppHandle;
 
 use super::super::PasteClipboardReply;
+#[cfg(target_os = "linux")]
+use super::super::{ClipboardFiles, ClipboardFilesError, ClipboardIntent};
 
 /// Not supported yet.
-pub(crate) fn write_file_urls(_app: AppHandle, _paths: Vec<PathBuf>) -> Result<(), String> {
-    Err("Clipboard file operations are not yet supported on this platform".to_string())
+#[cfg(target_os = "linux")]
+pub(crate) fn write_file_urls(
+    _app: AppHandle,
+    _paths: Vec<std::path::PathBuf>,
+    _intent: ClipboardIntent,
+) -> Result<(), ClipboardFilesError> {
+    Err(ClipboardFilesError::NotSupported)
 }
 
 /// Not supported yet.
-pub(crate) fn read_file_urls(_app: AppHandle) -> Result<Vec<PathBuf>, String> {
-    Err("Clipboard file operations are not yet supported on this platform".to_string())
+#[cfg(target_os = "linux")]
+pub(crate) fn read_file_urls(_app: AppHandle) -> Result<ClipboardFiles, ClipboardFilesError> {
+    Err(ClipboardFilesError::NotSupported)
 }
+
+/// Nothing to tell: no cut mark is ever read here.
+#[cfg(target_os = "linux")]
+pub(crate) fn after_cut_paste(_paths: Vec<std::path::PathBuf>) {}
 
 /// Not supported yet.
 pub(crate) async fn paste_as_file(

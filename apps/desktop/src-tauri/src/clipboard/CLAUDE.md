@@ -1,41 +1,41 @@
 # Clipboard
 
-File clipboard (Cmd+C/X/V) with macOS NSPasteboard interop. Follows Finder's copy-at-source, decide-at-paste model:
-Cmd+X sets a Cmdr-internal cut flag, and the move-vs-copy decision happens at paste time.
+File clipboard (Cmd+C/X/V, Ctrl+C/X/V) with Finder's NSPasteboard on macOS and Explorer's `CF_HDROP` on Windows. The
+move-vs-copy decision happens at paste time: a cut is Cmdr's own flag on macOS (`state.rs`), and the clipboard's
+`Preferred DropEffect` on Windows, so Explorer and Cmdr move each other's cuts.
 
 ## Module map
 
-- `mod.rs`: re-exports; `#[cfg]` switch between the prod NSPasteboard backend and the E2E mock; exposes
-  `snapshot_mock_clipboard` / `clear_mock_clipboard` under the `playwright-e2e` feature.
-- `pasteboard.rs`: macOS NSPasteboard FFI via `objc2`. Compiled when `target_os = "macos"` AND `playwright-e2e` is OFF.
-- `mock.rs`: in-process mock with the same fn signatures. Compiled when `target_os = "macos"` AND `playwright-e2e` is ON.
-- `store.rs`: TWO separate statics — `ClipboardEntry` (file-URL copy/cut) and `ClipboardData` (paste-content flavors).
-- `payload.rs`: pure paste-content core (flavor precedence, TIFF→PNG, markdown sniff, payload→content). Both prod and
-  E2E backends feed it a `ClipboardData`.
-- `paste_file.rs`: paste-as-file's write, under the instant-mutation reply deadline, over the engine's numbered create.
-- `state.rs`: cut state (`LazyLock<RwLock<Option<CutState>>>`).
+- `mod.rs`: re-exports, the shared types (`ClipboardIntent`, `ClipboardFiles`, `ClipboardFilesError`), and the `#[cfg]`
+  switch between the prod NSPasteboard backend and the E2E mock.
+- `platform/`: each OS's seam. `macos.rs` (main-thread hop), `windows.rs` (`CF_HDROP` + drop effect),
+  `linux.rs`/`unsupported.rs`, `arboard_text.rs` (plain text on Linux and Windows), and `shell_formats.rs` (pure bytes
+  of the Windows formats: `DROPFILES`, `DROPEFFECT`, the text; tested on every OS).
+- `cut_paste.rs`: follows a paste of a clipboard-marked cut from the read to the move's end.
+- `pasteboard.rs` / `mock.rs` / `store.rs`: macOS FFI, its E2E mock, and their shared statics.
+- `payload.rs` / `paste_file.rs`: paste content (text, image, PDF) as a new file. `state.rs`: Cmdr's own cut flag.
 
 ## Gotchas
 
-- **NSPasteboard is NOT thread-safe**: all pasteboard calls dispatch to the main thread via `run_on_main_thread` (same
-  pattern as the drag code).
-- **Cut state lives in Rust, not the frontend** (backend is authoritative for file ops). On paste, validate that the
-  clipboard paths still match the stored cut-state paths; if another app replaced the clipboard, clear the stale cut
-  state and paste as a copy. This prevents moving the wrong files.
-- **Both file URLs and plain text are written**, so pasting into a text editor gives newline-separated paths (matches
-  Finder).
-- **MTP paths are excluded**: they can't be a `public.file-url`. The UI suggests F5/F6.
-- **Each OS's pasteboard access is `platform/`**; Linux and Windows read plain text through `arboard`
-  (`platform/arboard_text.rs`, ❗ off the main thread: GTK serves our own selection from it) and answer "not supported"
-  for files (Linux needs `text/uri-list`, Windows `CF_HDROP`: task 42).
-- **Paste-content-as-file uses a SEPARATE `ClipboardData` static from the file-URL `ClipboardEntry`.** Don't merge them
-  — a content paste would clobber a pending file copy. Flavor precedence + the markdown sniff live in `payload.rs` (pure,
-  testable); the write is `paste_file.rs` over the engine's `create_numbered_file`. See `DETAILS.md` § Paste clipboard content as a
-  file.
-- **Runtime `CMDR_CLIPBOARD_BACKEND=mock`** lives in `pasteboard.rs` (a prod-build debugging tool), sampled once via
-  `LazyLock`. Both the compile-time mock and this runtime override share `store.rs`, so a test flipping the env in one
-  process sees the same data the E2E mock module sees in another. See the "Mock-backend convention" in
-  `docs/tooling/instance-isolation.md`.
+- **NSPasteboard is NOT thread-safe**: all pasteboard calls dispatch to the main thread via `run_on_main_thread`.
+- **The Windows clipboard is a system-wide lock another app can hold**: `windows.rs` retries a bounded number of times,
+  and the commands run every seam call in `spawn_blocking`, ❌ never on the main thread or the async runtime.
+- **Clipboard paths cross as PLAIN native paths** (`to_native_plain`): other apps read `CF_HDROP` without `\\?\`. A row
+  whose plain form names another file (long path, trailing dot, `CON`) refuses the whole set as `NoPlainPath`.
+- **Paths come back as app paths** (`C:\x` → `C:/x`) in `read_clipboard_files`, so the move the paste starts names
+  what `cut_paste.rs` noted. ❌ Don't hand the frontend native text.
+- **A paste-as-move of a marked cut owes its source a word**: `move_files` / `move_between_volumes` claim it,
+  `operations_host::terminal_effects` settles it. Windows then sends `Paste Succeeded` (never `Performed DropEffect`:
+  that asks Explorer to delete) and empties a cut nobody else ended. `DETAILS.md` § Windows.
+- **Cut state lives in Rust, not the frontend**. A clipboard that no longer matches the cut-state paths clears the
+  stale state and pastes as a copy, so the wrong files never move.
+- **Both files and plain text are written**, so pasting into a text editor gives the paths, one per line.
+- **Scheme paths (MTP, SFTP, archives, Cmdr's own SMB) never reach the clipboard**: the frontend refuses them and
+  suggests F5/F6; `native_rows` refuses them too.
+- **Paste-content-as-file uses a SEPARATE `ClipboardData` static from the file-URL `ClipboardEntry`.** Don't merge
+  them: a content paste would clobber a pending file copy. `DETAILS.md` § Paste clipboard content as a file.
+- **Runtime `CMDR_CLIPBOARD_BACKEND=mock`** lives in `pasteboard.rs` (macOS, a prod-build debugging tool), sampled
+  once via `LazyLock`; see the "Mock-backend convention" in `docs/tooling/instance-isolation.md`.
 
-Full details (why `objc2` over a Tauri plugin, why the E2E mock is a `cfg` module swap rather than a `dyn` trait, the
-copy-at-source rationale): `DETAILS.md`.
+Full details (why `objc2` over a Tauri plugin, why the plain Windows clipboard API over `OleSetClipboard`, the E2E mock
+as a `cfg` swap, the cut handshake): `DETAILS.md`.

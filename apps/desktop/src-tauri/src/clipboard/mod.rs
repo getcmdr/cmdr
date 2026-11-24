@@ -24,7 +24,62 @@ mod mock;
 pub(crate) mod platform;
 mod state;
 
+// A paste-as-move of files the clipboard marks cut, followed to the move's end.
+pub(crate) mod cut_paste;
+
 pub use state::{clear_cut_state, get_cut_state, set_cut_state};
+
+/// Whether files go on the clipboard to be copied or moved on paste.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ClipboardIntent {
+    /// Ctrl+C / ⌘C: a paste copies them.
+    Copy,
+    /// Ctrl+X / ⌘X: a paste moves them. Windows marks the clipboard so (`Preferred DropEffect`);
+    /// macOS keeps the mark in Cmdr (`state.rs`), since Finder's pasteboard has none.
+    Cut,
+}
+
+/// The files on the clipboard, as native paths, and whether the CLIPBOARD marks them cut (an
+/// Explorer Ctrl+X). Only Windows has such a mark; macOS and Linux always answer `false`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ClipboardFiles {
+    pub(crate) paths: Vec<std::path::PathBuf>,
+    pub(crate) marked_cut: bool,
+}
+
+/// Why files couldn't go on, or come off, the clipboard. The frontend words each from the
+/// catalog; `detail` is for the log only.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum ClipboardFilesError {
+    /// Nothing to put on it: no rows, or a row with no path on this computer (a phone's, a
+    /// server's), which refuses the whole set.
+    NothingToCopy,
+    /// A path whose plain form names a different file or none (Windows: past 259 characters, a
+    /// name ending in a dot or space, a device name like `CON`). Other apps read `CF_HDROP` as
+    /// plain paths, so the whole set stays off the clipboard.
+    NoPlainPath {
+        /// The path, for the toast to name.
+        path: String,
+    },
+    /// Another app held the clipboard open through every retry.
+    #[allow(
+        dead_code,
+        reason = "made by Windows' arm only: its clipboard is a lock another app holds"
+    )]
+    Busy,
+    /// Files on the clipboard aren't supported on this OS yet.
+    #[allow(
+        dead_code,
+        reason = "made by Linux's arm only, the one OS with no file clipboard yet"
+    )]
+    NotSupported,
+    /// The OS refused for a reason it named.
+    Unexpected {
+        /// The OS's words, for the log.
+        detail: String,
+    },
+}
 
 /// The kind of clipboard content pasted as a file. Drives the paste toast's
 /// noun (text / image / PDF); the filename's extension carries the finer detail

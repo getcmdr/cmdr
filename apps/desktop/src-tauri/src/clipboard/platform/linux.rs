@@ -2,4 +2,4 @@
 //! writer yet (`text/uri-list` is the one to add).
 
 pub(crate) use super::arboard_text::read_text;
-pub(crate) use super::unsupported::{paste_as_file, read_file_urls, write_file_urls};
+pub(crate) use super::unsupported::{after_cut_paste, paste_as_file, read_file_urls, write_file_urls};

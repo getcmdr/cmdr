@@ -121,6 +121,8 @@ pub async fn move_between_volumes(
         .await?;
     // The dialog's Move on a promised drop (`drop_in/folders.rs`), same as a copy.
     let _ = crate::drop_in::folders::claim_for_operation(&started.operation_id, &sources);
+    // A paste of an Explorer cut owes Explorer a word once it lands (`clipboard/cut_paste.rs`).
+    let _ = crate::clipboard::cut_paste::claim_for_operation(&started.operation_id, &sources);
     Ok(started)
 }
 

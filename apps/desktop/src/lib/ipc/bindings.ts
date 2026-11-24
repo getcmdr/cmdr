@@ -4766,17 +4766,20 @@ export const commands = {
    *  insert renumbers rows and old row numbers would name the neighbor.
    */
   copyPathsToClipboard: (paths: string[]) =>
-    typedError<number, string>(__TAURI_INVOKE('copy_paths_to_clipboard', { paths })),
+    typedError<number, ClipboardFilesError>(__TAURI_INVOKE('copy_paths_to_clipboard', { paths })),
   // Writes the given paths directly to the system clipboard and marks them as cut.
   cutPathsToClipboard: (paths: string[]) =>
-    typedError<number, string>(__TAURI_INVOKE('cut_paths_to_clipboard', { paths })),
+    typedError<number, ClipboardFilesError>(__TAURI_INVOKE('cut_paths_to_clipboard', { paths })),
   /**
-   *  Reads file URLs from the system clipboard and checks whether they were cut.
+   *  Reads file URLs from the system clipboard and checks whether they were cut: marked so by the
+   *  clipboard itself (Windows' `Preferred DropEffect`, an Explorer Ctrl+X), or by Cmdr's own cut
+   *  state.
    *
    *  If the clipboard contents no longer match the recorded cut state (the user copied
    *  something else), the stale cut state is automatically cleared.
    */
-  readClipboardFiles: () => typedError<ClipboardReadResult, string>(__TAURI_INVOKE('read_clipboard_files')),
+  readClipboardFiles: () =>
+    typedError<ClipboardReadResult, ClipboardFilesError>(__TAURI_INVOKE('read_clipboard_files')),
   /**
    *  Reads plain text from the system clipboard.
    *
@@ -8654,6 +8657,37 @@ export type ClipModelStatus = {
   // The total download size in bytes, for the honest "~X MB" copy.
   downloadBytes: number
 }
+
+/**
+ *  Why files couldn't go on, or come off, the clipboard. The frontend words each from the
+ *  catalog; `detail` is for the log only.
+ */
+export type ClipboardFilesError =
+  /**
+   *  Nothing to put on it: no rows, or a row with no path on this computer (a phone's, a
+   *  server's), which refuses the whole set.
+   */
+  | { type: 'nothingToCopy' }
+  /**
+   *  A path whose plain form names a different file or none (Windows: past 259 characters, a
+   *  name ending in a dot or space, a device name like `CON`). Other apps read `CF_HDROP` as
+   *  plain paths, so the whole set stays off the clipboard.
+   */
+  | {
+      type: 'noPlainPath'
+      // The path, for the toast to name.
+      path: string
+    }
+  // Another app held the clipboard open through every retry.
+  | { type: 'busy' }
+  // Files on the clipboard aren't supported on this OS yet.
+  | { type: 'notSupported' }
+  // The OS refused for a reason it named.
+  | {
+      type: 'unexpected'
+      // The OS's words, for the log.
+      detail: string
+    }
 
 // How a paste that outlived its deadline ended.
 export type ClipboardPasteOutcome =

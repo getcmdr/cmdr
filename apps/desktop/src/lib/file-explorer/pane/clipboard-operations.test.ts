@@ -4,6 +4,7 @@ import type { PaneAccess } from './pane-access'
 import type { FilePaneAPI } from './types'
 import type { TransferProgressPropsData } from './dialog-props'
 import type { ToastContent, ToastOptions } from '#lib/ui/toast/toast-store.svelte.js'
+import type { ClipboardFilesError } from '#lib/ipc/bindings.js'
 
 const {
   copyPathsToClipboardSpy,
@@ -50,6 +51,11 @@ vi.mock('#lib/tauri-commands/index.js', async () => ({
   asListingLookupError: (
     await vi.importActual<typeof import('#lib/tauri-commands/listing-gone.js')>('#lib/tauri-commands/listing-gone.js')
   ).asListingLookupError,
+  asClipboardFilesError: (
+    await vi.importActual<typeof import('#lib/tauri-commands/clipboard-files.js')>(
+      '#lib/tauri-commands/clipboard-files.js',
+    )
+  ).asClipboardFilesError,
   getSelectionSnapshot: getSelectionSnapshotSpy,
   copyPathsToClipboard: copyPathsToClipboardSpy,
   cutPathsToClipboard: cutPathsToClipboardSpy,
@@ -190,6 +196,57 @@ beforeEach(() => {
   getSnapshotSpy.mockReturnValue({ volumeId: 'root' })
   // The shipped defaults, unless a test rebinds one.
   getLiveShortcutsSpy.mockImplementation((commandId) => (commandId === 'file.move' ? ['F6'] : ['F5']))
+})
+
+describe('clipboard refusals a person can act on', () => {
+  async function failure(error: ClipboardFilesError) {
+    const { ClipboardFilesFailure } = await vi.importActual<typeof import('#lib/tauri-commands/clipboard-files.js')>(
+      '#lib/tauri-commands/clipboard-files.js',
+    )
+    return new ClipboardFilesFailure(error)
+  }
+
+  it('names the file whose path other apps can’t read (Windows: long path, trailing dot, CON)', async () => {
+    resolveSnapshotPathsSpy.mockReturnValue(['/Users/test_user_1/dup.'])
+    copyPathsToClipboardSpy.mockRejectedValue(await failure({ type: 'noPlainPath', path: '/Users/test_user_1/dup.' }))
+    const paneRef = buildPaneRef({ currentPath: 'search-results://sr-1' })
+
+    await createClipboardOperations(
+      buildAccess({ paneRef, volumeId: 'search-results' }),
+      buildDialogs(),
+    ).copyToClipboard()
+
+    expect(addToastSpy).toHaveBeenCalledWith(expect.stringContaining('“dup.”'), { level: 'warn' })
+  })
+
+  it('says another app holds the clipboard when a cut can’t reach it', async () => {
+    resolveSnapshotPathsSpy.mockReturnValue(['/a.txt'])
+    cutPathsToClipboardSpy.mockRejectedValue(await failure({ type: 'busy' }))
+    const paneRef = buildPaneRef({ currentPath: 'search-results://sr-1' })
+
+    await createClipboardOperations(
+      buildAccess({ paneRef, volumeId: 'search-results' }),
+      buildDialogs(),
+    ).cutToClipboard()
+
+    expect(addToastSpy).toHaveBeenCalledWith('Another app is holding the clipboard. Try again in a moment.', {
+      level: 'warn',
+    })
+  })
+
+  it('keeps a refusal the gates already explain to the log', async () => {
+    resolveSnapshotPathsSpy.mockReturnValue(['/a.txt'])
+    copyPathsToClipboardSpy.mockRejectedValue(await failure({ type: 'nothingToCopy' }))
+    const paneRef = buildPaneRef({ currentPath: 'search-results://sr-1' })
+
+    await createClipboardOperations(
+      buildAccess({ paneRef, volumeId: 'search-results' }),
+      buildDialogs(),
+    ).copyToClipboard()
+
+    expect(addToastSpy).not.toHaveBeenCalled()
+    expect(logErrorSpy).toHaveBeenCalled()
+  })
 })
 
 describe('copyToClipboard', () => {

@@ -7,35 +7,55 @@ use cmdr_operations::MutationError;
 use objc2::MainThreadMarker;
 use tauri::AppHandle;
 
-use super::super::PasteClipboardReply;
+use super::super::{ClipboardFiles, ClipboardFilesError, ClipboardIntent, PasteClipboardReply};
 
-/// Writes `paths` as file URLs (and their newline-joined text) on the main thread.
-pub(crate) fn write_file_urls(app: AppHandle, paths: Vec<PathBuf>) -> Result<(), String> {
+/// The OS's words as the typed error's log detail.
+fn unexpected(detail: String) -> ClipboardFilesError {
+    ClipboardFilesError::Unexpected { detail }
+}
+
+/// Writes `paths` as file URLs (and their newline-joined text) on the main thread. A cut writes
+/// the same: Finder's pasteboard has no cut mark, so Cmdr keeps it (`state.rs`).
+pub(crate) fn write_file_urls(
+    app: AppHandle,
+    paths: Vec<PathBuf>,
+    _intent: ClipboardIntent,
+) -> Result<(), ClipboardFilesError> {
     let (tx, rx) = std::sync::mpsc::channel();
     app.run_on_main_thread(move || {
         let mtm = MainThreadMarker::new().expect("run_on_main_thread runs on the main thread");
         let result = super::super::write_file_urls_to_clipboard(mtm, &paths);
         let _ = tx.send(result);
     })
-    .map_err(|e| format!("Couldn't run on main thread: {e}"))?;
+    .map_err(|e| unexpected(format!("Couldn't run on main thread: {e}")))?;
 
     rx.recv()
-        .map_err(|e| format!("Couldn't receive pasteboard result: {e}"))?
+        .map_err(|e| unexpected(format!("Couldn't receive pasteboard result: {e}")))?
+        .map_err(unexpected)
 }
 
-/// Reads the file URLs on the main thread.
-pub(crate) fn read_file_urls(app: AppHandle) -> Result<Vec<PathBuf>, String> {
+/// Reads the file URLs on the main thread. Never marked cut: the pasteboard can't say so.
+pub(crate) fn read_file_urls(app: AppHandle) -> Result<ClipboardFiles, ClipboardFilesError> {
     let (tx, rx) = std::sync::mpsc::channel();
     app.run_on_main_thread(move || {
         let mtm = MainThreadMarker::new().expect("run_on_main_thread runs on the main thread");
         let result = super::super::read_file_urls_from_clipboard(mtm);
         let _ = tx.send(result);
     })
-    .map_err(|e| format!("Couldn't run on main thread: {e}"))?;
+    .map_err(|e| unexpected(format!("Couldn't run on main thread: {e}")))?;
 
-    rx.recv()
-        .map_err(|e| format!("Couldn't receive pasteboard result: {e}"))?
+    let paths = rx
+        .recv()
+        .map_err(|e| unexpected(format!("Couldn't receive pasteboard result: {e}")))?
+        .map_err(unexpected)?;
+    Ok(ClipboardFiles {
+        paths,
+        marked_cut: false,
+    })
 }
+
+/// Nothing to tell: the pasteboard never marks files cut, so no paste claims one.
+pub(crate) fn after_cut_paste(_paths: Vec<PathBuf>) {}
 
 /// Reads the plain text on the main thread.
 pub(crate) fn read_text(app: AppHandle) -> Result<Option<String>, String> {

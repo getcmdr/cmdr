@@ -1291,6 +1291,17 @@
       "combo": "the user’s own key for copying files to the clipboard, as key glyphs or key names (⌘C on a Mac, Ctrl+C on Windows and Linux); never a word"
     }
   },
+  "fileExplorer.clipboard.noPlainPath": "Other apps can’t open “{name}” from the clipboard, so nothing went on it. Shorten its path or rename it, then try again.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "description": "Warning toast after the copy or cut shortcut on Windows, when one of the picked files has a path other apps (File Explorer) can't read from the clipboard: the path is longer than Windows' classic 259-character limit, or the name ends in a dot or space, or is a reserved device name like CON or NUL. Cmdr itself can still copy it with its own Copy command. Nothing was put on the clipboard.",
+    "placeholders": {
+      "name": "the file or folder name that couldn't go on the clipboard"
+    }
+  },
+  "fileExplorer.clipboard.busy": "Another app is holding the clipboard. Try again in a moment.",
+  "@fileExplorer.clipboard.busy": {
+    "description": "Warning toast after the copy, cut, or paste shortcut, when another app kept the system clipboard locked through every retry, so Cmdr couldn't read or write it. Usually clears up within seconds."
+  },
   "fileExplorer.clipboard.noFiles": "No files on the clipboard. Copy files first.",
   "@fileExplorer.clipboard.noFiles": {
     "description": "Warning toast when the user pastes in the file list but the clipboard holds no files, shown when the user has no key for copying files (they removed it). Same sentence as \"fileExplorer.clipboard.noFilesWithKey\" without the key."
