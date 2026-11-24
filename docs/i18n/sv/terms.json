@@ -4224,5 +4224,18 @@
     "chosen": "Huvudmeny",
     "confidence": "high",
     "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
+  },
+  "up-to-date": {
+    "chosen": "uppdaterad",
+    "accept": ["uppdater"],
+    "confidence": "high",
+    "forms": "indexed and up to date → Indexerad och uppdaterad; X keeps Y up to date → håller Y uppdaterad",
+    "sources": "catalog (fileExplorer.navigation.driveIndex.tooltipFresh, tooltipFreshNoScan: Indexerad och uppdaterad); gnome-control-center.po uppdaterad färgprofil",
+    "avoid": [
+      {
+        "form": "à jour",
+        "why": "git.po's bookish loan; the catalog and GNOME say uppdaterad"
+      }
+    ]
   }
 }

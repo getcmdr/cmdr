@@ -4490,5 +4490,12 @@
     "chosen": "Hoofdmenu",
     "confidence": "high",
     "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
+  },
+  "up-to-date": {
+    "chosen": "up-to-date",
+    "accept": ["up-to-date", "bijgewerkt", "bij te werken", "actueel"],
+    "confidence": "high",
+    "forms": "indexed and up to date → Geïndexeerd en up-to-date; X keeps Y up to date → houdt Y up-to-date",
+    "sources": "catalog (fileExplorer.navigation.driveIndex.tooltipFresh, tooltipFreshNoScan: Geïndexeerd en up-to-date); gnome-control-center.po actueel bijgewerkt"
   }
 }

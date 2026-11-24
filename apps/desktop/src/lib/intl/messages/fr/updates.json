@@ -112,7 +112,7 @@
   "@updates.status.noBuildForThisPlatform": {
     "sourceHash": "0644008"
   },
-  "updates.status.updatedByStore": "The Microsoft Store keeps this copy of Cmdr up to date.",
+  "updates.status.updatedByStore": "Le Microsoft Store maintient cette copie de Cmdr à jour.",
   "@updates.status.updatedByStore": {
     "sourceHash": "1911f15"
   },

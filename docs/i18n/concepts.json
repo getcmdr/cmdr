@@ -950,7 +950,7 @@
     "en": "copy",
     "match": ["copy", "copies", "copying", "copied"],
     "note": "\"A copy\" as a noun (the duplicate object) may take a different word than the verb.",
-    "notMatch": ["released copy", "another copy of cmdr", "fresh copy", "this copy will close"],
+    "notMatch": ["released copy", "another copy of cmdr", "fresh copy", "this copy will close", "this copy of cmdr"],
     "sense": "Duplicating files to another location (F5), or copying text or a path to the clipboard."
   },
   "cost": {
@@ -3889,7 +3889,8 @@
       {
         "key": "aboutThis.unknown.onlineOnly",
         "why": "stored online only names the online-only state, not where a name or data lives on a drive"
-      }
+      },
+      "microsoft store"
     ],
     "sense": "Where data or a name physically lives (a destination that can't store a name, a file stored on a drive, a password stored in the keychain)."
   },
