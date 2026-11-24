@@ -1,5 +1,5 @@
 /**
- * `TransferDialog`'s "skip this OS's junk files" toggle (#314), through the component: it
+ * `TransferDialog`'s "skip system clutter files" toggle (#314), through the component: it
  * starts from `fileOperations.osJunkFiles`, its link names that default (or offers to stop
  * asking) and opens the setting row, a flip is a one-off that the confirm carries and the
  * preview walks again for, and rename mode shows none. The policy mapping itself is
@@ -142,16 +142,14 @@ describe('the toggle starts from the setting', () => {
   })
 })
 
-describe('each OS names its own junk', () => {
-  it.each([
-    ['macos', 'Skip Mac hidden files (.DS_Store, ._*)'],
-    ['windows', 'Skip Windows thumbnail files (Thumbs.db, ehthumbs*.db)'],
-    ['linux', 'Skip Linux leftover files (.nfs*, .fuse_hidden*)'],
-  ] as const)('on %s the toggle reads “%s”', async (platform, label) => {
+describe('every OS skips the one merged set (#1416)', () => {
+  it.each(['macos', 'windows', 'linux'] as const)('on %s the toggle names the same set', async (platform) => {
     onTestFinished(withPlatform(platform))
     const target = mountDialog()
     await flushMicrotasks()
-    expect(target.querySelector('.os-junk-row label')?.textContent.trim()).toBe(label)
+    expect(target.querySelector('.os-junk-row label')?.textContent.trim()).toBe(
+      'Skip system clutter files (.DS_Store, Thumbs.db, and more)',
+    )
   })
 })
 
@@ -177,7 +175,7 @@ describe('the toggle is a one-off override', () => {
 })
 
 describe('the link', () => {
-  it('opens Settings at the “skip this OS’s junk files” row', async () => {
+  it('opens Settings at the “skip system clutter files” row', async () => {
     const target = mountDialog()
     await flushMicrotasks()
     link(target)?.click()

@@ -1,6 +1,7 @@
 //! OS junk files: files an operating system drops beside a person's own, which a
-//! transfer can leave out on request (#314, #1305). The set is the RUNNING OS's
-//! own, so the copy dialog's one toggle means "skip this system's junk" on each:
+//! transfer can leave out on request (#314, #1305, #1416). The set is ONE merged
+//! set, the same on every OS, since a USB stick or a NAS share carries what every
+//! system that touched it wrote:
 //!
 //! - **macOS**: Finder's `.DS_Store` in every folder it shows, and the `._name`
 //!   AppleDouble files macOS writes beside items on volumes that can't hold
@@ -20,8 +21,8 @@
 //! The match is on the NAME, typed here once, so every walk (the local scan, each
 //! backend's copy scan, the cross-volume merge, the compress plan) asks the same
 //! question. Only a FILE matches: a folder named `._x` is the person's own and
-//! always goes. The matching logic takes the OS as a value, so every OS's set is
-//! tested on every OS; only [`JunkOs::current`] reads the target, without `cfg`.
+//! always goes. The one per-OS part is the zip's `__MACOSX` sidecars, which only
+//! a Mac builds ([`OsJunkFiles::leaves_out_apple_double_sidecars`]).
 //!
 //! Not the same rule as [`crate::apple_double`]'s, which leaves out only a `._`
 //! sidecar the KERNEL serves as its sibling's xattrs (so a copy that carries the
@@ -32,7 +33,7 @@ use std::ffi::OsStr;
 
 use serde::{Deserialize, Serialize};
 
-/// Whether a transfer writes the running OS's junk files to its destination.
+/// Whether a transfer writes OS junk files to its destination.
 // DEFAULT-OK: `Include` claims nothing about the disk; it's what every transfer did
 // before the person could ask otherwise, and what a caller that never asks gets.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
@@ -42,16 +43,15 @@ pub enum OsJunkFiles {
     /// something a person asks for.
     #[default]
     Include,
-    /// Leave every listed junk file of the running OS out of the destination.
+    /// Leave every listed junk file, whichever OS's, out of the destination.
     Skip,
 }
 
 impl OsJunkFiles {
-    /// Whether a walk under this choice leaves out the entry called `name`, by
-    /// the running OS's set. `is_directory` is the listing's own word: a folder
-    /// never matches.
+    /// Whether a walk under this choice leaves out the entry called `name`.
+    /// `is_directory` is the listing's own word: a folder never matches.
     pub fn leaves_out(self, name: &OsStr, is_directory: bool) -> bool {
-        self.leaves_out_on(JunkOs::current(), name, is_directory)
+        self == Self::Skip && !is_directory && is_os_junk_file_name(name)
     }
 
     /// [`Self::leaves_out`] for a name a listing hands over as a `str`.
@@ -59,72 +59,33 @@ impl OsJunkFiles {
         self.leaves_out(OsStr::new(name), is_directory)
     }
 
-    /// [`Self::leaves_out`] by `os`'s set: the seam that lets every set be tested
-    /// on every OS.
-    pub fn leaves_out_on(self, os: JunkOs, name: &OsStr, is_directory: bool) -> bool {
-        self == Self::Skip && !is_directory && is_os_junk_file_name(os, name)
-    }
-
     /// Whether a zip leaves out the `__MACOSX` `._` sidecars it would build from
     /// an item's xattrs. Those are the same AppleDouble clutter as a `._name`
-    /// file, so only skipping macOS's set drops them; skipping Windows' or
-    /// Linux's keeps the xattrs.
+    /// file, so skipping on a Mac drops them; elsewhere skipping keeps the xattrs.
     pub fn leaves_out_apple_double_sidecars(self) -> bool {
-        self.leaves_out_apple_double_sidecars_on(JunkOs::current())
+        self.leaves_out_apple_double_sidecars_on(RUNNING_ON_MACOS)
     }
 
-    /// [`Self::leaves_out_apple_double_sidecars`] on `os`.
-    pub fn leaves_out_apple_double_sidecars_on(self, os: JunkOs) -> bool {
-        self == Self::Skip && os == JunkOs::MacOs
-    }
-}
-
-/// The OS whose junk set a transfer skips.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum JunkOs {
-    /// `.DS_Store` and `._*`.
-    MacOs,
-    /// `Thumbs.db`, `ehthumbs.db`, and `ehthumbs_vista.db`, in any case.
-    Windows,
-    /// `.nfs…` and `.fuse_hidden…` leftovers of deleted open files.
-    Linux,
-}
-
-impl JunkOs {
-    /// Every OS, for tests that walk them all.
-    pub const ALL: [Self; 3] = [Self::MacOs, Self::Windows, Self::Linux];
-
-    /// The OS this binary runs on, from the target's own OS name, so the matcher
-    /// stays free of `cfg`. Anything that isn't macOS or Windows (Linux, and the
-    /// browser demo's wasm build) answers Linux.
-    pub const fn current() -> Self {
-        match std::env::consts::OS.as_bytes() {
-            b"macos" => Self::MacOs,
-            b"windows" => Self::Windows,
-            _ => Self::Linux,
-        }
-    }
-
-    /// Two names this OS's set matches, for a test that writes junk files on
-    /// whichever OS it runs on and checks a transfer leaves them out.
-    #[cfg(any(test, feature = "testing"))]
-    pub const fn sample_junk_names(self) -> [&'static str; 2] {
-        match self {
-            Self::MacOs => [".DS_Store", "._photo.jpg"],
-            Self::Windows => ["Thumbs.db", "ehthumbs.db"],
-            Self::Linux => [".nfs000000000012abcd00000001", ".fuse_hidden0000000a00000001"],
-        }
+    /// [`Self::leaves_out_apple_double_sidecars`] as if on a Mac or not: the seam
+    /// that tests both answers on every OS.
+    pub fn leaves_out_apple_double_sidecars_on(self, on_macos: bool) -> bool {
+        self == Self::Skip && on_macos
     }
 }
 
-/// Whether `name` is in `os`'s junk set. See the module docs for each set.
-pub fn is_os_junk_file_name(os: JunkOs, name: &OsStr) -> bool {
+/// Whether this binary runs on macOS, from the target's own OS name, so the
+/// module stays free of `cfg`.
+pub const RUNNING_ON_MACOS: bool = matches!(std::env::consts::OS.as_bytes(), b"macos");
+
+/// Two junk names from different OSes' sets, for a test that writes junk files
+/// and checks a transfer leaves them out on whichever OS it runs on.
+#[cfg(any(test, feature = "testing"))]
+pub const SAMPLE_JUNK_NAMES: [&str; 2] = [".DS_Store", "Thumbs.db"];
+
+/// Whether `name` is in the merged junk set. See the module docs for each part.
+pub fn is_os_junk_file_name(name: &OsStr) -> bool {
     let bytes = name.as_encoded_bytes();
-    match os {
-        JunkOs::MacOs => is_mac_junk(bytes),
-        JunkOs::Windows => is_windows_junk(bytes),
-        JunkOs::Linux => is_linux_junk(bytes),
-    }
+    is_mac_junk(bytes) || is_windows_junk(bytes) || is_linux_junk(bytes)
 }
 
 /// Exactly `.DS_Store`, or `._` followed by at least one more byte. Byte-exact:

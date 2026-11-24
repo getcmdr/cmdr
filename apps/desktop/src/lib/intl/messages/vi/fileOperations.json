@@ -404,7 +404,7 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Bỏ qua tệp ẩn chỉ dành cho Mac (.DS_Store, ._*)} windows {Bỏ qua tệp hình thu nhỏ của Windows (Thumbs.db, ehthumbs*.db)} other {Bỏ qua tệp sót lại của Linux (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "2dbf7cc"
   },

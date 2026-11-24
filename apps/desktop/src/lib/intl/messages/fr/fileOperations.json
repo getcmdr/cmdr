@@ -406,7 +406,7 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Ignorer les fichiers cachés propres au Mac (.DS_Store, ._*)} windows {Ignorer les fichiers de miniatures de Windows (Thumbs.db, ehthumbs*.db)} other {Ignorer les fichiers résiduels de Linux (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "2dbf7cc"
   },

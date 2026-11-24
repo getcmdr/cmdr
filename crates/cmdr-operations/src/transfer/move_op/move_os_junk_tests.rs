@@ -1,4 +1,4 @@
-//! A local copy or cross-filesystem move that leaves the running OS's junk files out
+//! A local copy or cross-filesystem move that leaves OS junk files out
 //! (#314, #1305): they never reach the destination or the totals, and a move
 //! takes them with the folders that moved, so it never leaves a husk behind.
 
@@ -9,10 +9,10 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::transfer::copy::copy_files_with_progress_inner;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_fs::os_junk_files::{JunkOs, OsJunkFiles};
+use cmdr_fs::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
 
-/// The running OS's junk names, so the test checks the set this OS skips.
-const JUNK: [&str; 2] = JunkOs::current().sample_junk_names();
+/// Junk names from two OSes, so the test checks one OS skips another's junk too (#1416).
+const JUNK: [&str; 2] = SAMPLE_JUNK_NAMES;
 
 /// `work/` with the OS's junk at every level, and one folder holding nothing else.
 fn seed(src_root: &Path) -> PathBuf {
@@ -40,7 +40,7 @@ fn assert_no_os_junk_files_under(root: &Path) {
     for entry in walkdir::WalkDir::new(root) {
         let entry = entry.unwrap();
         assert!(
-            !cmdr_fs::os_junk_files::is_os_junk_file_name(JunkOs::current(), entry.file_name()),
+            !cmdr_fs::os_junk_files::is_os_junk_file_name(entry.file_name()),
             "{} reached the destination",
             entry.path().display()
         );

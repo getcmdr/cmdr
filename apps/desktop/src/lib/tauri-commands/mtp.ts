@@ -199,7 +199,7 @@ export interface VolumeCopyConfig {
   spaceShortfall?: SpaceShortfall
   /** The top-level sources split into files and folders, for the queue row's "2 folders and 1 file". */
   sourceKinds?: ItemKinds
-  /** Whether the transfer leaves the running OS's junk files (`cmdr_fs::os_junk_files`) out of its destination. */
+  /** Whether the transfer leaves OS junk files (`cmdr_fs::os_junk_files`) out of its destination. */
   osJunkFiles?: OsJunkFiles
 }
 

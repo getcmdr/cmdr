@@ -719,14 +719,14 @@ came from (`ConflictPolicySource`: `remembered`, `picked`, `preset`, or `explici
 E2E specs share one app per shard, so a saved policy would leak into the next spec; the conflict-family specs reset it
 through `resetRememberedConflictPolicy` (`test/e2e-playwright/conflict-helpers.ts`).
 
-### "Skip this OS's junk files" (#314, #1305)
+### "Skip system clutter files" (#314, #1305, #1416)
 
-The "To" card ends with a checkbox and a link. Its label is one `{platform, select, …}` message, so each OS names its
-own set ("Skip Mac hidden files", "Skip Windows thumbnail files", "Skip Linux leftover files"); the backend skips the
-RUNNING OS's set, and the label reads the same platform, so the two agree (the browser demo is the exception: its engine
-answers Linux whatever the visitor's OS). The rules live in `os-junk-files.ts`; which names match, and what a transfer
-then does with them (the walks, the totals, a move's husk folders, a zip's `__MACOSX` sidecars), is the backend's:
-`crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk files a transfer leaves out".
+The "To" card ends with a checkbox and a link. The backend skips ONE merged set of macOS, Windows, and Linux clutter on
+every OS (a stick or a share carries what every system wrote), so the label is one plain message naming two examples
+(`.DS_Store`, `Thumbs.db`), the same on every OS; the setting's help text lists the whole set. The rules live in
+`os-junk-files.ts`; which names match, and what a transfer then does with them (the walks, the totals, a move's husk
+folders, a zip's `__MACOSX` sidecars), is the backend's: `crates/cmdr-operations/src/transfer/DETAILS.md` § "OS junk
+files a transfer leaves out".
 
 - **It starts from `fileOperations.osJunkFiles`** (`include` / `skip` / `ask`, default `ask`): ticked only on `skip`. It
   was `fileOperations.macOnlyFiles` until #1305; settings migration 11 carries a stored choice across. The link names

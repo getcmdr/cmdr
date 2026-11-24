@@ -502,11 +502,11 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Пропускати приховані файли, потрібні лише на Mac} windows {Пропускати файли ескізів Windows} other {Пропускати залишкові файли Linux}}",
+  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
   "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Пропускає файли .DS_Store і ._* під час копіювання, переміщення чи архівування.} windows {Пропускає файли Thumbs.db і ehthumbs*.db під час копіювання, переміщення чи архівування. Windows створює їх знову, коли вони потрібні.} other {Пропускає файли .nfs* і .fuse_hidden* під час копіювання, переміщення чи архівування. Linux зберігає їх для видалених файлів, які досі відкриті.}}",
+  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "d429ec1"
   },

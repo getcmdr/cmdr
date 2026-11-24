@@ -504,11 +504,11 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {略過 Mac 專用的隱藏檔案} windows {略過 Windows 縮圖檔案} other {略過 Linux 殘留檔案}}",
+  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
   "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {複製、移動或壓縮時略過 .DS_Store 和 ._* 檔案。} windows {複製、移動或壓縮時略過 Thumbs.db 和 ehthumbs*.db 檔案。Windows 需要時會重新建立它們。} other {複製、移動或壓縮時略過 .nfs* 和 .fuse_hidden* 檔案。Linux 會替已刪除但仍開著的檔案保留它們。}}",
+  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "d429ec1"
   },

@@ -1,4 +1,4 @@
-//! A cross-volume copy or move that leaves the running OS's junk files out
+//! A cross-volume copy or move that leaves OS junk files out
 //! (#314, #1305), over `InMemoryVolume`, the double every backend's copy walk is
 //! held to: the merge walk never lands one, and a move's sweep takes them with
 //! the folders that moved.
@@ -9,11 +9,11 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_fs::os_junk_files::{JunkOs, OsJunkFiles};
+use cmdr_fs::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
 use std::time::Duration;
 
-/// The running OS's junk names, so the test checks the set this OS skips.
-const JUNK: [&str; 2] = JunkOs::current().sample_junk_names();
+/// Junk names from two OSes, so the test checks one OS skips another's junk too (#1416).
+const JUNK: [&str; 2] = SAMPLE_JUNK_NAMES;
 
 /// `dir`'s junk file number `n` as an app path.
 fn junk_in(dir: &str, n: usize) -> app_path::AppPathBuf {

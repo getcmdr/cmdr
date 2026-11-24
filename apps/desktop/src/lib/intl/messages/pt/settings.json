@@ -505,11 +505,11 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "{platform, select, macos {Ignorar arquivos ocultos exclusivos do Mac} windows {Ignorar arquivos de miniaturas do Windows} other {Ignorar arquivos residuais do Linux}}",
+  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
   "@settings.fileOperations.osJunkFiles.label": {
     "sourceHash": "28cccff"
   },
-  "settings.fileOperations.osJunkFiles.description": "{platform, select, macos {Ignora os arquivos .DS_Store e ._* ao copiar, mover ou comprimir.} windows {Ignora os arquivos Thumbs.db e ehthumbs*.db ao copiar, mover ou comprimir. O Windows os recria quando precisa deles.} other {Ignora os arquivos .nfs* e .fuse_hidden* ao copiar, mover ou comprimir. O Linux os mantém para arquivos apagados que continuam abertos.}}",
+  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
     "sourceHash": "d429ec1"
   },

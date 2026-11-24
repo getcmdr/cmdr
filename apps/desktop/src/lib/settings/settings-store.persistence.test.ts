@@ -682,8 +682,8 @@ describe('migration 10: the network timeout mode folds into one timeout', () => 
 })
 
 /**
- * Migration 11 (#1305): the Mac-only hidden files setting became "skip this OS's junk files"
- * under a new key. A Mac keeps the choice it made, since the Mac set is the same files.
+ * Migration 11 (#1305): the Mac-only hidden files setting became "skip system clutter files"
+ * under a new key. Every machine keeps the choice it made, since the merged set holds the Mac files.
  */
 describe('migration 11: the Mac-only files choice moves to the OS junk files key', () => {
   function seedLegacy(value: unknown): void {

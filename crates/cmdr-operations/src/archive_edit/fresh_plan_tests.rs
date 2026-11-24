@@ -293,16 +293,16 @@ async fn a_selected_macosx_folder_is_skipped_and_a_local_folder_is_its_own_sourc
     assert!(matches!(&plan.entries[0].source, PlannedSource::Local(path) if path.ends_with("docs")));
 }
 
-/// A compress that leaves the running OS's junk files out (#314, #1305) packs
+/// A compress that leaves OS junk files out (#314, #1305) packs
 /// none below the selection. On a Mac it also bridges every local entry without
 /// its `__MACOSX` sidecar, the same `._` clutter on another system; a folder's
 /// only use as a local source is its sidecar, so it becomes an empty entry.
 #[tokio::test]
 async fn a_compress_skipping_os_junk_files_packs_neither_them_nor_sidecars() {
     use super::super::fresh_zip::FreshZipSource;
-    use cmdr_fs::os_junk_files::{JunkOs, OsJunkFiles};
+    use cmdr_fs::os_junk_files::{OsJunkFiles, RUNNING_ON_MACOS, SAMPLE_JUNK_NAMES};
 
-    let [junk, other_junk] = JunkOs::current().sample_junk_names();
+    let [junk, other_junk] = SAMPLE_JUNK_NAMES;
     let engine = TestOperations::new();
     let temp = tempfile::tempdir().expect("tempdir");
     std::fs::create_dir_all(temp.path().join("docs/sub")).expect("mkdir");
@@ -336,8 +336,8 @@ async fn a_compress_skipping_os_junk_files_packs_neither_them_nor_sidecars() {
     names.sort_unstable();
     assert_eq!(names, vec!["docs/", "docs/a.txt", "docs/sub/"]);
     assert_eq!(plan.source_bytes, 1, "the totals leave them out too");
-    let on_a_mac = JunkOs::current() == JunkOs::MacOs;
-    assert_eq!(plan.sidecars, !on_a_mac, "only the Mac set drops sidecars");
+    let on_a_mac = RUNNING_ON_MACOS;
+    assert_eq!(plan.sidecars, !on_a_mac, "only a Mac drops sidecars");
     let (entries, _feeds) = plan.bridged();
     for entry in entries.iter().filter(|_| on_a_mac) {
         assert!(

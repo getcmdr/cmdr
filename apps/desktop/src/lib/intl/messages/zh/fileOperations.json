@@ -403,7 +403,7 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {跳过 Mac 专用的隐藏文件（.DS_Store、._*）} windows {跳过 Windows 缩略图文件（Thumbs.db、ehthumbs*.db）} other {跳过 Linux 遗留文件（.nfs*、.fuse_hidden*）}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "2dbf7cc"
   },

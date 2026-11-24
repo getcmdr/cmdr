@@ -438,7 +438,7 @@ export type { RowBeside } from '#lib/ipc/bindings.js'
 /** Which dialog a scan preview walks for (`startScanPreview`). */
 export type { ScanPreviewPurpose } from '#lib/ipc/bindings.js'
 
-/** Whether a transfer leaves the running OS's junk files out (#314). */
+/** Whether a transfer leaves OS junk files out (#314). */
 export type { OsJunkFiles } from '#lib/ipc/bindings.js'
 
 // Write + scan-preview event payload types, from typed events via `write-operations.ts`.

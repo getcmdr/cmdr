@@ -405,7 +405,7 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "{platform, select, macos {Hoppa över Mac-specifika dolda filer (.DS_Store, ._*)} windows {Hoppa över Windows-miniatyrfiler (Thumbs.db, ehthumbs*.db)} other {Hoppa över kvarlämnade Linux-filer (.nfs*, .fuse_hidden*)}}",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
     "sourceHash": "2dbf7cc"
   },
