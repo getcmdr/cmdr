@@ -377,6 +377,33 @@ async fn a_dev_build_answers_the_policy_and_otherwise_never_fetches() {
     assert!(!fetched.get());
 }
 
+/// The Store's package says the Store updates it, from every entry point and under any policy, and
+/// never reaches the network: the organization's update keys can't hold a Store install back.
+#[tokio::test]
+async fn a_store_package_is_updated_by_the_store_and_never_fetches() {
+    const STORE: SkipReason = SkipReason::NotUpdatable(NotUpdatable::StorePackage);
+    assert_eq!(skip_with(Err(NotUpdatable::StorePackage), &[]), Some(STORE));
+    let state = UpdateState::new();
+    let fetched = Cell::new(false);
+    for policy in [None, Some(forcing(&[DISABLE_UPDATES])), Some(ceiling("0.52"))] {
+        let _policy = policy.map(override_for_test);
+        for trigger in EVERY_TRIGGER {
+            let outcome = run_check(trigger, &state, Some(STORE), RUNNING, &[], || async {
+                fetched.set(true);
+                Ok(manifest_offering("0.53.0"))
+            })
+            .await
+            .expect("no fetch, no failure");
+            assert_eq!(outcome, UpdateCheckOutcome::UpdatedByStore, "{trigger:?}");
+        }
+    }
+    assert!(!fetched.get());
+    assert_eq!(
+        offer_to_download(&state).await.expect_err("nothing offered"),
+        UpdateDownloadError::NothingOffered
+    );
+}
+
 /// A profile that arrives between the check and the download stops the download before a byte.
 #[tokio::test]
 async fn a_policy_that_arrives_after_the_check_blocks_the_download() {

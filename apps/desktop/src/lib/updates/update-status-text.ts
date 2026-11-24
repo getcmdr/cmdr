@@ -15,6 +15,7 @@ export interface UpdateStatusReadable {
   managed: ManagedUpdateOutcome | null
   unwritable: UnwritableUpdate | null
   noBuild: boolean
+  updatedByStore: boolean
   previousVersion: string | null
   nextVersion: string | null
 }
@@ -47,6 +48,7 @@ export function formatUpdateStatus(state: UpdateStatusReadable): string | null {
       if (state.managed !== null) return describeManagedOutcome(state.managed)
       if (state.unwritable !== null) return describeUnwritableUpdate(state.unwritable)
       if (state.noBuild) return tString('updates.status.noBuildForThisPlatform')
+      if (state.updatedByStore) return tString('updates.status.updatedByStore')
       // Two sub-cases share idle. If we just finished a successful check (we have a previousVersion
       // and no nextVersion), say "no updates found". Before any check has run, say nothing.
       if (state.previousVersion !== null && state.nextVersion === null) {

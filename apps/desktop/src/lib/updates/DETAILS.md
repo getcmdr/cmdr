@@ -197,6 +197,16 @@ stays staged. **Decision/Why**: it used to answer `upToDate`, telling a stranded
 an old version; "a newer Cmdr, but not for this system yet" is the honest state the person can read (the check worked).
 `updater.no-build.test.ts`. `noBuild` clears when the next check starts.
 
+## Updated by the Microsoft Store
+
+A copy installed from the Microsoft Store (Windows) answers `updatedByStore` on every check, with no request and before
+the managed policy (`src-tauri/src/updater/DETAILS.md` § Who may check). `finishCheckUpdatedByStore` lands it as a
+terminal phase: status `idle`, `updateState.updatedByStore` set, and `formatUpdateStatus` says
+`updates.status.updatedByStore` ("The Microsoft Store keeps this copy of Cmdr up to date") in Settings and the menu
+check's toast. It also stops the poll loop: every later answer would be the same. A person's own check still runs and
+gets the same sentence. The `update_check` event reports `updated_by_store`, the only way the dashboard sees Store
+installs (they never reach `update-check`). `updater.store.test.ts`.
+
 ## Managed policy (MDM)
 
 The backend applies the organization's update keys and answers typed outcomes (`src-tauri/src/updater/DETAILS.md` §

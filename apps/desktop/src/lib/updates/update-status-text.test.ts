@@ -16,6 +16,7 @@ describe('an update this install can’t write into its own bundle', () => {
     failure: null,
     managed: null,
     noBuild: false,
+    updatedByStore: false,
     previousVersion: '0.52.0',
     nextVersion: null,
   } as const

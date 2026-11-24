@@ -24331,6 +24331,12 @@ export type UpdateCheckOutcome =
    *  person asks for still runs.
    */
   | { kind: 'automaticChecksDisabledByPolicy' }
+  /**
+   *  This is the Microsoft Store's package (`NotUpdatable::StorePackage`): the Store updates it,
+   *  so no request was made and nothing will be. Its own state, ❌ never `UpToDate`: the frontend
+   *  says where updates come from, and stops its background checks.
+   */
+  | { kind: 'updatedByStore' }
 
 /**
  *  What set an update check going. The frontend's `update_check` analytics event carries the same

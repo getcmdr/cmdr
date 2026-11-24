@@ -112,6 +112,10 @@
   "@updates.status.noBuildForThisPlatform": {
     "sourceHash": "0644008"
   },
+  "updates.status.updatedByStore": "The Microsoft Store keeps this copy of Cmdr up to date.",
+  "@updates.status.updatedByStore": {
+    "sourceHash": "1911f15"
+  },
   "updates.status.managedOff": "Cmdr 的更新由你的组织管理。",
   "@updates.status.managedOff": {
     "sourceHash": "aa342dc"

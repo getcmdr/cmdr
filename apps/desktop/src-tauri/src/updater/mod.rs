@@ -162,6 +162,10 @@ pub enum UpdateCheckOutcome {
     /// `DisableAutomaticUpdateChecks` refused a background check: no request was made. A check a
     /// person asks for still runs.
     AutomaticChecksDisabledByPolicy,
+    /// This is the Microsoft Store's package (`NotUpdatable::StorePackage`): the Store updates it,
+    /// so no request was made and nothing will be. Its own state, ❌ never `UpToDate`: the frontend
+    /// says where updates come from, and stops its background checks.
+    UpdatedByStore,
 }
 
 /// Why this process must not run an update check. Carried (rather than collapsed to a bool) so
@@ -268,6 +272,14 @@ where
     // Every check replaces the last offer, so a download can only fetch what the newest check
     // offered under the newest policy.
     state.slots().offered = None;
+
+    // Ahead of the policy: the organization's update keys can't hold a Store install back (the
+    // Store and Windows' own Store policies do), so answering "turned off by your organization"
+    // there would be false. Nothing is ever staged in a package, so there's nothing to withdraw.
+    if skip == Some(SkipReason::NotUpdatable(NotUpdatable::StorePackage)) {
+        log::info!("Not checking for updates: the Microsoft Store updates this install");
+        return Ok(UpdateCheckOutcome::UpdatedByStore);
+    }
 
     let policy = crate::managed_policy::for_egress().await;
     match policy.updates() {

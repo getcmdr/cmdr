@@ -63,7 +63,13 @@ What counts as an install (`platform::current_install`, each arm's pure `kind_fr
 
 - **macOS**: the exe sits inside a `.app` bundle (`installer::is_running_from_app_bundle`).
 - **Windows**: the binary carries the bundler's NSIS marker (`tauri::utils::platform::bundle_type`). An MSI is
-  `UnsupportedBundle`: Cmdr ships no MSI updater artifact.
+  `UnsupportedBundle`: Cmdr ships no MSI updater artifact. A process with a package identity
+  (`GetCurrentPackageFullName`) is `StorePackage` whatever its exe carries, asked first: the Store updates its MSIX,
+  whose files are read-only, and an NSIS installer run from inside it would install a second Cmdr. An unexpected
+  status from that call counts as packaged, the safe side. `run_check` answers `StorePackage` with `UpdatedByStore`
+  ahead of the managed policy and with no request, since the organization's update keys can't hold a Store install back
+  (the Store's own policies do), so "turned off by your organization" would be false there. Route and sources:
+  `docs/notes/windows-port/store-distribution.md`.
 - **Linux**: the AppImage marker AND `APPIMAGE` set (the file the plugin replaces). A `.deb` or `.rpm` is
   `PackageManagerInstall` and never checks: its files belong to the package manager, and updating them ourselves would
   take a `pkexec` admin prompt, which the updater never asks for.

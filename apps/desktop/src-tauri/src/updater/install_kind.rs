@@ -9,7 +9,9 @@
 //!   verified and handed to the Tauri updater plugin when Cmdr quits to restart (`handoff.rs`).
 //!   The signature's trusted comment binds the version (`--app-version`).
 //!
-//! Anything else (a dev binary, a `.deb` or `.rpm`, an MSI) never checks: [`NotUpdatable`].
+//! Anything else (a dev binary, a `.deb` or `.rpm`, an MSI, the Microsoft Store's package) never
+//! checks: [`NotUpdatable`]. The Store's package is the one the UI names, since its updates still
+//! come, just from the Store.
 
 /// An install the updater can update. Pure data, so every OS's arm is testable on any host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +45,9 @@ pub enum NotUpdatable {
     PackageManagerInstall,
     /// An install kind Cmdr doesn't ship an updater artifact for (an MSI).
     UnsupportedBundle,
+    /// The Microsoft Store's MSIX (Windows): the Store updates it, and its files are read-only, so
+    /// Cmdr's own updater stands down and the check answers `UpdatedByStore` without a request.
+    StorePackage,
 }
 
 impl std::fmt::Display for NotUpdatable {
@@ -52,6 +57,7 @@ impl std::fmt::Display for NotUpdatable {
             Self::NotAnInstalledBuild => f.write_str("not running from an installed build"),
             Self::PackageManagerInstall => f.write_str("installed by a package manager, which updates it"),
             Self::UnsupportedBundle => f.write_str("installed in a form Cmdr ships no update for"),
+            Self::StorePackage => f.write_str("installed from the Microsoft Store, which updates it"),
         }
     }
 }

@@ -96,6 +96,8 @@ Every key only turns something off or narrows it. Absent or forced to its permis
   to off.
 - **`DisableUpdates`** (bool): no check of any kind, no download, no install. Overrides the other two update keys. Locks
   `updates.autoCheck` to off.
+- None of the three update keys reach a Microsoft Store install: the Store updates it, and Cmdr's updater never runs
+  there (`updater/DETAILS.md` § Who may check). An admin holds a Store copy back with Windows' own Store policies.
 - **`MaxUpdateVersion`** (string, or an integer read as a major): "never update past this version". `"0.52"` allows up
   to the last 0.52.x (core `< 0.53.0`), `"0.52.3"` up to and including 0.52.3, `"1"` anything below 2.0.0. Grammar: one
   to three dot-separated non-negative integers, optional leading `v`, surrounding whitespace trimmed. A `<real>` is

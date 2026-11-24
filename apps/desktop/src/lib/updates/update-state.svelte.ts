@@ -72,6 +72,12 @@ export interface UpdateState {
    * this build can't check right now. Cleared when a check starts.
    */
   noBuild: boolean
+  /**
+   * This copy is the Microsoft Store's package, so the Store updates it and Cmdr's own updater never checks. A terminal
+   * phase like `managed`, ❌ not a failure and ❌ never "up to date": Settings and the check toast say where updates come
+   * from. Cleared when a check starts; the backend answers the same every time.
+   */
+  updatedByStore: boolean
   /** Version the user is currently running. Set when `checking` starts. */
   previousVersion: string | null
   /** Version we're moving to. Set when an update is found. Cleared on `idle`. */
@@ -91,6 +97,7 @@ export const updateState = $state<UpdateState>({
   managed: null,
   unwritable: null,
   noBuild: false,
+  updatedByStore: false,
   previousVersion: null,
   nextVersion: null,
   securityNotice: null,

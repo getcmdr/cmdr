@@ -6063,6 +6063,7 @@ export type MessageKey =
   | 'updates.status.ready'
   | 'updates.status.unwritableAdmin'
   | 'updates.status.unwritableStandard'
+  | 'updates.status.updatedByStore'
   | 'updates.toast.later'
   | 'updates.toast.readAdvisory'
   | 'updates.toast.ready'

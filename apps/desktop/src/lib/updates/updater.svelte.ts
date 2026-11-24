@@ -222,6 +222,7 @@ export async function checkForUpdates(trigger: UpdateCheckTrigger): Promise<void
     updateState.managed = null
     updateState.unwritable = null
     updateState.noBuild = false
+    updateState.updatedByStore = false
   }
 
   log.debug('Checking for updates (current: v{version})...', { version: currentVersion })
@@ -267,6 +268,9 @@ async function runUpdateFlow(
       return
     case 'noBuildForThisPlatform':
       finishCheckWithNoBuild(trigger, staged)
+      return
+    case 'updatedByStore':
+      finishCheckUpdatedByStore(trigger)
       return
     case 'available':
       break
@@ -484,6 +488,20 @@ function finishCheckWithNoBuild(trigger: UpdateCheckTrigger, staged: string | nu
   updateState.status = 'idle'
   updateState.nextVersion = null
   updateState.noBuild = true
+}
+
+/**
+ * This copy is the Microsoft Store's package: the Store updates it, and the backend made no request. Terminal and
+ * calm, like a managed answer, and the background loop stops, since every later check would answer the same. Nothing
+ * is ever staged inside a package, so there's no staged build to keep.
+ */
+function finishCheckUpdatedByStore(trigger: UpdateCheckTrigger): void {
+  log.info('The Microsoft Store updates this copy; stopping the background update checks')
+  reportUpdateCheck({ trigger, outcome: 'updated_by_store' })
+  stopPollLoop()
+  updateState.status = 'idle'
+  updateState.nextVersion = null
+  updateState.updatedByStore = true
 }
 
 /**
@@ -729,6 +747,7 @@ export function _resetUpdaterStateForTest(): void {
   updateState.managed = null
   updateState.unwritable = null
   updateState.noBuild = false
+  updateState.updatedByStore = false
   updateState.previousVersion = null
   updateState.nextVersion = null
   updateState.securityNotice = null
