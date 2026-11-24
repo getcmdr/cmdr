@@ -46,17 +46,17 @@ use cmdr_fs::app_path::AppPath;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use super::super::host::Announced;
+use super::super::host::AnnouncedOnVolume;
 use super::super::in_flight_temps::{self, RecordHome};
 use super::super::state::WriteOperationState;
 use super::leftover_cleanup::{LeftBehind, finish_in_background};
 #[cfg(test)]
 use super::recovered_name::FinalizeFailure;
+pub(crate) use super::staged_paths::announce_app_on;
 use super::staged_paths::{Spelled, Temp};
 use super::transfer_probe::{TaskPhase, set_task_phase};
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::staging::StagingTemp;
 use cmdr_fs::volume::{Volume, VolumeError, WriteMode};
 
 /// Who owns the `.cmdr-tmp-*` staging for one file write.
@@ -198,7 +198,7 @@ impl StagedWrite {
     pub(crate) fn begin_generated(
         state: &Arc<WriteOperationState>,
         dest_volume: &dyn Volume,
-        final_path: Announced<'_>,
+        final_path: AnnouncedOnVolume<'_>,
         replace_existing: bool,
     ) -> Self {
         let staging = if replace_existing {
@@ -212,13 +212,13 @@ impl StagedWrite {
     /// Picks the staging path and, when we own it, records it as an in-flight
     /// partial on the operation so an abandoned task's litter can be found.
     ///
-    /// The final name comes in announced ([`Announced`]); the write's own
+    /// The final name comes in announced ([`AnnouncedOnVolume`]); the write's own
     /// target (the temp, or the final name itself when single-shot) is announced
     /// here on `dest_volume`, before the write that creates it.
     pub(super) fn begin(
         state: &Arc<WriteOperationState>,
         dest_volume: &dyn Volume,
-        final_path: Announced<'_>,
+        final_path: AnnouncedOnVolume<'_>,
         staging: WriteStaging,
     ) -> Self {
         let staged = Self::begin_unannounced(state, final_path.path(), staging);
@@ -238,7 +238,7 @@ impl StagedWrite {
     pub(crate) fn begin_over_original(
         state: &Arc<WriteOperationState>,
         dest_volume: &dyn Volume,
-        final_path: Announced<'_>,
+        final_path: AnnouncedOnVolume<'_>,
         dest_volume_id: &str,
     ) -> Self {
         let staged = Self::begin_recorded_in(
@@ -252,7 +252,7 @@ impl StagedWrite {
     }
 
     /// [`Self::begin`] with nothing announced.
-    fn begin_unannounced(state: &Arc<WriteOperationState>, final_path: &Path, staging: WriteStaging) -> Self {
+    fn begin_unannounced(state: &Arc<WriteOperationState>, final_path: &AppPath, staging: WriteStaging) -> Self {
         Self::begin_recorded_in(state, final_path, staging, state.dest_volume_id().map(str::to_owned))
     }
 
@@ -260,7 +260,7 @@ impl StagedWrite {
     /// space.
     fn begin_recorded_in(
         state: &Arc<WriteOperationState>,
-        final_path: &Path,
+        final_path: &AppPath,
         staging: WriteStaging,
         home_volume: Option<String>,
     ) -> Self {
@@ -269,9 +269,9 @@ impl StagedWrite {
             | WriteStaging::StageInFreshFolder
             | WriteStaging::StageOntoClaimedName
             | WriteStaging::StageOverOriginal => {
-                let staged = StagingTemp::mint(final_path, state.liveness_token());
+                let staged = Temp::mint(final_path, uuid::Uuid::new_v4(), state.liveness_token());
                 in_flight_temps::track_temp(state, home_of(home_volume.as_deref()), staged.path());
-                Some(Temp::new(staged))
+                Some(staged)
             }
             // Straight to the final name: no intermediate state to track, and
             // nothing to hide.

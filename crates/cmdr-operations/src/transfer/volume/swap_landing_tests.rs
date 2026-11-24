@@ -89,7 +89,8 @@ async fn swap_over_the_original_on(
     dest: &Arc<dyn Volume>,
 ) -> (PathBuf, Result<(), FinalizeFailure>) {
     let state = Arc::clone(state);
-    let original = state.scope().host().announce_on(&**dest, Path::new("/notes.txt"));
+    let original =
+        crate::transfer::staged_write::announce_app_on(state.scope().host(), &**dest, cmdr_fs::app_path!("/notes.txt"));
     let staged = StagedWrite::begin(&state, &**dest, original, WriteStaging::StageOverOriginal);
     let temp = staged.target().to_path_buf();
     inner

@@ -66,7 +66,7 @@ pub(crate) use displaced_destination::{DisplacedDestination, displace_destinatio
 /// move (`archive_edit`).
 pub(crate) use item_identity::is_the_same_item;
 /// The one way a listed name joins under a folder (the remote zip edit's temp reap).
-pub(crate) use listed_name::{ListedName, into_std, listed_path};
+pub(crate) use listed_name::{ListedName, into_std, listed_path, on_volume};
 /// Move ONE file across two volumes, staged and mid-file cancelable, with no
 /// driver above it (the operation-log rollback's cross-volume restore).
 pub(crate) use move_file::move_file_across_volumes;

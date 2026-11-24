@@ -129,8 +129,8 @@ pub(crate) fn recheck_local(file: &WrittenFile) -> Recheck {
 /// `live_size` comes off the entry the caller already fetched, which is why the
 /// answer is a [`PresentRecheck`]: a path the backend says is gone never reaches
 /// here, so nothing pays a second round trip to re-ask.
-pub(crate) fn recheck_volume(file: &WrittenFile, live_size: Option<u64>) -> PresentRecheck {
-    match &file.identity {
+pub(crate) fn recheck_volume(identity: &WrittenIdentity, live_size: Option<u64>, path: &Path) -> PresentRecheck {
+    match identity {
         WrittenIdentity::VolumeFile { size } => {
             PresentRecheck::of(verify_snapshot(Some(*size as i64), None, live_size, None))
         }
@@ -140,7 +140,7 @@ pub(crate) fn recheck_volume(file: &WrittenFile, live_size: Option<u64>) -> Pres
         WrittenIdentity::LocalFile { .. } | WrittenIdentity::LocalDir { .. } | WrittenIdentity::VolumeLink { .. } => {
             log::warn!(
                 "reversal: {} was recorded as a local entry but is being rechecked through a volume, leaving it",
-                LogPrivate::path(&file.path)
+                LogPrivate::path(path)
             );
             PresentRecheck::Skip(SkipReason::UnverifiablePrecondition)
         }

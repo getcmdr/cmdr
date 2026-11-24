@@ -838,15 +838,23 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
 - **`listed_name.rs` is a leaf** (no engine module): the stale-temp reaps in `cleanup.rs` and the remote zip edit join
   through it, and importing it from `landing.rs` closed a module cycle (`landing` → `transfer_driver` → `staged_write` →
   `cleanup`).
-- On Windows `ListedName` also refuses `\` and `:` (through `ChildName`), which a POSIX server's name can hold
-  (`12:00 notes`): the typed join keeps such a name whole, but the bodies past the join still take `std::path`, whose
-  `parent` and `file_name` would split it into a subfolder or a stream. Such a name isn't hostile, so it's the
-  destination refusing it on this host, asked per item like any refused name
-  (`crate::name_rules::DestinationNames::native_join_refuses`, checked in `merge_level` BEFORE the join, and through
-  `refuses` at the top level), ❌ never the whole transfer ending. Always `false` on macOS and Linux. Pinned on every OS
-  by `refused_class_tests.rs`' `*_native_join_refuses` cells, which preset Windows' join. Both go once the leaf bodies
-  (`copy_leaf`, `stream_pipe_file`, the staged write, `CreatedPaths`) take app paths: `docs/specs/app-path-plan.md` §
-  10a.
+- **A name holding `\` or `:` is one name on every host** (a POSIX server's `a\b`, `12:00 notes`): `ListedName::new`
+  refuses only what's no plain name anywhere (`AppName::from_listed_text`), the walk joins it typed, and the leaf bodies
+  past the join take the app path, ❌ never a `std::path` value, whose Windows `parent` and `file_name` split it into a
+  subfolder or a stream: `copy_leaf`, `copy_link_leaf`, `stream_pipe_file` and `land_link` (their `FileRun` holds both
+  spellings, the app one for every volume call), `server_side_copy`, the staged write (`staged_paths.rs::Temp::mint`
+  names the temp by the app path's split), `CreatedPaths` and the drivers' op-wide ledgers (`WrittenFile<AppPathBuf>`),
+  their rollback, the move sweep's `SourceLedger` and skipped set (keyed by app path: a Windows `PathBuf` key compares
+  `a\b` equal to `a/b`), and the journal rows (`journal_split.rs::journal_split_app`, `LandedReadBack`). So it lands
+  whole on a remote destination, and a local NTFS one refuses it by its rules, per item
+  (`name_rules::DestinationNames`). Pinned by `refused_class_tests.rs`' `run_remote_names_case` (both ways, every
+  driver) and `listed_row_tests.rs`' `a_backslash_name_copies_and_moves_as_one_name`, whose `\` names run on macOS and
+  Linux only: `InMemoryVolume` keys its store by `PathBuf`, which on Windows splits them. ❗ A TOP-LEVEL source's name
+  still splits through the driver's `std::path` (`landing.rs::landing_at`, `ListedName::native`, which keeps
+  `ChildName`'s host refusal), so on Windows a top-level `a\b.txt` lands as `b.txt` (#1457): the drivers' sources and
+  destination are the plan's next pass (`docs/specs/app-path-plan.md` § 10a). A drive or UNC folder takes no name
+  holding `\` (the typed join refuses it), so `merge_level` refuses such a child per item BEFORE `where_it_lands`, ❌
+  never as the level's failure, which would blame and, on a Skip, drop the whole folder.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in

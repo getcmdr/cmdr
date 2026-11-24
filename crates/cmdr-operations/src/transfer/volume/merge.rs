@@ -23,7 +23,7 @@
 //! `safety_oracle.rs`, never fresh inline asserts. See `CLAUDE.md` § Merge and
 //! conflicts, and `DETAILS.md` § "Scan-as-you-merge".
 
-use cmdr_fs::app_path::{AppName, AppPath, ListedFolder};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashSet;
 use std::future::Future;
 use std::path::{Path, PathBuf};
@@ -72,19 +72,19 @@ enum LeafEnd {
 
 /// A leaf whose name the destination refused, waiting for its walker to ask.
 struct RefusedLeaf {
-    source: PathBuf,
-    dest: PathBuf,
+    source: AppPathBuf,
+    dest: AppPathBuf,
     size: Option<u64>,
     node: Option<NodeId>,
     error: PathedVolumeError,
 }
 
 /// What a leaf is called in the operation's in-flight table. Built even when no
-/// probe is registered (the tests), which costs two `PathBuf` clones per file
+/// probe is registered (the tests), which costs two path clones per file
 /// against a network round trip.
 struct LeafRow {
-    source: PathBuf,
-    dest: PathBuf,
+    source: AppPathBuf,
+    dest: AppPathBuf,
 }
 
 /// The leaves this operation currently has in flight, plus the running totals
@@ -255,8 +255,8 @@ impl<'a> LeafPool<'a> {
                 // Every row this walker opens is one leaf FILE's byte copy,
                 // holding the permit reserved just above.
                 TaskRole::File,
-                &row.source,
-                &row.dest,
+                &std_of(&row.source),
+                &std_of(&row.dest),
             );
             self.next_leaf += 1;
             handle
@@ -307,9 +307,10 @@ impl<'a> LeafPool<'a> {
             let Some(ctx) = merge else {
                 return Err(refused.error);
             };
+            let (source, dest) = (std_of(&refused.source), std_of(&refused.dest));
             let subject = RefusalSubject {
-                source: &refused.source,
-                dest: &refused.dest,
+                source: &source,
+                dest: &dest,
                 source_size: refused.size,
                 source_is_directory: false,
             };
@@ -333,10 +334,10 @@ impl<'a> LeafPool<'a> {
 )]
 async fn copy_leaf<'a>(
     source_volume: &'a Arc<dyn Volume>,
-    child_source: PathBuf,
+    child_source: AppPathBuf,
     source_facts: SourceFileFacts,
     dest_volume: &'a Arc<dyn Volume>,
-    write_dest: PathBuf,
+    write_dest: AppPathBuf,
     replaces: Replaces,
     reserved_placeholder: bool,
     staging: WriteStaging,
@@ -373,7 +374,7 @@ async fn copy_leaf<'a>(
     // unfilled reservations (`naming.rs::take_back_unfilled_reservations`), which
     // is there for the leaf whose future is dropped before it gets here.
     if streamed.is_err() && reserved_placeholder {
-        take_back_reservation(dest_volume, &write_dest, &state.claimed_names).await;
+        take_back_reservation(dest_volume, &std_of(&write_dest), &state.claimed_names).await;
     }
     let piped = match streamed {
         Ok(piped) => piped,
@@ -404,8 +405,8 @@ async fn copy_leaf<'a>(
 /// person (`LeafPool`). Anything else is the walk's failure.
 fn leaf_stopped_short(
     error: PathedVolumeError,
-    source: PathBuf,
-    dest: PathBuf,
+    source: AppPathBuf,
+    dest: AppPathBuf,
     size: Option<u64>,
     created: &CreatedPaths,
     progress: &Arc<SourceProgress>,
@@ -417,13 +418,15 @@ fn leaf_stopped_short(
         progress.skip_leaf(bytes, node);
         return Ok(LeafEnd::Landed(0));
     }
+    let (source_std, dest_std) = (std_of(&source), std_of(&dest));
     let subject = RefusalSubject {
-        source: &source,
-        dest: &dest,
+        source: &source_std,
+        dest: &dest_std,
         source_size: size,
         source_is_directory: false,
     };
     if refused_here(&subject, &error).is_some() {
+        drop((source_std, dest_std));
         return Ok(LeafEnd::Refused(Box::new(RefusedLeaf {
             error,
             source,
@@ -444,11 +447,11 @@ fn leaf_stopped_short(
 )]
 async fn copy_link_leaf<'a>(
     source_volume: &'a Arc<dyn Volume>,
-    child_source: PathBuf,
+    child_source: AppPathBuf,
     target: PathBuf,
     listed_size: Option<u64>,
     dest_volume: &'a Arc<dyn Volume>,
-    write_dest: PathBuf,
+    write_dest: AppPathBuf,
     replaces: Replaces,
     reserved_placeholder: bool,
     staging: WriteStaging,
@@ -469,7 +472,7 @@ async fn copy_link_leaf<'a>(
     )
     .await;
     if landed.is_err() && reserved_placeholder {
-        take_back_reservation(dest_volume, &write_dest, &state.claimed_names).await;
+        take_back_reservation(dest_volume, &std_of(&write_dest), &state.claimed_names).await;
     }
     if let Err(error) = landed {
         return leaf_stopped_short(error, child_source, write_dest, listed_size, created, progress, node);
@@ -486,8 +489,8 @@ async fn copy_link_leaf<'a>(
 /// A listed child whose name the destination refuses, before anything is written for it.
 struct RefusedChild<'e> {
     entry: &'e FileEntry,
-    source: PathBuf,
-    dest: PathBuf,
+    source: AppPathBuf,
+    dest: AppPathBuf,
     node: Option<NodeId>,
 }
 
@@ -527,8 +530,8 @@ async fn refuse_child(
 
 /// A child folder of the walk, as its refused-name question names it.
 struct RefusedFolder<'p> {
-    source: &'p Path,
-    dest: &'p Path,
+    source: &'p AppPath,
+    dest: &'p AppPath,
     node: Option<NodeId>,
 }
 
@@ -553,9 +556,10 @@ async fn skip_if_folder_refused(
     let Some(ctx) = merge else {
         return Err(error);
     };
+    let (source_std, dest_std) = (std_of(folder.source), std_of(folder.dest));
     let subject = RefusalSubject {
-        source: folder.source,
-        dest: folder.dest,
+        source: &source_std,
+        dest: &dest_std,
         source_size: None,
         source_is_directory: true,
     };
@@ -563,19 +567,19 @@ async fn skip_if_folder_refused(
         return Err(error);
     }
     pool.drive(skip_if_refused(ctx, &subject, error)).await?;
-    let (files, bytes) = match pool.drive(source_volume.scan_for_copy(&on_volume(folder.source))).await {
+    let (files, bytes) = match pool.drive(source_volume.scan_for_copy(folder.source)).await {
         Ok(scan) => (scan.file_count, scan.total_bytes),
         // The skip stands either way; only its count is short.
         Err(e) => {
             log::warn!(
                 "merge: couldn't count the skipped folder {}: {}",
-                LogPrivate::path(folder.source),
+                LogPrivate::path(&*source_std),
                 LogError(&e)
             );
             (0, 0)
         }
     };
-    created.record_skipped_subtree(folder.source.to_path_buf(), files, bytes);
+    created.record_skipped_subtree(folder.source.to_owned(), files, bytes);
     progress.skip_leaves(files, bytes, folder.node);
     Ok(())
 }
@@ -805,7 +809,7 @@ async fn merge_level<'a>(
                     let level_pre_existed = if backend_create_directory_detects_collisions(dest_volume) {
                         match dest_volume.create_directory(dest_path_app).await {
                             Ok(()) => {
-                                created.record_dir(dest_path.to_path_buf());
+                                created.record_dir(dest_path_app.to_owned());
                                 // Made here, so it is the extract's to quarantine, now rather than
                                 // in a pass a cancel or failure would skip (`extract_quarantine.rs`).
                                 super::extract_quarantine::quarantine_created_folder(
@@ -834,7 +838,7 @@ async fn merge_level<'a>(
                         } else {
                             match dest_volume.create_directory(dest_path_app).await {
                                 Ok(()) => {
-                                    created.record_dir(dest_path.to_path_buf());
+                                    created.record_dir(dest_path_app.to_owned());
                                     // Made here, so it is the extract's to quarantine, now rather than
                                     // in a pass a cancel or failure would skip (`extract_quarantine.rs`).
                                     super::extract_quarantine::quarantine_created_folder(
@@ -895,7 +899,7 @@ async fn merge_level<'a>(
     });
     // A move sweeps exactly the folders this walk listed; anything else it
     // finds in the source afterwards arrived later and stays.
-    created.record_walked_source_dir(&std_of(source_path));
+    created.record_walked_source_dir(source_path);
     // The level's children by name, for each entry's tree row: one index per
     // level, dropped with it.
     let mut tree_level = progress.tree().level(
@@ -924,10 +928,11 @@ async fn merge_level<'a>(
         }
 
         // The child as its own listing row names it, typed (an MTP twin's path
-        // isn't its folder joined with its name); the bodies past the walk still
-        // take `std::path`, so they get the join's own buffer.
+        // isn't its folder joined with its name). The leaf bodies take it typed;
+        // the seams still keyed by `std::path` (a link's target, the Locked
+        // plan, the resolver) read its `std::path` spelling, a borrow for UTF-8.
         let listed_source = listed_path(entry).at_source(source_path)?;
-        let child_source = into_std(listed_source.clone().into_owned());
+        let child_source = listed_source.clone().into_owned();
         // A repeat waits for what's in flight to land, then asks the destination
         // afresh, so the earlier item is an ordinary clash for it.
         let repeat = !names_seen.insert(entry.name.as_str());
@@ -942,33 +947,29 @@ async fn merge_level<'a>(
             Some(index) => DestFolder::Listed(index),
             None => DestFolder::CreatedByUs,
         };
-        // A name a POSIX server holds whole but this host's native join can't
-        // keep one name (Windows: `12:00 notes`, `a\b`) is the destination
-        // refusing it here, asked per item, ❌ never a hostile listing that ends
-        // the transfer. Checked before the typed join, which keeps it whole.
-        // `DestinationNames` says why; false on macOS and Linux.
-        if state.destination_names.native_join_refuses(entry.name.as_str()) {
+        // ❗ The source's listing named this child, and a hostile server or
+        // device can name it `../x` or `/x`: ❌ never join it raw.
+        let name = ListedName::new(&entry.name)
+            .map_err(VolumeError::from)
+            .at_source(&*child_source)?;
+        // A plain name this folder's path can't hold (a drive or UNC folder
+        // takes no `\`: a POSIX server's `a\b` copied onto NTFS) is the
+        // destination refusing THIS item, asked per item like any refused name,
+        // ❌ never the level's failure, which would blame (and, on a Skip, drop)
+        // the whole folder. Nothing is written for it, so the place the question
+        // names is display text only: the folder's text and the name as listed.
+        if name.under(&join_dir).is_err() {
             let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
+            let shown_dest = format!("{}/{}", join_dir.as_str().trim_end_matches('/'), entry.name);
             let refused = RefusedChild {
                 entry,
                 source: child_source,
-                // The name as the question shows it, by the typed join (a Windows
-                // `Path::join` puts a `\` between a POSIX folder and the name);
-                // nothing is written there.
-                dest: AppName::from_listed_text(&entry.name)
-                    .ok()
-                    .and_then(|name| ListedFolder::new(&join_dir).join(&name).ok())
-                    .map_or_else(|| dest_path.to_path_buf(), into_std),
+                dest: on_volume(Path::new(&shown_dest)).into_owned(),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;
             continue;
         }
-        // ❗ The source's listing named this child, and a hostile server or
-        // device can name it `../x` or `/x`: ❌ never join it raw.
-        let name = ListedName::new(&entry.name)
-            .map_err(VolumeError::from)
-            .at_source(&child_source)?;
         let (child_dest, dest_hit) = pool
             .drive(where_it_lands(
                 dest_volume,
@@ -998,7 +999,7 @@ async fn merge_level<'a>(
                 entry,
                 source: child_source,
                 // The place the asked name takes: it joined above, so it joins here.
-                dest: name.under(&join_dir).map_or_else(|_| dest_path.to_path_buf(), into_std),
+                dest: name.under(&join_dir).unwrap_or_else(|_| dest_path_app.to_owned()),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;
@@ -1009,7 +1010,7 @@ async fn merge_level<'a>(
         // out whole, recorded like a deep Skip so a move's sweep keeps it.
         if merge
             .and_then(|ctx| ctx.locked)
-            .is_some_and(|locked| locked.skips(&child_source))
+            .is_some_and(|locked| locked.skips(&std_of(&child_source)))
         {
             let skipped_bytes = if entry.is_directory { 0 } else { entry.size.unwrap_or(0) };
             created.record_skip(child_source.clone(), skipped_bytes);
@@ -1023,9 +1024,9 @@ async fn merge_level<'a>(
             Some(links) if entry.is_symlink && plan.is_none() => {
                 pool.drive(through_outages(state, &[source_volume, dest_volume], || async {
                     links
-                        .target_of_listed(state, source_volume, dest_volume, &child_source)
+                        .target_of_listed(state, source_volume, dest_volume, &std_of(&child_source))
                         .await
-                        .at_source(&child_source)
+                        .at_source(&*child_source)
                 }))
                 .await?
             }
@@ -1064,7 +1065,7 @@ async fn merge_level<'a>(
                     Err(e) => {
                         let folder = RefusedFolder {
                             source: &child_source,
-                            dest: &std_of(&child_dest),
+                            dest: &child_dest,
                             node: child_row,
                         };
                         skip_if_folder_refused(pool, merge, created, progress, source_volume, &folder, e).await?;
@@ -1073,7 +1074,7 @@ async fn merge_level<'a>(
                 };
                 if level == DirectoryCreation::Created {
                     pool.folders
-                        .note_filled(child_dest, child_source, SourceFolderDates::of_entry(entry));
+                        .note_filled(child_dest, into_std(child_source), SourceFolderDates::of_entry(entry));
                 }
                 continue;
             }
@@ -1083,9 +1084,9 @@ async fn merge_level<'a>(
         // a same-named dest LEAF (a file or a link: a type mismatch). If there's
         // a dest hit and we have merge context, route it through the file-policy
         // resolver.
-        // From here the child is a leaf (or a renamed folder root), for bodies that
-        // still take `std::path`: the join's own buffer when the spellings are one.
-        let child_dest = into_std(child_dest);
+        // From here the child is a leaf (or a renamed folder root); the resolver
+        // still takes `std::path`, so it reads the destination's spelling.
+        let child_dest_std = std_of(&child_dest).into_owned();
         let mut write_dest = child_dest.clone();
         let mut replaces = Replaces::Nothing;
         // Nothing has resolved a conflict for this child yet, so the name it is
@@ -1106,11 +1107,11 @@ async fn merge_level<'a>(
                 .drive(resolve_merge_child(
                     ctx,
                     source_volume,
-                    &child_source,
+                    &std_of(&child_source),
                     entry,
                     descends,
                     dest_volume,
-                    &child_dest,
+                    &child_dest_std,
                     hit,
                 ))
                 .await?
@@ -1131,7 +1132,9 @@ async fn merge_level<'a>(
                     replace,
                     reserved_placeholder: reserved,
                 } => {
-                    write_dest = write_path;
+                    // The resolver's answer, in the volume's spelling: the
+                    // clash's own path, or the free name a `Rename` picked.
+                    write_dest = on_volume(&write_path).into_owned();
                     replaces = replace;
                     reserved_placeholder = reserved;
                     // ❗ Ours to clear only when the pick put a placeholder
@@ -1150,7 +1153,8 @@ async fn merge_level<'a>(
             // merge context nobody freed the name, and recursing would merge
             // into the leaf that holds it (THROUGH it, for a link): refuse.
             if dest_hit.is_some() && merge.is_none() {
-                return Err(VolumeError::AlreadyExists(child_dest.display().to_string())).at_destination(&child_dest);
+                return Err(VolumeError::AlreadyExists(child_dest_std.display().to_string()))
+                    .at_destination(&*child_dest);
             }
             // Type-mismatch Overwrite/Rename that resolved to Proceed: the
             // resolver already set aside/relocated the dest leaf, so recurse
@@ -1161,7 +1165,7 @@ async fn merge_level<'a>(
                 source_volume,
                 &listed_source,
                 dest_volume,
-                &on_volume(&write_dest),
+                &write_dest,
                 state,
                 created,
                 progress,
@@ -1172,11 +1176,8 @@ async fn merge_level<'a>(
             ))
             .await?;
             if level == DirectoryCreation::Created {
-                pool.folders.note_filled(
-                    on_volume(&write_dest).into_owned(),
-                    child_source,
-                    SourceFolderDates::of_entry(entry),
-                );
+                pool.folders
+                    .note_filled(write_dest, into_std(child_source), SourceFolderDates::of_entry(entry));
             }
             continue;
         }
@@ -1224,7 +1225,7 @@ async fn merge_level<'a>(
         // prompts still happened above, exactly as a streaming copy would.
         if let Some(plan) = plan {
             plan.record(
-                child_source,
+                into_std(child_source),
                 super::sequential_extract::PlannedWrite {
                     dest_path: write_dest,
                     replaces,

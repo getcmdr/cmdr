@@ -25,8 +25,9 @@
 //!
 //! ❗ On Windows the native join splits on `\` and reads `a:b` as a stream of `a`, so there
 //! both are refused too (`is_plain_name`): the item fails as an unusable name, where a
-//! join would have written into a subfolder or a stream. A name a remote destination could
-//! hold that way waits for the engines' app-path join (`AppName`).
+//! join would have written into a subfolder or a stream. A walk that joins a listed name
+//! onto a remote destination takes the app path's join instead (`AppName`), which keeps
+//! such a name whole.
 //!
 //! A refusal is [`VolumeError::InvalidName`](super::VolumeError::InvalidName)
 //! (through [`NotAChildName`], whose `From` lives beside `VolumeError`), the
@@ -110,19 +111,6 @@ pub(crate) fn is_plain_name(bytes: &[u8], flavor: NameFlavor) -> bool {
     !matches!(bytes, b"" | b"." | b"..") && !bytes.iter().any(|&b| separator(b))
 }
 
-/// Whether `name` is one plain name to a POSIX join, yet `flavor`'s native join can't keep
-/// it a direct child: on Windows a remote name holding `\` or `:` (`12:00 notes`), which no
-/// POSIX server forbids. Always `false` under POSIX.
-///
-/// A transfer reads it as the destination refusing that name on this host, asked per item
-/// like any refused name; a name that isn't plain even to POSIX (`..`, `a/b`) is a hostile
-/// listing, which fails the transfer. Goes once the engines join with the app path
-/// (`docs/specs/app-path-plan.md` milestone 10a), which lands such a name per the escape rules.
-pub fn only_native_join_refuses(name: &(impl AsRef<OsStr> + ?Sized), flavor: NameFlavor) -> bool {
-    let bytes = name.as_ref().as_encoded_bytes();
-    is_plain_name(bytes, NameFlavor::Posix) && !is_plain_name(bytes, flavor)
-}
-
 impl fmt::Display for NotAChildName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_plain(self, f)
@@ -183,21 +171,6 @@ mod tests {
         }
         // Not valid UTF-8 (a Linux name): plain under POSIX.
         assert!(is_plain_name(b"caf\xe9", NameFlavor::Posix));
-    }
-
-    /// Only a name POSIX keeps whole and Windows' join doesn't is "this host's join refuses
-    /// it": a hostile name is no such name under either flavor, so it still fails a transfer.
-    #[test]
-    fn only_the_native_join_refuses_a_remote_name_with_a_colon_or_backslash() {
-        for name in ["12:00 notes", "back\\slash", "C:"] {
-            assert!(only_native_join_refuses(name, NameFlavor::Windows), "{name:?}");
-            assert!(!only_native_join_refuses(name, NameFlavor::Posix), "{name:?}");
-        }
-        for name in ["photo.jpg", "CON", "trail.", "", ".", "..", "a/b", "x\0y"] {
-            for flavor in [NameFlavor::Posix, NameFlavor::Windows] {
-                assert!(!only_native_join_refuses(name, flavor), "{name:?} under {flavor:?}");
-            }
-        }
     }
 
     #[test]

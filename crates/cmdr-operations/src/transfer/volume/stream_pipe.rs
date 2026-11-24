@@ -13,14 +13,15 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use super::super::super::host::Announced;
+use super::super::super::host::AnnouncedOnVolume;
 use super::super::super::state::WriteOperationState;
 use super::super::retry;
-use super::super::staged_write::{CutOffLanding, StagedWrite, WriteStaging};
+use super::super::staged_write::{CutOffLanding, StagedWrite, WriteStaging, announce_app_on};
 use super::super::transfer_probe::{TaskPhase, note_task_retry, set_task_phase};
 use super::super::volume_outage::{
     self, LostConnection, OutageEnd, OutageFailure, StartedOn, lost_connection, wait_after_failure,
 };
+use super::listed_name::std_of;
 use super::piped_file::PipedFile;
 use super::preflight::SourceFileFacts;
 use super::server_side_copy::{ServerSideCopy, try_server_side_copy};
@@ -135,14 +136,19 @@ fn auto_yield_tuning() -> (Duration, u64, Duration) {
 )]
 pub(super) async fn stream_pipe_file(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_app: &AppPath,
     source_facts: SourceFileFacts,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_app: &AppPath,
     state: &Arc<WriteOperationState>,
     on_file_progress: &(dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     staging: WriteStaging,
 ) -> Result<PipedFile, PathedVolumeError> {
+    // Every volume call addresses the app paths; the text exits (the logs, a
+    // failure's path, the claimed-name ledger) read their `std::path`
+    // spellings, a borrow for UTF-8.
+    let (source_std, dest_std) = (std_of(source_app), std_of(dest_app));
+    let (source_path, dest_path): (&Path, &Path) = (&source_std, &dest_std);
     log::debug!(
         "stream_pipe_file: {} -> {}",
         LogPrivate::file_path(source_path),
@@ -153,7 +159,7 @@ pub(super) async fn stream_pipe_file(
     // ignore set when the destination is local-FS-backed (the only case where
     // the watcher could otherwise fire). Covers MTP→Local and SMB→Local imports
     // that land in ~/Downloads.
-    let announced_dest = state.scope().host().announce_on(&**dest_volume, dest_path);
+    let announced_dest = announce_app_on(state.scope().host(), &**dest_volume, dest_app);
 
     // The server can copy for itself: the bytes never leave it. A pure
     // optimization, so anything short of a clean success falls through to the
@@ -161,7 +167,7 @@ pub(super) async fn stream_pipe_file(
     // transport cut off takes the runner's landing wait like a streamed one.
     let fault = match try_server_side_copy(
         source_volume,
-        source_path,
+        source_app,
         dest_volume,
         announced_dest,
         state,
@@ -193,10 +199,12 @@ pub(super) async fn stream_pipe_file(
     let mut run = FileRun {
         source_volume,
         source_path,
+        source_app,
         source_facts,
         link_target: None,
         dest_volume,
         dest_path,
+        dest_app,
         announced_dest,
         state,
         on_file_progress,
@@ -224,13 +232,15 @@ pub(super) async fn stream_pipe_file(
 /// the callers already count (`refused_item.rs::has_no_content`).
 pub(super) async fn land_link(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_app: &AppPath,
     target: &Path,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_app: &AppPath,
     state: &Arc<WriteOperationState>,
     staging: WriteStaging,
 ) -> Result<(), PathedVolumeError> {
+    let (source_std, dest_std) = (std_of(source_app), std_of(dest_app));
+    let (source_path, dest_path): (&Path, &Path) = (&source_std, &dest_std);
     if state.work_stopped() {
         return Err(volume_outage::cancelled()).at_source(source_path);
     }
@@ -238,11 +248,13 @@ pub(super) async fn land_link(
     let mut run = FileRun {
         source_volume,
         source_path,
+        source_app,
         source_facts: SourceFileFacts::default(),
         link_target: Some(target),
         dest_volume,
         dest_path,
-        announced_dest: state.scope().host().announce_on(&**dest_volume, dest_path),
+        dest_app,
+        announced_dest: announce_app_on(state.scope().host(), &**dest_volume, dest_app),
         state,
         on_file_progress: &no_progress,
         staging,
@@ -267,13 +279,7 @@ pub(super) async fn land_link(
             role: PathRole::Destination,
             ..
         }) if (run.attempt > 1 || run.outages > 0)
-            && dest_volume
-                .read_link_target(&AppPath::legacy_unchecked(dest_path))
-                .await
-                .ok()
-                .flatten()
-                .as_deref()
-                == Some(target) =>
+            && dest_volume.read_link_target(dest_app).await.ok().flatten().as_deref() == Some(target) =>
         {
             Ok(())
         }
@@ -285,14 +291,19 @@ pub(super) async fn land_link(
 /// reads, and what a file carries from one pass to the next.
 struct FileRun<'a> {
     source_volume: &'a Arc<dyn Volume>,
+    /// The source in its `std::path` spelling, for the text exits (logs, a
+    /// failure's path); every volume call addresses [`Self::source_app`].
     source_path: &'a Path,
+    source_app: &'a AppPath,
     source_facts: SourceFileFacts,
     /// `Some` when this run lands a symlink holding this target: no source to
     /// open, no bytes to stream.
     link_target: Option<&'a Path>,
     dest_volume: &'a Arc<dyn Volume>,
+    /// The destination in its `std::path` spelling, as [`Self::source_path`].
     dest_path: &'a Path,
-    announced_dest: Announced<'a>,
+    dest_app: &'a AppPath,
+    announced_dest: AnnouncedOnVolume<'a>,
     state: &'a Arc<WriteOperationState>,
     on_file_progress: &'a (dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     /// The staging the caller asked for, until a destination that can't land a
@@ -643,7 +654,7 @@ impl FileRun<'_> {
         // The staged bytes are a partial (a mid-stream failure, or the cancel
         // the backend turned into `Cancelled`); drop them.
         staged.abandon(dest_volume).await;
-        remove_unstaged_partial(self.writing_at_the_final_name, dest_volume, dest_path).await;
+        remove_unstaged_partial(self.writing_at_the_final_name, dest_volume, self.dest_app, dest_path).await;
         // A cancel landed while an attempt was failing on something we WOULD
         // have run again. The cancel is the reason this file stops here, so
         // report it as one: the post-loop keys `write-cancelled` off a
@@ -688,11 +699,16 @@ impl FileRun<'_> {
 /// after a destination that can't land a staged write sent the file back to be
 /// written there unstaged. Best-effort: the write's own error is the one to
 /// report.
-async fn remove_unstaged_partial(writing_at_the_final_name: bool, dest_volume: &Arc<dyn Volume>, dest_path: &Path) {
+async fn remove_unstaged_partial(
+    writing_at_the_final_name: bool,
+    dest_volume: &Arc<dyn Volume>,
+    dest_app: &AppPath,
+    dest_path: &Path,
+) {
     if !writing_at_the_final_name {
         return;
     }
-    if let Err(e) = dest_volume.delete(&AppPath::legacy_unchecked(dest_path)).await {
+    if let Err(e) = dest_volume.delete(dest_app).await {
         log::debug!(
             target: "copy",
             "stream_pipe_file: couldn't remove the unstaged partial {}: {e}",

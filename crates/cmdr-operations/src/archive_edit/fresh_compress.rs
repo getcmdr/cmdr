@@ -17,6 +17,7 @@ use super::super::scratch_dir::ScratchDir;
 use super::super::state::{WriteOperationState, WriteSettledGuard};
 use super::super::summary::volume_items;
 use super::super::transfer::StagedWrite;
+use super::super::transfer::staged_write::announce_app_on;
 use super::super::transfer::volume_outage::StartedOn;
 use super::super::transfer_tree::{TreeLanding, TreeOrder, from_archive_plan};
 use super::super::types::{ConflictResolution, WriteOperationError, WriteOperationStartResult, WriteOperationType};
@@ -649,7 +650,8 @@ fn begin_stage(
     archive_path: &Path,
     replace_existing: bool,
 ) -> StagedWrite {
-    let archive = state.scope().host().announce_on(dest_volume, archive_path);
+    let archive_app = crate::transfer::volume::on_volume(archive_path);
+    let archive = announce_app_on(state.scope().host(), dest_volume, &archive_app);
     StagedWrite::begin_generated(state, dest_volume, archive, replace_existing)
 }
 

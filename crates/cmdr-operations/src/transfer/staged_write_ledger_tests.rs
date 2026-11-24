@@ -79,7 +79,11 @@ async fn claimed_landing(name: &str, hold_rename_after_delete: bool) -> ClaimedL
         hold_rename_after_delete,
         deleted: std::sync::atomic::AtomicBool::new(false),
     });
-    let staged = StagedWrite::begin_unannounced(&state, Path::new("/notes.txt"), WriteStaging::StageOntoClaimedName);
+    let staged = StagedWrite::begin_unannounced(
+        &state,
+        cmdr_fs::app_path!("/notes.txt"),
+        WriteStaging::StageOntoClaimedName,
+    );
     let temp = staged.target().to_path_buf();
     let temp_app = staged.target_app().to_owned();
     inner.create_file(&temp_app, b"THE NEW BYTES").await.unwrap();
@@ -182,7 +186,8 @@ async fn a_landing_cut_off_after_clearing_the_way_is_finished_by_the_next_launch
 async fn swap_over(state: &Arc<WriteOperationState>) -> (Arc<InMemoryVolume>, Arc<dyn Volume>, StagedWrite) {
     let inner = Arc::new(InMemoryVolume::new("dest"));
     inner.create_file(app_path!("/notes.txt"), b"OLD").await.unwrap();
-    let staged = StagedWrite::begin_unannounced(state, Path::new("/notes.txt"), WriteStaging::StageOverOriginal);
+    let staged =
+        StagedWrite::begin_unannounced(state, cmdr_fs::app_path!("/notes.txt"), WriteStaging::StageOverOriginal);
     inner.create_file(staged.target_app(), b"THE NEW BYTES").await.unwrap();
     let dest: Arc<dyn Volume> = Arc::clone(&inner) as Arc<dyn Volume>;
     (inner, dest, staged)

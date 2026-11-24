@@ -311,10 +311,9 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `root_echo`, `routed` (a `FileEntry.path` is still text until escapes go live).
 - **`ChildName` refuses by the host's flavor** (`is_plain_name`): on Windows also `\` (a separator) and `:` (a stream,
   or a drive-relative path), since a native join would land the item in a subfolder or a stream. Reserved names and
-  trailing dots and spaces pass: NTFS holds them, and only the plain form refuses them (`NotPlainSafe`). A name plain to
-  POSIX that only the host's join refuses (`only_native_join_refuses`: `12:00 notes` from a Linux server) is the
-  transfer's per-item "destination refuses this name" (`cmdr-operations`' `DestinationNames`), ❌ never the hostile
-  listing that ends it.
+  trailing dots and spaces pass: NTFS holds them, and only the plain form refuses them (`NotPlainSafe`). A walk that
+  joins a listed name onto a remote destination takes `AppName` instead, which keeps `12:00 notes` from a Linux server
+  one name on every host (`cmdr-operations`' `transfer/volume/DETAILS.md` § "Listed names are untrusted").
 - **The typed twins of `Path`'s methods are a trait, `PathArithmetic`** (`parent`, `file_name`, `extension`,
   `file_stem`, `with_file_name`, `join`, `starts_with`, `strip_prefix`, `relative_to`, `rebase`), ❌ never inherent: a
   value the flip typed would otherwise answer `x.file_name().is_some()` the typed way, silently, where `Path` answered

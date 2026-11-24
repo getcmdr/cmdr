@@ -27,17 +27,14 @@ pub(crate) struct ListedName<'a> {
 }
 
 impl<'a> ListedName<'a> {
-    /// A name off a listing row (`FileEntry.name`).
-    ///
-    /// ❗ Also refused where `ChildName` refuses it on this host: on Windows a
-    /// name holding `\` or `:` (a POSIX server's `a\b`, `12:00 notes`). The
-    /// typed join keeps such a name whole, but the bodies past it still take
-    /// `std::path` ([`into_std`]), whose `parent` and `file_name` would split
-    /// it there, and a child joined under the wrong folder is a write nobody
-    /// picked. Goes once those bodies take app paths (the plan's 10a); on macOS
-    /// and Linux it refuses nothing the plain-name check doesn't.
+    /// A name off a listing row (`FileEntry.name`), refused unless it's one
+    /// plain name on every host (the empty name, `.`, `..`, a `/`, a NUL). A
+    /// name holding `\` or `:` (a POSIX server's `a\b`, `12:00 notes`) is one
+    /// name here on Windows too: the typed join keeps it whole and the leaf
+    /// bodies take the app path, so a local NTFS destination refuses it by its
+    /// rules, per item (`name_rules::DestinationNames`), and a remote one holds
+    /// it.
     pub(crate) fn new(text: &'a str) -> Result<Self, NotAChildName> {
-        ChildName::new(text)?;
         Ok(Self {
             text: Some(text),
             app: AppName::from_listed_text(text)?,
@@ -87,7 +84,7 @@ pub(crate) fn listed_path(entry: &FileEntry) -> Result<Cow<'_, AppPath>, VolumeE
 
 /// A `std::path` value the driver hands in, in the volume's spelling: the
 /// bridge's lossless door in, ONE named crossing for this module and the walk.
-pub(super) fn on_volume(path: &Path) -> Cow<'_, AppPath> {
+pub(crate) fn on_volume(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }
 

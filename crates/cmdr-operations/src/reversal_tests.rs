@@ -136,14 +136,17 @@ fn a_created_directory_someone_put_a_file_into_stays() {
 fn a_volume_file_the_backend_now_reports_at_another_size_is_left_alone() {
     let recorded = WrittenFile::volume(PathBuf::from("/share/report.pdf"), 4096);
 
-    assert_eq!(recheck_volume(&recorded, Some(4096)), PresentRecheck::Act);
     assert_eq!(
-        recheck_volume(&recorded, Some(9000)),
+        recheck_volume(&recorded.identity, Some(4096), &recorded.path),
+        PresentRecheck::Act
+    );
+    assert_eq!(
+        recheck_volume(&recorded.identity, Some(9000), &recorded.path),
         PresentRecheck::Skip(SkipReason::Drift),
         "a different size is a different file"
     );
     assert_eq!(
-        recheck_volume(&recorded, None),
+        recheck_volume(&recorded.identity, None, &recorded.path),
         PresentRecheck::Skip(SkipReason::UnverifiablePrecondition),
         "a backend that won't say fails safe"
     );

@@ -708,7 +708,8 @@ async fn a_stale_error_on_a_claimed_names_delete_keeps_the_temp_and_its_resume_l
             .with_journal_volumes("swap-outage-source".into(), NAS_ID.into())
             .with_in_flight_ledger(Ledger::for_test()),
     );
-    let claimed = state.scope().host().announce_on(&*dest, Path::new("/notes.txt"));
+    let claimed =
+        crate::transfer::staged_write::announce_app_on(state.scope().host(), &*dest, cmdr_fs::app_path!("/notes.txt"));
     let staged = StagedWrite::begin(&state, &*dest, claimed, WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
     inner.create_file(&AppPath::legacy_unchecked(&temp), NEW).await.unwrap();
@@ -757,7 +758,8 @@ async fn resume_after_someone_saved_at_the_cleared_name(
             .with_journal_volumes("swap-outage-source".into(), NAS_ID.into())
             .with_in_flight_ledger(Ledger::for_test()),
     );
-    let claimed = state.scope().host().announce_on(&*dest, Path::new("/notes.txt"));
+    let claimed =
+        crate::transfer::staged_write::announce_app_on(state.scope().host(), &*dest, cmdr_fs::app_path!("/notes.txt"));
     let staged = StagedWrite::begin(&state, &*dest, claimed, WriteStaging::StageOntoClaimedName);
     let temp = staged.target().to_path_buf();
     inner.create_file(&AppPath::legacy_unchecked(&temp), NEW).await.unwrap();

@@ -26,14 +26,20 @@ use super::types::RecoveredOriginal;
 /// One destination path this operation put on disk, with the identity a reversal
 /// rechecks before removing it or renaming it back.
 ///
-/// Build one through [`WrittenFile::local_stat`] or [`WrittenFile::volume`]: each
+/// Build one through [`WrittenFile::local_stat`] or [`WrittenFile::volume_at`]: each
 /// names the kind of write it describes, and neither can produce a local entry
 /// missing its node id.
+///
+/// `P` is how the path is held: a `std::path` value for the local engine, an app
+/// path for the volume engine (`transfer/volume/merge_ctx.rs::CreatedPaths`, the
+/// drivers' op-wide ledgers, their rollback, and their journal rows), which
+/// joined it typed: a POSIX server's `a\b` is one name there, which a
+/// `std::path` value would split on Windows.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct WrittenFile {
+pub(crate) struct WrittenFile<P = PathBuf> {
     /// Where it landed. For a move ledger this is the moved-TO path, the one a
     /// reversal has to recognize before renaming it back.
-    pub(crate) path: PathBuf,
+    pub(crate) path: P,
     pub(crate) identity: WrittenIdentity,
     /// The landed modified time the write reported for `path`
     /// ([`LandedModified`]), which the operation log records instead of reading
@@ -71,9 +77,17 @@ impl WrittenFile {
         }
     }
 
-    /// A complete file written through a `Volume` backend, with the byte count
-    /// the leaf copier piped into it.
+    /// [`Self::volume_at`] at a `std::path` value, for a test.
+    #[cfg(test)]
     pub(crate) fn volume(path: PathBuf, size: u64) -> Self {
+        WrittenFile::<PathBuf>::volume_at(path, size)
+    }
+}
+
+impl<P> WrittenFile<P> {
+    /// A complete file written through a `Volume` backend, at a path held as `P`, with the byte
+    /// count the leaf copier piped into it.
+    pub(crate) fn volume_at(path: P, size: u64) -> Self {
         Self {
             path,
             identity: WrittenIdentity::VolumeFile { size },
@@ -82,7 +96,7 @@ impl WrittenFile {
     }
 
     /// A symlink landed through a `Volume` backend, holding `target`.
-    pub(crate) fn volume_link(path: PathBuf, target: PathBuf) -> Self {
+    pub(crate) fn volume_link(path: P, target: PathBuf) -> Self {
         Self {
             path,
             identity: WrittenIdentity::VolumeLink { target },

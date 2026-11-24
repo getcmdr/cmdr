@@ -15,7 +15,7 @@
 //! - Local → MTP: Uses volume.import_from_local()
 //! - MTP → Local: Uses volume.export_to_local()
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashSet;
 use std::future::Future;
 
@@ -94,13 +94,13 @@ pub(super) struct CopyCells {
     /// (possibly pre-existing) dest directory, NOT the directory root, so
     /// rollback never recursively deletes a merged directory and destroys
     /// dest-only files the user already had there.
-    pub(super) copied_paths: Arc<std::sync::Mutex<Vec<WrittenFile>>>,
+    pub(super) copied_paths: Arc<std::sync::Mutex<Vec<WrittenFile<AppPathBuf>>>>,
     /// Destination directories this operation NEWLY created (create_directory
     /// returned Ok, not AlreadyExists), in creation order (shallowest first).
     /// Rollback removes these AFTER the files, deepest first, with a
     /// non-recursive empty-only delete, so a dir we created but which still
     /// holds a pre-existing sibling (or a kept-partial under cancel) survives.
-    pub(super) created_dirs: Arc<std::sync::Mutex<Vec<PathBuf>>>,
+    pub(super) created_dirs: Arc<std::sync::Mutex<Vec<AppPathBuf>>>,
     /// What a cross-type Overwrite renamed aside to free a name, at any depth.
     /// Settled once the operation knows how it ended: dropped on success, put
     /// back by a rollback, and by a stop or a failure put back or kept beside
@@ -1109,10 +1109,10 @@ pub async fn copy_volumes_with_progress(
     bytes_skipped += deep_skipped_bytes.load(Ordering::Relaxed);
 
     // Unwrap shared containers for post-loop logic.
-    let mut copied_paths: Vec<WrittenFile> = Arc::try_unwrap(copied_paths)
+    let mut copied_paths: Vec<WrittenFile<AppPathBuf>> = Arc::try_unwrap(copied_paths)
         .map(|m| m.into_inner().unwrap_or_default())
         .unwrap_or_else(|arc| arc.lock_ignore_poison().clone());
-    let created_dirs: Vec<PathBuf> = Arc::try_unwrap(created_dirs)
+    let created_dirs: Vec<AppPathBuf> = Arc::try_unwrap(created_dirs)
         .map(|m| m.into_inner().unwrap_or_default())
         .unwrap_or_else(|arc| arc.lock_ignore_poison().clone());
 

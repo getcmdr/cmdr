@@ -181,8 +181,8 @@ async fn a_copys_rollback_prunes_its_created_folders_as_folders() {
     let spy = FolderDeleteSpy::seeded().await;
     let volume: Arc<dyn Volume> = spy.clone();
     let mut written = vec![
-        WrittenFile::volume(PathBuf::from("/d/a.txt"), 1),
-        WrittenFile::volume(PathBuf::from("/d/sub/b.txt"), 2),
+        WrittenFile::volume_at(app_path!("/d/a.txt").to_owned(), 1),
+        WrittenFile::volume_at(app_path!("/d/sub/b.txt").to_owned(), 2),
     ];
     let engine = TestOperations::new();
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(0)));
@@ -190,7 +190,7 @@ async fn a_copys_rollback_prunes_its_created_folders_as_folders() {
     volume_rollback_with_progress(
         &volume,
         &mut written,
-        &[PathBuf::from("/d"), PathBuf::from("/d/sub")],
+        &[app_path!("/d").to_owned(), app_path!("/d/sub").to_owned()],
         &CollectorEventSink::new(),
         "folder-kind-rollback",
         &WindDown::of(&state),

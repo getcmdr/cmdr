@@ -1384,13 +1384,18 @@ server-side copy here, plus a fresh compress and a remote zip edit's swap in `..
 
 **Two spellings, made once** (issue #1225): a staged write holds its temp as `Temp` and its final name as `Spelled`
 (both in the leaf `staged_paths.rs`, because `recovered_name.rs` names them too, and importing them from `staged_write`
-closes a cycle through `volume::displaced_destination`), each carrying the `std::path` value AND its app path, crossed
-once when the write begins. Every volume call in the landing, the aside swap, the cut-off settle, and the publish
-addresses the app path; the ledgers (`in_flight_temps`), the logs, `kept_landings`, and `FinalizeFailure`'s rescued path
-read the `std::path` one, so their text stays byte-exact on a Linux name that isn't UTF-8. `StagedWrite::target_app` is
-the write target's app path for the writers in `volume/` and `../archive_edit/`. What still crosses per call: a held
-aside (`DisplacedDestination` answers `std::path`), the ` (recovered)` candidates (`unique_name` does `std::path`
-arithmetic), and `LandingSource`'s and `settle_unanswered_create`'s paths (their callers hold `std::path`).
+closes a cycle through `volume::displaced_destination`), each carrying its app path AND the `std::path` value made from
+it once when the write begins. The final name comes in as an app path (`StagedWrite::begin` takes an
+`AnnouncedOnVolume`, which `staged_paths.rs::announce_app_on` makes), and `Temp::mint` names the temp by the app path's
+own split and join, so on Windows a POSIX server's `a\b` keeps one name and its temp is its sibling (a canonical final
+path holding no escape-range code point; anything else mints through `std::path` as it always did, so a Linux name that
+isn't UTF-8 keeps its lossy temp spelling). Every volume call in the landing, the aside swap, the cut-off settle, and
+the publish addresses the app path; the ledgers (`in_flight_temps`), the logs, `kept_landings`, and `FinalizeFailure`'s
+rescued path read the `std::path` one, so their text stays byte-exact on a Linux name that isn't UTF-8.
+`StagedWrite::target_app` is the write target's app path for the writers in `volume/` and `../archive_edit/`. What still
+crosses per call: a held aside (`DisplacedDestination` answers `std::path`), the ` (recovered)` candidates
+(`unique_name` does `std::path` arithmetic), and `LandingSource`'s and `settle_unanswered_create`'s paths (their callers
+hold `std::path`).
 
 **Why**: the conflict layer only staged a file→file Overwrite. A NEW file has no conflict, so it streamed straight to
 the destination path — and a transfer killed mid-stream left a truncated file wearing the user's real filename, which is

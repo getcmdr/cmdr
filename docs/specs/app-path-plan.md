@@ -1956,6 +1956,58 @@ included; the hidden couplings it found are why waves B and C differ from round 
     rename-validity, and conflict-preflight-sources entry points, `leaf_validation` / `target_names` / `transfer_leaves`
     (M); `scan_walker`'s cached walk (with 10f's lossless row); the remaining 11 `seam_path` crossings.
 
+- **Eighth pass, milestone 1** (2026-11-24, branch `worktree-agent-aa4259d35808f95c3`; one agent, no helpers): the leaf
+  bodies past the walk take app paths, and `native_join_refuses` is gone. Bridge calls 907 → 893 (`cmdr-operations` 450
+  → 436), `appTextToPath` 34 → 33 (`journal_landed.rs:158`, off the list), `pathFromBareText` 269 → 269; no entry grew.
+  What it is:
+  - **Typed end to end, walk to journal**: `copy_leaf`, `copy_link_leaf`, the leaf rows (`LeafRow`, `RefusedLeaf`,
+    `RefusedChild`, `RefusedFolder`), `stream_pipe_file` and `land_link` (their `FileRun` holds both spellings, the app
+    one for every volume call, so `stream_pipe*.rs`, `server_side_copy.rs`, and `move_file.rs` hold no bridge call),
+    `interrupted_landing::settle_unanswered_create`, the staged write (`StagedWrite::begin` takes an
+    `AnnouncedOnVolume`; `staged_paths.rs::Temp::mint` names the temp by the app path's split and join, registered under
+    its own name through the new `StagingTemp::adopt_named`), `CreatedPaths` and the drivers' op-wide ledgers
+    (`WrittenFile<AppPathBuf>`, `Vec<AppPathBuf>`), the volume rollback (`cleanup.rs`), the move sweep's `SourceLedger`
+    and skipped set (keyed by app path: a Windows `PathBuf` key compares `a\b` equal to `a/b`), `LandedReadBack`, and
+    the journal's volume-transfer and created-dir rows (`journal_split.rs::journal_split_app`, split out of
+    `journal.rs`).
+  - **`native_join_refuses` is deleted** (with `only_native_join_refuses`, `DestinationNames::join_as`, and their
+    cells): `ListedName::new` refuses only what's no plain name on any host, so a POSIX server's `a\b` or `12:00 notes`
+    lands whole on a remote destination, and a local NTFS one refuses it by its rules, per item. The cells:
+    `refused_class_tests.rs::run_remote_names_case` (both ways, all three drivers, `a\b.txt` beside a real `a/b.txt`).
+    ❗ Its `\` names and `listed_row_tests.rs`' backslash cell still run on macOS and Linux only, for the TEST DOUBLE:
+    `InMemoryVolume` keys its store by `PathBuf` (`in_memory.rs`, on the 10f list), so on Windows it lists `a\b.txt` as
+    `b.txt` in `a` and can't hold `foo\..` or both `a\b.txt` and `a/b.txt` (the lane's first run, 45467575511, read
+    exactly that). Typing its store is what re-enables them; the engine's side is pinned on every host by the typed temp
+    cell (`staged_write_tests.rs`) and the journal's split under both flavors (`journal_split_tests.rs`).
+  - **Windows lane** (hosted, run 45480062626): 0 newly failing; 13 known failures pass and left the list (eight
+    `swap_outage_tests`, five `archive_edit::remote::remote_outage_tests`, which named their temp through `std::path` on
+    a POSIX fixture), with the three deleted native-join cells: `cmdr-operations` entries 36 → 20.
+  - **A name a drive folder can't hold is asked about per item** (review of #1451): the typed join refuses `\` under a
+    drive or UNC folder, and that refusal used to come back as the LEVEL's failure (a POSIX server's `a\b.txt` into
+    `C:\dest` failed the walk, or on a Skip dropped the whole folder); `merge_level` now refuses that child as a
+    `RefusedChild` before `where_it_lands`. Pinned on every host by `refused_class_tests.rs`'
+    `a_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_item` (a drive-spelled in-memory destination, seen red
+    first).
+  - **A journal rebase between canonical roots only**: a volume-relative root (a share suite's `cmdr-test-…/tree`, a
+    local tree's `tree`) rebases its leaves by `std::path` as before; the first run's typed-only rebase wrote such a
+    leaf's DEST as its source, and the SMB and S3 fixtures' undo cells caught it (`UnverifiablePrecondition`).
+  - **Byte-exact on macOS and Linux** by construction, no differential harness this pass: a typed temp is minted only
+    for a canonical final path holding no escape-range code point, whose split and join there equal `Path`'s (anything
+    else mints through `std::path` as before, so a non-UTF-8 Linux name keeps its lossy temp); a typed journal end
+    splits through `journal_split(engine_path(...))` off Windows (`journal_split_tests.rs` pins both flavors); every
+    other volume call gets the app path the bridge made before, made once. Suites on macOS: `cmdr-operations` +
+    `cmdr-fs` 3,880 green.
+  - **New crossings, to go with the drivers' pass**: `journal.rs::record_volume_transfer_source` reads its two driver
+    roots through `seam_path` (2), and the top-level `copy_single_path`, `move_file_across_volumes`, the copy drivers'
+    file-source ledger push, `link_carry`'s probe, and the two archive-edit announces cross the driver's `std::path`
+    through `listed_name::on_volume` (each replaced a bridge call further in).
+- **Left in 10a after the eighth pass**: the drivers' sources and destination (a TOP-LEVEL name still splits through the
+  driver's `std::path`, `landing.rs::landing_at` with `ListedName::native`'s host refusal, so on Windows a top-level
+  remote source named `a\b.txt` lands as `b.txt`, silently: #1457, which that pass closes); the resolver's
+  `ResolvedConflict.write_path` and `naming.rs` (a `Rename` pick on a `\`-holding name splits on Windows, crossed back
+  through `on_volume`); `DisplacedDestination`'s aside mint (`std::path`); then milestone 2's list (the create,
+  rename-validity, and preflight-sources entry points, `leaf_validation`, `target_names`, `transfer_leaves`).
+
 ### 10b. `cmdr-index`
 
 - **Size**: M.
@@ -2548,12 +2600,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
       Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as
       text and `seam_path` re-escapes it as literal: a mangled name. 10 of the 11 are new here (`create.rs:55` is on the
       list).
-    - **Corrected hazard count: 62** (26 on the list, 26 off it, 10 `seam_path`); 76 at the snapshot (37, 27, 12), 15
-      gone with 10a's seventh pass: `resolve_dest_path` (off the list), the 11 walker and destination sites, and the
-      `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`, one new
-      (the anchor's fallback). The demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`,
-      `tree.rs:129`) reach no OS, so no hazard. A regex can't make this list complete; the type-level gate (§ "Keeping
-      it that way") is what can.
+    - **Corrected hazard count: 64** after 10a's eighth pass (26 on the list, 26 off it, 12 `seam_path`: the two driver
+      roots `journal.rs::record_volume_transfer_source` reads, new there); 62 before it (26, 26, 10); 76 at the snapshot
+      (37, 27, 12), 15 gone with 10a's seventh pass: `resolve_dest_path` (off the list), the 11 walker and destination
+      sites, and the `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and
+      `routing/destination.rs:41`, one new (the anchor's fallback). The demo's off-list sites (`cmdr-listing-wasm`'s
+      `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no hazard. A regex can't make this list complete;
+      the type-level gate (§ "Keeping it that way") is what can.
   - **27 sites need an exemption**, and the check has no directive for one today: env vars (`cmdr-adb`, the `cmdr-index`
     benches, the SFTP fixture's key dir), xattr key names (`cmdr-archive`, `cmdr-smb`, `cmdr-fs` caps tests), the SQLite
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
@@ -3124,9 +3177,6 @@ included; the hidden couplings it found are why waves B and C differ from round 
         with: typing `set_modified_at` to take `&AppPath`. No exemption.
       - :715 pathFromBareText, test-fixture, no hazard: literal; `InMemoryVolume::set_modified_at` takes `&Path`. Goes
         with: typing `set_modified_at` to take `&AppPath`. No exemption.
-    - `crates/cmdr-operations/src/journal_landed.rs`
-      - :158 appTextToPath, name-arith, no hazard: compare only: listing name looked up in an `OsStr`-keyed `wanted`
-        map. Goes with: keying `wanted` by `AppName`. No exemption.
     - `crates/cmdr-operations/src/leaf_validation.rs`
       - :234 pathFromBareText, engine-body, HAZARD: chosen leaf joined onto `destination: &Path`; `stat` (`file_id`)
         opens it in `NamesAndInodes`. Goes with: typing leaves as `AppName` and `destination` as `&AppPath`. No

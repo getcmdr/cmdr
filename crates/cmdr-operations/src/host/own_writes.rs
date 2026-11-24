@@ -4,6 +4,7 @@
 //! ignore set, through `operations_host::own_writes`, so a copy into
 //! `~/Downloads` never pops a "new download" toast.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 /// Where the engine announces its own writes.
@@ -52,6 +53,31 @@ impl<'a> Announced<'a> {
 
     /// The announced path.
     pub(crate) fn path(self) -> &'a Path {
+        self.0
+    }
+}
+
+/// [`Announced`] for a path a volume addresses, held as the app path the volume
+/// engine's writers take (`StagedWrite::begin`). Only
+/// [`EngineHost::announce_spelled_on`](super::EngineHost::announce_spelled_on)
+/// makes one.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct AnnouncedOnVolume<'a>(&'a AppPath);
+
+impl<'a> AnnouncedOnVolume<'a> {
+    pub(super) fn new(path: &'a AppPath) -> Self {
+        Self(path)
+    }
+
+    /// `path`, for a test that drives a writer directly and so stands in for
+    /// the caller that would have announced it.
+    #[cfg(test)]
+    pub(crate) fn assumed(path: &'a AppPath) -> Self {
+        Self(path)
+    }
+
+    /// The announced path.
+    pub(crate) fn path(self) -> &'a AppPath {
         self.0
     }
 }

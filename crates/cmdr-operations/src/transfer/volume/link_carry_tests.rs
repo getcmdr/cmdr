@@ -459,8 +459,8 @@ async fn a_rollback_removes_the_links_it_landed_and_only_those() {
     dest.plant_symlink(Path::new("/changed"), Path::new("someone else's"));
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
     let mut ledger = vec![
-        crate::ledger::WrittenFile::volume_link(PathBuf::from("/ours"), PathBuf::from("t")),
-        crate::ledger::WrittenFile::volume_link(PathBuf::from("/changed"), PathBuf::from("t")),
+        crate::ledger::WrittenFile::volume_link(app_path!("/ours").to_owned(), PathBuf::from("t")),
+        crate::ledger::WrittenFile::volume_link(app_path!("/changed").to_owned(), PathBuf::from("t")),
     ];
 
     let as_dyn: Arc<dyn Volume> = Arc::clone(&dest) as Arc<dyn Volume>;

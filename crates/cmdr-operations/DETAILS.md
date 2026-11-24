@@ -250,21 +250,23 @@ The full top-level inventory is here:
   mutation says it is still running"), `validation.rs`, `leaf_validation.rs` (the one check of a transfer's
   `TransferLeaves`, `src/transfer/DETAILS.md` § "Named destinations"), `free_space.rs` (the copy's free-space
   pre-flight, § "The free-space pre-flight"), `eta.rs` (+ `eta_cost_model.rs`). Journaling: `journal.rs` (every row's
-  ends stored as app text through `journal_split`, why in `crates/cmdr-operation-log/DETAILS.md`'s escape-mark notes; a
-  test's `root` that undoes is `host::testing::scratch_disk_root`, the drive on Windows, ❌ never a bare `/`; a
-  both-local transfer between two volumes journals each row under a volume that reaches it, `OpScope::local_ids_for`,
-  since Windows' `root` is the system drive alone, #1351; a local delete or trash outside `root`'s own root journals
-  under the registered volume holding it, `local_start::one_local_side`, #1433; a finished local op's `items_done` is
-  the larger of the status cache's and its terminal event's count, `local_start::CompletionTally`, since delete and
-  trash move the cache only on a throttled frame), `journal_search.rs`, `journal_landed.rs` (which node each landed item
-  is, and a volume transfer's landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item
-  must still be the node that landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote
-  edit itself is `archive_edit/remote.rs`). Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`,
-  `create_numbered.rs` (paste-as-file's numbered create), `routing.rs` (the one routing every cross-volume transfer
-  takes: `start_volume_{copy,move,compress}`, plus `start_rename_by_move`; `routing/retry.rs` is the Retry recipe a copy
-  or move leaves with the manager), `routed_writes.rs` (the refusal every drive-only entry point asks first for an
-  in-zip or `.git/<category>/` path, `host/DETAILS.md`). `source_binding.rs` is the optional set of sources an op may
-  touch. `queued_sources.rs` is the check an op that waited in the queue runs on its sources when admitted, parking on
+  ends stored as app text through `journal_split.rs`: `journal_split` for a `std::path` end, `journal_split_app` for an
+  end the volume engine joined typed, where a `\` is a name character even on Windows; why in
+  `crates/cmdr-operation-log/DETAILS.md`'s escape-mark notes; a test's `root` that undoes is
+  `host::testing::scratch_disk_root`, the drive on Windows, ❌ never a bare `/`; a both-local transfer between two
+  volumes journals each row under a volume that reaches it, `OpScope::local_ids_for`, since Windows' `root` is the
+  system drive alone, #1351; a local delete or trash outside `root`'s own root journals under the registered volume
+  holding it, `local_start::one_local_side`, #1433; a finished local op's `items_done` is the larger of the status
+  cache's and its terminal event's count, `local_start::CompletionTally`, since delete and trash move the cache only on
+  a throttled frame), `journal_search.rs`, `journal_landed.rs` (which node each landed item is, and a volume transfer's
+  landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item must still be the node that
+  landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote edit itself is
+  `archive_edit/remote.rs`). Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`, `create_numbered.rs`
+  (paste-as-file's numbered create), `routing.rs` (the one routing every cross-volume transfer takes:
+  `start_volume_{copy,move,compress}`, plus `start_rename_by_move`; `routing/retry.rs` is the Retry recipe a copy or
+  move leaves with the manager), `routed_writes.rs` (the refusal every drive-only entry point asks first for an in-zip
+  or `.git/<category>/` path, `host/DETAILS.md`). `source_binding.rs` is the optional set of sources an op may touch.
+  `queued_sources.rs` is the check an op that waited in the queue runs on its sources when admitted, parking on
   `sources_gone_slot.rs` (a leaf the state owns, like `outage_slot.rs`). Layering, so the three stay out of a cycle:
   `source_binding` → `queued_sources` → `state` → `sources_gone_slot`, and the empty batch's terminal shape is
   `WriteCompleteEvent::all_skipped` in `types`. `locked_sources.rs` is a move's question about Locked items and the plan
@@ -2498,16 +2500,16 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   `copy_files_with_progress`, the cross-FS move, `copy_volumes_with_progress`, `move_volumes_with_progress`). A Windows
   class the destination's tier REFUSES (a character, a device name, a trailing space or period) never reaches the
   landing, because a driver may take it with no error: Linux's vfat strips `dup.` to `dup`, so it would land on a
-  sibling, merge a folder `dir.` into `dir`, and under "Overwrite all" replace the sibling. It also refuses, on any
-  destination, a name only this host's native join can't keep whole (`native_join_refuses`: on Windows a POSIX server's
-  `12:00 notes` or `a\b`), so that item is asked about rather than ending the transfer; `transfer/volume/DETAILS.md` §
-  "Listed names are untrusted" has the order it's checked in. The local engine checks every segment of a file's
-  destination below the root (`single_item.rs::refuse_a_refused_segment`: the file asks as a file, a folder as a folder,
-  whose Skip leaves it out whole through `skipped_subtrees`); the volume walk checks each child before anything is made
-  for it (`merge.rs`), and a top-level name skips the probe and the resolver (`landing.rs::destination_refuses`) and is
-  refused at the top of `copy_single_path`, where every driver asks. Length stays the destination's to answer. macOS
-  needs none of it: its drivers warn (they store a stand-in, so `dup.` and `dup` stay two names), and a case-only twin
-  is a look-alike `landing.rs` already settles. Pinned by `src/transfer/copy/refused_class_tests.rs` and
+  sibling, merge a folder `dir.` into `dir`, and under "Overwrite all" replace the sibling. A POSIX server's
+  `12:00 notes` or `a\b` is no refusal of its own: the volume walk keeps it one name (`transfer/volume/DETAILS.md` §
+  "Listed names are untrusted"), so a remote destination holds it and a local NTFS one refuses it here, by its rules.
+  The local engine checks every segment of a file's destination below the root
+  (`single_item.rs::refuse_a_refused_segment`: the file asks as a file, a folder as a folder, whose Skip leaves it out
+  whole through `skipped_subtrees`); the volume walk checks each child before anything is made for it (`merge.rs`), and
+  a top-level name skips the probe and the resolver (`landing.rs::destination_refuses`) and is refused at the top of
+  `copy_single_path`, where every driver asks. Length stays the destination's to answer. macOS needs none of it: its
+  drivers warn (they store a stand-in, so `dup.` and `dup` stay two names), and a case-only twin is a look-alike
+  `landing.rs` already settles. Pinned by `src/transfer/copy/refused_class_tests.rs` and
   `src/transfer/volume/refused_class_tests.rs`.
 - **Not covered**: on the LOCAL engine, a folder the destination refuses at its `create_dir` (with no rule saying so)
   still ends the copy (a refused file asks).

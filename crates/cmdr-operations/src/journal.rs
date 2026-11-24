@@ -11,9 +11,7 @@ use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-#[cfg(not(target_family = "wasm"))]
 use cmdr_fs::app_path::{AppPathBuf, PathArithmetic};
-use cmdr_fs::app_path::{PathFlavor, is_scheme_url};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
 use cmdr_operation_log::types::RowRole;
@@ -26,6 +24,7 @@ use super::journal_landed::LandedReadBack;
 use super::ledger::WrittenFile;
 use super::scope::OpScope;
 use super::types::{WriteOperationError, WriteOperationType};
+use super::wire_paths::{engine_path, seam_path};
 use cmdr_operation_log::types::{SearchCoverage, SearchCoverageReason};
 
 /// Record item rows for the scope's operation (buffered and batched by the journal).
@@ -100,89 +99,9 @@ pub(super) fn mtime_secs(meta: &Metadata) -> Option<i64> {
         .map(|d| d.as_secs() as i64)
 }
 
-/// Split one end of a row into the (folder text, name) the journal stores: the APP
-/// path's folder and last name, so a Windows drive row reads `C:/Users/x` (the store
-/// interns by `/`, `cmdr-operation-log`'s `store/dirs.rs`), ❌ never the native
-/// `C:\Users\x`, which interned as one name under `/` and read back as
-/// `/C:\Users\x`, a path no volume answers (#1351). A path with no last name yields
-/// empty strings.
-///
-/// The engine's ends are still `std::path` values, so each crosses here once, through
-/// the non-escaping door (`from_native_unicode`). One it refuses keeps the text it
-/// always had ([`bridge_split`]), counted on nothing because nothing changes for it:
-/// a name that isn't Unicode text (10f escapes it), an escape-range code point, a
-/// relative or `..` path, and a remote volume's `sftp://…` or, on Windows, POSIX
-/// `/device/…` text, which isn't a native path. On macOS and Linux an absolute
-/// Unicode path's app text IS its native text, so those rows keep every byte
-/// (`journal_split_tests.rs`).
-fn journal_split(path: &Path) -> (String, String) {
-    // A remote volume's `scheme://` text is no native path.
-    if !path.to_str().is_some_and(is_scheme_url)
-        && let Some(split) = native_split(path)
-    {
-        return split;
-    }
-    bridge_split(&separated(path))
-}
-
-/// A volume engine's bridge path as `/`-separated text. On Windows `std::path` joined its
-/// names with `\`, and no name in such a path holds one (the engine refuses that name per
-/// item, `ChildName`), so every `\` separates: a cross-volume move's `/photos\sub\b.txt`
-/// stores under `/photos/sub`, ❌ never a folder named `photos\sub`, which a POSIX server's
-/// undo would read as one name. Elsewhere `\` is a name character, as every POSIX row
-/// always read it.
-fn separated(path: &Path) -> std::borrow::Cow<'_, Path> {
-    match path.to_str() {
-        Some(text) if PathFlavor::HOST == PathFlavor::Windows && text.contains('\\') => {
-            std::borrow::Cow::Owned(PathBuf::from(text.replace('\\', "/")))
-        }
-        _ => std::borrow::Cow::Borrowed(path),
-    }
-}
-
-/// A native end's app split, or `None` for one the non-escaping door refuses.
-#[cfg(not(target_family = "wasm"))]
-fn native_split(path: &Path) -> Option<(String, String)> {
-    AppPathBuf::from_native_unicode(path).ok().map(app_split)
-}
-
-/// The browser build has no native paths: its every volume is in memory or remote.
-#[cfg(target_family = "wasm")]
-fn native_split(_path: &Path) -> Option<(String, String)> {
-    None
-}
-
-/// [`journal_split`] for an end already typed. The folder text reuses the path's own
-/// buffer (its parent is a prefix of it), so a row costs the two allocations the
-/// `std::path` split always did: this runs once per journaled item.
-#[cfg(not(target_family = "wasm"))]
-fn app_split(path: AppPathBuf) -> (String, String) {
-    let name = path.file_name().unwrap_or_default().to_owned();
-    let dir_len = path.parent().map(|parent| {
-        debug_assert!(path.as_str().starts_with(parent.as_str()), "a parent is a prefix");
-        parent.as_str().len()
-    });
-    let mut dir = path.into_string();
-    dir.truncate(dir_len.unwrap_or(0));
-    (dir, name)
-}
-
-#[cfg(test)]
-#[path = "journal_split_tests.rs"]
-mod journal_split_tests;
-
-/// The split every row had before ends were typed: `std::path`'s, as lossy text.
-fn bridge_split(path: &Path) -> (String, String) {
-    let name = path
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    let dir = path
-        .parent()
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_default();
-    (dir, name)
-}
+#[path = "journal_split.rs"]
+mod split;
+use split::{journal_split, journal_split_app};
 
 /// Open a local-FS managed op in the journal (header only; the schema opens it
 /// `not_rollbackable` until finalize computes eligibility). `item_count` is the
@@ -363,27 +282,56 @@ pub(super) fn record_volume_transfer_source(
     dest_volume_id: &str,
     dest_root: &Path,
     source_is_dir: bool,
-    created_files: &[WrittenFile],
+    created_files: &[WrittenFile<AppPathBuf>],
     file_size: Option<i64>,
     landed: &LandedReadBack,
     overwrote: bool,
 ) {
+    // The roots as the walk under them spelled them, so each leaf's tail under
+    // `dest_root` rebases onto `source_root` by whole app names: a POSIX
+    // server's `a\b` stays one name on Windows, where `std::path` split it.
+    let (source_app, dest_app) = (seam_path(source_root), seam_path(dest_root));
+    // Only between canonical roots: a volume-relative root (a share suite's
+    // `cmdr-test-…/tree`) or another bridge value has no typed place, so its
+    // leaves rebase by `std::path` as they always did.
+    let typed_roots = source_app.is_canonical() && dest_app.is_canonical();
     if source_is_dir {
         for leaf in created_files {
-            let rel = leaf.path.strip_prefix(dest_root).unwrap_or(&leaf.path);
-            // A selected link is its own one leaf, with nothing to join.
-            let source_leaf = if rel.as_os_str().is_empty() {
-                source_root.to_path_buf()
-            } else {
-                source_root.join(rel)
+            let ends = match typed_roots.then(|| leaf.path.strip_prefix(&dest_app)).flatten() {
+                // A selected link is its own one leaf, with nothing to join.
+                Some(rel) if rel.is_empty() => Some(journal_split_app(&source_app)),
+                Some(rel) => source_app
+                    .join_relative(&rel)
+                    .ok()
+                    .map(|source| journal_split_app(&source)),
+                None => None,
             };
-            record_row(
+            let (source_ends, dest_ends) = match ends {
+                Some(source_ends) => (source_ends, journal_split_app(&leaf.path)),
+                None => {
+                    // A leaf outside the root is its own source, as `Path::join`
+                    // of an absolute tail answered. Only a test's volume-relative
+                    // root reaches here (every start anchors its roots typed), so
+                    // the source rebases as it always did; the destination end is
+                    // the leaf the walk joined, split as one (a `\` in it is a
+                    // name character even on Windows).
+                    let leaf_std = engine_path(&leaf.path);
+                    let rel = leaf_std.strip_prefix(dest_root).unwrap_or(&leaf_std);
+                    let source_leaf = if rel.as_os_str().is_empty() {
+                        source_root.to_path_buf()
+                    } else {
+                        source_root.join(rel)
+                    };
+                    (journal_split(&source_leaf), journal_split_app(&leaf.path))
+                }
+            };
+            record_split_row(
                 scope,
                 EntryType::File,
                 RowRole::RollbackUnit,
                 source_volume_id,
-                &source_leaf,
-                Some((dest_volume_id, &leaf.path)),
+                source_ends,
+                Some((dest_volume_id, dest_ends)),
                 leaf.identity.recorded_size().and_then(|size| i64::try_from(size).ok()),
                 match leaf.landed_modified {
                     LandedModified::Known(secs) => secs.and_then(|secs| i64::try_from(secs).ok()),
@@ -403,10 +351,10 @@ pub(super) fn record_volume_transfer_source(
             source_root,
             Some((dest_volume_id, dest_root)),
             file_size,
-            landed.modified(dest_root),
+            landed.modified(&dest_app),
             overwrote,
             ItemOutcome::Done,
-            landed.node(dest_root),
+            landed.node(&dest_app),
         );
     }
 }
@@ -457,12 +405,38 @@ fn record_row(
     outcome: ItemOutcome,
     dest_identity: Option<NodeIdentity>,
 ) {
-    let (source_dir, source_name) = journal_split(source);
+    record_split_row(
+        scope,
+        entry_type,
+        row_role,
+        source_volume_id,
+        journal_split(source),
+        dest.map(|(vol, d)| (vol, journal_split(d))),
+        size,
+        mtime,
+        overwrote,
+        outcome,
+        dest_identity,
+    );
+}
+
+/// [`record_row`] with each end already split into its (folder text, name).
+#[allow(clippy::too_many_arguments, reason = "the natural fields of a journal row")]
+fn record_split_row(
+    scope: &OpScope,
+    entry_type: EntryType,
+    row_role: RowRole,
+    source_volume_id: &str,
+    (source_dir, source_name): (String, String),
+    dest: Option<(&str, (String, String))>,
+    size: Option<i64>,
+    mtime: Option<i64>,
+    overwrote: bool,
+    outcome: ItemOutcome,
+    dest_identity: Option<NodeIdentity>,
+) {
     let (dest_volume_id, dest_dir, dest_name) = match dest {
-        Some((vol, d)) => {
-            let (dd, dn) = journal_split(d);
-            (Some(vol.to_string()), Some(dd), Some(dn))
-        }
+        Some((vol, (dd, dn))) => (Some(vol.to_string()), Some(dd), Some(dn)),
         None => (None, None, None),
     };
     journal_record_items(
@@ -494,22 +468,36 @@ fn record_row(
 /// when empty; search matches its name).
 pub(super) fn record_created_dirs(scope: &OpScope, dirs: &[PathBuf]) {
     for dir in dirs {
-        record_created_dirs_on(scope, scope.local_ids_for(dir, Some(dir)).1, std::slice::from_ref(dir));
+        let volume_id = scope.local_ids_for(dir, Some(dir)).1;
+        record_row(
+            scope,
+            EntryType::Dir,
+            RowRole::RollbackUnit,
+            volume_id,
+            dir,
+            Some((volume_id, dir)),
+            None,
+            None,
+            false,
+            ItemOutcome::Done,
+            None,
+        );
     }
 }
 
 /// The volume-aware sibling of [`record_created_dirs`]: the created dirs live on
 /// the destination volume `dest_volume_id` (may be SMB / MTP). Both the source
-/// and dest of each row are the created path on that volume.
-pub(super) fn record_created_dirs_on(scope: &OpScope, dest_volume_id: &str, dirs: &[PathBuf]) {
+/// and dest of each row are the created path on that volume, as the walk joined
+/// it.
+pub(super) fn record_created_dirs_on(scope: &OpScope, dest_volume_id: &str, dirs: &[AppPathBuf]) {
     for dir in dirs {
-        record_row(
+        record_split_row(
             scope,
             EntryType::Dir,
             RowRole::RollbackUnit,
             dest_volume_id,
-            dir,
-            Some((dest_volume_id, dir)),
+            journal_split_app(dir),
+            Some((dest_volume_id, journal_split_app(dir))),
             None,
             None,
             false,

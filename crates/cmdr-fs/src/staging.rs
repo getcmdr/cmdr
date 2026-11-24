@@ -91,7 +91,8 @@ use crate::ignore_poison::IgnorePoison;
 mod names;
 
 pub use names::{
-    MAX_SCRATCH_NAME_BYTES, deleting_sibling_name, temp_sibling_name, temp_sibling_path, temp_sibling_prefix,
+    MAX_SCRATCH_NAME_BYTES, aside_sibling_name_with_uuid, deleting_sibling_name, temp_sibling_name,
+    temp_sibling_name_with_uuid, temp_sibling_path, temp_sibling_prefix,
 };
 
 /// Marks a file holding bytes on their way IN: the staging sibling a write
@@ -245,6 +246,19 @@ impl StagingTemp {
     /// to the writer).
     pub fn adopt(path: PathBuf, owner: StagingOwner) -> Self {
         let name = path.file_name().map(|n| n.to_string_lossy().into_owned());
+        Self::register(path, name, owner)
+    }
+
+    /// Takes ownership of the scratch file at `path`, registered under `name`,
+    /// its last name as the caller split it: for a temp a volume engine names
+    /// with an app path's own join (`temp_sibling_name_with_uuid`), whose last
+    /// name `Path::file_name` would split on Windows (a POSIX server's
+    /// `a\b.cmdr-tmp-<uuid>` is ONE name there, and the listing names it so).
+    pub fn adopt_named(path: PathBuf, name: String, owner: StagingOwner) -> Self {
+        Self::register(path, Some(name), owner)
+    }
+
+    fn register(path: PathBuf, name: Option<String>, owner: StagingOwner) -> Self {
         if let Some(name) = &name {
             ACTIVE_TEMPS
                 .lock_ignore_poison()

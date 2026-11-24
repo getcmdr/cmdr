@@ -172,10 +172,10 @@ async fn pipe(
 ) -> Result<u64, PathedVolumeError> {
     stream_pipe_file(
         source_volume,
-        Path::new(from),
+        &crate::testing::app_path_of(Path::new(from)),
         SourceFileFacts::default(),
         dest_volume,
-        Path::new(to),
+        &crate::testing::app_path_of(Path::new(to)),
         state,
         &|_, _| ControlFlow::Continue(()),
         WriteStaging::Stage,
@@ -334,10 +334,10 @@ async fn a_cancelled_server_side_copy_leaves_no_destination_behind() {
 
     let outcome = stream_pipe_file(
         &as_volume,
-        Path::new("big.bin"),
+        &crate::testing::app_path_of(Path::new("big.bin")),
         SourceFileFacts::default(),
         &as_volume,
-        Path::new("big copy.bin"),
+        &crate::testing::app_path_of(Path::new("big copy.bin")),
         &state,
         &|_, _| ControlFlow::Break(()),
         WriteStaging::Stage,

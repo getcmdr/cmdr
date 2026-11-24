@@ -13,6 +13,7 @@
 //! `copy_concurrent_tests.rs::a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one`.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -52,8 +53,8 @@ pub(super) struct CopyTaskSuccess {
     /// swap, or a deep-merge child overwrite). Feeds the operation-log
     /// eligibility: a copy that overwrote isn't rollbackable (the original is gone).
     pub(super) overwrote: bool,
-    pub(super) created_files: Vec<WrittenFile>,
-    pub(super) created_dirs: Vec<PathBuf>,
+    pub(super) created_files: Vec<WrittenFile<AppPathBuf>>,
+    pub(super) created_dirs: Vec<AppPathBuf>,
     /// The landed files' own modified times, read back here in the task (so the
     /// driver loop never awaits the destination) when the operation journals.
     pub(super) landed: journal_landed::LandedReadBack,
@@ -77,7 +78,7 @@ pub(super) enum CopyTaskEnd {
     /// folder the walk made before the refusal, which rollback still owns.
     Skipped {
         source_path: PathBuf,
-        created_dirs: Vec<PathBuf>,
+        created_dirs: Vec<AppPathBuf>,
     },
 }
 
@@ -112,8 +113,8 @@ pub(super) struct CopyTaskFailure {
     pub(super) source_path: PathBuf,
     pub(super) source_is_dir: bool,
     pub(super) overwrote: bool,
-    pub(super) created_files: Vec<WrittenFile>,
-    pub(super) created_dirs: Vec<PathBuf>,
+    pub(super) created_files: Vec<WrittenFile<AppPathBuf>>,
+    pub(super) created_dirs: Vec<AppPathBuf>,
 }
 
 /// Everything one task owns for the life of one top-level source.

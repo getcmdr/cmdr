@@ -9,12 +9,13 @@ use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use super::super::super::host::Announced;
+use super::super::super::host::AnnouncedOnVolume;
 use super::super::super::state::WriteOperationState;
 use super::super::recovered_name::FinalizeFailure;
 use super::super::staged_write::{CutOffLanding, LandingError, StagedWrite, WriteStaging, resolve_staging};
 use super::super::transfer_probe::{TaskPhase, set_task_bytes, set_task_phase};
 use super::super::volume_outage::StartedOn;
+use super::listed_name::std_of;
 use super::piped_file::{PipedFile, landed_at_final_name};
 use super::transfer_error::hard_abort_error;
 use cmdr_fs::log_error::LogError;
@@ -66,14 +67,18 @@ use cmdr_fs::volume::{ServerCopyProgress, Volume, VolumeError};
 )]
 pub(super) async fn try_server_side_copy(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    announced_dest: Announced<'_>,
+    announced_dest: AnnouncedOnVolume<'_>,
     state: &Arc<WriteOperationState>,
     on_file_progress: &(dyn Fn(u64, u64) -> ControlFlow<()> + Sync),
     staging: WriteStaging,
 ) -> Result<ServerSideCopy, FinalizeFailure> {
-    let dest_path = announced_dest.path();
+    // The text exits (the logs, a hard abort's error) read the `std::path`
+    // spellings: a borrow for UTF-8.
+    let source_std = std_of(source_path);
+    let dest_std = std_of(announced_dest.path());
+    let dest_path: &Path = &dest_std;
     if !dest_volume.may_copy_on_server_from(source_volume.as_ref()) {
         return Ok(ServerSideCopy::Streams);
     }
@@ -89,14 +94,13 @@ pub(super) async fn try_server_side_copy(
         target: "copy",
         "try_server_side_copy: asking {} to copy {} on the server, into {}",
         LogPrivate::volume(dest_volume.name()),
-        LogPrivate::file_path(source_path),
+        LogPrivate::file_path(&*source_std),
         LogPrivate::file_path(staged.target()),
     );
     let progress = EngineCopyProgress {
         state,
         on_file_progress,
     };
-    let source_path_app = AppPath::legacy_unchecked(source_path);
     let target_app = staged.target_app();
 
     // The quit deadline rides the same `select!` it rides for a streamed write.
@@ -108,7 +112,7 @@ pub(super) async fn try_server_side_copy(
         () = state.backend_abort.cancelled() => return Err(hard_abort_error(dest_path).into()),
         result = dest_volume.copy_on_server(
             source_volume.as_ref(),
-            &source_path_app,
+            source_path,
             target_app,
             staged.write_mode(),
             &progress,

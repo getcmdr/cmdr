@@ -4,7 +4,9 @@
 
 use std::path::Path;
 
-use super::{bridge_split, journal_split};
+use cmdr_fs::app_path::{AppPath, PathFlavor};
+
+use super::{bridge_split, journal_split, journal_split_app_as};
 
 /// What the store keeps of a split: the folder's names (it interns by `/`, empty
 /// names dropped, `store/dirs.rs`), whether it hangs off `/`, and the leaf name.
@@ -147,5 +149,32 @@ fn a_volume_path_joined_with_backslashes_on_windows_stores_its_folders() {
             bridge_split(path)
         };
         assert_eq!(journal_split(path), expected, "{text:?}");
+    }
+}
+
+/// An end the volume engine joined typed holds `\` only inside a name, so a Windows build
+/// splits it by `/`: a POSIX server's `a\b.txt` and `foo\..` are ONE name in their folder,
+/// ❌ never a file `b.txt` in a folder `a` (an undo of that row would act on another file).
+/// A POSIX build splits it as it always split the `std::path` end.
+#[test]
+fn a_typed_end_keeps_a_backslash_name_whole() {
+    for (text, dir, name) in [
+        (r"/inbox/album/a\b.txt", "/inbox/album", r"a\b.txt"),
+        (r"/inbox/album/foo\..", "/inbox/album", r"foo\.."),
+        (r"/inbox/sub\dir/x.txt", r"/inbox/sub\dir", "x.txt"),
+    ] {
+        let path = AppPath::from_normalized_as(text, PathFlavor::Posix).expect("a canonical path");
+        assert_eq!(
+            journal_split_app_as(path, PathFlavor::Windows),
+            (dir.to_owned(), name.to_owned()),
+            "{text:?}"
+        );
+        if PathFlavor::HOST == PathFlavor::Posix {
+            assert_eq!(
+                journal_split_app_as(path, PathFlavor::Posix),
+                journal_split(Path::new(text)),
+                "{text:?}"
+            );
+        }
     }
 }
