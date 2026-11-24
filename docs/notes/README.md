@@ -32,6 +32,9 @@ Some notes here are load-bearing rather than historical. Those are grouped below
   stat per entry, and why `FIND_FIRST_EX_LARGE_FETCH` stayed out.
 - `windows-port/real-windows-check-2026-11-19.md`: the first run of the in-page menus, WebView2's browser keys, and the
   Windows look on a real Windows 10 desktop, one line per check with its evidence, and the open problems by severity.
+- `windows-port/store-distribution.md`: what the Microsoft Store accepts for Cmdr in late 2026 (MSIX over a signed EXE,
+  `runFullTrust`, AppData virtualization, WebView2, Store-managed updates, third-party commerce, privacy, age rating,
+  private audience, submission automation), each with its source, and the route task 57 takes.
 - `windows-port/real-windows-check-2026-11-23.md`: PRs #1389, #1390, #1405, and #1406 in the running app on the real
   Windows 10 desktop (shares, a folder mount, growing files, junctions, every write op and its undo, 3,000-file bursts),
   a free look around, and the bugs it filed.
