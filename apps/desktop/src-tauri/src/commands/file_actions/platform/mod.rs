@@ -45,6 +45,13 @@ pub enum RevealError {
     NoPlainPath,
     /// The file manager was asked and said no: the item is gone or its share unreachable, or the
     /// launch couldn't start.
+    #[cfg_attr(
+        feature = "playwright-e2e",
+        allow(
+            dead_code,
+            reason = "the E2E build records a reveal on macOS and Windows instead of asking the file manager"
+        )
+    )]
     NotShown,
 }
 
