@@ -1979,6 +1979,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `b.txt` in `a` and can't hold `foo\..` or both `a\b.txt` and `a/b.txt` (the lane's first run, 45467575511, read
     exactly that). Typing its store is what re-enables them; the engine's side is pinned on every host by the typed temp
     cell (`staged_write_tests.rs`) and the journal's split under both flavors (`journal_split_tests.rs`).
+  - **Windows lane** (hosted, run 45480062626): 0 newly failing; 13 known failures pass and left the list (eight
+    `swap_outage_tests`, five `archive_edit::remote::remote_outage_tests`, which named their temp through `std::path` on
+    a POSIX fixture), with the three deleted native-join cells: `cmdr-operations` entries 36 → 20.
   - **A journal rebase between canonical roots only**: a volume-relative root (a share suite's `cmdr-test-…/tree`, a
     local tree's `tree`) rebases its leaves by `std::path` as before; the first run's typed-only rebase wrote such a
     leaf's DEST as its source, and the SMB and S3 fixtures' undo cells caught it (`UnverifiablePrecondition`).
