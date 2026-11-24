@@ -8,6 +8,7 @@
 //	./scripts/windows-package.sh msix -version X.Y.Z -exe Cmdr.exe -out Cmdr_X.Y.Z_x64.msix [-identity release|dev]
 //	./scripts/windows-package.sh verify-msix -version X.Y.Z [-identity release|dev] Cmdr_X.Y.Z_x64.msix
 //	./scripts/windows-package.sh group-policy -version X.Y.Z -out cmdr-group-policy-X.Y.Z.zip
+//	./scripts/windows-package.sh store-identity
 //
 // `msix` stages the package (the exe, the bundle's resources from `tauri.conf.json`, the logos,
 // and the manifest with its identity and version filled in), refuses anything that would make it
@@ -17,6 +18,8 @@
 // still a placeholder; `dev` takes a local test identity, which runs unpacked in Developer Mode
 // (`apps/desktop/packaging/msix/DETAILS.md` § The two identities). `verify-msix` re-runs the
 // checks on a built package. `group-policy` zips the committed ADMX and ADML files.
+// `store-identity` prints `release` once `identity.json` holds Partner Center's identity, else
+// `dev`: what the CI artifact build (`.github/workflows/windows-store-package.yml`) packs with.
 package main
 
 import (
@@ -36,7 +39,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("name a command: msix, verify-msix, or group-policy")
+		return errors.New("name a command: msix, verify-msix, group-policy, or store-identity")
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	root := fs.String("root", "", "the repo root (scripts/windows-package.sh sets it)")
@@ -49,6 +52,9 @@ func run(args []string) error {
 	}
 	if *root == "" {
 		return errors.New("-root is required (run it through scripts/windows-package.sh)")
+	}
+	if args[0] == "store-identity" {
+		return printStoreIdentity(*root)
 	}
 	msixVersion, err := packageVersion(*version)
 	if err != nil {
@@ -79,5 +85,15 @@ func run(args []string) error {
 		}
 		return zipGroupPolicy(filepath.Join(*root, groupPolicyDir), *out)
 	}
-	return fmt.Errorf("unknown command %q: msix, verify-msix, or group-policy", args[0])
+	return fmt.Errorf("unknown command %q: msix, verify-msix, group-policy, or store-identity", args[0])
+}
+
+// printStoreIdentity prints `storeIdentity`'s answer, the one line the CI workflow reads.
+func printStoreIdentity(root string) error {
+	which, err := storeIdentity(root)
+	if err != nil {
+		return err
+	}
+	fmt.Println(which)
+	return nil
 }

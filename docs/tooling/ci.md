@@ -17,6 +17,7 @@ How the GitHub workflows fit together, and the invariants that keep them honest.
 | `deploy-dashboard.yml`        | Push to main touching the dashboard     | Builds and deploys the analytics dashboard to Cloudflare Pages.                                      |
 | `release.yml`                 | `v*` tags                               | Only calls `release-pipeline.yml` (so attestations name the reusable workflow as signer).            |
 | `release-pipeline.yml`        | Called by `release.yml`                 | Builds, signs, and publishes the app, and the site's browser demo. `docs/guides/releasing.md`        |
+| `windows-store-package.yml`   | MSIX packaging PRs, weekly, manual      | Builds the Store's MSIX as an artifact, publishes nothing. `docs/guides/releasing.md`                |
 | `scorecard.yml`               | Push to main, weekly, rule edits        | OpenSSF Scorecard: publishes the score (README badge) and SARIF to code scanning. § below            |
 | `codeql.yml`                  | PRs, push to main, weekly, manual       | CodeQL (Actions, JS/TS, Rust); a high or critical finding fails it and blocks releases. § below      |
 | `gradle-wrapper.yml`          | Push to main, wrapper PRs, weekly       | Checks the IntelliJ plugin's `gradle-wrapper.jar` against Gradle's published checksums. § Scorecard  |

@@ -1378,7 +1378,10 @@ environment already holds.
    `apps/desktop/packaging/msix/identity.json`'s `release` block: `Package/Identity/Name` into `name`,
    `Package/Identity/Publisher` (the `CN=…` string) into `publisher`, and `Package/Properties/PublisherDisplayName` into
    `publisherDisplayName`. These are public values, not secrets: commit them. Until then the `PLACEHOLDER_` values make
-   `windows-package msix` fail with a pointer here, so a Windows release can't ship a made-up identity.
+   `windows-package msix` fail with a pointer here, so a Windows release can't ship a made-up identity. In the same
+   commit, flip `TestTheReleaseIdentityFailsLoudlyWhileItsAPlaceholder` and the last assertion of
+   `TestStoreIdentityFollowsIdentityJSON` (`scripts/windows-package/msix_test.go`), which pin the placeholder. From then
+   on the weekly Store package build (§ The Microsoft Store) packs the real identity.
 4. **Review the copy**: the MSIX's display name and description (`apps/desktop/packaging/msix/Package.appxmanifest`),
    and the NSIS installer's publisher, copyright, and short description
    (`apps/desktop/src-tauri/tauri.windows.conf.json`). A changed publisher means re-running
@@ -1396,7 +1399,8 @@ environment already holds.
    in that run, and check `publish` carried the leg (no "ships without its windows files" warning).
 
 7. **Submit the MSIX** to the Store by hand from Partner Center (upload `Cmdr_<version>_x64.msix` from the release)
-   until task 57 automates the submission. Store certification takes hours to days.
+   until task 57 automates the submission. Store certification takes hours to days. What the first submission asks for:
+   § The Microsoft Store.
 
 8. **Make the download public**, once that release is out: add `windows` to `PUBLIC_DOWNLOAD_OSES` in
    `apps/api-server/wrangler.toml`. That one line turns the Windows download on at the API server's
@@ -1419,6 +1423,44 @@ environment already holds.
 Turning it on also wants, though nothing breaks without it: the Store link and the fuller "Run anyway" explainer on the
 website (task 58). In `local` mode, `windows-publish` is a second `release` environment approval if it arrives after you
 approved `sign`.
+
+### The Microsoft Store (not live yet)
+
+**Not live**: no Partner Center account yet (#1348), and nothing submits anything. The route, each finding's source, and
+what's left: `docs/notes/windows-port/store-distribution.md`. David chose the Store for the first Windows alpha
+(2026-11-24); the NSIS installer stays the internal test build.
+
+What's ready:
+
+- **The package, as a CI artifact**: `.github/workflows/windows-store-package.yml` compiles the app on `windows-2025`,
+  packs the MSIX, verifies it, and keeps it as `cmdr-store-package-<version>-<identity>` for 14 days. It runs on PRs
+  that touch the packaging, weekly, and by hand (`gh workflow run windows-store-package.yml --ref <branch>`). It holds
+  no secrets and publishes nothing. Its identity is `windows-package store-identity`'s answer: the dev identity while
+  `identity.json` holds placeholders, Partner Center's once step 3 above commits it, so that day's next run is a package
+  the Store takes.
+- **A Store install's updater stands down**: the process's package identity makes it `NotUpdatable::StorePackage`, and
+  Settings says the Microsoft Store keeps it up to date (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Who may
+  check). Cmdr's managed update keys don't reach a Store install.
+
+The first submission, by hand in Partner Center (the CLI can't create the first one):
+
+1. **Packages**: the MSIX from a release, or from the artifact once it carries the release identity.
+2. **Properties**: category, and the privacy policy URL (`https://getcmdr.com/privacy-policy`, once it covers Windows).
+3. **Age ratings**: the IARC questionnaire.
+4. **Submission options**: why Cmdr declares `runFullTrust` (a desktop file manager that reads and writes the user's
+   files and drives with the user's own rights).
+5. **Pricing and availability**: the audience (Private for the alpha: Public can't go back to Private), the price, and
+   the third-party purchase note if the Commercial license stays on Paddle (policy 10.8.2).
+6. **Store listing**: David's copy, screenshots, and the BSL as additional license terms.
+
+Later submissions go through the Microsoft Store Developer CLI (`msstore`, Microsoft's
+`microsoft/microsoft-store-apppublisher` action) from the release pipeline, which waits on an Entra ID tenant linked to
+Partner Center, an app registration, and four repo secrets: `PARTNER_CENTER_TENANT_ID`, `PARTNER_CENTER_SELLER_ID`,
+`PARTNER_CENTER_CLIENT_ID`, and `PARTNER_CENTER_CLIENT_SECRET`. The CLI updates free products only.
+
+Gotcha: once `ShippedOSes` names Windows, `windows-build` packs the MSIX with `-identity release`, so a placeholder
+identity fails the whole Windows leg, NSIS installer included. Commit the identity before turning Windows on, or ship
+the NSIS installer alone by splitting the MSIX out of the leg first.
 
 ### Building the Windows packages locally
 

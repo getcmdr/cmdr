@@ -897,6 +897,11 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
     - **The Store build only reads policy keys, never writes them**: policies are the admin's, and a packaged app's
       registry view is merged and virtualized (Microsoft Learn's MSIX registry virtualization page, read 2026-11-18).
       Task 52 keeps `Policies` keys out of the package.
+    - **Done without the account** (2026-11-24): the route and its sources
+      (`docs/notes/windows-port/store-distribution.md`), the MSIX as a CI artifact (`windows-store-package.yml`), the
+      `StorePackage` install kind ("the Microsoft Store keeps this copy up to date"), and the Windows triple in
+      `deny.toml` and the notices (53a). Left: the account (#1348), the first submission by hand, `msstore` automation,
+      and the data-dir virtualization fix (the note's § Capabilities).
 58. [XS] Windows. The website's "Run anyway" download (D3 step 2): the unsigned NSIS installer on the download page with
     a short explainer of SmartScreen's "More info → Run anyway" step, next to the Store link. David reviews the copy.
     Needs 32, 52.

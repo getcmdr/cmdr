@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -53,6 +54,10 @@ type identity struct {
 	PublisherDisplayName string `json:"publisherDisplayName"`
 }
 
+// errPlaceholderIdentity: an identity field still holds the `PLACEHOLDER_` value Partner Center's
+// real one replaces (or is empty).
+var errPlaceholderIdentity = errors.New("identity.json still holds a placeholder")
+
 // loadIdentity reads one identity from `identity.json`. The release one must be Partner Center's:
 // a placeholder fails here, before anything is built, naming the step that fills it in.
 func loadIdentity(root, which string) (identity, error) {
@@ -70,10 +75,29 @@ func loadIdentity(root, which string) (identity, error) {
 	}
 	for field, v := range map[string]string{"name": id.Name, "publisher": id.Publisher, "publisherDisplayName": id.PublisherDisplayName} {
 		if v == "" || strings.HasPrefix(v, placeholderPrefix) {
-			return identity{}, fmt.Errorf("identity.json's %s.%s is %q: copy it from Partner Center › Product identity first (docs/guides/releasing.md § Windows releases)", which, field, v)
+			return identity{}, fmt.Errorf("%w: its %s.%s is %q, so copy it from Partner Center › Product identity first (docs/guides/releasing.md § Windows releases)", errPlaceholderIdentity, which, field, v)
 		}
 	}
 	return id, nil
+}
+
+// storeIdentity names the identity a package built outside a release should carry: `release` once
+// Partner Center's values are in `identity.json`, `dev` while they're placeholders. A broken
+// `identity.json` is an error, never a quiet `dev`. Releases never ask it: they pass `release`,
+// which fails on a placeholder.
+func storeIdentity(root string) (string, error) {
+	_, err := loadIdentity(root, "release")
+	switch {
+	case err == nil:
+		return "release", nil
+	case errors.Is(err, errPlaceholderIdentity):
+		if _, err := loadIdentity(root, "dev"); err != nil {
+			return "", err
+		}
+		return "dev", nil
+	default:
+		return "", err
+	}
 }
 
 var semverCore = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)

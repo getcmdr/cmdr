@@ -1,0 +1,122 @@
+name: Windows Store package
+
+# Builds the Microsoft Store's MSIX as a workflow artifact, outside any release, so the Store
+# channel stays ready for the day Partner Center clears (task 57 of the Windows port,
+# `docs/notes/windows-port/store-distribution.md`). It publishes, signs, and submits nothing, and
+# holds no secrets: the artifact is for a hand upload to Partner Center or a local install.
+#
+# The identity comes from `apps/desktop/packaging/msix/identity.json` through
+# `windows-package store-identity`: Partner Center's once its values are committed (the package is
+# then the one the Store takes), the dev identity while they're placeholders (a package that runs
+# unpacked in Developer Mode). A release never takes this path: its `windows-build` job packs with
+# `-identity release`, which fails on a placeholder (`docs/guides/releasing.md` § Windows releases).
+#
+# Runs when the packaging changes, weekly so the build can't rot unseen while Windows ships off,
+# and by hand: `gh workflow run windows-store-package.yml --ref <branch>`. The compile steps mirror
+# `release-pipeline.yml`'s `windows-build`; keep the two in step.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - apps/desktop/packaging/msix/**
+      - scripts/windows-package/**
+      - scripts/windows-package.sh
+      - .github/workflows/windows-store-package.yml
+  schedule:
+    - cron: '43 3 * * 1' # Mondays 03:43 UTC, off-peak and off the hour
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-store-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Build the Store package
+    runs-on: windows-2025
+    # A cold release compile on a hosted runner; the release job allows 150 for the same work.
+    timeout-minutes: 150
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Same as the Windows lane: the tree's bytes match every other OS's, and a nested
+      # `target/` path passes Windows' old 260-character limit.
+      - name: Keep the tree's line endings, allow long paths
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Install Go, Node, and pnpm with mise
+        uses: ./.github/actions/install-mise
+        with:
+          install_args: go node pnpm
+
+      - name: Install the pinned Rust toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
+          [ -n "$channel" ] || { echo "::error::Couldn't read the pinned channel from rust-toolchain.toml."; exit 1; }
+          rustup toolchain install "$channel" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$channel" >> "$GITHUB_ENV"
+
+      # Before the long compile, so a broken `identity.json` fails in seconds.
+      - name: Pick the identity and the version
+        id: plan
+        run: |
+          set -euo pipefail
+          identity=$(./scripts/windows-package.sh store-identity)
+          version=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' apps/desktop/src-tauri/tauri.conf.json)
+          [ -n "$version" ] || { echo "::error::Couldn't read the version from tauri.conf.json."; exit 1; }
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$identity" = dev ]; then
+            echo "::notice::identity.json still holds Partner Center placeholders, so this package carries the dev identity (Developer Mode only, not for the Store)."
+          fi
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./apps/desktop
+
+      - name: Generate SvelteKit types
+        run: pnpm exec svelte-kit sync
+        working-directory: ./apps/desktop
+
+      # `--no-bundle`: the bundler would stamp its bundle type into the exe, and the MSIX takes the
+      # unstamped one (`apps/desktop/packaging/msix/DETAILS.md` § Decision/Why: the unstamped exe).
+      - name: Compile the frontend and the app
+        run: pnpm tauri build --no-bundle --target x86_64-pc-windows-msvc
+        working-directory: ./apps/desktop
+
+      - name: Install the winapp CLI
+        uses: microsoft/setup-WinAppCli@9288bd0729bd3f71e2ed1b9eb247dc91470b824e # v0.3.0
+        with:
+          version: v0.8.0
+          sha256: 67a8e1d39421a5ef5309c7017327c6a70ea6215a0e56e47ec22a7e9ec3b914e6
+
+      # `msix` verifies the package it packs (identity, version, the unstamped exe, no registry).
+      - name: Make the Store package
+        env:
+          IDENTITY: ${{ steps.plan.outputs.identity }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/store"
+          ./scripts/windows-package.sh msix -version "$VERSION" -identity "$IDENTITY" \
+            -exe target/x86_64-pc-windows-msvc/release/Cmdr.exe -out "$RUNNER_TEMP/store/Cmdr_${VERSION}_x64.msix"
+          ls -l "$RUNNER_TEMP/store"
+
+      - name: Keep the package as an artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: cmdr-store-package-${{ steps.plan.outputs.version }}-${{ steps.plan.outputs.identity }}
+          path: ${{ runner.temp }}/store
+          if-no-files-found: error
+          retention-days: 14

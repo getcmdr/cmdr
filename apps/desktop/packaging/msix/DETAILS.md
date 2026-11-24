@@ -56,8 +56,9 @@ Tauri's bundler patches `__TAURI_BUNDLE_TYPE_VAR_UNK` in the binary it packages 
 NSIS; tauri-utils 2.10.2 `platform::bundle_type`, source read 2026-11-18), and the updater's Windows arm
 (`apps/desktop/src-tauri/src/updater/platform/windows.rs`) updates only an NSIS-stamped install. The NSIS bundle and the
 MSIX come from one compile, so the release job copies the exe before `tauri bundle` runs, and the MSIX gets that copy:
-inside the Store package the updater answers "not running from an installed build" and stays off, as D3 says the Store
-build must. A stamped exe is refused at packaging and again in `verify-msix`.
+inside the Store package the updater would answer "not running from an installed build" and stay off, as D3 says the
+Store build must. Since task 57 the package identity answers first (`StorePackage`, so Settings says the Store updates
+it), and the unstamped exe is the second guard. A stamped exe is refused at packaging and again in `verify-msix`.
 
 On tauri-cli 2.12 the bundler patches the copy it installs and leaves `target/release/Cmdr.exe` unstamped (verified on
 mami, 2026-11-18: the target exe's hash didn't change across `tauri bundle`, it still carried `…_UNK`, and the installed
@@ -73,6 +74,14 @@ virtualization", read 2026-11-18). Cmdr reads managed policy from `SOFTWARE\Poli
 (`managed_policy/DETAILS.md` § The Windows registry keys), so any key the package shipped there would read as an admin's
 setting. The package ships no `Registry.dat`, `User.dat`, or `UserClasses.dat`, and its manifest names no `Policies`
 path; both are checked.
+
+## The CI artifact
+
+`.github/workflows/windows-store-package.yml` (packaging PRs, weekly, manual) compiles with `--no-bundle`, packs with
+`windows-package store-identity`'s identity (`dev` while `identity.json`'s release block holds placeholders, `release`
+once Partner Center's values are in), and keeps `cmdr-store-package-<version>-<identity>` for 14 days. It's the package
+for a hand upload to Partner Center, and it keeps the build from rotting while Windows ships off. A release never asks
+`store-identity`: it passes `-identity release`, which fails on a placeholder.
 
 ## Why winapp
 

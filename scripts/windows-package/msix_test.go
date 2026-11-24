@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -92,11 +93,49 @@ func zipPack(stage, manifest, out string) error {
 // fails before packing anything, naming the step that fixes it.
 func TestTheReleaseIdentityFailsLoudlyWhileItsAPlaceholder(t *testing.T) {
 	_, err := loadIdentity(repoRoot(t), "release")
-	if err == nil || !strings.Contains(err.Error(), "copy it from Partner Center") {
+	if !errors.Is(err, errPlaceholderIdentity) {
 		t.Fatalf("a placeholder release identity loaded: %v", err)
 	}
 	if _, err := loadIdentity(repoRoot(t), "dev"); err != nil {
 		t.Fatalf("the dev identity: %v", err)
+	}
+}
+
+// The CI artifact packs the dev identity while the release one is a placeholder, and Partner
+// Center's the moment it's filled in; a broken file stops it rather than falling back.
+func TestStoreIdentityFollowsIdentityJSON(t *testing.T) {
+	write := func(t *testing.T, contents string) string {
+		t.Helper()
+		root := t.TempDir()
+		dir := filepath.Join(root, msixDir)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "identity.json"), []byte(contents), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return root
+	}
+	const dev = `"dev": {"name": "Rymd.Cmdr.Dev", "publisher": "CN=Cmdr Dev", "publisherDisplayName": "Cmdr dev build"}`
+	cases := []struct {
+		name, release, want string
+	}{
+		{"placeholder", `{"name": "PLACEHOLDER_A", "publisher": "PLACEHOLDER_B", "publisherDisplayName": "PLACEHOLDER_C"}`, "dev"},
+		{"filled in", `{"name": "12345Test.Cmdr", "publisher": "CN=00000000-0000-0000-0000-000000000000", "publisherDisplayName": "Test publisher"}`, "release"},
+		{"half filled", `{"name": "12345Test.Cmdr", "publisher": "PLACEHOLDER_B", "publisherDisplayName": "Test publisher"}`, "dev"},
+	}
+	for _, c := range cases {
+		root := write(t, `{"release": `+c.release+`, `+dev+`}`)
+		got, err := storeIdentity(root)
+		if err != nil || got != c.want {
+			t.Errorf("%s: got %q, %v; want %q", c.name, got, err, c.want)
+		}
+	}
+	if got, err := storeIdentity(write(t, `{"release": `)); err == nil {
+		t.Errorf("a broken identity.json answered %q", got)
+	}
+	if got, err := storeIdentity(repoRoot(t)); err != nil || got != "dev" {
+		t.Errorf("the committed identity.json: got %q, %v; want dev until Partner Center's values are in", got, err)
 	}
 }
 
