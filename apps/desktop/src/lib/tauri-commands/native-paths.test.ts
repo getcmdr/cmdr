@@ -7,14 +7,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NativePathCrossing } from '#lib/ipc/bindings.js'
 
-const { cross, open, save, dragDropHandlerRef } = vi.hoisted(() => ({
+const { cross, open, save, dragDropHandlerRef, cmdrDropHandlerRef } = vi.hoisted(() => ({
   cross: vi.fn<(paths: string[]) => Promise<NativePathCrossing[]>>(),
   open: vi.fn<() => Promise<string | string[] | null>>(),
   save: vi.fn<() => Promise<string | null>>(),
   dragDropHandlerRef: { current: null as ((event: { payload: unknown }) => void) | null },
+  cmdrDropHandlerRef: { current: null as ((event: { payload: unknown }) => void) | null },
 }))
 
-vi.mock('#lib/ipc/bindings.js', () => ({ commands: { appPathsFromNative: cross } }))
+vi.mock('#lib/ipc/bindings.js', () => ({
+  commands: { appPathsFromNative: cross },
+  events: {
+    // `native-drag-drop`, scoped to the webview: Cmdr's own drop target on Windows.
+    nativeDragDrop: () => ({
+      listen: (handler: (event: { payload: unknown }) => void) => {
+        cmdrDropHandlerRef.current = handler
+        return Promise.resolve(() => {})
+      },
+    }),
+  },
+}))
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open, save }))
 vi.mock('@tauri-apps/api/webview', () => ({
   getCurrentWebview: () => ({
@@ -27,6 +39,7 @@ vi.mock('@tauri-apps/api/webview', () => ({
 
 import { chooseSaveTarget, onAppPathDragDrop, pickOneAsAppPath } from './native-paths'
 import type { AppPathDragDropEvent } from './native-paths'
+import { withPlatform } from '#lib/platform/test-platform.js'
 
 /** Windows' crossing, as the backend answers it: a drive path's `\` become `/`; a device path refuses. */
 function windowsCrossing(paths: string[]): Promise<NativePathCrossing[]> {
@@ -43,6 +56,9 @@ beforeEach(() => {
   open.mockReset()
   save.mockReset()
   dragDropHandlerRef.current = null
+  cmdrDropHandlerRef.current = null
+  vi.stubGlobal('devicePixelRatio', 1)
+  return withPlatform('macos')
 })
 
 describe('pickOneAsAppPath', () => {
@@ -181,5 +197,46 @@ describe('onAppPathDragDrop', () => {
       expect(events).toHaveLength(1)
     })
     expect(events[0]).toMatchObject({ paths: [], refused: 2 })
+  })
+})
+
+describe('onAppPathDragDrop on Windows (#1311)', () => {
+  beforeEach(() => withPlatform('windows'))
+
+  it('reads positions in physical pixels, so at 150 % a drop hits the row under the cursor', async () => {
+    vi.stubGlobal('devicePixelRatio', 1.5)
+    const events: AppPathDragDropEvent[] = []
+    await onAppPathDragDrop((event) => events.push(event))
+    dragDropHandlerRef.current?.({ payload: { type: 'over', position: { x: 300, y: 150 } } })
+    await vi.waitFor(() => {
+      expect(events).toHaveLength(1)
+    })
+    expect(events[0]).toEqual({ type: 'over', position: { x: 200, y: 100 } })
+  })
+
+  it("delivers Cmdr's own drop target's events, whose paths are app paths already", async () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const events: AppPathDragDropEvent[] = []
+    await onAppPathDragDrop((event) => events.push(event))
+    const fire = cmdrDropHandlerRef.current
+    if (!fire) throw new Error('no native-drag-drop subscription on Windows')
+    fire({ payload: { type: 'enter', paths: ['C:/Users/test_user_1/a.txt'], refused: 1, position: { x: 40, y: 20 } } })
+    fire({ payload: { type: 'over', position: { x: 42, y: 20 } } })
+    fire({ payload: { type: 'leave' } })
+    await vi.waitFor(() => {
+      expect(events).toHaveLength(3)
+    })
+    expect(events).toEqual([
+      { type: 'enter', paths: ['C:/Users/test_user_1/a.txt'], refused: 1, position: { x: 20, y: 10 } },
+      { type: 'over', position: { x: 21, y: 10 } },
+      { type: 'leave' },
+    ])
+    expect(cross).not.toHaveBeenCalled()
+  })
+
+  it("listens to Cmdr's drop target only on Windows", async () => {
+    withPlatform('macos')
+    await onAppPathDragDrop(() => {})
+    expect(cmdrDropHandlerRef.current).toBeNull()
   })
 })

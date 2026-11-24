@@ -441,8 +441,67 @@ Key files:
     appearing late, ~5–30ms. Picked this direction over the reverse because a badge appearing later feels intentional,
     while a badge appearing-then-disappearing reads as a glitch.
 
+## Windows
+
+Code: `apps/desktop/src-tauri/src/commands/file_system/drag/platform/windows/` (`mod.rs` drag out and install,
+`drop_target.rs`, `data_object.rs`, `effects.rs` for the pure rules, `tests.rs` on the Windows CI lane). Locality is
+shared with macOS (`apps/desktop/src-tauri/src/commands/file_system/drag/platform/locality.rs`).
+
+### Drag in (#1311)
+
+- **Why #1311 broke drops** (diagnosed from code, wry 0.57.0 and tauri-runtime-wry 2.12.5, 2026-11-24): the paths were
+  already crossed (commit `093de07e20`), but (1) wry's `ScreenToClient` positions are PHYSICAL pixels, passed through
+  as-is, while macOS's are points, so at any display scale above 100 % the hit test read a spot 1.25–2 times further
+  right and down: the wrong row, the wrong pane, or nothing; (2) no modifier reached the page (OLE holds the keyboard
+  during a drag and nothing sent `drag-modifiers`), and the keys meant were Finder's; (3) wry shows Copy for every drag
+  and never sets the effect a drop answers, so the source read back every effect it allowed, Move included.
+- **Cmdr's own `IDropTarget`** (`drop_target.rs`) is registered on each webview's windows in place of wry's, from
+  `apps/desktop/src-tauri/src/tauri_builder.rs`'s webview hook, by enumerating the controller's parent window's children
+  as wry does and replacing only where a target was revoked. It sends `native-drag-drop` (paths crossed in Rust through
+  `commands/native_paths.rs::answer`) and `drag-modifiers` (OLE's key state) to its own webview. The door listens to
+  Tauri's event too, so a window whose replacement didn't take still works as before.
+- **Cursor**: the frontend pushes its resolved op for every drag (`setSelfDragResolvedOperation`, `none` where nothing
+  can be dropped), and `DragOver` shows it, falling back to an effect the source allows. Nothing pushed yet reads Copy.
+  Another app's drag starts with nothing resolved; Cmdr's own keeps the `move` seeded at drag start.
+- **Drop answers Copy at most** (`effects::drop_effect`). Cmdr's dialog does the move itself after the person confirms;
+  telling the source Move would let it delete the originals first (the Shell's non-optimized move).
+- **Taken drags**: `CF_HDROP`, or anything carrying Cmdr's private format (a phone or search-results self-drag offers no
+  files). Text, links, and browser images (`CFSTR_FILEDESCRIPTOR`) are refused, as wry did; the Windows twin of macOS's
+  promise drops is open work.
+- **UI thread**: every `IDropTarget` method runs there, inside the source's drag loop: it reads the data object (memory)
+  and emits, with no disk I/O. Emits from the UI thread run at once (tauri-runtime-wry's `send_user_message`).
+
+### Drag out (task 42b)
+
+- **`SHDoDragDrop` with the Shell's own data object** (`BHID_DataObject` on a Shell item array of the dragged items' ID
+  lists): the object Explorer drags, so every target that takes an Explorer drag takes Cmdr's (`CF_HDROP`, the ID list,
+  drop descriptions), and the Shell draws Explorer's drag image (thumbnails, count). No `DROPFILES` is written. The
+  frontend's PNG drag image is unused on Windows.
+- **Offered effects**: Copy, Move, and Link, Explorer's own set; the target picks by its rules and the keys (Explorer:
+  Move on the same drive, Copy across, Ctrl copies, Shift moves, Alt makes a shortcut). The target does the file
+  operation itself; Cmdr deletes nothing when the drag returns.
+- **Threads**: `start_drag_paths` returns at once (the frontend expects that, as on macOS). The ID lists
+  (`ILCreateFromPathW`, which asks the file system and can wait on a share) are built on a fresh 8 MB-stack thread in an
+  STA; the drag then runs on the UI thread through `run_on_main_thread`. `SHDoDragDrop` is modal and pumps messages, so
+  the window paints and IPC answers (wry completes requests through its window's messages); events other threads post
+  through Tauri's event loop wait for the drop. A missing item cancels the whole drag (logged), and a mouse button
+  released during the thread hop cancels it too, since starting then would drop wherever the cursor is.
+- **Virtual sessions** (phone, search results, inside an archive or a repo's history): an empty Shell data object
+  carrying only Cmdr's private format. Cmdr's own panes take the drop (recorded self-drag identity); other apps see
+  nothing to take, where macOS fulfils a file promise. Task 43 (`CFSTR_FILEDESCRIPTOR`) is that half.
+- **Decision: no `drag` crate** (crabnebula-dev/drag-rs 2.1.1, 121 stars, pushed 2026-11-24, checked 2026-11-24 via the
+  GitHub API): its Windows arm links `windows` 0.52 (a second copy beside our 0.62), offers ONE effect (Copy or Move,
+  the single-op mask the macOS decision above already rejected), `unwrap()`s the Shell calls, and parses paths on the UI
+  thread. Its Shell-data-object approach is the one adopted here.
+
+### Modifier keys
+
+The `dropModifiers` platform convention (`#lib/platform`, from `platform/conventions.rs`) says what the keys mean:
+Finder's (Option copies, Cmd or Shift moves) on macOS, Explorer's (Ctrl copies, Shift moves) on Windows and Linux.
+Ctrl+Shift copies (Cmdr makes no links; Ctrl wins as Option does), and Alt or the Windows key force nothing.
+`isForcedCopyDrag` follows it, so a background drop in its own pane duplicates with Ctrl on Windows.
+
 ## Platform support
 
-macOS only. Backend commands and swizzle gated `#[cfg(target_os = "macos")]`. Drop receiving uses cross-platform Tauri
-API but untested on other platforms. `drag-image-size` event never fires on non-macOS (frontend defaults to showing
-overlay).
+macOS and Windows as above. Linux takes drops through wry with no drag out (`platform/linux.rs`), untested.
+`drag-image-size` fires on macOS only (elsewhere the overlay always shows).

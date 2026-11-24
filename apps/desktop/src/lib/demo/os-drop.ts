@@ -170,8 +170,8 @@ function carriesFiles(event: DragEvent): boolean {
   return event.dataTransfer?.types.includes('Files') ?? false
 }
 
-function modifiersOf(event: DragEvent): { altHeld: boolean; cmdHeld: boolean; shiftHeld: boolean } {
-  return { altHeld: event.altKey, cmdHeld: event.metaKey, shiftHeld: event.shiftKey }
+function modifiersOf(event: DragEvent): { altHeld: boolean; cmdHeld: boolean; ctrlHeld: boolean; shiftHeld: boolean } {
+  return { altHeld: event.altKey, cmdHeld: event.metaKey, ctrlHeld: event.ctrlKey, shiftHeld: event.shiftKey }
 }
 
 export interface OsDrops {

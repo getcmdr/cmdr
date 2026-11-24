@@ -46,6 +46,8 @@ use crate::system_events::{DragImageSize, DragModifiers};
 
 /// NSEventModifierFlagShift = 1 << 17
 const NS_EVENT_MODIFIER_FLAG_SHIFT: usize = 1 << 17;
+/// NSEventModifierFlagControl = 1 << 18
+const NS_EVENT_MODIFIER_FLAG_CONTROL: usize = 1 << 18;
 /// NSEventModifierFlagOption = 1 << 19 (Option/Alt key)
 const NS_EVENT_MODIFIER_FLAG_OPTION: usize = 1 << 19;
 /// NSEventModifierFlagCommand = 1 << 20
@@ -61,6 +63,7 @@ static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 static LAST_ALT_HELD: AtomicBool = AtomicBool::new(false);
 static LAST_CMD_HELD: AtomicBool = AtomicBool::new(false);
 static LAST_SHIFT_HELD: AtomicBool = AtomicBool::new(false);
+static LAST_CTRL_HELD: AtomicBool = AtomicBool::new(false);
 
 // Warn-once flags to prevent log spam for issues that recur on every drag event.
 static WARNED_NSEVENT_MISSING: AtomicBool = AtomicBool::new(false);
@@ -218,7 +221,7 @@ unsafe fn install_swizzles(webview_ptr: *mut std::ffi::c_void) {
 
 // --- Modifier key detection ---
 
-/// Reads the current Alt/Cmd/Shift modifier state from `[NSEvent modifierFlags]`.
+/// Reads the current Alt/Cmd/Ctrl/Shift modifier state from `[NSEvent modifierFlags]`.
 /// This is a class method that reads hardware state, so it works even when the webview isn't
 /// focused. Returns all flags as `false` if NSEvent can't be found (graceful degradation).
 fn read_modifiers() -> DragModifiers {
@@ -233,6 +236,7 @@ fn read_modifiers() -> DragModifiers {
         return DragModifiers {
             alt_held: false,
             cmd_held: false,
+            ctrl_held: false,
             shift_held: false,
         };
     };
@@ -243,6 +247,7 @@ fn read_modifiers() -> DragModifiers {
     DragModifiers {
         alt_held: flags & NS_EVENT_MODIFIER_FLAG_OPTION != 0,
         cmd_held: flags & NS_EVENT_MODIFIER_FLAG_COMMAND != 0,
+        ctrl_held: flags & NS_EVENT_MODIFIER_FLAG_CONTROL != 0,
         shift_held: flags & NS_EVENT_MODIFIER_FLAG_SHIFT != 0,
     }
 }
@@ -253,7 +258,11 @@ fn emit_modifiers_if_changed() {
     let prev_alt = LAST_ALT_HELD.swap(mods.alt_held, Ordering::Relaxed);
     let prev_cmd = LAST_CMD_HELD.swap(mods.cmd_held, Ordering::Relaxed);
     let prev_shift = LAST_SHIFT_HELD.swap(mods.shift_held, Ordering::Relaxed);
-    if (mods.alt_held != prev_alt || mods.cmd_held != prev_cmd || mods.shift_held != prev_shift)
+    let prev_ctrl = LAST_CTRL_HELD.swap(mods.ctrl_held, Ordering::Relaxed);
+    if (mods.alt_held != prev_alt
+        || mods.cmd_held != prev_cmd
+        || mods.shift_held != prev_shift
+        || mods.ctrl_held != prev_ctrl)
         && let Some(app_handle) = APP_HANDLE.get()
     {
         let _ = mods.emit(app_handle);
@@ -266,6 +275,7 @@ fn emit_modifiers_forced() {
     LAST_ALT_HELD.store(mods.alt_held, Ordering::Relaxed);
     LAST_CMD_HELD.store(mods.cmd_held, Ordering::Relaxed);
     LAST_SHIFT_HELD.store(mods.shift_held, Ordering::Relaxed);
+    LAST_CTRL_HELD.store(mods.ctrl_held, Ordering::Relaxed);
     if let Some(app_handle) = APP_HANDLE.get() {
         let _ = mods.emit(app_handle);
     }

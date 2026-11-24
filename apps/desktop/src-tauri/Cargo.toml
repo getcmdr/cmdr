@@ -388,7 +388,10 @@ windows-sys = { version = "0.61", features = [
 # version tao, wry, and tauri already link, so nothing new enters the lockfile. Also the file
 # icons' Shell lookup (`icons/platform/windows/shell_image.rs`): `IShellItemImageFactory` in a
 # COM apartment, read back through GDI's `GetDIBits`, and a shortcut's places read through
-# `IShellLinkW::GetPath`, whose find-data type is `Win32_Storage_FileSystem`'s.
+# `IShellLinkW::GetPath`, whose find-data type is `Win32_Storage_FileSystem`'s. And drag and drop
+# (`commands/file_system/drag/platform/windows/`): OLE's `IDropTarget`, the Shell's data object
+# and `SHDoDragDrop`, `CF_HDROP` reads, and the window and key reads around them; the same
+# features wry turns on, so no new crate.
 windows = { version = "0.62", features = [
     "UI_ViewManagement",
     "Win32_Foundation",
@@ -402,7 +405,11 @@ windows = { version = "0.62", features = [
     "Win32_System_DataExchange",
     "Win32_System_Memory",
     "Win32_System_Ole",
+    "Win32_System_SystemServices",
+    "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_Shell",
+    "Win32_UI_Shell_Common",
+    "Win32_UI_WindowsAndMessaging",
 ] }
 # Secrets in Windows Credential Manager (`secrets/platform/windows/`): the `keyring-core` backend
 # from the same maintainers as the Linux Secret Service one, so both arms share one API.

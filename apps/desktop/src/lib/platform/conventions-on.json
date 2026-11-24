@@ -7,6 +7,7 @@
     "menuModel": "systemMenuBar",
     "hiddenMenuBar": "none",
     "contextMenus": "native",
+    "dropModifiers": "optionCopiesCommandMoves",
     "screenReaders": ["voiceOver"],
     "linuxDesktop": null
   },
@@ -18,6 +19,7 @@
     "menuModel": "windowMenuBar",
     "hiddenMenuBar": "showsOnAltOrF10",
     "contextMenus": "inPage",
+    "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["jaws", "nvda", "narrator"],
     "linuxDesktop": null
   },
@@ -29,6 +31,7 @@
     "menuModel": "primaryMenu",
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
+    "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
     "linuxDesktop": "gnome"
   },
@@ -40,6 +43,7 @@
     "menuModel": "windowMenuBar",
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
+    "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
     "linuxDesktop": "kde"
   },
@@ -51,6 +55,7 @@
     "menuModel": "windowMenuBar",
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
+    "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
     "linuxDesktop": "other"
   }

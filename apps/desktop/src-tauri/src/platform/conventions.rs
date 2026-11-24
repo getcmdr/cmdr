@@ -24,6 +24,8 @@ pub struct PlatformConventions {
     pub hidden_menu_bar: HiddenMenuBar,
     /// Who draws the right-click menus.
     pub context_menus: ContextMenus,
+    /// Which keys held during a drag force a copy or a move.
+    pub drop_modifiers: DropModifiers,
     /// The screen readers this platform's users run, most used first: the ones a screen reader
     /// pass tests with and any hint names.
     pub screen_readers: &'static [ScreenReader],
@@ -115,6 +117,19 @@ pub enum ContextMenus {
     InPage,
 }
 
+/// Which keys held during a drag force a copy or a move, as the platform's file manager reads
+/// them. Without one, a drop moves within a volume and copies across volumes everywhere.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum DropModifiers {
+    /// Finder: Option copies, Command moves (Shift moves too, an accelerator for people coming
+    /// from Windows). Option wins when both are held.
+    OptionCopiesCommandMoves,
+    /// Explorer, Nautilus, and Dolphin: Ctrl copies, Shift moves. Ctrl+Shift (their shortcut or
+    /// link) copies: Cmdr makes no links, and Ctrl wins as Option does on a Mac.
+    ControlCopiesShiftMoves,
+}
+
 /// A screen reader a platform's users run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -180,6 +195,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             menu_model: MenuModel::SystemMenuBar,
             hidden_menu_bar: HiddenMenuBar::None,
             context_menus: ContextMenus::Native,
+            drop_modifiers: DropModifiers::OptionCopiesCommandMoves,
             screen_readers: &[ScreenReader::VoiceOver],
             linux_desktop: None,
         },
@@ -192,6 +208,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             hidden_menu_bar: HiddenMenuBar::ShowsOnAltOrF10,
             // In the page, so the bar's flyouts and the right-click menus share one look (D5).
             context_menus: ContextMenus::InPage,
+            drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
             linux_desktop: None,
         },
@@ -215,6 +232,8 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             hidden_menu_bar: HiddenMenuBar::F10OpensMainMenu,
             // muda's GTK popups are the desktop's own menus.
             context_menus: ContextMenus::Native,
+            // Nautilus, Dolphin, and Thunar all read Ctrl and Shift the way Explorer does.
+            drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
             screen_readers: &[ScreenReader::Orca],
             linux_desktop: Some(desktop),
         },
@@ -374,6 +393,18 @@ mod tests {
             let mac = desktop == Desktop::Macos;
             assert_eq!(row.enter_activates == EnterActivates::DefaultButton, mac, "{desktop:?}");
             assert_eq!(row.cancel_keys == CancelKeys::EscapeOrCommandPeriod, mac, "{desktop:?}");
+        }
+    }
+
+    #[test]
+    fn only_macos_forces_a_drop_with_option_and_command() {
+        for desktop in Desktop::ALL {
+            let expected = if desktop == Desktop::Macos {
+                DropModifiers::OptionCopiesCommandMoves
+            } else {
+                DropModifiers::ControlCopiesShiftMoves
+            };
+            assert_eq!(conventions_on(desktop).drop_modifiers, expected, "{desktop:?}");
         }
     }
 

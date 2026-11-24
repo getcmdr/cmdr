@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { VolumeInfo } from '#lib/file-explorer/types.js'
-import { findVolumeIdForPath, isSameVolume, pickDropOperation } from './drop-operation'
+import { withConventions } from '#lib/platform/test-platform.js'
+import { findVolumeIdForPath, isForcedCopyDrag, isSameVolume, pickDropOperation } from './drop-operation'
+
+// Finder's keys unless a block says otherwise.
+beforeEach(() => withConventions('macos'))
 
 const root: VolumeInfo = { id: 'boot', name: 'Macintosh HD', path: '/', category: 'main_volume', isEjectable: false }
 const usb: VolumeInfo = {
@@ -39,7 +43,7 @@ const favDocuments: VolumeInfo = {
 }
 const volumesWithFavorites: VolumeInfo[] = [root, favDesktop, favDocuments, usb]
 
-const noMods = { altHeld: false, cmdHeld: false, shiftHeld: false }
+const noMods = { altHeld: false, cmdHeld: false, ctrlHeld: false, shiftHeld: false }
 
 describe('findVolumeIdForPath', () => {
   it('matches the longest-prefix volume', () => {
@@ -114,7 +118,7 @@ describe('pickDropOperation', () => {
     expect(
       pickDropOperation({
         ...baseOpts,
-        modifiers: { altHeld: true, cmdHeld: false, shiftHeld: false },
+        modifiers: { altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false },
       }),
     ).toBe('copy')
   })
@@ -124,7 +128,7 @@ describe('pickDropOperation', () => {
       pickDropOperation({
         ...baseOpts,
         targetPath: '/Volumes/MyDrive/dst',
-        modifiers: { altHeld: false, cmdHeld: true, shiftHeld: false },
+        modifiers: { altHeld: false, cmdHeld: true, ctrlHeld: false, shiftHeld: false },
       }),
     ).toBe('move')
   })
@@ -134,7 +138,7 @@ describe('pickDropOperation', () => {
       pickDropOperation({
         ...baseOpts,
         targetPath: '/Volumes/MyDrive/dst',
-        modifiers: { altHeld: false, cmdHeld: false, shiftHeld: true },
+        modifiers: { altHeld: false, cmdHeld: false, ctrlHeld: false, shiftHeld: true },
       }),
     ).toBe('move')
   })
@@ -143,7 +147,7 @@ describe('pickDropOperation', () => {
     expect(
       pickDropOperation({
         ...baseOpts,
-        modifiers: { altHeld: true, cmdHeld: true, shiftHeld: false },
+        modifiers: { altHeld: true, cmdHeld: true, ctrlHeld: false, shiftHeld: false },
       }),
     ).toBe('copy')
   })
@@ -179,5 +183,42 @@ describe('pickDropOperation', () => {
         modifiers: noMods,
       }),
     ).toBe('move')
+  })
+})
+
+describe("pickDropOperation with Explorer's keys (Windows and Linux)", () => {
+  beforeEach(() => withConventions('windows'))
+
+  const sameVolume = { sourcePath: '/Users/a', targetPath: '/Users/b', volumes }
+  const crossVolume = { ...sameVolume, targetPath: '/Volumes/MyDrive/dst' }
+  const held = (keys: Partial<typeof noMods>) => ({ ...noMods, ...keys })
+
+  it('keeps the volume-aware default: Move on the same volume, Copy across', () => {
+    expect(pickDropOperation({ ...sameVolume, modifiers: noMods })).toBe('move')
+    expect(pickDropOperation({ ...crossVolume, modifiers: noMods })).toBe('copy')
+  })
+
+  it('Ctrl forces Copy on the same volume', () => {
+    expect(pickDropOperation({ ...sameVolume, modifiers: held({ ctrlHeld: true }) })).toBe('copy')
+    expect(isForcedCopyDrag(held({ ctrlHeld: true }))).toBe(true)
+  })
+
+  it('Shift forces Move across volumes', () => {
+    expect(pickDropOperation({ ...crossVolume, modifiers: held({ shiftHeld: true }) })).toBe('move')
+  })
+
+  it("Ctrl+Shift (Explorer's shortcut) copies: Cmdr makes no links", () => {
+    expect(pickDropOperation({ ...sameVolume, modifiers: held({ ctrlHeld: true, shiftHeld: true }) })).toBe('copy')
+  })
+
+  it("Alt (Explorer's shortcut) and the Windows key force nothing", () => {
+    expect(pickDropOperation({ ...sameVolume, modifiers: held({ altHeld: true }) })).toBe('move')
+    expect(pickDropOperation({ ...crossVolume, modifiers: held({ cmdHeld: true }) })).toBe('copy')
+    expect(isForcedCopyDrag(held({ altHeld: true }))).toBe(false)
+  })
+
+  it('reads Linux the same way', () => {
+    withConventions('gnome')
+    expect(pickDropOperation({ ...sameVolume, modifiers: held({ ctrlHeld: true }) })).toBe('copy')
   })
 })

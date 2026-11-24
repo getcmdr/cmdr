@@ -1,5 +1,5 @@
 //! The answer where there's no drag-out yet: a drag is refused and the self-drag overlay has
-//! nothing to swap. Linux and Windows re-export it.
+//! nothing to swap. Linux re-exports it.
 
 /// Not supported yet.
 pub(crate) fn start_drag(
@@ -10,6 +10,9 @@ pub(crate) fn start_drag(
 ) -> Result<(), String> {
     Err("Drag operation is not yet supported on this platform".to_string())
 }
+
+/// wry's drop target stays.
+pub(crate) fn install_drop_target(_webview: &tauri::Webview<tauri::Wry>) {}
 
 /// Nothing to swap.
 pub(crate) fn prepare_self_drag_overlay(_rich_image_path: String) {}

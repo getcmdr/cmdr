@@ -1,7 +1,7 @@
 # Drag and drop
 
 Native drag-and-drop for files: dragging out to other apps, receiving drops from external sources, and pane-to-pane
-drags. macOS only (backend commands + swizzle gated `#[cfg(target_os = "macos")]`).
+drags. macOS (wry plus a swizzle) and Windows (OLE, DETAILS § Windows); Linux takes drops but can't drag out.
 
 ## Module map
 
@@ -48,15 +48,12 @@ drags. macOS only (backend commands + swizzle gated `#[cfg(target_os = "macos")]
   downstream `NSFilenamesPboardType` derivation.
 - **Drop runs the shared destination guard (`pane/transfer-entry.ts::checkTransferDestinationGuard`) FIRST**, before any
   stat / volume resolution, so F5/F6, paste, and drop reject read-only/search-results destinations identically.
-- **`resolveSourceVolumeId` NEVER ships a knowingly-wrong id**: when sources span volumes or resolution fails it returns
-  `root` (honest unknown). Don't reintroduce the `sourceVolumeId = destVolumeId` placeholder; it stat'd the wrong shape
-  and reported 0 bytes / 0 files.
-- **Self-drag op override**: the swizzle returns our resolved `NSDragOperation` only while `SELF_DRAG_ACTIVE`; without
-  it macOS always draws the green "+" copy badge inside our window even on a Move.
+- **`resolveSourceVolumeId` NEVER ships a knowingly-wrong id**: unknown is `root`, ❌ never `destVolumeId` (0 bytes).
 - **An empty-paths external drop is never a `transfer`**: a promise drop (Copy dialog once the files land) or
   `nothingUsable`. DETAILS § "Drops from other apps".
-- **Swizzle calls are wrapped in `catch_unwind` + `warn_once`**: a panic across the FFI boundary mid-drag would crash
-  the app. Keep the guards if you touch `drag_image_detection.rs`.
+- **Keep the swizzle's `catch_unwind` guards**: a panic across FFI mid-drag crashes the app.
+- **Windows: a drop answers its source Copy at most**, ❌ never Move (the source may delete the originals before the
+  dialog). Positions are physical pixels until the door. DETAILS § Windows.
 - **`startDrag()` resolves before macOS delivers drag events.** Don't clear self-drag state (rich image path, active
   flag) from async JS after `startDrag`; only `endSelfDragSession()` on drop/leave clears it. Temp PNGs survive the
   whole session (`pendingImageCleanup`).

@@ -1,6 +1,6 @@
 //! What every WebView2 webview gets before it's used: the browser accelerator keys off (#1115,
-//! task 67 of `docs/specs/windows-port-plan.md`), and its window guarded against Windows' own menu
-//! loop (`keymenu.rs`, task 63).
+//! task 67 of `docs/specs/windows-port-plan.md`), its window guarded against Windows' own menu
+//! loop (`keymenu.rs`, task 63). Its drop target is the drag seam's (`tauri_builder.rs`).
 //!
 //! WebView2 handles its own browser keys (`F5` and `Ctrl+R` reload, `Ctrl+F` / `F3` find,
 //! `Ctrl+P` print, `Ctrl+J` downloads, `Alt+←/→` history, `F7` caret browsing, zoom, DevTools)

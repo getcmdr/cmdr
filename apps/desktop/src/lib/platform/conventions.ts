@@ -1,6 +1,6 @@
 /**
  * How this platform's own apps behave (dialog button order, the keys that commit and cancel a
- * dialog, access keys, the menu model, who draws the context menus, the screen readers to expect, and on Linux the desktop), as
+ * dialog, access keys, the menu model, who draws the context menus, the keys that force a drop's copy or move, the screen readers to expect, and on Linux the desktop), as
  * the backend says, read synchronously. A UI primitive asks a convention, ❌ never "is this
  * Windows", so Linux follows its desktop with no extra branch. Mechanics: `DETAILS.md` § Conventions.
  */
@@ -9,6 +9,7 @@ import type {
   CancelKeys,
   ContextMenus,
   DialogButtonOrder,
+  DropModifiers,
   EnterActivates,
   HiddenMenuBar,
   LinuxDesktop,
@@ -52,6 +53,7 @@ const ACCESS_KEYS = every<AccessKeys>()('none', 'underlinesAfterKeyboardUse', 'u
 const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar', 'primaryMenu')
 const HIDDEN_MENU_BARS = every<HiddenMenuBar>()('none', 'showsOnAltOrF10', 'f10OpensMainMenu')
 const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
+const DROP_MODIFIERS = every<DropModifiers>()('optionCopiesCommandMoves', 'controlCopiesShiftMoves')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')
 const LINUX_DESKTOPS = every<LinuxDesktop>()('gnome', 'kde', 'other')
 
@@ -79,6 +81,7 @@ export function platformConventions(): PlatformConventions {
     menuModel: oneOf(MENU_MODELS, answered.menuModel, fallback.menuModel),
     hiddenMenuBar: oneOf(HIDDEN_MENU_BARS, answered.hiddenMenuBar, fallback.hiddenMenuBar),
     contextMenus: oneOf(CONTEXT_MENUS, answered.contextMenus, fallback.contextMenus),
+    dropModifiers: oneOf(DROP_MODIFIERS, answered.dropModifiers, fallback.dropModifiers),
     screenReaders:
       Array.isArray(readers) &&
       readers.length > 0 &&

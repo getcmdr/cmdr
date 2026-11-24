@@ -133,8 +133,8 @@ export function createDragDropController(deps: DragDropControllerDeps) {
   // after auto-scroll reveals a different row under a stationary cursor.
   let lastDragPosition: { x: number; y: number } | null = null
 
-  // Last resolved op pushed to the native swizzle. Dedupe for IPC traffic.
-  let lastPushedSelfDragOp: 'move' | 'copy' | null = null
+  // Last resolved op pushed to the native side. Dedupe for IPC traffic.
+  let lastPushedSelfDragOp: 'move' | 'copy' | 'none' | null = null
 
   let dragAutoScrollPane: 'left' | 'right' | null = null
   let dragAutoScrollPosition: { x: number; y: number } | null = null
@@ -505,16 +505,16 @@ export function createDragDropController(deps: DragDropControllerDeps) {
 
     updateOverlay(position.x, position.y, targetName, canDrop, operation)
 
-    pushSelfDragOpIfChanged(operation)
+    pushSelfDragOpIfChanged(canDrop ? operation : 'none')
   }
 
   /**
-   * Pushes the resolved op to the native swizzle so the OS-rendered "+" copy badge
-   * tracks reality (Copy → +, Move → no badge). Deduped via `lastPushedSelfDragOp`
-   * to keep IPC traffic to op transitions only.
+   * Pushes the resolved op to the native side so the OS-drawn feedback tracks reality: on macOS
+   * the "+" copy badge of a self-drag (Copy → +, Move → no badge; `none` is ignored there), on
+   * Windows the drop target's cursor for every drag (Copy, Move, or the no-drop cursor). Deduped
+   * via `lastPushedSelfDragOp` to keep IPC traffic to op transitions only.
    */
-  function pushSelfDragOpIfChanged(operation: 'move' | 'copy') {
-    if (!getIsDraggingFromSelf()) return
+  function pushSelfDragOpIfChanged(operation: 'move' | 'copy' | 'none') {
     if (operation === lastPushedSelfDragOp) return
     lastPushedSelfDragOp = operation
     void setSelfDragResolvedOperation(operation)
@@ -717,6 +717,8 @@ export function createDragDropController(deps: DragDropControllerDeps) {
         if (getIsDraggingFromSelf() && !matchesSelfDragFingerprint(paths)) {
           storeSelfDragFingerprint(paths)
         }
+        // Another app's drag starts with nothing resolved natively (Windows forgets on enter).
+        if (!getIsDraggingFromSelf()) lastPushedSelfDragOp = null
         currentDragSourcePaths = paths
         handleDragEnter(paths, toViewportPosition(event.position))
       } else if (type === 'over') {

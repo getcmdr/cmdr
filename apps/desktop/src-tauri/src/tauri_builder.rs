@@ -40,11 +40,15 @@ pub fn configure(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::W
 /// it at module load. See `apps/desktop/src/lib/platform/DETAILS.md`.
 ///
 /// The same reach readies each webview natively (`platform::prepare_webview`: on Windows, WebView2's
-/// browser keys off).
+/// browser keys off) and gives it Cmdr's drop target where wry's won't do (Windows' OLE one,
+/// `commands/file_system/drag/platform/`).
 fn platform_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
     tauri::plugin::Builder::new("cmdr-platform")
         .js_init_script(crate::platform::frontend_init_script())
-        .on_webview_ready(|webview| crate::platform::prepare_webview(&webview))
+        .on_webview_ready(|webview| {
+            crate::platform::prepare_webview(&webview);
+            crate::commands::file_system::install_drop_target(&webview);
+        })
         .build()
 }
 

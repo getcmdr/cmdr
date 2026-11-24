@@ -458,12 +458,12 @@ export async function clearSelfDragOverlay(): Promise<void> {
 }
 
 /**
- * Pushes the frontend's resolved drop operation down to the native swizzle so the
- * OS-rendered "+" copy badge tracks reality (Copy → +, Move → no badge). Without this,
- * wry's `draggingEntered:`/`draggingUpdated:` returns `Copy` unconditionally and the
- * badge always shows "+" even on Move. No-op on non-macOS.
+ * Pushes the frontend's resolved drop operation (`none` where nothing can be dropped) down to
+ * the native side so the OS-drawn feedback tracks reality. macOS: a self-drag's "+" copy badge
+ * (Copy → +, Move → no badge; wry's `draggingEntered:` would answer `Copy` unconditionally).
+ * Windows: Cmdr's drop target's cursor, for every drag. No-op on Linux.
  */
-export async function setSelfDragResolvedOperation(operation: 'move' | 'copy'): Promise<void> {
+export async function setSelfDragResolvedOperation(operation: 'move' | 'copy' | 'none'): Promise<void> {
   await commands.setSelfDragResolvedOp(operation)
 }
 

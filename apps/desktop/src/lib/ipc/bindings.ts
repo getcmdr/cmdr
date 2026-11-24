@@ -2016,10 +2016,10 @@ export const commands = {
   // Clears self-drag state after drop or cancellation.
   clearSelfDragOverlay: () => __TAURI_INVOKE<void>('clear_self_drag_overlay'),
   /**
-   *  Pushes the resolved drop operation for the current self-drag down to the native swizzle.
-   *  The swizzled `draggingEntered:`/`draggingUpdated:` reads this and overrides wry's hardcoded
-   *  `Copy` return so the OS-rendered "+" badge tracks our chosen op (Copy → +, Move → no badge).
-   *  Unknown values are ignored.
+   *  Pushes the resolved drop operation (`copy`, `move`, or `none`) for the drag over the window
+   *  down to the native side. macOS: the swizzled `draggingEntered:`/`draggingUpdated:` reads it
+   *  for a self-drag and overrides wry's hardcoded `Copy` so the "+" badge tracks our op. Windows:
+   *  Cmdr's drop target shows it as the cursor for every drag. Unknown values are ignored.
    */
   setSelfDragResolvedOp: (operation: string) => __TAURI_INVOKE<void>('set_self_drag_resolved_op', { operation }),
   /**
@@ -6504,6 +6504,7 @@ export const events = {
   mtpStorageRemoved: makeEvent<MtpStorageRemoved>('mtp-storage-removed'),
   multiRenameMediaProgress: makeEvent<MultiRenameMediaProgress>('multi-rename-media-progress'),
   mutationSettled: makeEvent<MutationSettled>('mutation-settled'),
+  nativeDragDrop: makeEvent<NativeDragDrop>('native-drag-drop'),
   networkDiscoveryStateChanged: makeEvent<NetworkDiscoveryStateChanged>('network-discovery-state-changed'),
   networkHostContextAction: makeEvent<NetworkHostContextAction>('network-host-context-action'),
   networkHostFound: makeEvent<NetworkHostFound>('network-host-found'),
@@ -10211,12 +10212,15 @@ export type DragImageSize = {
 
 /**
  *  `drag-modifiers`: the modifier-key state during a drag, emitted on drag
- *  enter and whenever it changes (macOS swizzle in `drag_image_detection.rs`).
- *  Drives copy/move intent without keyboard focus.
+ *  enter and whenever it changes (macOS swizzle in `drag_image_detection.rs`, the
+ *  Windows drop target in `commands/file_system/drag/platform/windows/drop_target.rs`).
+ *  Drives copy/move intent without keyboard focus. What each key means is the
+ *  platform's `dropModifiers` convention, read by the frontend.
  */
 export type DragModifiers = {
   altHeld: boolean
   cmdHeld: boolean
+  ctrlHeld: boolean
   shiftHeld: boolean
 }
 
@@ -10246,6 +10250,15 @@ export type DragPayloadKind =
 export type DragPayloadKindEvent = {
   // What the drag carries.
   kind: DragPayloadKind
+}
+
+/**
+ *  A point in the webview's client area, in PHYSICAL pixels, as Windows reports it; the
+ *  frontend divides by `devicePixelRatio` for CSS pixels.
+ */
+export type DragPoint = {
+  x: number
+  y: number
 }
 
 /**
@@ -10300,6 +10313,22 @@ export type DriveItemLinks = {
    */
   geminiUrl: string | null
 }
+
+/**
+ *  Which keys held during a drag force a copy or a move, as the platform's file manager reads
+ *  them. Without one, a drop moves within a volume and copies across volumes everywhere.
+ */
+export type DropModifiers =
+  /**
+   *  Finder: Option copies, Command moves (Shift moves too, an accelerator for people coming
+   *  from Windows). Option wins when both are held.
+   */
+  | 'optionCopiesCommandMoves'
+  /**
+   *  Explorer, Nautilus, and Dolphin: Ctrl copies, Shift moves. Ctrl+Shift (their shortcut or
+   *  link) copies: Cmdr makes no links, and Ctrl wins as Option does on a Mac.
+   */
+  | 'controlCopiesShiftMoves'
 
 /**
  *  Where a promised drop came from, as far as the pasteboard and the OS say. The
@@ -16222,6 +16251,31 @@ export type NamedLeavesRefusal =
    */
   | 'routeCannotName'
 
+/**
+ *  `native-drag-drop`: a drag over a Windows webview, from Cmdr's own OLE drop target
+ *  (`commands/file_system/drag/platform/windows/drop_target.rs`), which stands in for
+ *  wry's. The frontend's drop door (`#lib/tauri-commands/native-paths.ts`) reads it where
+ *  macOS and Linux read Tauri's own drag-drop event. Its `paths` are already app paths.
+ */
+export type NativeDragDrop =
+  /**
+   *  The drag came over the webview, with the files it carries (none for a drag of
+   *  Cmdr's own that offers no files to other apps).
+   */
+  | {
+      type: 'enter'
+      paths: string[]
+      // Paths no app path names, left out of `paths`.
+      refused: number
+      position: DragPoint
+    }
+  // The drag moved, or a key changed.
+  | { type: 'over'; position: DragPoint }
+  // The drag was dropped on the webview.
+  | { type: 'drop'; paths: string[]; refused: number; position: DragPoint }
+  // The drag left the webview, or was cancelled over it.
+  | { type: 'leave' }
+
 // One native path's answer.
 export type NativePathCrossing =
   // The app path naming the same place.
@@ -17762,6 +17816,8 @@ export type PlatformConventions = {
   hiddenMenuBar: HiddenMenuBar
   // Who draws the right-click menus.
   contextMenus: ContextMenus
+  // Which keys held during a drag force a copy or a move.
+  dropModifiers: DropModifiers
   /**
    *  The screen readers this platform's users run, most used first: the ones a screen reader
    *  pass tests with and any hint names.

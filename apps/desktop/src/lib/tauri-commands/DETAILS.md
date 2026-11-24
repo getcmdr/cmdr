@@ -12,7 +12,9 @@ commands, and notable non-obvious placements.
   `src/test-setup.ts` stands one in for every suite. ❌ Never Tauri's `homeDir()`: its native `C:\Users\…` is no app
   path on Windows (#1292).
 - **`native-paths.ts`**: the one door from native path text to app text (#1311): `onAppPathDragDrop` (the webview's
-  drag-drop events, `enter` and `drop` paths crossed, events kept in OS order through one promise queue),
+  drag-drop events, `enter` and `drop` paths crossed, events kept in OS order through one promise queue, positions in
+  CSS pixels: Windows reports physical ones, divided by `devicePixelRatio`; on Windows it also hears Cmdr's own drop
+  target's `native-drag-drop`, whose paths arrive crossed, `../file-explorer/drag/DETAILS.md` § Windows),
   `pickOneAsAppPath` (`plugin-dialog`'s `open` for one item), and `chooseSaveTarget` (`save`, typed `cancelled` /
   `chosen` / `refused`). All cross through `commands.appPathsFromNative` (`src-tauri/src/commands/native_paths.rs`); a
   path no app path names comes back counted in `refused`, ❌ never as native text. `no-restricted-imports` sends new

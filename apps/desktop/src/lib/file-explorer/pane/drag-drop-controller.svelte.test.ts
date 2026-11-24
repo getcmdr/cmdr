@@ -17,6 +17,10 @@
  * root.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { withConventions } from '#lib/platform/test-platform.js'
+
+// Finder's keys: these cells hold Option for a forced copy.
+beforeEach(() => withConventions('macos'))
 import type { DropTarget } from '../drag/drop-target-hit-testing'
 import type { DragFileInfo } from '../drag/drag-drop'
 import type { VolumeInfo } from '../types'
@@ -74,7 +78,7 @@ const {
   hideOverlaySpy: vi.fn(),
   startModifierTrackingSpy: vi.fn(),
   stopModifierTrackingSpy: vi.fn(),
-  getModifierStateSpy: vi.fn<() => { altHeld: boolean; cmdHeld: boolean; shiftHeld: boolean }>(),
+  getModifierStateSpy: vi.fn<() => { altHeld: boolean; cmdHeld: boolean; ctrlHeld: boolean; shiftHeld: boolean }>(),
   addToastSpy: vi.fn(),
   operationStartIsBlockedSpy: vi.fn<() => boolean>(),
   trackEventSpy: vi.fn<(name: string, props: Record<string, unknown>) => Promise<void>>(() => Promise.resolve()),
@@ -217,7 +221,7 @@ describe('drag-drop-controller', () => {
     vi.stubGlobal('cancelAnimationFrame', vi.fn())
     listenHandlers.clear()
     dragDropHandlerRef.current = null
-    getModifierStateSpy.mockReturnValue({ altHeld: false, cmdHeld: false, shiftHeld: false })
+    getModifierStateSpy.mockReturnValue({ altHeld: false, cmdHeld: false, ctrlHeld: false, shiftHeld: false })
     getIsDraggingFromSelfSpy.mockReturnValue(false)
     getSelfDragFileInfosSpy.mockReturnValue(null)
     getSelfDragIdentitySpy.mockReturnValue(null)
@@ -378,7 +382,7 @@ describe('drag-drop-controller', () => {
     it('highlights the source pane for an Option-held self-drag, which duplicates', () => {
       resolveDropTargetSpy.mockReturnValue(paneTarget('left'))
       getIsDraggingFromSelfSpy.mockReturnValue(true)
-      getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, shiftHeld: false })
+      getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false })
       const { controller } = create({ focusedPane: 'left' })
 
       controller.handleDragOver({ x: 5, y: 5 })
@@ -437,11 +441,14 @@ describe('drag-drop-controller', () => {
   })
 
   describe('pushSelfDragOpIfChanged', () => {
-    it('does nothing when not dragging from self', () => {
+    // Windows' drop target draws its cursor from it for another app's drag too; macOS ignores
+    // it outside a self-drag.
+    it("pushes for another app's drag too, and `none` where nothing can be dropped", () => {
       getIsDraggingFromSelfSpy.mockReturnValue(false)
       const { controller } = create()
       controller.pushSelfDragOpIfChanged('move')
-      expect(setSelfDragResolvedOperationSpy).not.toHaveBeenCalled()
+      controller.pushSelfDragOpIfChanged('none')
+      expect(setSelfDragResolvedOperationSpy.mock.calls).toEqual([['move'], ['none']])
     })
 
     it('pushes once and dedupes repeats of the same op', () => {
@@ -529,7 +536,8 @@ describe('drag-drop-controller', () => {
       function dropFromLeftPane(opts: { onto: 'left' | 'right'; optionHeld?: boolean; volumes?: VolumeInfo[] }) {
         resolveDropTargetSpy.mockReturnValue(paneTarget(opts.onto))
         getIsDraggingFromSelfSpy.mockReturnValue(true)
-        if (opts.optionHeld) getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, shiftHeld: false })
+        if (opts.optionHeld)
+          getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false })
         const created = create({
           focusedPane: 'left',
           paths: { left: SOURCE_FOLDER, right: SOURCE_FOLDER },
@@ -660,7 +668,7 @@ describe('drag-drop-controller', () => {
 
     it('forces copy when Alt is held even on a same-volume drop', async () => {
       resolveDropTargetSpy.mockReturnValue(folderTarget(SAME_VOL_PATH_B, 'left'))
-      getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, shiftHeld: false })
+      getModifierStateSpy.mockReturnValue({ altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false })
       const { controller, showTransfer } = create()
 
       controller.handleDragOver({ x: 1, y: 1 })

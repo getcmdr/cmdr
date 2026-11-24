@@ -21,6 +21,10 @@
  * infix vite-plugin-svelte's compile-module looks for.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { withConventions } from '#lib/platform/test-platform.js'
+
+// Finder's keys: these cells hold Option for a forced copy.
+beforeEach(() => withConventions('macos'))
 import type { DropTarget } from '../drag/drop-target-hit-testing'
 import type { DragFileInfo } from '../drag/drag-drop'
 import {
@@ -68,7 +72,7 @@ const {
   hideOverlaySpy: vi.fn(),
   startModifierTrackingSpy: vi.fn(),
   stopModifierTrackingSpy: vi.fn(),
-  getModifierStateSpy: vi.fn<() => { altHeld: boolean; cmdHeld: boolean; shiftHeld: boolean }>(),
+  getModifierStateSpy: vi.fn<() => { altHeld: boolean; cmdHeld: boolean; ctrlHeld: boolean; shiftHeld: boolean }>(),
   addToastSpy: vi.fn(),
   trackEventSpy: vi.fn(() => Promise.resolve()),
   releasePromiseDropSpy: vi.fn(() => Promise.resolve()),
@@ -240,7 +244,7 @@ describe('drag-drop-controller — native listeners', () => {
     vi.clearAllMocks()
     listenHandlers.clear()
     dragDropHandlerRef.current = null
-    getModifierStateSpy.mockReturnValue({ altHeld: false, cmdHeld: false, shiftHeld: false })
+    getModifierStateSpy.mockReturnValue({ altHeld: false, cmdHeld: false, ctrlHeld: false, shiftHeld: false })
     getIsDraggingFromSelfSpy.mockReturnValue(false)
     getSelfDragFileInfosSpy.mockReturnValue(null)
     getSelfDragIdentitySpy.mockReturnValue(null)
@@ -358,7 +362,7 @@ describe('drag-drop-controller — native listeners', () => {
       fire({ payload: { type: 'enter', paths: ['/a/f'], position: { x: 7, y: 9 } } })
       updateOverlaySpy.mockClear()
 
-      modHandler({ payload: { altHeld: true, cmdHeld: false, shiftHeld: false } })
+      modHandler({ payload: { altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false } })
       // Re-evaluated at the last drag position (7, 9).
       const lastCall = lastOverlayArgs()
       expect(lastCall[0]).toBe(7)

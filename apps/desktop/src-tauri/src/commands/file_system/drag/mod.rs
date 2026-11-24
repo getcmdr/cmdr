@@ -3,6 +3,8 @@
 
 mod platform;
 
+pub(crate) use platform::install_drop_target;
+
 /// Begins a native drag with the given file paths. Used for single-file drags
 /// where the frontend has the path directly (no listing-cache lookup needed),
 /// and for the search-results pane's paths-by-value drag.
@@ -42,10 +44,10 @@ pub fn clear_self_drag_overlay() {
     platform::clear_self_drag_overlay();
 }
 
-/// Pushes the resolved drop operation for the current self-drag down to the native swizzle.
-/// The swizzled `draggingEntered:`/`draggingUpdated:` reads this and overrides wry's hardcoded
-/// `Copy` return so the OS-rendered "+" badge tracks our chosen op (Copy → +, Move → no badge).
-/// Unknown values are ignored.
+/// Pushes the resolved drop operation (`copy`, `move`, or `none`) for the drag over the window
+/// down to the native side. macOS: the swizzled `draggingEntered:`/`draggingUpdated:` reads it
+/// for a self-drag and overrides wry's hardcoded `Copy` so the "+" badge tracks our op. Windows:
+/// Cmdr's drop target shows it as the cursor for every drag. Unknown values are ignored.
 #[tauri::command]
 #[specta::specta]
 pub fn set_self_drag_resolved_op(operation: String) {

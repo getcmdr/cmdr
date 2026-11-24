@@ -21,6 +21,7 @@ type EmitToMain = (event: string, payload: unknown) => void
 interface Modifiers {
   altHeld: boolean
   cmdHeld: boolean
+  ctrlHeld: boolean
   shiftHeld: boolean
 }
 
@@ -43,11 +44,17 @@ export const DRAG_COMMANDS = ['start_drag_paths'] as const
 const SWALLOWED_MOUSE = ['mousedown', 'mousemove', 'mouseup', 'click', 'dblclick', 'contextmenu'] as const
 
 function modifiersOf(event: MouseEvent | KeyboardEvent): Modifiers {
-  return { altHeld: event.altKey, cmdHeld: event.metaKey, shiftHeld: event.shiftKey }
+  return { altHeld: event.altKey, cmdHeld: event.metaKey, ctrlHeld: event.ctrlKey, shiftHeld: event.shiftKey }
 }
 
 function sameModifiers(a: Modifiers | null, b: Modifiers): boolean {
-  return a !== null && a.altHeld === b.altHeld && a.cmdHeld === b.cmdHeld && a.shiftHeld === b.shiftHeld
+  return (
+    a !== null &&
+    a.altHeld === b.altHeld &&
+    a.cmdHeld === b.cmdHeld &&
+    a.ctrlHeld === b.ctrlHeld &&
+    a.shiftHeld === b.shiftHeld
+  )
 }
 
 export function createDragSessions(win: Window, emit: EmitToMain): DragSessions {

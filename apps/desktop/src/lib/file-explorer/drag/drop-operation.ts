@@ -1,15 +1,20 @@
-// Picks the operation (move or copy) for a drag-and-drop drop, following Finder conventions:
-//   - Option (Alt) held       → Copy (force, beats other modifiers)
-//   - Cmd or Shift held       → Move (force; Cmd is Finder, Shift is the Windows accelerator)
+// Picks the operation (move or copy) for a drag-and-drop drop, following the platform's file
+// manager (the `dropModifiers` convention):
+//   - macOS (Finder): Option copies (beats the rest), Cmd or Shift moves (Shift is an
+//     accelerator for people coming from Windows)
+//   - Windows (Explorer) and Linux: Ctrl copies (beats Shift: Ctrl+Shift is their link, which
+//     Cmdr doesn't make), Shift moves
 //   - Otherwise, same volume  → Move
 //   - Otherwise               → Copy
 
 import type { VolumeInfo } from '#lib/file-explorer/types.js'
 import { isPathOnVolume } from '#lib/path/canonical.js'
+import { convention } from '#lib/platform/index.js'
 
 export interface ModifierState {
   altHeld: boolean
   cmdHeld: boolean
+  ctrlHeld: boolean
   shiftHeld: boolean
 }
 
@@ -49,14 +54,20 @@ export function isSameVolume(sourcePath: string, targetPath: string, volumes: re
 }
 
 /**
- * True when the user forced Copy with Option, rather than Copy merely being what
+ * True when the user forced Copy (Option on macOS, Ctrl elsewhere), rather than Copy merely being what
  * the rules resolved to. `pickDropOperation` folds this into its answer, so the
  * two can't drift; the distinction matters where a drop needs the user's stated
  * intent, because Copy is also the fallback for an unresolvable source volume
  * (`pane/drag-drop-controller.svelte.ts::isSamePaneNoOpDrop`).
  */
 export function isForcedCopyDrag(modifiers: ModifierState): boolean {
-  return modifiers.altHeld
+  return convention('dropModifiers') === 'optionCopiesCommandMoves' ? modifiers.altHeld : modifiers.ctrlHeld
+}
+
+/** True when the user forced Move (Cmd or Shift on macOS, Shift elsewhere). */
+function isForcedMoveDrag(modifiers: ModifierState): boolean {
+  if (convention('dropModifiers') === 'optionCopiesCommandMoves') return modifiers.cmdHeld || modifiers.shiftHeld
+  return modifiers.shiftHeld
 }
 
 /**
@@ -70,9 +81,8 @@ export function pickDropOperation(opts: {
   volumes: readonly VolumeInfo[]
   modifiers: ModifierState
 }): 'move' | 'copy' {
-  const { cmdHeld, shiftHeld } = opts.modifiers
   if (isForcedCopyDrag(opts.modifiers)) return 'copy'
-  if (cmdHeld || shiftHeld) return 'move'
+  if (isForcedMoveDrag(opts.modifiers)) return 'move'
   if (opts.sourcePath && opts.targetPath && isSameVolume(opts.sourcePath, opts.targetPath, opts.volumes)) {
     return 'move'
   }

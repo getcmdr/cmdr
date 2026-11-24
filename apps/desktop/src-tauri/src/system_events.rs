@@ -130,14 +130,52 @@ pub struct DragImageSize {
 }
 
 /// `drag-modifiers`: the modifier-key state during a drag, emitted on drag
-/// enter and whenever it changes (macOS swizzle in `drag_image_detection.rs`).
-/// Drives copy/move intent without keyboard focus.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type, Event)]
+/// enter and whenever it changes (macOS swizzle in `drag_image_detection.rs`, the
+/// Windows drop target in `commands/file_system/drag/platform/windows/drop_target.rs`).
+/// Drives copy/move intent without keyboard focus. What each key means is the
+/// platform's `dropModifiers` convention, read by the frontend.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, Event)]
 #[serde(rename_all = "camelCase")]
 pub struct DragModifiers {
     pub alt_held: bool,
     pub cmd_held: bool,
+    pub ctrl_held: bool,
     pub shift_held: bool,
+}
+
+/// `native-drag-drop`: a drag over a Windows webview, from Cmdr's own OLE drop target
+/// (`commands/file_system/drag/platform/windows/drop_target.rs`), which stands in for
+/// wry's. The frontend's drop door (`#lib/tauri-commands/native-paths.ts`) reads it where
+/// macOS and Linux read Tauri's own drag-drop event. Its `paths` are already app paths.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, specta::Type, Event)]
+#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum NativeDragDrop {
+    /// The drag came over the webview, with the files it carries (none for a drag of
+    /// Cmdr's own that offers no files to other apps).
+    Enter {
+        paths: Vec<String>,
+        /// Paths no app path names, left out of `paths`.
+        refused: u32,
+        position: DragPoint,
+    },
+    /// The drag moved, or a key changed.
+    Over { position: DragPoint },
+    /// The drag was dropped on the webview.
+    Drop {
+        paths: Vec<String>,
+        refused: u32,
+        position: DragPoint,
+    },
+    /// The drag left the webview, or was cancelled over it.
+    Leave,
+}
+
+/// A point in the webview's client area, in PHYSICAL pixels, as Windows reports it; the
+/// frontend divides by `devicePixelRatio` for CSS pixels.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, specta::Type)]
+pub struct DragPoint {
+    pub x: f64,
+    pub y: f64,
 }
 
 /// `drag-out-session-started`: the FE raises a signs-of-life in-progress toast

@@ -77,8 +77,8 @@ describe('createDragSessions', () => {
 
     const modifiers = sent.filter((s) => s.event === 'drag-modifiers').map((s) => s.payload)
     expect(modifiers).toEqual([
-      { altHeld: true, cmdHeld: false, shiftHeld: false },
-      { altHeld: true, cmdHeld: true, shiftHeld: false },
+      { altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false },
+      { altHeld: true, cmdHeld: true, ctrlHeld: false, shiftHeld: false },
     ])
   })
 

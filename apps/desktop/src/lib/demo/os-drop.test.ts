@@ -153,6 +153,7 @@ function drag(
     clientY: init.y ?? 20,
     altKey: init.altKey ?? false,
     metaKey: false,
+    ctrlKey: false,
     shiftKey: false,
   })
   Object.defineProperty(event, 'dataTransfer', { value: dataTransfer })
@@ -219,8 +220,8 @@ describe('createOsDrops', () => {
     window.dispatchEvent(drag('dragenter'))
     window.dispatchEvent(drag('dragover', { altKey: true }))
     expect(sent.filter((s) => s.event === 'drag-modifiers').map((s) => s.payload)).toEqual([
-      { altHeld: false, cmdHeld: false, shiftHeld: false },
-      { altHeld: true, cmdHeld: false, shiftHeld: false },
+      { altHeld: false, cmdHeld: false, ctrlHeld: false, shiftHeld: false },
+      { altHeld: true, cmdHeld: false, ctrlHeld: false, shiftHeld: false },
     ])
   })
 

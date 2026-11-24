@@ -12,8 +12,9 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 // eslint-disable-next-line no-restricted-imports -- the door itself: every app-path pick crosses here.
 import { open, save, type OpenDialogOptions, type SaveDialogOptions } from '@tauri-apps/plugin-dialog'
 import type { UnlistenFn } from '@tauri-apps/api/event'
-import { commands } from '#lib/ipc/bindings.js'
+import { commands, events, type NativeDragDrop } from '#lib/ipc/bindings.js'
 import { getAppLogger } from '#lib/logging/logger.js'
+import { getPlatform } from '#lib/platform/index.js'
 
 const log = getAppLogger('nativePaths')
 
@@ -55,32 +56,79 @@ export type AppPathDragDropEvent =
   | { type: 'leave' }
 
 /**
+ * A drag position in CSS pixels, the unit `elementsFromPoint` hit-tests in. macOS reports points,
+ * which are CSS pixels already. Windows reports PHYSICAL pixels (wry's and Cmdr's own drop target
+ * alike, both from `ScreenToClient`), so at 150 % display scaling a drop read them 1.5 times too
+ * far right and down and hit the wrong row, pane, or nothing (#1311). `devicePixelRatio` folds
+ * the display scale and the page zoom together.
+ */
+function toCssPixels(position: DragPosition): DragPosition {
+  if (getPlatform() !== 'windows') return position
+  const ratio = window.devicePixelRatio || 1
+  return { x: position.x / ratio, y: position.y / ratio }
+}
+
+/**
  * Subscribes to the webview's native drag-drop events, each `enter` and `drop` delivered with
- * app paths. Events reach `handler` in the order the OS sent them: an `over` waits for the
- * `enter` before it to cross, so a drop target never reads a drag's paths before they exist.
+ * app paths and the position in CSS pixels. Events reach `handler` in the order the OS sent
+ * them: an `over` waits for the `enter` before it to cross, so a drop target never reads a
+ * drag's paths before they exist.
+ *
+ * Two sources, one queue: Tauri's own event (wry's drop target), and on Windows Cmdr's drop
+ * target's `native-drag-drop` (`commands/file_system/drag/platform/windows/drop_target.rs`),
+ * which replaces wry's there and sends paths already crossed. Only one of them speaks for a
+ * window; listening to both keeps drops working if the replacement didn't take.
  */
 export async function onAppPathDragDrop(handler: (event: AppPathDragDropEvent) => void): Promise<UnlistenFn> {
   let queue: Promise<void> = Promise.resolve()
-  // eslint-disable-next-line no-restricted-syntax -- the door itself: every drop crosses here.
-  return getCurrentWebview().onDragDropEvent((event) => {
-    const payload = event.payload
-    // A handler that throws is logged and the queue carries on: a rejected link would skip
-    // every later event, so one bug would end drag-and-drop until a reload.
+  // A handler that throws is logged and the queue carries on: a rejected link would skip
+  // every later event, so one bug would end drag-and-drop until a reload.
+  const deliver = (type: AppPathDragDropEvent['type'], next: () => Promise<AppPathDragDropEvent>) => {
     queue = queue
       .then(async () => {
-        if (payload.type === 'enter' || payload.type === 'drop') {
-          const crossed = await crossOrRefuseAll(payload.paths)
-          handler({ type: payload.type, ...crossed, position: payload.position })
-        } else if (payload.type === 'over') {
-          handler({ type: 'over', position: payload.position })
-        } else {
-          handler({ type: 'leave' })
-        }
+        handler(await next())
       })
       .catch((error: unknown) => {
-        log.error('A drag-drop handler threw on a {type} event: {error}', { type: payload.type, error })
+        log.error('A drag-drop handler threw on a {type} event: {error}', { type, error })
       })
+  }
+  const webview = getCurrentWebview()
+  // eslint-disable-next-line no-restricted-syntax -- the door itself: every drop crosses here.
+  const fromTauri = await webview.onDragDropEvent((event) => {
+    const payload = event.payload
+    deliver(payload.type, async () => {
+      if (payload.type === 'enter' || payload.type === 'drop') {
+        const crossed = await crossOrRefuseAll(payload.paths)
+        return { type: payload.type, ...crossed, position: toCssPixels(payload.position) }
+      }
+      if (payload.type === 'over') return { type: 'over', position: toCssPixels(payload.position) }
+      return { type: 'leave' }
+    })
   })
+  if (getPlatform() !== 'windows') return fromTauri
+  // Scoped to this webview: each window's drop target sends to its own.
+  const fromCmdr = await events.nativeDragDrop(webview).listen((event) => {
+    const payload = event.payload
+    deliver(payload.type, () => Promise.resolve(fromCmdrDropTarget(payload)))
+  })
+  return () => {
+    fromTauri()
+    fromCmdr()
+  }
+}
+
+/** A `native-drag-drop` event as the door hands it on: its paths are app paths already. */
+function fromCmdrDropTarget(payload: NativeDragDrop): AppPathDragDropEvent {
+  if (payload.type === 'enter' || payload.type === 'drop') {
+    return {
+      type: payload.type,
+      paths: payload.paths,
+      refused: payload.refused,
+      position: toCssPixels(payload.position),
+    }
+  }
+  if (payload.type === 'over') return { type: 'over', position: toCssPixels(payload.position) }
+  return { type: 'leave' }
 }
 
 /** A broken bridge crosses nothing: every path counts as refused, so no native text slips by. */

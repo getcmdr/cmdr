@@ -622,8 +622,11 @@ frequently-changing implementation. Space-poller commands: `watch_volume_space`,
 
 ## Drag session locality
 
-`start_drag_paths` runs on the main thread (`run_drag_on_main_thread`) and picks a `DragSessionLocality` through
-`locality_for_volume`, keyed on `Volume::paths_are_os_visible()`. The question a drop
+`start_drag_paths` picks a session locality through `file_system/drag/platform/locality.rs` (shared by the macOS and Windows arms),
+keyed on `Volume::paths_are_os_visible()`. macOS builds the session on the main thread (`run_drag_on_main_thread`);
+Windows returns at once and runs `SHDoDragDrop` on the UI thread after a worker builds the items
+(`apps/desktop/src/lib/file-explorer/drag/DETAILS.md` § Windows, which also says what Windows offers per locality). The
+question a drop
 target asks is whether a `file://` URL built from the path opens in ANOTHER app, not whether Cmdr can read it through
 `std::fs`:
 
