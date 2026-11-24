@@ -252,8 +252,12 @@ A non-root volume's index `ROOT_ID` is its MOUNT ROOT, so it stores mount-relati
 
 - **Read side** — `engine::search_ranked` takes a `path_prefix` (the mount root, empty for root) and PREPENDS it to
   every reconstructed path, so a NAS result reports `/Volumes/testshare/sub/file` and opens in a pane.
-- **Scope side** — `seam::resolve_scope` STRIPS the mount root from each include path (`query::to_index_relative`)
-  before the source looks it up (`IndexSource` through `store::resolve_path`, which walks from `ROOT_ID`), with two
+- **Scope side** — `seam::resolve_scope` STRIPS the index root (`SearchRows::index_root`: the mount root, or for `root`
+  the boot volume root) from each include path (`query::to_index_relative`, typed through
+  `AppPath::strip_volume_prefix`, in the grammar the root's own shape picks) before the source looks it up. The boot root differs from
+  the read side's empty prefix only on Windows: `root`'s index is rooted at `C:/` and its rows read `/Users/…`, so a
+  pane's `C:/Users/…` scope has to lose `C:/`, or every folder-scoped search there finds nothing (#1430). A POSIX-shaped
+  `/…` scope passes through as volume-relative on the boot volume only (`crates/cmdr-search/DETAILS.md`). The source then looks it up (`IndexSource` through `store::resolve_path`, which walks from `ROOT_ID`), with two
   special cases:
   - **The mount root itself** (`/Volumes/testshare` → stripped to `/`) means the WHOLE VOLUME — routing already scoped to
     this volume, so there's no sub-restriction: `ResolvedScope::Whole`. Without this, the empty strip resolved to

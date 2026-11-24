@@ -23,6 +23,13 @@ pub trait SearchRows {
     /// The mount root a row's index path is prefixed with (`/Volumes/testshare`), empty
     /// for a volume whose index is `/`-rooted.
     fn path_prefix(&self) -> &str;
+    /// The app path the index is rooted at, which a scope path loses before its lookup
+    /// (`query::to_index_relative`). [`Self::path_prefix`] by default; the two differ
+    /// only on the Windows boot volume, rooted at `C:/` while its rows read `/Users/…`.
+    /// Empty for a `/`-rooted index, whose scope paths are index paths already.
+    fn index_root(&self) -> &str {
+        self.path_prefix()
+    }
     /// The entry id each index-relative path (`/photos/2024`) names, or `None` for a
     /// path the source doesn't hold. One answer per path, in order.
     fn resolve_scope(&self, index_paths: &[&str]) -> Result<Vec<Option<i64>>, SourceError>;
@@ -127,11 +134,12 @@ pub fn resolve_scope(rows: &dyn SearchRows, scope_paths: &[(String, String)]) ->
             unresolved: Vec::new(),
         });
     }
-    let mount_root = Some(rows.path_prefix()).filter(|prefix| !prefix.is_empty());
+    let index_root = Some(rows.index_root()).filter(|root| !root.is_empty());
+    let volume_relative = rows.path_prefix().is_empty();
     let mut unresolved = Vec::new();
     let mut to_resolve: Vec<(&str, String)> = Vec::new();
     for (original, canonical) in scope_paths {
-        match to_index_relative(canonical, mount_root) {
+        match to_index_relative(canonical, index_root, volume_relative) {
             Some(index_path) if index_path == "/" => {
                 return Ok(ScopeResolution {
                     scope: ResolvedScope::Whole,

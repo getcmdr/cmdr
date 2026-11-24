@@ -3,6 +3,8 @@
 
 use std::borrow::Cow;
 
+use cmdr_fs::app_path::{AppPathBuf, NotAnAppPath, PathFlavor, PathKind};
+
 use super::local_days::LocalDays;
 use super::types::{PatternType, SearchQuery};
 
@@ -353,21 +355,51 @@ pub fn expand_tilde<'a>(path: &'a str, home: Option<&str>) -> Cow<'a, str> {
     }
 }
 
-/// Map an absolute scope path into a volume's index path space (mount-relative),
+/// Map an absolute scope path into a volume's index path space (root-relative),
 /// so a source's path lookup, which walks component by component from the index
-/// root, hits. A `/`-rooted volume (`mount_root` `None`) passes the path through.
-/// A mount-rooted volume's index root is its mount root, so the mount prefix is
-/// stripped: `/Volumes/testshare/sub` → `/sub`, the mount root itself → `/`. A path
-/// outside the mount root yields `None` (don't mis-root it).
-pub(crate) fn to_index_relative(path: &str, mount_root: Option<&str>) -> Option<String> {
-    let Some(root) = mount_root else {
+/// root, hits. A `/`-rooted volume (`index_root` `None`) passes the path through.
+/// Any other index is rooted at its volume's root, which the path loses through
+/// [`cmdr_fs::app_path::AppPath::strip_volume_prefix`]: `/Volumes/testshare/sub` →
+/// `/sub`, `C:/Users/x` on the Windows boot volume → `/Users/x` (#1430), the root
+/// itself → `/`. A path off that volume, or one that isn't an app path, yields `None`
+/// (don't mis-root it).
+///
+/// `volume_relative` says the volume's result rows read `/…` (its path prefix is
+/// empty: the Windows boot volume, rooted at `C:/`). There, and only there, a
+/// POSIX-shaped `/…` scope on a drive root is the volume's own spelling and passes
+/// through; on any other drive it's `None`, so `/Users/x` never looks up
+/// `D:/Users/x`.
+///
+/// The root's own shape picks the grammar both are read in ([`root_flavor`]), ❌ never
+/// the host's: a Windows host holds POSIX-rooted volumes too (the in-memory one, a
+/// test's fake mount), and the core reads no platform.
+pub(crate) fn to_index_relative(path: &str, index_root: Option<&str>, volume_relative: bool) -> Option<String> {
+    let Some(root) = index_root else {
         return Some(path.to_string());
     };
-    if path == root {
-        return Some("/".to_string());
-    }
-    let rest = path.strip_prefix(root)?;
-    rest.starts_with('/').then(|| rest.to_string())
+    let (root, flavor) = root_flavor(root)?;
+    let path_buf = match AppPathBuf::parse(path, flavor) {
+        Ok(path_buf) => path_buf,
+        Err(NotAnAppPath::WrongFlavor) if volume_relative && root.kind() == PathKind::Drive => {
+            return Some(path.to_string());
+        }
+        Err(_) => return None,
+    };
+    let rest = path_buf.strip_volume_prefix(&root)?;
+    Some(format!("/{}", rest.as_str()))
+}
+
+/// `root` as an app path, with the grammar its shape names: POSIX for a `/…` root,
+/// Windows for anything else (a drive, a UNC `//server/share`, a scheme root). By
+/// shape, ❌ never by which grammar accepts it: the Windows one refuses a `\` before it
+/// looks at the root, so a POSIX `/Volumes/a\b` would read as no root at all.
+fn root_flavor(root: &str) -> Option<(AppPathBuf, PathFlavor)> {
+    let flavor = if root.starts_with('/') && !root.starts_with("//") {
+        PathFlavor::Posix
+    } else {
+        PathFlavor::Windows
+    };
+    Some((AppPathBuf::parse(root, flavor).ok()?, flavor))
 }
 
 #[cfg(test)]

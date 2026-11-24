@@ -584,3 +584,114 @@ mod scope_proptests {
         }
     }
 }
+
+// ── to_index_relative ────────────────────────────────────────────────
+//
+// Every cell runs on every host: the root's own shape picks the grammar.
+
+mod index_relative {
+    use super::super::to_index_relative;
+
+    /// A mounted volume: its result rows carry its root, so they never read `/…`.
+    fn relative(path: &str, root: Option<&str>) -> Option<String> {
+        to_index_relative(path, root, false)
+    }
+
+    /// The Windows boot volume: rooted at `C:/`, its result rows reading `/…`.
+    fn on_boot_volume(path: &str) -> Option<String> {
+        to_index_relative(path, Some("C:/"), true)
+    }
+
+    #[test]
+    fn a_mount_scope_loses_its_mount_root() {
+        let root = Some("/Volumes/testshare");
+        assert_eq!(relative("/Volumes/testshare/sub", root).as_deref(), Some("/sub"));
+        assert_eq!(relative("/Volumes/testshare", root).as_deref(), Some("/"));
+        assert_eq!(relative("/Volumes/testshare-2/sub", root), None);
+        assert_eq!(relative("C:/Volumes/testshare/sub", root), None);
+        assert_eq!(relative("/Users/x", None).as_deref(), Some("/Users/x"));
+    }
+
+    /// A `\` is an ordinary name character on a POSIX volume, so a mount root holding one
+    /// reads as POSIX, ❌ never as a refused Windows path that leaves every scope on the
+    /// volume unresolved.
+    #[test]
+    fn a_posix_mount_root_holding_a_backslash_still_strips() {
+        let root = Some("/Volumes/foo\\bar");
+        assert_eq!(relative("/Volumes/foo\\bar/sub", root).as_deref(), Some("/sub"));
+        assert_eq!(relative("/Volumes/foo\\bar", root).as_deref(), Some("/"));
+    }
+
+    /// A root name ending in a space or a dot is that name: only a person's typing is
+    /// trimmed the way Explorer trims it, never a root a volume reported.
+    #[test]
+    fn a_root_name_with_a_trailing_space_or_dot_keeps_it() {
+        assert_eq!(
+            relative("/Volumes/disk /sub", Some("/Volumes/disk ")).as_deref(),
+            Some("/sub")
+        );
+        assert_eq!(relative("/Volumes/disk/sub", Some("/Volumes/disk ")), None);
+        assert_eq!(
+            relative("/Volumes/disk./sub", Some("/Volumes/disk.")).as_deref(),
+            Some("/sub")
+        );
+        assert_eq!(
+            relative("C:/mnt/disk./sub", Some("C:/mnt/disk.")).as_deref(),
+            Some("/sub")
+        );
+        assert_eq!(relative("C:/mnt/disk/sub", Some("C:/mnt/disk.")), None);
+    }
+
+    /// Regression (#1430): the Windows boot volume's index is `C:/`-rooted, so a pane's
+    /// `C:/Users/…` scope has to lose `C:/` before the lookup, as a mount scope loses its
+    /// mount root. Stripping the root's text left `Users/…`, which no row matched.
+    #[test]
+    fn a_drive_scope_loses_its_drive_root() {
+        assert_eq!(
+            on_boot_volume("C:/Users/test_user_1/src").as_deref(),
+            Some("/Users/test_user_1/src")
+        );
+        assert_eq!(on_boot_volume("c:/Users").as_deref(), Some("/Users"), "the same drive");
+        assert_eq!(on_boot_volume("C:/").as_deref(), Some("/"));
+        assert_eq!(on_boot_volume("D:/Users"), None);
+        assert_eq!(relative("D:/x", Some("D:/")).as_deref(), Some("/x"));
+    }
+
+    /// A root is an app path, so the native `C:\` spelling is no root, and a scope on it
+    /// is unresolved rather than mis-rooted.
+    #[test]
+    fn a_native_drive_root_is_no_root() {
+        assert_eq!(to_index_relative("C:/Users", Some("C:\\"), true), None);
+    }
+
+    #[test]
+    fn a_share_or_scheme_scope_loses_its_root() {
+        let share = Some("//testnas.local/share");
+        assert_eq!(relative("//testnas.local/share/sub", share).as_deref(), Some("/sub"));
+        assert_eq!(
+            relative("//testnas.local/SHARE/sub", share).as_deref(),
+            Some("/sub"),
+            "a share name compares without case"
+        );
+        assert_eq!(relative("//testnas.local/other/sub", share), None);
+        let device = Some("mtp://device-1/storage");
+        assert_eq!(
+            relative("mtp://device-1/storage/DCIM", device).as_deref(),
+            Some("/DCIM")
+        );
+        assert_eq!(relative("/DCIM", device), None, "a scheme root is no drive");
+    }
+
+    /// A volume-relative `/…` scope on the boot volume is index-relative already: it's
+    /// how its own rows read, and what a whole-drive search lists. On any other drive
+    /// or share it names nothing there: `/Users/x` never looks up `D:/Users/x`.
+    #[test]
+    fn a_volume_relative_scope_passes_through_on_the_boot_volume_only() {
+        assert_eq!(
+            on_boot_volume("/Users/test_user_1/src").as_deref(),
+            Some("/Users/test_user_1/src")
+        );
+        assert_eq!(relative("/Users/x", Some("D:/")), None);
+        assert_eq!(relative("/Users/x", Some("//testnas.local/share")), None);
+    }
+}

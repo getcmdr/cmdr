@@ -81,9 +81,15 @@ would be millions of virtual calls and, worse, a `dyn` iterator can't `par_chunk
 - **Two traits** because they read different stores (desktop: `entries` vs `dir_stats`) and, in a browser host, come
   from different producers.
 - **The scope path pipeline keeps one order**: `~` (`query::expand_tilde`, against the context's home), then the host's
-  `realpath`, then the mount strip (`query::to_index_relative`, in `resolve_scope`), because an index-relative path
-  can't be canonicalized. So `search_covered` takes `(original, canonical)` pairs: the original is what `unresolved`
-  reports, the canonical is what is looked up.
+  `realpath`, then the root strip (`query::to_index_relative`, in `resolve_scope`), because an index-relative path can't
+  be canonicalized. The strip takes `SearchRows::index_root` (defaults to `path_prefix`; the Windows boot volume's is
+  `C:/` while its prefix is empty), and the root's own shape picks the grammar both are read in, ❌ never the host's: a
+  Windows host holds POSIX-rooted volumes too (the in-memory one, a test's fake mount). A POSIX `/` root is chosen by
+  shape (`/…`, not `//…`), since the Windows grammar refuses a `\` before it reads the root. A `/…` scope passes through
+  as volume-relative only on a drive root whose rows read `/…` (an empty `path_prefix`: the Windows boot volume), so
+  `/Users/x` never looks up `D:/Users/x`. A scope the typed parse refuses (a `..` left after a `realpath` timeout, a
+  mixed-escape name) is unresolved. So `search_covered` takes `(original, canonical)` pairs: the original is what
+  `unresolved` reports, the canonical is what is looked up.
 - **`ResolvedScope`** (`Whole`, `Ids`, `Nothing`) replaced the `[i64::MIN]` sentinel; the engine takes it as a
   parameter. `SearchQuery::include_path_ids` stays on the wire type, read only by the test wrapper `engine::search`.
 - **Decision: the seam sits ABOVE the engine, never beside it.** `seam.rs` resolves and orchestrates, `engine.rs` scans,

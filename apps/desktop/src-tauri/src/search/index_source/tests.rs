@@ -106,7 +106,18 @@ fn mount_rooted_volume() -> (tempfile::TempDir, LoadedVolume) {
     mount_rooted_volume_at(TEST_MOUNT)
 }
 
+/// The boot volume's shape: `ROOT_ID` is the boot volume root, so the arena's
+/// `/photos` sits at `C:/photos` on Windows and at `/photos` elsewhere, and no mount
+/// root is recorded.
+fn boot_volume() -> (tempfile::TempDir, LoadedVolume) {
+    volume_with_photos(None)
+}
+
 fn mount_rooted_volume_at(mount: &str) -> (tempfile::TempDir, LoadedVolume) {
+    volume_with_photos(Some(mount))
+}
+
+fn volume_with_photos(mount: Option<&str>) -> (tempfile::TempDir, LoadedVolume) {
     let dir = tempfile::tempdir().expect("temp dir");
     let db_path = dir.path().join("index-smb-test.db");
     let _store = IndexStore::open(&db_path).expect("open store");
@@ -114,7 +125,40 @@ fn mount_rooted_volume_at(mount: &str) -> (tempfile::TempDir, LoadedVolume) {
     IndexStore::insert_entry_v2(&conn, ROOT_ID, "photos", true, false, None, None, None, None).unwrap();
     let pool = ReadPool::new(db_path).expect("read pool");
     let index = load_search_index(&pool, &AtomicBool::new(false)).expect("load the arena");
-    (dir, LoadedVolume::for_test(index, pool, Some(mount.to_string())))
+    (dir, LoadedVolume::for_test(index, pool, mount.map(str::to_string)))
+}
+
+fn photos_id(loaded: &LoadedVolume) -> i64 {
+    (0..loaded.index.len())
+        .find(|&i| loaded.index.name(i) == "photos")
+        .map(|i| loaded.index.id(i))
+        .expect("photos is in the arena")
+}
+
+/// Regression (#1430): on Windows the boot volume's index is rooted at `C:/` and its
+/// rows read `/photos`, while a pane's scope reads `C:/photos`. Looked up unstripped,
+/// every folder-scoped search there found nothing. Runs on every host: elsewhere the
+/// boot root is `/` and the scope passes through.
+#[test]
+fn a_boot_volume_scope_loses_the_boot_root() {
+    let (_dir, loaded) = boot_volume();
+    let scope = format!("{}photos", cmdr_fs::mount_layout::boot_volume_root());
+
+    let r = resolved(&loaded, &[&scope]);
+    assert_eq!(r.scope, ResolvedScope::Ids(vec![photos_id(&loaded)]), "scope {scope}");
+    assert!(r.unresolved.is_empty());
+
+    let whole = resolved(&loaded, &[&cmdr_fs::mount_layout::boot_volume_root()]);
+    assert_eq!(whole.scope, ResolvedScope::Whole, "the boot root is the whole volume");
+}
+
+/// A volume-relative `/photos` names the same folder on the boot volume, on every
+/// host: it's how a whole-drive search lists the boot volume's rows.
+#[test]
+fn a_volume_relative_boot_scope_resolves() {
+    let (_dir, loaded) = boot_volume();
+    let r = resolved(&loaded, &["/photos"]);
+    assert_eq!(r.scope, ResolvedScope::Ids(vec![photos_id(&loaded)]));
 }
 
 fn resolved(loaded: &LoadedVolume, paths: &[&str]) -> crate::search::seam::ScopeResolution {

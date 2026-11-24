@@ -3,6 +3,7 @@
 //! do (`realpath`) is here too.
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use cmdr_index::store::{self, IndexStore};
 
@@ -10,6 +11,16 @@ use super::index::SearchIndex;
 use super::query::expand_tilde;
 use super::seam::{DirSizeSource, SearchRows, SourceError, SourceRead};
 use super::volumes::LoadedVolume;
+
+/// Where `root`'s index is rooted as a scope strips it: the boot volume root
+/// (`cmdr_fs::mount_layout`, the root the index walks from), empty when that's `/`.
+fn boot_index_root() -> &'static str {
+    static ROOT: OnceLock<String> = OnceLock::new();
+    ROOT.get_or_init(|| {
+        let root = cmdr_fs::mount_layout::boot_volume_root();
+        if root == "/" { String::new() } else { root }
+    })
+}
 
 /// A loaded volume as a search source: its arena, its mount root, and SQL over its
 /// read pool for the scope and the folder sizes.
@@ -22,6 +33,13 @@ impl SearchRows for IndexSource<'_> {
 
     fn path_prefix(&self) -> &str {
         self.0.mount_root.as_deref().unwrap_or("")
+    }
+
+    /// The mount root, or for `root` the boot volume's: `C:/` on Windows, whose rows
+    /// read `/Users/…` while a pane's scope reads `C:/Users/…` (#1430). Empty on macOS
+    /// and Linux, where `root`'s index is `/`-rooted and a scope passes through as is.
+    fn index_root(&self) -> &str {
+        self.0.mount_root.as_deref().unwrap_or_else(|| boot_index_root())
     }
 
     fn resolve_scope(&self, index_paths: &[&str]) -> Result<Vec<Option<i64>>, SourceError> {
