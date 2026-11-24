@@ -41,6 +41,74 @@ pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
     })
 }
 
+/// The icon at an app's declared icon location (`IAssocHandler::GetIconLocation`), `size` ×
+/// `size` straight-alpha RGBA, or `None` when nothing draws from it.
+///
+/// Two shapes reach here: a packaged app's indirect resource (`@{Package?ms-resource://…}`),
+/// which `SHLoadIndirectString` resolves to the PNG it names, and a classic `file` plus `index`
+/// into its icon resources, which `SHDefExtractIconW` draws at `size`. Call it in a COM
+/// apartment (`platform/windows/apartment.rs`).
+pub(crate) fn app_icon_at(location: &str, index: i32, size: u32) -> Option<RgbaImage> {
+    if location.is_empty() {
+        return None;
+    }
+    let img = if location.starts_with("@{") {
+        packaged_logo(location)?
+    } else {
+        extracted_icon(location, index, size)?
+    };
+    Some(if img.dimensions() == (size, size) {
+        img
+    } else {
+        image::imageops::resize(&img, size, size, FilterType::Lanczos3)
+    })
+}
+
+/// A packaged app's logo: the PNG its indirect resource string resolves to.
+fn packaged_logo(resource: &str) -> Option<RgbaImage> {
+    use std::os::windows::ffi::OsStringExt;
+    use windows::Win32::UI::Shell::SHLoadIndirectString;
+
+    let mut resolved = vec![0u16; 1024];
+    // SAFETY: the source is a live NUL-terminated `HSTRING`; `resolved` is the output buffer
+    // whose length the binding passes; no reserved pointer.
+    unsafe { SHLoadIndirectString(&HSTRING::from(resource), &mut resolved, None) }.ok()?;
+    let len = resolved.iter().position(|&unit| unit == 0)?;
+    let path = std::path::PathBuf::from(std::ffi::OsString::from_wide(resolved.get(..len)?));
+    Some(image::open(path).ok()?.to_rgba8())
+}
+
+/// The icon at index `index` of `file`'s icon resources, drawn at `size`.
+fn extracted_icon(file: &str, index: i32, size: u32) -> Option<RgbaImage> {
+    use windows::Win32::UI::Shell::SHDefExtractIconW;
+    use windows::Win32::UI::WindowsAndMessaging::{DestroyIcon, GetIconInfo, HICON, ICONINFO};
+
+    let mut icon = HICON::default();
+    // SAFETY: the file is a live NUL-terminated `HSTRING`; `icon` receives an icon this call
+    // owns, destroyed below; no small icon is asked for. The size's low word is the large size.
+    let extracted = unsafe { SHDefExtractIconW(&HSTRING::from(file), index, 0, Some(&raw mut icon), None, size) };
+    if extracted.is_err() || icon.is_invalid() {
+        return None;
+    }
+    let mut info = ICONINFO::default();
+    // SAFETY: `icon` is the live icon extracted above; `info` receives two bitmaps this call
+    // owns and deletes below.
+    let read = unsafe { GetIconInfo(icon, &raw mut info) }.is_ok();
+    let pixels = if read { read_bitmap(info.hbmColor) } else { None };
+    // SAFETY: each bitmap came from `GetIconInfo` above (a null one is skipped), and the icon
+    // from `SHDefExtractIconW`; nothing else holds them.
+    unsafe {
+        for bitmap in [info.hbmColor, info.hbmMask] {
+            if !bitmap.is_invalid() {
+                let _ = DeleteObject(HGDIOBJ::from(bitmap));
+            }
+        }
+        let _ = DestroyIcon(icon);
+    }
+    let (width, height, bgra) = pixels?;
+    RgbaImage::from_raw(width, height, bgra_to_straight_rgba(bgra)?)
+}
+
 /// The bitmap's pixels as 32-bit top-down BGRA, with its width and height.
 fn read_bitmap(bitmap: HBITMAP) -> Option<(u32, u32, Vec<u8>)> {
     let mut header = BITMAP::default();

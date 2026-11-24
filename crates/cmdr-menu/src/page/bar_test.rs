@@ -170,6 +170,7 @@ fn render_rows(rows: &[Row], indent: &str, out: &mut String) {
                 shortcut,
                 aria_keyshortcuts,
                 enabled,
+                ..
             } => format!(
                 "item {id} {}{}{}",
                 label(text),

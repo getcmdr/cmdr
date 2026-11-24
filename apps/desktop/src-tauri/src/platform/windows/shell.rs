@@ -28,6 +28,36 @@ use crate::platform::windows_shell_path::{ShellLaunchPaths, shell_launch_paths, 
 /// gets the same 8 MB stack a macOS framework call does (`file_system/CLAUDE.md`).
 pub(crate) const SHELL_THREAD_STACK: usize = 8 * 1024 * 1024;
 
+/// Runs `call` in an apartment on a thread of its own, named `name`, and blocks until it answers:
+/// for a caller that is already off the main thread and bounded by its own deadline (a command's
+/// blocking task). `None` when the thread couldn't start, panicked, or the apartment refused.
+pub(crate) fn blocking_on_shell_thread<T: Send + 'static>(
+    name: &'static str,
+    call: impl FnOnce() -> T + Send + 'static,
+) -> Option<T> {
+    let joined = std::thread::Builder::new()
+        .name(name.to_string())
+        .stack_size(SHELL_THREAD_STACK)
+        .spawn(move || in_apartment(call))
+        .map(std::thread::JoinHandle::join);
+    match joined {
+        Ok(Ok(Ok(answer))) => Some(answer),
+        Ok(Ok(Err(hresult))) => {
+            log::warn!(target: "file_actions", "{name}: no COM apartment ({hresult:#010x})");
+            None
+        }
+        Ok(Err(_panicked)) => {
+            log::warn!(target: "file_actions", "{name}: the Shell thread panicked");
+            None
+        }
+        Err(e) => {
+            // allowed-log-private: `name` is our own fixed thread name, and `e` the OS's spawn refusal
+            log::warn!(target: "file_actions", "{name} couldn't start a thread: {e}");
+            None
+        }
+    }
+}
+
 /// How a Shell call run by [`on_shell_thread`] ended for its caller.
 #[derive(Debug)]
 pub(crate) enum ShellWait<T> {
@@ -81,10 +111,13 @@ pub(crate) enum ShellRefusal {
     Win32(u32),
     /// Any other `HRESULT`.
     Other(i32),
+    /// No app by the asked handler's name offers to open this type any more
+    /// (`assoc::invoke`): it was uninstalled since the list was read.
+    NoHandler,
 }
 
 impl ShellRefusal {
-    fn of_hresult(hresult: i32) -> Self {
+    pub(super) fn of_hresult(hresult: i32) -> Self {
         win32_code(hresult).map_or(Self::Other(hresult), Self::Win32)
     }
 }
@@ -102,7 +135,9 @@ pub(crate) async fn launch_default_app(path: String, deadline: Duration) -> Resu
         ShellWait::Answered(Err(ShellRefusal::Win32(code))) => Err(OpenPathError::NotOpened {
             exit_code: i32::try_from(code).ok(),
         }),
-        ShellWait::Answered(Err(ShellRefusal::Other(_))) => Err(OpenPathError::NotOpened { exit_code: None }),
+        ShellWait::Answered(Err(ShellRefusal::Other(_) | ShellRefusal::NoHandler)) => {
+            Err(OpenPathError::NotOpened { exit_code: None })
+        }
         // No errno to carry: neither an apartment's `HRESULT` nor a gone thread is one.
         ShellWait::NoApartment(_) | ShellWait::NoThread => Err(OpenPathError::LaunchRefused { errno: None }),
         ShellWait::TimedOut => Err(OpenPathError::TimedOut),
@@ -134,11 +169,16 @@ fn shell_paths_of(path: &str) -> Result<ShellLaunchPaths, OpenPathError> {
 }
 
 /// An ID list the Shell allocated for one item, freed on drop.
-struct ItemIdList(*mut ITEMIDLIST);
+pub(super) struct ItemIdList(*mut ITEMIDLIST);
 
 impl ItemIdList {
+    /// The list, for a call that reads it while `self` lives.
+    pub(super) fn as_ptr(&self) -> *const core::ffi::c_void {
+        self.0.cast_const().cast()
+    }
+
     /// The item at `path` (NUL-terminated), pinned: the Shell finds it now, by this exact name.
-    fn parse(path: &[u16]) -> Result<Self, ShellRefusal> {
+    pub(super) fn parse(path: &[u16]) -> Result<Self, ShellRefusal> {
         let mut item = std::ptr::null_mut();
         // SAFETY: `path` is NUL-terminated and outlives the call; no bind context, no attribute
         // query; `item` receives an ID list the Shell allocates, owned by `Self` from here.
@@ -178,7 +218,7 @@ const OPEN_AS: &[u16] = &[
 ///
 /// [`ShellRefusal`]: the item is gone or unreachable (`SHParseDisplayName`), or the launch was
 /// refused or cancelled (`ShellExecuteExW`).
-fn open_with_default_app(paths: &ShellLaunchPaths) -> Result<(), ShellRefusal> {
+pub(crate) fn open_with_default_app(paths: &ShellLaunchPaths) -> Result<(), ShellRefusal> {
     let item = ItemIdList::parse(&paths.item)?;
     let folder = paths.folder.as_deref();
     match execute(&item, folder, None) {

@@ -198,7 +198,7 @@ impl<'a> TempSpot<'a> {
 
 /// A routed pull that couldn't be made, and which route served the path, so open-with's
 /// toast can say where the file came from.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 #[derive(Debug)]
 pub(super) struct RoutedPullFailure {
     pub(super) routed: RoutedKind,
@@ -207,7 +207,7 @@ pub(super) struct RoutedPullFailure {
 
 /// [`extract_routed`] into another temp family's spot, unwatched: open-with's pull
 /// (`open_with_extract.rs`), which has no window to close and no deadline to honor.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn extract_routed_into(
     requested: &Path,
     volume_id: &str,

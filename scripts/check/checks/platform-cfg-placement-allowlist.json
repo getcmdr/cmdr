@@ -114,7 +114,7 @@
       "outsideSeam": 10
     },
     "apps/desktop/src-tauri/src/file_system/open_with.rs": {
-      "negated": 4,
+      "negated": 1,
       "outsideSeam": 6
     },
     "apps/desktop/src-tauri/src/file_system/tags.rs": {
@@ -219,7 +219,7 @@
       "outsideSeam": 4
     },
     "apps/desktop/src-tauri/src/menu/menu_handlers.rs": {
-      "outsideSeam": 14
+      "outsideSeam": 13
     },
     "apps/desktop/src-tauri/src/menu/menu_structure.rs": {
       "outsideSeam": 1

@@ -17,7 +17,7 @@ pub mod git;
 pub mod google_drive;
 /// The app's `VolumeProvider`: what the index asks about mounted volumes.
 pub(crate) mod index_provider;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub mod open_with;
 /// Asking macOS which visible dotted folders are packages.
 pub(crate) mod packages;

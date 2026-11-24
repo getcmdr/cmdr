@@ -398,7 +398,7 @@ impl VolumeManager {
     }
 
     /// Gets the default volume ID.
-    #[cfg(any(target_os = "macos", test))]
+    #[cfg(any(target_os = "macos", target_os = "windows", test))]
     pub fn default_volume_id(&self) -> Option<String> {
         self.default_volume_id.read_ignore_poison().clone()
     }

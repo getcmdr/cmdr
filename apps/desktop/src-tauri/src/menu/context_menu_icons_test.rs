@@ -93,6 +93,7 @@ fn app(bundle_id: &str, with_icon: bool) -> AppCandidate {
             width: 1,
             height: 1,
         }),
+        is_default: false,
     }
 }
 

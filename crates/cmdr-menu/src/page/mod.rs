@@ -57,6 +57,11 @@ pub enum Row {
         aria_keyshortcuts: Option<String>,
         /// Whether a pick does something.
         enabled: bool,
+        /// A picture drawn before the words, as an image URL (an app's icon in Windows' "Open
+        /// with", a data URL). Absent for every row the crate builds: only the desktop's
+        /// OS-filled rows carry one.
+        #[specta(optional)]
+        icon: Option<String>,
     },
     /// A check item: a checkbox, or one choice of a radio group.
     #[serde(rename_all = "camelCase")]

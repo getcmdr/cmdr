@@ -9,22 +9,36 @@
 use std::collections::HashSet;
 
 use crate::context::click::{ContextClick, context_click};
-use crate::context::{ContextLabel, ContextMenuShortcuts, ContextRow};
+use crate::context::{ContextLabel, ContextMenuShortcuts, ContextRow, Slot};
 use crate::spec::Platform;
 
 use super::{CheckKind, KeyHint, Row, RowLabel, hint_fields};
 
 /// `rows` as the page draws them on `platform`, with each enabled row's id added to `live`: what
-/// a pick may name, as only an enabled native row can be picked.
+/// a pick may name, as only an enabled native row can be picked. The OS-filled slots are left
+/// out; [`page_rows_with`] fills them.
 pub fn page_rows(
     rows: &[ContextRow],
     shortcuts: &ContextMenuShortcuts,
     platform: Platform,
     live: &mut HashSet<String>,
 ) -> Vec<Row> {
+    page_rows_with(rows, shortcuts, platform, live, &mut |_, _| Vec::new())
+}
+
+/// [`page_rows`], with each OS-filled [`Slot`] drawn as the rows `fill` answers for it (none
+/// leaves it out). `fill` adds the ids it offers to the `live` set it's handed. The desktop fills
+/// Windows' "Open with" this way (`apps/desktop/src-tauri/src/menu/page_context.rs`).
+pub fn page_rows_with(
+    rows: &[ContextRow],
+    shortcuts: &ContextMenuShortcuts,
+    platform: Platform,
+    live: &mut HashSet<String>,
+    fill: &mut dyn FnMut(Slot, &mut HashSet<String>) -> Vec<Row>,
+) -> Vec<Row> {
     rows.iter()
-        .filter_map(|row| {
-            Some(match row {
+        .flat_map(|row| {
+            vec![match row {
                 ContextRow::Item(item) => {
                     if item.enabled {
                         live.insert(item.id.clone());
@@ -37,6 +51,7 @@ pub fn page_rows(
                         shortcut,
                         aria_keyshortcuts,
                         enabled: item.enabled,
+                        icon: None,
                     }
                 }
                 ContextRow::Check { item, checked } => {
@@ -59,15 +74,15 @@ pub fn page_rows(
                     id: submenu_id(*id, text),
                     label: label(text),
                     enabled: true,
-                    rows: page_rows(rows, shortcuts, platform, live),
+                    rows: page_rows_with(rows, shortcuts, platform, live, fill),
                 },
                 ContextRow::Header(text) => Row::Header {
                     label: RowLabel::Text { text: text.clone() },
                 },
                 ContextRow::Separator => Row::Separator,
-                // The OS fills these on a native menu; a page has no OS to ask.
-                ContextRow::Slot(_) => return None,
-            })
+                // The OS fills these on a native menu; a page draws what its host filled.
+                ContextRow::Slot(slot) => return fill(*slot, live),
+            }]
         })
         .collect()
 }

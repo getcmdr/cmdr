@@ -729,17 +729,73 @@ fn pane_facts_read_the_frontend_s_payload() {
     );
 }
 
+/// macOS fills every slot; Windows only "Open with" (from the Shell's handlers, in the page);
+/// Linux none.
 #[test]
-fn slots_appear_on_macos_only() {
-    for platform in [Platform::Windows, Platform::Linux] {
-        let rows = file_menu(&facts("a", false, EVERY_PANE_FACT), platform);
-        assert!(
-            !rows.iter().any(|row| matches!(row, ContextRow::Slot(_))),
-            "on {platform:?}"
-        );
+fn slots_appear_where_the_os_fills_them() {
+    let slots = |platform| -> Vec<Slot> {
+        file_menu(&facts("a", false, EVERY_PANE_FACT), platform)
+            .into_iter()
+            .filter_map(|row| match row {
+                ContextRow::Slot(slot) => Some(slot),
+                _ => None,
+            })
+            .collect()
+    };
+    assert_eq!(slots(Platform::Linux), Vec::<Slot>::new());
+    assert_eq!(slots(Platform::Windows), vec![Slot::OpenWith]);
+    let mac = slots(Platform::MacOs);
+    assert!(mac.contains(&Slot::OpenWith) && mac.contains(&Slot::Services));
+}
+
+/// A folder has no "Open with" on any platform.
+#[test]
+fn a_folder_offers_no_open_with() {
+    for platform in [Platform::MacOs, Platform::Windows] {
+        let rows = file_menu(&facts("a", true, EVERY_PANE_FACT), platform);
+        assert!(!rows.contains(&ContextRow::Slot(Slot::OpenWith)), "on {platform:?}");
     }
-    let mac = file_menu(&facts("a", false, EVERY_PANE_FACT), Platform::MacOs);
-    assert!(mac.contains(&ContextRow::Slot(Slot::Services)));
+}
+
+/// A page draws a slot as the rows its host fills it with, their ids live; unfilled, it's left out.
+#[test]
+fn a_page_draws_a_slot_as_its_host_fills_it() {
+    use crate::page::{Row, RowLabel};
+    use std::collections::HashSet;
+
+    let rows = file_menu(&facts("a", false, EVERY_PANE_FACT), Platform::Windows);
+    let mut live = HashSet::new();
+    let filled = crate::page::context::page_rows_with(
+        &rows,
+        &ContextMenuShortcuts::default(),
+        Platform::Windows,
+        &mut live,
+        &mut |slot, live| {
+            assert_eq!(slot, Slot::OpenWith);
+            live.insert("open-with:test_app".to_string());
+            vec![Row::Item {
+                id: "open-with:test_app".to_string(),
+                label: RowLabel::Text {
+                    text: "Test app".to_string(),
+                },
+                shortcut: None,
+                aria_keyshortcuts: None,
+                enabled: true,
+                icon: Some("data:image/webp;base64,AA".to_string()),
+            }]
+        },
+    );
+    assert!(live.contains("open-with:test_app"));
+    assert!(
+        filled
+            .iter()
+            .any(|row| matches!(row, Row::Item { id, .. } if id == "open-with:test_app"))
+    );
+
+    let mut live = HashSet::new();
+    let unfilled =
+        crate::page::context::page_rows(&rows, &ContextMenuShortcuts::default(), Platform::Windows, &mut live);
+    assert_eq!(unfilled.len(), filled.len() - 1);
 }
 
 // --- The header line ---

@@ -15,11 +15,13 @@ use crate::file_system::get_info::GetInfoError;
 use crate::file_system::google_drive::DriveItemLinks;
 #[cfg(target_os = "macos")]
 use crate::file_system::terminal::{OpenTerminalError, OpenTerminalOutcome, TerminalAppList};
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use crate::file_system::text_editor::TextEditorList;
 use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 #[cfg(target_os = "macos")]
-use cmdr_fs::deadline::{TimedOut, blocking_typed_result_with_timeout, blocking_with_timeout_flag};
+use cmdr_fs::deadline::blocking_typed_result_with_timeout;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use cmdr_fs::deadline::{TimedOut, blocking_with_timeout_flag};
 
 /// Listing terminals is a handful of LaunchServices lookups and bundle-icon
 /// reads. Generous enough for a custom pick sitting on a slow mount, short enough
@@ -32,9 +34,10 @@ const TERMINAL_APPS_TIMEOUT: Duration = Duration::from_secs(2);
 #[cfg(target_os = "macos")]
 const OPEN_TERMINAL_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Listing text editors is one LaunchServices query plus a name and an icon read
-/// per app. Same bound as the terminal list, for a picked app on a slow mount.
-#[cfg(target_os = "macos")]
+/// Listing text editors is one LaunchServices query (the Shell's handler list on Windows) plus a
+/// name and an icon read per app. Same bound as the terminal list, for a picked app on a slow
+/// mount.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const TEXT_EDITORS_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// The default-app name is a LaunchServices lookup plus a name read, no file I/O. The
@@ -123,7 +126,7 @@ pub async fn open_in_editor(
 /// nothing caches it; the timeout only bounds a read on a stalled mount.
 #[tauri::command]
 #[specta::specta]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub async fn list_text_editors(app_choice: String) -> TimedOut<TextEditorList> {
     blocking_with_timeout_flag(TEXT_EDITORS_TIMEOUT, TextEditorList::default(), move || {
         crate::file_system::text_editor::list_text_editors(&app_choice)

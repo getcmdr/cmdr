@@ -29,7 +29,7 @@
 //!   the sweep sorts can't slip in between the check and the removal.
 
 use std::path::{Path, PathBuf};
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -72,7 +72,7 @@ impl FileTime {
         })
     }
 
-    #[cfg(any(target_os = "macos", test))]
+    #[cfg(any(target_os = "macos", target_os = "windows", test))]
     fn to_system_time(self) -> SystemTime {
         UNIX_EPOCH + Duration::new(self.secs, self.nanos)
     }
@@ -80,7 +80,7 @@ impl FileTime {
 
 /// Records `copy` as pulled, beside it in its launch folder. Best-effort: a copy with
 /// no record counts as changed, so a failure here only means it's kept, never lost.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn record_pull(copy: &Path) {
     let result = (|| -> Result<(), String> {
         let folder = copy.parent().ok_or("no launch folder")?;
@@ -199,7 +199,7 @@ fn trash_contents(folder: &Path, trash: &dyn Fn(&Path) -> Result<(), String>) ->
 }
 
 /// How the in-session sweep picks what goes.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) struct SweepPolicy {
     /// This many of the newest untouched copies always stay, whatever their age or size.
     pub(super) keep_newest: usize,
@@ -213,7 +213,7 @@ pub(super) struct SweepPolicy {
 /// `policy` lets go, as of `now`. Never touches a changed copy (an app may be editing
 /// it; the next startup takes it to the Trash) or a folder with no record yet (a pull
 /// still running beside this one).
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn sweep_launch_folders(
     dir: &Path,
     is_launch_folder: impl Fn(&str) -> bool,

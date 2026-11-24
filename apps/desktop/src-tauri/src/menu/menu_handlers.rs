@@ -559,47 +559,10 @@ pub(crate) fn handle_menu_pick(app: &AppHandle<tauri::Wry>, id: &str, source: Pi
         return;
     }
 
-    // === Open with submenu: dynamic IDs prefix-routed before unified dispatch ===
-    // Items have IDs like `open-with:com.apple.Xcode`, too dynamic to enumerate
-    // in `menu_id_to_command`. We resolve the bundle ID back to an app path via
-    // `MenuState.context.open_with_apps` and call the launch helper directly.
-    #[cfg(target_os = "macos")]
-    if let Some(bundle_id) = id.strip_prefix(super::open_with::OPEN_WITH_ID_PREFIX) {
-        let menu_state = app.state::<MenuState<tauri::Wry>>();
-        let ctx = menu_state.context.lock_ignore_poison();
-        let app_path = ctx.open_with_apps.get(bundle_id).cloned();
-        let rows = ctx.paths.clone();
-        let listing_id = ctx.listing_id.clone();
-        drop(ctx);
-
-        if let Some(app_path) = app_path
-            && !rows.is_empty()
-        {
-            super::open_with::launch_with(app, &rows, app_path, &listing_id);
-        } else {
-            log::warn!("Open with: missing app or paths for {bundle_id}");
-        }
-        return;
-    }
-
-    // === Open with → Other… : show NSOpenPanel, then launch ===
-    #[cfg(target_os = "macos")]
-    if id == super::open_with::OPEN_WITH_OTHER_ID {
-        use crate::file_system::open_with::pick_app_via_open_panel;
-
-        let menu_state = app.state::<MenuState<tauri::Wry>>();
-        let ctx = menu_state.context.lock_ignore_poison();
-        let rows = ctx.paths.clone();
-        let listing_id = ctx.listing_id.clone();
-        drop(ctx);
-
-        // NSOpenPanel must run on the main thread. on_menu_event is invoked on
-        // the main thread by Tauri/muda, so this is safe.
-        if let Some(app_path) = pick_app_via_open_panel()
-            && !rows.is_empty()
-        {
-            super::open_with::launch_with(app, &rows, app_path, &listing_id);
-        }
+    // === Open with: a listed app, or Other… / Choose another app (`open_with::handle_pick`) ===
+    // Dynamic ids, too many to enumerate in `menu_id_to_command`, so they're routed first.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    if super::open_with::handle_pick(app, id) {
         return;
     }
 

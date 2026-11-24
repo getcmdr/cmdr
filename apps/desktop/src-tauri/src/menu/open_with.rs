@@ -16,7 +16,11 @@
 //! disabled "Finding apps…" line in their place ([`build_pending_open_with_submenu`]), and
 //! [`fill_open_with_submenu`] swaps the real list in while the menu is open.
 //!
-//! The first candidate (the OS default for the right-clicked file) reads "{app} (default)".
+//! Windows draws its right-click menus in the page, so there the same candidates become page
+//! rows ([`page_open_with_submenu`]), icons as data URLs, and "Other…" is Windows' own "Choose
+//! another app" dialog ([`OpenWithTarget::ChooseAnother`]).
+//!
+//! The OS default for the right-clicked file reads "{app} (default)".
 //! [`default_label`] splits that label into parts, and `context_menu_icons.rs` draws the words
 //! around the app's name in `secondaryLabelColor` on the live item, matching Finder's "Open
 //! with" submenu. The Tauri item itself carries the plain text.
@@ -24,15 +28,15 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use tauri::{
-    AppHandle, Runtime,
-    menu::{MenuItem, PredefinedMenuItem, Submenu},
-};
+#[cfg(target_os = "macos")]
+use tauri::menu::{MenuItem, PredefinedMenuItem, Submenu};
+use tauri::{AppHandle, Runtime};
 
+#[cfg(target_os = "macos")]
 use super::context_menu_slots::Placeheld;
 use crate::file_system::open_with::AppCandidate;
+#[cfg(any(target_os = "macos", test))]
 use crate::intl::menu_t;
-#[cfg(target_os = "macos")]
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 
@@ -44,12 +48,49 @@ pub const OPEN_WITH_ID_PREFIX: &str = "open-with:";
 /// prefix-routes as launch targets.
 pub const OPEN_WITH_SUBMENU_ID: &str = "open-with-submenu";
 
-/// Menu item ID for "Open with → Other…" (NSOpenPanel picker).
+/// Menu item ID for "Open with → Other…" (NSOpenPanel picker) and Windows' "Choose another
+/// app" (its own dialog).
 pub const OPEN_WITH_OTHER_ID: &str = "open-with-other";
+
+/// What an "Open with" pick launches.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum OpenWithTarget {
+    /// A listed app, or one picked in macOS's panel: the app's path (on Windows, the handler's id).
+    App(PathBuf),
+    /// Windows' "Choose another app" dialog, over the window whose raw `HWND` this is (0: none).
+    #[cfg(target_os = "windows")]
+    ChooseAnother { parent: isize },
+}
+
+impl OpenWithTarget {
+    /// The app's name for a toast; `None` for the dialog, which hasn't picked one.
+    fn app_name(&self) -> Option<String> {
+        match self {
+            Self::App(app_path) => Some(crate::file_system::open_with::app_display_name(app_path)),
+            #[cfg(target_os = "windows")]
+            Self::ChooseAnother { .. } => None,
+        }
+    }
+
+    /// Hands `paths` over.
+    fn launch(&self, paths: &[PathBuf]) -> Result<(), crate::file_system::open_with::OpenWithLaunchError> {
+        match self {
+            Self::App(app_path) => crate::file_system::open_with::open_paths_with(paths, app_path),
+            #[cfg(target_os = "windows")]
+            Self::ChooseAnother { parent } => {
+                let first = paths
+                    .first()
+                    .ok_or(crate::file_system::open_with::OpenWithLaunchError::NoPath)?;
+                crate::file_system::open_with::choose_another_app(first, *parent)
+            }
+        }
+    }
+}
 
 /// Builds the "Open with" submenu and returns it alongside a `bundle_id → app_path`
 /// map that the caller stores in `MenuState` so click events can resolve the launch
 /// target.
+#[cfg(target_os = "macos")]
 pub fn build_open_with_submenu<R: Runtime>(
     app: &AppHandle<R>,
     candidates: &[AppCandidate],
@@ -70,6 +111,7 @@ pub fn build_open_with_submenu<R: Runtime>(
 
 /// The "Open with" submenu for a menu that went up before LaunchServices answered: a
 /// disabled "Finding apps…" line, a separator, and "Other…", which works without the list.
+#[cfg(target_os = "macos")]
 pub fn build_pending_open_with_submenu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Placeheld<R>> {
     let submenu = Submenu::with_id(app, OPEN_WITH_SUBMENU_ID, menu_t("menu.context.openWith"), true)?;
     let placeholder = MenuItem::new(app, menu_t("menu.context.openWithLoading"), false, None::<&str>)?;
@@ -90,6 +132,7 @@ pub fn build_pending_open_with_submenu<R: Runtime>(app: &AppHandle<R>) -> tauri:
 ///
 /// ❗ Runs while the menu tracks, so it touches only the submenu and its items, never the
 /// context menu itself: muda holds that one borrowed for the whole popup.
+#[cfg(target_os = "macos")]
 pub fn fill_open_with_submenu<R: Runtime>(
     app: &AppHandle<R>,
     pending: &Placeheld<R>,
@@ -107,14 +150,16 @@ pub fn fill_open_with_submenu<R: Runtime>(
 }
 
 /// The candidates' items, and the `bundle_id → app_path` map a click resolves its app through.
+#[cfg(target_os = "macos")]
 type CandidateItems<R> = (Vec<MenuItem<R>>, HashMap<String, PathBuf>);
 
 /// One item per candidate, the OS default first and marked.
+#[cfg(target_os = "macos")]
 fn candidate_items<R: Runtime>(app: &AppHandle<R>, candidates: &[AppCandidate]) -> tauri::Result<CandidateItems<R>> {
     let mut items = Vec::with_capacity(candidates.len());
     let mut bundle_to_path: HashMap<String, PathBuf> = HashMap::new();
-    for (idx, candidate) in candidates.iter().enumerate() {
-        let label = if idx == 0 {
+    for candidate in candidates {
+        let label = if candidate.is_default {
             default_label(&candidate.display_name)
                 .into_iter()
                 .map(|part| part.text)
@@ -131,6 +176,7 @@ fn candidate_items<R: Runtime>(app: &AppHandle<R>, candidates: &[AppCandidate]) 
 
 /// One stretch of the OS default's label: the app's name, or the words around it that say it's
 /// the default, which draw dimmed.
+#[cfg(any(target_os = "macos", test))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct LabelPart {
     pub text: String,
@@ -138,6 +184,7 @@ pub(super) struct LabelPart {
 }
 
 /// The OS default's label for `app` in the active language, in parts.
+#[cfg(target_os = "macos")]
 pub(super) fn default_label(app: &str) -> Vec<LabelPart> {
     default_label_parts(&menu_t("menu.context.openWithDefault"), app)
 }
@@ -145,6 +192,7 @@ pub(super) fn default_label(app: &str) -> Vec<LabelPart> {
 /// `template` with each `{app}` as an undimmed part holding `app`, and the words between them
 /// dimmed. The parts join into exactly what `menu_t_with` would make of it. A template with no
 /// `{app}` (a translation that dropped it) comes back whole and undimmed.
+#[cfg(any(target_os = "macos", test))]
 fn default_label_parts(template: &str, app: &str) -> Vec<LabelPart> {
     const TOKEN: &str = "{app}";
     if !template.contains(TOKEN) {
@@ -171,6 +219,81 @@ fn default_label_parts(template: &str, app: &str) -> Vec<LabelPart> {
     parts
 }
 
+/// The "Open with" submenu as a page draws it (Windows' in-page menus): one row per candidate,
+/// each with its app's icon, the default marked, then "Choose another app". Each row's id goes
+/// into `live`, so a pick of it may run, and the answer carries the `id → app` map a pick
+/// resolves its app through, as [`build_open_with_submenu`]'s does.
+///
+/// `offer_another` leaves "Choose another app" out for rows only a route serves (a file inside
+/// an archive): Windows' dialog needs the file itself, and a copy refused there would have no
+/// app to name.
+#[cfg(target_os = "windows")]
+pub fn page_open_with_submenu(
+    candidates: &[AppCandidate],
+    offer_another: bool,
+    live: &mut std::collections::HashSet<String>,
+) -> (cmdr_menu::page::Row, HashMap<String, PathBuf>) {
+    use cmdr_menu::page::{Row, RowLabel};
+
+    let mut rows = Vec::with_capacity(candidates.len() + 2);
+    let mut bundle_to_path = HashMap::new();
+    for candidate in candidates {
+        let id = format!("{OPEN_WITH_ID_PREFIX}{}", candidate.bundle_id);
+        let label = if candidate.is_default {
+            RowLabel::Key {
+                key: "menu.context.openWithDefault".to_string(),
+                args: HashMap::from([("app".to_string(), candidate.display_name.clone())]),
+            }
+        } else {
+            RowLabel::Text {
+                text: candidate.display_name.clone(),
+            }
+        };
+        let icon = candidate
+            .icon
+            .as_ref()
+            .and_then(|icon| crate::icons::rgba_to_data_url(&icon.rgba, icon.width, icon.height));
+        live.insert(id.clone());
+        rows.push(Row::Item {
+            id,
+            label,
+            shortcut: None,
+            aria_keyshortcuts: None,
+            enabled: true,
+            icon,
+        });
+        bundle_to_path.insert(candidate.bundle_id.clone(), candidate.app_path.clone());
+    }
+    if offer_another {
+        if !rows.is_empty() {
+            rows.push(Row::Separator);
+        }
+        live.insert(OPEN_WITH_OTHER_ID.to_string());
+        rows.push(Row::Item {
+            id: OPEN_WITH_OTHER_ID.to_string(),
+            label: RowLabel::Key {
+                key: "menu.context.openWithChooseAnother".to_string(),
+                args: HashMap::new(),
+            },
+            shortcut: None,
+            aria_keyshortcuts: None,
+            enabled: true,
+            icon: None,
+        });
+    }
+    let submenu = Row::Submenu {
+        id: OPEN_WITH_SUBMENU_ID.to_string(),
+        label: RowLabel::Key {
+            key: "menu.context.openWith".to_string(),
+            args: HashMap::new(),
+        },
+        enabled: !rows.is_empty(),
+        rows,
+    };
+    (submenu, bundle_to_path)
+}
+
+#[cfg(target_os = "macos")]
 fn other_item<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
     MenuItem::with_id(
         app,
@@ -181,7 +304,66 @@ fn other_item<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
     )
 }
 
-/// Launches `app_path` on the rows an "Open with" click acts on, for both the listed apps
+/// Runs an "Open with" pick (`open-with:<id>`, or [`OPEN_WITH_OTHER_ID`]) on the rows the menu
+/// went up over, and answers whether `id` was one. A listed app resolves through
+/// `MenuState.context.open_with_apps` (on Windows the key is the Shell handler's id, and the pick
+/// comes from the page's menu); "Other…" is macOS's app panel, Windows' "Choose another app"
+/// dialog.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub(super) fn handle_pick(app: &AppHandle<tauri::Wry>, id: &str) -> bool {
+    use crate::ignore_poison::IgnorePoison;
+    use tauri::Manager as _;
+
+    let listed = id.strip_prefix(OPEN_WITH_ID_PREFIX);
+    if listed.is_none() && id != OPEN_WITH_OTHER_ID {
+        return false;
+    }
+    let menu_state = app.state::<super::MenuState<tauri::Wry>>();
+    let ctx = menu_state.context.lock_ignore_poison();
+    let app_path = listed.and_then(|bundle_id| ctx.open_with_apps.get(bundle_id).cloned());
+    let rows = ctx.paths.clone();
+    let listing_id = ctx.listing_id.clone();
+    drop(ctx);
+    if rows.is_empty() {
+        log::warn!("Open with: no rows for {id}");
+        return true;
+    }
+    let target = match (listed, app_path) {
+        (Some(_), Some(app_path)) => OpenWithTarget::App(app_path),
+        (Some(bundle_id), None) => {
+            log::warn!("Open with: no app for {bundle_id}");
+            return true;
+        }
+        (None, _) => match other_target(app) {
+            Some(target) => target,
+            None => return true,
+        },
+    };
+    launch_with(app, &rows, target, &listing_id);
+    true
+}
+
+/// "Other…" on macOS: an `NSOpenPanel` pick, `None` when cancelled. Runs on the main thread,
+/// where muda delivers the click.
+#[cfg(target_os = "macos")]
+fn other_target(_app: &AppHandle<tauri::Wry>) -> Option<OpenWithTarget> {
+    crate::file_system::open_with::pick_app_via_open_panel().map(OpenWithTarget::App)
+}
+
+/// "Choose another app" on Windows: its own dialog, over the main window, as File Explorer's
+/// sits over its own.
+#[cfg(target_os = "windows")]
+fn other_target(app: &AppHandle<tauri::Wry>) -> Option<OpenWithTarget> {
+    use tauri::Manager as _;
+
+    let parent = app
+        .get_webview_window("main")
+        .and_then(|window| window.hwnd().ok())
+        .map_or(0, |hwnd| hwnd.0 as isize);
+    Some(OpenWithTarget::ChooseAnother { parent })
+}
+
+/// Launches `target` on the rows an "Open with" click acts on, for both the listed apps
 /// and "Other…".
 ///
 /// A row only a route serves (a file inside an archive) has no file an app can open, so
@@ -194,10 +376,12 @@ fn other_item<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<MenuItem<R>> {
 /// a row on a volume whose paths no other app can open right now, like a direct SMB
 /// share whose macOS mount is gone (`OpenWithNotOnThisMac`): `listing_id` is the pane's
 /// listing the menu went up over, which names that volume.
-#[cfg(target_os = "macos")]
-pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], app_path: PathBuf, listing_id: &str) {
+///
+/// On Windows a row whose path has no plain spelling another app reads (`NoPlainPath`) launches
+/// nothing and says so (`OpenWithNoPlainPath`).
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], target: OpenWithTarget, listing_id: &str) {
     use crate::file_system::default_app::listing_paths_reach_other_apps;
-    use crate::file_system::open_with::open_paths_with;
     use crate::file_viewer::open_with_extract;
 
     // The menu's rows are app text a pane sent, and another app opens them: each crosses to its
@@ -207,22 +391,29 @@ pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], app_p
 
     if !open_with_extract::any_needs_extraction(&paths) {
         if !listing_paths_reach_other_apps(listing_id) {
-            log::info!(
-                "Open with {}: not launching, the pane's volume has no macOS mount behind its paths",
-                LogPrivate::path(&app_path)
-            );
-            announce_not_on_this_mac(app, &app_path);
+            log::info!("Open with {target:?}: not launching, the pane's volume has no OS mount behind its paths");
+            announce_not_on_this_mac(app, target.app_name());
             return;
         }
         if paths.is_empty() {
-            log::warn!("Open with {}: no row has a file here", LogPrivate::path(&app_path));
+            log::warn!("Open with {target:?}: no row has a file here");
             return;
         }
-        if let Err(e) = open_paths_with(&paths, &app_path) {
-            log::warn!("Open with failed for {}: {e}", LogPrivate::path(&app_path));
+        if let Err(e) = target.launch(&paths) {
+            log::warn!("Open with {target:?} didn't launch: {e}");
+            announce_launch_refused(app, e, &paths);
         }
         return;
     }
+    let app_path = match target {
+        OpenWithTarget::App(app_path) => app_path,
+        // The menu offers no "Choose another app" over such rows (`page_open_with_submenu`).
+        #[cfg(target_os = "windows")]
+        OpenWithTarget::ChooseAnother { .. } => {
+            log::warn!("Open with: Choose another app over a row that needs a copy; nothing to show");
+            return;
+        }
+    };
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let copies = match open_with_extract::launch_paths(&paths) {
@@ -240,10 +431,13 @@ pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], app_p
         };
         let notice = open_with_extract::OpenWithCopyLaunched::new(&paths, &copies, &app_path);
         let launcher = app.clone();
-        let hopped = app.run_on_main_thread(move || match open_paths_with(&copies, &app_path) {
-            Ok(()) => announce_launched_copy(&launcher, notice),
-            Err(e) => log::warn!("Open with failed for {}: {e}", LogPrivate::path(&app_path)),
-        });
+        let hopped =
+            app.run_on_main_thread(
+                move || match crate::file_system::open_with::open_paths_with(&copies, &app_path) {
+                    Ok(()) => announce_launched_copy(&launcher, notice),
+                    Err(e) => log::warn!("Open with failed for {}: {e}", LogPrivate::path(&app_path)),
+                },
+            );
         if let Err(e) = hopped {
             log::warn!("Open with: couldn't reach the main thread to launch: {e}");
         }
@@ -251,7 +445,7 @@ pub(super) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], app_p
 }
 
 /// Tells the main window the app got read-only copies, whose changes stay in the copy.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn announce_launched_copy<R: Runtime>(
     app: &AppHandle<R>,
     notice: Option<crate::file_viewer::open_with_extract::OpenWithCopyLaunched>,
@@ -266,23 +460,44 @@ fn announce_launched_copy<R: Runtime>(
 }
 
 /// Tells the main window an "Open with" launch didn't happen because the file has no
-/// path another app can open.
-#[cfg(target_os = "macos")]
-fn announce_not_on_this_mac<R: Runtime>(app: &AppHandle<R>, app_path: &std::path::Path) {
+/// path another app can open. `app_name` is `None` for Windows' "Choose another app".
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn announce_not_on_this_mac<R: Runtime>(app: &AppHandle<R>, app_name: Option<String>) {
     use crate::file_system::default_app::OpenWithNotOnThisMac;
     use tauri_specta::Event;
 
-    let app_name = app_path.file_stem().map_or_else(
-        || app_path.display().to_string(),
-        |stem| stem.to_string_lossy().into_owned(),
-    );
     if let Err(e) = (OpenWithNotOnThisMac { app_name }).emit(app) {
-        log::warn!("Open with: couldn't tell the main window the file isn't on this Mac: {e}");
+        log::warn!("Open with: couldn't tell the main window the file isn't on this computer: {e}");
+    }
+}
+
+/// Tells the main window why a launch the OS was never asked for didn't happen, where that's
+/// something to say: a path with no plain spelling (Windows). The rest is in the log.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn announce_launch_refused<R: Runtime>(
+    app: &AppHandle<R>,
+    why: crate::file_system::open_with::OpenWithLaunchError,
+    paths: &[PathBuf],
+) {
+    use crate::file_system::default_app::OpenWithNoPlainPath;
+    use crate::file_system::open_with::OpenWithLaunchError;
+    use tauri_specta::Event;
+
+    if why != OpenWithLaunchError::NoPlainPath {
+        return;
+    }
+    let file_name = paths
+        .first()
+        .and_then(|path| path.file_name())
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if let Err(e) = (OpenWithNoPlainPath { file_name }).emit(app) {
+        log::warn!("Open with: couldn't tell the main window the path is too awkward to hand over: {e}");
     }
 }
 
 /// Tells the main window an "Open with" launch didn't happen, and why.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn announce_refused_copy<R: Runtime>(
     app: &AppHandle<R>,
     refused: &crate::file_viewer::open_with_extract::RefusedCopy,

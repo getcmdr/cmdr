@@ -98,7 +98,12 @@ pub struct InPageContextMenu {
 /// as the browser demo leaves them out: they're macOS's, and macOS keeps native menus.
 #[tauri::command]
 #[specta::specta]
-pub fn open_context_menu_in_page(window: Window<tauri::Wry>, request: InPageContextMenuRequest) -> InPageContextMenu {
+pub async fn open_context_menu_in_page(
+    window: Window<tauri::Wry>,
+    request: InPageContextMenuRequest,
+) -> InPageContextMenu {
+    // Read before anything is stashed, so the stash and the rows stay one synchronous step.
+    let open_with = open_with_for(&request).await;
     let app = window.app_handle().clone();
     let state = app.state::<MenuState<tauri::Wry>>();
     let none = ContextMenuShortcuts::default;
@@ -174,8 +179,63 @@ pub fn open_context_menu_in_page(window: Window<tauri::Wry>, request: InPageCont
     };
     // The window the menu opens over is the one a pick acts in, as the native path makes it.
     focus_for_context_menu(&window);
-    let (token, rows) = crate::menu::page_context::open(&state, &rows, &shortcuts);
+    let (token, rows) = crate::menu::page_context::open(&state, &rows, &shortcuts, open_with.as_ref());
     InPageContextMenu { token, rows, anchor }
+}
+
+/// How long a file menu waits for Windows' "Open with" apps. A warm type answers from the cache
+/// at once; a cold one is tens of milliseconds, its icons included. Past this the menu opens with
+/// only "Choose another app", and the log says so.
+#[cfg(target_os = "windows")]
+const OPEN_WITH_WAIT: std::time::Duration = std::time::Duration::from_millis(1500);
+
+/// Windows: the "Open with" apps for a file menu's rows, read on a Shell thread
+/// (`file_system::open_with`). `None` for every other menu, a folder, and every other OS.
+#[cfg(target_os = "windows")]
+async fn open_with_for(request: &InPageContextMenuRequest) -> Option<crate::menu::page_context::PageOpenWith> {
+    use crate::file_viewer::open_with_extract::any_needs_extraction;
+
+    let InPageContextMenuRequest::File {
+        path,
+        paths,
+        is_directory: false,
+        ..
+    } = request
+    else {
+        return None;
+    };
+    let rows = if paths.is_empty() {
+        std::slice::from_ref(path)
+    } else {
+        paths.as_slice()
+    };
+    let native: Vec<std::path::PathBuf> = rows.iter().filter_map(|row| crate::app_text::native(row)).collect();
+    let offer_another = !any_needs_extraction(&native);
+    // Only the extensions matter to the Shell's handler lists, so an archive's insides ask
+    // as they are, with no stand-in file.
+    let asked = tokio::time::timeout(
+        OPEN_WITH_WAIT,
+        tokio::task::spawn_blocking(move || crate::file_system::open_with::compute_open_with_choices(native)),
+    )
+    .await;
+    let choices = match asked {
+        Ok(Ok(choices)) => choices,
+        Ok(Err(e)) => {
+            log::warn!(target: "open_with", "The Open with list didn't come back: {e}");
+            crate::file_system::open_with::OpenWithChoices::default()
+        }
+        Err(_) => {
+            log::info!(target: "open_with", "The Open with list took over {OPEN_WITH_WAIT:?}; opening the menu without it");
+            crate::file_system::open_with::OpenWithChoices::default()
+        }
+    };
+    Some(crate::menu::page_context::PageOpenWith { choices, offer_another })
+}
+
+#[cfg(not(target_os = "windows"))]
+#[allow(clippy::unused_async, reason = "Windows' arm awaits the Shell")]
+async fn open_with_for(_request: &InPageContextMenuRequest) -> Option<crate::menu::page_context::PageOpenWith> {
+    None
 }
 
 /// A page's pick of `menu_id` from the right-click menu `open_context_menu_in_page` answered with

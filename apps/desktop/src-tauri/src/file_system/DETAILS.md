@@ -311,6 +311,32 @@ already provider-agnostic: a streamed Drive file carries `SF_DATALESS` like any 
   (verified on macOS 26.6.2 with VS Code 1.137.0, compiled probe, 2026-09-11). The terminal row, the text editor row,
   and the file-viewer row in `reveal/` name apps through it too.
 
+### Open with on Windows (`open_with_windows.rs`)
+
+- **The list is File Explorer's**: `SHAssocEnumHandlers(".ext", ASSOC_FILTER_RECOMMENDED)` through
+  `../platform/windows/assoc.rs`, each handler named by `IAssocHandler::GetUIName` and drawn from `GetIconLocation`
+  (a classic `file,index` through `SHDefExtractIconW`, a packaged app's `@{…}` resource through `SHLoadIndirectString`
+  to its PNG; `../icons/platform/windows/shell_image.rs::app_icon_at`).
+- **A candidate's `bundle_id` and `app_path` both carry the handler's id** (`GetName`: a program path for a classic
+  app, an app id for a packaged one), which is what a pick names and `open_paths_with` finds the handler by again.
+  ❌ Never treat that `app_path` as a file.
+- **The default is marked only when Windows says which it is**: `AssocQueryStringW`'s `ASSOCSTR_EXECUTABLE` matched
+  against a classic handler's id, else `ASSOCSTR_FRIENDLYAPPNAME` against the names (a packaged app's id is no path).
+  The rule is `../platform/windows_assoc_rules.rs`, pure, tested on every OS. No match marks nothing, rather than
+  calling the Shell's first entry the default.
+- **The launch is `IAssocHandler::Invoke` on one data object** over the items' pinned ID lists
+  (`SHCreateShellItemArrayFromIDLists`, then `BHID_DataObject`), as File Explorer hands them over: ❌ no command line
+  is built from a path. The paths cross through the plain-spelling rules first (`../platform/windows_shell_path.rs`);
+  a refusal launches nothing and the main window toasts Enter's own words (`OpenWithNoPlainPath`).
+- **"Other…" is Windows' "Choose another app"**: `SHOpenWithDialog` with `OAIF_EXEC | OAIF_ALLOW_REGISTRATION |
+  OAIF_REGISTER_EXT`, over the main window, on its own Shell thread, which opens the file itself. It takes one file,
+  so a multi-selection hands it the first. Rows only a route serves (an archive's insides) don't offer it: the dialog
+  needs the file itself, and a refused copy would have no app to name.
+- **A per-extension cache, two minutes**, icons included: the Shell has no "the set of apps changed" signal to subscribe
+  to, and the in-page menu waits for the list (at most 1.5 s, `commands/menu_in_page.rs`).
+- Both the list and the launch run on their own 8 MB threads in an apartment (`../platform/windows/apartment.rs`); the
+  launch is fire-and-forget and logs its answer, a dismissed dialog quietly.
+
 ## Default app (`default_app.rs`)
 
 - `open_path` (the command) passes straight through to `open_with_default_app(path, volume_id)`. `volume_id` is the
@@ -505,7 +531,21 @@ Which app F4 opens a file in: the regular pane, the search-results pane, and the
   LaunchServices call. `list_text_editors` with six apps, the default, names, and icons took 371 ms in a cold test
   process and 57 ms warm, nearly all of it icon decoding.
 - The `playwright-e2e` build records the FILE into `crate::open_mock` instead of launching, whatever the choice, so
-  every `e2e_opened_paths` consumer is untouched. On macOS that's `text_editor_macos.rs`'s own `launch`; off macOS it's the
+  every `e2e_opened_paths` consumer is untouched.
+
+### Text editor on Windows (`text_editor_windows.rs`)
+
+- **The list is the Shell's plain-text handlers** (`assoc::apps_for("txt")`, what File Explorer's "Open with" offers for
+  a `.txt`); its marked default is the "System default (…)" row. `system` opens the file in that default whatever the
+  file's own type, as `open -t` does; with no plain-text handler at all, the file's own default app.
+- **Three shapes in one string, decided in `text_editor_windows_rules.rs`** (pure, tested everywhere): the sentinel, a
+  listed handler's id, or an absolute program path from "Choose an app…". A listed id wins, since a classic handler's
+  id IS its program's path, so a pick of a listed program stores the handler. A choice naming nothing any more (an
+  uninstalled handler, a deleted program, a macOS bundle id) falls back to the default with
+  `chosen_app_missing_opened_default_instead`.
+- **A handler gets the file through `IAssocHandler::Invoke`; a picked program starts with the file as its one
+  argument**, quoted by `std::process::Command`, in the file's folder. ❌ Never a hand-built command line.
+- A path with no plain spelling is `OpenInEditorError::NoPlainPath` before anything launches, worded as Enter's. On macOS that's `text_editor_macos.rs`'s own `launch`; off macOS it's the
   command's E2E arm.
 
 ## Finder tags (`tags.rs`, `tags_io.rs`)

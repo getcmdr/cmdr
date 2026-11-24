@@ -14,6 +14,7 @@ import {
   type MenuSort,
   type OpenWithCopyLaunched,
   type OpenWithCopyRefused,
+  type OpenWithNoPlainPath,
   type OpenWithNotOnThisMac,
   type ShowSearchResultInFolder,
   type ViewModeChanged,
@@ -107,6 +108,17 @@ export function onOpenWithCopyRefused(handler: (payload: OpenWithCopyRefused) =>
  */
 export function onOpenWithNotOnThisMac(handler: (payload: OpenWithNotOnThisMac) => void): Promise<UnlistenFn> {
   return events.openWithNotOnThisMac.listen((event) => {
+    handler(event.payload)
+  })
+}
+
+/**
+ * Windows: an "Open with" click on a file whose path has no plain spelling another app reads
+ * as this same file (too long, a name ending in a dot or space, a device name like `CON`), so
+ * no app launched. The payload names the file.
+ */
+export function onOpenWithNoPlainPath(handler: (payload: OpenWithNoPlainPath) => void): Promise<UnlistenFn> {
+  return events.openWithNoPlainPath.listen((event) => {
     handler(event.payload)
   })
 }

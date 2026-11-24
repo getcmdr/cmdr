@@ -12,7 +12,12 @@
  * A third event rides along, `open-with-not-on-this-mac`: the row's volume hands out
  * paths no other app can open (a phone, a server, a direct SMB share whose macOS mount
  * went away), so no app launched. Rust checks it in `launch_with`, because only the
- * volume knows when a share's mount is gone.
+ * volume knows when a share's mount is gone. It names no app for Windows' "Choose another
+ * app", which hadn't picked one, so that toast is Enter's own app-free one.
+ *
+ * And a fourth, Windows only, `open-with-no-plain-path`: the row's path has no plain
+ * spelling another app reads as this same file, so nothing launched; its toast is Enter's
+ * own for the same refusal.
  *
  * The click lands on the native context menu, which Rust handles end to end
  * (`menu/open_with.rs::launch_with`), so the frontend never sees the launch: the
@@ -27,11 +32,17 @@ import { getAppLogger } from '#lib/logging/logger.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { formatByteSize } from '#lib/units/index.js'
 import { formatInteger } from '#lib/intl/number-format.js'
-import { onOpenWithCopyLaunched, onOpenWithCopyRefused, onOpenWithNotOnThisMac } from '#lib/tauri-commands/index.js'
+import {
+  onOpenWithCopyLaunched,
+  onOpenWithCopyRefused,
+  onOpenWithNoPlainPath,
+  onOpenWithNotOnThisMac,
+} from '#lib/tauri-commands/index.js'
 import type {
   OpenWithCopyLaunched,
   OpenWithCopyRefused,
   OpenWithCopySource,
+  OpenWithNoPlainPath,
   OpenWithNotOnThisMac,
 } from '#lib/ipc/bindings.js'
 import { viewShortcut } from './pane/default-app-open'
@@ -42,31 +53,51 @@ const log = getAppLogger('fileExplorer')
 /** Long enough to read a two-sentence notice that says what to do next. */
 const NOTICE_TIMEOUT_MS = 10_000
 
-/** Mounts all three listeners. Returns their unsubscribe. */
+/** Mounts all four listeners. Returns their unsubscribe. */
 export async function startOpenWithCopyBridge(): Promise<UnlistenFn> {
   const unlistenRefused = await onOpenWithCopyRefused(raiseNotice)
   const unlistenLaunched = await onOpenWithCopyLaunched(raiseLaunchedNotice)
   const unlistenNotOnThisMac = await onOpenWithNotOnThisMac(raiseNotOnThisMacNotice)
+  const unlistenNoPlainPath = await onOpenWithNoPlainPath(raiseNoPlainPathNotice)
   log.debug('Open-with copy notice bridge mounted')
   return () => {
     unlistenRefused()
     unlistenLaunched()
     unlistenNotOnThisMac()
+    unlistenNoPlainPath()
   }
+}
+
+function raiseNoPlainPathNotice({ fileName }: OpenWithNoPlainPath): void {
+  log.info('Open with didn’t launch: {fileName} has no plain path another app reads', { fileName })
+  addToast(tString('fileExplorer.open.noPlainPath', { fileName }), {
+    level: 'warn',
+    timeoutMs: NOTICE_TIMEOUT_MS,
+    id: 'open-with-no-plain-path',
+  })
 }
 
 function raiseNotOnThisMacNotice({ appName }: OpenWithNotOnThisMac): void {
   log.info('Open with {appName} didn’t launch: the file has no path another app can open', { appName })
   const viewKey = viewShortcut()
-  const message =
-    viewKey === undefined
-      ? tString('fileExplorer.openWith.notOnThisMacWithoutKey', { appName })
-      : tString('fileExplorer.openWith.notOnThisMac', { appName, viewKey })
+  const message = notOnThisMacText(appName, viewKey)
   addToast(message, {
     level: 'info',
     timeoutMs: NOTICE_TIMEOUT_MS,
     id: 'open-with-not-on-this-mac',
   })
+}
+
+/** The not-on-this-computer words, naming the app when one was picked (Windows' "Choose another app" hadn't). */
+function notOnThisMacText(appName: string | null, viewKey: string | undefined): string {
+  if (appName === null) {
+    return viewKey === undefined
+      ? tString('fileExplorer.open.notOnThisMacWithoutKey')
+      : tString('fileExplorer.open.notOnThisMac', { viewKey })
+  }
+  return viewKey === undefined
+    ? tString('fileExplorer.openWith.notOnThisMacWithoutKey', { appName })
+    : tString('fileExplorer.openWith.notOnThisMac', { appName, viewKey })
 }
 
 function raiseLaunchedNotice({ fileName, appName, copyCount }: OpenWithCopyLaunched): void {

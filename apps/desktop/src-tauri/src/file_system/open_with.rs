@@ -1,4 +1,5 @@
-//! "Open with" candidate apps and launch wrappers, backed by `NSWorkspace`.
+//! "Open with" candidate apps and launch wrappers: `NSWorkspace` on macOS, the Shell's
+//! `IAssocHandler`s on Windows (`open_with_windows.rs`). The rest of this header is macOS's.
 //!
 //! Two responsibilities:
 //! - **Listing candidates** for one or more selected files via `URLsForApplicationsToOpenURL:`
@@ -24,6 +25,52 @@ pub struct AppCandidate {
     /// Pre-rasterized RGBA icon for the "Open with" item (`menu/context_menu_icons.rs`).
     /// `None` if the app has no `CFBundleIconFile` or its `.icns` couldn't be parsed.
     pub icon: Option<AppIcon>,
+    /// Whether this is the app the OS opens the (first) file in by default, which the menu
+    /// marks "(default)". macOS always lists its default first; Windows marks it only when it
+    /// can tell which handler it is.
+    pub is_default: bool,
+}
+
+/// Why an "Open with" launch didn't go ahead. Typed so nothing reads a sentence; a caller
+/// that tells the user words the variant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpenWithLaunchError {
+    /// No row has a file an app can open (no native path at all).
+    NoPath,
+    /// Windows: a row's path has no plain spelling another app reads as this same file (past
+    /// 259 characters, a name ending in a dot or space, a device name like `CON`). Nothing
+    /// launched.
+    #[cfg_attr(
+        not(target_os = "windows"),
+        allow(dead_code, reason = "only Windows apps need the plain spelling")
+    )]
+    NoPlainPath,
+    /// The OS was asked and took nothing (macOS: the app's path isn't a URL).
+    NotLaunched,
+}
+
+impl std::fmt::Display for OpenWithLaunchError {
+    /// ❗ For logs only.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::NoPath => "no row has a path an app can open",
+            Self::NoPlainPath => "a row's path has no plain spelling",
+            Self::NotLaunched => "the OS took nothing",
+        })
+    }
+}
+
+/// The name a toast calls the app at `app_path` (an "Open with" row's launch target) by: the
+/// bundle name without `.app` on macOS, the name the Shell listed it under on Windows.
+pub fn app_display_name(app_path: &Path) -> String {
+    #[cfg(target_os = "windows")]
+    if let Some(name) = windows_imp::listed_name(app_path) {
+        return name;
+    }
+    app_path.file_stem().map_or_else(
+        || app_path.display().to_string(),
+        |stem| stem.to_string_lossy().into_owned(),
+    )
 }
 
 /// RGBA icon bytes plus dimensions, sized for a macOS context-menu item (32 px, shown at
@@ -396,30 +443,35 @@ mod imp {
                             display_name,
                             app_path,
                             icon,
+                            // Filled in below: LaunchServices lists the default first.
+                            is_default: false,
                         })
                     })
                     .collect::<Vec<_>>()
             })
             .expect("spawn open_with worker");
-        let candidates = handle.join().unwrap_or_default();
+        let mut candidates = handle.join().unwrap_or_default();
+        if let Some(first) = candidates.first_mut() {
+            first.is_default = true;
+        }
         OpenWithChoices { candidates }
     }
 
     /// Launches the given paths with the chosen application via
     /// `openURLs:withApplicationAtURL:configuration:completionHandler:`. Uses a single
     /// multi-URL call so apps that aren't running launch once instead of per file.
-    pub fn open_paths_with(paths: &[PathBuf], app_path: &Path) -> Result<(), String> {
+    pub fn open_paths_with(paths: &[PathBuf], app_path: &Path) -> Result<(), OpenWithLaunchError> {
         autoreleasepool(|_| {
             let workspace = NSWorkspace::sharedWorkspace();
             // Build NSArray<NSURL> of the paths.
             let urls: Vec<Retained<NSURL>> = paths.iter().filter_map(|p| nsurl_from_path(p)).collect();
             if urls.is_empty() {
-                return Err("No valid paths to open".to_string());
+                return Err(OpenWithLaunchError::NoPath);
             }
             let url_refs: Vec<&NSURL> = urls.iter().map(|u| u.as_ref()).collect();
             let urls_array = NSArray::from_slice(&url_refs);
 
-            let app_url = nsurl_from_path(app_path).ok_or_else(|| "Couldn't convert app path to URL".to_string())?;
+            let app_url = nsurl_from_path(app_path).ok_or(OpenWithLaunchError::NotLaunched)?;
             let config = NSWorkspaceOpenConfiguration::configuration();
 
             // Fire-and-forget launch: pass `None` for completion handler. Failures
@@ -480,23 +532,12 @@ pub use imp::{
     pick_app_via_open_panel, read_app_display_name, read_bundle_identifier, start_invalidation_observer,
 };
 
-#[cfg(not(target_os = "macos"))]
-pub fn compute_open_with_choices(_paths: Vec<PathBuf>) -> OpenWithChoices {
-    OpenWithChoices::default()
-}
+#[cfg(target_os = "windows")]
+#[path = "open_with_windows.rs"]
+mod windows_imp;
 
-#[cfg(not(target_os = "macos"))]
-pub fn open_paths_with(_paths: &[PathBuf], _app_path: &Path) -> Result<(), String> {
-    Err("Open with is only available on macOS".to_string())
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn pick_app_via_open_panel() -> Option<PathBuf> {
-    None
-}
-
-#[cfg(not(target_os = "macos"))]
-pub fn start_invalidation_observer() {}
+#[cfg(target_os = "windows")]
+pub use windows_imp::{choose_another_app, compute_open_with_choices, open_paths_with};
 
 #[cfg(test)]
 mod tests {

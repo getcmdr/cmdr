@@ -189,7 +189,10 @@
                 }}
             >
                 <span class="command-menu-glyph" aria-hidden="true">
-                    {#if row.kind === 'check' && row.checked}
+                    {#if row.kind === 'item' && row.icon}
+                        <!-- An app's own icon (Windows' "Open with"), decorative: the label names it. -->
+                        <img class="command-menu-glyph-icon" src={row.icon} alt="" draggable="false" />
+                    {:else if row.kind === 'check' && row.checked}
                         <span class="command-menu-glyph-box">
                             {#if row.checkKind === 'radio' && flavor === 'desktop'}
                                 <svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="3" fill="currentColor" /></svg>
@@ -320,6 +323,13 @@
         justify-content: center;
         width: var(--spacing-menu-glyph-size);
         height: var(--spacing-menu-glyph-size);
+    }
+
+    /* An app's icon fills the glyph cell, as File Explorer's "Open with" draws it. */
+    .command-menu-glyph-icon {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
 
     /* The glyph inside its box, as Segoe Fluent Icons and SF Symbols draw it: a little inset. */

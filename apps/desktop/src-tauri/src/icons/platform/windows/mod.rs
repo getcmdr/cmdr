@@ -11,6 +11,8 @@ mod shortcut;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use shell_image::app_icon_at;
+
 use std::path::{Path, PathBuf};
 
 use image::DynamicImage;

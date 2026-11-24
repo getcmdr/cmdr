@@ -42,6 +42,10 @@ pub(super) use imp::may_read_own_icon;
 /// none for it.
 pub(super) use imp::fetch_icon_for_path;
 
+/// The icon at a Windows icon location (`file,index`, or a packaged app's `@{…}` resource).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::app_icon_at;
+
 /// [`fetch_icon_for_path`] for each of `paths`, keyed `path:{path}`, in input order. Each arm
 /// picks the threads: a real folder's lookup can descend into a cloud provider.
 pub(super) use imp::fetch_path_icons;

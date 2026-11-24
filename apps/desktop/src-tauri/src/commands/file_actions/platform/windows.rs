@@ -1,6 +1,6 @@
 //! Windows: reveals select the item in File Explorer (`SHOpenFolderAndSelectItems`, through
-//! `platform::shell`), and the Recycle Bin opens there too (`open_trash_view`). No Get Info or
-//! editor launch yet (task 44b of #942), so those answer as before they had an arm.
+//! `platform::shell`), the Recycle Bin opens there too (`open_trash_view`), and F4 hands the file
+//! to the chosen plain-text handler (`file_system::text_editor`). No Get Info window.
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_operations::MutationError;
@@ -169,14 +169,16 @@ pub(crate) async fn get_info(_path: String) -> Result<(), GetInfoError> {
     Ok(())
 }
 
-/// Refused, except in the E2E build, which records the file like the other arms.
+/// The chosen plain-text editor (`file_system::text_editor`), except in the E2E build, which
+/// records the file like the other arms.
 pub(crate) async fn open_in_editor(
     path: String,
-    _app_choice: String,
-    _ask_about_other_editors: bool,
+    app_choice: String,
+    ask_about_other_editors: bool,
 ) -> Result<EditorOpenReport, OpenInEditorError> {
     #[cfg(feature = "playwright-e2e")]
     {
+        let _ = (app_choice, ask_about_other_editors);
         crate::open_mock::record(path);
         Ok(EditorOpenReport {
             outcome: crate::file_system::text_editor::EditorOpenOutcome::Opened,
@@ -186,7 +188,6 @@ pub(crate) async fn open_in_editor(
     }
     #[cfg(not(feature = "playwright-e2e"))]
     {
-        let _ = path;
-        Err(OpenInEditorError::LaunchRefused { errno: None })
+        crate::file_system::text_editor::open_in_editor(path, app_choice, ask_about_other_editors).await
     }
 }

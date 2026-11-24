@@ -10,7 +10,9 @@ use core_services::{
     LSCopyAllRoleHandlersForContentType, LSCopyDefaultRoleHandlerForContentType, kLSRolesAll, kLSRolesEditor,
 };
 
-use super::{EditorOpenOutcome, EditorOpenReport, OpenInEditorError, SYSTEM_DEFAULT_CHOICE};
+use super::{
+    EditorOpenOutcome, EditorOpenReport, OpenInEditorError, SYSTEM_DEFAULT_CHOICE, TextEditorApp, TextEditorList,
+};
 use crate::file_system::open_with::{
     app_icon_data_url, installed_app_path, read_app_display_name, read_bundle_identifier,
 };
@@ -45,40 +47,6 @@ impl TextEditorChoice {
             Self::AppPath(path) => path.to_string_lossy().into_owned(),
         }
     }
-}
-
-/// One text editor, as the settings row needs it.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TextEditorApp {
-    /// Exactly what goes into the setting: a bundle id, or an absolute `.app` path.
-    pub id: String,
-    /// The app's name the way Finder shows it.
-    pub display_name: String,
-    /// The app's icon as a base64 WebP data URL, read from its bundle. Absent when
-    /// the bundle carries no readable icon.
-    pub icon: Option<String>,
-}
-
-/// The text editors on this Mac, plus the system default and which one is chosen.
-// DEFAULT-OK: an empty list with no default and nothing chosen is what the command's
-// deadline has to answer with, and it claims nothing about which editors exist. The
-// `TimedOut` flag beside it says which case it was.
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TextEditorList {
-    /// What the system default is called, for the "System default (…)" row. `None`
-    /// when nothing on this Mac claims plain text.
-    pub default_app_name: Option<String>,
-    pub default_app_icon: Option<String>,
-    /// Every other listed editor, plus the chosen app when macOS doesn't list it.
-    /// ❗ In no particular order: LaunchServices' own order shifts between calls,
-    /// so the frontend sorts by name.
-    pub apps: Vec<TextEditorApp>,
-    /// The stored choice in canonical form: `system`, or the `id` of one of `apps`.
-    /// `None` once the chosen app is gone, which the row displays as the default
-    /// without writing anything.
-    pub chosen_id: Option<String>,
 }
 
 /// One listed app before its name and icon are read.

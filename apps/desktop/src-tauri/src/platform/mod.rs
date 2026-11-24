@@ -32,6 +32,10 @@ mod windows_version;
 #[cfg(any(target_os = "windows", test))]
 pub(crate) mod windows_shell_path;
 
+// Pure text too: which handler is a type's default, for "Open with" and F4's editors.
+#[cfg(any(target_os = "windows", test))]
+pub(crate) mod windows_assoc_rules;
+
 const _: fn() -> String = os_version;
 const _: fn(i64, i64) -> bool = macos_at_least;
 const _: fn() -> PlatformCapabilities = capabilities;
@@ -87,6 +91,10 @@ pub(crate) use imp::registry;
 /// The single-threaded COM apartment every Shell call asks for (`windows/apartment.rs`).
 #[cfg(target_os = "windows")]
 pub(crate) use imp::apartment;
+
+/// The apps Windows offers for a file type, and handing files to one (`windows/assoc.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::assoc;
 
 /// The Shell calls that open a file in its default app and show one in File Explorer.
 #[cfg(target_os = "windows")]

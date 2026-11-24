@@ -11,11 +11,10 @@ Sync status, volume management, and file watching. The engines are crates: listi
 
 ## Gotchas
 
-- **Reach the volume-manager singleton at `volume::manager::get_volume_manager()`; ❌ never re-export it from here**: a
-  facade that also hands out the accessor welds the subtree into one cycle. `volume/DETAILS.md` § "Key decisions".
-- **Transient scratch hides on the listing READ path only** (`cmdr-listing`'s `CachedListing::rows`): a watcher-side
-  skip strands an entry in the pane forever. Cmdr's own (`.cmdr-tmp-*`) hides by OWNERSHIP, other apps' (`.sb-`) by
-  NAME. § "Hiding transient scratch".
+- **Reach the volume manager at `volume::manager::get_volume_manager()`; ❌ never re-export it here**: that welds the
+  subtree into one cycle. `volume/DETAILS.md` § "Key decisions".
+- **Transient scratch hides on the listing READ path only** (`CachedListing::rows`): a watcher-side skip strands an
+  entry forever. Cmdr's own (`.cmdr-tmp-*`) hides by OWNERSHIP, others' (`.sb-`) by NAME. § "Hiding transient scratch".
 - **Tag writes touch ONLY `_kMDItemUserTags`** (`FinderInfo` holds folder icons), as **binary** plist, through the
   volume (`tags_io`), merging via `read_for_merge`. **Clearing writes the empty array, ❌ never deletes**: a QNAP keeps
   what it's told to delete. § "Finder tags".
@@ -40,13 +39,14 @@ Sync status, volume management, and file watching. The engines are crates: listi
   `launch_argv`. New terminals need a sourced, dated `KNOWN_TERMINALS` entry. § "Open terminal here".
 - **F4's editors come from LaunchServices' editor-ROLE plain-text query** (`text_editor.rs`): ❌ never the UTI crate
   (10.15 floor) or a made-up `.txt` URL (no apps). § "Text editor".
+- **Windows' Open with and F4 use the Shell's `IAssocHandler`s** (`../platform/windows/assoc.rs`): `app_path` holds the
+  handler's id, ❌ not a file; files go as a data object, ❌ never a command line. § "Open with on Windows".
 - **`cloud_actions.rs` is iCloud Drive only**, gated by `CloudProvider::supports_eviction`; the cross-provider-looking
   `NSFileProviderManager` methods need the bundled extension. Don't widen it. Provider identity lives once, in
   `cmdr_fs::cloud_provider`, which the volume switcher reads too.
 - **Google Drive (`google_drive/`), three ❌:** never gate on a path prefix (mirror mode keeps real files outside
-  `~/Library/CloudStorage` with no xattr, so we gate on a resolved item ID); never resolve a mirrored file by NAME;
-  never read a mirror `stable_id` from the stream-mode `metadata_sqlite_db` (different id space). `mirror_db.rs` walks
-  up to a root by inode, down by indexed `(parent, name)`, then proves the row with the file's inode. Read-only, and
-  every failure means no menu item: a wrong link points at someone else's file. § "Mirror mode".
+  `~/Library/CloudStorage` with no xattr: gate on a resolved item ID); never resolve a mirrored file by NAME; never read
+  a mirror `stable_id` from the stream-mode `metadata_sqlite_db` (different id space). Read-only; every failure means
+  no menu item, since a wrong link points at someone else's file. § "Mirror mode".
 
 Read `DETAILS.md` before non-trivial work here: open-with, cloud actions, threading, and watchers.

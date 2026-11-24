@@ -31,7 +31,8 @@ menus through `cmdr-listing-wasm` (`crates/cmdr-listing-wasm/CLAUDE.md`).
   platform's spelling. Windows has the Linux bar until its menu model is decided (`DETAILS.md` § "Three platforms").
 - **A context menu is rows for a set of facts** (`file_menu`, `tab_menu`, …): a new item is a row there plus its lane in
   `context_click`; `every_row_the_crate_builds_has_a_click` fails a row whose pick does nothing. A `Slot` is a group
-  only the OS fills (Open with, Share, tags, the provider, Services): the desktop builds it, the demo leaves it out.
+  only the OS fills (Open with, Share, tags, the provider, Services): the desktop builds it, the demo leaves it out. A
+  page draws a slot through `page_rows_with`'s filler (Windows' Open with), else leaves it out.
 - **No `cfg` in the data**: every bar exists on every host, so a Mac test pins the Windows and Linux bars.
   `Platform::current()` is the desktop's call; a wasm build answers Linux, so the demo passes `Platform::MacOs`.
 - **Every accelerator here is a string muda must parse** (Tauri drops a bad one silently); the desktop's

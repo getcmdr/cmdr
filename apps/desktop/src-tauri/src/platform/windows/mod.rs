@@ -1,6 +1,7 @@
 //! The Windows arm of the platform-identity seam.
 
 pub(crate) mod apartment;
+pub(crate) mod assoc;
 mod keymenu;
 pub(crate) mod registry;
 pub(crate) mod shell;
@@ -25,7 +26,8 @@ pub(crate) fn capabilities() -> PlatformCapabilities {
         quick_look: false,
         get_info: false,
         open_terminal_here: false,
-        text_editor_choice: false,
+        // The Shell's plain-text handlers, F4 through `IAssocHandler` (`file_system/text_editor_windows.rs`).
+        text_editor_choice: true,
         cloud_file_actions: false,
         color_tags: false,
         // No app menu: Quit is Cmdr's own command (File > Exit Cmdr), and there's nothing to hide.

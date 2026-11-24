@@ -559,12 +559,13 @@ pub(super) fn stash_file_context<R: Runtime>(
     context.filename = filename.to_string();
     context.paths = context_paths;
     context.listing_id = listing_id.to_string();
+    // The native menu fills both from the facts that answered in time, and later the live menu
+    // from the ones that didn't; Windows' page menu fills the apps. Cleared first, so a click can
+    // never reach the last menu's apps or provider actions.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    context.open_with_apps.clear();
     #[cfg(target_os = "macos")]
     {
-        // The native menu fills both from the facts that answered in time, and later the live
-        // menu from the ones that didn't; a page menu never does. Cleared first, so a click can
-        // never reach the last menu's apps or provider actions.
-        context.open_with_apps.clear();
         context.file_provider_offer = None;
     }
 }

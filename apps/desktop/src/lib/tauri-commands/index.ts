@@ -661,6 +661,7 @@ export {
   onMediaIndexFolderChoice,
   onMenuBarRebuilt,
   onOpenWithCopyRefused,
+  onOpenWithNoPlainPath,
   onOpenWithNotOnThisMac,
   onOpenWithCopyLaunched,
 } from './menu-events'

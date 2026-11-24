@@ -594,6 +594,10 @@
       "app": "the application's own display name, supplied by the system and never translated (e.g. \"Preview\", \"Xcode\")"
     }
   },
+  "menu.context.openWithChooseAnother": "Choose another app",
+  "@menu.context.openWithChooseAnother": {
+    "description": "Windows only. Last entry of the \"Open with\" submenu, below the listed apps: opens Windows' own \"How do you want to open this file?\" dialog, where the user picks any app (and may make it the default). Use the exact wording File Explorer's own \"Open with\" submenu uses in the same position in your language. VERB phrase (imperative). No trailing punctuation: File Explorer shows none here."
+  },
   "menu.context.openWithOther": "Other…",
   "@menu.context.openWithOther": {
     "description": "Last entry of the \"Open with\" submenu: opens a file picker so the user can choose an app that isn't listed. \"Other\" means another application. Use the exact word your macOS Finder uses in the same position. The trailing … is U+2026 and must stay."

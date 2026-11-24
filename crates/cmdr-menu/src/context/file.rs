@@ -153,7 +153,8 @@ pub fn file_menu(facts: &FileMenuFacts<'_>, platform: Platform) -> Vec<ContextRo
     // Open / View / Edit (files only), with Open with after Open, the Finder convention.
     if !is_directory {
         rows.push(plain(OPEN_ID, ContextLabel::key("menu.file.open"), true));
-        if mac {
+        // Windows draws it in the page, from the Shell's handlers (`page_rows_with`).
+        if mac || platform == Platform::Windows {
             rows.push(ContextRow::Slot(Slot::OpenWith));
         }
         rows.push(command(FILE_VIEW_ID, "menu.file.view"));

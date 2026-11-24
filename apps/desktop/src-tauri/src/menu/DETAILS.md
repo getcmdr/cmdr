@@ -391,9 +391,14 @@ each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks 
   (`stash_file_context`, `breadcrumb_rows`, `parent_row_rows`, `network_host_rows` in `commands/menu.rs`), BEFORE the
   rows go out, so a pick finds them exactly as a native pick does. The file menu's "same kind" label is the caller's
   live value, as the native command's.
-- **The answer** is `InPageContextMenu { token, rows, anchor }`: `cmdr_menu::page::context::page_rows` over the same
-  `ContextRow`s, OS slots left out (macOS's only, and macOS stays native), and the caller's anchor handed back (a
+- **The answer** is `InPageContextMenu { token, rows, anchor }`: `cmdr_menu::page::context::page_rows_with` over the
+  same `ContextRow`s, OS slots left out except the one Windows fills, and the caller's anchor handed back (a
   keyboard-opened menu opens at the row, Shift+F10 and the Menu key included; `None` opens at the pointer).
+- **Windows' "Open with" is the one slot a page fills**: the command waits (at most 1.5 s, `open_with_for`) for the
+  Shell's handlers (`file_system/DETAILS.md` § "Open with on Windows"), and `page_context::open` draws them through
+  `open_with::page_open_with_submenu`: one row per app with its icon (`Row::Item.icon`, a data URL), the default
+  marked, then "Choose another app" (`open-with-other`). It stores the `id → app` map in
+  `MenuState.context.open_with_apps`, so a pick runs `open_with::handle_pick` exactly as a native one does.
 - **A pick names its menu**: `pick_context_menu_item(token, menuId)` answers `ContextPickOutcome::{Ran, Stale}`. Every
   menu that opens, native (`note_native_popup` at the top of each `show_*`) or page, moves the token and replaces the
   pickable ids, so a pick from a menu another right-click replaced (its facts are gone from `MenuState`) runs nothing,

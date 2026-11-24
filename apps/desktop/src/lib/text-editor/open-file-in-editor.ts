@@ -9,7 +9,7 @@
  */
 
 import { asOpenInEditorError, openInEditor } from '#lib/tauri-commands/index.js'
-import type { EditorOpenReport } from '#lib/ipc/bindings.js'
+import type { EditorOpenReport, OpenInEditorError } from '#lib/ipc/bindings.js'
 import { addToast, dismissToast } from '#lib/ui/toast/index.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { decideEditorHint } from './editor-hint'
@@ -69,11 +69,7 @@ export async function openFileInEditor(path: string): Promise<boolean> {
   try {
     report = await openInEditor(path, appChoice, askAboutOtherEditors)
   } catch (error) {
-    const refusal = asOpenInEditorError(error)
-    replaceToast(
-      tString(refusal?.type === 'timedOut' ? 'fileExplorer.edit.timedOut' : 'fileExplorer.edit.launchRefused'),
-      { level: 'error' },
-    )
+    replaceToast(refusalText(asOpenInEditorError(error), path), { level: 'error' })
   }
 
   if (report?.outcome === 'chosen_app_missing_opened_default_instead') {
@@ -85,6 +81,24 @@ export async function openFileInEditor(path: string): Promise<boolean> {
   if (hint.showHint) showHint(report?.openedInName ?? null)
 
   return report !== null
+}
+
+/** The words for a launch that never started. */
+function refusalText(refusal: OpenInEditorError | null, path: string): string {
+  switch (refusal?.type) {
+    case 'timedOut':
+      return tString('fileExplorer.edit.timedOut')
+    // Windows: a path with no plain spelling (too long, a trailing dot, `CON`): Enter's words.
+    case 'noPlainPath':
+      return tString('fileExplorer.open.noPlainPath', { fileName: baseName(path) })
+    default:
+      return tString('fileExplorer.edit.launchRefused')
+  }
+}
+
+/** The last name in an app path (`/`-separated on every OS). */
+function baseName(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1)
 }
 
 /**

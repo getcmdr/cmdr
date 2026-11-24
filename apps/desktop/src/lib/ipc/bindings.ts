@@ -6517,6 +6517,7 @@ export const events = {
   openSettings: makeEvent<OpenSettings>('open-settings'),
   openWithCopyLaunched: makeEvent<OpenWithCopyLaunched>('open-with-copy-launched'),
   openWithCopyRefused: makeEvent<OpenWithCopyRefused>('open-with-copy-refused'),
+  openWithNoPlainPath: makeEvent<OpenWithNoPlainPath>('open-with-no-plain-path'),
   openWithNotOnThisMac: makeEvent<OpenWithNotOnThisMac>('open-with-not-on-this-mac'),
   operationLogTreeBackfill: makeEvent<TreeBackfillEvent>('operation-log-tree-backfill'),
   operationLogTreeIndexesSettled: makeEvent<OperationLogTreeIndexesSettled>('operation-log-tree-indexes-settled'),
@@ -16648,6 +16649,12 @@ export type OpenInEditorError =
   | { type: 'launchRefused'; errno: number | null }
   // The launch didn't finish inside the command's deadline.
   | { type: 'timedOut' }
+  /**
+   *  Windows: the file's path has no plain spelling an editor reads as this same file (past
+   *  259 characters, a name ending in a dot or space, a device name like `CON`). Nothing
+   *  launched.
+   */
+  | { type: 'noPlainPath' }
 
 // Why a file didn't go to its default app. The frontend words every variant.
 export type OpenPathError =
@@ -16786,14 +16793,28 @@ export type OpenWithCopySource =
   | 'backup'
 
 /**
+ *  `open-with-no-plain-path`, Windows: an "Open with" click on a file whose path has no plain
+ *  spelling another app reads as this same file (past 259 characters, a name ending in a dot or
+ *  space, a device name like `CON`), so nothing launched. The toast is Enter's own for the same
+ *  refusal (`fileExplorer.open.noPlainPath`).
+ */
+export type OpenWithNoPlainPath = {
+  // The first row's own name.
+  fileName: string
+}
+
+/**
  *  `open-with-not-on-this-mac`: an "Open with" click on a file whose volume hands
  *  out paths no other app can open right now, so no app was launched. The main
  *  window says so in a toast; without it, the app would open on a file that isn't
  *  there, or the click would do nothing.
  */
 export type OpenWithNotOnThisMac = {
-  // The chosen app's display name (its bundle name without `.app`).
-  appName: string
+  /**
+   *  The chosen app's display name (its bundle name without `.app`, the name Windows lists
+   *  it under). `None` for Windows' "Choose another app", which hadn't picked one yet.
+   */
+  appName: string | null
 }
 
 /**
@@ -19468,6 +19489,12 @@ export type Row =
       ariaKeyshortcuts: string | null
       // Whether a pick does something.
       enabled: boolean
+      /**
+       *  A picture drawn before the words, as an image URL (an app's icon in Windows' "Open
+       *  with", a data URL). Absent for every row the crate builds: only the desktop's
+       *  OS-filled rows carry one.
+       */
+      icon?: string | null
     }
   // A check item: a checkbox, or one choice of a radio group.
   | {

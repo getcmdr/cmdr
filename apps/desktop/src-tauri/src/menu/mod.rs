@@ -80,7 +80,7 @@ mod menu_handlers;
 mod menu_items;
 // The viewer's native bar: macOS only (the file says so itself); elsewhere the viewer page draws it.
 mod menu_structure;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub mod open_with;
 pub(crate) mod page_bar;
 pub(crate) mod page_context;
@@ -108,7 +108,7 @@ use cmdr_menu::spec as menu_spec;
 
 use self::menu_spec::{Platform, display_accelerator_label};
 use crate::ignore_poison::IgnorePoison as _;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
@@ -252,8 +252,9 @@ pub struct MenuContext {
     pub paths: Vec<String>,
     /// Map of bundle ID → app path for the most-recent "Open with" submenu. Populated
     /// when the context menu is built; consumed when the user clicks an
-    /// `open-with:<bundle-id>` item.
-    #[cfg(target_os = "macos")]
+    /// `open-with:<bundle-id>` item. On Windows the key and the path are both the Shell
+    /// handler's id, filled by the page's menu (`commands/menu_in_page.rs`).
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub open_with_apps: HashMap<String, PathBuf>,
     /// The File Provider actions the most recent file context menu offered, which an
     /// `fp-action:<index>` click indexes into. Set when the menu is built.

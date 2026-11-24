@@ -105,8 +105,8 @@ fn paths_reach_other_apps(id: &str) -> bool {
 /// [`paths_reach_other_apps`] for the volume a listing reads through, the question
 /// an "Open with" click asks (`menu/open_with.rs::launch_with`): the menu knows the
 /// pane's listing, not its volume. An empty id or a listing that's gone answers
-/// `true`, leaving the launch to go ahead as it always did. macOS-only, like "Open with".
-#[cfg(target_os = "macos")]
+/// `true`, leaving the launch to go ahead as it always did. macOS and Windows, like "Open with".
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn listing_paths_reach_other_apps(listing_id: &str) -> bool {
     if listing_id.is_empty() {
         return true;
@@ -123,8 +123,20 @@ pub(crate) fn listing_paths_reach_other_apps(listing_id: &str) -> bool {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenWithNotOnThisMac {
-    /// The chosen app's display name (its bundle name without `.app`).
-    pub app_name: String,
+    /// The chosen app's display name (its bundle name without `.app`, the name Windows lists
+    /// it under). `None` for Windows' "Choose another app", which hadn't picked one yet.
+    pub app_name: Option<String>,
+}
+
+/// `open-with-no-plain-path`, Windows: an "Open with" click on a file whose path has no plain
+/// spelling another app reads as this same file (past 259 characters, a name ending in a dot or
+/// space, a device name like `CON`), so nothing launched. The toast is Enter's own for the same
+/// refusal (`fileExplorer.open.noPlainPath`).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenWithNoPlainPath {
+    /// The first row's own name.
+    pub file_name: String,
 }
 
 #[cfg(all(target_os = "macos", not(feature = "playwright-e2e")))]

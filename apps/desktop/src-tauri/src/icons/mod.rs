@@ -30,6 +30,11 @@ use std::time::{Duration, Instant};
 // main thread and fails silently from a rayon or tokio worker. Both in `platform/`.
 use platform::{fetch_icon_for_path, fetch_path_icons};
 
+/// The icon a Windows app declares for itself (`IAssocHandler::GetIconLocation`), `size` ×
+/// `size` straight-alpha RGBA (`platform/windows/shell_image.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use platform::app_icon_at;
+
 /// The macOS display options that change the pixels `NSWorkspace` draws for an icon.
 /// Every cached icon belongs to one variant: the in-memory tier flushes when it
 /// changes, and the on-disk tier keys its entries by it.
@@ -87,12 +92,9 @@ fn image_to_data_url(img: &DynamicImage) -> Option<String> {
 /// Encodes a raw RGBA buffer as a WebP data URL at the standard icon size, the
 /// same form `get_icons` hands the frontend.
 ///
-/// For icons that were read straight out of a bundle rather than fetched from the
-/// OS icon provider (the "open terminal here" app list).
-///
-/// macOS only, because its one caller is: `file_system::terminal` reads `.app`
-/// bundles, which don't exist elsewhere.
-#[cfg(target_os = "macos")]
+/// For icons that were read straight out of an app rather than fetched for a place: the
+/// "open terminal here" and text editor app lists, and Windows' "Open with" rows.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn rgba_to_data_url(rgba: &[u8], width: u32, height: u32) -> Option<String> {
     let img = image::RgbaImage::from_raw(width, height, rgba.to_vec())?;
     image_to_data_url(&DynamicImage::ImageRgba8(img))

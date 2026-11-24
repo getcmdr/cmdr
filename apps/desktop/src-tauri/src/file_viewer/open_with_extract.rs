@@ -40,18 +40,18 @@ use std::sync::{LazyLock, RwLock};
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use super::materialize::{MaterializedFile, RoutedPullFailure, TempSpot, extract_routed_into};
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use super::open_with_copies::{SweepPolicy, record_pull, sweep_launch_folders};
 use super::open_with_copies::{left_by_an_earlier_run, reap_launch_folders};
 use super::{ArchiveFailureKind, ViewerError};
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use crate::file_system::volume::RoutedKind;
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use crate::file_system::volume::manager::{get_volume_manager, path_routes_over_its_parent};
 use cmdr_fs::ignore_poison::RwLockIgnorePoison;
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 use cmdr_fs::log_private::LogPrivate;
 
 /// Prefix on each launch's subdir, and on the stand-in dir: what the startup reaper
@@ -63,25 +63,25 @@ const TEMP_SUBDIR_PREFIX: &str = ".cmdr-open-with-";
 const STAND_IN_DIRNAME: &str = ".cmdr-open-with-types";
 
 /// The stand-in's file stem. Only its extension matters to LaunchServices.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 const STAND_IN_STEM: &str = "stand-in";
 
 /// Fallback dir under the OS temp dir before [`init_open_with_extract_dir`] runs (unit
 /// tests, a not-yet-initialized process).
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const DEFAULT_DIRNAME: &str = "cmdr-open-with-extract";
 
 /// Max bytes pulled for one launch. Larger than the viewer's 256 MiB preview cap: a
 /// whole video or a big PDF is what people open in a real app. The declared size is
 /// checked before a byte is written, so this is also the zip-bomb guard. It bounds one
 /// copy; [`SESSION_SWEEP`] bounds their sum.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) const OPEN_WITH_CAP_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 /// What the sweep before each launch lets go. Generous on purpose: a copy an app still
 /// shows is one the person may come back to, so the newest four always stay, and an
 /// older one goes after 12 hours, or sooner once the copies pass 4 GiB together.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const SESSION_SWEEP: SweepPolicy = SweepPolicy {
     keep_newest: 4,
     max_age: std::time::Duration::from_secs(12 * 60 * 60),
@@ -111,7 +111,7 @@ pub fn init_open_with_extract_dir(dir: PathBuf) {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn open_with_dir() -> PathBuf {
     OPEN_WITH_DIR
         .read_ignore_poison()
@@ -152,7 +152,7 @@ pub(super) fn reap_open_with_temps_with(
 }
 
 /// The in-session sweep of `dir` as of `now` (`open_with_copies::sweep_launch_folders`).
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn sweep_open_with_copies_at(dir: &Path, now: std::time::SystemTime, policy: &SweepPolicy) {
     sweep_launch_folders(
         dir,
@@ -170,7 +170,7 @@ pub(super) fn is_open_with_temp_name(name: &str) -> bool {
 
 /// Whether any of `paths` needs a pull before an app can open it. Pure string work, so
 /// the menu handler can keep an ordinary launch on its synchronous path.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn any_needs_extraction(paths: &[PathBuf]) -> bool {
     paths.iter().any(|path| path_routes_over_its_parent(path))
 }
@@ -190,13 +190,13 @@ pub struct OpenWithCopyRefused {
     pub source: OpenWithCopySource,
 }
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 impl OpenWithCopyRefused {
     /// The notice for `refused`, a launch of the app bundle at `app_path`.
     pub(crate) fn new(refused: &RefusedCopy, app_path: &Path) -> Self {
         Self {
             file_name: display_name(refused.path.file_name(), &refused.path),
-            app_name: display_name(app_path.file_stem(), app_path),
+            app_name: crate::file_system::open_with::app_display_name(app_path),
             reason: refused.reason,
             source: refused.source,
         }
@@ -217,7 +217,7 @@ pub struct OpenWithCopyLaunched {
     pub app_name: String,
 }
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 impl OpenWithCopyLaunched {
     /// The notice for a launch of the app bundle at `app_path` on `launched`, what
     /// [`launch_paths`] made of `rows`; `None` when no row needed a copy.
@@ -227,13 +227,13 @@ impl OpenWithCopyLaunched {
         Some(Self {
             file_name: display_name(first.file_name(), first),
             copy_count: u32::try_from(copied.count() + 1).unwrap_or(u32::MAX),
-            app_name: display_name(app_path.file_stem(), app_path),
+            app_name: crate::file_system::open_with::app_display_name(app_path),
         })
     }
 }
 
 /// `name` as the person reads it, else the whole `fallback` path.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn display_name(name: Option<&std::ffi::OsStr>, fallback: &Path) -> String {
     name.map_or_else(|| fallback.display().to_string(), |n| n.to_string_lossy().into_owned())
 }
@@ -252,7 +252,7 @@ pub enum OpenWithCopySource {
     Backup,
 }
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 impl From<RoutedKind> for OpenWithCopySource {
     fn from(routed: RoutedKind) -> Self {
         match routed {
@@ -310,7 +310,7 @@ impl From<&ViewerError> for OpenWithCopyRefusal {
 }
 
 /// A launch that couldn't copy one of its rows out: which one, and why.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 #[derive(Debug)]
 pub(crate) struct RefusedCopy {
     pub(crate) path: PathBuf,
@@ -323,7 +323,7 @@ pub(crate) struct RefusedCopy {
 /// What to hand the app: each path as it is, or a fresh read-only copy of one only a
 /// route serves. Sweeps the copies earlier launches this session left first, so they
 /// can't pile up. Blocking (it streams the file out): run it off the main thread.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn launch_paths(paths: &[PathBuf]) -> Result<Vec<PathBuf>, RefusedCopy> {
     let dir = open_with_dir();
     sweep_open_with_copies_at(&dir, std::time::SystemTime::now(), &SESSION_SWEEP);
@@ -333,7 +333,7 @@ pub(crate) fn launch_paths(paths: &[PathBuf]) -> Result<Vec<PathBuf>, RefusedCop
 /// [`launch_paths`] into an explicit dir under an explicit cap, for tests. A row that
 /// can't be copied takes the copies already made for the rows before it along: no app
 /// will ever open them.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn launch_paths_in(paths: &[PathBuf], dir: &Path, cap: u64) -> Result<Vec<PathBuf>, RefusedCopy> {
     let spot = TempSpot {
         dir,
@@ -363,7 +363,7 @@ pub(super) fn launch_paths_in(paths: &[PathBuf], dir: &Path, cap: u64) -> Result
 }
 
 /// One row's read-only copy, or `None` when the row opens as it is.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn launch_path(path: &Path, spot: TempSpot<'_>, cap: u64) -> Result<Option<MaterializedFile>, RefusedCopy> {
     if !path_routes_over_its_parent(path) {
         return Ok(None);
@@ -389,7 +389,7 @@ fn launch_path(path: &Path, spot: TempSpot<'_>, cap: u64) -> Result<Option<Mater
 /// The volume physically holding `path`: the longest registered mount under it, else
 /// the default (boot) volume. The menu carries paths only, and a route rides on its
 /// parent drive's volume (`VolumeManager::mount_id_for_path` skips routed volumes).
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn parent_volume_id(path: &Path) -> String {
     let manager = get_volume_manager();
     manager
@@ -399,7 +399,7 @@ fn parent_volume_id(path: &Path) -> String {
 }
 
 /// Best-effort: a copy that stays writable still opens, it just doesn't say "locked".
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 fn make_read_only(file: &Path) {
     let result = std::fs::metadata(file).and_then(|meta| {
         let mut permissions = meta.permissions();
@@ -417,13 +417,13 @@ fn make_read_only(file: &Path) {
 
 /// The path to ask LaunchServices about for `path`'s "Open with" apps: `path` itself, or
 /// for a path only a route serves, a real empty file with the same extension.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn listing_path(path: &Path) -> PathBuf {
     listing_path_in(path, &open_with_dir())
 }
 
 /// `listing_path` in an explicit dir, for tests.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "windows", test))]
 pub(super) fn listing_path_in(path: &Path, dir: &Path) -> PathBuf {
     if !path_routes_over_its_parent(path) {
         return path.to_path_buf();

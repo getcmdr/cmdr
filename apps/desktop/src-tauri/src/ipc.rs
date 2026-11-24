@@ -799,10 +799,10 @@ macro_rules! ipc_command_manifest {
                 ]
                 dispatch_only: []
             }
-            // The text editors F4 can open a file in. macOS only: the list is
-            // LaunchServices' answer (`file_system/text_editor.rs`), while
+            // The text editors F4 can open a file in: LaunchServices' answer on macOS, the
+            // Shell's plain-text handlers on Windows (`file_system/text_editor.rs`), while
             // `open_in_editor` itself answers on every platform.
-            cfg(target_os = "macos") {
+            cfg(any(target_os = "macos", target_os = "windows")) {
                 typed: [
                     crate::commands::file_actions::list_text_editors,
                 ]
@@ -1081,6 +1081,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             // An "Open with" click on a file whose volume has no macOS mount behind
             // its paths, so no app launched (file_system/default_app.rs).
             crate::file_system::default_app::OpenWithNotOnThisMac,
+            crate::file_system::default_app::OpenWithNoPlainPath,
             // A question for a person, and its withdrawal (tools/ask.rs).
             crate::tools::ask::ToolAskRequested,
             crate::tools::ask::ToolAskDismissed,

@@ -156,6 +156,7 @@ fn rows(spec: &'static SubmenuSpec, inputs: &BarInputs, platform: Platform) -> V
                         shortcut,
                         aria_keyshortcuts,
                         enabled,
+                        icon: None,
                     }
                 }
                 EntryKind::Check(check) => {
@@ -287,6 +288,7 @@ impl RowState {
                 shortcut,
                 aria_keyshortcuts,
                 enabled,
+                icon: _,
             } => Self {
                 id: id.clone(),
                 label: label.clone(),

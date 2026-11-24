@@ -15,7 +15,7 @@ use std::collections::HashSet;
 
 use cmdr_menu::context::{ContextMenuShortcuts, ContextRow};
 use cmdr_menu::page::Row;
-use cmdr_menu::page::context::page_rows;
+use cmdr_menu::page::context::page_rows_with;
 use cmdr_menu::spec::Platform;
 use tauri::{AppHandle, Manager, Runtime};
 
@@ -51,15 +51,59 @@ pub fn note_native_popup<R: Runtime>(menu_state: &MenuState<R>) {
     open.live.clear();
 }
 
+/// What fills a file menu's "Open with" on a page (Windows): the apps the Shell offers for the
+/// rows, and whether "Choose another app" may follow them.
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(not(target_os = "windows"), allow(dead_code, reason = "only Windows fills it"))]
+pub struct PageOpenWith {
+    pub choices: crate::file_system::open_with::OpenWithChoices,
+    /// `false` for rows only a route serves (a file inside an archive): Windows' dialog needs the
+    /// file itself.
+    pub offer_another: bool,
+}
+
 /// A page menu is going up over the facts just stashed: its rows, and the token a pick from it
-/// names.
+/// names. `open_with` fills the file menu's "Open with" slot (Windows); without it, the slot is
+/// left out, as every other OS-filled slot is.
 pub fn open<R: Runtime>(
     menu_state: &MenuState<R>,
     rows: &[ContextRow],
     shortcuts: &ContextMenuShortcuts,
+    open_with: Option<&PageOpenWith>,
 ) -> (u32, Vec<Row>) {
     let mut live = HashSet::new();
-    let rows = page_rows(rows, shortcuts, Platform::current(), &mut live);
+    #[cfg_attr(
+        not(target_os = "windows"),
+        allow(unused_mut, unused_variables, reason = "only Windows fills a slot in the page")
+    )]
+    let mut apps: Option<std::collections::HashMap<String, std::path::PathBuf>> = None;
+    let rows = page_rows_with(
+        rows,
+        shortcuts,
+        Platform::current(),
+        &mut live,
+        &mut |slot, live| match (slot, open_with) {
+            #[cfg(target_os = "windows")]
+            (cmdr_menu::context::Slot::OpenWith, Some(open_with)) => {
+                let (submenu, map) = super::open_with::page_open_with_submenu(
+                    &open_with.choices.candidates,
+                    open_with.offer_another,
+                    live,
+                );
+                apps = Some(map);
+                vec![submenu]
+            }
+            _ => {
+                let _ = (live, open_with);
+                Vec::new()
+            }
+        },
+    );
+    // A pick resolves its app through these, as a native pick does (`menu_handlers.rs`).
+    #[cfg(target_os = "windows")]
+    if let Some(apps) = apps {
+        menu_state.context.lock_ignore_poison().open_with_apps = apps;
+    }
     let mut open = menu_state.page_context.lock_ignore_poison();
     open.token = open.token.wrapping_add(1);
     open.live = live;
@@ -99,7 +143,7 @@ mod tests {
     fn a_page_menu_draws_the_native_menus_rows() {
         let menu_state = MenuState::<MockRuntime>::default();
         let rows = tab_menu(false, true, false);
-        let (_, drawn) = open(&menu_state, &rows, &ContextMenuShortcuts::default());
+        let (_, drawn) = open(&menu_state, &rows, &ContextMenuShortcuts::default(), None);
         let native: Vec<(String, bool)> = rows
             .iter()
             .filter_map(|row| match row {
@@ -126,12 +170,18 @@ mod tests {
             &menu_state,
             &tab_menu(false, true, false),
             &ContextMenuShortcuts::default(),
+            None,
         );
         assert!(may_pick(&menu_state, tab_token, TAB_PIN_ID));
         // Close others is greyed with no other unpinned tab.
         assert!(!may_pick(&menu_state, tab_token, TAB_CLOSE_OTHERS_ID));
 
-        let (bar_token, _) = open(&menu_state, &function_key_bar_menu(), &ContextMenuShortcuts::default());
+        let (bar_token, _) = open(
+            &menu_state,
+            &function_key_bar_menu(),
+            &ContextMenuShortcuts::default(),
+            None,
+        );
         assert_ne!(bar_token, tab_token);
         assert!(!may_pick(&menu_state, tab_token, TAB_PIN_ID));
         assert!(may_pick(&menu_state, bar_token, FUNCTION_KEY_BAR_HIDE_ID));

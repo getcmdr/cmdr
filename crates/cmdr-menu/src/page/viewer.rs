@@ -205,6 +205,7 @@ fn item(id: &str, key: &str, accelerator: Option<&str>, enabled: bool, platform:
         shortcut,
         aria_keyshortcuts,
         enabled,
+        icon: None,
     }
 }
 

@@ -402,7 +402,9 @@ windows-sys = { version = "0.61", features = [
 # `IShellLinkW::GetPath`, whose find-data type is `Win32_Storage_FileSystem`'s. And drag and drop
 # (`commands/file_system/drag/platform/windows/`): OLE's `IDropTarget`, the Shell's data object
 # and `SHDoDragDrop`, `CF_HDROP` reads, and the window and key reads around them; the same
-# features wry turns on, so no new crate.
+# features wry turns on, so no new crate. And "Open with" and F4's editors
+# (`platform/windows/assoc.rs`): `IAssocHandler` invoked on an item array's data object (ID lists
+# are `Win32_UI_Shell_Common`'s), its icon drawn from an `HICON` (`Win32_UI_WindowsAndMessaging`).
 windows = { version = "0.62", features = [
     "UI_ViewManagement",
     "Win32_Foundation",

@@ -51,6 +51,14 @@ pub enum OpenInEditorError {
     LaunchRefused { errno: Option<i32> },
     /// The launch didn't finish inside the command's deadline.
     TimedOut,
+    /// Windows: the file's path has no plain spelling an editor reads as this same file (past
+    /// 259 characters, a name ending in a dot or space, a device name like `CON`). Nothing
+    /// launched.
+    #[cfg_attr(
+        not(target_os = "windows"),
+        allow(dead_code, reason = "only Windows apps need the plain spelling")
+    )]
+    NoPlainPath,
 }
 
 impl std::fmt::Display for OpenInEditorError {
@@ -59,6 +67,7 @@ impl std::fmt::Display for OpenInEditorError {
         match self {
             Self::LaunchRefused { errno } => write!(f, "launch refused (errno {errno:?})"),
             Self::TimedOut => f.write_str("timed out"),
+            Self::NoPlainPath => f.write_str("no plain path"),
         }
     }
 }
@@ -70,9 +79,56 @@ impl std::error::Error for OpenInEditorError {}
 /// can word it on any OS.
 pub(crate) const SYSTEM_DEFAULT_CHOICE: &str = "system";
 
+/// One text editor, as the settings row needs it.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TextEditorApp {
+    /// Exactly what goes into the setting: a bundle id, or an absolute `.app` path.
+    pub id: String,
+    /// The app's name the way Finder shows it.
+    pub display_name: String,
+    /// The app's icon as a base64 WebP data URL, read from its bundle. Absent when
+    /// the bundle carries no readable icon.
+    pub icon: Option<String>,
+}
+
+/// The text editors on this Mac, plus the system default and which one is chosen.
+// DEFAULT-OK: an empty list with no default and nothing chosen is what the command's
+// deadline has to answer with, and it claims nothing about which editors exist. The
+// `TimedOut` flag beside it says which case it was.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TextEditorList {
+    /// What the system default is called, for the "System default (…)" row. `None`
+    /// when nothing on this Mac claims plain text.
+    pub default_app_name: Option<String>,
+    pub default_app_icon: Option<String>,
+    /// Every other listed editor, plus the chosen app when macOS doesn't list it.
+    /// ❗ In no particular order: LaunchServices' own order shifts between calls,
+    /// so the frontend sorts by name.
+    pub apps: Vec<TextEditorApp>,
+    /// The stored choice in canonical form: `system`, or the `id` of one of `apps`.
+    /// `None` once the chosen app is gone, which the row displays as the default
+    /// without writing anything.
+    pub chosen_id: Option<String>,
+}
+
 #[cfg(target_os = "macos")]
 #[path = "text_editor_macos.rs"]
 mod imp;
 
 #[cfg(target_os = "macos")]
-pub use imp::{TextEditorList, list_text_editors, open_in_editor};
+pub use imp::{list_text_editors, open_in_editor};
+
+#[cfg(target_os = "windows")]
+#[path = "text_editor_windows.rs"]
+mod imp;
+
+#[cfg(target_os = "windows")]
+pub use imp::{list_text_editors, open_in_editor};
+
+/// Windows' editor rules, pure so they're tested on every OS (`text_editor_windows.rs` asks the
+/// Shell).
+#[cfg(any(target_os = "windows", test))]
+#[path = "text_editor_windows_rules.rs"]
+pub(crate) mod windows_rules;
