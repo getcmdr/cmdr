@@ -79,6 +79,10 @@
   "@settings.behavior.fileSystemWatching.lowDiskSpaceThresholdPercent.keywords": {
     "sourceHash": "7a0df93"
   },
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexing pauses only when free space is below this per cent and below 10 GB, so a big disk keeps indexing. It picks up where it left off once free space is one point above this per cent or above 11 GB. This works whether the “Low disk space warning” is on or off.",
+  "@settings.advanced.indexPauseFreeSpacePercent.description": {
+    "sourceHash": "69929a4"
+  },
   "settings.advanced.indexPauseFreeSpacePercent.keywords": "disk, space, full, free, index, indexing, pause, storage, threshold, percent, per cent, low",
   "@settings.advanced.indexPauseFreeSpacePercent.keywords": {
     "sourceHash": "1af2a91"
