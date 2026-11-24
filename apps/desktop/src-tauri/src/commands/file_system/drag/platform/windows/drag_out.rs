@@ -14,7 +14,7 @@ use windows::Win32::UI::Shell::SHDoDragDrop;
 use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
 
 use super::super::locality::SessionLocality;
-use super::data_object::{OwnedPidl, empty_data_object, files_data_object, mark_as_cmdr_drag};
+use super::data_object::{OwnedPidl, empty_data_object, files_data_object, fits_cf_hdrop, mark_as_cmdr_drag};
 use super::effects::{OFFERED_EFFECTS, clear_intent};
 use crate::system_events::{DragOutEnded, SessionCompleteEvent};
 
@@ -37,9 +37,10 @@ pub(super) enum DragOutEnd {
     /// The mouse button came up before the drag could start: starting it then would drop at once,
     /// wherever the cursor is.
     ButtonUp,
-    /// The Shell has no name for these items (leaf names): the drag is refused whole rather than
-    /// quietly leaving them out.
-    Unnamed(Vec<String>),
+    /// Items other apps can't be handed (leaf names): the Shell has no name for them, or their
+    /// path is past `MAX_PATH`, which `CF_HDROP` can't carry. The drag is refused whole rather
+    /// than quietly leaving them out.
+    Refused(Vec<String>),
     /// No apartment, window, or data object: logged where it happened.
     Broken,
 }
@@ -94,35 +95,36 @@ fn still_wanted(generation: u64) -> Option<DragOutEnd> {
 }
 
 /// The ID list for each of `natives`, asking `stop` before each lookup (a lookup can wait on a
-/// share, so a released button or a newer drag ends the work early). An item the Shell can't
-/// name refuses the drag, naming every such item.
+/// share, so a released button or a newer drag ends the work early). An item past `MAX_PATH` or
+/// one the Shell can't name refuses the drag, naming every such item.
 pub(super) fn item_lists(
     natives: &[PathBuf],
     stop: impl Fn() -> Option<DragOutEnd>,
 ) -> Result<Vec<OwnedPidl>, DragOutEnd> {
     let mut items = Vec::with_capacity(natives.len());
-    let mut unnamed = Vec::new();
+    let mut refused = Vec::new();
     for native in natives {
         if let Some(end) = stop() {
             return Err(end);
         }
-        match OwnedPidl::for_path(native) {
+        let item = fits_cf_hdrop(native).then(|| OwnedPidl::for_path(native)).flatten();
+        match item {
             Some(item) => items.push(item),
             None => {
                 log::info!(
                     target: "native_drag",
-                    "the Shell can't name a dragged item: path={:?}",
+                    "a dragged item can't be handed to other apps (past MAX_PATH, or no Shell name): path={:?}",
                     cmdr_fs::log_private::LogPrivate::path(native)
                 );
                 let leaf = native.file_name().unwrap_or(native.as_os_str());
-                unnamed.push(leaf.to_string_lossy().into_owned());
+                refused.push(leaf.to_string_lossy().into_owned());
             }
         }
     }
-    if unnamed.is_empty() {
+    if refused.is_empty() {
         Ok(items)
     } else {
-        Err(DragOutEnd::Unnamed(unnamed))
+        Err(DragOutEnd::Refused(refused))
     }
 }
 
@@ -182,7 +184,7 @@ fn report(app: &AppHandle, end: DragOutEnd) {
     if !end.tells_frontend() {
         return;
     }
-    if let DragOutEnd::Unnamed(names) = &end {
+    if let DragOutEnd::Refused(names) = &end {
         let toast = SessionCompleteEvent {
             session_key: -1,
             files_succeeded: 0,

@@ -95,7 +95,7 @@ fn every_end_but_a_superseded_one_reaches_the_frontend() {
     assert!(DragOutEnd::Finished.tells_frontend());
     assert!(DragOutEnd::ButtonUp.tells_frontend());
     assert!(DragOutEnd::Broken.tells_frontend());
-    assert!(DragOutEnd::Unnamed(vec!["a.txt".into()]).tells_frontend());
+    assert!(DragOutEnd::Refused(vec!["a.txt".into()]).tells_frontend());
     assert!(!DragOutEnd::Superseded.tells_frontend());
 }
 
@@ -121,36 +121,48 @@ fn an_unnamed_item_refuses_the_drag_and_names_it() {
         let built = item_lists(&items, || None);
         assert_eq!(
             built.err(),
-            Some(DragOutEnd::Unnamed(vec!["never-made.txt".to_string()]))
+            Some(DragOutEnd::Refused(vec!["never-made.txt".to_string()]))
         );
     })
     .expect("enters an apartment");
 }
 
-/// Past `MAX_PATH`, in both the plain and the `\\?\` spelling.
+/// A file past `MAX_PATH` under a temp dir, as Windows names it.
+fn file_past_max_path(dir: &TestDir) -> PathBuf {
+    let mut deep = dir.join("x");
+    while deep.as_os_str().len() < 300 {
+        deep = deep.join("a_folder_name_of_forty_characters_long__");
+    }
+    std::fs::create_dir_all(&deep).expect("makes a deep folder");
+    let file = deep.join("deep.txt");
+    std::fs::write(&file, b"deep").expect("writes past MAX_PATH");
+    file
+}
+
+/// Why a long path is refused: the Shell names it, but its data object carries no `CF_HDROP`
+/// for it, so no target could take it (Windows CI runner, 2026-11-25).
 #[test]
-fn a_path_longer_than_max_path_still_drags() {
+fn the_shell_names_a_path_past_max_path_but_offers_no_cf_hdrop_for_it() {
+    in_apartment(|| {
+        let dir = TestDir::new("drag_out_long_shell");
+        let file = file_past_max_path(&dir);
+        let item = OwnedPidl::for_path(&file).expect("the Shell names a long path");
+        let data = files_data_object(std::slice::from_ref(&item));
+        assert!(data.is_err(), "a data object without the item's CF_HDROP is refused");
+    })
+    .expect("enters an apartment");
+}
+
+/// Past `MAX_PATH`, in both the plain and the `\\?\` spelling: refused whole, naming the file.
+#[test]
+fn a_path_past_max_path_refuses_the_drag_and_names_it() {
     in_apartment(|| {
         let dir = TestDir::new("drag_out_long");
-        let mut deep = dir.join("x");
-        while deep.as_os_str().len() < 300 {
-            deep = deep.join("a_folder_name_of_forty_characters_long__");
-        }
-        std::fs::create_dir_all(&deep).expect("makes a deep folder");
-        let file = deep.join("deep.txt");
-        std::fs::write(&file, b"deep").expect("writes past MAX_PATH");
+        let file = file_past_max_path(&dir);
         let verbatim = PathBuf::from(format!(r"\\?\{}", file.display()));
         for spelling in [file.clone(), verbatim] {
-            let item = OwnedPidl::for_path(&spelling).expect("the Shell names a long path");
-            let data = files_data_object(std::slice::from_ref(&item)).expect("a data object");
-            let read = dropped_files(&data).expect("CF_HDROP");
-            assert_eq!(read.len(), 1);
-            assert!(
-                same_file(&read[0], &file),
-                "{} came back as {}",
-                file.display(),
-                read[0].display()
-            );
+            let built = item_lists(std::slice::from_ref(&spelling), || None);
+            assert_eq!(built.err(), Some(DragOutEnd::Refused(vec!["deep.txt".to_string()])));
         }
     })
     .expect("enters an apartment");

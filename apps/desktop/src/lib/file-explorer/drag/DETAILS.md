@@ -505,7 +505,9 @@ shared with macOS (`apps/desktop/src-tauri/src/commands/file_system/drag/platfor
   items when a newer one starts gives way silently (a generation counter), so two modal drags never queue; the newer one
   owns the frontend's state. A refused `startDragPaths` ends it the same way (`startNativeDrag`).
 - **Long and verbatim paths**: each item is parsed in its plain form first (`C:\…`, `\\server\share\…`), then as sent
-  (`data_object.rs::shell_spellings`); a test drags a file past `MAX_PATH` in both spellings.
+  (`data_object.rs::shell_spellings`). Past `MAX_PATH` the Shell names the file but its data object offers no `CF_HDROP`
+  for it (Windows CI runner, `tests.rs`, 2026-11-25), so no target could take it: such an item refuses the drag with the
+  failure toast naming it (`fits_cf_hdrop`), as an item without a Shell name does. Explorer can't drag these either.
 - **Drop targets are revoked** when their window is destroyed (`WindowEvent::Destroyed`; a child already gone answers an
   error, harmlessly).
 - **Virtual sessions** (phone, search results, inside an archive or a repo's history): an empty Shell data object

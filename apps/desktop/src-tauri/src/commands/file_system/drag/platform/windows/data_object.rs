@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::ptr::NonNull;
 use std::sync::OnceLock;
 
-use windows::Win32::Foundation::{GlobalFree, HGLOBAL, S_OK};
+use windows::Win32::Foundation::{E_FAIL, GlobalFree, HGLOBAL, S_OK};
 use windows::Win32::System::Com::{DVASPECT_CONTENT, FORMATETC, IDataObject, STGMEDIUM, STGMEDIUM_0, TYMED_HGLOBAL};
 use windows::Win32::System::DataExchange::RegisterClipboardFormatW;
 use windows::Win32::System::Memory::{GMEM_MOVEABLE, GlobalAlloc};
@@ -94,22 +94,39 @@ pub(super) fn shell_spellings(native: &Path) -> Vec<OsString> {
 ///
 /// Items from one folder go through a Shell item array, Explorer's own path. Items from several
 /// folders (where that object doesn't carry them all) go as absolute lists under the desktop,
-/// which names any file. Either way the object is checked to carry every item as `CF_HDROP`.
+/// which names any file. Either way the object must carry every item as `CF_HDROP`, else it's
+/// refused (`E_FAIL`): a drag that quietly offers fewer files than it shows is worse than none.
 pub(super) fn files_data_object(items: &[OwnedPidl]) -> windows::core::Result<IDataObject> {
     let lists: Vec<*const ITEMIDLIST> = items.iter().map(OwnedPidl::as_ptr).collect();
+    let carries_all = |data: &IDataObject| dropped_files(data).map(|files| files.len()) == Some(items.len());
     // SAFETY: every pointer is a live ID list owned by `items`, which outlives both calls.
     let from_array: windows::core::Result<IDataObject> = unsafe {
         SHCreateShellItemArrayFromIDLists(&lists)
             .and_then(|array: IShellItemArray| array.BindToHandler(None, &BHID_DataObject))
     };
-    if let Ok(data) = &from_array
-        && dropped_files(data).map(|files| files.len()) == Some(items.len())
+    if let Ok(data) = from_array
+        && carries_all(&data)
     {
-        return from_array;
+        return Ok(data);
     }
     // SAFETY: no parent folder (the desktop), so each absolute list is its own child; they live
     // through the call, and the Shell copies them.
-    unsafe { SHCreateDataObject(None, Some(&lists), None) }
+    let from_desktop: IDataObject = unsafe { SHCreateDataObject(None, Some(&lists), None) }?;
+    if carries_all(&from_desktop) {
+        Ok(from_desktop)
+    } else {
+        Err(windows::core::Error::from(E_FAIL))
+    }
+}
+
+/// Whether `CF_HDROP` can carry `native`: its plain spelling fits in `MAX_PATH` (260 UTF-16 units
+/// with the terminator). Past it the Shell still names the file, but its data object offers no
+/// `CF_HDROP` for it (verified on the Windows CI runner, `tests.rs`, 2026-11-25).
+pub(super) fn fits_cf_hdrop(native: &Path) -> bool {
+    const MAX_PATH: usize = 260;
+    shell_spellings(native)
+        .first()
+        .is_some_and(|plain| plain.encode_wide().count() < MAX_PATH)
 }
 
 /// An empty Shell data object: a drag that offers other apps nothing, which Cmdr's own drop
