@@ -143,6 +143,19 @@ describe('a row that looks openable', () => {
     expect(options).toMatchObject({ id: 'opening-file', level: 'warn' })
   })
 
+  it('says why when Windows has no plain path other apps take for the file', async () => {
+    openFile.mockRejectedValue(new Refused({ type: 'noPlainPath' }))
+
+    await expect(openWithDefaultAppOrExplain('root', fileAt('/Users/test_user_10/report.pdf'))).resolves.toBe(
+      'notOpened',
+    )
+
+    const [text, options] = onlyToast()
+    expect(text).toContain('fileExplorer.open.noPlainPath')
+    expect(text).toContain('report.pdf')
+    expect(options).toMatchObject({ id: 'opening-file', level: 'warn' })
+  })
+
   it('stays quiet when macOS didn’t answer in time, since the app may still open it', async () => {
     openFile.mockRejectedValue(new Refused({ type: 'timedOut' }))
 

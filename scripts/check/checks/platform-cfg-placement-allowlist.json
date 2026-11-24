@@ -100,8 +100,7 @@
       "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/file_system/default_app.rs": {
-      "negated": 1,
-      "outsideSeam": 6
+      "outsideSeam": 5
     },
     "apps/desktop/src-tauri/src/file_system/get_info.rs": {
       "outsideSeam": 6

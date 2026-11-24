@@ -2683,6 +2683,7 @@ export type MessageKey =
   | 'fileExplorer.networkMount.signInTitle'
   | 'fileExplorer.networkMount.tryAgain'
   | 'fileExplorer.open.didNotOpen'
+  | 'fileExplorer.open.noPlainPath'
   | 'fileExplorer.open.notOnThisMac'
   | 'fileExplorer.open.notOnThisMacWithoutKey'
   | 'fileExplorer.openWith.copyRefused.archiveUnreadable'

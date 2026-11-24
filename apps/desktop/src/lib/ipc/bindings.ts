@@ -16557,6 +16557,12 @@ export type OpenPathError =
    *  still open the file.
    */
   | { type: 'timedOut' }
+  /**
+   *  Windows: the path has no plain spelling another app reads as this same file (past 259
+   *  characters, a name ending in a dot or space, or a device name like `CON`), so nothing
+   *  was launched (`platform::windows_shell_path`).
+   */
+  | { type: 'noPlainPath' }
   // There's no opener on this platform.
   | { type: 'unsupported' }
 

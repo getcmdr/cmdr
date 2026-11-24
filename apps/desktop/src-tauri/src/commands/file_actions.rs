@@ -42,8 +42,8 @@ const TEXT_EDITORS_TIMEOUT: Duration = Duration::from_secs(2);
 #[cfg(target_os = "macos")]
 const DEFAULT_APP_NAME_TIMEOUT: Duration = Duration::from_millis(500);
 
-/// Reveals a file in the OS's file manager: Finder on macOS, the default file manager (its parent
-/// folder) on Linux.
+/// Reveals a file in the OS's file manager: Finder on macOS, File Explorer with the item selected
+/// on Windows, the default file manager (its parent folder) on Linux.
 #[tauri::command]
 #[specta::specta]
 pub fn reveal_in_file_manager(path: String) -> Result<(), String> {

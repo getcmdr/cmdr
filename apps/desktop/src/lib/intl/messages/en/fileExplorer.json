@@ -508,6 +508,13 @@
       "fileName": "the file's name, for example report.pdf (do not translate)"
     }
   },
+  "fileExplorer.open.noPlainPath": "Other apps can’t open {fileName} by its path. The path is longer than Windows apps take, or a name in it ends in a dot or space, or is a reserved name like CON. Shorten or rename it, or view it in Cmdr.",
+  "@fileExplorer.open.noPlainPath": {
+    "description": "Warning toast, Windows only, shown when the user pressed Enter, double-clicked, or picked Open on a file and Cmdr didn't hand it to its default app: its full path is past the 259-character limit most Windows apps still have, or a name in the path (a folder's or the filename) ends in a period or space, or is a name Windows reserves for devices (CON, NUL, COM1, and so on). Cmdr itself can still read the file. \"CON\" is a literal Windows device name; keep it as is. \"Cmdr\" is the product name; keep it. Never use the words 'error' or 'failed'.",
+    "placeholders": {
+      "fileName": "the file's name, for example report.pdf (do not translate)"
+    }
+  },
   "fileExplorer.openingToast.noApp": "Opening {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "description": "Short self-dismissing toast (two seconds) shown right after the user presses Enter or double-clicks a file, when Cmdr doesn't know which app will open it (or the item is an app itself).",
