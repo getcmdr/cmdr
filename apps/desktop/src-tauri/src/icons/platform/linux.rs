@@ -35,6 +35,11 @@ pub(crate) fn fetch_path_icons(paths: Vec<String>) -> PathIcons {
         .collect()
 }
 
+/// The XDG theme answers by type, so asking about any place reads no more than its kind.
+pub(crate) fn may_read_own_icon(_path: &str) -> bool {
+    true
+}
+
 /// Looks the id up directly in the XDG icon theme (no temp files needed).
 pub(crate) fn icon_for_id(icon_id: &str, _use_app_icons_for_documents: bool) -> Option<String> {
     crate::linux_icons::get_icon_for_id(icon_id, ICON_SIZE as u16).and_then(|img| image_to_data_url(&img))

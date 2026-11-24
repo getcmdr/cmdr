@@ -19,6 +19,28 @@ unrelated.)
 
 Decision/Why: this replaced the `file_icon_provider` crate, which did the same drawing but also reached `UTType` from a caching struct Cmdr never constructed. That reference alone hard-linked `UniformTypeIdentifiers.framework` into the binary, and since that framework arrived in macOS 11, dyld refused to launch Cmdr at all on the 10.15 floor `tauri.macos.conf.json` promises. Sixty lines of `NSWorkspace` we own beats a dependency that can put a framework in the binary for code we don't run, and it drops `gio`, `gtk`, and `windows` from the macOS graph as a side effect. `desktop-macos-framework-floor` now fails the build on any framework newer than the floor; the version evidence is in `docs/notes/system-requirements-and-es2025.md`.
 
+## Asking Windows for the pixels (`platform/windows/`)
+
+`shell_image.rs` asks `IShellItemImageFactory::GetImage(32×32, SIIGBF_ICONONLY)` on a Shell item made from the path, and reads the `HBITMAP` back with `GetDIBits` as 32-bit top-down BGRA, then converts premultiplied BGRA to straight RGBA. Every arm then encodes at `ICON_SIZE` (32), which the list draws at 16 CSS px, so 100–200% scaling is covered as on macOS.
+
+- **Decision/Why `IShellItemImageFactory`, not `SHGetFileInfoW`**: `GetImage` hands back exactly the size asked for, picking the icon resource's own frame for it (the hand-drawn 32 px frame, not a resample), whatever the process's DPI. `SHGetFileInfoW` only knows the system's small and large sizes (`SM_CXICON`, which moves with DPI), and its `SHGetImageList(SHIL_JUMBO)` route draws a type with no 256 px frame as a 48 px icon in the corner of a 256 px canvas. (Microsoft Learn: `IShellItemImageFactory::GetImage`, `SHGetImageList`, read 2026-11-24; the pixels are unverified on hardware, see the real-Windows checklist in #942 task 41.)
+- **`SIIGBF_ICONONLY`, always**: a thumbnail would read the file's content, and on a cloud placeholder start a download.
+- **Premultiplied unless proven straight**: the Shell's 32-bit icons come back premultiplied, so each color is divided by its alpha. A buffer where some color exceeds its alpha can't be premultiplied and is taken as straight; a buffer with every alpha 0 (an old 24-bit icon) is opaque; a buffer of nothing but zero bytes is no icon (`None`), not a black square. Pinned by the `bgra_*` and `an_all_zero_buffer_is_no_icon` tests.
+- **One STA per asking thread** (`apartment.rs`, a `thread_local`, left when the thread ends): the image factory and `ShellLink` are documented for STA, and an apartment-threaded third-party icon handler can fail quietly from an MTA. A thread another library already put in an MTA keeps it. The same pattern as `cmdr-operations`' trash and `commands/file_actions/platform/windows.rs`.
+- **Type ids ask Cmdr's own samples**, as on macOS: `ext:{x}` an empty `<temp>/cmdr-icon-samples/sample.{x}`, `dir` the sample folder, and `file` / `symlink*` an extensionless `sample-file` (the Unix arms' `/etc/hosts` has no Windows twin). So a type lookup never touches a user's file, and samples skip the no-touch rule (a `%TEMP%` on a network home folder still draws every type).
+
+**Files with their own icon (`path:{file}`).** Explorer draws a program, a shortcut, and an icon file with the icon it holds or points at, so `file_extension::has_own_icon` (a pure name check, `crates/cmdr-fs/src/file_extension/platform/windows.rs` holds the list) gives such a file its `path:` key during listing (`cmdr_fs::icons::own_icons`). It shares the `path:` lifecycle (LRU-capped, never in localStorage) and the disk tier, whose mtime token tracks a rebuilt `.exe`. A shortcut (`.lnk`, `.appref-ms`) stays out of the disk tier (`own_icons::keeps_on_disk`): its icon follows a file its own mtime can't see.
+
+- Decision/Why no `.url`: an Internet shortcut's `IconFile=` can name `\\host\…`, and drawing it opens an SMB connection on listing, which can offer the user's NTLM credentials. It always shows its type icon.
+
+**The no-touch rule (`place.rs`, `may_read_own_icon`).** The Shell reads the file to draw its own icon, so a real place is asked only when it sits on a fixed, removable, or RAM drive (`GetDriveTypeW` on the letter; a UNC path and a verbatim `\\?\` one answer no by shape, a mapped drive from its letter's kind, none reaching the server), isn't itself a symlink or junction (its reparse tag, read with `FindFirstFileW`, never followed; Cloud Files tags don't count), and holds its bytes (`GetFileAttributesW` shows no `OFFLINE` / `RECALL_ON_OPEN` / `RECALL_ON_DATA_ACCESS`; reading attributes opens no stream, so it starts no download). A path that doesn't exist (inside an archive, on a phone or a protocol share whose path has no native form) answers no too. `get_icons` asks this BEFORE the disk tier and shows the type's icon instead (`stand_in_icon_id`: `ext:{x}` for an own-icon file, `dir` for a folder id), cached in memory under the original id only.
+
+- **A shortcut also needs both its places local** (`shortcut.rs`): its icon location and target, read through `IShellLinkW` + `IPersistFile::Load`, `GetIconLocation`, and `GetPath(SLGP_RAWPATH)`, ❌ never `Resolve` (which searches for a moved target, network included). `%VAR%`s expand first. A shortcut that fails shows the `.lnk` type icon. This check is COM, so it runs at fetch time on the icon thread, not in the cheap `may_read_own_icon`.
+- Known gap: a junction in a PARENT folder (`C:\x` pointing at `\\nas\share`, then `C:\x\tool.exe`) passes, and `GetFileAttributesW` on such a place reaches the share. Catching it would cost a check per ancestor. The bounded fetch (below) keeps a hang there to that one icon.
+- Special folders work through the same path: `real_path_for_real_folder_id` hands their location over as app text (`of_native`), since Windows names it `C:\Users\…`.
+
+**One slow place costs only its own icon (`per_place_fetch.rs`).** `get_icons` runs under the IPC command's 2 s deadline, and a timed-out call answers NOTHING, so a real-place lookup stuck on a dead share used to blank the whole batch (types included), and the frontend retries only once. So `get_icons` resolves the type ids first, then hands real places to `per_place_fetch`, which runs each on its own detached thread and waits only for what's left of a 1.5 s budget (`PER_PLACE_BUDGET`). A lookup that outlives the wait keeps running and caches its icon (memory, plus disk where allowed) when it lands, so the next request hits it. At most `MAX_IN_FLIGHT` (16) run at once, and a place already in flight isn't asked again, so stuck threads can't pile up with every visit. Pinned by `per_place_fetch_test.rs`.
+
 ## Cache tiers and persistence
 
 `mod.rs` holds the fetch paths; the hot in-memory tier (`IconCache`, its LRU, the `clear_*` entry points) lives in
@@ -173,6 +195,9 @@ too and would repaint the user's artwork; it applies only when `isAccentTintedCu
 away / unmount), keeping the working set tight and re-detecting a re-icon next time the folder is shown.
 
 ## Persistent on-disk cache (`disk_cache.rs`)
+
+**Capped at `MAX_ENTRIES` (4,096), oldest written dropped first**: every 64th store lists the directory and prunes
+(`prune_in`). Folders alone rarely reach it, but on Windows every program and icon file visited is an entry of its own.
 
 Real-folder icons (`special:*`, `pkg:*`, `path:*`) rarely change, so they persist across restarts in a warm on-disk
 tier under `<data_dir>/icon-cache/` (env-resolved via `CMDR_DATA_DIR`, like the secret store). Each entry is a small

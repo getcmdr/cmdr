@@ -8,12 +8,16 @@ use image::DynamicImage;
 
 #[cfg_attr(target_os = "macos", path = "macos/mod.rs")]
 #[cfg_attr(target_os = "linux", path = "linux.rs")]
-#[cfg_attr(target_os = "windows", path = "windows.rs")]
+#[cfg_attr(target_os = "windows", path = "windows/mod.rs")]
 mod imp;
 
 /// Extended-attribute reads, shared by the macOS and Linux arms.
 #[cfg(unix)]
 mod unix;
+
+/// The 8 MB-stack threads real-place lookups run on, shared by the macOS and Windows arms.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+mod icon_threads;
 
 /// Each path's icon as a data URL (`None` when the OS has none), keyed `path:{path}`.
 pub(super) type PathIcons = Vec<(String, Option<String>)>;
@@ -25,6 +29,14 @@ const _: fn(&str, bool) -> Option<DynamicImage> = fresh_extension_icon;
 const _: fn(fn() -> bool) -> bool = with_object_pool;
 const _: fn() -> bool = tag_tinting_disabled;
 const _: fn(&Path, &str) -> Option<Vec<u8>> = extended_attribute;
+const _: fn(&str) -> bool = may_read_own_icon;
+
+/// Whether the place at app path `path` may be asked for its OWN icon: the ask stays on this
+/// machine and leaves the file as it is (no network round trip, no cloud download, no place
+/// that only exists inside an archive). When not, `get_icons` shows its type's icon
+/// (`own_icons::stand_in_icon_id`) and skips the disk cache, whose mtime read would reach
+/// the place too.
+pub(super) use imp::may_read_own_icon;
 
 /// The OS's icon for the file or folder at `path`, as a data URL, or `None` when the OS has
 /// none for it.

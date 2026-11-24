@@ -7,9 +7,11 @@
 mod disk_cache;
 mod memory_cache;
 pub mod per_path;
+mod per_place_fetch;
 mod platform;
 // The special-folder classifier moved to `cmdr-fs`, where `FileEntry::new` can
 // reach it. Aliased so `icons::special_folders::…` keeps resolving.
+use cmdr_fs::icons::own_icons;
 pub use cmdr_fs::icons::special_folders;
 pub use memory_cache::{clear_directory_icon_cache, clear_extension_icon_cache};
 
@@ -19,9 +21,10 @@ use base64::Engine;
 use image::{DynamicImage, ImageFormat, imageops::FilterType};
 use memory_cache::{PATH_KEY_PREFIX, cache_icon, get_cached_icon};
 use rayon::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 // macOS asks NSWorkspace; Linux asks the XDG icon theme, because a GTK lookup wants the
 // main thread and fails silently from a rayon or tokio worker. Both in `platform/`.
@@ -131,7 +134,8 @@ fn get_sample_path_for_icon_id(icon_id: &str) -> Option<PathBuf> {
         return folder_sample_path();
     }
     if icon_id == "symlink-file" || icon_id == "symlink" || icon_id == "file" {
-        // Generic file icon - use /etc/hosts which exists on all macOS systems
+        // A generic document: `/etc/hosts` exists on every macOS and Linux system. Windows
+        // has none and answers these ids in `platform::icon_for_id` before asking here.
         return Some(PathBuf::from("/etc/hosts"));
     }
     if let Some(ext) = icon_id.strip_prefix("ext:") {
@@ -181,14 +185,15 @@ fn icon_sample_path(ext: &str) -> Option<PathBuf> {
 /// Resolves a real-folder icon id (one fetched from an actual filesystem path) to
 /// that path. Covers all three Tier-B/C kinds:
 ///
-/// - `special:{name}` → the special folder's resolved standard location.
+/// - `special:{name}` → the special folder's resolved standard location, as app text (on
+///   Windows the OS names it `C:\Users\…`, which no app-text door reads).
 /// - `pkg:{path}` / `path:{path}` → the embedded path verbatim.
 ///
-/// Returns `None` for the bounded sample-based ids (`dir`, `ext:*`, `file`,
-/// `symlink*`), which fetch from sample paths, not real user folders.
+/// Every answer is app text. Returns `None` for the bounded sample-based ids (`dir`,
+/// `ext:*`, `file`, `symlink*`), which fetch from sample paths, not real user places.
 fn real_path_for_real_folder_id(icon_id: &str) -> Option<String> {
     if icon_id.starts_with(special_folders::SPECIAL_KEY_PREFIX) {
-        return special_folders::real_path_for_icon_id(icon_id).map(|p| p.to_string_lossy().into_owned());
+        return special_folders::real_path_for_icon_id(icon_id).and_then(|p| crate::app_text::of_native(&p));
     }
     if let Some(path) = icon_id.strip_prefix(per_path::PKG_KEY_PREFIX) {
         return Some(path.to_string());
@@ -248,33 +253,43 @@ pub fn custom_folder_icon_ids(directory_paths: Vec<String>) -> Vec<CustomFolderI
 ///
 /// Returns a map of icon_id -> data URL.
 pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> HashMap<String, String> {
+    let started = Instant::now();
     let mut result = HashMap::new();
-    // Taken before asking macOS, so a flush during the fetch refuses its writes.
+    // Taken before asking the OS, so a flush during the fetch refuses its writes.
     let epoch = memory_cache::epoch();
 
-    // Real-folder icon ids (`special:downloads`, `pkg:/Applications/Safari.app`,
-    // `path:/Users/x/CustomFolder`) all fetch their icon from a REAL filesystem
-    // path, which can be a cloud-synced location (Desktop/Documents iCloud sync)
-    // whose NSWorkspace lookup descends into `fileproviderd`. Route every one of
-    // them through the dedicated 8 MB-stack fetch (`fetch_path_icons`), NOT the
-    // generic per-id loop below, which runs on the calling thread with a normal
-    // stack. Each result is re-keyed back to its ORIGINAL icon id (the bounded
-    // `special:{name}` or the per-path `pkg:`/`path:` key), not the raw path.
-    //
-    // Before the cold NSWorkspace fetch, consult the on-disk persistent cache
-    // (keyed by path + folder mtime): a folder whose icon we fetched in a prior
-    // session reloads instantly and skips NSWorkspace entirely until the user
-    // re-icons it (which bumps the folder mtime → cache miss → re-fetch).
-    let mut remaining = Vec::with_capacity(icon_ids.len());
-    // (original_icon_id, real_path) pairs to fetch via the 8 MB threads.
+    // Real-place ids (`special:downloads`, `pkg:/Applications/Safari.app`, `path:/Users/x/Custom`,
+    // Windows' `path:C:/Tools/tool.exe`) fetch from a REAL path, which can be a cloud folder
+    // or, on Windows, a program whose icon handler runs inside the lookup. They go through
+    // `per_place_fetch` AFTER the type ids, with a bounded wait, so a slow place costs only
+    // its own icon (the IPC deadline would otherwise blank the whole batch). Before that, the
+    // on-disk tier (keyed by path + mtime) answers a place fetched in an earlier session.
+    let mut remaining: Vec<String> = Vec::with_capacity(icon_ids.len());
+    // (original_icon_id, real_path) pairs for `per_place_fetch`.
     let mut per_path_to_fetch: Vec<(String, String)> = Vec::new();
+    // (original_icon_id, stand_in_id) for real places the OS may not be asked about.
+    let mut stand_ins: Vec<(String, String)> = Vec::new();
     for icon_id in icon_ids {
         if let Some(cached) = get_cached_icon(&icon_id) {
             result.insert(icon_id, cached);
             continue;
         }
         if let Some(real_path) = real_path_for_real_folder_id(&icon_id) {
-            if let Some(url) = disk_cache::load(&icon_id, &real_path, epoch.variant) {
+            // A share, a cloud placeholder, or a place inside an archive: its own icon would
+            // reach the network, start a download, or name nothing, so its type's icon stands
+            // in. Asked before the disk cache too, whose mtime read would reach the place.
+            if !platform::may_read_own_icon(&real_path) {
+                let stand_in = own_icons::stand_in_icon_id(&icon_id);
+                if get_cached_icon(&stand_in).is_none() {
+                    remaining.push(stand_in.clone());
+                }
+                stand_ins.push((icon_id, stand_in));
+                continue;
+            }
+            let on_disk = own_icons::keeps_on_disk(&icon_id)
+                .then(|| disk_cache::load(&icon_id, &real_path, epoch.variant))
+                .flatten();
+            if let Some(url) = on_disk {
                 // Warm-tier hit: promote into the hot in-memory cache and return.
                 cache_icon(epoch, icon_id.clone(), url.clone());
                 result.insert(icon_id, url);
@@ -290,29 +305,14 @@ pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> Ha
         }
         remaining.push(icon_id);
     }
-
-    if !per_path_to_fetch.is_empty() {
-        let paths: Vec<String> = per_path_to_fetch.iter().map(|(_, path)| path.clone()).collect();
-        let fetched = fetch_path_icons(paths);
-        // `fetch_path_icons` returns `(path:{real_path}, data_url)` in input
-        // order; re-key each back to its original id, cache it (memory + on-disk),
-        // and return it.
-        for ((original_id, real_path), (_, data_url)) in per_path_to_fetch.into_iter().zip(fetched) {
-            if let Some(url) = data_url {
-                if cache_icon(epoch, original_id.clone(), url.clone()) {
-                    disk_cache::store(&original_id, &real_path, epoch.variant, &url);
-                }
-                result.insert(original_id, url);
-            }
-        }
-    }
+    // A stand-in the frontend also asked for by name (or two places sharing one) is fetched once.
+    let mut seen = HashSet::new();
+    remaining.retain(|id| seen.insert(id.clone()));
 
     for icon_id in remaining {
-        // Cache was already checked above for this batch.
-
         // An id the OS answers directly first (macOS: an extension's default app's bundle,
-        // when app icons for documents are on; Linux: the XDG theme), then a sample path.
-        // Inside the OS's object pool: both may call ObjC APIs.
+        // when app icons for documents are on; Linux: the XDG theme; Windows: the generic
+        // file), then a sample path. Inside the OS's object pool: both may call ObjC APIs.
         let fetched = platform::with_object_pool(|| {
             if let Some(data_url) = platform::icon_for_id(&icon_id, use_app_icons_for_documents) {
                 return Some(data_url);
@@ -326,8 +326,27 @@ pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> Ha
         }
     }
 
+    // Each unreadable place shows its stand-in's pixels under its own id, in memory only:
+    // nothing on disk, since the place's mtime is exactly what mustn't be read.
+    for (icon_id, stand_in) in stand_ins {
+        if let Some(url) = result.get(&stand_in).cloned().or_else(|| get_cached_icon(&stand_in)) {
+            cache_icon(epoch, icon_id.clone(), url.clone());
+            result.insert(icon_id, url);
+        }
+    }
+
+    if !per_path_to_fetch.is_empty() {
+        let wait = PER_PLACE_BUDGET.saturating_sub(started.elapsed());
+        result.extend(per_place_fetch::fetch_within(per_path_to_fetch, epoch, wait));
+    }
+
     result
 }
+
+/// How long `get_icons` waits for real places, counted from its start: under the IPC
+/// command's 2 s deadline, so the type icons always come back. A place that answers later
+/// lands in the cache for the next request.
+const PER_PLACE_BUDGET: Duration = Duration::from_millis(1_500);
 
 /// Fetches a fresh icon for an extension, bypassing any OS cache.
 /// On macOS, this goes directly to the app bundle. On other platforms, falls back to temp files.

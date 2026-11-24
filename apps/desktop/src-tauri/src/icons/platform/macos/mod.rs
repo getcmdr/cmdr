@@ -14,10 +14,6 @@ use super::PathIcons;
 pub(crate) use super::unix::extended_attribute;
 use crate::config::ICON_SIZE;
 
-/// 8 MB stack per thread: enough for deep FileProvider XPC chains that
-/// NSWorkspace's per-path icon lookup descends into on cloud folders.
-const ICON_THREAD_STACK_SIZE: usize = 8 * 1024 * 1024;
-
 /// Global-domain key behind Finder > Settings > Tags > "Tint folders based on tags". Absent (the
 /// default) means tinting is on (verified on macOS 27.0.1: `defaults write -g … -bool true` turns
 /// a red-tagged custom folder back to the accent color, 2026-10-29).
@@ -33,44 +29,18 @@ pub(crate) fn fetch_icon_for_path(path: &Path) -> Option<String> {
 /// threads (macOS) to survive `fileproviderd` XPC depth on cloud folders. The
 /// `data_url` is `None` when the OS returned no icon.
 pub(crate) fn fetch_path_icons(paths: Vec<String>) -> PathIcons {
-    let num_threads = paths
-        .len()
-        .min(std::thread::available_parallelism().map_or(4, |n| n.get()));
-
-    std::thread::scope(|scope| {
-        let chunk_size = paths.len().div_ceil(num_threads);
-        let handles: Vec<_> = paths
-            .chunks(chunk_size)
-            .map(|chunk| {
-                let chunk = chunk.to_vec();
-                std::thread::Builder::new()
-                    .stack_size(ICON_THREAD_STACK_SIZE)
-                    .name("icon_path_fetch".into())
-                    .spawn_scoped(scope, move || {
-                        chunk
-                            .into_iter()
-                            .map(|path| {
-                                // Drain autoreleased ObjC objects per path (NSWorkspace
-                                // calls accumulate otherwise) on these threads, which
-                                // lack AppKit's autorelease pool.
-                                autoreleasepool(|_| {
-                                    let data_url = crate::app_text::native_plain(&path)
-                                        .and_then(|native| fetch_icon_for_path(&native));
-                                    (format!("path:{}", path), data_url)
-                                })
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                    .expect("failed to spawn icon path-fetch thread")
-            })
-            .collect();
-
-        let mut results = Vec::with_capacity(paths.len());
-        for handle in handles {
-            results.extend(handle.join().expect("icon path-fetch thread panicked"));
-        }
-        results
+    super::icon_threads::fetch_on_icon_threads(paths, |path| {
+        // Drain autoreleased ObjC objects per path (NSWorkspace calls accumulate otherwise)
+        // on these threads, which lack AppKit's autorelease pool.
+        autoreleasepool(|_| crate::app_text::native_plain(path).and_then(|native| fetch_icon_for_path(&native)))
     })
+}
+
+/// Every place may be asked: only folders and packages reach a real-place lookup here, which
+/// NSWorkspace draws from metadata, and a hung mount is the 8 MB thread's and the IPC
+/// deadline's to absorb.
+pub(crate) fn may_read_own_icon(_path: &str) -> bool {
+    true
 }
 
 /// With app icons for documents on, an `ext:` id asks the default app's bundle first.
