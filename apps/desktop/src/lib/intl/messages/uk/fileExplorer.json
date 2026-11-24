@@ -837,6 +837,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Інші програми не можуть відкрити «{name}» з буфера обміну, тому в нього нічого не додано. Скоротіть шлях або перейменуйте елемент і спробуйте ще раз.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Буфер обміну зараз зайнятий іншою програмою. Спробуйте ще раз за мить.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "У буфері обміну немає файлів. Спершу скопіюйте файли.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

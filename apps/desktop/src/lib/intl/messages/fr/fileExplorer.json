@@ -838,6 +838,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Les autres apps ne peuvent pas ouvrir « {name} » depuis le presse-papiers, donc rien n’y a été placé. Raccourcissez son chemin ou renommez-le, puis réessayez.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Une autre app bloque le presse-papiers. Réessayez dans un instant.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Aucun fichier dans le presse-papiers. Copiez d’abord des fichiers.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

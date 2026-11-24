@@ -840,6 +840,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Andere apps kunnen ‘{name}’ niet vanaf het klembord openen, dus er is niets op het klembord gezet. Maak het pad korter of wijzig de naam, en probeer het opnieuw.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Een andere app houdt het klembord bezet. Probeer het zo meteen opnieuw.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Geen bestanden op het klembord. Kopieer eerst bestanden.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

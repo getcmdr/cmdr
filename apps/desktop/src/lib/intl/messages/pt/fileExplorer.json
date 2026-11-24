@@ -838,6 +838,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Outros apps não conseguem abrir “{name}” pela área de transferência, então nada foi colocado nela. Encurte o caminho ou renomeie o item e tente novamente.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Outro app está segurando a área de transferência. Tente novamente em instantes.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Não há arquivos na área de transferência. Copie arquivos primeiro.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

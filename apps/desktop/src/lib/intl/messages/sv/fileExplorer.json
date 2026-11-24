@@ -838,6 +838,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Andra appar kan inte öppna ”{name}” från urklipp, så inget hamnade i urklipp. Korta sökvägen eller byt namn på objektet, och försök igen.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "En annan app håller i urklipp just nu. Försök igen om en stund.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Inga filer i urklipp. Kopiera filer först.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

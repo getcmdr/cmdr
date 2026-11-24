@@ -838,6 +838,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Otras apps no pueden abrir “{name}” desde el portapapeles, así que no se puso nada en él. Acorta su ruta o renómbralo, y vuelve a intentarlo.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Otra app está usando el portapapeles. Vuelve a intentarlo en un momento.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "No hay archivos en el portapapeles. Copia archivos primero.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

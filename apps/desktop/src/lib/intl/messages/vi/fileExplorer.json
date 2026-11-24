@@ -838,6 +838,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Các ứng dụng khác không mở được “{name}” từ bảng nhớ tạm, nên chưa có gì được đưa vào bảng nhớ tạm. Hãy rút ngắn đường dẫn hoặc đổi tên mục, rồi thử lại.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Một ứng dụng khác đang giữ bảng nhớ tạm. Hãy thử lại sau giây lát.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Bảng nhớ tạm không có tệp nào. Hãy sao chép tệp trước.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

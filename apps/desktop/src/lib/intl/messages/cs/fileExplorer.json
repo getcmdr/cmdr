@@ -837,6 +837,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "Ostatní aplikace nedokážou „{name}“ otevřít ze schránky, proto se do schránky nic nevložilo. Zkraťte cestu nebo položku přejmenujte a zkuste to znovu.",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "Schránku právě drží jiná aplikace. Zkuste to za chvíli znovu.",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "Ve schránce nejsou žádné soubory. Nejdřív nějaké zkopírujte.",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"

@@ -835,6 +835,14 @@
   "@fileExplorer.clipboard.noFilesWithKey": {
     "sourceHash": "1eb6ea9"
   },
+  "fileExplorer.clipboard.noPlainPath": "其他 App 無法從剪貼板開啟「{name}」，所以剪貼板裡沒有放入任何內容。請縮短路徑或重新命名，然後再試一次。",
+  "@fileExplorer.clipboard.noPlainPath": {
+    "sourceHash": "5cb921d"
+  },
+  "fileExplorer.clipboard.busy": "另一個 App 正在佔用剪貼板。請稍後再試一次。",
+  "@fileExplorer.clipboard.busy": {
+    "sourceHash": "c9833a6"
+  },
   "fileExplorer.clipboard.noFiles": "剪貼板上沒有檔案。請先複製檔案。",
   "@fileExplorer.clipboard.noFiles": {
     "sourceHash": "295341a"
