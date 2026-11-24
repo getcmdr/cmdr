@@ -5,7 +5,7 @@
 use cmdr_fs::app_path::AppPath;
 use cmdr_operations::MutationError;
 
-use super::TrashView;
+use super::{RevealError, TrashView};
 use crate::file_system::get_info::GetInfoError;
 use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 
@@ -35,9 +35,12 @@ pub(crate) fn open_trash_view(path: &AppPath) -> Result<TrashView, MutationError
     {
         // A thread of its own, so the Shell gets the single-threaded apartment it asks for
         // whatever the caller's thread already joined.
-        std::thread::spawn(open_recycle_bin)
-            .join()
-            .unwrap_or(Err(E_UNEXPECTED))
+        std::thread::Builder::new()
+            .name("open-recycle-bin".to_string())
+            .stack_size(crate::platform::shell::SHELL_THREAD_STACK)
+            .spawn(open_recycle_bin)
+            .map_err(|_| E_UNEXPECTED)
+            .and_then(|thread| thread.join().unwrap_or(Err(E_UNEXPECTED)))
             .map(|()| TrashView::Opened)
             .map_err(|hr| MutationError::Unexpected {
                 detail: format!(
@@ -102,21 +105,32 @@ fn open_recycle_bin_in_apartment() -> Result<(), i32> {
     }
 }
 
-/// Shows `path` selected in File Explorer, reusing a window already on its folder.
+/// How long a reveal waits for the Shell's answer. Finding the item is one parse, fast on a
+/// healthy disk; a dead share holds it far longer, and then the wait ends quietly (logged): the
+/// window may still open.
+#[cfg(not(feature = "playwright-e2e"))]
+const REVEAL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Shows `path` selected in File Explorer, reusing a window already on its folder, and says why
+/// not when it didn't, typed, for the frontend's toast.
 ///
-/// Refused up front, with nothing launched, for a path the Shell can't take
+/// [`RevealError::NoPlainPath`] up front, with nothing asked, for a path the Shell can't take
 /// (`platform::windows_shell_path`: past 259 units, a name ending in a dot or space, a device
-/// name, a scheme path). Otherwise the Shell calls run on a thread of their own and this answers
-/// at once, as the macOS arm does: `SHParseDisplayName` touches the file, which on a dead share
-/// can take a long time, and a sync command must not wait on it. A Shell refusal there (the item
-/// is gone) is logged. The E2E build records the path instead: Explorer would take the front.
-pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
+/// name). Otherwise the Shell calls run on a thread of their own (`platform::shell`), waited on
+/// for at most [`REVEAL_TIMEOUT`]; a refusal there (the item is gone) is
+/// [`RevealError::NotShown`]. The E2E build records the path instead: Explorer would take the
+/// front.
+pub(crate) async fn reveal_in_file_manager(path: String) -> Result<(), RevealError> {
+    use cmdr_fs::app_path::NativeRefusal;
+
     let app_path = crate::commands::wire_path::app_path(&path)
         .ok()
         .flatten()
-        .ok_or_else(|| "no file to show in File Explorer: not an app path".to_string())?;
-    let wide = crate::platform::windows_shell_path::shell_path(&app_path)
-        .map_err(|why| format!("no path File Explorer can show: {why}"))?;
+        .ok_or(RevealError::NoPath)?;
+    let wide = crate::platform::windows_shell_path::shell_path(&app_path).map_err(|why| match why {
+        NativeRefusal::NotPlainSafe(_) => RevealError::NoPlainPath,
+        _ => RevealError::NoPath,
+    })?;
     #[cfg(feature = "playwright-e2e")]
     {
         let _ = wide;
@@ -125,28 +139,28 @@ pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
     }
     #[cfg(not(feature = "playwright-e2e"))]
     {
-        std::thread::Builder::new()
-            .name("reveal-in-explorer".to_string())
-            .stack_size(crate::platform::shell::SHELL_THREAD_STACK)
-            .spawn(move || {
-                let shown = crate::platform::shell::in_apartment(|| crate::platform::shell::reveal(&wide))
-                    .and_then(|shown| shown);
-                match shown {
-                    Ok(()) => log::debug!(
-                        target: "reveal",
-                        "Showed {} in File Explorer",
-                        cmdr_fs::log_private::LogPrivate::path(&path)
-                    ),
-                    Err(hr) => log::warn!(
-                        target: "reveal",
-                        "File Explorer didn't show {} [code {:#010x}]",
-                        cmdr_fs::log_private::LogPrivate::path(&path),
-                        hr.cast_unsigned()
-                    ),
-                }
-            })
-            .map(|_| ())
-            .map_err(|err| err.to_string())
+        use crate::platform::shell::{ShellWait, on_shell_thread, reveal};
+
+        let wait = on_shell_thread("reveal-in-explorer", REVEAL_TIMEOUT, move || reveal(&wide)).await;
+        let shown = match wait {
+            ShellWait::Answered(Ok(())) => Ok(()),
+            // Explorer may still show it; no answer is no refusal to report.
+            ShellWait::TimedOut => Ok(()),
+            ShellWait::Answered(Err(_)) | ShellWait::NoApartment(_) | ShellWait::NoThread => Err(RevealError::NotShown),
+        };
+        match &shown {
+            Ok(()) => log::debug!(
+                target: "reveal",
+                "Showed {} in File Explorer ({wait:?})",
+                cmdr_fs::log_private::LogPrivate::path(&path)
+            ),
+            Err(_) => log::warn!(
+                target: "reveal",
+                "File Explorer didn't show {}: {wait:?}",
+                cmdr_fs::log_private::LogPrivate::path(&path)
+            ),
+        }
+        shown
     }
 }
 

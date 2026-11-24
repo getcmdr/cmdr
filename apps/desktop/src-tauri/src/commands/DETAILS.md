@@ -321,7 +321,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   `set_focus`, which tao makes a silent no-op on a minimized or hidden window, so a minimized queue window used to
   ignore every click on the corner chip (verified in the tao 0.37.1 source of its macOS `set_focus`, from
   ERR-APXNK, 2026-10-24).
-- **`file_actions.rs`**: direct file actions from the palette / menus: `reveal_in_file_manager` (Finder; File Explorer with the item selected via `SHOpenFolderAndSelectItems` on Windows, refused up front for a path with no plain form, `../file_system/DETAILS.md` § "Default app"; the parent folder on Linux), `open_trash_view` (Windows' Recycle Bin opens in File Explorer, a typed `TrashView`; `noView` elsewhere, `crates/cmdr-operations/src/delete/DETAILS.md` § "Windows: the Recycle Bin"), `get_info`, `open_in_editor`,
+- **`file_actions.rs`**: direct file actions from the palette / menus: `reveal_in_file_manager` (async; Finder; File Explorer with the item selected via `SHOpenFolderAndSelectItems` on Windows, waited on for 5 s; the parent folder on Linux; a typed `RevealError` the frontend words in `../../../src/lib/file-explorer/file-manager-reveal.ts`), `open_trash_view` (Windows' Recycle Bin opens in File Explorer, a typed `TrashView`; `noView` elsewhere, `crates/cmdr-operations/src/delete/DETAILS.md` § "Windows: the Recycle Bin"), `get_info`, `open_in_editor`,
   `copy_to_clipboard`, and `cloud_make_available_offline` / `cloud_remove_download` (iCloud Drive download/eviction via
   `FileManager` ubiquity APIs; see `file_system/cloud_actions.rs`). `google_drive_links(path)` returns a Drive item's
   `viewUrl` plus its `geminiUrl` (absent for folders) or `None`, backing the three Drive menu items from ONE

@@ -83,6 +83,8 @@ function explainRefusal(entry: FileEntry, error: unknown): DefaultAppOpenOutcome
   // The opener stopped answering, which on a wedged mount is no answer at all. The app
   // may still open the file, so saying it didn't could be wrong; the log has it.
   if (failure?.type === 'timedOut') return 'notOpened'
+  // Windows: the person cancelled a UAC prompt or dismissed the "open with" picker. They know.
+  if (failure?.type === 'cancelled') return 'notOpened'
   // Windows: a path with no plain spelling (too long, a trailing dot, `CON`), so nothing launched.
   const key = failure?.type === 'noPlainPath' ? 'fileExplorer.open.noPlainPath' : 'fileExplorer.open.didNotOpen'
   addToast(tString(key, { fileName: entry.name }), {

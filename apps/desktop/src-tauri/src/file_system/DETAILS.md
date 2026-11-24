@@ -326,9 +326,14 @@ already provider-agnostic: a streamed Drive file carries `SF_DATALESS` like any 
 - Why it waits: a spawned-and-forgotten `open` hides every refusal, and Enter on a stranded share did nothing at all
   (ERR-NHM5T).
 - Windows has no opener program: `ShellExecuteExW`'s default verb (`../platform/windows/shell.rs`) runs on its own 8 MB
-  thread in a COM apartment, under the same 15 s deadline, with `SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI`. Its Win32
-  error code is `NotOpened.exit_code`; a file no app is set to open (`ERROR_NO_ASSOCIATION`) gets the `openas` verb, so
-  Windows' "How do you want to open this file?" picker appears, as in File Explorer. The path goes over in its PLAIN
+  thread in a COM apartment (`on_shell_thread`, which logs an answer that lands after the deadline), under the same
+  15 s deadline, with `SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI`. The item is pinned ONCE as an ID list
+  (`SHParseDisplayName`, then `SEE_MASK_INVOKEIDLIST`): a path handed on as text gets searched, so an extensionless
+  `report` that vanished could start `report.exe` beside it. It starts in the item's own folder (`lpDirectory`), as
+  File Explorer does, so a `.bat` or `.exe` doesn't run in Cmdr's working folder. The Win32 error code is
+  `NotOpened.exit_code`; `ERROR_CANCELLED` (a cancelled UAC prompt, a dismissed picker) is `Cancelled`, which the
+  frontend leaves quiet. A file no app is set to open (`ERROR_NO_ASSOCIATION`) gets the `openas` verb on the same ID
+  list, so Windows' "How do you want to open this file?" picker appears, as in File Explorer. The path goes over in its PLAIN
   spelling (`../platform/windows_shell_path.rs`): an app handed the file reads it the Win32 way, so a path with no faithful
   plain form (past 259 units, a name ending in a dot or space, a device name like `CON`) is refused as `NoPlainPath`
   before anything launches, ❌ never sent verbatim or with `\\?\` stripped. The same check backs "Show in File

@@ -156,6 +156,16 @@ describe('a row that looks openable', () => {
     expect(options).toMatchObject({ id: 'opening-file', level: 'warn' })
   })
 
+  it('stays quiet when the person cancelled the launch themselves (a UAC prompt, the picker)', async () => {
+    openFile.mockRejectedValue(new Refused({ type: 'cancelled' }))
+
+    await expect(openWithDefaultAppOrExplain('root', fileAt('/Users/test_user_10/setup.exe'))).resolves.toBe(
+      'notOpened',
+    )
+
+    expect(addToast).not.toHaveBeenCalled()
+  })
+
   it('stays quiet when macOS didn’t answer in time, since the app may still open it', async () => {
     openFile.mockRejectedValue(new Refused({ type: 'timedOut' }))
 

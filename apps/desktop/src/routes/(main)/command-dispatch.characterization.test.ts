@@ -46,7 +46,7 @@ const m = vi.hoisted(() => ({
   goToLatestDownload: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),
   goToTrash: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),
   openExternalUrl: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),
-  showInFinder: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),
+  showInFinder: vi.fn<(...a: unknown[]) => Promise<null>>(() => Promise.resolve(null)),
   copyToClipboard: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),
   quickLookOpen: vi.fn<(...a: unknown[]) => Promise<boolean>>(() => Promise.resolve(true)),
   quickLookClose: vi.fn<(...a: unknown[]) => Promise<void>>(() => Promise.resolve()),

@@ -6,13 +6,13 @@ use crate::file_system::get_info::GetInfoError;
 use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 
 /// Opens the parent folder in the default file manager.
-pub(crate) fn reveal_in_file_manager(path: String) -> Result<(), String> {
-    let native = crate::commands::wire_path::native(&path).map_err(|why| format!("no folder to reveal: {why:?}"))?;
+pub(crate) async fn reveal_in_file_manager(path: String) -> Result<(), super::RevealError> {
+    let native = crate::commands::wire_path::native(&path).map_err(|_| super::RevealError::NoPath)?;
     let parent = native.parent().unwrap_or(std::path::Path::new("/"));
-    Command::new("xdg-open")
-        .arg(parent)
-        .spawn()
-        .map_err(|e| e.to_string())?;
+    Command::new("xdg-open").arg(parent).spawn().map_err(|e| {
+        log::warn!(target: "reveal", "xdg-open didn't start: {e}");
+        super::RevealError::NotShown
+    })?;
     Ok(())
 }
 

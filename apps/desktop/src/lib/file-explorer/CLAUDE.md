@@ -8,8 +8,8 @@ Dual-pane file explorer with keyboard-driven navigation, file selection, sorting
   `quick-look/`: the feature subdirectories (each has its own colocated docs).
 - `pane/`: `DualPaneExplorer` + `FilePane` + dialog manager + per-pane state. Owns type-to-jump, live disk space, the
   `navigate()` transaction, volume capabilities, and the error-display pipeline (see `pane/CLAUDE.md`).
-- Sorting, the command palette, and the "Open with" copy toasts (`open-with-copy-bridge.ts`) have no own directory;
-  their detail is in `DETAILS.md`.
+- Sorting, the command palette, the "Open with" copy toasts (`open-with-copy-bridge.ts`), and "Show in Finder"'s refusal
+  toasts (`file-manager-reveal.ts`) have no own directory; their detail is in `DETAILS.md`.
 - `displayed-date.ts`: `displayedDateColumn(effectiveSortBy)`, the ONE rule for which date a list shows (Created or
   Added when the rows follow it, else Modified), plus each date's labels. ❌ No second derivation in a view.
 

@@ -350,6 +350,16 @@ For the dialog-side wiring see `../search/CLAUDE.md`.
   the cursor, feeding each `move` in as a removal from where the row left plus an insertion where it arrived, and
   landing the row's own tracker on the new position by identity.
 
+## "Show in Finder" refusals (`file-manager-reveal.ts`)
+
+Every road to "Show in Finder / File Explorer" (the shortcut, the File menu, the context menu, the About card's button)
+goes through `showInFileManagerOrExplain`, which never throws. The backend answers a typed `RevealError`
+(`apps/desktop/src-tauri/src/commands/file_actions/platform/mod.rs`): `noPath` (nothing the file manager can reach),
+`noPlainPath` (Windows: a path the Shell would read as another item), or `notShown` (the file manager was asked and said
+no). Each is one warning toast, `fileExplorer.reveal.*`. Refused before asking and refused by the Shell end the same
+way, on purpose: a thrown refusal used to reach the dispatcher as an unhandled error, and a Shell-side one was only
+logged. A Windows reveal past its 5 s wait stays quiet: Explorer may still show it.
+
 ## "Open with" copy notices (`open-with-copy-bridge.ts`)
 
 "Open with" on a file inside an archive or a `.git` snapshot runs entirely in Rust (the native context menu), and it has

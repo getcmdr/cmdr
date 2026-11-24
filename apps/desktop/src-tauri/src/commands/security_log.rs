@@ -30,10 +30,14 @@ pub fn set_security_log_enabled(value: bool) {
 #[specta::specta]
 pub async fn reveal_security_log(app: AppHandle) -> Result<(), RevealSecurityLogError> {
     let data_dir = crate::config::resolved_app_data_dir(&app).map_err(|_| RevealSecurityLogError::NoDataDir)?;
-    cmdr_fs::deadline::blocking_with_timeout(REVEAL_DEADLINE, Err(RevealSecurityLogError::Unavailable), move || {
+    let target = cmdr_fs::deadline::blocking_with_timeout(REVEAL_DEADLINE, None, move || {
         let target = crate::security_log::reveal_target(&data_dir);
-        crate::commands::file_actions::reveal_in_file_manager(target.to_string_lossy().into_owned())
-            .map_err(|_| RevealSecurityLogError::Unavailable)
+        // Crossed up once: the reveal takes an app path, as every sender's.
+        cmdr_fs::app_path::AppPathBuf::from_native_unicode(&target).ok()
     })
     .await
+    .ok_or(RevealSecurityLogError::Unavailable)?;
+    crate::commands::file_actions::reveal_in_file_manager(target.into_string())
+        .await
+        .map_err(|_| RevealSecurityLogError::Unavailable)
 }

@@ -166,6 +166,7 @@ export type {
   OpenTerminalError,
   OpenTerminalOutcome,
   PaneContextMenuFacts,
+  RevealError,
   TerminalApp,
   TerminalAppList,
   TextEditorApp,

@@ -515,6 +515,18 @@
       "fileName": "the file's name, for example report.pdf (do not translate)"
     }
   },
+  "fileExplorer.reveal.notShown": "{platform, select, macos {Finder couldn’t show this item. It may have moved, or its disk or server may be offline.} windows {File Explorer couldn’t show this item. It may have moved, or its drive or network share may be offline.} other {Your file manager couldn’t show this item. It may have moved, or its disk or server may be offline.}}",
+  "@fileExplorer.reveal.notShown": {
+    "description": "Warning toast shown after the user picked \"Show in Finder\" (\"Show in File Explorer\" on Windows; see commands.fileShowInFileManager.label) and the system's file manager didn't show the item: it was moved or deleted meanwhile, or the disk or network share it's on stopped answering. \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language. Never use the words 'error' or 'failed'."
+  },
+  "fileExplorer.reveal.noPath": "{platform, select, macos {This item isn’t a regular file on your Mac, so Finder can’t show it.} windows {This item isn’t a regular file on your PC, so File Explorer can’t show it.} other {This item isn’t a regular file on your computer, so your file manager can’t show it.}}",
+  "@fileExplorer.reveal.noPath": {
+    "description": "Warning toast shown after the user picked \"Show in Finder\" (\"Show in File Explorer\" on Windows; see commands.fileShowInFileManager.label) on an item that lives somewhere the system's file manager can't reach, like a phone or a server Cmdr connects to itself. Word \"regular file on your Mac\" like fileExplorer.open.notOnThisMacWithoutKey does. \"Finder\" is the macOS app name and stays verbatim; the Windows branch names File Explorer, in the name Microsoft gives it in your language. Never use the words 'error' or 'failed'."
+  },
+  "fileExplorer.reveal.noPlainPath": "File Explorer can’t show this item by its path. The path is longer than Windows apps take, or a name in it ends in a dot or space, or is a reserved name like CON. Shorten or rename it, then try again.",
+  "@fileExplorer.reveal.noPlainPath": {
+    "description": "Warning toast, Windows only, shown after the user picked \"Show in File Explorer\" (commands.fileShowInFileManager.label) and Cmdr didn't ask File Explorer, because File Explorer would read the path as a different item: the full path is past the 259-character limit, or a name in the path (a folder's or the filename) ends in a period or space, or is a name Windows reserves for devices (CON, NUL, COM1, and so on). Word it like fileExplorer.open.noPlainPath. \"File Explorer\" is Windows' file manager, in the name Microsoft gives it in your language. \"CON\" is a literal Windows device name; keep it as is. Never use the words 'error' or 'failed'."
+  },
   "fileExplorer.openingToast.noApp": "Opening {fileName}…",
   "@fileExplorer.openingToast.noApp": {
     "description": "Short self-dismissing toast (two seconds) shown right after the user presses Enter or double-clicks a file, when Cmdr doesn't know which app will open it (or the item is an app itself).",

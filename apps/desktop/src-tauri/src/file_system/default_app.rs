@@ -49,7 +49,11 @@ pub enum OpenPathError {
     /// characters, a name ending in a dot or space, or a device name like `CON`), so nothing
     /// was launched (`platform::windows_shell_path`).
     NoPlainPath,
-    /// There's no opener on this platform.
+    /// Windows: the person said no on the way (a cancelled UAC prompt, a dismissed "How do you
+    /// want to open this file?" picker). They know; nothing to say.
+    Cancelled,
+    /// There's no opener on this platform. No desktop build answers it any more; the browser
+    /// demo does (`lib/demo/answers.ts`), so the shape stays shared.
     Unsupported,
 }
 
@@ -62,6 +66,7 @@ impl std::fmt::Display for OpenPathError {
             Self::LaunchRefused { errno } => write!(f, "the opener couldn't start (errno {errno:?})"),
             Self::TimedOut => f.write_str("the opener didn't answer in time"),
             Self::NoPlainPath => f.write_str("the path has no plain form other apps read"),
+            Self::Cancelled => f.write_str("the person cancelled on the way"),
             Self::Unsupported => f.write_str("no opener on this platform"),
         }
     }

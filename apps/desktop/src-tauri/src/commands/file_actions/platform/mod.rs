@@ -11,7 +11,6 @@ use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
 #[cfg_attr(target_os = "windows", path = "windows.rs")]
 mod imp;
 
-const _: fn(String) -> Result<(), String> = reveal_in_file_manager;
 const _: fn(&cmdr_fs::app_path::AppPath) -> Result<TrashView, cmdr_operations::MutationError> = open_trash_view;
 
 /// What [`open_trash_view`] did.
@@ -29,6 +28,26 @@ pub enum TrashView {
     NoView,
 }
 
+/// Why a file didn't show in the OS's file manager. The frontend words every variant
+/// (`lib/file-explorer/file-manager-reveal.ts`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum RevealError {
+    /// The path names nothing the file manager can show: a `..` name, a scheme path, or text
+    /// that's no app path. Nothing was asked.
+    NoPath,
+    /// Windows: the path has no plain spelling the Shell reads as this same item (past 259
+    /// characters, a name ending in a dot or space, a device name like `CON`). Nothing was asked.
+    #[cfg_attr(
+        any(target_os = "macos", target_os = "linux"),
+        allow(dead_code, reason = "only Windows' Shell needs the plain spelling")
+    )]
+    NoPlainPath,
+    /// The file manager was asked and said no: the item is gone or its share unreachable, or the
+    /// launch couldn't start.
+    NotShown,
+}
+
 /// "Go to trash" where the trash is a view the OS draws rather than a folder a pane lists:
 /// Windows' Recycle Bin, one Shell view of every drive's bin, opens in File Explorer when
 /// `path`'s drive keeps one. [`TrashView::NoView`] on macOS and Linux, with no I/O.
@@ -38,11 +57,12 @@ pub(super) use imp::open_trash_view;
 // output its future resolves to.
 const _: fn() = || {
     fn resolves_to<T, F: Future<Output = T>>(_: F) {}
+    resolves_to::<Result<(), RevealError>, _>(reveal_in_file_manager(String::new()));
     resolves_to::<Result<(), GetInfoError>, _>(get_info(String::new()));
     resolves_to::<Result<EditorOpenReport, OpenInEditorError>, _>(open_in_editor(String::new(), String::new(), false));
 };
 
-/// Shows `path` in the OS's file manager.
+/// Shows `path` in the OS's file manager, or says why it didn't.
 pub(super) use imp::reveal_in_file_manager;
 
 /// Opens the OS's Get Info window for `path`, or `Ok` with nothing to show where it has none.
