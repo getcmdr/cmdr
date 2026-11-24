@@ -247,6 +247,67 @@ fn process_dir_removal_deletes_subtree() {
     assert!(children.is_empty(), "directory and its children should be deleted");
 }
 
+/// A folder that went away, reported the way `ReadDirectoryChangesW` reports it:
+/// `FILE_ACTION_REMOVED` or `FILE_ACTION_RENAMED_OLD_NAME` carry no file type, and the
+/// path is gone before anyone can stat it, so the event says nothing about a folder.
+/// Deleting just the folder's row left its children orphaned under a dead id and its
+/// bytes counted in every ancestor, so a renamed or deleted folder on Windows kept
+/// its old size in the index (#1363).
+fn a_typeless_removal_deletes_the_whole_folder(flags: FsEventFlags) {
+    let (writer, dir, conn) = setup_test_writer();
+    let db_path = dir.path().join("test-reconciler.db");
+    let removed_dir_id = {
+        let wconn = IndexStore::open_write_connection(&db_path).unwrap();
+        let parent_id =
+            IndexStore::insert_entry_v2(&wconn, ROOT_ID, "parent", true, false, None, None, None, None).unwrap();
+        let removed_dir_id =
+            IndexStore::insert_entry_v2(&wconn, parent_id, "removed_dir", true, false, None, None, None, None).unwrap();
+        IndexStore::insert_entry_v2(
+            &wconn,
+            removed_dir_id,
+            "child.txt",
+            false,
+            false,
+            Some(50),
+            Some(50),
+            None,
+            None,
+        )
+        .unwrap();
+        removed_dir_id
+    };
+
+    let event = make_event("/parent/removed_dir", 80, flags);
+    process_fs_event(&event, &IndexPathSpace::root(), &conn, &writer, None, &mut None);
+
+    writer.flush_blocking().unwrap();
+    writer.shutdown();
+
+    let store = IndexStore::open(&db_path).unwrap();
+    let parent_id = store::resolve_path(store.read_conn(), "/parent").unwrap().unwrap();
+    assert!(store.list_children(parent_id).unwrap().is_empty(), "the folder is gone");
+    assert!(
+        store.list_children(removed_dir_id).unwrap().is_empty(),
+        "and so is everything in it, ❌ never left orphaned under a dead id"
+    );
+}
+
+#[test]
+fn a_folder_removal_without_a_type_deletes_its_subtree() {
+    a_typeless_removal_deletes_the_whole_folder(FsEventFlags {
+        item_removed: true,
+        ..Default::default()
+    });
+}
+
+#[test]
+fn a_folder_renamed_away_without_a_type_deletes_its_subtree() {
+    a_typeless_removal_deletes_the_whole_folder(FsEventFlags {
+        item_renamed: true,
+        ..Default::default()
+    });
+}
+
 #[test]
 fn process_nonexistent_file_treated_as_removal() {
     let (writer, _dir, conn) = setup_test_writer();

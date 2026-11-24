@@ -786,6 +786,7 @@ mod phased;
 mod registry_rescan;
 mod root;
 mod start;
+mod watch_rearm;
 
 pub(in crate::indexing) use branch_watch::BranchWatchStart;
 

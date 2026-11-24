@@ -251,8 +251,16 @@ impl ReadDirectoryChangesServer {
             complete_sem: semaphore,
             stopping,
         };
+        // CMDR-PATCH: a first read the OS refuses fails the watch, as in notify 9.0, where
+        // 8.2.2 answered `Ok` for a watch that would never report anything.
+        if let Err(err) = start_read(&rd, self.event_handler.clone(), handle, self.tx.clone()) {
+            unsafe {
+                CloseHandle(handle);
+                CloseHandle(semaphore);
+            }
+            return Err(Error::io(err).add_path(path));
+        }
         self.watches.insert(path.clone(), ws);
-        start_read(&rd, self.event_handler.clone(), handle, self.tx.clone());
         Ok(path)
     }
 
@@ -292,12 +300,14 @@ fn stop_watch(ws: &WatchState, meta_tx: &Sender<MetaEvent>) {
     let _ = meta_tx.send(MetaEvent::SingleWatchComplete);
 }
 
+// CMDR-PATCH: answers whether the read was queued, as notify 9.0's does; 8.2.2 dropped a
+// refusal, so a watch whose re-arm failed went quiet with nobody told.
 fn start_read(
     rd: &ReadData,
     event_handler: Arc<Mutex<dyn EventHandler>>,
     handle: HANDLE,
     action_tx: Sender<Action>,
-) {
+) -> std::io::Result<()> {
     let request = Box::new(ReadDirectoryRequest {
         event_handler,
         handle,
@@ -342,6 +352,7 @@ fn start_read(
         );
 
         if ret == 0 {
+            let err = std::io::Error::last_os_error();
             // error reading. retransmute request memory to allow drop.
             // Because of the error, ownership of the `overlapped` alloc was not passed
             // over to `ReadDirectoryChangesW`.
@@ -349,8 +360,10 @@ fn start_read(
             let _overlapped = Box::from_raw(overlapped);
             let request = Box::from_raw(request);
             ReleaseSemaphore(request.data.complete_sem, 1, ptr::null_mut());
+            return Err(err);
         }
     }
+    Ok(())
 }
 
 // CMDR-PATCH: hands `event` to the watch's handler, as the parsing loop below does.
@@ -439,12 +452,25 @@ unsafe extern "system" fn handle_event(
     }
 
     // Get the next request queued up as soon as possible
-    start_read(
+    // CMDR-PATCH: a re-arm the OS refuses (a drive pulled between two reads) is the
+    // watch's end. The changes this completion carries are reported first, then the
+    // error, then the unwatch, as in notify 9.0.
+    let rearm_error = start_read(
         &request.data,
         request.event_handler.clone(),
         request.handle,
-        request.action_tx,
-    );
+        request.action_tx.clone(),
+    )
+    .err();
+    let report_rearm_error = |request: &ReadDirectoryRequest| {
+        if let Some(err) = rearm_error {
+            emit_to(
+                &request.event_handler,
+                Err(Error::io(err).add_path(request.data.dir.clone())),
+            );
+            request.unwatch();
+        }
+    };
 
     // CMDR-PATCH: Windows reports discarded notification details (a buffer overflow) as a
     // zero-byte successful completion or `ERROR_NOTIFY_ENUM_DIR`, both meaning "enumerate the
@@ -456,6 +482,7 @@ unsafe extern "system" fn handle_event(
             &request.event_handler,
             Ok(Event::new(EventKind::Other).set_flag(Flag::Rescan)),
         );
+        report_rearm_error(&request);
         return;
     }
 
@@ -545,6 +572,7 @@ unsafe extern "system" fn handle_event(
         cur_offset = cur_offset.offset(cur_entry.NextEntryOffset as isize);
         cur_entry = ptr::read_unaligned(cur_offset as *const FILE_NOTIFY_INFORMATION);
     }
+    report_rearm_error(&request);
 }
 
 /// Watcher implementation based on ReadDirectoryChanges

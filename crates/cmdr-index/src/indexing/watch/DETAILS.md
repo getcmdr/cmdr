@@ -325,6 +325,36 @@ that overflows during every scan would repeat back to back.
 An anchor that arrives DURING a scan is kept, on every OS: see the rescan doc's § "An anchor that arrives during a
 scan".
 
+### When the OS ends the watch
+
+A `ReadDirectoryChangesW` watch can end while its volume stays registered: a read error (a pulled drive, a detached VHD,
+a dropped `subst` target), a re-arm the OS refuses, or the watched root itself going away. The vendored `notify` reports
+each, then unwatches (`vendor/notify/CMDR-PATCH.md`). The index used to log the error at `debug` and keep reading a
+channel nothing would write to again, so the drive's index read live and stopped changing for the session (#1363).
+
+**Decision: a watch the OS ended is the watch's END, said in a typed way, and the lifecycle re-arms it.** **Why**: the
+loop sits below the registry and can't restart its own watcher (§ "A loop needing a rescan SAYS so" in `CLAUDE.md`), and
+re-arming inside the backend races the vendored backend's own queued unwatch of the same path.
+
+- **The backend** (`watcher/platform/notify_backend/forward.rs`): on Windows (`ROOT_LOSS_ENDS_THE_WATCH`) an `Err`, or a
+  `Remove` naming a watched root, raises `ended_flag` and returns, which drops the sender and closes the channel. The
+  flag goes up FIRST, so a loop that sees the close always sees why. ❌ A root's removal is never forwarded: the root of
+  a whole-volume watch is the volume, and its row going would empty the index of a drive that may only be unplugged.
+  Linux keeps logging its errors: inotify's name a subdirectory it couldn't watch, and a removed branch root is an
+  ordinary removal.
+- **The loop** (`event_loop/live.rs`): a close with the flag up returns `LiveLoopEnd::WatchLost`; with it down, a stop.
+- **The lifecycle** (`../lifecycle/manager/watch_rearm.rs`, through `after_live_loop`): retires the dead watcher, then
+  catches up the way a launch would, since nothing watched in between and `notify` keeps no journal. A whole-watched
+  volume rescans through `cover_or_scan` (which starts a fresh watcher); a branch-watched one re-watches its branches
+  with `resuming`, so its rows render stale; a volume whose root is gone does neither and waits for its removal. A watch
+  that keeps dying backs off: the first re-arm is immediate, each one after a short-lived watch (under 10 min) waits
+  twice the last, from 30 s up to 30 min, on one timer.
+- **macOS** never raises it: an FSEvents stream doesn't end while its volume is mounted, so `ended_flag` defaults to a
+  flag nobody sets.
+
+Not covered here: the open root handle vetoing "Safely remove" of a removable drive (#1363 part 2), which waits on the
+device-notification work (`docs/specs/windows-port-plan.md` task 39).
+
 ## Data flow (live + replay)
 
 ```
@@ -507,6 +537,13 @@ onto a freed inode, so the pre-pass would FALSE-MATCH it as a move and re-home t
 unrelated file. Every local write path stores `inode: None` on such a `LocalExternal` volume, making
 `find_entry_by_inode` inert and every change fall back to the safe delete+create. The volume-level trust decision
 (`trust_inode` / `inodes_trustworthy`) is canonical in `../paths/DETAILS.md`.
+
+**Windows stores no inode at all** today: `std::fs::Metadata` carries no file id there (`cmdr_fs::file_identity`,
+`FileId::of` answers `None`; only the handle-opening `FileId::at` does), so the pre-pass is inert on every Windows
+volume, as on FAT. A rename arrives as two typeless events (`RENAMED_OLD_NAME`, `RENAMED_NEW_NAME`): the old path's row
+goes as a SUBTREE because the delete reads the row's own type, not the event's
+(`../reconcile/reconciler/events.rs:delete_for`), and the new folder lands unlisted and queues its walk. Correct, at the
+cost of re-walking a renamed folder; storing a file id from the scanner is what would make it a `MoveEntryV2`.
 
 **A trusted inode can still be RECYCLED.** ext4 and friends reuse a freed inode for a later create, so a stale row (its
 removal not yet applied) can carry the inode of a path that now sits INSIDE that row's own subtree, for example the old

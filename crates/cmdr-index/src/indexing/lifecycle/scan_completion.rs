@@ -70,6 +70,9 @@ pub(super) struct ScanCompletion {
     /// `None` if the watcher failed to start; otherwise the FSEvents overflow
     /// flag, checked here and passed to the live loop.
     pub watcher_overflow_flag: Option<Arc<AtomicBool>>,
+    /// `None` if the watcher failed to start; otherwise its ended flag
+    /// (`DriveWatcher::ended_flag`), passed to the live loop.
+    pub watch_ended_flag: Option<Arc<AtomicBool>>,
     /// Volume id (for events, phases, and freshness).
     pub volume_id: String,
     /// The volume's path space (pass-through for the boot disk, mount-relative strip
@@ -122,6 +125,7 @@ async fn finish_the_scan(params: ScanCompletion) {
         ground,
         event_rx,
         watcher_overflow_flag,
+        watch_ended_flag,
         volume_id,
         space,
         events,
@@ -418,6 +422,7 @@ async fn finish_the_scan(params: ScanCompletion) {
     let events_live = Arc::clone(&events);
     let volume_id_live = volume_id.clone();
     let overflow_live = watcher_overflow_flag.clone();
+    let ended_live = watch_ended_flag.clone();
     let space_live = space.clone();
     let handle = crate::indexing::host::runtime::spawn(async move {
         let end = run_live_event_loop(
@@ -429,6 +434,7 @@ async fn finish_the_scan(params: ScanCompletion) {
                 volume_id: volume_id_live.clone(),
                 space: space_live,
                 watcher_overflow: overflow_live,
+                watch_ended: ended_live,
                 scope,
                 // Started at the scan's own id, right behind the walk: no gap to judge.
                 history_check: None,

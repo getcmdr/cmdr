@@ -66,7 +66,9 @@ concurrently without corrupting each other. Every invariant below holds independ
   kind on `get_status`, so a mid-scan window reload recovers it. `manager/registry_rescan.rs` holds
   `perform_registry_rescan` and `after_live_loop`: the door a "this volume needs a fresh scan" trigger from below the
   manager (a replay fallback, a live loop's backlog, the reconciler) comes back in through, re-resolving the manager by
-  volume id.
+  volume id. `manager/watch_rearm.rs` is its sibling for a watch the OS ended (`LiveLoopEnd::WatchLost`): it retires the
+  dead watcher and rescans, re-watches the branches, or waits for a vanished drive, behind a per-volume backoff
+  (`../watch/DETAILS.md` § "When the OS ends the watch").
 - **`manager/`'s submodules import what they use, and a top-level `use super::*` here is not free.** `cargo-modules`
   resolves such a glob to every item the parent re-exports, so each child gains a phantom edge to every sibling: while
   `start.rs` and `phased.rs` carried one, `manager.rs`'s seven child-only imports all printed as `manager` edges and

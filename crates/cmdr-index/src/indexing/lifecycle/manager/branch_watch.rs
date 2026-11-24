@@ -230,6 +230,7 @@ impl IndexManager {
         } = started;
 
         let watcher_overflow = Some(watcher.overflow_flag());
+        let watch_ended = Some(watcher.ended_flag());
         // A branch a walk began while the stream was starting isn't in `paths`. A
         // watcher that watches branch by branch (inotify) has to be told about it;
         // one that watches the volume root already carries it.
@@ -273,6 +274,7 @@ impl IndexManager {
                     volume_id: volume_id.clone(),
                     space,
                     watcher_overflow,
+                    watch_ended,
                     scope,
                     history_check,
                 },

@@ -30,6 +30,12 @@ so inotify and FSEvents builds are the release's code.
   stopping, so a pane learns its folder is gone.
 - **A fatal read error reaches the handler**: any other completion error (a pulled drive, a dropped share) is emitted
   as an `Err` before the watch stops, where 8.2.2 only logged it.
+- **A read the OS refuses to queue says so** (#1363). `start_read` answers whether `ReadDirectoryChangesW` took the
+  read, as in 9.0: 8.2.2 reclaimed the request and returned nothing, so a re-arm refused between two reads (a drive
+  pulled in that window) left the watch silent, and a first read refused made `watch` answer `Ok` for a watch that
+  never reported. Now a refused first read fails `watch` with the OS error, and a refused re-arm reports the changes the
+  completion carried, then the error naming the watched path, then unwatches. The index treats that error as the
+  watch's end (`crates/cmdr-index/src/indexing/watch/DETAILS.md` § "When the OS ends the watch").
 - **A 64 KiB read buffer on the heap**: 8.2.2 read into a 16 KiB `[u8; N]` field of the request, which is neither big
   enough for one recursive watch over a whole drive (the index's, #1353) nor guaranteed the DWORD alignment
   `ReadDirectoryChangesW` requires. 9.0 reads 64 KiB into a `Box<[u32]>` (`read_buffer`); so does this copy. 64 KiB is

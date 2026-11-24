@@ -18,6 +18,9 @@ use tokio::sync::mpsc;
 
 use super::super::{FsChangeEvent, FsEventFlags, WatcherBackend, WatcherError};
 
+mod forward;
+use forward::{Forward, ROOT_LOSS_ENDS_THE_WATCH};
+
 /// No journal to replay: a restart rescans.
 pub(crate) const SUPPORTS_EVENT_REPLAY: bool = false;
 
@@ -101,6 +104,8 @@ pub(crate) struct NotifyBackend {
     watched_roots: WatchedRoots,
     /// Branches `watch_branch` was asked for that aren't registered yet.
     pending: Arc<PendingWatches>,
+    /// Raised when the OS ended the watch on its own ([`ROOT_LOSS_ENDS_THE_WATCH`]).
+    ended: Arc<AtomicBool>,
     /// Task that reads notify events from the channel and forwards them.
     forward_task: Option<tokio::task::JoinHandle<()>>,
 }
@@ -171,35 +176,20 @@ impl NotifyBackend {
             }),
         );
 
-        let running_clone = Arc::clone(&running);
-        let counter_clone = Arc::clone(&event_counter);
-        let roots_clone = Arc::clone(&watched_roots);
+        let ended = Arc::new(AtomicBool::new(false));
+        let forward = Forward {
+            running: Arc::clone(&running),
+            counter: Arc::clone(&event_counter),
+            watched_roots: Arc::clone(&watched_roots),
+            ended: Arc::clone(&ended),
+            end_on_root_loss: ROOT_LOSS_ENDS_THE_WATCH,
+        };
 
         let forward_task = crate::indexing::host::runtime::spawn(async move {
             // Bridge the std channel to the tokio world via spawn_blocking
-            let handle = tokio::task::spawn_blocking(move || {
-                while let Ok(result) = notify_rx.recv() {
-                    if !running_clone.load(Ordering::Relaxed) {
-                        break;
-                    }
-                    let events = match result {
-                        Ok(event) => translate_notify_event(event, &counter_clone, &roots_clone),
-                        Err(e) => {
-                            log::debug!("DriveWatcher: notify error: {e}");
-                            continue;
-                        }
-                    };
-                    for ev in events {
-                        // Unbounded send never blocks (Fix 2: no backpressure into
-                        // the notify backend); the event loop caps memory instead.
-                        if event_sender.send(ev).is_err() {
-                            return; // receiver dropped
-                        }
-                    }
-                }
-            });
+            let handle = tokio::task::spawn_blocking(move || forward.run(&notify_rx, &event_sender));
             let _ = handle.await;
-            log::debug!("DriveWatcher (inotify) forward task exiting");
+            log::debug!("DriveWatcher ({OS_API}) forward task exiting");
         });
 
         Ok(Self {
@@ -208,6 +198,7 @@ impl NotifyBackend {
             watcher,
             watched_roots,
             pending: Arc::default(),
+            ended,
             forward_task: Some(forward_task),
         })
     }
@@ -276,6 +267,10 @@ impl WatcherBackend for NotifyBackend {
     /// own route: [`rescan_anchors`].
     fn overflow_flag(&self) -> Arc<AtomicBool> {
         Arc::new(AtomicBool::new(false))
+    }
+
+    fn ended_flag(&self) -> Arc<AtomicBool> {
+        Arc::clone(&self.ended)
     }
 }
 
