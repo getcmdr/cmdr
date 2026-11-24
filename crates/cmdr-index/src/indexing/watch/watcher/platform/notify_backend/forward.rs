@@ -68,7 +68,21 @@ fn removes_a_watched_root(event: &notify::Event, watched_roots: &[PathBuf]) -> b
         && event
             .paths
             .iter()
-            .any(|path| watched_roots.iter().any(|root| root == path))
+            .any(|path| watched_roots.iter().any(|root| same_root(root, path)))
+}
+
+/// Whether `a` and `b` spell the same root the way Windows compares names: case- and
+/// separator-insensitive, a trailing separator ignored. `notify` reports the path it was
+/// given, but a spelling that differs by `\` or case must not slip a root's removal
+/// through as a delete. Only asked where a root loss ends the watch (Windows).
+fn same_root(a: &std::path::Path, b: &std::path::Path) -> bool {
+    let spell = |path: &std::path::Path| {
+        path.to_string_lossy()
+            .replace('\\', "/")
+            .trim_end_matches('/')
+            .to_lowercase()
+    };
+    spell(a) == spell(b)
 }
 
 /// The bridge from `notify`'s std channel to the loop's, run on a blocking thread.
@@ -235,8 +249,43 @@ mod tests {
         assert!(forwarded.running);
     }
 
+    /// Windows names one folder however its case and separators are spelled.
+    #[test]
+    fn a_root_spelled_differently_is_still_the_root() {
+        assert!(same_root(&PathBuf::from("C:/Data/"), &PathBuf::from(r"c:\data")));
+        assert!(same_root(&PathBuf::from("/vol"), &PathBuf::from("/vol/")));
+        assert!(!same_root(&PathBuf::from("C:/Data"), &PathBuf::from("C:/Data/x")));
+    }
+
     #[test]
     fn only_windows_ends_the_watch_on_a_root_loss() {
         assert_eq!(ROOT_LOSS_ENDS_THE_WATCH, cfg!(target_os = "windows"));
+    }
+
+    /// The real OS path, end to end through the vendored `notify` (#1363): a watched
+    /// folder deleted under a live `ReadDirectoryChangesW` watch completes its read with
+    /// `ERROR_ACCESS_DENIED` on a delete-pending handle, `notify` reports the root
+    /// removed and unwatches, and the backend says the watch ended and closes the
+    /// channel. The refused-read path (`start_read` failing) has no reliable trigger on
+    /// a hosted runner; it's on the real-Windows checklist (`watch/DETAILS.md`).
+    #[cfg(target_os = "windows")]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_watched_folder_deleted_on_windows_ends_the_watch_for_real() {
+        let parent = tempfile::tempdir().expect("temp dir");
+        let root = parent.path().join("watched");
+        std::fs::create_dir(&root).expect("create the watched folder");
+        let (event_tx, mut event_rx) = mpsc::unbounded_channel();
+        let mut backend = super::super::start(&root, 0, event_tx).expect("the watch starts");
+        let ended = backend.ended_flag();
+
+        std::fs::remove_dir(&root).expect("delete the watched folder");
+        let closed = tokio::time::timeout(std::time::Duration::from_secs(20), async {
+            while event_rx.recv().await.is_some() {}
+        })
+        .await;
+
+        assert!(closed.is_ok(), "the channel closes once the watched folder goes");
+        assert!(ended.load(Ordering::Acquire), "as an ended watch, not a stop");
+        backend.stop();
     }
 }

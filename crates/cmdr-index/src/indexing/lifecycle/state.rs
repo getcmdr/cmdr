@@ -628,7 +628,7 @@ pub(crate) fn finish_branch_coverage(volume_id: &str, branches: &Arc<BranchWatch
 /// none. Non-blocking work only — the registry lock is held throughout. ❌ That
 /// rules out every `fseventsd` call, a watcher's stop included (DETAILS § "Every
 /// `fseventsd` call runs off the registry").
-fn with_running_manager(volume_id: &str, f: impl FnOnce(&mut IndexManager)) {
+pub(in crate::indexing::lifecycle) fn with_running_manager(volume_id: &str, f: impl FnOnce(&mut IndexManager)) {
     let mut reg = INDEX_REGISTRY.lock_ignore_poison();
     if let Some(IndexPhase::Running(mgr)) = reg.get_mut(volume_id).map(|i| &mut i.phase) {
         f(mgr);

@@ -187,7 +187,11 @@ pub(in crate::indexing) enum LiveLoopEnd {
     /// The OS ended the watch on its own (a read error, its root gone), so nothing
     /// watches the volume: its watcher has to be re-armed, and what changed while
     /// nothing watched caught up (#1363).
-    WatchLost,
+    WatchLost {
+        /// How long this loop ran, which the re-arm's backoff times the watch's health
+        /// by. A loop starts once its scan ends, so a long scan doesn't count.
+        lived: Duration,
+    },
 }
 
 /// Process FSEvents in real time after scan + reconciliation completes.
@@ -214,6 +218,7 @@ pub(in crate::indexing) async fn run_live_event_loop(
         mut history_check,
     } = config;
     log::info!("Live event processing: started");
+    let started = Instant::now();
     log::info!(target: "stall_probe::reconciler", "live_event_loop_started");
 
     // Open a read-only connection for path resolution (integer-keyed lookups).
@@ -343,7 +348,7 @@ pub(in crate::indexing) async fn run_live_event_loop(
                         // its sender, so a close it caused always finds it up.
                         if watch_ended.as_ref().is_some_and(|ended| ended.load(Ordering::Acquire)) {
                             log::warn!("Live event processing: the watch ended under the loop; asking for a re-arm");
-                            end = LiveLoopEnd::WatchLost;
+                            end = LiveLoopEnd::WatchLost { lived: started.elapsed() };
                         }
                         break;
                     }

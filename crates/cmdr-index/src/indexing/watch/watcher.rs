@@ -60,6 +60,14 @@ mod platform;
 #[cfg(all(test, target_os = "linux"))]
 pub(crate) use platform::overflow_events_for_test;
 
+/// Whether a watcher that failed to START counts as a lost watch, so the volume's live
+/// loop asks for a re-arm (`LiveLoopEnd::WatchLost`) once its scan ends. Windows only:
+/// a `ReadDirectoryChangesW` start fails on a root that doesn't answer right now; an
+/// FSEvents or inotify one doesn't fail in a way a retry fixes (`platform/`).
+pub(crate) fn a_failed_start_is_a_lost_watch() -> bool {
+    platform::A_FAILED_START_IS_A_LOST_WATCH
+}
+
 /// What every OS's watcher does once started. The start itself is per OS (`platform/`),
 /// because what a start takes differs: a journal position, or a set of branches.
 pub(crate) trait WatcherBackend: Send {

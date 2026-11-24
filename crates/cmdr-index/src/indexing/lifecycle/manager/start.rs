@@ -464,7 +464,9 @@ impl IndexManager {
             }
             Err(e) => {
                 watcher_overflow = None;
-                watch_ended = None;
+                // Already ended where a failed start is a lost watch: the channel closed
+                // with the failed start, so the live loop asks for a re-arm.
+                watch_ended = watcher::a_failed_start_is_a_lost_watch().then(|| Arc::new(AtomicBool::new(true)));
                 // Watcher failure is non-fatal: scan works without it, just no live updates
                 log::warn!(
                     "Failed to start DriveWatcher (scan will proceed without watcher): {}",

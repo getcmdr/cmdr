@@ -25,6 +25,9 @@ use super::super::{FsChangeEvent, FsEventFlags, WatcherBackend, WatcherError};
 /// FSEvents keeps a journal with event IDs, so a restart replays from the last one.
 pub(crate) const SUPPORTS_EVENT_REPLAY: bool = true;
 
+/// An FSEvents start doesn't fail on a root that answers later.
+pub(crate) const A_FAILED_START_IS_A_LOST_WATCH: bool = false;
+
 /// Start watching `root`; `since_when` is the FSEvents event ID to replay from (`0` for "since
 /// now"). A root on the test-only fake journal gets that backend instead of a stream.
 pub(crate) fn start(

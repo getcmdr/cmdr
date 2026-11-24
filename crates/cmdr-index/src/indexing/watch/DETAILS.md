@@ -343,14 +343,38 @@ re-arming inside the backend races the vendored backend's own queued unwatch of 
   Linux keeps logging its errors: inotify's name a subdirectory it couldn't watch, and a removed branch root is an
   ordinary removal.
 - **The loop** (`event_loop/live.rs`): a close with the flag up returns `LiveLoopEnd::WatchLost`; with it down, a stop.
-- **The lifecycle** (`../lifecycle/manager/watch_rearm.rs`, through `after_live_loop`): retires the dead watcher, then
-  catches up the way a launch would, since nothing watched in between and `notify` keeps no journal. A whole-watched
-  volume rescans through `cover_or_scan` (which starts a fresh watcher); a branch-watched one re-watches its branches
-  with `resuming`, so its rows render stale; a volume whose root is gone does neither and waits for its removal. A watch
-  that keeps dying backs off: the first re-arm is immediate, each one after a short-lived watch (under 10 min) waits
-  twice the last, from 30 s up to 30 min, on one timer.
+- **A watcher that fails to START counts too, on Windows** (`watcher::a_failed_start_is_a_lost_watch`): the vendored
+  `notify` fails `watch` when the first read is refused, `start_scan` hands the loop an already-raised flag, and the
+  loop ends `WatchLost` once its scan does, so a refused restart retries through the backoff instead of leaving the
+  volume unwatched. macOS and Linux keep "scan without a watcher".
+- **The lifecycle** (`../lifecycle/manager/watch_rearm.rs`, through `after_live_loop`) catches up the way a launch
+  would, since nothing watched in between and `notify` keeps no journal:
+  - **It re-arms only the LOST watch.** Each attempt first checks the manager still has no watcher or the dead one (its
+    `ended_flag` up) and that no walk owns the volume. A "Rescan now" or a replugged drive during the wait brings up a
+    healthy watcher, and retiring it would leave the volume unwatched for the session (or rescan it for nothing).
+  - A whole-watched volume rescans through `cover_or_scan` (which starts a fresh watcher); a branch-watched one
+    re-watches its branches with `resuming`, so its rows render stale. Whether it was branch-watched is read once, at
+    the first attempt: retiring the watcher clears the manager's flag.
+  - **A root that doesn't answer** (`Path::is_dir` is false on any error: a pulled drive, a locked BitLocker volume, a
+    transient I/O failure) marks the rows stale once and asks again on the next backoff step. Windows sends no removal
+    or arrival notice yet, so this timer is what notices a drive coming back under the same id; ⚠️ task 39's device
+    notifications (`docs/specs/windows-port-plan.md`) replace it.
+  - A rescan refused because a walk holds the ground (`GroundBeingWalked`, `GroundBeingRewritten`), or a branch watch
+    that didn't start, retries the same way.
+  - **Backoff** (`RearmBackoff`, on the manager, so it goes with it): a watch whose live loop ran 10 min or more re-arms
+    at once; otherwise each attempt waits twice the last, from 30 s up to 30 min. ⚠️ Timed from the LOOP's start
+    (`LiveLoopEnd::WatchLost { lived }`), ❌ never from the last re-arm: a loop starts only once its scan ends, so a
+    scan longer than the window made every loss look healthy and rescanned a big drive back to back. One timer per wait,
+    dropped with the volume's work (its cancel token) or the runtime; nothing polls.
 - **macOS** never raises it: an FSEvents stream doesn't end while its volume is mounted, so `ended_flag` defaults to a
   flag nobody sets.
+
+**Cells**: the classification and the loop end run on every OS (`watcher/platform/notify_backend/forward.rs` tests,
+`event_loop/tests/watch_lost.rs`); one Windows cell deletes a watched folder under a real `ReadDirectoryChangesW` watch
+and expects the end. The vendored refused-read path (`start_read` failing on a re-arm or a first read) has no reliable
+trigger on a hosted runner, so it's checked on real Windows: pull a USB stick or detach a VHD that's being indexed, and
+look for "the watch ended on a read error" and a "Watch re-arm" line; plug it back and look for the re-arm once the root
+answers.
 
 Not covered here: the open root handle vetoing "Safely remove" of a removable drive (#1363 part 2), which waits on the
 device-notification work (`docs/specs/windows-port-plan.md` task 39).

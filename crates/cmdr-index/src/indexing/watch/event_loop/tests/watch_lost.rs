@@ -52,10 +52,10 @@ async fn end_of_a_loop(volume_id: &str, ended: bool) -> LiveLoopEnd {
 /// owing nothing and the drive's index read live for the rest of the session.
 #[tokio::test(flavor = "multi_thread")]
 async fn a_watch_the_os_ended_asks_its_owner_for_a_re_arm() {
-    assert_eq!(
+    assert!(matches!(
         end_of_a_loop("live-loop-test-watch-lost", true).await,
-        LiveLoopEnd::WatchLost
-    );
+        LiveLoopEnd::WatchLost { .. }
+    ));
 }
 
 #[tokio::test(flavor = "multi_thread")]
