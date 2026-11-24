@@ -1755,9 +1755,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "只有在可用空間也低於 10 GB 時，索引才會暫停，所以大磁碟會繼續建立索引。可用空間回升到比這個值高 1 個百分點，或超過 11 GB 後，索引就會從中斷的地方繼續。不論「磁碟空間不足警告」開或關都一樣。",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "只有在可用空間低於這個百分比、同時也低於 10 GB 時，索引才會暫停，所以大磁碟會繼續建立索引。可用空間比這個百分比高 1 個百分點，或超過 11 GB 後，索引就會從中斷的地方繼續。不論「磁碟空間不足警告」開或關都一樣。",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "避免索引佔用你自己的檔案需要的空間。",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

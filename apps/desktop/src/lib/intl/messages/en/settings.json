@@ -2112,7 +2112,7 @@
     "description": "Advanced-section label for the number input that sets the free-space percentage of the startup disk below which drive indexing pauses. \"(%)\" marks the value as a percent; keep the locale's percent sign.",
     "screenshot": "settings-advanced-page-2.png"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexing pauses only while less than 10 GB is free, too, so a big disk keeps indexing. It picks up where it left off once free space climbs one point above this or past 11 GB. This works whether the “Low disk space warning” is on or off.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexing pauses only when free space is below this percentage and below 10 GB, so a big disk keeps indexing. It picks up where it left off once free space is one point above this percentage or above 11 GB. This works whether the “Low disk space warning” is on or off.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
     "description": "The longer text behind the ⓘ after the index pause threshold label (Settings > Advanced). Indexing pauses only when free space is below BOTH the percentage the user set and 10 GB, so a large disk with plenty of room left never pauses. \"one point\" means one percentage point (5% → 6%) above the threshold the user set. \"10 GB\" and \"11 GB\" are fixed amounts of free space (decimal gigabytes); write them with your language’s number and unit conventions. “Low disk space warning” quotes the label of the separate setting under Behavior > Notifications (settings.behavior.fileSystemWatching.lowDiskSpaceNotifications.label); use that label’s translation exactly, in your language’s quote marks.",
     "screenshot": "settings-advanced.png",

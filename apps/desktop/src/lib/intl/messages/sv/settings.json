@@ -1758,9 +1758,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexeringen pausar bara om det också finns mindre än 10 GB ledigt, så en stor disk indexeras ändå. Den fortsätter där den slutade när det lediga utrymmet är en procentenhet över gränsen eller över 11 GB. Det gäller oavsett om ”Varning vid lågt diskutrymme” är på eller av.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexeringen pausar bara när det lediga utrymmet är under den här procentsatsen och också under 10 GB, så en stor disk indexeras ändå. Den fortsätter där den slutade när det lediga utrymmet är en procentenhet över procentsatsen eller över 11 GB. Det gäller oavsett om ”Varning vid lågt diskutrymme” är på eller av.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Hindrar indexet från att ta det utrymme som dina egna filer behöver.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

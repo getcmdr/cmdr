@@ -1754,9 +1754,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexování se pozastaví, jen když je zároveň volného místa méně než 10 GB, takže velký disk se indexuje dál. Pokračuje tam, kde skončilo, jakmile volné místo vystoupá o jeden procentní bod nad tuto hodnotu nebo nad 11 GB. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Indexování se pozastaví, jen když je volného místa méně než toto procento a zároveň méně než 10 GB, takže velký disk se indexuje dál. Pokračuje tam, kde skončilo, jakmile je volného místa o jeden procentní bod víc než toto procento nebo víc než 11 GB. Funguje to bez ohledu na to, jestli je „Varování při nedostatku volného místa na disku“ zapnuté, nebo vypnuté.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Index tak nezabere místo, které potřebují vaše vlastní soubory.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

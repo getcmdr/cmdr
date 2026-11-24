@@ -1759,9 +1759,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Het indexeren pauzeert alleen als er ook minder dan 10 GB vrij is, dus op een grote schijf gaat het indexeren door. Het gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt boven deze drempel komt of boven 11 GB. Dit werkt ongeacht of ‘Waarschuwing bij weinig schijfruimte’ aan of uit staat.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Het indexeren pauzeert alleen als de vrije ruimte onder dit percentage én onder 10 GB ligt, dus op een grote schijf gaat het indexeren door. Het gaat verder waar het gebleven was zodra de vrije ruimte één procentpunt boven dit percentage of boven 11 GB komt. Dit werkt ongeacht of ‘Waarschuwing bij weinig schijfruimte’ aan of uit staat.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Zo neemt de index niet de ruimte in die je eigen bestanden nodig hebben.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

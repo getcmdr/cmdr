@@ -1758,9 +1758,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Angehalten wird die Indizierung nur, wenn zugleich weniger als 10 GB frei sind, deshalb wird ein großes Laufwerk weiter indiziert. Sie macht dort weiter, wo sie aufgehört hat, sobald der freie Speicherplatz wieder einen Prozentpunkt über diesem Wert oder über 11 GB liegt. Das gilt unabhängig davon, ob die „Warnung bei wenig Speicherplatz“ ein- oder ausgeschaltet ist.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Die Indizierung hält nur an, wenn der freie Speicherplatz unter diesem Prozentwert und zugleich unter 10 GB liegt, deshalb wird ein großes Laufwerk weiter indiziert. Sie macht dort weiter, wo sie aufgehört hat, sobald der freie Speicherplatz einen Prozentpunkt über diesem Prozentwert oder über 11 GB liegt. Das gilt unabhängig davon, ob die „Warnung bei wenig Speicherplatz“ ein- oder ausgeschaltet ist.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Verhindert, dass der Index den Platz belegt, den deine eigenen Dateien brauchen.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

@@ -1756,9 +1756,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "La indexación solo se pausa si además quedan menos de 10 GB libres, así que un disco grande sigue indexándose. Sigue donde se quedó en cuanto el espacio libre sube un punto por encima de este valor o pasa de 11 GB. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "La indexación solo se pausa cuando el espacio libre está por debajo de este porcentaje y también por debajo de 10 GB, así que un disco grande sigue indexándose. Sigue donde se quedó en cuanto el espacio libre está un punto por encima de este porcentaje o por encima de 11 GB. Funciona tanto si el “Aviso de poco espacio en disco” está activado como si no.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Evita que el índice ocupe el espacio que necesitan tus propios archivos.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

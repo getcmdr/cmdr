@@ -1753,9 +1753,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Việc lập chỉ mục chỉ tạm dừng khi dung lượng trống cũng dưới 10 GB, nên ổ đĩa lớn vẫn tiếp tục được lập chỉ mục. Việc lập chỉ mục tiếp tục từ chỗ đã dừng khi dung lượng trống tăng lên cao hơn ngưỡng này một điểm phần trăm hoặc vượt quá 11 GB. Điều này áp dụng dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Việc lập chỉ mục chỉ tạm dừng khi dung lượng trống thấp hơn tỷ lệ phần trăm này và cũng dưới 10 GB, nên ổ đĩa lớn vẫn tiếp tục được lập chỉ mục. Việc lập chỉ mục tiếp tục từ chỗ đã dừng khi dung lượng trống cao hơn tỷ lệ phần trăm này một điểm phần trăm hoặc vượt quá 11 GB. Điều này áp dụng dù “Cảnh báo thiếu dung lượng đĩa” đang bật hay tắt.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Giúp chỉ mục không chiếm chỗ mà các tệp của bạn cần.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

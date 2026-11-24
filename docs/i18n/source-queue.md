@@ -252,9 +252,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `servers.hub.moreShares`'s note says "the single character … (U+2026); keep it", which contradicts each locale's
   `mechanics.json` ellipsis (zh-Hant `⋯`). It's a house phrasing on 12 keys (`servers.json`, `commands.json`,
   `menu.json`); reword them together: "keep a trailing ellipsis, in your locale's glyph". (zh-Hant)
-- `settings.advanced.indexPauseFreeSpacePercent.description`: "pauses only while less than 10 GB is free, too" reads two
-  ways until the `@key` note settles it (BOTH limits must hold). "Indexing also waits until less than 10 GB is free"
-  would carry the AND on its own. (all)
 - `startup-disk` has no `windows` / `other` forms for nl, pt, uk, vi, and zh, so `settings.indexing.pausedForSpaceNote`
   reused the system-drive and system-disk words `fileExplorer.dirSize.pausedForSpaceOtherDrive` ships; record them as
   rulings in a termbase pass. (nl, pt, uk, vi, zh)

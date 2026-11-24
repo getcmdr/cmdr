@@ -1753,9 +1753,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Індексування призупиняється, лише якщо вільного місця ще й менше ніж 10 ГБ, тож великий диск індексується далі. Воно продовжиться з того ж моменту, щойно вільного місця стане на один відсотковий пункт більше за цей поріг або більше ніж 11 ГБ. Це працює незалежно від того, ввімкнено «Застереження про брак місця на диску» чи ні.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Індексування призупиняється, лише коли вільного місця менше за цей відсоток і водночас менше ніж 10 ГБ, тож великий диск індексується далі. Воно продовжиться з того ж моменту, щойно вільного місця стане на один відсотковий пункт більше за цей відсоток або більше ніж 11 ГБ. Це працює незалежно від того, ввімкнено «Застереження про брак місця на диску» чи ні.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Не дає індексу зайняти місце, потрібне вашим власним файлам.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

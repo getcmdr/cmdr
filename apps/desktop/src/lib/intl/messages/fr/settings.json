@@ -1761,9 +1761,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "L’indexation ne se met en pause que s’il reste aussi moins de 10 Go libres, donc un grand disque continue d’être indexé. Elle reprend là où elle s’était arrêtée dès que l’espace libre dépasse ce seuil d’un point ou passe au-dessus de 11 Go. Cela fonctionne que l’option « Avertissement d’espace disque faible » soit activée ou non.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "L’indexation ne se met en pause que lorsque l’espace libre est sous ce pourcentage et aussi sous 10 Go, donc un grand disque continue d’être indexé. Elle reprend là où elle s’était arrêtée dès que l’espace libre dépasse ce pourcentage d’un point ou passe au-dessus de 11 Go. Cela fonctionne que l’option « Avertissement d’espace disque faible » soit activée ou non.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Évite que l’index prenne la place dont vos propres fichiers ont besoin.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {

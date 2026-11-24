@@ -1756,9 +1756,9 @@
   "@settings.advanced.indexPauseFreeSpacePercent.label": {
     "sourceHash": "c6fe418"
   },
-  "settings.advanced.indexPauseFreeSpacePercent.description": "Az indexelés csak akkor szünetel, ha a szabad hely 10 GB alá is csökken, így egy nagy lemezen tovább folyik az indexelés. Ott folytatódik, ahol abbamaradt, amint a szabad hely egy százalékponttal a beállított érték fölé vagy 11 GB fölé nő. Ez attól függetlenül működik, hogy a „Kevés lemezterület figyelmeztetés” be vagy ki van kapcsolva.",
+  "settings.advanced.indexPauseFreeSpacePercent.description": "Az indexelés csak akkor szünetel, ha a szabad hely ez alatt a százalék alatt és 10 GB alatt is van, így egy nagy lemezen tovább folyik az indexelés. Ott folytatódik, ahol abbamaradt, amint a szabad hely egy százalékponttal e fölé a százalék fölé vagy 11 GB fölé kerül. Ez attól függetlenül működik, hogy a „Kevés lemezterület figyelmeztetés” be vagy ki van kapcsolva.",
   "@settings.advanced.indexPauseFreeSpacePercent.description": {
-    "sourceHash": "0e1b2e0"
+    "sourceHash": "69929a4"
   },
   "settings.advanced.indexPauseFreeSpacePercent.summary": "Így az index nem foglalja el a helyet, amelyre a saját fájljaidnak szükségük van.",
   "@settings.advanced.indexPauseFreeSpacePercent.summary": {
