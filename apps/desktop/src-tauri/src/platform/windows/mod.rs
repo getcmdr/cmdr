@@ -1,5 +1,6 @@
 //! The Windows arm of the platform-identity seam.
 
+pub(crate) mod apartment;
 mod keymenu;
 pub(crate) mod registry;
 pub(crate) mod shell;

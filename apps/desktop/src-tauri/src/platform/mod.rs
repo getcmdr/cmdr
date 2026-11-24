@@ -84,6 +84,10 @@ pub(crate) use imp::distro::LinuxDistro;
 #[cfg(target_os = "windows")]
 pub(crate) use imp::registry;
 
+/// The single-threaded COM apartment every Shell call asks for (`windows/apartment.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::apartment;
+
 /// The Shell calls that open a file in its default app and show one in File Explorer.
 #[cfg(target_os = "windows")]
 pub(crate) use imp::shell;

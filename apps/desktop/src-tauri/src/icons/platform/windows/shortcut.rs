@@ -33,7 +33,7 @@ pub(super) fn points_only_here(lnk: &Path) -> bool {
 /// The link's icon location and target path as stored, each `None` when unset (a link to a
 /// Shell item like This PC has no target path).
 fn read_link(lnk: &Path) -> Option<(Option<String>, Option<String>)> {
-    super::apartment::ensure();
+    crate::platform::apartment::ensure_on_this_thread();
     // SAFETY: creating the Shell's own in-process `ShellLink` object; no outer object.
     let link: IShellLinkW = unsafe { CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER) }.ok()?;
     let file: IPersistFile = link.cast().ok()?;

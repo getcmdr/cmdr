@@ -1,10 +1,9 @@
 //! Windows: the Shell draws every icon (`shell_image.rs`), from one STA per asking thread
-//! (`apartment.rs`). Types are asked through Cmdr's own empty sample files, so a type lookup
+//! (`platform/windows/apartment.rs`). Types are asked through Cmdr's own empty sample files, so a type lookup
 //! never touches the user's file; a real place (a special folder, a program or shortcut with
 //! its own icon) is asked only when `place.rs` says it stays on this machine and holds its
 //! bytes, and a shortcut only when both places it names do (`shortcut.rs`).
 
-mod apartment;
 mod place;
 mod shell_image;
 mod shortcut;

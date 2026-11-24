@@ -1,6 +1,6 @@
 //! The Windows Shell calls behind handing a file to other apps: open it in its default app
-//! (`ShellExecuteExW`), show it selected in File Explorer (`SHOpenFolderAndSelectItems`), the
-//! single-threaded COM apartment both want, and the thread each runs on.
+//! (`ShellExecuteExW`), show it selected in File Explorer (`SHOpenFolderAndSelectItems`), and the
+//! thread each runs on, in the COM apartment `apartment.rs` enters.
 //!
 //! Each takes the NUL-terminated plain paths `platform::windows_shell_path` builds, and pins the
 //! exact item ONCE as an ID list (`SHParseDisplayName`) before acting on it: a path handed on as
@@ -12,9 +12,7 @@ use std::fmt::Debug;
 use std::time::Duration;
 
 use windows_sys::Win32::Foundation::{ERROR_CANCELLED, ERROR_NO_ASSOCIATION, GetLastError};
-use windows_sys::Win32::System::Com::{
-    COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoInitializeEx, CoTaskMemFree, CoUninitialize,
-};
+use windows_sys::Win32::System::Com::CoTaskMemFree;
 use windows_sys::Win32::UI::Shell::Common::ITEMIDLIST;
 use windows_sys::Win32::UI::Shell::{
     SEE_MASK_FLAG_NO_UI, SEE_MASK_INVOKEIDLIST, SEE_MASK_NOASYNC, SHELLEXECUTEINFOW, SHOpenFolderAndSelectItems,
@@ -22,46 +20,13 @@ use windows_sys::Win32::UI::Shell::{
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
 
+use super::apartment::in_apartment;
 use crate::file_system::default_app::OpenPathError;
 use crate::platform::windows_shell_path::{ShellLaunchPaths, shell_launch_paths, win32_code};
 
 /// A thread for one Shell call. The Shell loads third-party extensions into the caller, so it
 /// gets the same 8 MB stack a macOS framework call does (`file_system/CLAUDE.md`).
 pub(crate) const SHELL_THREAD_STACK: usize = 8 * 1024 * 1024;
-
-/// Leaves the apartment [`in_apartment`] entered, on drop, so a panicking call leaves it too.
-struct Apartment;
-
-impl Drop for Apartment {
-    fn drop(&mut self) {
-        // SAFETY: an `Apartment` exists only after a successful `CoInitializeEx` on this thread
-        // (it's never sent), and this balances it exactly once.
-        unsafe { CoUninitialize() };
-    }
-}
-
-/// Runs `call` inside a single-threaded apartment entered and left on THIS thread, the apartment
-/// the Shell's calls ask for. Call it on a fresh thread: one that already joined the
-/// multithreaded apartment can't enter this one.
-///
-/// # Errors
-///
-/// The `CoInitializeEx` `HRESULT` when the apartment can't be entered; `call` didn't run.
-pub(crate) fn in_apartment<T>(call: impl FnOnce() -> T) -> Result<T, i32> {
-    // SAFETY: no reserved pointer; a success (`S_OK` or `S_FALSE`) is balanced by the
-    // `Apartment` guard's drop, on this same thread.
-    let entered = unsafe {
-        CoInitializeEx(
-            std::ptr::null(),
-            (COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE).cast_unsigned(),
-        )
-    };
-    if entered < 0 {
-        return Err(entered);
-    }
-    let _apartment = Apartment;
-    Ok(call())
-}
 
 /// How a Shell call run by [`on_shell_thread`] ended for its caller.
 #[derive(Debug)]

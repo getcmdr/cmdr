@@ -20,7 +20,7 @@ use windows::core::HSTRING;
 /// `SIIGBF_ICONONLY` keeps it to the icon: never a thumbnail, which would read the file's
 /// content (and on a cloud placeholder, download it).
 pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
-    super::apartment::ensure();
+    crate::platform::apartment::ensure_on_this_thread();
     let side = i32::try_from(size).ok()?;
     // SAFETY: the path is a live, NUL-terminated `HSTRING` for the whole call, and no bind
     // context is passed (`None`), which the API documents as allowed.

@@ -60,7 +60,7 @@ const E_UNEXPECTED: i32 = 0x8000_FFFF_u32.cast_signed();
 /// apartment it enters and leaves on this thread. Returns once Explorer has the request.
 #[cfg(not(feature = "playwright-e2e"))]
 fn open_recycle_bin() -> Result<(), i32> {
-    crate::platform::shell::in_apartment(open_recycle_bin_in_apartment).and_then(|opened| opened)
+    crate::platform::apartment::in_apartment(open_recycle_bin_in_apartment).and_then(|opened| opened)
 }
 
 /// [`open_recycle_bin`]'s Shell calls, inside the apartment.

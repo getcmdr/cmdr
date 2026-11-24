@@ -138,7 +138,7 @@ fn write_shortcut(lnk: &Path, target: &Path, icon: Option<&str>) {
     use windows::Win32::UI::Shell::{IShellLinkW, ShellLink};
     use windows::core::{HSTRING, Interface};
 
-    super::apartment::ensure();
+    crate::platform::apartment::ensure_on_this_thread();
     // SAFETY: the Shell's in-process `ShellLink`; every string is a live `HSTRING` for its call.
     unsafe {
         let link: IShellLinkW = CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER).expect("ShellLink");
