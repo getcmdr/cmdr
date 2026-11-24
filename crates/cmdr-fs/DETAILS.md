@@ -552,9 +552,10 @@ extension is the truth, and a bogus one only finds no match.
 `os_junk_files::OsJunkFiles::Skip` leaves out ONE merged set, the union of the three below, on every OS (#1416): a USB
 stick or a NAS share carries what every system that touched it wrote, so Windows and Linux skip a Mac's `.DS_Store` too,
 and a Mac skips `Thumbs.db`. `os_junk_files_test.rs` pins all three parts on every CI OS, and the transfer tests write
-`SAMPLE_JUNK_NAMES` (`.DS_Store` and `Thumbs.db`), so each CI OS checks it skips another's junk too. Only FILES match.
-The one per-OS rule is the zip's `__MACOSX` sidecars (`leaves_out_apple_double_sidecars`, macOS only:
-`RUNNING_ON_MACOS`, from `std::env::consts::OS`, no `cfg`).
+`SAMPLE_JUNK_NAMES`: `._photo.jpg` (the prefix match that can meet a real name, so it sits in every folder),
+`Thumbs.db`, `.DS_Store`, and an `.nfs` name, so each CI OS checks it skips another's junk too. Only FILES match. The
+one per-OS rule is the zip's `__MACOSX` sidecars (`leaves_out_apple_double_sidecars`, macOS only: `RUNNING_ON_MACOS`,
+from `std::env::consts::OS`, no `cfg`).
 
 The rule for a set: a regenerated cache or an OS dropping, ❌ never the person's data, a folder setting, or a folder.
 
@@ -570,7 +571,9 @@ The rule for a set: a regenerated cache or an OS dropping, ❌ never the person'
   file deleted while open to `.nfs<16-hex fileid><8-hex counter>` (`fs/nfs/unlink.c`, `SILLYNAME_PREFIX "%0*llx%0*x"`),
   libfuse to `.fuse_hidden%08x%08x` (`lib/fuse.c`); both vanish when the last handle closes. The exact shape keeps a
   person's `.nfsconfig` theirs (verified against torvalds/linux `master` and libfuse `master`, 2026-11-23; both are in
-  `github/gitignore` `Global/Linux.gitignore`).
+  `github/gitignore` `Global/Linux.gitignore`). A skipping move from an NFS export takes an `.nfs<24 hex>` file away
+  with its folder (the husk sweep). That file is another Linux client's open-but-deleted file, so that client then sees
+  a stale-file error (`ESTALE`), the same as when any other client deletes the folder.
 
 Left out on purpose:
 

@@ -1071,8 +1071,8 @@ always goes.
   locally `move_op/source_sweep.rs::remove_husk` on the `ENOTEMPTY`, across volumes `volume/source_sweep.rs`'s `husk`
   list, deleted only once everything else in the folder went. A folder that stays for a real reason (a Skip, a newcomer)
   keeps its metadata, and none of it counts as "appeared". Pinned by `move_op/move_os_junk_tests.rs` and
-  `volume/move_os_junk_tests.rs`. Those tests write a Mac name and a Windows name (`SAMPLE_JUNK_NAMES`), so each CI OS
-  checks it skips another OS's junk too.
+  `volume/move_os_junk_tests.rs`. Those tests write a name from each OS (`SAMPLE_JUNK_NAMES`, the `._*` prefix match in
+  every folder), so each CI OS checks it skips another OS's junk too.
 - **A junk file the OS won't delete keeps its folder, ❌ never a failed move** (#1305): Explorer holds `Thumbs.db` open
   (a sharing violation), and unlinking an open `.nfs*` gives `EBUSY`. Both sweeps classify by type
   (`left_in_source::junk_delete_refused` / `junk_volume_delete_refused`: access, permission, busy, in use, delete

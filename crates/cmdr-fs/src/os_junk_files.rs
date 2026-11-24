@@ -77,10 +77,12 @@ impl OsJunkFiles {
 /// module stays free of `cfg`.
 pub const RUNNING_ON_MACOS: bool = matches!(std::env::consts::OS.as_bytes(), b"macos");
 
-/// Two junk names from different OSes' sets, for a test that writes junk files
-/// and checks a transfer leaves them out on whichever OS it runs on.
+/// Junk names from all three OSes' sets, for a test that writes junk files and
+/// checks a transfer leaves them out on whichever OS it runs on. The first is a
+/// `._*` PREFIX match, the one rule that can meet a real person's name and runs
+/// beside the AppleDouble sidecar rule, so tests put it in every folder.
 #[cfg(any(test, feature = "testing"))]
-pub const SAMPLE_JUNK_NAMES: [&str; 2] = [".DS_Store", "Thumbs.db"];
+pub const SAMPLE_JUNK_NAMES: [&str; 4] = ["._photo.jpg", "Thumbs.db", ".DS_Store", ".nfs000000000012abcd00000001"];
 
 /// Whether `name` is in the merged junk set. See the module docs for each part.
 pub fn is_os_junk_file_name(name: &OsStr) -> bool {

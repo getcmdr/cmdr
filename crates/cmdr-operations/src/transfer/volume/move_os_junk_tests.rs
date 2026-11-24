@@ -12,8 +12,9 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
 use std::time::Duration;
 
-/// Junk names from two OSes, so the test checks one OS skips another's junk too (#1416).
-const JUNK: [&str; 2] = SAMPLE_JUNK_NAMES;
+/// Junk names from all three OSes, so each OS checks it skips another's junk too (#1416).
+/// `JUNK[0]` is the `._*` prefix match, written in every folder.
+const JUNK: [&str; 4] = SAMPLE_JUNK_NAMES;
 
 /// `dir`'s junk file number `n` as an app path.
 fn junk_in(dir: &str, n: usize) -> app_path::AppPathBuf {
@@ -24,8 +25,9 @@ async fn seed(source: &Arc<dyn Volume>) {
     source.create_directory(app_path!("/work")).await.unwrap();
     source.create_directory(app_path!("/work/notes")).await.unwrap();
     source.create_directory(app_path!("/work/only-metadata")).await.unwrap();
-    source.create_file(&junk_in("/work", 0), &[0u8; 64]).await.unwrap();
-    source.create_file(&junk_in("/work", 1), &[0u8; 32]).await.unwrap();
+    for n in 0..JUNK.len() {
+        source.create_file(&junk_in("/work", n), &[0u8; 64]).await.unwrap();
+    }
     source.create_file(app_path!("/work/report.txt"), b"one").await.unwrap();
     source
         .create_file(&junk_in("/work/notes", 0), &[0u8; 64])
@@ -63,12 +65,10 @@ async fn assert_lands_without_os_junk_files(dest: &Arc<dyn Volume>) {
         dest.exists(app_path!("/work/only-metadata")).await,
         "the folder is the person's"
     );
-    for gone in [
-        junk_in("/work", 0),
-        junk_in("/work", 1),
-        junk_in("/work/notes", 0),
-        junk_in("/work/only-metadata", 0),
-    ] {
+    for gone in (0..JUNK.len())
+        .map(|n| junk_in("/work", n))
+        .chain([junk_in("/work/notes", 0), junk_in("/work/only-metadata", 0)])
+    {
         assert!(!dest.exists(&gone).await, "{gone:?} reached the destination");
     }
 }

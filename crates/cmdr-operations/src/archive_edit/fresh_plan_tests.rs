@@ -302,7 +302,7 @@ async fn a_compress_skipping_os_junk_files_packs_neither_them_nor_sidecars() {
     use super::super::fresh_zip::FreshZipSource;
     use cmdr_fs::os_junk_files::{OsJunkFiles, RUNNING_ON_MACOS, SAMPLE_JUNK_NAMES};
 
-    let [junk, other_junk] = SAMPLE_JUNK_NAMES;
+    let [junk, other_junk, ..] = SAMPLE_JUNK_NAMES;
     let engine = TestOperations::new();
     let temp = tempfile::tempdir().expect("tempdir");
     std::fs::create_dir_all(temp.path().join("docs/sub")).expect("mkdir");
@@ -336,10 +336,9 @@ async fn a_compress_skipping_os_junk_files_packs_neither_them_nor_sidecars() {
     names.sort_unstable();
     assert_eq!(names, vec!["docs/", "docs/a.txt", "docs/sub/"]);
     assert_eq!(plan.source_bytes, 1, "the totals leave them out too");
-    let on_a_mac = RUNNING_ON_MACOS;
-    assert_eq!(plan.sidecars, !on_a_mac, "only a Mac drops sidecars");
+    assert_eq!(plan.sidecars, !RUNNING_ON_MACOS, "only a Mac drops sidecars");
     let (entries, _feeds) = plan.bridged();
-    for entry in entries.iter().filter(|_| on_a_mac) {
+    for entry in entries.iter().filter(|_| RUNNING_ON_MACOS) {
         assert!(
             !matches!(entry.source, FreshZipSource::Local(_)),
             "{} would carry a sidecar",
