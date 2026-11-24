@@ -505,13 +505,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
+  "settings.fileOperations.osJunkFiles.label": "Omitir archivos basura del sistema",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
+  "settings.fileOperations.osJunkFiles.description": "Omite los archivos que los sistemas operativos dejan junto a los tuyos al copiar, mover o comprimir: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* y .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Incluir",
   "@settings.fileOperations.osJunkFiles.opt.include": {

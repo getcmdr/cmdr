@@ -405,9 +405,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Hoppa över skräpfiler från systemet (.DS_Store, Thumbs.db med flera)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Fråga inte igen",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {

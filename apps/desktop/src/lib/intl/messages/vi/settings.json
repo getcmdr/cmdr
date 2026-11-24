@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
+  "settings.fileOperations.osJunkFiles.label": "Bỏ qua tệp rác hệ thống",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
+  "settings.fileOperations.osJunkFiles.description": "Bỏ qua các tệp mà hệ điều hành để lại bên cạnh tệp của bạn khi sao chép, di chuyển hoặc nén: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* và .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Bao gồm",
   "@settings.fileOperations.osJunkFiles.opt.include": {

@@ -504,13 +504,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
+  "settings.fileOperations.osJunkFiles.label": "Rendszerek hagyta kacatfájlok átugrása",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
+  "settings.fileOperations.osJunkFiles.description": "Másoláskor, áthelyezéskor vagy tömörítéskor kihagyja azokat a fájlokat, amelyeket az operációs rendszerek a saját fájljaid mellé raknak: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* és .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Belefoglalás",
   "@settings.fileOperations.osJunkFiles.opt.include": {

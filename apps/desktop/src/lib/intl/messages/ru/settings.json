@@ -502,13 +502,13 @@
   "@settings.fileOperations.pasteClipboardAsFile.keywords": {
     "sourceHash": "3e077e3"
   },
-  "settings.fileOperations.osJunkFiles.label": "Skip system clutter files",
+  "settings.fileOperations.osJunkFiles.label": "Пропускать ненужные служебные файлы",
   "@settings.fileOperations.osJunkFiles.label": {
-    "sourceHash": "28cccff"
+    "sourceHash": "e19a76b"
   },
-  "settings.fileOperations.osJunkFiles.description": "Skips files that operating systems leave beside your own when copying, moving, or compressing: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs*, and .fuse_hidden*.",
+  "settings.fileOperations.osJunkFiles.description": "При копировании, перемещении или сжатии пропускает файлы, которые операционные системы оставляют рядом с вашими: .DS_Store, ._*, Thumbs.db, ehthumbs*.db, .nfs* и .fuse_hidden*.",
   "@settings.fileOperations.osJunkFiles.description": {
-    "sourceHash": "d429ec1"
+    "sourceHash": "d509ebd"
   },
   "settings.fileOperations.osJunkFiles.opt.include": "Включить",
   "@settings.fileOperations.osJunkFiles.opt.include": {

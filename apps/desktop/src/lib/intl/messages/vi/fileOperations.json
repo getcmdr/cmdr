@@ -404,9 +404,9 @@
   "@fileOperations.transferDialog.rememberedOverwriteNote": {
     "sourceHash": "7456023"
   },
-  "fileOperations.transferDialog.osJunkFiles.toggle": "Skip system clutter files (.DS_Store, Thumbs.db, and more)",
+  "fileOperations.transferDialog.osJunkFiles.toggle": "Bỏ qua tệp rác hệ thống (.DS_Store, Thumbs.db và các tệp khác)",
   "@fileOperations.transferDialog.osJunkFiles.toggle": {
-    "sourceHash": "2dbf7cc"
+    "sourceHash": "03843fd"
   },
   "fileOperations.transferDialog.osJunkFiles.dontAskAgain": "Đừng hỏi lại",
   "@fileOperations.transferDialog.osJunkFiles.dontAskAgain": {
