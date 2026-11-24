@@ -310,7 +310,11 @@ pub(super) fn record_volume_transfer_source(
                 Some(source_ends) => (source_ends, journal_split_app(&leaf.path)),
                 None => {
                     // A leaf outside the root is its own source, as `Path::join`
-                    // of an absolute tail answered.
+                    // of an absolute tail answered. Only a test's volume-relative
+                    // root reaches here (every start anchors its roots typed), so
+                    // the source rebases as it always did; the destination end is
+                    // the leaf the walk joined, split as one (a `\` in it is a
+                    // name character even on Windows).
                     let leaf_std = engine_path(&leaf.path);
                     let rel = leaf_std.strip_prefix(dest_root).unwrap_or(&leaf_std);
                     let source_leaf = if rel.as_os_str().is_empty() {
@@ -318,7 +322,7 @@ pub(super) fn record_volume_transfer_source(
                     } else {
                         source_root.join(rel)
                     };
-                    (journal_split(&source_leaf), journal_split(&leaf_std))
+                    (journal_split(&source_leaf), journal_split_app(&leaf.path))
                 }
             };
             record_split_row(

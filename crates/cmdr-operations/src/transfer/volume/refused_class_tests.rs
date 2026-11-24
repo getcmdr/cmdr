@@ -362,3 +362,47 @@ async fn a_concurrent_copy_asks_about_a_colon_or_backslash_name_the_destination_
 async fn a_cross_volume_move_asks_about_a_colon_or_backslash_name_the_destination_refuses_and_keeps_its_source() {
     run_remote_names_case(Driver::CrossVolumeMove, true).await;
 }
+
+/// ❗ A drive folder takes no name holding `\` (a POSIX server's `a\b.txt` copied onto NTFS):
+/// the walk asks about THAT item and carries on with its siblings, ❌ never failing the
+/// level, which would blame the folder and, on a Skip, drop every sibling with it. The
+/// destination is an in-memory volume spelled as a drive, so every host runs it, with no
+/// name rules resolved: the typed join's own refusal is what asks.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_item() {
+    use cmdr_fs::app_path::PathFlavor;
+    let source = Arc::new(InMemoryVolume::new("Server").with_space_info(10_000_000, 10_000_000));
+    source.create_directory(app_path!("/album")).await.unwrap();
+    for file in ["/album/ok.txt", "/album/zz.txt"] {
+        source
+            .create_file(AppPath::from_normalized(file).expect("a canonical path"), b"incoming")
+            .await
+            .unwrap();
+    }
+    // Stored under a plain path, listed as a POSIX server lists `a\b.txt` (the store
+    // can't hold the name itself on Windows).
+    source.set_reported_name(Path::new("/album/zz.txt"), "a\\b.txt");
+    let drive = |text: &'static str| AppPath::from_normalized_as(text, PathFlavor::Windows).expect("a drive path");
+    let dest = Arc::new(InMemoryVolume::new("Disk").with_space_info(10_000_000, 10_000_000));
+    dest.create_directory(drive("C:/inbox")).await.unwrap();
+
+    let engine = TestOperations::new();
+    let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
+    let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Skip, false));
+    let result = copy_volumes_with_progress(
+        Arc::clone(&events) as _,
+        "op",
+        &state,
+        Arc::clone(&source) as Arc<dyn Volume>,
+        &[PathBuf::from("/album")],
+        Arc::clone(&dest) as Arc<dyn Volume>,
+        Path::new("C:/inbox"),
+        &VolumeCopyConfig::default(),
+    )
+    .await;
+    result.unwrap_or_else(|f| panic!("one unusable name must not end the copy: {:?}", f.error));
+    assert!(dest.exists(drive("C:/inbox/album/ok.txt")).await, "its sibling landed");
+    let prompts = events.inner.conflicts.lock_ignore_poison().clone();
+    assert_eq!(prompts.len(), 1, "one prompt, for the refused name: {prompts:?}");
+    assert!(!prompts[0].source_is_directory, "{prompts:?}");
+}

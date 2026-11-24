@@ -851,8 +851,10 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   driver) and `listed_row_tests.rs`' `a_backslash_name_copies_and_moves_as_one_name`, whose `\` names run on macOS and
   Linux only: `InMemoryVolume` keys its store by `PathBuf`, which on Windows splits them. ❗ A TOP-LEVEL source's name
   still splits through the driver's `std::path` (`landing.rs::landing_at`, `ListedName::native`, which keeps
-  `ChildName`'s host refusal): the drivers' sources and destination are the plan's next pass
-  (`docs/specs/app-path-plan.md` § 10a).
+  `ChildName`'s host refusal), so on Windows a top-level `a\b.txt` lands as `b.txt` (#1457): the drivers' sources and
+  destination are the plan's next pass (`docs/specs/app-path-plan.md` § 10a). A drive or UNC folder takes no name
+  holding `\` (the typed join refuses it), so `merge_level` refuses such a child per item BEFORE `where_it_lands`, ❌
+  never as the level's failure, which would blame and, on a Skip, drop the whole folder.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in

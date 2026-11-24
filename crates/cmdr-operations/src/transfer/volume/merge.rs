@@ -952,6 +952,24 @@ async fn merge_level<'a>(
         let name = ListedName::new(&entry.name)
             .map_err(VolumeError::from)
             .at_source(&*child_source)?;
+        // A plain name this folder's path can't hold (a drive or UNC folder
+        // takes no `\`: a POSIX server's `a\b` copied onto NTFS) is the
+        // destination refusing THIS item, asked per item like any refused name,
+        // ❌ never the level's failure, which would blame (and, on a Skip, drop)
+        // the whole folder. Nothing is written for it, so the place the question
+        // names is display text only: the folder's text and the name as listed.
+        if name.under(&join_dir).is_err() {
+            let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
+            let shown_dest = format!("{}/{}", join_dir.as_str().trim_end_matches('/'), entry.name);
+            let refused = RefusedChild {
+                entry,
+                source: child_source,
+                dest: on_volume(Path::new(&shown_dest)).into_owned(),
+                node: child_row,
+            };
+            refuse_child(pool, merge, created, progress, source_volume, refused).await?;
+            continue;
+        }
         let (child_dest, dest_hit) = pool
             .drive(where_it_lands(
                 dest_volume,

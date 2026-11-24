@@ -1982,6 +1982,12 @@ included; the hidden couplings it found are why waves B and C differ from round 
   - **Windows lane** (hosted, run 45480062626): 0 newly failing; 13 known failures pass and left the list (eight
     `swap_outage_tests`, five `archive_edit::remote::remote_outage_tests`, which named their temp through `std::path` on
     a POSIX fixture), with the three deleted native-join cells: `cmdr-operations` entries 36 → 20.
+  - **A name a drive folder can't hold is asked about per item** (review of #1451): the typed join refuses `\` under a
+    drive or UNC folder, and that refusal used to come back as the LEVEL's failure (a POSIX server's `a\b.txt` into
+    `C:\dest` failed the walk, or on a Skip dropped the whole folder); `merge_level` now refuses that child as a
+    `RefusedChild` before `where_it_lands`. Pinned on every host by `refused_class_tests.rs`'
+    `a_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_item` (a drive-spelled in-memory destination, seen red
+    first).
   - **A journal rebase between canonical roots only**: a volume-relative root (a share suite's `cmdr-test-…/tree`, a
     local tree's `tree`) rebases its leaves by `std::path` as before; the first run's typed-only rebase wrote such a
     leaf's DEST as its source, and the SMB and S3 fixtures' undo cells caught it (`UnverifiablePrecondition`).
@@ -1997,7 +2003,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
     through `listed_name::on_volume` (each replaced a bridge call further in).
 - **Left in 10a after the eighth pass**: the drivers' sources and destination (a TOP-LEVEL name still splits through the
   driver's `std::path`, `landing.rs::landing_at` with `ListedName::native`'s host refusal, so on Windows a top-level
-  remote source named `a\b.txt` is suspected to land as `b.txt`: unverified, check first in that pass); the resolver's
+  remote source named `a\b.txt` lands as `b.txt`, silently: #1457, which that pass closes); the resolver's
   `ResolvedConflict.write_path` and `naming.rs` (a `Rename` pick on a `\`-holding name splits on Windows, crossed back
   through `on_volume`); `DisplacedDestination`'s aside mint (`std::path`); then milestone 2's list (the create,
   rename-validity, and preflight-sources entry points, `leaf_validation`, `target_names`, `transfer_leaves`).
