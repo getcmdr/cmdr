@@ -622,17 +622,18 @@ offer "System default (TextEdit)" and "Choose an app…". A timed-out answer (th
 disabled at "Checking…": a short list would claim this Mac has fewer apps than it does, while staying disabled claims
 nothing.
 
-**The picker is the plugin's, not a new IPC.** "Choose an app…" opens `@tauri-apps/plugin-dialog`'s `open()` filtered to
-`app`, defaulting to `/Applications`, the same shape `MediaIndexChosenFolders` uses for its folder picker. Under the
-hood that's the same `NSOpenPanel` with the same `setAllowedFileTypes(["app"])` as the native "Open with > Other…" path,
-so `.app` bundles select as files. The settings window already grants `dialog:allow-open`. Cancelling returns `null` and
+**The picker is the plugin's, not a new IPC.** "Choose an app…" opens `@tauri-apps/plugin-dialog`'s `open()` filtered by
+the platform's `appFile` convention (`appPickerShape` in `app-choice-options.ts`): `app` from `/Applications` on macOS,
+`exe` on Windows, no filter on Linux. Same shape `MediaIndexChosenFolders` uses for its folder picker. Under the hood
+that's the same `NSOpenPanel` with the same `setAllowedFileTypes(["app"])` as the native "Open with > Other…" path, so
+`.app` bundles select as files. The settings window already grants `dialog:allow-open`. Cancelling returns `null` and
 the setting is left alone. A row's `resolvePick` turns the picked path into the value to store; without one, or when it
 throws, the path itself is stored, which Rust launches with `open -a`.
 
 **A missing app displays its fallback, without a write.** Both backends report `chosenId: null` when the stored app is
-gone, and each row's selected-value function shows what the action itself falls back to (the system default, or
-Terminal.app). Rewriting the setting belongs to the moment the action actually falls back, so browsing Settings never
-changes a choice.
+gone, and each row's selected-value function shows what the action itself falls back to (the system default, or the
+terminal list's `defaultId`). Rewriting the setting belongs to the moment the action actually falls back, so browsing
+Settings never changes a choice.
 
 **Only the newest answer lands.** A pick refreshes once itself and its write's change event refreshes again; an older
 answer arriving last would show a stale list, so the shell drops it. A just-picked row shows at once until the next
@@ -669,14 +670,17 @@ Text editor); `text-editor-options.ts` only presents that answer.
 
 ### "Open terminal here uses": a row whose options are read off the machine
 
-macOS has no system-wide default terminal, so Cmdr keeps its own list. The Rust side owns it
-(`src-tauri/src/file_system/terminal.rs`: which apps it knows, how each one takes a folder, and which are installed
-right now); this row only renders the answer, in the order the backend listed it.
+Neither macOS nor Windows has a default terminal an app can launch at a folder, so Cmdr keeps its own list per OS. The
+Rust side owns it (`src-tauri/src/file_system/terminal/mod.rs`: which apps it knows, how each one takes a folder, which
+are installed right now, and which one the default launches, `defaultId`); this row only renders the answer, in the
+order the backend listed it, and shows `defaultId` when the stored app is gone.
 
-**The stored value carries both kinds of choice.** `behavior.openTerminalHereApp` is one string: a bundle id for a known
-terminal, an absolute `.app` path for a "Choose an app…" pick. Rust's `parse_choice` tells them apart structurally (a
-choice is a path exactly when it's absolute), which is why the frontend never has to tag or wrap the value, and why this
-row passes no `resolvePick`.
+**The stored value carries both kinds of choice.** `behavior.openTerminalHereApp` is one string: a table id for a known
+terminal (a bundle id on macOS, `windows-terminal` / `pwsh` / `windows-powershell` / `cmd` on Windows), an absolute app
+path for a "Choose an app…" pick (`.app` on macOS, `.exe` on Windows). The registry default `com.apple.Terminal` reads
+as "the default" on Windows, never as a missing app. Rust's `parse_choice` tells them apart structurally (a choice is a
+path exactly when it's absolute), which is why the frontend never has to tag or wrap the value, and why this row passes
+no `resolvePick`.
 
 **Deep-linking here** uses the standard row anchor:
 `openSettingsWindow(surface, ['Behavior', 'Navigation & file ops'], settingAnchorId('behavior.openTerminalHereApp'))`.

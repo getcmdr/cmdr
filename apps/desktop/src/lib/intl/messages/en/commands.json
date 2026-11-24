@@ -1572,16 +1572,16 @@
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     }
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} isn’t installed anymore, so this opened in Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} isn’t installed anymore, so Cmdr picked another terminal app for this folder.} other {{app} isn’t installed anymore, so this opened in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "description": "Toast shown when the terminal app the user chose has been uninstalled: Cmdr opened Terminal instead and reset the setting to it. \"Terminal\" is Apple's own app, which ships with macOS; keep the name as your macOS spells it. Not phrased as something going wrong, because nothing did.",
+    "description": "Toast shown when the terminal app the user chose has been uninstalled: Cmdr opened another one instead and reset the setting to the default. On macOS that's Terminal, Apple's own app, which ships with macOS; keep the name as your macOS spells it. On Windows it's the first of Windows Terminal, PowerShell, or Command Prompt that Cmdr finds, so the `windows` branch doesn't name it. Not phrased as something going wrong, because nothing did.",
     "placeholders": {
       "app": "the display name of the app that is gone, like \"Warp\" or \"Ghostty\""
     }
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Your terminal app isn’t installed anymore, so this opened in Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Your terminal app isn’t installed anymore, so Cmdr picked another one for this folder.} other {Your terminal app isn’t installed anymore, so this opened in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "description": "The same toast for the rare case where Cmdr has no name for the app that is gone (the setting names something this version doesn't know). Says the same thing without naming it. \"Terminal\" is Apple's own app; keep the name as your macOS spells it."
+    "description": "The same toast for the rare case where Cmdr has no name for the app that is gone (the setting names something this version doesn't know). Says the same thing without naming it. \"Terminal\" is Apple's own app; keep the name as your macOS spells it. The `windows` branch names no app, as in commands.handler.openTerminalHere.appMissing."
   },
   "commands.handler.openTerminalHere.noPath": "This folder doesn’t have a path a terminal can open.",
   "@commands.handler.openTerminalHere.noPath": {

@@ -4894,6 +4894,7 @@ export type MessageKey =
   | 'settings.analytics.enabled.description'
   | 'settings.analytics.enabled.keywords'
   | 'settings.analytics.enabled.label'
+  | 'settings.appChoice.pickerFilterName'
   | 'settings.appearance.appColor.description'
   | 'settings.appearance.appColor.keywords'
   | 'settings.appearance.appColor.label'

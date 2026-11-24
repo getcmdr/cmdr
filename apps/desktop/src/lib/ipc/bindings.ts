@@ -6099,9 +6099,9 @@ export const commands = {
    *  rather than read here: the frontend owns the settings store, and Rust's own
    *  loader is the startup-time read only (`settings/CLAUDE.md`).
    *
-   *  The settings row calls this on every render. Each app costs one LaunchServices
-   *  lookup plus a bundle-icon read, so there's nothing to cache; the timeout only
-   *  bounds an icon read on a stalled mount.
+   *  The settings row calls this on every render. Each app costs one installed-app
+   *  lookup plus an icon read, so there's nothing to cache; the timeout only bounds an
+   *  icon read on a stalled mount.
    */
   listTerminalApps: (appChoice: string) =>
     __TAURI_INVOKE<TimedOut<TerminalAppList>>('list_terminal_apps', { appChoice }),
@@ -7522,6 +7522,18 @@ export type AppFate =
    *  timer or by the app reaching its own quit path (`app_lifecycle.rs`).
    */
   | 'keptRunning'
+
+/**
+ *  What a launchable app is on disk: what the "Choose an app…" picker (the terminal and text
+ *  editor rows) filters on and where it starts.
+ */
+export type AppFile =
+  // A `.app` bundle, picked from `/Applications`: macOS.
+  | 'appBundle'
+  // An `.exe` program: Windows.
+  | 'exe'
+  // Any executable file, which no extension names: Linux.
+  | 'executable'
 
 // An app, as the OS names it.
 export type AppRef = {
@@ -16706,8 +16718,9 @@ export type OpenSettings = {
  */
 export type OpenTerminalError =
   /**
-   *  `open` couldn't be spawned. Carries the OS errno where there is one, so
-   *  nothing has to read the message.
+   *  The launch couldn't be started (`open` on macOS, `CreateProcessW` on
+   *  Windows). Carries the OS error code where there is one, so nothing has to read
+   *  the message.
    */
   | { type: 'launchRefused'; errno: number | null }
   // The launch didn't finish inside the command's deadline.
@@ -16721,8 +16734,9 @@ export type OpenTerminalOutcome =
   // The chosen terminal was launched at the folder.
   | 'opened'
   /**
-   *  The chosen app isn't installed anymore, so Terminal opened instead. The
-   *  frontend says so and resets the setting.
+   *  The chosen app isn't installed anymore, so the OS's fallback terminal opened
+   *  instead (Terminal on macOS, the first installed of the table's default order
+   *  on Windows). The frontend says so and resets the setting.
    */
   | 'app_missing_opened_terminal_instead'
   /**
@@ -16730,6 +16744,12 @@ export type OpenTerminalOutcome =
    *  mount went away), so nothing was launched.
    */
   | 'not_a_local_path'
+  /**
+   *  Windows: the folder has no plain spelling a process's working directory takes
+   *  as this same folder (past 259 characters, a name ending in a dot or space, a
+   *  device name like `CON`), so nothing was launched.
+   */
+  | 'no_plain_path'
 
 /**
  *  `open-with-copy-launched`: an "Open with" launch went ahead on read-only copies of
@@ -17859,6 +17879,8 @@ export type PlatformConventions = {
    *  because [`conventions_on`] derives it from the desktop it answers for.
    */
   linuxDesktop: LinuxDesktop | null
+  // What an app the user picks by hand is on disk, which a "Choose an app…" picker filters on.
+  appFile: AppFile
 }
 
 /**
@@ -23122,19 +23144,17 @@ export type TakenChars = {
 // One installed terminal, as the settings dropdown needs it.
 export type TerminalApp = {
   /**
-   *  Exactly what goes into the setting: a bundle id for a known terminal, an
-   *  absolute `.app` path for a custom pick.
+   *  Exactly what goes into the setting: a table id for a known terminal, an
+   *  absolute path for a custom pick.
    */
   id: string
   displayName: string
-  /**
-   *  The app's icon as a base64 WebP data URL, read from its bundle. Absent
-   *  when the bundle carries no readable icon.
-   */
+  // The app's icon as a data URL. Absent when the app carries no readable icon.
   icon: string | null
   /**
    *  Whether the app is running right now. The first-use picker prefers a
-   *  running terminal when exactly one is.
+   *  running terminal when exactly one is. Always `false` on Windows, where the
+   *  signal means nothing (`platform/windows.rs` says why).
    */
   isRunning: boolean
 }
@@ -23148,6 +23168,14 @@ export type TerminalAppList = {
    *  chosen app has been uninstalled, which is the frontend's cue to reset.
    */
   chosenId: string | null
+  /**
+   *  The id of the app the setting's default (and every fallback) launches on this
+   *  machine, present in `apps`: Terminal on macOS, the first installed of Windows
+   *  Terminal, PowerShell 7, Windows PowerShell, and Command Prompt on Windows. The
+   *  first-use picker and the row's fallback display read it, so neither names an
+   *  OS's terminal itself.
+   */
+  defaultId: string | null
 }
 
 // One text editor, as the settings row needs it.

@@ -1,9 +1,9 @@
 # Terminal launch sources (2026-09-04)
 
-The external evidence behind `apps/desktop/src-tauri/src/file_system/terminal.rs`: where each bundle id came from, why
-each app gets the launch recipe it gets, and what each one does with the window-vs-tab question. The decisions
-themselves live in `apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Open terminal here"; this note is the paper
-trail, so a future entry can be added to `KNOWN_TERMINALS` to the same standard.
+The external evidence behind `apps/desktop/src-tauri/src/file_system/terminal/platform/macos.rs`: where each bundle id
+came from, why each app gets the launch recipe it gets, and what each one does with the window-vs-tab question. The
+decisions themselves live in `apps/desktop/src-tauri/src/file_system/DETAILS.md` § "Open terminal here"; this note is
+the paper trail, so a future entry can be added to `KNOWN_TERMINALS` to the same standard.
 
 ## Why a table at all
 

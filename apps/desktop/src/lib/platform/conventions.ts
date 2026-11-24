@@ -6,6 +6,7 @@
  */
 import type {
   AccessKeys,
+  AppFile,
   CancelKeys,
   ContextMenus,
   DialogButtonOrder,
@@ -56,6 +57,7 @@ const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
 const DROP_MODIFIERS = every<DropModifiers>()('optionCopiesCommandMoves', 'controlCopiesShiftMoves')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')
 const LINUX_DESKTOPS = every<LinuxDesktop>()('gnome', 'kde', 'other')
+const APP_FILES = every<AppFile>()('appBundle', 'exe', 'executable')
 
 function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback: T): T {
   return allowed.includes(value as T) ? (value as T) : fallback
@@ -89,6 +91,7 @@ export function platformConventions(): PlatformConventions {
         ? [...(readers as ScreenReader[])]
         : [...fallback.screenReaders],
     linuxDesktop: validLinuxDesktop(answered.linuxDesktop),
+    appFile: oneOf(APP_FILES, answered.appFile, fallback.appFile),
   }
 }
 

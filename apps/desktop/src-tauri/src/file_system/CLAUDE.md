@@ -35,8 +35,8 @@ Sync status, volume management, and file watching. The engines are crates: listi
 - **A watch on an OS-mounted network share is `WatchCoverage::ThisMachineOnly`, never `EveryWriter`** (FSEvents on
   `smbfs` sees this machine's writes only). Arm it anyway, but it must never let a delete walker or copy scan skip a
   read. `volume/DETAILS.md` § "Trait capability model".
-- **"Open terminal here" asks `NSWorkspace` per known app, ❌ never scans `/Applications`**; recipes are a pure
-  `launch_argv`. New terminals need a sourced, dated `KNOWN_TERMINALS` entry. § "Open terminal here".
+- **"Open terminal here" probes known apps, ❌ never scans a folder.** Windows: the folder is the working directory, ❌
+  never argv (`wt` splits on `;`). § "Open terminal here".
 - **F4's editors come from LaunchServices' editor-ROLE plain-text query** (`text_editor.rs`): ❌ never the UTI crate
   (10.15 floor) or a made-up `.txt` URL (no apps). § "Text editor".
 - **Windows' Open with and F4 use the Shell's `IAssocHandler`s** (`../platform/windows/assoc.rs`): `app_path` holds the

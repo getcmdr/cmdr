@@ -329,7 +329,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   because a missing link only means the caller shows nothing. Plus the "open terminal
   here" pair,
   `list_terminal_apps(app_choice)`, `open_terminal_here(path, volume_id, app_choice)`, and the sync
-  `terminal_app_display_name(app_choice)`, all pass-throughs to `../file_system/terminal.rs`, which owns the table, the
+  `terminal_app_display_name(app_choice)`, all pass-throughs to `../file_system/terminal/mod.rs`, which owns the table, the
   recipes, and the volume gate. The chosen app arrives as an argument because the frontend owns the settings store.
   The display-name lookup is I/O-free on purpose: the toast that needs it fires exactly when the app it names has been
   uninstalled, so the table is all that's left to read a name from. `open_in_editor(path, app_choice,

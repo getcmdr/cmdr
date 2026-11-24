@@ -9,7 +9,8 @@
     "contextMenus": "native",
     "dropModifiers": "optionCopiesCommandMoves",
     "screenReaders": ["voiceOver"],
-    "linuxDesktop": null
+    "linuxDesktop": null,
+    "appFile": "appBundle"
   },
   "windows": {
     "dialogButtonOrder": "affirmativeFirst",
@@ -21,7 +22,8 @@
     "contextMenus": "inPage",
     "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["jaws", "nvda", "narrator"],
-    "linuxDesktop": null
+    "linuxDesktop": null,
+    "appFile": "exe"
   },
   "gnome": {
     "dialogButtonOrder": "cancelFirst",
@@ -33,7 +35,8 @@
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
-    "linuxDesktop": "gnome"
+    "linuxDesktop": "gnome",
+    "appFile": "executable"
   },
   "kde": {
     "dialogButtonOrder": "affirmativeFirst",
@@ -45,7 +48,8 @@
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
-    "linuxDesktop": "kde"
+    "linuxDesktop": "kde",
+    "appFile": "executable"
   },
   "otherLinux": {
     "dialogButtonOrder": "cancelFirst",
@@ -57,6 +61,7 @@
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
     "screenReaders": ["orca"],
-    "linuxDesktop": "other"
+    "linuxDesktop": "other",
+    "appFile": "executable"
   }
 }

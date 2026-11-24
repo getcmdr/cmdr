@@ -95,7 +95,7 @@ beforeEach(() => {
   setSetting.mockClear()
   listTerminalApps.mockReset()
   openAppPicker.mockReset()
-  answerWith({ apps: [TERMINAL, GHOSTTY], chosenId: TERMINAL_APP_BUNDLE_ID })
+  answerWith({ apps: [TERMINAL, GHOSTTY], chosenId: TERMINAL_APP_BUNDLE_ID, defaultId: TERMINAL_APP_BUNDLE_ID })
 })
 
 afterEach(() => {
@@ -165,7 +165,7 @@ describe('TerminalAppSelect', () => {
   it('shows Terminal when the chosen app has been uninstalled', async () => {
     settingsMap[SETTING_ID] = 'dev.warp.Warp-Stable'
     // Warp is gone, so the backend leaves it out of `apps` and reports no choice.
-    answerWith({ apps: [TERMINAL, GHOSTTY], chosenId: null })
+    answerWith({ apps: [TERMINAL, GHOSTTY], chosenId: null, defaultId: TERMINAL_APP_BUNDLE_ID })
     const target = await mountRow()
 
     expect(target.querySelector('.select-value')?.textContent.trim()).toBe('Terminal')
@@ -175,7 +175,7 @@ describe('TerminalAppSelect', () => {
   })
 
   it('waits, disabled, rather than showing a list it does not have yet', async () => {
-    answerWith({ apps: [], chosenId: null }, true)
+    answerWith({ apps: [], chosenId: null, defaultId: null }, true)
     const target = await mountRow()
 
     const trigger = target.querySelector<HTMLButtonElement>('.select-trigger')

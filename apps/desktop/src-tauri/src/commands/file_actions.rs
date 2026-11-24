@@ -13,25 +13,23 @@ use tokio::time::Duration;
 use crate::file_system::default_app::OpenPathError;
 use crate::file_system::get_info::GetInfoError;
 use crate::file_system::google_drive::DriveItemLinks;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use crate::file_system::terminal::{OpenTerminalError, OpenTerminalOutcome, TerminalAppList};
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use crate::file_system::text_editor::TextEditorList;
 use crate::file_system::text_editor::{EditorOpenReport, OpenInEditorError};
-#[cfg(target_os = "macos")]
-use cmdr_fs::deadline::blocking_typed_result_with_timeout;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-use cmdr_fs::deadline::{TimedOut, blocking_with_timeout_flag};
+use cmdr_fs::deadline::{TimedOut, blocking_typed_result_with_timeout, blocking_with_timeout_flag};
 
-/// Listing terminals is a handful of LaunchServices lookups and bundle-icon
-/// reads. Generous enough for a custom pick sitting on a slow mount, short enough
-/// that the settings row doesn't hang on one.
-#[cfg(target_os = "macos")]
+/// Listing terminals is a handful of installed-app lookups and icon reads.
+/// Generous enough for a custom pick sitting on a slow mount, short enough that the
+/// settings row doesn't hang on one.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const TERMINAL_APPS_TIMEOUT: Duration = Duration::from_secs(2);
 
-/// Launching is one `spawn` of `open`; the wait is for the installed-app lookup
-/// in front of it.
-#[cfg(target_os = "macos")]
+/// Launching is one process start; the wait is for the installed-app lookup in
+/// front of it.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 const OPEN_TERMINAL_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Listing text editors is one LaunchServices query (the Shell's handler list on Windows) plus a
@@ -172,12 +170,12 @@ pub fn e2e_clear_opened_paths() {
 /// rather than read here: the frontend owns the settings store, and Rust's own
 /// loader is the startup-time read only (`settings/CLAUDE.md`).
 ///
-/// The settings row calls this on every render. Each app costs one LaunchServices
-/// lookup plus a bundle-icon read, so there's nothing to cache; the timeout only
-/// bounds an icon read on a stalled mount.
+/// The settings row calls this on every render. Each app costs one installed-app
+/// lookup plus an icon read, so there's nothing to cache; the timeout only bounds an
+/// icon read on a stalled mount.
 #[tauri::command]
 #[specta::specta]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub async fn list_terminal_apps(app_choice: String) -> TimedOut<TerminalAppList> {
     blocking_with_timeout_flag(TERMINAL_APPS_TIMEOUT, TerminalAppList::default(), move || {
         crate::file_system::terminal::list_terminal_apps(&app_choice)
@@ -195,7 +193,7 @@ pub async fn list_terminal_apps(app_choice: String) -> TimedOut<TerminalAppList>
 /// uninstalled-app fallback and the path-less refusal without parsing anything.
 #[tauri::command]
 #[specta::specta]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub async fn open_terminal_here(
     path: String,
     volume_id: String,
@@ -208,10 +206,11 @@ pub async fn open_terminal_here(
             crate::log_error!(target: "file_actions", "open_terminal_here panicked: {detail}");
             OpenTerminalError::TimedOut
         },
-        move || match crate::commands::wire_path::native(&path) {
-            Ok(dir) => crate::file_system::terminal::open_terminal_here(&volume_id, &dir, &app_choice),
-            // No folder a shell can `cd` into, as an MTP or ADB pane answers.
-            Err(_) => Ok(OpenTerminalOutcome::NotALocalPath),
+        move || match crate::commands::wire_path::app_path(&path) {
+            // The OS arm crosses the folder to the spelling its launch takes.
+            Ok(Some(dir)) => crate::file_system::terminal::open_terminal_here(&volume_id, &dir, &app_choice),
+            // No folder a shell can `cd` into: a `..` name, or text that's no app path.
+            Ok(None) | Err(_) => Ok(OpenTerminalOutcome::NotALocalPath),
         },
     )
     .await
@@ -224,7 +223,7 @@ pub async fn open_terminal_here(
 /// which is the only thing left once the app itself has been uninstalled.
 #[tauri::command]
 #[specta::specta]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub fn terminal_app_display_name(app_choice: String) -> Option<String> {
     crate::file_system::terminal::choice_display_name(&app_choice)
 }

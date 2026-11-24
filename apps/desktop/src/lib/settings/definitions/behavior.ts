@@ -315,11 +315,13 @@ export const behaviorSettings: SettingDefinitionSource[] = [
     descriptionKey: 'settings.behavior.openTerminalHereApp.description',
     descriptionInTip: true,
     keywordsKey: 'settings.behavior.openTerminalHereApp.keywords',
-    terms: ['iTerm', 'Warp', 'Ghostty', 'kitty', 'Alacritty', 'WezTerm', 'Hyper'],
+    terms: ['iTerm', 'Warp', 'Ghostty', 'kitty', 'Alacritty', 'WezTerm', 'Hyper', 'PowerShell', 'Windows Terminal'],
     type: 'string',
     // Terminal.app, always present on macOS, so a user with no other terminal
-    // never has to touch this row. Mirrors `TERMINAL_APP_BUNDLE_ID` in
-    // `src-tauri/src/file_system/terminal.rs`.
+    // never has to touch this row. On Windows the backend reads it as "the
+    // default" (the first installed of Windows Terminal, PowerShell, Command
+    // Prompt), so one registry default serves both. Mirrors `TERMINAL_APP_BUNDLE_ID` in
+    // `src-tauri/src/file_system/terminal/platform/macos.rs`.
     default: 'com.apple.Terminal',
     // Rendered by `TerminalAppSelect.svelte`, not `SettingSelect`: the options
     // are whatever is installed right now, so they can't be registry constants.

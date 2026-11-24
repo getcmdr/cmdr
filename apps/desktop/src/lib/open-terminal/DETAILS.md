@@ -1,14 +1,19 @@
 # Open terminal here: details
 
 Depth behind `CLAUDE.md`. The launch table, the per-app recipes, why there's no window-vs-tab control, and what was
-deferred are `src-tauri/src/file_system/DETAILS.md` § "Open terminal here (`terminal.rs`)".
+deferred are `src-tauri/src/file_system/DETAILS.md` § "Open terminal here (`terminal/`)".
 
-The whole feature sits behind the `openTerminalHere` capability (macOS today), asked per surface: the palette entry and
-the shortcut come from `hasCapability` in `commands/sources/file-list.ts`, the F9 slot from `FunctionKeyBar.svelte`, the
-menu item from the Rust side, and the Settings Terminal card from
-`settings/sections/NavigationAndFileOpsSection.svelte`, with `needsCapability` on the setting so search agrees. Bundle
-ids and launch recipes are a macOS vocabulary, and Linux has no default terminal either, so a Linux build would bring
-its own table rather than reuse this one.
+The whole feature sits behind the `openTerminalHere` capability (macOS and Windows), asked per surface: the palette
+entry and the shortcut come from `hasCapability` in `commands/sources/file-list.ts`, the F9 slot from
+`FunctionKeyBar.svelte`, the menu item from the Rust side, and the Settings Terminal card from
+`settings/sections/NavigationAndFileOpsSection.svelte`, with `needsCapability` on the setting so search agrees. Each OS
+brings its own table (bundle ids on macOS, four known executables on Windows), and Linux has no default terminal either,
+so a Linux build would bring a third.
+
+**Nothing here names an OS's terminal.** The backend's `defaultId` says which app the default launches (Terminal on
+macOS, the first installed of Windows Terminal, PowerShell 7, Windows PowerShell, and Command Prompt on Windows). The
+stored registry default `com.apple.Terminal` (`TERMINAL_APP_BUNDLE_ID`) means "the default" on both: Windows' backend
+reads it that way, so resetting the setting to it after an app went missing is right everywhere.
 
 ## What "here" means
 
@@ -61,15 +66,17 @@ result set is not a folder, so "here" has nothing to mean there. Enabling it for
 | --------------------------------------------------- | ----------------- | -------- | ---- | ---------- |
 | Hint already spent                                  | the stored choice | no       | no   | —          |
 | App list came back empty (query timed out)          | the stored choice | no       | no   | no         |
-| Terminal.app is the only terminal installed         | Terminal          | no       | no   | **no**     |
+| The default (`defaultId`) is the only one installed | the default       | no       | no   | **no**     |
 | Exactly one terminal running, user hasn't chosen    | that one          | **yes**  | yes  | yes        |
 | Two or more running, or none, or user already chose | the stored choice | no       | yes  | yes        |
 
 The unspent flag in row three is the one that looks like a bug and isn't: the hint exists to advertise a setting that
 only matters once a second terminal exists, so it waits for one.
 
-Adoption is skipped when `storedChoice` isn't Terminal.app: the user has already answered this question in Settings, and
-a running app is a weaker signal than a choice.
+Adoption is skipped when `storedChoice` isn't the registry default: the user has already answered this question in
+Settings, and a running app is a weaker signal than a choice. On Windows it never happens: the backend reports every
+`isRunning` as `false` (`src-tauri/src/file_system/terminal/platform/windows.rs` says why), so the hint shows and the
+default launches.
 
 ## The toasts
 
@@ -82,7 +89,8 @@ same-id path swaps the content, `dismissal`, and `props` but keeps the first toa
 deep-link to the terminal-app row through `openSettingsToTerminalApp()` under the `'open-terminal-toast'` settings
 surface.
 
-`launchRefused` and `timedOut` become plain error toasts. `not_a_local_path` coming back from Rust reuses the same
+`launchRefused` and `timedOut` become plain error toasts. `not_a_local_path` and Windows' `no_plain_path` (a folder
+whose plain spelling would name a different folder, or runs past 259 characters) coming back from Rust reuse the same
 `noPath` wording as the frontend gate's refusal: from the user's side it's the same sentence, and the only difference is
 that Rust noticed the mount was gone and the gate hadn't.
 

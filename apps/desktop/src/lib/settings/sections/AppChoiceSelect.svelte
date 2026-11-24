@@ -1,30 +1,34 @@
 <script lang="ts" generics="L">
     /**
-     * The control behind every Settings row that picks an app off this Mac: the
+     * The control behind every Settings row that picks an app off this machine: the
      * "Edit files in" row and the "Open terminal here uses" row. Each row is a thin
      * wrapper that hands this shell its list call, its option builders, and its
      * strings.
      *
      * It can't be `SettingSelect`: those options are registry constants, and these
-     * are whatever apps this Mac has right now. The backend answers that in a few
-     * LaunchServices lookups, so the row asks on mount and again after every write
+     * are whatever apps this machine has right now. The backend answers that in a
+     * few installed-app lookups, so the row asks on mount and again after every write
      * of its setting instead of caching a list that goes stale the moment someone
      * installs a new app. There's deliberately no refresh button.
      *
      * The last row, "Choose an app…", opens the app picker and stores what
-     * `resolvePick` makes of the picked `.app` path (the path itself when a row
-     * passes none). Cancelling the picker leaves the setting alone.
+     * `resolvePick` makes of the picked app path (the path itself when a row
+     * passes none). The picker filters on this platform's kind of app file
+     * (`convention('appFile')`: a `.app` bundle on macOS, an `.exe` on Windows).
+     * Cancelling the picker leaves the setting alone.
      *
      * Rationale: `DETAILS.md` § "Rows that pick an app".
      */
     import { onMount } from 'svelte'
-    // eslint-disable-next-line no-restricted-imports -- OS-only: a macOS `.app` bundle the OS launches, never an app path a pane or index compares.
+    // eslint-disable-next-line no-restricted-imports -- OS-only: an app file (a `.app` bundle, an `.exe`) the OS launches, never an app path a pane or index compares.
     import { open as openAppPicker } from '@tauri-apps/plugin-dialog'
     import Select from '#lib/ui/Select.svelte'
     import { getSetting, setSetting, onSpecificSettingChange } from '#lib/settings/index.js'
     import { getAppLogger } from '#lib/logging/logger.js'
     import type { TimedOut } from '#lib/ipc/bindings.js'
-    import { CHOOSE_APP_VALUE, type AppChoiceOption } from './app-choice-options'
+    import { convention } from '#lib/platform/conventions.js'
+    import { tString } from '#lib/intl/messages.svelte.js'
+    import { CHOOSE_APP_VALUE, appPickerShape, type AppChoiceOption } from './app-choice-options'
 
     interface Props {
         /** The setting the row reads and writes. */
@@ -93,13 +97,17 @@
     async function chooseApp(): Promise<void> {
         const change = ++latestChange
         let picked: string | string[] | null
+        const shape = appPickerShape(convention('appFile'))
         try {
             picked = await openAppPicker({
                 multiple: false,
                 directory: false,
-                defaultPath: '/Applications',
+                defaultPath: shape.defaultPath,
                 title: pickerTitle,
-                filters: [{ name: 'Applications', extensions: ['app'] }],
+                filters:
+                    shape.extensions === null
+                        ? undefined
+                        : [{ name: tString('settings.appChoice.pickerFilterName'), extensions: shape.extensions }],
             })
         } catch (err) {
             log.warn('The app picker did not open: {err}', { err })

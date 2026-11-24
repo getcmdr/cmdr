@@ -74,7 +74,10 @@ function app(id: string, isRunning = false): TerminalApp {
 
 /** The list query answering with these apps, un-timed-out. */
 function installed(...apps: TerminalApp[]): void {
-  listTerminalApps.mockResolvedValue({ data: { apps, chosenId: apps[0]?.id ?? null }, timedOut: false })
+  listTerminalApps.mockResolvedValue({
+    data: { apps, chosenId: apps[0]?.id ?? null, defaultId: apps[0]?.id ?? null },
+    timedOut: false,
+  })
 }
 
 beforeEach(() => {
@@ -130,7 +133,7 @@ describe('openTerminalHereForFolder: the first-use picker', () => {
   })
 
   it('still launches when the app list times out', async () => {
-    listTerminalApps.mockResolvedValue({ data: { apps: [], chosenId: null }, timedOut: true })
+    listTerminalApps.mockResolvedValue({ data: { apps: [], chosenId: null, defaultId: null }, timedOut: true })
 
     await openTerminalHereForFolder({ folder: '/Users/test_user_10/code', volumeId: 'root' })
 
@@ -159,6 +162,15 @@ describe('openTerminalHereForFolder: the outcomes it reports', () => {
     openTerminalHere.mockResolvedValue('not_a_local_path')
 
     await openTerminalHereForFolder({ folder: '/Users/test_user_10/code', volumeId: 'mtp-1' })
+
+    expect(addToast).toHaveBeenCalledWith('commands.handler.openTerminalHere.noPath', expect.anything())
+  })
+
+  it('says the same when Windows finds no plain spelling for the folder', async () => {
+    settings.set(SEEN_KEY, true)
+    openTerminalHere.mockResolvedValue('no_plain_path')
+
+    await openTerminalHereForFolder({ folder: 'C:/Users/test_user_10/CON', volumeId: 'root' })
 
     expect(addToast).toHaveBeenCalledWith('commands.handler.openTerminalHere.noPath', expect.anything())
   })

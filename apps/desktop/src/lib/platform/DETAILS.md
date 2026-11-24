@@ -94,8 +94,10 @@ dialog buttons like macOS, KDE like Windows.
   `hiddenMenuBar` (`none` | `showsOnAltOrF10` | `f10OpensMainMenu`: what stands in for a bar the user hid, beside the
   main-menu button), `contextMenus` (`native` | `inPage`), `dropModifiers` (`optionCopiesCommandMoves` |
   `controlCopiesShiftMoves`: the keys that force a drop's copy or move, read by `file-explorer/drag/drop-operation.ts`),
-  `screenReaders` (most used first), and `linuxDesktop` (`gnome` | `kde` | `other`, `null` off Linux). Each value and
-  its guideline, with dates and what stayed unverified: `docs/notes/windows-port/platform-conventions.md`.
+  `screenReaders` (most used first), `linuxDesktop` (`gnome` | `kde` | `other`, `null` off Linux), and `appFile`
+  (`appBundle` | `exe` | `executable`: what a "Choose an app…" picker filters on,
+  `settings/sections/app-choice-options.ts`). Each value and its guideline, with dates and what stayed unverified:
+  `docs/notes/windows-port/platform-conventions.md`.
 - **`pageDrawsMenuBar()`** is the one reading of `menuModel` the windows mount their bar on: true for every model but
   `systemMenuBar`. Whether that's a bar or a main-menu button is `#lib/ui/command-menu/menu-layout.ts`'s `menuLayout`
   (the menu model, `hiddenMenuBar`, and the "Show menu bar" setting). The backend asks the same question of its own row

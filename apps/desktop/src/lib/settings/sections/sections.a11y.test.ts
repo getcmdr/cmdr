@@ -80,6 +80,7 @@ const bindingCommands = vi.hoisted(() => ({
           { id: 'com.mitchellh.ghostty', displayName: 'Ghostty', icon: null, isRunning: false },
         ],
         chosenId: 'com.apple.Terminal',
+        defaultId: 'com.apple.Terminal',
       },
       timedOut: false,
     }),

@@ -109,6 +109,7 @@ file.deletePermanently	Shift+F8, Shift+Delete
 edit.undoTrash	
 file.goToTrash	
 file.showInFinder	Ctrl+Shift+E
+file.openTerminalHere	F9
 file.copyPath	Ctrl+Shift+C
 file.copyCurrentDirectoryPath	
 file.copyFilename	

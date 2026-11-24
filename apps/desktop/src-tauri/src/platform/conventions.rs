@@ -32,6 +32,21 @@ pub struct PlatformConventions {
     /// The Linux desktop this window lives on; `None` off Linux. Only the Linux arm can set it,
     /// because [`conventions_on`] derives it from the desktop it answers for.
     pub linux_desktop: Option<LinuxDesktop>,
+    /// What an app the user picks by hand is on disk, which a "Choose an app…" picker filters on.
+    pub app_file: AppFile,
+}
+
+/// What a launchable app is on disk: what the "Choose an app…" picker (the terminal and text
+/// editor rows) filters on and where it starts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum AppFile {
+    /// A `.app` bundle, picked from `/Applications`: macOS.
+    AppBundle,
+    /// An `.exe` program: Windows.
+    Exe,
+    /// Any executable file, which no extension names: Linux.
+    Executable,
 }
 
 /// Where the affirmative ("do it") button sits relative to Cancel.
@@ -198,6 +213,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             drop_modifiers: DropModifiers::OptionCopiesCommandMoves,
             screen_readers: &[ScreenReader::VoiceOver],
             linux_desktop: None,
+            app_file: AppFile::AppBundle,
         },
         Desktop::Windows => PlatformConventions {
             dialog_button_order: DialogButtonOrder::AffirmativeFirst,
@@ -211,6 +227,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
             linux_desktop: None,
+            app_file: AppFile::Exe,
         },
         Desktop::Linux(desktop) => PlatformConventions {
             dialog_button_order: match desktop {
@@ -236,6 +253,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
             screen_readers: &[ScreenReader::Orca],
             linux_desktop: Some(desktop),
+            app_file: AppFile::Executable,
         },
     }
 }

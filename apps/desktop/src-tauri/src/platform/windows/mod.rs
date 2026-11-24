@@ -19,13 +19,14 @@ pub(crate) fn conventions() -> PlatformConventions {
     conventions_on(Desktop::Windows)
 }
 
-/// Nothing yet: every surface waits for its Windows backend, and the title bar stays native, so
-/// Snap Layouts keep working. Image indexing doesn't ship on Windows.
+/// Each surface waits for its Windows backend, and the title bar stays native, so Snap Layouts
+/// keep working. Image indexing doesn't ship on Windows.
 pub(crate) fn capabilities() -> PlatformCapabilities {
     PlatformCapabilities {
         quick_look: false,
         get_info: false,
-        open_terminal_here: false,
+        // Windows Terminal, PowerShell, and Command Prompt (`file_system/terminal/`).
+        open_terminal_here: true,
         // The Shell's plain-text handlers, F4 through `IAssocHandler` (`file_system/text_editor_windows.rs`).
         text_editor_choice: true,
         cloud_file_actions: false,

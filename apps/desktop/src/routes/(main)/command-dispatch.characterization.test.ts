@@ -202,7 +202,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   // `file.openTerminalHere`'s chain. Its own behavior is pinned in
   // `#lib/open-terminal/open-terminal-here.test.ts`; here it only has to exist, so
   // the dispatch arm resolves instead of throwing on an undefined barrel member.
-  listTerminalApps: () => Promise.resolve({ data: { apps: [], chosenId: null }, timedOut: false }),
+  listTerminalApps: () => Promise.resolve({ data: { apps: [], chosenId: null, defaultId: null }, timedOut: false }),
   openTerminalHere: (...a: unknown[]) => m.openTerminalHere(...a),
   terminalAppDisplayName: () => Promise.resolve(null),
   asOpenTerminalError: () => null,

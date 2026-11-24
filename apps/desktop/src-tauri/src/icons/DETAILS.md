@@ -166,7 +166,7 @@ detection during listing; the cost is bounded to the ~50 visible rows.
 
 **An icon that was never fetched from the OS** still reaches the frontend in the same base64 WebP form:
 `rgba_to_data_url(rgba, w, h)` encodes a raw buffer at `ICON_SIZE`. Its one caller is the "open terminal here" app list
-(`../file_system/terminal.rs`), which reads each app's `.icns` straight out of its bundle rather than asking NSWorkspace,
+(`../file_system/terminal/platform/macos.rs`), which reads each app's `.icns` straight out of its bundle rather than asking NSWorkspace,
 so it needs no TCC permission and can't descend into a FileProvider XPC chain. Nothing here caches it: that list is a
 handful of apps, rendered when the settings row opens. It's `#[cfg(target_os = "macos")]` for the same reason its caller
 is: `.app` bundles are a macOS thing, and an ungated copy is dead code in the Linux build.

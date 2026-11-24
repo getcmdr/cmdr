@@ -37,7 +37,8 @@ mod tags_io_integration_test;
 /// A tag write's entry in the operation log, so the history can undo it.
 #[cfg(target_os = "macos")]
 pub mod tags_journal;
-#[cfg(target_os = "macos")]
+/// "Open terminal here": macOS and Windows carry a terminal table; Linux has none yet.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub mod terminal;
 /// Ungated: `open_in_editor` answers with its wire types on every platform.
 pub mod text_editor;

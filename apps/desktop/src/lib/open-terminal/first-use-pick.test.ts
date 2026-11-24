@@ -15,6 +15,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: TERMINAL_APP_BUNDLE_ID,
       hintSeen: true,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID), app(WARP, true)],
     })
     expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: false, markSeen: false })
@@ -26,6 +27,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: TERMINAL_APP_BUNDLE_ID,
       hintSeen: false,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID, true)],
     })
     expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: false, markSeen: false })
@@ -37,6 +39,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: TERMINAL_APP_BUNDLE_ID,
       hintSeen: false,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID), app(WARP, true), app(GHOSTTY)],
     })
     expect(pick).toEqual({ appChoice: WARP, persistChoice: true, showHint: true, markSeen: true })
@@ -46,6 +49,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: TERMINAL_APP_BUNDLE_ID,
       hintSeen: false,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID, true), app(WARP, true), app(GHOSTTY)],
     })
     expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: true, markSeen: true })
@@ -55,6 +59,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: TERMINAL_APP_BUNDLE_ID,
       hintSeen: false,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID), app(WARP)],
     })
     expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: true, markSeen: true })
@@ -66,6 +71,7 @@ describe('decideFirstUsePick', () => {
     const pick = decideFirstUsePick({
       storedChoice: WARP,
       hintSeen: false,
+      defaultId: TERMINAL_APP_BUNDLE_ID,
       apps: [app(TERMINAL_APP_BUNDLE_ID), app(WARP), app(GHOSTTY, true)],
     })
     expect(pick).toEqual({ appChoice: WARP, persistChoice: false, showHint: true, markSeen: true })
@@ -74,7 +80,42 @@ describe('decideFirstUsePick', () => {
   it('falls back to the stored choice when the app list came back empty', () => {
     // The list query timed out. Nothing is known, so nothing is claimed: launch
     // what's stored and leave the hint for a run that can answer.
-    const pick = decideFirstUsePick({ storedChoice: TERMINAL_APP_BUNDLE_ID, hintSeen: false, apps: [] })
+    const pick = decideFirstUsePick({
+      storedChoice: TERMINAL_APP_BUNDLE_ID,
+      hintSeen: false,
+      defaultId: null,
+      apps: [],
+    })
     expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: false, markSeen: false })
+  })
+
+  describe('on Windows, where the default is whatever the backend finds first', () => {
+    const WT = 'windows-terminal'
+    const CMD = 'cmd'
+
+    it('stays quiet when the default is the only terminal, even though the stored value is the registry default', () => {
+      const pick = decideFirstUsePick({
+        storedChoice: TERMINAL_APP_BUNDLE_ID,
+        hintSeen: false,
+        defaultId: CMD,
+        apps: [app(CMD)],
+      })
+      expect(pick).toEqual({
+        appChoice: TERMINAL_APP_BUNDLE_ID,
+        persistChoice: false,
+        showHint: false,
+        markSeen: false,
+      })
+    })
+
+    it('shows the hint when there is a terminal besides the default, and keeps launching the default', () => {
+      const pick = decideFirstUsePick({
+        storedChoice: TERMINAL_APP_BUNDLE_ID,
+        hintSeen: false,
+        defaultId: WT,
+        apps: [app(WT), app(CMD)],
+      })
+      expect(pick).toEqual({ appChoice: TERMINAL_APP_BUNDLE_ID, persistChoice: false, showHint: true, markSeen: true })
+    })
   })
 })

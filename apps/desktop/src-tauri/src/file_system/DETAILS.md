@@ -37,7 +37,7 @@ restic backup's snapshots: the overlay row, the parked hub, and the write guards
   (the macOS arm holds the pool, budget, and `is_package_to_macos`; Linux and Windows answer from the list alone), lined
   up with `cmdr-fs`'s `file_extension/platform/`. The rule: `crates/cmdr-fs/DETAILS.md` § "What counts as an
   extension".
-- `tags.rs`: Finder tags, the pure half. `tags_io.rs`: their I/O, through the volume. `tags_journal.rs`: a tag write's operation-log entry, for undo. `terminal.rs`: "open terminal here". `text_editor.rs`: which app F4 opens a file in (wire
+- `tags.rs`: Finder tags, the pure half. `tags_io.rs`: their I/O, through the volume. `tags_journal.rs`: a tag write's operation-log entry, for undo. `terminal/`: "open terminal here" (macOS and Windows). `text_editor.rs`: which app F4 opens a file in (wire
   types; the macOS half in `text_editor_macos.rs`, its tests in `text_editor_test.rs`).
 
 ## Local disk or not (`filesystem_kind.rs`)
@@ -422,7 +422,18 @@ needs a real file behind the URL, which rules out phones, the SMB host list, an 
 volume-kind lookup, so it lives in `src/lib/file-explorer/pane/volume-capabilities.ts::rowIsOsVisible`. `Share` needs one
 more yes on top of it: a non-empty enumeration.
 
-## Open terminal here (`terminal.rs`)
+## Open terminal here (`terminal/`)
+
+Layout: `terminal/mod.rs` is the shared core (the wire types, the generic `KnownTerminal<R>` / `TerminalChoice<R>`, the
+fallback rule `resolve_choice`, and the volume refusal); `terminal/platform/` is a seam with a macOS and a Windows arm,
+pinned by `const _` signatures; `terminal/platform/windows_table.rs` is Windows' pure half (table, setting parse, `launch_plan`),
+compiled into every OS's test build so its tests run on a Mac. No Linux arm: the module and its three commands are gated
+on macOS and Windows, and the `open_terminal_here` capability hides every surface on Linux.
+
+Both arms answer `TerminalAppList.default_id`, the app the default launches here, so the frontend never names an OS's
+terminal (`src/lib/open-terminal/DETAILS.md`).
+
+### macOS
 
 macOS has no system-wide "default terminal" setting. Finder's own "New Terminal at Folder" service is hardcoded to
 Terminal.app, and iTerm2 works around that by installing its own service. So Cmdr carries a table, the way VS Code,
@@ -465,6 +476,32 @@ the per-app window-vs-tab survey) is `docs/notes/terminal-launch-sources-2026-09
   `open_in_editor`, so a suite run doesn't pile up terminal windows nothing can close. It records the FOLDER, never the
   argv: Warp's recipe ends in a URI rather than a path, so a spec reading the argv would assert something different for
   one app in the table than for the other seven.
+
+### Windows (`platform/windows.rs`, `windows_table.rs`)
+
+- **Four known terminals, in default order**: Windows Terminal (`windows-terminal`, `wt.exe`), PowerShell 7 (`pwsh`),
+  Windows PowerShell (`windows-powershell`), Command Prompt (`cmd`). The ids are what the setting stores. The default
+  (an empty setting, or the registry default `com.apple.Terminal`) is the first installed, else Command Prompt; it's
+  never "missing", so a fresh install raises no gone-toast. A gone choice falls back to the default and says so.
+- **Installed-ness is `symlink_metadata` on each executable's few known homes**: `%LOCALAPPDATA%\Microsoft\WindowsApps`
+  (Store execution aliases), the system folder (`GetSystemDirectoryW`), `%ProgramFiles%\PowerShell\7`, then local
+  `PATH` entries (UNC entries skipped: a probe there can wait on a server). ❌ Not `metadata`/`exists`: `wt.exe` is an
+  app execution alias, a reparse point that following fails on.
+- **The folder is the process's working directory, ❌ never an argument.** Windows Terminal gets `-d .`: it splits its
+  whole command line on `;` into subcommands, so a folder like `a;b` would run as two. The shells get no arguments and
+  `CREATE_NEW_CONSOLE`. A custom `.exe` pick launches like a shell (the flag is ignored by a GUI program).
+  `launch_plan` and `command_line` are pure and tested.
+- **The folder's plain spelling** (`AppPath::to_native_plain`): a working directory takes no `\\?\` form. A folder
+  whose plain form names a different folder (trailing dot or space, a device name) or runs past 259 units answers
+  `OpenTerminalOutcome::NoPlainPath`, ❌ never sent verbatim.
+- **`CreateProcessW`, ❌ not `std::process::Command`**: `Command` hands the child Cmdr's std handles whenever Cmdr has
+  any (a dev run, a console launch), so a shell on its new console would talk to Cmdr's pipes, and it lets inheritable
+  handles leak. Here nothing is inherited.
+- **Icons are the Shell's own for the `.exe`** (`crate::icons::get_icon_for_native`). **`is_running` is always
+  `false`**: `cmd.exe` and `powershell.exe` run hidden under build tools and tasks, and Windows Terminal runs as
+  `WindowsTerminal.exe`, so "exactly one running" would adopt the wrong app.
+- Not verified on a real machine yet: `wt -d .` from an execution alias honoring the inherited working directory, `cmd`
+  on a UNC folder (it refuses a UNC current directory and starts in the Windows folder; PowerShell takes one).
 
 **Considered and deferred** (revisit only when a user asks):
 

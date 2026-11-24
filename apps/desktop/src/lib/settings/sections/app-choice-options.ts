@@ -4,6 +4,8 @@
  * row's own `*-options.ts` builds them from its backend answer.
  */
 
+import type { AppFile } from '#lib/ipc/bindings.js'
+
 /**
  * One dropdown row. Structurally a `SelectItem` (`#lib/ui/Select.svelte`), spelled
  * out here rather than imported: this module is plain TypeScript, and a type
@@ -23,3 +25,28 @@ export interface AppChoiceOption {
  * for a real choice even if it somehow reached the store.
  */
 export const CHOOSE_APP_VALUE = '__choose_app__'
+
+/** Where the app picker starts and which files it lets through. */
+export interface AppPickerShape {
+  /** The extensions an app file carries, or `null` where none names one (no filter). */
+  extensions: string[] | null
+  /** The folder the picker opens in, or `undefined` to leave it to the OS. */
+  defaultPath: string | undefined
+}
+
+/**
+ * The picker for this platform's kind of app (`convention('appFile')`), so neither row
+ * names an OS: macOS picks a `.app` bundle from `/Applications`, Windows an `.exe`
+ * from wherever the dialog last was, Linux any file.
+ * @param appFile - What an app is on disk here.
+ */
+export function appPickerShape(appFile: AppFile): AppPickerShape {
+  switch (appFile) {
+    case 'appBundle':
+      return { extensions: ['app'], defaultPath: '/Applications' }
+    case 'exe':
+      return { extensions: ['exe'], defaultPath: undefined }
+    case 'executable':
+      return { extensions: null, defaultPath: undefined }
+  }
+}

@@ -57,18 +57,29 @@ describe('terminalAppItems', () => {
 
 describe('selectedTerminalAppId', () => {
   it('selects the chosen app', () => {
-    expect(selectedTerminalAppId({ apps: [TERMINAL, GHOSTTY], chosenId: 'com.mitchellh.ghostty' })).toBe(
-      'com.mitchellh.ghostty',
+    expect(
+      selectedTerminalAppId({
+        apps: [TERMINAL, GHOSTTY],
+        chosenId: 'com.mitchellh.ghostty',
+        defaultId: TERMINAL_APP_BUNDLE_ID,
+      }),
+    ).toBe('com.mitchellh.ghostty')
+  })
+
+  it('falls back to the default when the chosen app has been uninstalled', () => {
+    // `chosenId: null` is exactly how the backend reports that: the stored app
+    // isn't in `apps` anymore.
+    expect(selectedTerminalAppId({ apps: [TERMINAL], chosenId: null, defaultId: TERMINAL_APP_BUNDLE_ID })).toBe(
+      TERMINAL_APP_BUNDLE_ID,
     )
   })
 
-  it('falls back to Terminal when the chosen app has been uninstalled', () => {
-    // `chosenId: null` is exactly how the backend reports that: the stored app
-    // isn't in `apps` anymore.
-    expect(selectedTerminalAppId({ apps: [TERMINAL], chosenId: null })).toBe(TERMINAL_APP_BUNDLE_ID)
+  it('shows the default the backend names, whatever the OS calls it', () => {
+    const cmd = app('cmd', 'Command Prompt', null)
+    expect(selectedTerminalAppId({ apps: [cmd], chosenId: null, defaultId: 'cmd' })).toBe('cmd')
   })
 
   it('selects nothing while the list is still empty', () => {
-    expect(selectedTerminalAppId({ apps: [], chosenId: null })).toBe('')
+    expect(selectedTerminalAppId({ apps: [], chosenId: null, defaultId: null })).toBe('')
   })
 })

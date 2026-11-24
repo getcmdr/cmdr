@@ -12,9 +12,11 @@ import { CHOOSE_APP_VALUE, type AppChoiceOption } from './app-choice-options'
 export { CHOOSE_APP_VALUE }
 
 /**
- * Terminal.app's bundle id, the `behavior.openTerminalHereApp` default. It ships
- * with macOS, so it's also what the row shows once the chosen app is gone.
- * Mirrors `TERMINAL_APP_BUNDLE_ID` in `src-tauri/src/file_system/terminal.rs`.
+ * Terminal.app's bundle id, the `behavior.openTerminalHereApp` registry default on
+ * every OS. On macOS it names Terminal, which ships with macOS; on Windows the
+ * backend reads it as "the default" (`REGISTRY_DEFAULT` in `src-tauri/src/file_system/terminal/platform/windows_table.rs`), so
+ * resetting the setting to it means "the default" everywhere. Mirrors
+ * `TERMINAL_APP_BUNDLE_ID` in `src-tauri/src/file_system/terminal/platform/macos.rs`.
  */
 export const TERMINAL_APP_BUNDLE_ID = 'com.apple.Terminal'
 
@@ -38,7 +40,7 @@ export function terminalAppItems(apps: TerminalApp[], chooseAppLabel: string): A
  * Which row reads as selected.
  *
  * A `chosenId` of `null` means the stored app has been uninstalled. The action
- * itself falls back to Terminal in that case, so the row says the same thing
+ * itself falls back to the default (`defaultId`) in that case, so the row says the same thing
  * rather than showing an empty control for an app that isn't there. It only
  * DISPLAYS the fallback: rewriting the setting is the action's job, at the
  * moment it actually opens Terminal instead.
@@ -46,6 +48,5 @@ export function terminalAppItems(apps: TerminalApp[], chooseAppLabel: string): A
  * @returns The row's value, or an empty string while the list is still empty.
  */
 export function selectedTerminalAppId(list: TerminalAppList): string {
-  if (list.chosenId !== null) return list.chosenId
-  return list.apps.some((app) => app.id === TERMINAL_APP_BUNDLE_ID) ? TERMINAL_APP_BUNDLE_ID : ''
+  return list.chosenId ?? list.defaultId ?? ''
 }

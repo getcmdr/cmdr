@@ -82,9 +82,10 @@ export async function openTerminalHereForFolder({ folder, volumeId }: OpenTermin
     const outcome = await openTerminalHere(folder, volumeId, appChoice)
     if (outcome === 'app_missing_opened_terminal_instead') {
       await reportMissingApp(appChoice)
-    } else if (outcome === 'not_a_local_path') {
+    } else if (outcome === 'not_a_local_path' || outcome === 'no_plain_path') {
       // Rust took the same reading and disagreed: the pane's volume kind still says
-      // local, but the mount behind it is gone (a share that went away).
+      // local, but the mount behind it is gone (a share that went away), or, on
+      // Windows, the folder has no plain spelling a working directory takes.
       showMessage('commands.handler.openTerminalHere.noPath', 'info')
     }
   } catch (error) {
@@ -110,7 +111,12 @@ async function pickAppForThisRun(): Promise<string> {
   if (getTerminalHintSeen()) return storedChoice
 
   const list = await listTerminalApps(storedChoice)
-  const pick = decideFirstUsePick({ storedChoice, hintSeen: false, apps: list.data.apps })
+  const pick = decideFirstUsePick({
+    storedChoice,
+    hintSeen: false,
+    apps: list.data.apps,
+    defaultId: list.data.defaultId,
+  })
 
   if (pick.persistChoice) setTerminalAppChoice(pick.appChoice)
   if (pick.markSeen) markTerminalHintSeen()
@@ -125,8 +131,9 @@ async function pickAppForThisRun(): Promise<string> {
 }
 
 /**
- * Says which app went missing and puts the setting back to Terminal, so the next
- * run opens the same thing without saying it again.
+ * Says which app went missing and puts the setting back to its default (Terminal
+ * on macOS, whatever the backend finds first on Windows), so the next run opens
+ * the same thing without saying it again.
  */
 async function reportMissingApp(appChoice: string): Promise<void> {
   // Asked BEFORE the reset, while the setting still names the app that's gone.

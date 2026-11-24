@@ -195,9 +195,9 @@ All under `apps/desktop/src-tauri/src/`.
   toggle, `volume_holds_real_repos`, and the `git-state-changed` event). The route itself sits with the registry in
   `file_system/volume/manager/git_routing.rs`; everything a repository answers, typed git-error classification
   (`FriendlyGitErrorKind`) included, is `crates/cmdr-git`
-- `file_system/terminal.rs`: "Open terminal here": which terminal apps Cmdr knows, how each one takes a folder, and
-  whether a pane's folder has a path a shell can reach. Rationale: the module's own docs; the sources behind the table:
-  `docs/notes/terminal-launch-sources-2026-09-04.md`
+- `file_system/terminal/`: "Open terminal here" on macOS and Windows: which terminal apps Cmdr knows per OS, how each
+  one takes a folder, and whether a pane's folder has a path a shell can reach. Rationale: the module's own docs; the
+  sources behind the table: `docs/notes/terminal-launch-sources-2026-09-04.md`
 - `file_system/text_editor.rs`: which app F4 opens a file in: the text editors LaunchServices lists, the stored choice
   (the system default, a bundle id, or a picked `.app`), and the fallback when that app is gone. Rationale: the module's
   own docs

@@ -160,7 +160,7 @@
     })
 
     /**
-     * The plain row, F2…F8, plus F9 Terminal on macOS. Each chip shows its command's live effective FIRST
+     * The plain row, F2…F8, plus F9 Terminal where the OS has "Open terminal here". Each chip shows its command's live effective FIRST
      * shortcut, never the hardcoded F-key: rebinding `file.copy` to `⌘C` in Settings
      * re-renders the F5 chip as `⌘C` immediately, so the bar can't lie about what the
      * keys do. The chip keeps the bar's quiet `<kbd>` look (a boxed `ShortcutChip` pill

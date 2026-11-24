@@ -125,6 +125,7 @@ windows	file.deletePermanently	Shift+F8
 windows	file.rename	F2
 windows	file.multiRename	Ctrl+M
 windows	file.showInFinder	Ctrl+Shift+E
+windows	file.openTerminalHere	F9
 windows	file.tellMeAbout	Ctrl+Shift+Enter
 windows	file.copyPath	Ctrl+Shift+C
 windows	file.copyFilename	

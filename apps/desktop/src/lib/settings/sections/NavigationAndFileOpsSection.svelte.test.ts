@@ -53,6 +53,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
       data: {
         apps: [{ id: 'com.apple.Terminal', displayName: 'Terminal', icon: null, isRunning: false }],
         chosenId: 'com.apple.Terminal',
+        defaultId: 'com.apple.Terminal',
       },
       timedOut: false,
     }),

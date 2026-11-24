@@ -1,7 +1,7 @@
 # Open terminal here (frontend)
 
 The frontend half of `file.openTerminalHere`: which folder "here" means, whether the command is offered at all, and the
-two toasts around the launch. Backend counterpart: `src-tauri/src/file_system/terminal.rs`.
+two toasts around the launch. Backend counterpart: `src-tauri/src/file_system/terminal/mod.rs`.
 
 ## Module map
 
@@ -19,12 +19,14 @@ two toasts around the launch. Backend counterpart: `src-tauri/src/file_system/te
   what decides whether the containing folder is reachable. Rust re-reads `paths_are_os_visible()` at launch time and
   answers `not_a_local_path`, which is what catches a share whose mount went away after the gate said yes.
 - **Five surfaces, and only three of them can grey out.** The File menu item, the pane context menu, and the F-key bar's
-  F9 Terminal button (`FunctionKeyBar.svelte`, macOS only) carry an enabled flag; the palette has no disabled state and
-  an accelerator fires whatever the menu looks like. So the handler is the real refusal and it words the hint
+  F9 Terminal button (`FunctionKeyBar.svelte`, behind the capability) carry an enabled flag; the palette has no disabled
+  state and an accelerator fires whatever the menu looks like. So the handler is the real refusal and it words the hint
   (`commands.handler.openTerminalHere.noPath`); the greying is chrome.
-- **The hint flag is spent only when the hint actually shows.** Terminal.app alone on the Mac ⇒ open it, say nothing,
-  and ❗ leave `behavior.openTerminalHereToastSeen` FALSE: someone who installs Ghostty next month is still owed the
-  hint, and a flag spent today would eat it. `first-use-pick.ts` owns this.
+- **Never name an OS's terminal here: read the backend's `defaultId`.** The registry default `com.apple.Terminal` means
+  "the default" on Windows too.
+- **The hint flag is spent only when the hint actually shows.** The default alone (Terminal.app alone on a Mac) ⇒ open
+  it, say nothing, and ❗ leave `behavior.openTerminalHereToastSeen` FALSE: someone who installs Ghostty next month is
+  still owed the hint, and a flag spent today would eat it. `first-use-pick.ts` owns this.
 - **`listTerminalApps` runs only while the hint is unspent.** After that the stored choice is the whole answer, so the
   ordinary path costs one IPC, not two.
 - **The cursor row is RE-READ before acting on it, ❌ never the displayed one.** `getCursorRowForTerminal()` awaits

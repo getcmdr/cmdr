@@ -394,8 +394,8 @@ export const fileListCommands: CommandSource[] = [
     whileDialogOpen: BLOCKED_BY_DIALOGS,
   },
   {
-    // Behind `openTerminalHere`: the known-terminals table and its launch recipes are a macOS
-    // vocabulary, and there's no Linux module behind the command yet.
+    // Behind `openTerminalHere`: macOS and Windows each carry a known-terminals table, and
+    // there's no Linux module behind the command yet.
     // F9 first: it's the F-key bar's slot, so the bar chip, the palette, and the
     // menu all show it. ⌘⌥T stays as a second binding, written Command-then-Option
     // because that's the order `formatKeyCombo` emits.
@@ -407,7 +407,7 @@ export const fileListCommands: CommandSource[] = [
     shortcuts: { macos: ['F9', '⌘⌥T'], windows: ['F9'], linux: ['F9'] },
     whileDialogOpen: BLOCKED_BY_DIALOGS,
     descriptionKey: 'commands.fileOpenTerminalHere.description',
-    keywords: ['terminal', 'shell', 'console', 'cd', 'iterm', 'ghostty', 'warp'],
+    keywords: ['terminal', 'shell', 'console', 'cd', 'iterm', 'ghostty', 'warp', 'powershell'],
   },
   {
     id: 'file.copyPath',

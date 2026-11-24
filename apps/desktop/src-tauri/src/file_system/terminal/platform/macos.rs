@@ -1,29 +1,13 @@
-//! "Open terminal here": which terminal apps Cmdr knows, how each one takes a
-//! folder, and what actually happens when the action fires.
-//!
-//! macOS has no system-wide "default terminal", so Cmdr carries its own table the
-//! way every other app offering this does. Three parts:
+//! macOS: the known-terminals table, keyed by bundle id, and the `open` argv each
+//! app takes a folder through.
 //!
 //! - [`KNOWN_TERMINALS`], the table: bundle id, display name, and the recipe that
 //!   says how that app takes a folder.
 //! - [`launch_argv`], a pure choice + folder → argv function, so every recipe is
 //!   unit-testable without launching anything.
-//! - [`open_terminal_here`] and [`list_terminal_apps`], the two things the IPC
-//!   commands in `commands/file_actions.rs` pass through to.
 //!
 //! Installed-ness is a millisecond `NSWorkspace` question, asked per call. ❌ Never
 //! scan `/Applications`.
-//!
-//! macOS only, table and all: bundle ids are a macOS vocabulary, and Linux has no
-//! default terminal either (`x-terminal-emulator` on Debian, the emerging
-//! `xdg-terminal-exec`). There is no Linux counterpart yet, and no stub: the module,
-//! the `commands/file_actions.rs` wrappers, the `ipc.rs` registration, and the menu
-//! item are all `#[cfg(target_os = "macos")]`, so on a Linux build the two commands
-//! don't exist for the frontend to call. A Linux port would add its own module under
-//! the same command names, the way the platform seams' arms pin them.
-//!
-//! Rationale, and why there's no window-vs-tab control: `DETAILS.md` § "Open
-//! terminal here".
 
 use std::path::{Path, PathBuf};
 
@@ -32,6 +16,9 @@ use objc2_app_kit::NSRunningApplication;
 use objc2_foundation::NSString;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
+use cmdr_fs::app_path::AppPath;
+
+use super::super::{OpenTerminalError, OpenTerminalOutcome, TerminalApp, TerminalAppList};
 use crate::file_system::open_with::{
     app_icon_data_url, installed_app_path, read_app_display_name, read_bundle_identifier,
 };
@@ -61,15 +48,8 @@ pub enum LaunchRecipe {
     WarpUri,
 }
 
-/// One terminal app Cmdr knows how to launch a folder in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct KnownTerminal {
-    pub bundle_id: &'static str,
-    /// The app's own name, shown in the settings dropdown. Product names, so they
-    /// keep their vendor casing (`iTerm2`, `kitty`, `WezTerm`).
-    pub display_name: &'static str,
-    pub recipe: LaunchRecipe,
-}
+/// One terminal app Cmdr knows how to launch a folder in; its `id` is the bundle id.
+pub type KnownTerminal = super::super::KnownTerminal<LaunchRecipe>;
 
 /// Every terminal app Cmdr knows, Terminal first (it's the default) and the rest
 /// alphabetically, which is the order the settings dropdown renders.
@@ -87,42 +67,42 @@ pub struct KnownTerminal {
 /// - WezTerm: `assets/macos/WezTerm.app/Contents/Info.plist` (`wezterm/wezterm`, `main`).
 pub const KNOWN_TERMINALS: &[KnownTerminal] = &[
     KnownTerminal {
-        bundle_id: TERMINAL_APP_BUNDLE_ID,
+        id: TERMINAL_APP_BUNDLE_ID,
         display_name: "Terminal",
         recipe: LaunchRecipe::FolderAsDocument,
     },
     KnownTerminal {
-        bundle_id: "org.alacritty",
+        id: "org.alacritty",
         display_name: "Alacritty",
         recipe: LaunchRecipe::WorkingDirectoryFlag,
     },
     KnownTerminal {
-        bundle_id: "com.mitchellh.ghostty",
+        id: "com.mitchellh.ghostty",
         display_name: "Ghostty",
         recipe: LaunchRecipe::FolderAsDocument,
     },
     KnownTerminal {
-        bundle_id: "co.zeit.hyper",
+        id: "co.zeit.hyper",
         display_name: "Hyper",
         recipe: LaunchRecipe::FolderAsDocument,
     },
     KnownTerminal {
-        bundle_id: "com.googlecode.iterm2",
+        id: "com.googlecode.iterm2",
         display_name: "iTerm2",
         recipe: LaunchRecipe::FolderAsDocument,
     },
     KnownTerminal {
-        bundle_id: "net.kovidgoyal.kitty",
+        id: "net.kovidgoyal.kitty",
         display_name: "kitty",
         recipe: LaunchRecipe::FolderAsDocument,
     },
     KnownTerminal {
-        bundle_id: "dev.warp.Warp-Stable",
+        id: "dev.warp.Warp-Stable",
         display_name: "Warp",
         recipe: LaunchRecipe::WarpUri,
     },
     KnownTerminal {
-        bundle_id: "com.github.wez.wezterm",
+        id: "com.github.wez.wezterm",
         display_name: "WezTerm",
         recipe: LaunchRecipe::FolderAsDocument,
     },
@@ -130,34 +110,13 @@ pub const KNOWN_TERMINALS: &[KnownTerminal] = &[
 
 /// The known terminal with this bundle id, if Cmdr carries a recipe for it.
 pub fn known_terminal(bundle_id: &str) -> Option<&'static KnownTerminal> {
-    KNOWN_TERMINALS.iter().find(|t| t.bundle_id == bundle_id)
+    KNOWN_TERMINALS.iter().find(|t| t.id == bundle_id)
 }
 
-/// Which app the "open terminal here" setting names.
-///
-/// The stored setting is one string holding either kind, so the two are told apart
-/// structurally: a custom pick is an absolute path (`/Applications/Foo.app`), and a
-/// bundle id never is.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TerminalChoice {
-    /// One of [`KNOWN_TERMINALS`], with its recipe.
-    Known(&'static KnownTerminal),
-    /// An app the user picked by hand through "Choose an app…", held as the
-    /// absolute path to its `.app` bundle. Launched as a folder handler, which is
-    /// what nearly every terminal registers as.
-    CustomApp(PathBuf),
-}
-
-impl TerminalChoice {
-    /// The value that goes back into the setting, and the id the frontend uses to
-    /// tell one dropdown option from another.
-    pub fn id(&self) -> String {
-        match self {
-            Self::Known(t) => t.bundle_id.to_string(),
-            Self::CustomApp(path) => path.to_string_lossy().into_owned(),
-        }
-    }
-}
+/// Which app the "open terminal here" setting names: a known bundle id, or a custom
+/// pick held as the absolute path to its `.app` bundle, launched as a folder handler,
+/// which is what nearly every terminal registers as.
+pub type TerminalChoice = super::super::TerminalChoice<LaunchRecipe>;
 
 /// Reads a stored setting value into a choice.
 ///
@@ -177,18 +136,10 @@ pub fn parse_choice(setting: &str) -> Option<TerminalChoice> {
     known_terminal(setting).map(TerminalChoice::Known)
 }
 
-/// The name to call a stored choice when the app it names has just gone missing.
-///
-/// I/O-free on purpose: the bundle is gone, so there's nothing left to read a name
-/// out of. A known bundle id answers from the table; a custom `.app` path answers
-/// with its file stem, which is the name the user picked it by. `None` means Cmdr
-/// has no name to offer (a bundle id that left the table), and the caller words the
-/// nameless variant rather than putting a bundle id in front of anyone.
-pub fn choice_display_name(setting: &str) -> Option<String> {
-    match parse_choice(setting)? {
-        TerminalChoice::Known(terminal) => Some(terminal.display_name.to_string()),
-        TerminalChoice::CustomApp(path) => path.file_stem().map(|stem| stem.to_string_lossy().into_owned()),
-    }
+/// The name to call a stored choice when the app it names has just gone missing: a
+/// known bundle id answers from the table, a custom `.app` path with its file stem.
+pub(crate) fn choice_display_name(setting: &str) -> Option<String> {
+    parse_choice(setting)?.name_without_io()
 }
 
 /// The bytes left literal inside Warp's `path=` query value: the RFC 3986
@@ -221,13 +172,13 @@ pub fn launch_argv(choice: &TerminalChoice, dir: &Path) -> Vec<String> {
     match choice {
         TerminalChoice::Known(terminal) => match terminal.recipe {
             LaunchRecipe::FolderAsDocument => {
-                vec!["open".into(), "-b".into(), terminal.bundle_id.into(), dir_arg]
+                vec!["open".into(), "-b".into(), terminal.id.into(), dir_arg]
             }
             LaunchRecipe::WorkingDirectoryFlag => vec![
                 "open".into(),
                 "-n".into(),
                 "-b".into(),
-                terminal.bundle_id.into(),
+                terminal.id.into(),
                 "--args".into(),
                 "--working-directory".into(),
                 dir_arg,
@@ -243,95 +194,20 @@ pub fn launch_argv(choice: &TerminalChoice, dir: &Path) -> Vec<String> {
     }
 }
 
-/// What `open_terminal_here` did, so the frontend acts on a variant rather than
-/// reading a sentence.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(rename_all = "snake_case")]
-pub enum OpenTerminalOutcome {
-    /// The chosen terminal was launched at the folder.
-    Opened,
-    /// The chosen app isn't installed anymore, so Terminal opened instead. The
-    /// frontend says so and resets the setting.
-    AppMissingOpenedTerminalInstead,
-    /// The pane isn't on a path a shell can `cd` into (MTP, ADB, a share whose
-    /// mount went away), so nothing was launched.
-    NotALocalPath,
-}
-
-/// Why `open_terminal_here` couldn't answer at all. Distinct from
-/// [`OpenTerminalOutcome`], which reports things that DID happen.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
-pub enum OpenTerminalError {
-    /// `open` couldn't be spawned. Carries the OS errno where there is one, so
-    /// nothing has to read the message.
-    LaunchRefused { errno: Option<i32> },
-    /// The launch didn't finish inside the command's deadline.
-    TimedOut,
-}
-
-impl std::fmt::Display for OpenTerminalError {
-    /// ❗ For logs only; the frontend words the variant.
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::LaunchRefused { errno } => write!(f, "launch refused (errno {errno:?})"),
-            Self::TimedOut => f.write_str("timed out"),
-        }
-    }
-}
-
-impl std::error::Error for OpenTerminalError {}
-
-/// One installed terminal, as the settings dropdown needs it.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TerminalApp {
-    /// Exactly what goes into the setting: a bundle id for a known terminal, an
-    /// absolute `.app` path for a custom pick.
-    pub id: String,
-    pub display_name: String,
-    /// The app's icon as a base64 WebP data URL, read from its bundle. Absent
-    /// when the bundle carries no readable icon.
-    pub icon: Option<String>,
-    /// Whether the app is running right now. The first-use picker prefers a
-    /// running terminal when exactly one is.
-    pub is_running: bool,
-}
-
-/// The terminal apps installed on this machine, plus which one is chosen.
-// DEFAULT-OK: an empty list with nothing chosen is what the command's deadline has
-// to answer with, and it's honest: "the query didn't finish" carries no claim about
-// which terminals exist. The `TimedOut` flag beside it says which case it was.
-#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TerminalAppList {
-    /// Installed apps in table order, plus the custom pick last when there is one.
-    pub apps: Vec<TerminalApp>,
-    /// The id of the currently chosen app, present in `apps`. Absent when the
-    /// chosen app has been uninstalled, which is the frontend's cue to reset.
-    pub chosen_id: Option<String>,
-}
-
-/// Resolves a stored setting to the app that will actually be launched.
-///
-/// Pure given the "is this installed?" answer, so the fallback rule is testable
-/// without an `NSWorkspace`: an installed choice is used as is, anything else
-/// falls back to Terminal and reports that it did.
+/// Resolves a stored setting to the app that will actually be launched: an
+/// installed choice as is, anything else Terminal, reporting that it fell back.
 fn resolve_choice(
     setting: &str,
     is_installed: impl Fn(&TerminalChoice) -> bool,
 ) -> (TerminalChoice, OpenTerminalOutcome) {
-    let fallback = || {
-        known_terminal(TERMINAL_APP_BUNDLE_ID)
-            .map(TerminalChoice::Known)
-            .expect("the known-terminals table always carries Terminal.app")
-    };
-    match parse_choice(setting) {
-        Some(choice) if is_installed(&choice) => (choice, OpenTerminalOutcome::Opened),
-        // Either the setting named something this build can't launch, or the app
-        // it named is gone. Both land on Terminal, and both owe the user a word.
-        _ => (fallback(), OpenTerminalOutcome::AppMissingOpenedTerminalInstead),
-    }
+    super::super::resolve_choice(parse_choice(setting), is_installed, terminal_app)
+}
+
+/// Terminal.app: always present on macOS, so it's both the default and the fallback.
+fn terminal_app() -> TerminalChoice {
+    known_terminal(TERMINAL_APP_BUNDLE_ID)
+        .map(TerminalChoice::Known)
+        .expect("the known-terminals table always carries Terminal.app")
 }
 
 /// Whether an app with this bundle id has a running instance right now.
@@ -344,7 +220,7 @@ fn is_running(bundle_id: &str) -> bool {
 /// Where a choice's `.app` bundle sits, or `None` once it's been uninstalled.
 fn choice_app_path(choice: &TerminalChoice) -> Option<PathBuf> {
     match choice {
-        TerminalChoice::Known(terminal) => installed_app_path(terminal.bundle_id),
+        TerminalChoice::Known(terminal) => installed_app_path(terminal.id),
         // A custom pick is an absolute path the user handed us, so its own
         // existence is the whole question.
         TerminalChoice::CustomApp(path) => path.is_dir().then(|| path.clone()),
@@ -362,22 +238,17 @@ fn app_entry(id: String, display_name: String, app_path: &Path, bundle_id: &str)
     }
 }
 
-/// The terminal apps installed on this machine, in dropdown order, plus which one
-/// the stored `setting` names.
-///
-/// Asked fresh every time the settings row renders: installed-ness is one
-/// LaunchServices lookup per app, so there's nothing to cache and no "Refresh"
-/// button to offer.
-pub fn list_terminal_apps(setting: &str) -> TerminalAppList {
+/// Installed-ness is one LaunchServices lookup per app.
+pub(crate) fn list_terminal_apps(setting: &str) -> TerminalAppList {
     let mut apps: Vec<TerminalApp> = KNOWN_TERMINALS
         .iter()
         .filter_map(|terminal| {
-            let app_path = installed_app_path(terminal.bundle_id)?;
+            let app_path = installed_app_path(terminal.id)?;
             Some(app_entry(
-                terminal.bundle_id.to_string(),
+                terminal.id.to_string(),
                 terminal.display_name.to_string(),
                 &app_path,
-                terminal.bundle_id,
+                terminal.id,
             ))
         })
         .collect();
@@ -398,55 +269,30 @@ pub fn list_terminal_apps(setting: &str) -> TerminalAppList {
         ));
     }
 
-    let chosen_id = choice
-        .map(|choice| choice.id())
-        .filter(|id| apps.iter().any(|app| &app.id == id));
-    TerminalAppList { apps, chosen_id }
+    let listed = |id: &String| apps.iter().any(|app| &app.id == id);
+    let chosen_id = choice.map(|choice| choice.id()).filter(listed);
+    let default_id = Some(TERMINAL_APP_BUNDLE_ID.to_string()).filter(listed);
+    TerminalAppList {
+        apps,
+        chosen_id,
+        default_id,
+    }
 }
 
-/// Opens `dir` in the terminal the stored `setting` names.
-///
-/// Reports what happened rather than whether it worked: a pane on a volume with no
-/// OS-visible paths launches nothing, and a setting naming an app that's been
-/// uninstalled falls back to Terminal and says so.
-pub fn open_terminal_here(
-    volume_id: &str,
-    dir: &Path,
-    setting: &str,
-) -> Result<OpenTerminalOutcome, OpenTerminalError> {
-    if !volume_paths_are_os_visible(volume_id) {
+/// `open` takes the folder's POSIX spelling, which every local app path has.
+pub(crate) fn open_in_terminal(dir: &AppPath, setting: &str) -> Result<OpenTerminalOutcome, OpenTerminalError> {
+    let Ok(dir) = dir.to_native() else {
         return Ok(OpenTerminalOutcome::NotALocalPath);
-    }
+    };
     let (choice, outcome) = resolve_choice(setting, |choice| choice_app_path(choice).is_some());
-    launch(&launch_argv(&choice, dir), dir)?;
+    launch(&launch_argv(&choice, &dir), &dir)?;
     log::info!(
         target: "terminal",
         "opened {dir:?} in {} ({outcome:?})",
         choice.id(),
-        dir = cmdr_fs::log_private::LogPrivate::dir_path(dir),
+        dir = cmdr_fs::log_private::LogPrivate::dir_path(&dir),
     );
     Ok(outcome)
-}
-
-/// Whether the pane's volume hands out paths the OS (and so a shell) can
-/// reach: local POSIX, OS-mounted shares, direct SMB while its share is
-/// mounted. False for MTP, ADB, and a share whose mount went away.
-///
-/// ❌ Not a test on the path string, and ❌ not `supports_local_fs_access()`:
-/// that asks whether Cmdr reads through `std::fs`, and direct SMB answers
-/// `false` while its `/Volumes/…` paths are exactly what a shell can `cd`
-/// into. Same reading Quick Look and the drag commands take.
-fn volume_paths_are_os_visible(volume_id: &str) -> bool {
-    match crate::file_system::volume::manager::get_volume_manager().get(volume_id) {
-        Some(volume) => volume.paths_are_os_visible(),
-        None => {
-            // An id the registry doesn't know is an unmount race, not a
-            // verdict. The frontend gates on the pane's volume kind before
-            // it ever gets here, so assume yes rather than silently refusing.
-            log::debug!(target: "terminal", "volume {volume_id} not found; assuming its paths are OS-visible");
-            true
-        }
-    }
 }
 
 /// Spawns the built argv. Fire and forget: `open` returns as soon as
@@ -578,8 +424,7 @@ mod tests {
             let argv = launch_argv(&TerminalChoice::Known(terminal), Path::new("/tmp"));
             assert_eq!(argv.first().map(String::as_str), Some("open"));
             assert!(
-                argv.iter()
-                    .any(|a| a.contains(terminal.bundle_id) || a.starts_with("warp://")),
+                argv.iter().any(|a| a.contains(terminal.id) || a.starts_with("warp://")),
                 "{} should be named in its own argv",
                 terminal.display_name
             );
@@ -588,7 +433,7 @@ mod tests {
 
     #[test]
     fn bundle_ids_are_unique() {
-        let mut ids: Vec<&str> = KNOWN_TERMINALS.iter().map(|t| t.bundle_id).collect();
+        let mut ids: Vec<&str> = KNOWN_TERMINALS.iter().map(|t| t.id).collect();
         ids.sort_unstable();
         let count = ids.len();
         ids.dedup();

@@ -160,10 +160,10 @@ const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
   'commands.tagsToggle*': '`colorTags`: the tag commands exist only on macOS',
   'fileExplorer.tags.skipped': '`colorTags`: only macOS tags files',
   'settings.listing.showTags.description': '`colorTags`: the setting needs the capability',
-  'commands.handler.openTerminalHere.': '`openTerminalHere`: the command exists only on macOS',
-  'fileExplorer.functionKeyBar.terminalLabel': '`openTerminalHere`: the F9 slot exists only with the capability',
-  'settings.behavior.openTerminalHereApp.description': '`openTerminalHere`: the setting needs the capability',
-  'settings.navigationAndFileOps.card.terminal': '`openTerminalHere`: the card needs the capability',
+  'fileExplorer.functionKeyBar.terminalLabel':
+    '`openTerminalHere` (macOS and Windows): “Terminal” is the generic kind of app here, the word Windows Terminal uses too',
+  'settings.navigationAndFileOps.card.terminal':
+    '`openTerminalHere` (macOS and Windows): “Terminal” is the generic kind of app here, the word Windows Terminal uses too',
   'commands.handler.getInfo.': '`getInfo`: Finder’s Get Info, macOS only',
   'settings.behavior.textEditorApp.description': '`textEditorChoice`: the setting needs the capability',
   'downloads.fda.': '`fullDiskAccess`: the Full Disk Access prompt is macOS only',
