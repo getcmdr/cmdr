@@ -149,10 +149,11 @@ pub(crate) fn settle_for_operation(operation_id: &str, moved_all: bool) {
 mod tests {
     use super::*;
 
+    /// POSIX-shaped app paths on every host: the ledger compares text, whatever its flavor.
     fn app(paths: &[&str]) -> Vec<AppPathBuf> {
         paths
             .iter()
-            .map(|p| AppPathBuf::from_wire(p).expect("an app path"))
+            .map(|p| AppPathBuf::parse(p, cmdr_fs::app_path::PathFlavor::Posix).expect("an app path"))
             .collect()
     }
 
