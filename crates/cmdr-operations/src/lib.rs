@@ -421,6 +421,8 @@ mod journal_capture_volume_tests;
 #[cfg(test)]
 mod journal_landed_node_tests;
 #[cfg(test)]
+mod journal_root_shape_tests;
+#[cfg(test)]
 mod journal_row_shape_tests;
 #[cfg(test)]
 mod landed_node_undo_tests;
