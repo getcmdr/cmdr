@@ -2008,6 +2008,39 @@ included; the hidden couplings it found are why waves B and C differ from round 
   through `on_volume`); `DisplacedDestination`'s aside mint (`std::path`); then milestone 2's list (the create,
   rename-validity, and preflight-sources entry points, `leaf_validation`, `target_names`, `transfer_leaves`).
 
+- **Ninth pass, milestone 1** (2026-11-25, branch `worktree-agent-af05b2518a5689a0f`, PR #1465; one agent, no helpers):
+  the drivers' sources and destination are app paths end to end, which fixes #1457. Bridge calls 893 → 880
+  (`cmdr-operations` 436 → 423), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 268; no entry grew. What it is:
+  - **Typed from the start to the bodies**: `copy_between_volumes` / `move_between_volumes` take the routed start's
+    `AppPathBuf`s and cross once (`wire_paths::engine_path`) only for the native shortcut, the same-volume engine, and
+    the summary; the source binding keeps typed sources by position (`retain_bound_app_sources_on`).
+    `copy_volumes_with_progress` / `move_volumes_with_progress`, the async driver (its `TransferContext` generic over
+    the path spelling, `NameAtDest`, `ConflictDecision`, `build_pre_skip_set`), `landing_at` (`ListedName::app`),
+    `copy_single_path`, `copy_directory_streaming`, the sequential extract, the preflight's hints, the concurrent task,
+    `HeldSource`, `LandedReadBack`, and `journal::record_volume_transfer_source` all take app paths.
+  - **One top-level split**: `transfer/volume/listed_name.rs::top_level` (the chosen name, else `AppPath::file_name`,
+    joined by `ListedFolder`) feeds the serial loop, the concurrent `prepare_source`, and the copy's pre-skip identity
+    check. A name the destination folder can't hold (`TopLevel::Refused`: a drive folder and a `\`) is asked about per
+    item (`TransferContext::dest_name_refused`, `CopyTask::dest_name_refused`), where it failed the transfer.
+  - **The journal's ends**: the two `seam_path` crossings `record_volume_transfer_source` read the roots through are
+    gone; a file source's row splits through `journal_split_app`, which now takes the typed split only for a CANONICAL
+    path (a Windows suite's native-spelled bridge root keeps its `journal_split` row). Pinned for every root shape (`/`,
+    a drive, a scheme root, a volume-relative root, a top-level `a\b.txt`, a source that is its volume's root), source
+    AND destination, copy and move: `journal_root_shape_tests.rs`.
+  - **Byte-exact on macOS and Linux** by construction: a typed path's split and join equal `Path`'s there for every
+    canonical path; progress labels and the name-rules check read the app name as the native text it spells (`label_of`,
+    `native_text`), so a non-UTF-8 Linux name reads and checks as it did; the dest-inside-source guard still compares by
+    `Path`. Suites on macOS: `cmdr-operations` + `cmdr-fs` 3,885 green.
+  - **Crossings that moved, not new**: the resolver still answers a `std::path` write path (`ResolvedConflict`), read
+    back through `on_volume` in `top_level_conflict.rs`, `copy_concurrent_source.rs`, and `move_same.rs` (it used to
+    cross inside `copy_single_path`); the same-volume engine and the archive move-out cross their `std::path` sources
+    once into the typed driver (`on_volume`, replacing the closures' own bridge calls).
+- **Left in 10a after the ninth pass's milestone 1**: `InMemoryVolume`'s `PathBuf` store (milestone 2, which re-enables
+  the `\` cells on Windows); the resolver's `ResolvedConflict.write_path` and `naming.rs` (a `Rename` pick on a `\` name
+  still splits on Windows); `DisplacedDestination`'s aside mint; the create, rename-validity, and preflight-sources
+  entry points, `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's `std::path` body
+  (`move_same.rs`, `top_level_move_hints`); `scan_walker`'s cached walk (with 10f's lossless row).
+
 ### 10b. `cmdr-index`
 
 - **Size**: M.
@@ -2600,13 +2633,13 @@ included; the hidden couplings it found are why waves B and C differ from round 
       Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as
       text and `seam_path` re-escapes it as literal: a mangled name. 10 of the 11 are new here (`create.rs:55` is on the
       list).
-    - **Corrected hazard count: 64** after 10a's eighth pass (26 on the list, 26 off it, 12 `seam_path`: the two driver
-      roots `journal.rs::record_volume_transfer_source` reads, new there); 62 before it (26, 26, 10); 76 at the snapshot
-      (37, 27, 12), 15 gone with 10a's seventh pass: `resolve_dest_path` (off the list), the 11 walker and destination
-      sites, and the `seam_path` crossings at `conflict_preflight.rs:142`, `routing.rs:686`, and
-      `routing/destination.rs:41`, one new (the anchor's fallback). The demo's off-list sites (`cmdr-listing-wasm`'s
-      `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no hazard. A regex can't make this list complete;
-      the type-level gate (§ "Keeping it that way") is what can.
+    - **Corrected hazard count: 62** after 10a's ninth pass, milestone 1 (26 on the list, 26 off it, 10 `seam_path`: the
+      two driver roots `journal.rs::record_volume_transfer_source` read are typed now); 64 after the eighth (26, 26, 12,
+      those two new there); 62 before it (26, 26, 10); 76 at the snapshot (37, 27, 12), 15 gone with 10a's seventh pass:
+      `resolve_dest_path` (off the list), the 11 walker and destination sites, and the `seam_path` crossings at
+      `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`, one new (the anchor's fallback).
+      The demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no
+      hazard. A regex can't make this list complete; the type-level gate (§ "Keeping it that way") is what can.
   - **27 sites need an exemption**, and the check has no directive for one today: env vars (`cmdr-adb`, the `cmdr-index`
     benches, the SFTP fixture's key dir), xattr key names (`cmdr-archive`, `cmdr-smb`, `cmdr-fs` caps tests), the SQLite
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
