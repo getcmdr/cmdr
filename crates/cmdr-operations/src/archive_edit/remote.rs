@@ -37,7 +37,7 @@
 //! intact (the local temp and any partial remote temp are cleaned up). Pinned by
 //! `remote_tests` and `remote_outage_tests`.
 
-use cmdr_fs::app_path::{AppName, AppPath};
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic};
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -54,7 +54,7 @@ use super::super::transfer::StagedWrite;
 use super::super::transfer::retry::after_a_cut_off_landing_wait;
 use super::super::transfer::staged_write::announce_app_on;
 use super::super::transfer::staged_write::{LandingError, LandingSource, Resumed};
-use super::super::transfer::volume::{ListedName, PathRole};
+use super::super::transfer::volume::{ListedName, PathRole, label_of, on_volume, std_of};
 use super::super::transfer::volume_outage::{OutageEnd, StartedOn, lost_connection, wait_after_failure};
 use super::super::types::WriteOperationError;
 use super::edit_error::EditError;
@@ -209,7 +209,7 @@ async fn place_local_file(
         }
         // A fresh uuid each attempt, so a leftover from a crashed prior edit (an
         // abandoned upload; the original is intact) is never mistaken for this one.
-        let remote_app = crate::transfer::volume::on_volume(remote_path);
+        let remote_app = on_volume(remote_path);
         let target = announce_app_on(state.scope().host(), parent.as_ref(), &remote_app);
         let staged = StagedWrite::begin_over_original(state, parent.as_ref(), target, parent_volume_id);
         let started_on = StartedOn::now(&volumes);
@@ -457,14 +457,18 @@ async fn reap_remote_temps(
     parent_volume_id: &str,
     archive_path: &Path,
 ) {
-    let (Some(dir), Some(file_name)) = (archive_path.parent(), archive_path.file_name()) else {
+    // Split by the app path: on Windows `Path` read a POSIX server's `a\b.zip` as `b.zip`
+    // in `a`, so the reap listed that other folder and swept another archive's temps.
+    let archive_app = on_volume(archive_path);
+    let (Some(dir_app), Some(file_name)) = (archive_app.parent(), label_of(&archive_app)) else {
         return;
     };
     // The mint's own prefix, so a temp shortened to fit is matched too.
-    let prefix = temp_sibling_prefix(&file_name.to_string_lossy());
+    let prefix = temp_sibling_prefix(&file_name);
 
-    let dir_app = AppPath::legacy_unchecked(dir);
-    let entries = match parent.list_directory(&dir_app, None).await {
+    let dir = std_of(dir_app);
+    let dir = dir.as_ref();
+    let entries = match parent.list_directory(dir_app, None).await {
         Ok(entries) => entries,
         Err(err) => {
             log::debug!(target: "archive_remote_edit", "skipping remote temp reap ({}): {err}", LogPrivate::dir_path(dir), err = LogError(&err));
@@ -489,7 +493,7 @@ async fn reap_remote_temps(
         let temp_app = match AppName::from_app_spelling(&entry.name) {
             Ok(_) => ListedName::new(&entry.name)
                 .ok()
-                .and_then(|name| name.under(&dir_app).ok()),
+                .and_then(|name| name.under(dir_app).ok()),
             Err(_) => None,
         };
         let Some(temp_app) = temp_app else {

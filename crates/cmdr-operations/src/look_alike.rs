@@ -84,7 +84,7 @@ pub(crate) fn is_look_alike_clash(source: &Path, destination: &Path) -> bool {
 /// Windows' `Path` split it into `b.txt` inside `/dir/a`, another folder. `None` at a
 /// root, for a trailing `..`, and for a name that isn't UTF-8 (no text to compare or
 /// respell, as `Path`'s `to_str` had none). On macOS and Linux it's `Path`'s own split.
-fn folder_and_name(path: &Path) -> Option<(PathBuf, String)> {
+pub(crate) fn folder_and_name(path: &Path) -> Option<(PathBuf, String)> {
     let app = seam_path(path);
     let (folder, name) = (app.parent()?, app.file_name()?);
     Some((std_of(folder).into_owned(), native_text(name)?.into_owned()))

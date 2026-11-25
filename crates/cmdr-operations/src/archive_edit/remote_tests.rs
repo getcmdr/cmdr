@@ -185,6 +185,62 @@ async fn remote_edit_reaps_a_stale_temp_for_the_same_archive() {
     assert!(back.contains_key("added.txt"), "the edit committed");
 }
 
+/// A POSIX server's `sub\bundle.zip` is one name in `/device` on every host: its stale temp
+/// there is reaped, and `/device/sub`, which Windows' `Path` read as the archive's folder,
+/// keeps another archive's leftover.
+#[tokio::test]
+async fn the_temp_reap_of_a_backslash_name_sweeps_its_own_folder() {
+    let parent = InMemoryVolume::new("Remote");
+    parent.create_directory(app_path!("/device")).await.expect("the folder");
+    parent
+        .create_directory(app_path!("/device/sub"))
+        .await
+        .expect("the decoy folder");
+    parent
+        .create_file(
+            app_path!("/device/sub\\bundle.zip"),
+            &build_zip(&[("keep.txt", b"keep me")]),
+        )
+        .await
+        .expect("seed remote zip");
+    // Dated through the typed door: the double's `&Path` helpers read `\` as a separator
+    // on Windows.
+    let stale = std::time::UNIX_EPOCH + Duration::from_secs(now_secs() - 48 * 60 * 60);
+    for temp in [
+        "/device/sub\\bundle.zip.cmdr-tmp-0000stale",
+        "/device/sub/bundle.zip.cmdr-tmp-0000stale",
+    ] {
+        let temp = AppPath::from_normalized(temp).expect("canonical");
+        parent.create_file(temp, b"partial upload").await.expect("seed temp");
+        parent
+            .apply_metadata(temp, &cmdr_fs::metadata::CarriedMetadata::default(), Some(stale))
+            .await;
+    }
+    let parent = Arc::new(parent);
+
+    // The reap runs before the pull, whatever the edit then does.
+    let _ = run_add_edit(
+        parent.clone() as Arc<dyn Volume>,
+        PathBuf::from("/device/sub\\bundle.zip"),
+    )
+    .await;
+
+    let in_device = parent.list_directory(app_path!("/device"), None).await.expect("list");
+    assert!(
+        !in_device.iter().any(|e| e.name.contains(".cmdr-tmp-")),
+        "the archive's own stale temp is reaped: {in_device:?}"
+    );
+    let in_sub = parent
+        .list_directory(app_path!("/device/sub"), None)
+        .await
+        .expect("list");
+    assert_eq!(
+        in_sub.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(),
+        vec!["bundle.zip.cmdr-tmp-0000stale"],
+        "the decoy folder keeps its leftover"
+    );
+}
+
 /// A parent whose listing of `/device` also names a stale-looking "temp" that isn't one
 /// plain name, the way only a hostile or broken server lists one, and that records every
 /// delete it's asked for.

@@ -136,12 +136,13 @@ back, else left to the drive's next arrival, ❌ never to the next launch (#574)
 fully-uploaded temp on the remote under its `<archive>.cmdr-tmp-<uuid>` name. It's harmless (the original is intact and
 the temp holds the NEW bytes), but untidy. `pull_apply_upload_swap` reaps it at the start of the next edit of the SAME
 remote archive — the mirror of the local mutator's `reap_sibling_temps` — via a single `list_directory` of the archive's
-parent, deleting siblings that match this archive's own temp shape. ❗ It skips every temp the in-flight ledger records
-for the parent (`in_flight_temps::is_recorded_on`, as the transfer's reap does): a recorded temp is a live upload of
-ours, or a landing rescue that couldn't leave temp space, whose temp holds the edit until the sweep lands it.
-Best-effort and non-blocking (a listing/delete failure is logged at debug, never fails or delays the edit); one
-round-trip, nothing on the read path. Pinned by the `remote_edit_*` reap tests in `remote_tests` (stale-same-archive
-reaped, fresh spared, other-archive ignored, delete-failure doesn't fail the edit, a recorded year-old temp spared).
+parent (split by the app path, so on Windows a POSIX server's `sub\a.zip` sweeps its own folder, never `sub`), deleting
+siblings that match this archive's own temp shape. ❗ It skips every temp the in-flight ledger records for the parent
+(`in_flight_temps::is_recorded_on`, as the transfer's reap does): a recorded temp is a live upload of ours, or a landing
+rescue that couldn't leave temp space, whose temp holds the edit until the sweep lands it. Best-effort and non-blocking
+(a listing/delete failure is logged at debug, never fails or delays the edit); one round-trip, nothing on the read path.
+Pinned by the `remote_edit_*` reap tests in `remote_tests` (stale-same-archive reaped, fresh spared, other-archive
+ignored, delete-failure doesn't fail the edit, a recorded year-old temp spared).
 
 - **Decision — age-gate the remote reap at 24 h (`REMOTE_TEMP_REAP_MIN_AGE`); the local reap has no threshold.** The
   local reap deletes every matching sibling unconditionally because edits of one archive serialize on the parent lane,
