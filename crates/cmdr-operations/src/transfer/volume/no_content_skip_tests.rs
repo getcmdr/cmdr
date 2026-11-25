@@ -4,7 +4,7 @@
 //! so without this no folder of one would ever copy out.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -22,8 +22,8 @@ async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<AppPathBuf>) {
     let mut paths = Vec::new();
     for n in 0..count {
         // Spelled as app text: a `std::path` join puts Windows' `\` into it, one name on the double.
-        let top = AppPathBuf::from_wire(&format!("/t{n}")).expect("an app path");
-        let keep = AppPathBuf::from_wire(&format!("/t{n}/keep.txt")).expect("an app path");
+        let top = AppPathBuf::parse(&format!("/t{n}"), PathFlavor::Posix).expect("an app path");
+        let keep = AppPathBuf::parse(&format!("/t{n}/keep.txt"), PathFlavor::Posix).expect("an app path");
         source.create_directory(&top).await.unwrap();
         source.create_file(&keep, b"kept").await.unwrap();
         paths.push(top);
@@ -81,7 +81,7 @@ async fn copy_skips_and_carries_on(sources: usize) {
     assert!(result.is_ok(), "a link doesn't stop the copy: {result:?}");
     for n in 0..sources {
         assert!(
-            dest.exists(&AppPathBuf::from_wire(&format!("/inbox/t{n}/keep.txt")).expect("an app path"))
+            dest.exists(&AppPathBuf::parse(&format!("/inbox/t{n}/keep.txt"), PathFlavor::Posix).expect("an app path"))
                 .await
         );
     }
