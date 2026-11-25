@@ -140,6 +140,8 @@ const EJECT_MESSAGE: { [K in EjectError['type']]: (error: Extract<EjectError, { 
   unmountRefused: (e) => wordUnmountRefusal(e.holders),
   // The same names and the same advice; the toast around it says nothing was unmounted.
   heldBeforeEject: (e) => wordUnmountRefusal(e.holders),
+  // Nobody holds the drive: what it needs is rights, ❌ never "close your files".
+  needsAdministrator: () => raw('errors.eject.needsAdministrator'),
   timedOut: () => raw('errors.eject.timedOut'),
   // Nothing was unmounted, so it must NOT share `timedOut`'s "may still eject".
   notResponding: () => raw('errors.eject.notResponding'),
@@ -171,6 +173,7 @@ export function ejectRefusalReport(error: unknown): false | undefined {
     case 'notEjectable':
     case 'notAnSmbVolume':
     case 'remoteNotConnected':
+    case 'needsAdministrator':
       return false
     case 'unmountRefused':
     case 'heldBeforeEject':
@@ -193,7 +196,12 @@ function holdersExplainIt(holders: HolderScan): boolean {
 }
 
 /** `EjectError` variants that carry their own free-text `detail` field. */
-const DETAIL_BEARING_VARIANTS = new Set<EjectError['type']>(['unmountRefused', 'deviceDisconnectRefused', 'unexpected'])
+const DETAIL_BEARING_VARIANTS = new Set<EjectError['type']>([
+  'unmountRefused',
+  'deviceDisconnectRefused',
+  'needsAdministrator',
+  'unexpected',
+])
 
 /**
  * The backend's own words for this refusal (usually `diskutil`'s stderr, which

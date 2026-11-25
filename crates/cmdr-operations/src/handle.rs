@@ -156,7 +156,7 @@ impl Operations {
         let registry = Arc::new(WriteOperationRegistry::new());
         let status = Arc::new(StatusCache::new(Arc::clone(host.events_arc())));
         let stores = Arc::new(EngineStores::new());
-        Self {
+        let engine = Self {
             inner: Arc::new_cyclic(|engine| Inner {
                 manager: Arc::new(OperationManager::new(
                     Arc::clone(&host),
@@ -171,7 +171,17 @@ impl Operations {
                 status,
                 stores,
             }),
-        }
+        };
+        // An op an eject held back in the queue starts when the eject ends. Held
+        // weakly: an engine that's gone stops answering rather than living on in
+        // the host's list.
+        let manager = Arc::downgrade(engine.manager());
+        engine.host().volumes().on_eject_ended(Box::new(move || {
+            if let Some(manager) = manager.upgrade() {
+                manager.readmit();
+            }
+        }));
+        engine
     }
 
     /// Everything the engine reaches its host through.

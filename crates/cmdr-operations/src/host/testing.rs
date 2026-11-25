@@ -111,6 +111,10 @@ pub struct FakeVolumes {
     no_local_disk: AtomicBool,
     /// Set by [`Self::move_root`]: where each volume's recorded paths move now.
     root_moves: Mutex<HashMap<String, RootMove>>,
+    /// Set by [`Self::set_ejecting`]: the volumes an eject is taking down.
+    ejecting: Mutex<Vec<String>>,
+    /// Told when [`Self::set_ejecting`] ends an eject.
+    eject_listeners: Mutex<Vec<Arc<dyn Fn() + Send + Sync>>>,
 }
 
 /// A path prefix [`FakeVolumes`] serves through a route rather than its drive.
@@ -127,6 +131,25 @@ impl FakeVolumes {
         self.root_moves
             .lock_ignore_poison()
             .insert(volume_id.to_string(), root_move);
+    }
+
+    /// From now on, `volume_id` is (or, with `false`, isn't) being ejected. An
+    /// eject ending tells every listener, as the app's landing does.
+    pub fn set_ejecting(&self, volume_id: &str, ejecting: bool) {
+        {
+            let mut set = self.ejecting.lock_ignore_poison();
+            set.retain(|id| id != volume_id);
+            if ejecting {
+                set.push(volume_id.to_string());
+            }
+        }
+        if !ejecting {
+            // Outside the lock: a listener runs an admission pass that asks again.
+            let listeners = self.eject_listeners.lock_ignore_poison().clone();
+            for listener in listeners {
+                listener();
+            }
+        }
     }
 
     /// From now on, no volume id is the local disk (the browser demo's host),
@@ -227,6 +250,14 @@ impl OperationVolumes for FakeVolumes {
 
     fn local_disk_id(&self) -> Option<&str> {
         (!self.no_local_disk.load(Ordering::Relaxed)).then_some(cmdr_fs::volume::DEFAULT_VOLUME_ID)
+    }
+
+    fn is_ejecting(&self, volume_id: &str) -> bool {
+        self.ejecting.lock_ignore_poison().iter().any(|id| id == volume_id)
+    }
+
+    fn on_eject_ended(&self, listener: Box<dyn Fn() + Send + Sync>) {
+        self.eject_listeners.lock_ignore_poison().push(Arc::from(listener));
     }
 }
 

@@ -86,17 +86,18 @@ inside it names the app's accessor.
   the host its claim hands it; the probe watchdog and the preview watchdog hold their stores weakly, so a dropped engine
   stops them.
 - **Which volume serves an id or a path goes through `OperationVolumes`** (`host/volumes.rs`): the registry's `get`,
-  `resolve`, the archive-boundary questions, `find_by_root`, `forget_archive_index`, `on_volume_arrival`, and
-  `unregistered` (why an id has no volume, as an `UnregisteredVolume`). Its supertrait is the rollback planner's
-  `VolumeLookup`, so one answer serves both. The app answers it with `operations_host/volumes.rs`, which asks
-  `get_volume_manager()` per call. ❗ A site passing a path calls `resolve`; each that stays on `get` says why in one
-  line (the `.zip` file itself is a plain file on its parent; a lane key or a capability flag is a question about the
-  drive, not the path; an archive gate upstream already routed the in-zip case). Bulk rename, the numbered create,
-  rename-as-move, delete, trash, and the `.git` half of the instant rename and create have no route of their own, so
-  each asks `routed_writes.rs` first and refuses a path a route serves (typed: `ReadOnlyDevice` on the transfer path,
-  `VolumeError::ReadOnly` on the instant one), whatever the caller. The frontend refuses the same writes in a routed
-  pane; this is the backend's line for Ask Cmdr, MCP, and any later caller. `FakeVolumes::route` lets a test serve a
-  prefix through a route (`routed_writes_tests.rs`).
+  `resolve`, the archive-boundary questions, `find_by_root`, `forget_archive_index`, `on_volume_arrival`, `unregistered`
+  (why an id has no volume, as an `UnregisteredVolume`), and `is_ejecting` + `on_eject_ended` (an op touching a volume
+  being ejected waits Queued, and the engine readmits when an eject lands: `manager.rs` header). Its supertrait is the
+  rollback planner's `VolumeLookup`, so one answer serves both. The app answers it with `operations_host/volumes.rs`,
+  which asks `get_volume_manager()` per call. ❗ A site passing a path calls `resolve`; each that stays on `get` says
+  why in one line (the `.zip` file itself is a plain file on its parent; a lane key or a capability flag is a question
+  about the drive, not the path; an archive gate upstream already routed the in-zip case). Bulk rename, the numbered
+  create, rename-as-move, delete, trash, and the `.git` half of the instant rename and create have no route of their
+  own, so each asks `routed_writes.rs` first and refuses a path a route serves (typed: `ReadOnlyDevice` on the transfer
+  path, `VolumeError::ReadOnly` on the instant one), whatever the caller. The frontend refuses the same writes in a
+  routed pane; this is the backend's line for Ask Cmdr, MCP, and any later caller. `FakeVolumes::route` lets a test
+  serve a prefix through a route (`routed_writes_tests.rs`).
 - **What the browser build can reach on the volume path needs no thread.** There `Runtime::spawn_blocking` runs its
   closure INLINE (no pool), and nothing can `block_on` or wait in `blocking_recv`. Audited for the volume engine (copy,
   move, delete, rename, create, the scan preview, undo): every `blocking_recv` and `Condvar` wait sits on a LOCAL or

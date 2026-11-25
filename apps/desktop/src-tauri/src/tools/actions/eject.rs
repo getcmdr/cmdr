@@ -112,6 +112,7 @@ fn refusal_tag(error: &EjectError) -> &'static str {
         EjectError::DeviceDisconnectRefused { .. } => "deviceDisconnectRefused",
         EjectError::UnmountRefused { .. } => "unmountRefused",
         EjectError::HeldBeforeEject { .. } => "heldBeforeEject",
+        EjectError::NeedsAdministrator { .. } => "needsAdministrator",
         EjectError::TimedOut => "timedOut",
         EjectError::NotResponding { .. } => "notResponding",
         EjectError::Unexpected { .. } => "unexpected",

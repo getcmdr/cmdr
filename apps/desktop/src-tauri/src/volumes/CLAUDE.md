@@ -10,7 +10,7 @@ Linux's: `platform/linux/CLAUDE.md`.
 `ids.rs`, `fs_type.rs` (non-blocking `statfs`), `nsurl.rs` (blocking enrichment), `mounts.rs` (`getfsstat` rows),
 `smb.rs`, `cloud.rs`, `disk_image.rs`, `watcher.rs` (the `NSWorkspace` observer), `disk_units.rs`,
 `unmount_approver/`. `platform/lifecycle.rs`: mount/unmount handlers (macOS, Windows). `platform/unix.rs`: the POSIX
-local volume. `platform/windows/`: the drive table, `storage.rs` (which drives eject), and its `watcher/` (DETAILS § Windows).
+local volume. `platform/windows/`: the drive table, `storage.rs` (which drives eject), `device_tree.rs` (what one eject takes), and its `watcher/` (DETAILS § Windows).
 
 ## Must-knows
 

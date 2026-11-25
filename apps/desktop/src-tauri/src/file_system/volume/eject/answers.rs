@@ -199,6 +199,12 @@ pub enum EjectError {
         /// Who's holding the disk.
         holders: HolderScan,
     },
+    /// The OS wants an administrator's rights for this eject (Windows: locking or detaching a
+    /// mounted VHD). Nobody holds the drive, so ❌ never worded as "close what's using it".
+    NeedsAdministrator {
+        /// What Windows answered, for the log and the details line.
+        detail: String,
+    },
     /// The `diskutil` / `umount` subprocess (or a device provider's eject) didn't
     /// finish within the timeout. ❗ The unmount was NOT cancelled; it may still land.
     TimedOut,
@@ -258,6 +264,7 @@ impl std::fmt::Display for EjectError {
             }
             Self::UnmountRefused { holders, detail } => write!(f, "unmount refused ({holders}): {detail}"),
             Self::HeldBeforeEject { holders } => write!(f, "nothing was unmounted, since the disk is held ({holders})"),
+            Self::NeedsAdministrator { detail } => write!(f, "needs an administrator's rights: {detail}"),
             Self::TimedOut => f.write_str("timed out"),
             Self::NotResponding { step } => write!(f, "{step} didn't finish in time, so nothing was unmounted"),
             Self::Unexpected { detail } => write!(f, "unexpected: {detail}"),

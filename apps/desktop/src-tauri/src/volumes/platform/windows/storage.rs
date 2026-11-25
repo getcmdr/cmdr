@@ -6,10 +6,13 @@
 //! the descriptor it read at arrival, so no media I/O happens and a sleeping disk stays asleep
 //! (learn.microsoft.com `IOCTL_STORAGE_QUERY_PROPERTY` and "Opening a volume", read
 //! 2026-11-25). A volume spanning disks, or a device that refuses the query, answers nothing,
-//! which the decision reads as "not on a hot-plug bus". Answers are cached by volume id, since
-//! the bus a volume sits on doesn't change while it's mounted.
+//! which the decision reads as "not on a hot-plug bus". ❗ Each volume is probed ONCE, off-thread
+//! (the drive watcher's baseline and arrivals, [`probe_soon`]), and both outcomes are cached by
+//! volume id: the bus doesn't change while it's mounted, and a device that refuses (Storage
+//! Spaces, a half-dead stick) or stalls its open must never cost a listing path anything. The
+//! listing paths read the cache alone ([`route_of`]); only the eject probes inline ([`route_now`]).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::os::windows::io::{FromRawHandle, OwnedHandle};
 use std::sync::{LazyLock, Mutex};
 
@@ -28,31 +31,88 @@ use windows_sys::Win32::System::Ioctl::{
 
 use crate::ignore_poison::IgnorePoison;
 
-/// Each local volume's storage facts, by volume id. Only answers are kept: a read that failed is
-/// asked again next time (a stick's device can still be settling just after it arrives).
-static FACTS: LazyLock<Mutex<HashMap<String, StorageFacts>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+/// Each local volume's probe, by volume id: its storage facts, or `None` when the device wouldn't
+/// say. ❗ Both outcomes are kept, so a device that refuses the query (Storage Spaces, a
+/// half-dead stick) is asked once, ❌ never on every row read.
+static FACTS: LazyLock<Mutex<HashMap<String, Option<StorageFacts>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// How `drive` ejects, or `None` when it doesn't. Reads the device only for a local disk that
-/// isn't the system drive.
-pub(super) fn route_of(drive: &WindowsDrive) -> Option<EjectRoute> {
-    let local = matches!(
+/// Volume ids with a probe running, so a burst of row reads starts one.
+static PROBING: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// Whether Cmdr reads `drive`'s storage device at all: a local disk that isn't the system drive.
+fn is_probed_kind(drive: &WindowsDrive) -> bool {
+    matches!(
         drive.kind,
         WindowsDriveKind::Fixed | WindowsDriveKind::Removable | WindowsDriveKind::Optical
     ) && !drive.is_alias
-        && drive.id != crate::volumes::DEFAULT_VOLUME_ID;
-    if !local {
-        return eject_route(drive, None);
-    }
-    eject_route(drive, facts_of(drive))
+        && drive.id != crate::volumes::DEFAULT_VOLUME_ID
 }
 
-fn facts_of(drive: &WindowsDrive) -> Option<StorageFacts> {
-    if let Some(facts) = FACTS.lock_ignore_poison().get(&drive.id) {
-        return Some(*facts);
+/// How `drive` ejects, or `None` when it doesn't, from the cached probe only: it runs on listing
+/// paths (`drive_row`, `resolve_path_volume_fast`), so ❌ it never opens a device. A drive not
+/// probed yet starts its probe off-thread and answers from its kind alone meanwhile (a stick
+/// already offers Eject; a USB disk does once the probe lands and the list refreshes).
+pub(super) fn route_of(drive: &WindowsDrive) -> Option<EjectRoute> {
+    if !is_probed_kind(drive) {
+        return eject_route(drive, None);
     }
-    let facts = read_facts(&volume_device(&drive.root)?)?;
+    let cached = FACTS.lock_ignore_poison().get(&drive.id).copied();
+    match cached {
+        Some(facts) => eject_route(drive, facts),
+        None => {
+            // A listing path has nobody to tell: the watcher's own probes refresh the list.
+            probe_soon(std::slice::from_ref(drive), || {});
+            eject_route(drive, None)
+        }
+    }
+}
+
+/// [`route_of`], probing first when nothing's cached. Blocking: only for the eject's own
+/// blocking thread, under its deadline.
+pub(super) fn route_now(drive: &WindowsDrive) -> Option<EjectRoute> {
+    if !is_probed_kind(drive) {
+        return eject_route(drive, None);
+    }
+    let cached = FACTS.lock_ignore_poison().get(&drive.id).copied();
+    let facts = match cached {
+        Some(facts) => facts,
+        None => probe(drive),
+    };
+    eject_route(drive, facts)
+}
+
+/// Probes each of `drives` not cached or already being probed, each on a thread of its own, so a
+/// wedged device stalls nobody. The drive watcher calls it for its baseline and each arrival.
+/// `changed` runs after a probe whose answer changes the drive's route from its kind's alone (a
+/// USB disk turning ejectable), so the caller can refresh the list.
+pub(crate) fn probe_soon(drives: &[WindowsDrive], changed: impl Fn() + Clone + Send + 'static) {
+    for drive in drives.iter().filter(|drive| is_probed_kind(drive)) {
+        if FACTS.lock_ignore_poison().contains_key(&drive.id) || !PROBING.lock_ignore_poison().insert(drive.id.clone())
+        {
+            continue;
+        }
+        let drive = drive.clone();
+        let changed = changed.clone();
+        let spawned = std::thread::Builder::new()
+            .name("drive-probe".to_owned())
+            .spawn(move || {
+                let facts = probe(&drive);
+                PROBING.lock_ignore_poison().remove(&drive.id);
+                if eject_route(&drive, facts) != eject_route(&drive, None) {
+                    changed();
+                }
+            });
+        if let Err(e) = spawned {
+            log::debug!(target: "volumes::windows", "Couldn't start a drive probe: {e}");
+        }
+    }
+}
+
+/// Reads `drive`'s storage facts and caches the outcome, whichever it is.
+fn probe(drive: &WindowsDrive) -> Option<StorageFacts> {
+    let facts = volume_device(&drive.root).and_then(|device| read_facts(&device));
     FACTS.lock_ignore_poison().insert(drive.id.clone(), facts);
-    Some(facts)
+    facts
 }
 
 /// The volume device behind an app root (`E:/`, a folder mount's `C:/mnt/data`), as a

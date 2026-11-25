@@ -98,6 +98,39 @@ async fn admits_immediately_when_lanes_free() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_op_on_a_volume_being_ejected_waits_and_starts_once_the_eject_ends() {
+    // A copy started mid-eject would be cut off between two files, when nothing holds the
+    // drive for the OS to refuse: it waits in the queue instead, and starts when the eject ends.
+    let engine = TestOperations::new();
+    let op = OperationId::from("ejecting-wait");
+    let stick = "vol-stick".to_string();
+    engine.volumes().set_ejecting(&stick, true);
+    let (started_tx, mut started_rx) = oneshot::channel();
+    let (rel_tx, rel_rx) = oneshot::channel();
+    let mut held = descriptor(&op, vec!["lane"]);
+    held.volume_ids = vec![stick.clone()];
+
+    engine
+        .manager()
+        .spawn_managed(held, engine.new_state(), gated_deferred(op.clone(), started_tx, rel_rx));
+
+    assert_eq!(engine.manager().lifecycle_status(&op), Some(LifecycleStatus::Queued));
+    assert!(started_rx.try_recv().is_err(), "it never started under the eject");
+    assert!(
+        engine.busy_volume_ids().is_empty(),
+        "a waiting op doesn't hold the drive busy"
+    );
+
+    engine.volumes().set_ejecting(&stick, false);
+    tokio::time::timeout(WAIT, started_rx)
+        .await
+        .expect("the eject's end lets it start")
+        .expect("started signal");
+    assert_eq!(engine.manager().lifecycle_status(&op), Some(LifecycleStatus::Running));
+    let _ = rel_tx.send(());
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn queues_when_a_needed_lane_is_busy() {
     let engine = TestOperations::new();
     let lane = "lane".to_string();

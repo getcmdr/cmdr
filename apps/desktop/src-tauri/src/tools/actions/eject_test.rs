@@ -31,6 +31,9 @@ fn every_refusal() -> Vec<EjectError> {
         EjectError::HeldBeforeEject {
             holders: HolderScan::Incomplete { named: Vec::new() },
         },
+        EjectError::NeedsAdministrator {
+            detail: "DetachVirtualDisk: error 5".to_string(),
+        },
         EjectError::TimedOut,
         EjectError::NotResponding {
             step: EjectStep::IndexStop,

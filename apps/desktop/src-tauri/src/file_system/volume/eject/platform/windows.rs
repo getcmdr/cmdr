@@ -8,51 +8,41 @@
 //! Every call here runs on the flight's own `drive-eject` thread, ❌ never the main thread, and
 //! the flight bounds it (`drive_flight::REQUEST_DEADLINE`).
 //!
-//! - **`RemoveDevice`**: the volume's `IOCTL_STORAGE_GET_DEVICE_NUMBER`, the disk (or CD-ROM)
-//!   interface with the same number (`CM_Get_Device_Interface_ListW`), its device node
-//!   (`DEVPKEY_Device_InstanceId`, `CM_Locate_DevNodeW`), then up the tree (`CM_Get_Parent`) to
-//!   the first node with `DN_REMOVABLE` (`CM_Get_DevNode_Status`): the USB mass-storage device,
-//!   not the disk under it, so the whole stick goes, as the tray's "Safely remove" does (the walk
-//!   Uwe Sieber's RemoveDrive documents, uwe-sieber.de/drivetools_e.html, read 2026-11-25).
-//!   Then `CM_Request_Device_EjectW` with a veto buffer, which tells Windows not to show its own
-//!   message (learn.microsoft.com `CM_Request_Device_EjectW`, read 2026-11-25): Cmdr words the
-//!   outcome itself.
+//! - **`RemoveDevice`**: `CM_Request_Device_EjectW` on the unit's removable device node
+//!   (`volumes/platform/windows/device_tree.rs` finds it and every volume under it), with a veto
+//!   buffer, which tells Windows not to show its own message (learn.microsoft.com
+//!   `CM_Request_Device_EjectW`, read 2026-11-25): Cmdr words the outcome itself.
 //! - **`EjectMedia`** (a disc): `FSCTL_LOCK_VOLUME` (refused while anyone holds a file there,
 //!   retried over `REFUSAL_RETRY_BACKOFF`, which is what keeps it honest), `FSCTL_DISMOUNT_VOLUME`,
 //!   `IOCTL_STORAGE_MEDIA_REMOVAL` off, `IOCTL_STORAGE_EJECT_MEDIA` (KB 165721's sequence).
 //! - **`DetachImage`** (a mounted VHD, VHDX, or ISO): the same lock and dismount, then the backing
-//!   file from `GetStorageDependencyInformation` and `DetachVirtualDisk` on it. The lock handle
-//!   closes before the detach: an open handle on the volume would veto the disk's own removal.
+//!   file from `GetStorageDependencyInformation` and `DetachVirtualDisk` on it, with the lock
+//!   held until the detach returns. A denied open, lock, or detach is `NeedsRights` (a VHD on a
+//!   fixed volume needs an administrator), ❌ never a holder's veto.
 
 use std::os::windows::ffi::OsStringExt;
 use std::os::windows::io::{AsRawHandle, OwnedHandle};
 use std::sync::Arc;
 
 use cmdr_fs::volume::windows_eject::{EjectRoute, RequestVerdict, request_verdict};
-use windows_sys::Win32::Devices::DeviceAndDriverInstallation::{
-    CM_GET_DEVICE_INTERFACE_LIST_PRESENT, CM_Get_DevNode_Status, CM_Get_Device_Interface_List_SizeW,
-    CM_Get_Device_Interface_ListW, CM_Get_Device_Interface_PropertyW, CM_Get_Parent, CM_LOCATE_DEVNODE_NORMAL,
-    CM_Locate_DevNodeW, CM_Request_Device_EjectW, CR_SUCCESS, DN_REMOVABLE,
-};
-use windows_sys::Win32::Devices::Properties::DEVPKEY_Device_InstanceId;
+use windows_sys::Win32::Devices::DeviceAndDriverInstallation::CM_Request_Device_EjectW;
 use windows_sys::Win32::Foundation::{
     ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION, GENERIC_READ, GENERIC_WRITE, HANDLE, MAX_PATH,
 };
-use windows_sys::Win32::Storage::FileSystem::{FILE_DEVICE_CD_ROM, FILE_DEVICE_DISK};
 use windows_sys::Win32::Storage::Vhd::{
     DETACH_VIRTUAL_DISK_FLAG_NONE, DetachVirtualDisk, GET_STORAGE_DEPENDENCY_FLAG_NONE,
     GetStorageDependencyInformation, OPEN_VIRTUAL_DISK_FLAG_NONE, OpenVirtualDisk, STORAGE_DEPENDENCY_INFO,
     STORAGE_DEPENDENCY_INFO_VERSION_2, VIRTUAL_DISK_ACCESS_DETACH,
 };
 use windows_sys::Win32::System::Ioctl::{
-    FSCTL_DISMOUNT_VOLUME, FSCTL_LOCK_VOLUME, GUID_DEVINTERFACE_CDROM, GUID_DEVINTERFACE_DISK,
-    IOCTL_STORAGE_EJECT_MEDIA, IOCTL_STORAGE_GET_DEVICE_NUMBER, IOCTL_STORAGE_MEDIA_REMOVAL, PREVENT_MEDIA_REMOVAL,
-    STORAGE_DEVICE_NUMBER,
+    FSCTL_DISMOUNT_VOLUME, FSCTL_LOCK_VOLUME, IOCTL_STORAGE_EJECT_MEDIA, IOCTL_STORAGE_MEDIA_REMOVAL,
+    PREVENT_MEDIA_REMOVAL,
 };
 
 use super::super::unmount_tool::{ToolOutcome, UnmountVerb};
 use super::super::{EjectError, EjectOutcome};
 use super::drive_flight::{DriveSide, RequestAnswer};
+use crate::volumes::UnitKey;
 use crate::volumes::storage::{ioctl, open_volume, volume_device};
 
 /// Cmdr makes no OS SMB mount on Windows yet (`WNetAddConnection2W` is the SMB mounts task), so a
@@ -76,31 +66,78 @@ pub(crate) fn is_ejectable(mount_path: &str) -> bool {
     crate::volumes::resolve_path_volume_fast(mount_path).is_some_and(|v| v.is_ejectable)
 }
 
-/// An ejectable drive's eject: its drive flight, on the blocking pool, since the flight blocks up
-/// to its index stop's and its request's deadlines together.
+/// An ejectable drive's eject: its unit, then its drive flight, both on the blocking pool.
+///
+/// 1. The unit (`volumes::eject_target`: every volume the request takes down) is read under
+///    `DISK_RESOLVE_DEADLINE`: it opens devices, and a wedged one answers `NotResponding`.
+/// 2. The unit claims its device like a macOS disk flight claims its disk
+///    (`in_flight::disk::join_or_own_disk`): its other volumes join this flight in the ejecting
+///    set, so their own ejects join it and no transfer starts on them, and a unit another flight
+///    already owns is joined instead.
+/// 3. The flight runs; a timeout keeps the ownership (and the asked volume, `hold_past_landing`)
+///    until the request truly ends.
 pub(in crate::file_system::volume::eject) async fn eject_ejectable(
     volume_id: &str,
     mount_path: &str,
 ) -> Result<EjectOutcome, EjectError> {
-    let Some(target) = crate::volumes::eject_target(mount_path) else {
+    use super::super::in_flight::{DiskKey, disk};
+    use super::super::{EjectStep, deadlines};
+
+    let path = mount_path.to_string();
+    let target = deadlines::within_deadline(
+        EjectStep::DiskResolve,
+        volume_id,
+        deadlines::DISK_RESOLVE_DEADLINE,
+        async move { tokio::task::spawn_blocking(move || crate::volumes::eject_target(&path)).await },
+    )
+    .await?
+    .map_err(|join_err| EjectError::Unexpected {
+        detail: format!("{}: {join_err}", EjectStep::DiskResolve),
+    })?;
+    let Some(target) = target else {
         return Err(EjectError::NotEjectable {
             volume_id: volume_id.to_string(),
         });
     };
+    // The registry's id leads, whatever the table spelled: it's the one in the ejecting set.
+    let mut unit: Vec<(String, String)> = target.unit;
+    if let Some(first) = unit.first_mut() {
+        first.0 = volume_id.to_string();
+    }
+    let ids: Vec<String> = unit.iter().map(|(id, _)| id.clone()).collect();
+    let Some(key) = target.key else {
+        return Err(EjectError::Unexpected {
+            detail: "no removable device above the disk".to_owned(),
+        });
+    };
+    let mut ownership = match disk::join_or_own_disk(DiskKey(key.as_u64()), volume_id, &ids) {
+        disk::DiskFlight::Owner(ownership) => ownership,
+        // Another flight is taking this unit down: its answer is this one's.
+        disk::DiskFlight::Joined(flight) | disk::DiskFlight::DecideAgainAfter(flight) => return flight.await,
+    };
+    if !ownership.adopted().is_empty() {
+        log::info!(target: "eject", "Ejecting {volume_id} also takes down: {:?}", ownership.adopted());
+    }
     let side = Arc::new(WindowsDriveSide {
-        volume_id: volume_id.to_string(),
-        root: target.root,
+        unit,
         route: target.route,
+        key,
+        locks_for_writing: target.locks_for_writing,
     });
-    let id = volume_id.to_string();
+    let asked = volume_id.to_string();
     let ended = tokio::task::spawn_blocking(move || {
         super::drive_flight::eject_drive(
             crate::file_system::volume::drive_release::gate(),
-            &id,
+            &ids,
             side,
-            || super::super::is_busy(&id),
+            super::super::is_busy,
             super::super::stop_removable_index,
             super::drive_flight::REQUEST_DEADLINE,
+            // The ownership lives as long as the flight, or, past a timeout, as long as the request.
+            Box::new(move || {
+                ownership.hold_past_landing(&asked);
+                Box::new(move || drop(ownership))
+            }),
         )
         .answer
     })
@@ -112,39 +149,56 @@ pub(in crate::file_system::volume::eject) async fn eject_ejectable(
     })
 }
 
-/// One drive Cmdr's eject takes away, as the flight sees it.
+/// One unit Cmdr's eject takes away, as the flight sees it.
 struct WindowsDriveSide {
-    volume_id: String,
-    /// Its app root (`E:/`).
-    root: String,
+    /// `(volume id, app root)` of every volume the request takes down, the one asked about first.
+    unit: Vec<(String, String)>,
     route: EjectRoute,
+    key: UnitKey,
+    locks_for_writing: bool,
 }
 
 impl DriveSide for WindowsDriveSide {
     fn let_go(&self) {
-        crate::volumes::let_go_for_eject(&self.volume_id, &self.root);
+        for (volume_id, root) in &self.unit {
+            crate::volumes::let_go_for_eject(volume_id, root);
+        }
     }
 
     fn request(&self) -> RequestAnswer {
-        let Some(device) = volume_device(&self.root) else {
-            return RequestAnswer::NotPossible {
-                detail: "the drive has no volume device any more".to_owned(),
-            };
+        let Some((volume_id, root)) = self.unit.first() else {
+            return not_possible("an eject with no volume");
         };
-        log::info!(target: "eject", "Asking Windows to eject {} ({:?})", self.volume_id, self.route);
+        log::info!(target: "eject", "Asking Windows to eject {volume_id} ({:?})", self.route);
         match self.route {
-            EjectRoute::RemoveDevice => remove_device(&device),
-            EjectRoute::EjectMedia => eject_media(&device),
-            EjectRoute::DetachImage => detach_image(&device),
+            EjectRoute::RemoveDevice => match self.key {
+                UnitKey::Device(node) => remove_device(node),
+                UnitKey::Disk { .. } => not_possible("no removable device above the disk"),
+            },
+            EjectRoute::EjectMedia | EjectRoute::DetachImage => {
+                let Some(device) = volume_device(root) else {
+                    return not_possible("the drive has no volume device any more");
+                };
+                if self.route == EjectRoute::EjectMedia {
+                    eject_media(&device)
+                } else {
+                    detach_image(&device, self.locks_for_writing)
+                }
+            }
         }
     }
 
     fn take_back(&self) {
-        crate::volumes::take_back_after_eject(&self.volume_id, &self.root);
+        for (volume_id, root) in &self.unit {
+            crate::volumes::take_back_after_eject(volume_id, root);
+        }
     }
 
-    fn is_listed(&self) -> bool {
-        super::super::is_still_mounted(&self.root)
+    fn is_listed(&self, volume_id: &str) -> bool {
+        self.unit
+            .iter()
+            .find(|(id, _)| id == volume_id)
+            .is_some_and(|(_, root)| super::super::is_still_mounted(root))
     }
 }
 
@@ -154,130 +208,22 @@ fn not_possible(detail: impl Into<String>) -> RequestAnswer {
 
 // ── RemoveDevice ──────────────────────────────────────────────────────
 
-fn remove_device(device: &[u16]) -> RequestAnswer {
-    let number = {
-        let volume = match open_volume(device, 0) {
-            Ok(volume) => volume,
-            Err(code) => return not_possible(format!("couldn't open the volume (error {code})")),
-        };
-        match device_number(&volume) {
-            Ok(number) => number,
-            Err(code) => return not_possible(format!("the volume named no disk (error {code})")),
-        }
-        // ❗ The volume handle closes here: a handle of Cmdr's own would veto the eject.
-    };
-    let class = match number.DeviceType {
-        FILE_DEVICE_DISK => GUID_DEVINTERFACE_DISK,
-        FILE_DEVICE_CD_ROM => GUID_DEVINTERFACE_CDROM,
-        other => return not_possible(format!("device type {other} has no disk interface")),
-    };
-    let Some(disk) = devnode_of(&class, number.DeviceNumber) else {
-        return not_possible(format!("no device node for disk {}", number.DeviceNumber));
-    };
-    let Some(removable) = removable_ancestor(disk) else {
-        return not_possible("no removable device above the disk");
-    };
+/// Asks Windows to remove the device at `node` (the unit's removable ancestor,
+/// `volumes/platform/windows/device_tree.rs`).
+fn remove_device(node: u32) -> RequestAnswer {
     let mut veto_type = 0;
     let mut veto_name = [0u16; MAX_PATH as usize];
-    // SAFETY: `removable` is a device node `CM_Locate_DevNodeW` / `CM_Get_Parent` gave; the veto
-    // outputs are valid for the call, the name holding `MAX_PATH` units as the docs ask.
-    let configret = unsafe { CM_Request_Device_EjectW(removable, &mut veto_type, veto_name.as_mut_ptr(), MAX_PATH, 0) };
+    // SAFETY: `node` is a device node the configuration manager gave for a device still present;
+    // the veto outputs are valid for the call, the name holding `MAX_PATH` units as the docs ask.
+    let configret = unsafe { CM_Request_Device_EjectW(node, &mut veto_type, veto_name.as_mut_ptr(), MAX_PATH, 0) };
     let name = from_wide(&veto_name);
+    let detail = format!("CONFIGRET {configret}, veto type {veto_type} {name}");
     match request_verdict(configret, veto_type) {
         RequestVerdict::Ejected => RequestAnswer::Ejected,
-        RequestVerdict::Vetoed => RequestAnswer::Vetoed {
-            detail: format!("CONFIGRET {configret}, veto type {veto_type} by {name}"),
-        },
-        RequestVerdict::NotPossible => not_possible(format!("CONFIGRET {configret}, veto type {veto_type} {name}")),
+        RequestVerdict::Vetoed => RequestAnswer::Vetoed { detail },
+        RequestVerdict::NeedsRights => RequestAnswer::NeedsRights { detail },
+        RequestVerdict::NotPossible => not_possible(detail),
     }
-}
-
-fn device_number(handle: &OwnedHandle) -> Result<STORAGE_DEVICE_NUMBER, u32> {
-    let mut number = STORAGE_DEVICE_NUMBER::default();
-    // SAFETY: `IOCTL_STORAGE_GET_DEVICE_NUMBER` takes no input and fills a `STORAGE_DEVICE_NUMBER`.
-    unsafe { ioctl::<(), _>(handle, IOCTL_STORAGE_GET_DEVICE_NUMBER, None, Some(&mut number)) }?;
-    Ok(number)
-}
-
-/// The device node of the `class` interface whose device number is `number`.
-fn devnode_of(class: &windows_sys::core::GUID, number: u32) -> Option<u32> {
-    let mut len = 0u32;
-    // SAFETY: `class` outlives the call; no device id filter.
-    let configret = unsafe {
-        CM_Get_Device_Interface_List_SizeW(&mut len, class, std::ptr::null(), CM_GET_DEVICE_INTERFACE_LIST_PRESENT)
-    };
-    if configret != CR_SUCCESS || len == 0 {
-        return None;
-    }
-    let mut list = vec![0u16; len as usize];
-    // SAFETY: `list` holds the `len` units the size call asked for.
-    let configret = unsafe {
-        CM_Get_Device_Interface_ListW(
-            class,
-            std::ptr::null(),
-            list.as_mut_ptr(),
-            len,
-            CM_GET_DEVICE_INTERFACE_LIST_PRESENT,
-        )
-    };
-    if configret != CR_SUCCESS {
-        return None;
-    }
-    list.split(|&unit| unit == 0)
-        .filter(|path| !path.is_empty())
-        .find_map(|path| {
-            let path: Vec<u16> = path.iter().copied().chain(Some(0)).collect();
-            let interface = open_volume(&path, 0).ok()?;
-            let found = device_number(&interface).ok()?;
-            drop(interface);
-            (found.DeviceNumber == number).then(|| instance_node(&path)).flatten()
-        })
-}
-
-/// The device node behind interface `path` (NUL-terminated).
-fn instance_node(path: &[u16]) -> Option<u32> {
-    let mut kind = 0u32;
-    let mut id = [0u16; 512];
-    let mut size = u32::try_from(size_of_val(&id)).ok()?;
-    // SAFETY: `path` is NUL-terminated; `id` holds `size` bytes, which the call reads and
-    // overwrites with what it wrote.
-    let configret = unsafe {
-        CM_Get_Device_Interface_PropertyW(
-            path.as_ptr(),
-            &DEVPKEY_Device_InstanceId,
-            &mut kind,
-            id.as_mut_ptr().cast(),
-            &mut size,
-            0,
-        )
-    };
-    if configret != CR_SUCCESS {
-        return None;
-    }
-    let mut node = 0u32;
-    // SAFETY: `id` is the NUL-terminated instance id the property gave.
-    let configret = unsafe { CM_Locate_DevNodeW(&mut node, id.as_ptr(), CM_LOCATE_DEVNODE_NORMAL) };
-    (configret == CR_SUCCESS).then_some(node)
-}
-
-/// `node` or the nearest node above it Windows calls removable. Eight levels at most: a stick's
-/// removable node sits one or two above its disk.
-fn removable_ancestor(mut node: u32) -> Option<u32> {
-    for _ in 0..8 {
-        let (mut status, mut problem) = (0u32, 0u32);
-        // SAFETY: `node` is a device node the configuration manager gave; both outputs are valid.
-        let configret = unsafe { CM_Get_DevNode_Status(&mut status, &mut problem, node, 0) };
-        if configret == CR_SUCCESS && status & DN_REMOVABLE != 0 {
-            return Some(node);
-        }
-        let mut parent = 0u32;
-        // SAFETY: as above.
-        if unsafe { CM_Get_Parent(&mut parent, node, 0) } != CR_SUCCESS {
-            return None;
-        }
-        node = parent;
-    }
-    None
 }
 
 // ── EjectMedia and DetachImage ────────────────────────────────────────
@@ -289,8 +235,14 @@ struct Dismounted(OwnedHandle);
 /// Opens the volume, locks it (retrying a transient holder), and dismounts it. A refused lock is
 /// a holder's veto: ❌ never forced.
 fn lock_and_dismount(device: &[u16], access: u32) -> Result<Dismounted, RequestAnswer> {
-    let volume =
-        open_volume(device, access).map_err(|code| not_possible(format!("couldn't open the volume (error {code})")))?;
+    let volume = open_volume(device, access).map_err(|code| match code {
+        // The open asks no holder anything: a denial is about rights (a fixed volume opened for
+        // writing needs an administrator), ❌ never a veto.
+        ERROR_ACCESS_DENIED => RequestAnswer::NeedsRights {
+            detail: format!("opening the volume for its lock was denied (error {code})"),
+        },
+        _ => not_possible(format!("couldn't open the volume (error {code})")),
+    })?;
     let mut pauses = super::super::unmount_tool::REFUSAL_RETRY_BACKOFF.iter();
     loop {
         // SAFETY: `FSCTL_LOCK_VOLUME` takes no input and no output.
@@ -333,19 +285,24 @@ fn eject_media(device: &[u16]) -> RequestAnswer {
     }
 }
 
-fn detach_image(device: &[u16]) -> RequestAnswer {
-    // A VHD's volume locks for writing; an ISO's is read-only and opens for reading only.
-    let dismounted =
-        lock_and_dismount(device, GENERIC_READ | GENERIC_WRITE).or_else(|_| lock_and_dismount(device, GENERIC_READ));
-    let Dismounted(volume) = match dismounted {
+fn detach_image(device: &[u16], locks_for_writing: bool) -> RequestAnswer {
+    // A VHD's volume locks for writing (an administrator's right on a fixed volume); an ISO's is
+    // read-only. ❌ No second try with less access: after a veto it would rerun the whole backoff,
+    // and after a denial it would lock nothing a VHD's writers respect.
+    let access = if locks_for_writing {
+        GENERIC_READ | GENERIC_WRITE
+    } else {
+        GENERIC_READ
+    };
+    // ❗ Held until the detach returns: closed earlier, another app could reopen the volume and
+    // write between the dismount and the detach.
+    let Dismounted(volume) = match lock_and_dismount(device, access) {
         Ok(dismounted) => dismounted,
         Err(answer) => return answer,
     };
     let Some((storage_type, backing)) = backing_file(&volume) else {
         return not_possible("Windows named no image file behind the volume");
     };
-    // ❗ Closed before the detach: Cmdr's own open handle would veto the disk's removal.
-    drop(volume);
     let mut image: HANDLE = std::ptr::null_mut();
     // SAFETY: `storage_type` and `backing` (NUL-terminated) outlive the call; no parameters is
     // the documented default for a detach.
@@ -359,16 +316,26 @@ fn detach_image(device: &[u16]) -> RequestAnswer {
             &mut image,
         )
     };
-    if opened != 0 {
-        return not_possible(format!("couldn't open the image file (error {opened})"));
+    match opened {
+        0 => {}
+        ERROR_ACCESS_DENIED => {
+            return RequestAnswer::NeedsRights {
+                detail: format!("opening the image file for its detach was denied (error {opened})"),
+            };
+        }
+        other => return not_possible(format!("couldn't open the image file (error {other})")),
     }
     // SAFETY: `image` is the handle `OpenVirtualDisk` just gave, owned here.
     let image = unsafe { <OwnedHandle as std::os::windows::io::FromRawHandle>::from_raw_handle(image) };
     // SAFETY: a virtual disk handle opened for detaching.
     let detached = unsafe { DetachVirtualDisk(image.as_raw_handle() as HANDLE, DETACH_VIRTUAL_DISK_FLAG_NONE, 0) };
+    drop(volume);
     match detached {
         0 => RequestAnswer::Ejected,
-        ERROR_ACCESS_DENIED | ERROR_SHARING_VIOLATION => RequestAnswer::Vetoed {
+        ERROR_ACCESS_DENIED => RequestAnswer::NeedsRights {
+            detail: format!("the image's detach was denied (error {detached})"),
+        },
+        ERROR_SHARING_VIOLATION => RequestAnswer::Vetoed {
             detail: format!("the image's detach was refused (error {detached})"),
         },
         other => not_possible(format!("the image wouldn't detach (error {other})")),

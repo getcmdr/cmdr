@@ -15,7 +15,7 @@
 //!   `IOCTL_STORAGE_EJECT_MEDIA`, which opens the tray and leaves the drive, as Explorer's Eject
 //!   does (a USB DVD drive included: a person ejecting a disc means the disc).
 //! - **The image detaches** ([`EjectRoute::DetachImage`]) for a mounted VHD, VHDX, or ISO
-//!   (`BusTypeFileBackedVirtual`): lock, dismount, `DetachVirtualDisk`, the parity of a macOS
+//!   (`BusTypeFileBackedVirtual`, whatever drive type it reports): lock, dismount, `DetachVirtualDisk`, the parity of a macOS
 //!   disk image's eject. ❗ `CM_Request_Device_EjectW` doesn't detach one (Uwe Sieber's
 //!   RemoveDrive needs a separate `-vhd` switch for it, uwe-sieber.de/drivetools_e.html, read
 //!   2026-11-25).
@@ -67,7 +67,10 @@ pub fn eject_route(drive: &WindowsDrive, facts: Option<StorageFacts>) -> Option<
     }
     let bus_type = facts.map(|facts| facts.bus_type);
     if bus_type == Some(bus::FILE_BACKED_VIRTUAL)
-        && matches!(drive.kind, WindowsDriveKind::Fixed | WindowsDriveKind::Optical)
+        && matches!(
+            drive.kind,
+            WindowsDriveKind::Fixed | WindowsDriveKind::Removable | WindowsDriveKind::Optical
+        )
     {
         return Some(EjectRoute::DetachImage);
     }
@@ -92,8 +95,11 @@ pub enum RequestVerdict {
     Ejected,
     /// Something holds the drive: an open file, an app, a service. ❌ Never forced.
     Vetoed,
-    /// The request couldn't be made or Windows turned it down for another reason (no rights,
-    /// a device that can't be ejected).
+    /// Windows wants rights Cmdr's account doesn't have (an administrator's). Nobody holds the
+    /// drive, so ❌ never "close what's using it".
+    NeedsRights,
+    /// The request couldn't be made, or Windows turned it down for another reason (a device that
+    /// can't be ejected).
     NotPossible,
 }
 
@@ -113,6 +119,8 @@ pub mod veto {
     pub const DEVICE: i32 = 6;
     /// `PNP_VetoDriver`.
     pub const DRIVER: i32 = 7;
+    /// `PNP_VetoInsufficientRights`.
+    pub const INSUFFICIENT_RIGHTS: i32 = 12;
     /// `PNP_VetoAlreadyRemoved`.
     pub const ALREADY_REMOVED: i32 = 13;
 }
@@ -123,6 +131,8 @@ pub mod configret {
     pub const SUCCESS: u32 = 0;
     /// `CR_REMOVE_VETOED`.
     pub const REMOVE_VETOED: u32 = 23;
+    /// `CR_ACCESS_DENIED`.
+    pub const ACCESS_DENIED: u32 = 51;
 }
 
 /// What `CM_Request_Device_EjectW` answering `configret` with `veto_type` means.
@@ -133,6 +143,7 @@ pub mod configret {
 pub fn request_verdict(configret: u32, veto_type: i32) -> RequestVerdict {
     match veto_type {
         veto::ALREADY_REMOVED => RequestVerdict::Ejected,
+        veto::INSUFFICIENT_RIGHTS => RequestVerdict::NeedsRights,
         veto::PENDING_CLOSE
         | veto::WINDOWS_APP
         | veto::WINDOWS_SERVICE
@@ -141,6 +152,7 @@ pub fn request_verdict(configret: u32, veto_type: i32) -> RequestVerdict {
         | veto::DRIVER => RequestVerdict::Vetoed,
         veto::UNKNOWN if configret == configret::SUCCESS => RequestVerdict::Ejected,
         _ if configret == configret::REMOVE_VETOED => RequestVerdict::Vetoed,
+        _ if configret == configret::ACCESS_DENIED => RequestVerdict::NeedsRights,
         _ => RequestVerdict::NotPossible,
     }
 }
@@ -234,6 +246,14 @@ mod tests {
             ),
             Some(EjectRoute::DetachImage)
         );
+        assert_eq!(
+            eject_route(
+                &drive("local-vhd-removable", WindowsDriveKind::Removable),
+                on(bus::FILE_BACKED_VIRTUAL)
+            ),
+            Some(EjectRoute::DetachImage),
+            "a virtual disk that reports removable media still detaches: its device can't be ejected"
+        );
     }
 
     #[test]
@@ -289,7 +309,16 @@ mod tests {
             RequestVerdict::Ejected,
             "a device already gone is the goal met"
         );
-        // `PNP_VetoInsufficientRights` and `CR_ACCESS_DENIED`: no rights, nobody holds it.
-        assert_eq!(request_verdict(51, 12), RequestVerdict::NotPossible);
+        assert_eq!(
+            request_verdict(configret::ACCESS_DENIED, veto::UNKNOWN),
+            RequestVerdict::NeedsRights,
+            "no rights, and nobody holds it: ❌ never 'close your files'"
+        );
+        assert_eq!(
+            request_verdict(configret::REMOVE_VETOED, veto::INSUFFICIENT_RIGHTS),
+            RequestVerdict::NeedsRights
+        );
+        // `CR_NO_SUCH_DEVNODE` with no veto: the request wasn't possible.
+        assert_eq!(request_verdict(13, veto::UNKNOWN), RequestVerdict::NotPossible);
     }
 }

@@ -39,8 +39,8 @@
       "outsideSeam": 6
     },
     "apps/desktop/src-tauri/src/commands/menu.rs": {
-      "negated": 4,
-      "outsideSeam": 22
+      "negated": 3,
+      "outsideSeam": 20
     },
     "apps/desktop/src-tauri/src/commands/menu_state.rs": {
       "negated": 1,
@@ -145,11 +145,9 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/in_flight.rs": {
-      "negated": 9,
-      "outsideSeam": 9
+      "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/mod.rs": {
-      "negated": 1,
       "outsideSeam": 14
     },
     "apps/desktop/src-tauri/src/file_system/volume/eject/unmount_tool.rs": {

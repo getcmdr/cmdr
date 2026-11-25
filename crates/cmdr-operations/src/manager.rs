@@ -59,6 +59,14 @@
 //! (`register_external_volume_op`) populates directly. So the busy set stays
 //! `(running manager ops' volumes) ∪ (external registrations)` with no
 //! double-maintenance. See `lifecycle/state.rs` § "Busy-volumes set".
+//!
+//! ## Held while a volume is being ejected
+//!
+//! Admission skips a Queued op touching a volume the host says is being
+//! ejected (`OperationVolumes::is_ejecting`), and asks again AFTER marking an
+//! admitted op busy, backing it out to Queued if an eject slipped in: the eject
+//! marks its volumes and then reads the busy set, so one side always sees the
+//! other. The host's `on_eject_ended` runs a pass when an eject lands.
 
 use std::collections::{HashMap, VecDeque};
 use std::future::Future;
@@ -432,6 +440,7 @@ impl OperationManager {
                     if let Some(rec) = inner.records.get(id)
                         && rec.status == LifecycleStatus::Queued
                         && rec.descriptor.lanes.iter().all(|l| inner.lane_free(l))
+                        && !self.touches_an_ejecting_volume(&rec.descriptor.volume_ids)
                     {
                         admit_id = Some(id.clone());
                         break;
@@ -464,7 +473,15 @@ impl OperationManager {
             // Mark the volumes busy now that the op is actually running (a
             // Queued op isn't touching the device). The external drag-out seam
             // registers directly; together they form the busy-set union.
-            self.status.register(admit_id.as_str(), op_type, volume_ids);
+            self.status.register(admit_id.as_str(), op_type, volume_ids.clone());
+            // ❗ Asked again AFTER the busy mark: an eject marks its volumes
+            // ejecting and THEN reads the busy set, so one of the two always sees
+            // the other. Asked only before, an eject could start between that
+            // question and the mark, read this op as idle, and cut it off.
+            if self.touches_an_ejecting_volume(&volume_ids) {
+                self.back_to_queue(&admit_id, deferred);
+                continue;
+            }
             log::info!(target: "op_manager", "admit op={admit_id}");
 
             match deferred {
@@ -505,6 +522,41 @@ impl OperationManager {
             }
         }
         self.admission_passes.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Whether any of `volume_ids` is being ejected (the host's answer): an op
+    /// that would read or write one waits in the queue until the eject ends,
+    /// ❌ never starts under it. A transfer started mid-eject would be cut off
+    /// between two files, where nothing holds the drive for the OS to refuse.
+    fn touches_an_ejecting_volume(&self, volume_ids: &[String]) -> bool {
+        volume_ids.iter().any(|id| self.host.volumes().is_ejecting(id))
+    }
+
+    /// Undoes an admission an eject raced: the busy mark goes, the lanes free,
+    /// and the op is Queued again with its deferred start, for the pass the
+    /// eject's end runs ([`Self::readmit`]).
+    fn back_to_queue(&self, operation_id: &OperationId, deferred: Option<DeferredStart>) {
+        self.status.unregister(operation_id.as_str());
+        let mut inner = self.inner.lock_ignore_poison();
+        let lanes = match inner.records.get_mut(operation_id) {
+            Some(rec) => {
+                rec.status = LifecycleStatus::Queued;
+                rec.deferred = deferred;
+                std::mem::take(&mut rec.reserved_lanes)
+            }
+            None => Vec::new(),
+        };
+        inner.release(&lanes);
+        log::info!(target: "op_manager", "held back op={operation_id}: one of its volumes is being ejected");
+    }
+
+    /// Runs an admission pass, for a host whose answer to
+    /// [`OperationVolumes::is_ejecting`](super::host::OperationVolumes::is_ejecting)
+    /// just changed (its `on_eject_ended`): an op held back by an eject starts
+    /// once it ends (and meets the drive gone if it went, which it words as such).
+    pub(crate) fn readmit(self: &Arc<Self>) {
+        self.run_admission_pass();
+        self.emit_changed();
     }
 
     /// Happy-path dequeue: frees the op's lane slots, cleans the caches,

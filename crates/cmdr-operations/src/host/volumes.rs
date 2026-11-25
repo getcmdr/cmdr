@@ -62,6 +62,20 @@ pub trait OperationVolumes: VolumeLookup {
     /// came back empty: it doesn't consult the registry. ❗ Asking never dials.
     fn unregistered<'a>(&'a self, volume_id: &'a str) -> VolumeAnswer<'a, UnregisteredVolume>;
 
+    /// Whether an eject of `volume_id` is under way. An operation touching one
+    /// waits in the queue until it isn't. ❗ Answered from memory, under the
+    /// engine's admission lock.
+    fn is_ejecting(&self, _volume_id: &str) -> bool {
+        false
+    }
+
+    /// Tells `listener` whenever an eject ends, so an operation
+    /// [`Self::is_ejecting`] held back starts. ❗ It runs inside the host's
+    /// landing: no host lock may be held around it, since it runs an admission
+    /// pass that asks [`Self::is_ejecting`] again. A host that never ejects
+    /// keeps the default, which never calls it.
+    fn on_eject_ended(&self, _listener: Box<dyn Fn() + Send + Sync>) {}
+
     /// Which volume id is this host's LOCAL DISK, the one the engine's `std::fs`
     /// bodies (the local copy, move, delete, and trash, the local rename and its
     /// `lstat` pre-flight) may run on: the desktop's is

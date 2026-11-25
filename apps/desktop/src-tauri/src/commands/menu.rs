@@ -373,17 +373,9 @@ pub(super) fn breadcrumb_rows<R: Runtime>(
 /// Whether `volume_id`'s eject is still running, so a native Eject item renders disabled
 /// the way it does for a busy volume. A second pick would only join that eject anyway.
 fn is_ejecting(volume_id: &str) -> bool {
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        crate::file_system::volume::eject::ejecting_volume_ids()
-            .iter()
-            .any(|id| id == volume_id)
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-    {
-        let _ = volume_id;
-        false
-    }
+    crate::file_system::volume::eject::ejecting_volume_ids()
+        .iter()
+        .any(|id| id == volume_id)
 }
 
 /// Shows the minimal `..` parent-row context menu (just "Add to favorites").

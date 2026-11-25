@@ -19,8 +19,9 @@ pub(super) const EJECTABILITY_CHECK_DEADLINE: Duration = Duration::from_secs(5);
 /// How long working out which physical disk the volume sits on gets: the mount
 /// table, an IOKit registry walk, and one DiskArbitration lookup per device-backed
 /// mount. All of it is memory or a MIG call, so it's only a wedged
-/// `diskarbitrationd` this guards against. Same tier as the ejectability check.
-#[cfg(target_os = "macos")]
+/// `diskarbitrationd` this guards against. Same tier as the ejectability check. On Windows, the
+/// unit an eject takes down (the storage probe and the device tree, which open devices).
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(super) const DISK_RESOLVE_DEADLINE: Duration = Duration::from_secs(5);
 
 /// How long stopping the drive's index gets. It drains the index writer, which

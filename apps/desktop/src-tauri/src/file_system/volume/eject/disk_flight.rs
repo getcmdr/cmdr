@@ -22,7 +22,10 @@ use std::sync::Arc;
 
 use super::disk_reach::{self, DiskReach};
 use super::disk_target::{self, DiskMounts, DiskTarget};
-use super::in_flight::{self, DiskFlight, DiskOwnership};
+use super::in_flight::{
+    self,
+    disk::{DiskFlight, DiskOwnership},
+};
 use super::unmount_tool::{AbandonedRun, UnmountVerb};
 use super::{
     EjectError, EjectOutcome, EjectScope, EjectStep, IndexStopped, Teardown, deadlines, pre_check, run_teardown,
@@ -86,8 +89,8 @@ pub(super) async fn eject_on_disk(
         // ❗ Before the busy gate and everything after it: from here a sibling's own eject
         // joins this flight in `join_or_start` rather than running a teardown of its own.
         let claim = match reach {
-            DiskReach::WholeDisk => in_flight::join_or_own_disk(target.key, volume_id, &ids),
-            DiskReach::ThisVolume => in_flight::own_disk_for_one_volume(target.key, volume_id),
+            DiskReach::WholeDisk => in_flight::disk::join_or_own_disk(target.key, volume_id, &ids),
+            DiskReach::ThisVolume => in_flight::disk::own_disk_for_one_volume(target.key, volume_id),
         };
         let ownership = match claim {
             DiskFlight::Joined(running) => return running.await,
@@ -524,7 +527,7 @@ impl ResumeOwner for FlightResume {
     fn is_ejected_by_another_owner(&self, candidate: &ResumeCandidate) -> bool {
         // ❗ By flight, not by "is it ejecting": this flight's own adopted siblings read
         // as ejecting until it lands, and refusing over that would strand them stopped.
-        in_flight::is_ejecting_by_another(&candidate.volume_id, self.flight_id)
+        in_flight::disk::is_ejecting_by_another(&candidate.volume_id, self.flight_id)
     }
 
     fn consume(&self, _candidate: &ResumeCandidate) {}

@@ -1538,6 +1538,7 @@ export type MessageKey =
   | 'errorReporter.sentToast.message'
   | 'errors.eject.busy'
   | 'errors.eject.deviceDisconnectRefused'
+  | 'errors.eject.needsAdministrator'
   | 'errors.eject.notAnSmbVolume'
   | 'errors.eject.notEjectable'
   | 'errors.eject.notResponding'

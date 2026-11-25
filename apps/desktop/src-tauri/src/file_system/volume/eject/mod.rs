@@ -73,10 +73,10 @@ pub(crate) use deadlines::INDEX_STOP_DEADLINE;
 #[cfg(target_os = "macos")]
 pub(crate) use disk_reach::{disk_at, mark_shared_disks};
 pub use escalate::{TakenDown, take_down_smb_mount, take_down_smb_volume};
-pub(crate) use in_flight::is_ejecting;
 #[cfg(target_os = "macos")]
-pub(crate) use in_flight::is_ejecting_alone;
+pub(crate) use in_flight::disk::is_ejecting_alone;
 pub use in_flight::{VolumesEjectingChanged, ejecting_volume_ids, init_ejecting_volume_emitter};
+pub(crate) use in_flight::{is_ejecting, on_eject_ended};
 pub(in crate::file_system::volume) use unmount_tool::is_still_mounted;
 
 /// Ejects a volume. Picks the right teardown for the volume's kind.
@@ -500,11 +500,14 @@ fn stop_removable_index(volume_id: &str) -> cmdr_index::RemovableStop {
 
 /// How the pre-unmount index stop of a drive's volumes ended.
 ///
-/// The release rides along for the per-disk flight, which hands back what DID let go;
-/// only macOS has one, so off it nothing reads the release.
+/// The release rides along for the per-disk (macOS) and drive (Windows) flights, which hand back
+/// what DID let go; Linux has neither, so there nothing reads the release.
 #[cfg_attr(
-    not(target_os = "macos"),
-    expect(dead_code, reason = "only the macOS disk flight hands a partial release back")
+    all(not(test), target_os = "linux"),
+    expect(
+        dead_code,
+        reason = "only the macOS disk flight and the Windows drive flight hand a partial release back"
+    )
 )]
 enum IndexStopped {
     /// Every volume let go of the drive.

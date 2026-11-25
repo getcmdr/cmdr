@@ -8029,7 +8029,10 @@ export type BarMenuView = {
  *  moves DOM focus while the menu is up or closing can retarget it to the file list (#1464).
  */
 export type BarPickOrigin =
-  // A text field: an Edit row edits that field, and a key never moves files.
+  /**
+   *  A text field: an Edit row edits that field, and a key's plain command takes the
+   *  `BarKeyInTextField` road, where the main window refuses its `FILE_MOVING_COMMAND_IDS`.
+   */
   | 'textField'
   // Anywhere else (the file list, a button, nothing): the row acts where focus is, as before.
   | 'elsewhere'
@@ -10565,6 +10568,15 @@ export type EjectError =
       type: 'heldBeforeEject'
       // Who's holding the disk.
       holders: HolderScan
+    }
+  /**
+   *  The OS wants an administrator's rights for this eject (Windows: locking or detaching a
+   *  mounted VHD). Nobody holds the drive, so ❌ never worded as "close what's using it".
+   */
+  | {
+      type: 'needsAdministrator'
+      // What Windows answered, for the log and the details line.
+      detail: string
     }
   /**
    *  The `diskutil` / `umount` subprocess (or a device provider's eject) didn't

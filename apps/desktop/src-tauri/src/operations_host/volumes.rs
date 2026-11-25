@@ -72,6 +72,16 @@ impl OperationVolumes for AppOperationVolumes {
             }
         })
     }
+
+    /// Cmdr's own eject in flight (the ejecting set, every adopted sibling and a timeout's hold
+    /// included).
+    fn is_ejecting(&self, volume_id: &str) -> bool {
+        crate::file_system::volume::eject::is_ejecting(volume_id)
+    }
+
+    fn on_eject_ended(&self, listener: Box<dyn Fn() + Send + Sync>) {
+        crate::file_system::volume::eject::on_eject_ended(listener);
+    }
 }
 
 #[cfg(test)]

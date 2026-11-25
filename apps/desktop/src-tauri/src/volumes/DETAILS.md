@@ -220,11 +220,14 @@ pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still
   (`is_ejected_by_another_owner` reads `eject::is_ejecting`): the eject hands its index back itself. Proved on the
   Windows lane by `an_ejects_let_go_outlasts_windows_refusal_and_its_own_take_back_restores_it`.
 - **Which rows offer Eject** (`platform/windows/storage.rs`): `cmdr_fs::volume::windows_eject::eject_route` over the
-  drive kind and the storage bus `IOCTL_STORAGE_QUERY_PROPERTY` reports (opened with no access rights: no media I/O,
-  cached per volume id). The row's `is_ejectable` and the eject's `eject_target` ask the same question, so a row never
-  offers an eject the eject refuses. A mapped drive offers none: its share isn't an `SmbVolume` here (no session, no
-  `connectionState`), and un-mapping a person's drive letter is a stronger act than macOS's unmount of a share; it waits
-  for the SMB mounts task.
+  drive kind and the storage bus `IOCTL_STORAGE_QUERY_PROPERTY` reports (opened with no access rights: no media I/O).
+  ❗ Each volume is probed ONCE, off-thread, at the worker's baseline and on each arrival (`probe_soon`), and both
+  outcomes are cached by volume id: a device that refuses the query (Storage Spaces, a half-dead stick) or stalls its
+  open costs a listing path nothing, since `drive_row` and `resolve_path_volume_fast` read the cache alone. A probe that
+  turns a drive ejectable (a USB disk) refreshes the list. Only the eject probes inline (`route_now`), on its blocking
+  thread under its deadline. The row's `is_ejectable` and the eject's `eject_target` ask the same question. A mapped
+  drive offers none: its share isn't an `SmbVolume` here (no session, no `connectionState`), and un-mapping a person's
+  drive letter is a stronger act than macOS's unmount of a share; it waits for the SMB mounts task.
 - **Real-Windows checklist** (a USB stick, not yet run): plug in, the stick's row appears with no refresh; open it in a
   pane, "Safely remove" from the tray succeeds and the pane falls back with the removal wording; plug in and turn on
   indexing, "Safely remove" still succeeds (log: "Letting go of … for its removal"); copy a big file onto it and
@@ -248,6 +251,13 @@ pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still
   7. A DVD or an ISO mounted from Explorer, and a VHD mounted from Disk Management: Eject takes each away (a disc's tray
      opens); with a file open on it, the same in-use refusal.
   8. A USB stick with two partitions: Eject takes both letters away, as the tray does.
+  9. Same stick: start a big copy onto partition 2, then eject partition 1: it refuses as busy, and the copy finishes.
+  10. Start an eject with something holding the stick (so it pends), then start a copy onto it: the copy waits in the
+      queue, and starts (or meets the drive gone) once the eject ends.
+  11. A VHD mounted from Disk Management, Cmdr NOT run as administrator: Eject says it needs an administrator's rights,
+      and the VHD stays.
+  12. A USB hard disk (one that reports `DRIVE_FIXED`) plugged in while Cmdr runs: its Eject button appears within a
+      moment, with no manual refresh.
 
 ## Location categories
 

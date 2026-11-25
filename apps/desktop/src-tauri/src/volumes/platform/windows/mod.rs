@@ -10,6 +10,7 @@
 //! (`watcher/`, task 39). A mapped drive's UNC spelling registers as an alias root of the same
 //! volume, so `Z:/x` and `//server/share/x` land on one id.
 
+pub(crate) mod device_tree;
 mod drive_icons;
 mod drives;
 pub(crate) mod storage;
@@ -228,23 +229,66 @@ pub(crate) fn resolve_path_volume_fast(path: &str) -> Option<VolumeInfo> {
     drive_for(path).map(|drive| drive_row(&drive))
 }
 
-/// A drive Cmdr's eject can take away: its route, its volume id, and its app root.
+/// A drive Cmdr's eject can take away: its route, what the request is aimed at, and every volume
+/// it takes down with it.
 pub(crate) struct EjectTarget {
     pub(crate) route: cmdr_fs::volume::windows_eject::EjectRoute,
-    pub(crate) volume_id: String,
-    pub(crate) root: String,
+    /// What the request is aimed at; `None` when nothing above the disk is removable (the request
+    /// then answers it isn't possible).
+    pub(crate) key: Option<device_tree::UnitKey>,
+    /// Every volume the request takes down, as `(volume id, app root)`, the one asked about first.
+    pub(crate) unit: Vec<(String, String)>,
+    /// Whether the unit's volume opens for writing to be locked (a VHD), ❌ not read-only (an ISO).
+    pub(crate) locks_for_writing: bool,
 }
 
-/// What an eject of the volume at `mount_path` does, or `None` when it can't be ejected. Reads
-/// the cached drive table and the cached storage facts, so it doesn't touch the media.
+/// What an eject of the volume at `mount_path` does, or `None` when it can't be ejected.
+/// Blocking, and it opens devices (the storage probe if none is cached, the device tree): only for
+/// the eject's own blocking thread, under its deadline (`volumes/DETAILS.md` § "Windows: drive
+/// arrival and removal").
 pub(crate) fn eject_target(mount_path: &str) -> Option<EjectTarget> {
     let drive = drive_for(mount_path)?;
-    let route = storage::route_of(&drive)?;
+    let route = storage::route_now(&drive)?;
+    let tree = device_tree::DeviceTree::read();
+    let key = storage::volume_device(&drive.root).and_then(|device| tree.unit_key(route, &device));
+    let others: Vec<WindowsDrive> = fresh_drive_table().iter().cloned().collect();
+    let unit = unit_members(
+        &drive,
+        &others,
+        |other| storage::volume_device(&other.root).and_then(|device| tree.unit_key(route, &device)),
+        key,
+    );
     Some(EjectTarget {
         route,
-        volume_id: drive.id,
-        root: drive.root,
+        key,
+        unit: unit.into_iter().map(|member| (member.id, member.root)).collect(),
+        locks_for_writing: drive.kind != WindowsDriveKind::Optical,
     })
+}
+
+/// `clicked` and every other local drive in `drives` whose unit key (`key_of`) is `key`: what one
+/// request takes down. Pure over `key_of`, so the grouping is tested without devices. An unknown
+/// key is a unit of one, since nothing can be said to go with it.
+fn unit_members(
+    clicked: &WindowsDrive,
+    drives: &[WindowsDrive],
+    key_of: impl Fn(&WindowsDrive) -> Option<device_tree::UnitKey>,
+    key: Option<device_tree::UnitKey>,
+) -> Vec<WindowsDrive> {
+    let mut unit = vec![clicked.clone()];
+    let Some(key) = key else {
+        return unit;
+    };
+    unit.extend(
+        drives
+            .iter()
+            .filter(|other| {
+                other.id != clicked.id && cmdr_fs::volume::windows_device_change::hears_removal_queries(other)
+            })
+            .filter(|other| key_of(other) == Some(key))
+            .cloned(),
+    );
+    unit
 }
 
 pub(crate) fn network_mount_under(_path: &Path) -> Option<NetworkMount> {
@@ -410,6 +454,46 @@ mod tests {
         assert_eq!(volume.id, cmdr_fs::volume::smb_volume_id("testnas.local", 445, "media"));
         assert_eq!(volume.path, "//testnas.local/media/");
         assert_eq!(volume.category, LocationCategory::Network);
+    }
+
+    fn local(id: &str, root: &str) -> WindowsDrive {
+        WindowsDrive {
+            root: root.to_string(),
+            id: id.to_string(),
+            kind: WindowsDriveKind::Removable,
+            label: None,
+            share_root: None,
+            is_alias: false,
+            fs_type: None,
+            read_only: false,
+        }
+    }
+
+    #[test]
+    fn an_eject_takes_every_volume_of_its_device_and_nothing_else() {
+        // Partition 1 (E:) and partition 2 (F:) of one stick share its removable device; G: is
+        // another stick. A failed read of H: puts it in nobody's unit.
+        let stick = device_tree::UnitKey::Device(7);
+        let (e, f, g, h) = (
+            local("vol-e", "E:/"),
+            local("vol-f", "F:/"),
+            local("vol-g", "G:/"),
+            local("vol-h", "H:/"),
+        );
+        let drives = [e.clone(), f.clone(), g.clone(), h.clone()];
+        let key_of = |drive: &WindowsDrive| match drive.id.as_str() {
+            "vol-e" | "vol-f" => Some(stick),
+            "vol-g" => Some(device_tree::UnitKey::Device(9)),
+            _ => None,
+        };
+        let ids = |unit: Vec<WindowsDrive>| unit.into_iter().map(|d| d.id).collect::<Vec<_>>();
+        assert_eq!(ids(unit_members(&e, &drives, key_of, Some(stick))), ["vol-e", "vol-f"]);
+        assert_eq!(ids(unit_members(&f, &drives, key_of, Some(stick))), ["vol-f", "vol-e"]);
+        assert_eq!(
+            ids(unit_members(&h, &drives, key_of, None)),
+            ["vol-h"],
+            "an unknown key is a unit of one"
+        );
     }
 
     #[test]

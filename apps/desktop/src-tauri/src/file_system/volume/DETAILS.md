@@ -827,36 +827,65 @@ that one mount left:
    may still land. The owner asks `is_ejecting_by_another`, not `is_ejecting`: its own adopted siblings read as ejecting
    until it lands.
 
-**Windows: the drive flight** (task 39b, `eject/platform/drive_flight.rs` + `eject/platform/windows.rs`). Windows has no unmount tool, so an
-ejectable drive's `DiskutilEject` runs a flight of its own, one volume at a time (no `disk_reach`, no Eject all):
+**Windows: the drive flight** (task 39b, `eject/platform/drive_flight.rs` + `eject/platform/windows.rs`). Windows has
+no unmount tool, so an ejectable drive's `DiskutilEject` runs a flight of its own over the drive's UNIT: every volume the
+request takes down with it (no `disk_reach`, no Eject all).
 
 1. **Which drives, and how** (`cmdr_fs::volume::windows_eject`, pure; the bus read is
    `volumes/platform/windows/storage.rs`): a stick, card, or any `DRIVE_REMOVABLE` drive, and a fixed disk on USB,
    FireWire, SD, or MMC take the whole DEVICE (`CM_Request_Device_EjectW` on the disk's nearest `DN_REMOVABLE` ancestor,
-   what the tray's "Safely remove" does, so a second partition goes too, as there); a disc comes out with its drive
-   staying (lock, dismount, `IOCTL_STORAGE_EJECT_MEDIA`); a mounted VHD, VHDX, or ISO detaches (lock, dismount,
-   `DetachVirtualDisk` on its backing file), the parity of a macOS disk image. Never the system drive, an internal disk
-   (a hot-plug SATA port included: Explorer offers no Eject there and a misclick takes a working disk offline), a share,
-   a `subst`, or a RAM disk. Decision/Why per route and the API evidence: the two files' headers.
-2. **The sequence**: busy check again (a transfer that started after `eject_now`'s gate), the index stop through the gate
-   (`release_for_unmount`, the same classification as `stop_indexes_blocking`), the watcher's let-go
-   (`volumes/DETAILS.md` § "Windows: drive arrival and removal"), then the request on its own `drive-eject` thread under
-   `REQUEST_DEADLINE` (30 s, `TOOL_TIMEOUT`'s budget).
-3. **Answers**: ejected → `DiskEjected`, and the drive leaves through the watcher's own removal signals (panes fall back,
+   what the tray's "Safely remove" does); a disc comes out with its drive staying (lock, dismount,
+   `IOCTL_STORAGE_EJECT_MEDIA`); a mounted VHD, VHDX, or ISO detaches (lock, dismount, `DetachVirtualDisk` on its
+   backing file, the lock held until the detach returns), whatever drive type it reports, the parity of a macOS disk
+   image. Never the system drive, an internal disk (a hot-plug SATA port included: Explorer offers no Eject there and a
+   misclick takes a working disk offline), a share, a `subst`, or a RAM disk. Decision/Why per route and the API
+   evidence: the two files' headers.
+2. **The unit** (`volumes/platform/windows/device_tree.rs`, read on the blocking pool under `DISK_RESOLVE_DEADLINE`):
+   every local volume under the same removable device node (each partition of a stick, each slot of a multi-slot
+   reader), or on the same disk number for a disc or an image. ❗ Decision/Why: the request takes them all, and a copy
+   onto partition 2 runs between files and between a staged write's close and its rename with no handle open, so
+   Windows' veto can't protect it; only Cmdr's own refusal does. The unit's other volumes join the flight in the
+   ejecting set through the same claim a macOS disk flight makes (`in_flight::disk::join_or_own_disk`, keyed by
+   `UnitKey::as_u64`), so their own ejects join it; a unit another flight already owns is joined instead.
+3. **The sequence**: busy check over the unit (a transfer on ANY member answers `Busy`), the index stop of every member
+   through the gate (`release_for_unmount`, the same classification as `stop_indexes_blocking`), the watcher's let-go of
+   every member (`volumes/DETAILS.md` § "Windows: drive arrival and removal"), then the request on its own
+   `drive-eject` thread under `REQUEST_DEADLINE` (30 s, `TOOL_TIMEOUT`'s budget).
+4. **Answers**: ejected → `DiskEjected`, and the drives leave through the watcher's own removal signals (panes fall back,
    `volume-unmounted`), nothing announced here. A veto (`request_verdict`: the veto type is read before the return code)
    or a refused lock (retried over `REFUSAL_RETRY_BACKOFF` first) → `UnmountRefused` with `HolderScan::not_scanned()`,
    so the toast reads macOS's own "Something is still in use there" (`errors.eject.unmountRefused`); Windows names a
-   device or a module, never a process Cmdr could word, and the Restart Manager scan that could isn't wired up. Anything
-   else (no rights, no removable ancestor) → `Unexpected`. On every non-eject the watcher takes back and the index the
-   flight stopped resumes through the gate (`DriveResume`), its epoch read at hand-back, ❌ not at the stop: a removal
-   query reaching an untracked drive's watcher may have released it again. ❌ Never forced.
-4. **A timeout answers `TimedOut` at once** and the take-back waits for the request's own end: the eject may still land.
-5. **The one `warn` comes from the flight**, not `run_teardown`: no tool runs, so the flight is its own choke point.
+   device or a module, never a process Cmdr could word, and the Restart Manager scan that could isn't wired up. A denied
+   open, lock, or detach (a VHD's volume opens for writing, an administrator's right) and `CR_ACCESS_DENIED` /
+   `PNP_VetoInsufficientRights` → `NeedsAdministrator` (`errors.eject.needsAdministrator`), ❌ never a veto's "close
+   your files". Anything else (no removable ancestor) → `Unexpected`. On every non-eject the watcher takes back and each
+   index the flight stopped resumes through the gate (`DriveResume`), its epoch read at hand-back, ❌ not at the stop: a
+   removal query reaching an untracked drive's watcher may have released it again. ❌ Never forced.
+5. **A timeout answers `TimedOut` at once, but the unit LINGERS in the ejecting set** (the ownership
+   moves to the request's end, and `DiskOwnership::hold_past_landing` keeps the asked volume too) until the
+   request truly ends: a later eject of any volume of the unit joins the timed-out flight (hearing `TimedOut`, which is
+   true) instead of starting a teardown, and no operation starts on the unit. ❗ Why:
+   `CM_Request_Device_EjectW` can't be cancelled; a second eject starting under it would let go and take back under
+   the first request, and the first one's take-back would then reopen Cmdr's handle and veto the second.
+6. **The one `warn` comes from the flight**, not `run_teardown`: no tool runs, so the flight is its own choke point.
 
-Tests: `eject/platform/drive_flight/tests.rs` drives the sequence on every OS with a scripted side and a fake index (eject, veto with
-the index coming back, a refusal with nothing indexed, busy, an index that won't let go, a timeout that ends refused);
-`windows_eject`'s cells pin the route per kind and bus; the watcher's eject let-go is a Windows lane cell. A real eject
-can't run on CI: `volumes/DETAILS.md` § "Windows: drive arrival and removal" carries the real-machine checklist.
+**No operation starts on a volume being ejected** (every OS; the write engine's admission,
+`crates/cmdr-operations/src/manager.rs`). A queued or new copy, move, delete, compress, or archive edit touching a
+volume in the ejecting set waits in the queue (`OperationVolumes::is_ejecting`) and starts when the eject lands
+(`OperationVolumes::on_eject_ended`, which `in_flight`'s landing tells); if the drive went, it meets the drive-gone wording it would
+anyway. ❗ The engine marks an admitted op busy and THEN asks again, while an eject marks its volumes ejecting and
+THEN reads the busy set, so one of the two always sees the other. Decision/Why: waiting rather than refusing needs no
+new wording and loses no request when the eject is refused. Instant ops (rename, new folder, new file) aren't held: each
+is one syscall under an open handle, which Windows' veto and macOS's dissent already cover.
+
+Tests: `eject/platform/drive_flight/tests.rs` drives the sequence on every OS with a scripted side and a fake index
+(eject, a two-partition unit letting go of both, a copy on partition 2 refusing partition 1, a veto with both indexes
+coming back, a denied detach, a refusal with nothing indexed, an index that won't let go, a timeout that lingers and
+ends refused); `in_flight/tests.rs` pins the hold past a timeout; `windows_eject`'s cells pin the route
+per kind and bus; `volumes/platform/windows/mod.rs` pins the unit grouping; the watcher's eject let-go is a Windows lane
+cell; `cmdr-operations`' `an_op_on_a_volume_being_ejected_waits_and_starts_once_the_eject_ends` pins the queue hold. A
+real eject can't run on CI: `volumes/DETAILS.md` § "Windows: drive arrival and removal" carries the real-machine
+checklist.
 
 **Unmounted but not powered down is a silent `Ok`.** When every mount of the disk left the table but the hardware
 stayed attached (API-driven ejects of APFS media can do that: `NSWorkspace` ejects the synthesized container and leaves

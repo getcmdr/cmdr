@@ -168,6 +168,8 @@ impl<A: Announce> Worker<A> {
         if let Some(now) = super::super::listed_drive_table() {
             self.known = now.to_vec();
             self.owner.set_listed(&self.known);
+            // Which drives offer Eject reads a device probe, made here, off every listing path.
+            super::super::storage::probe_soon(&self.known, crate::volume_broadcast::emit_volumes_changed);
         }
         let local: Vec<WindowsDrive> = self
             .known
@@ -285,6 +287,7 @@ impl<A: Announce> Worker<A> {
             // land on the drive any more.
             self.lift_pending(&drive.id);
         }
+        super::super::storage::probe_soon(&changes.arrived, crate::volume_broadcast::emit_volumes_changed);
         for drive in &changes.arrived {
             info!(target: "volumes::windows", "Drive arrived: {}", LogPrivate::dir_path(&drive.root));
             self.lift_pending(&drive.id);
