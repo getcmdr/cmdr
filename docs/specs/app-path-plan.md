@@ -2089,19 +2089,35 @@ included; the hidden couplings it found are why waves B and C differ from round 
   before).
 - **Eleventh pass, milestone 1** (2026-11-25, branch `worktree-agent-a87892783e590c297`; helpers `join-check` (the
   check) and `split-sweep` (the sweep below), each in its own worktree, cherry-picked): #1491 fixed, the sweep's joins
-  typed, and a check that keeps them so. Bridge calls 816 → 816 (`cmdr-operations` 391 → 391), `appTextToPath` 33 → 33,
-  `pathFromBareText` 261 → 256; wrapper calls (new budget, #1469) 173 → 168; `std::path` joins in the write engine (new
-  budget) 80 → 71. Hazards 62 → 56. No existing entry grew. What it is:
+  typed, and a check that keeps them so. Bridge calls 816 → 813 (`cmdr-operations` 391 → 388), `appTextToPath` 33 → 32,
+  `pathFromBareText` 261 → 255; wrapper calls (new budget, #1469) 173 → 188, so every crossing 989 → 1,001 (the sweep's
+  typed splits hand their answers to `std::path` bodies through a wrapper: more crossings, each now named and counted);
+  `std::path` joins in the write engine (new budget) 80 → 71. Hazards 62 → 56. No pre-existing entry grew. What it is:
   - **The sweep**: every production `.join(` / `with_file_name(` and `file_name()` / `parent()` split in
-    `cmdr-operations` and the app's `operations_host/`, read one by one (about 60 joins and 100 splits; the local
-    engine, tempdirs, and the in-flight ledger are native and stay). Real Windows bugs, each fixed with a cell that runs
-    on every host: a same-volume move to a chosen `a\b.txt` skipped as already in place (`item_identity` split
-    `/dst\a\b.txt` and `/dst/a/b.txt` alike, #1491; the copy's pre-skip identity too); a rename-as-move to an object
-    store refused a target name holding `\` (`TargetNames` split it by `std::path` components); a named transfer onto a
-    server misread a `\`-holding source (`leaf_validation`'s own-name, folder, and landing joins: false `SameName` /
-    `OntoASource`, a missed `AlreadyInDestination`); the conflict preflight's pane stats and self-collision filter split
-    sources by `std::path`; `refuse_routed_create` joined before reading the name as one; and a remote zip's duplicate
-    pre-check (`archive_inner_exists`) joined `/share/a.zip\dir/x.txt`, which no route serves.
+    `cmdr-operations` and the app's `operations_host/`, read one by one (about 300 sites; about 150 native: the local
+    engine, tempdirs, the in-flight ledger, fixtures, thread joins). 14 real Windows bugs, each fixed with a cell that
+    runs on every host (red only on Windows, as each split equals `Path`'s on macOS and Linux), all where `std::path`
+    read a POSIX volume's `a\b.txt` as `b.txt` in `a`:
+    - a same-volume move to a chosen `a\b.txt` skipped as already in place, reported Done (`item_identity`, #1491; the
+      copy's pre-skip identity too);
+    - a rename-as-move to an object store refused a target name holding `\` (`TargetNames`);
+    - a named transfer onto a server: false `SameName` / `OntoASource`, a missed `AlreadyInDestination`
+      (`leaf_validation`);
+    - the conflict preflight's pane stats and self-collision filter took another entry's answers;
+    - `refuse_routed_create` joined before reading the name as one (#1491);
+    - a remote zip's duplicate pre-check joined `/share/a.zip\dir/x.txt`, which no route serves
+      (`archive_inner_exists`);
+    - a rename, new file, or new folder named `a\b.txt` was respelled into folder `a` or failed (`look_alike.rs`'s
+      splits undid the tenth pass's typed join; `folder_and_name`);
+    - a bulk rename refused `x.txt` → `sub\x.txt` as changing folders, moved rows into `sub`, put its hop temp there,
+      and let a share that refuses `\` take one (`rename/bulk.rs`, `by_move.rs`, `refused.rs`);
+    - a same-volume move listed `/src/a` for `a\b.txt`'s hint and failed or took another entry's kind
+      (`preflight.rs::top_level_move_hints`);
+    - a failed landing's ` (recovered)` rescue went into folder `a` or stayed on a temp name (`recovered_name.rs`);
+    - a long `a\b.txt` the server refused read "not allowed" for "name too long" (`transfer_error.rs`);
+    - a compress to `sub\a.zip` replaced a look-alike in `sub` (`archive_edit/compress.rs`), and the remote edit's temp
+      reap swept `sub` (`archive_edit/remote.rs`);
+    - a transfer or delete preview took `sub/a.jpg`'s size and kind for `sub\a.jpg` (`scan_preview/volume.rs`).
   - **Typed now**: `is_the_same_item` / `is_the_same_volume_path` (`&AppPath`), `TargetNames` (`AppPathBuf` keys, names
     checked by `AppName::from_listed_text`), `TransferLeaves::chosen_name` (the volume engine's leaf as app text;
     `chosen_for` stays for the local engines), `listed_name::top_level` (`Option<&str>`), the preflight-sources entry
@@ -2110,22 +2126,30 @@ included; the hidden couplings it found are why waves B and C differ from round 
     text as its canonical `AppPath`, no crossing).
   - **The check** (`scripts/check/checks/desktop-rust-app-path-std-join.go`, inside `app-path-std-bridge`): two new
     per-file ratchets. `wrapperCalls` counts each call through `std_of`, `into_std`, `on_volume`, `seam_path`, and
-    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (984: 816 direct + 168
-    through a wrapper). `stdJoin` counts a production `Path::join` / `with_file_name` in `cmdr-operations` and
-    `operations_host/` (a typed join is told apart by the `Result` it returns); a native one opts out with
-    `// allowed-std-join: <reason>`.
+    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (1,001: 813 direct + 188
+    through a wrapper; seeded at this branch's true count). `stdJoin` counts a production `Path::join` /
+    `with_file_name` in `cmdr-operations` and `operations_host/` (a typed join is told apart by the `Result` it
+    returns); a native one opts out with `// allowed-std-join: <reason>`.
   - **Behavior changes**: a rename-as-move's target name holding a NUL refuses at the start (no volume stores one); a
     preflight whose sources the edge refuses runs name-only; on Windows, the preflight's local self-collision asks the
     OS only for typed ends with a native spelling (else the conflict stays).
   - **Byte-exact on macOS and Linux** by construction: the typed splits and joins equal `Path`'s for canonical UTF-8
-    text, and every typed reading falls back to the `std::path` one for text that isn't UTF-8, holds an escape-range
-    code point, or isn't canonical. Suites on macOS: `cmdr-operations` 2,684, `cmdr-listing-wasm` 146, green.
+    text, and every typed reading falls back to the `std::path` one (the lenient reader splits by the host's rules) for
+    text that isn't UTF-8, holds an escape-range code point, or isn't canonical, so a native Windows `C:\x\a.txt` still
+    splits at `\`. Suites on macOS: `cmdr-operations` 2,699, `cmdr-listing-wasm` 146, green.
+  - **Found, not fixed** (each a refusal, a label, or a design call): `in_flight_sweep.rs::keep_beside` names a volume's
+    rescue with the `std::path` `recovered_sibling` (the `recovered_name.rs` bug, on the startup sweep); a remote
+    `x\a.txt` copied into a zip lands as entry `a.txt` (`archive_edit/copy_into.rs:282`, `fresh_plan.rs:333`: how a zip
+    names a `\` entry is David's call); `validation::first_shared_name` refuses remote `x\a.txt` and `y\a.txt` as
+    sharing a name, and `name_rules::ends_in_dot_name` reads `foo\..` as `..` (refusals); progress labels and summary
+    names in `rename/bulk.rs`, `delete/volume_walker.rs`, `delete/already_gone.rs`, `summary.rs`, `types/leftovers.rs`,
+    `left_in_source.rs`; `transfer_tree/model.rs`' `components()` attribution; `rollback.rs:275` and
+    `fresh_compress.rs:252` refresh a pane by the `std::path` parent.
 - **Left in 10a after the eleventh pass**: the create and rename-validity entry points (`create_*_managed` and
   `check_rename_validity_impl` still take the parent as text, so `create.rs` holds 8 tripwire sites and `validity.rs`
-  2); the same-volume engine's `std::path` body (`move_same.rs`, `rename_merge.rs`, `top_level_move_hints`);
-  `ClaimedNames` and the placeholder release (`std::path` keys: on Windows `a\b (1).txt` and `a/b (1).txt` hash as one
-  key, so a claim can shadow the other; a leftover placeholder at worst); `scan_walker`'s cached walk (10f's lossless
-  row); #1316.
+  2); the same-volume engine's `std::path` body (`move_same.rs`, `rename_merge.rs`); `ClaimedNames` and the placeholder
+  release (`std::path` keys: on Windows `a\b (1).txt` and `a/b (1).txt` hash as one key, so a claim can shadow the
+  other; a leftover placeholder at worst); `scan_walker`'s cached walk (10f's lossless row); #1316.
 
 ### 10b. `cmdr-index`
 
