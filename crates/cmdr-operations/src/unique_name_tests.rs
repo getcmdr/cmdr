@@ -322,3 +322,29 @@ fn a_dangling_symlink_counts_as_taken() {
     let picked = next_available_name(&target, &ClaimedNames::default());
     assert_eq!(picked.file_name().unwrap().to_string_lossy(), "notes (2).txt");
 }
+
+/// ❗ #1470: the volume namer's candidates split and join by the app path, so a POSIX
+/// server's `a\b.txt` numbers beside itself on every host (Windows' `Path` split it into
+/// `b (1).txt` inside `a`), and a folder keeps its dots whole.
+#[test]
+fn app_name_candidates_number_a_name_holding_a_backslash_beside_it() {
+    let next = |path: &str, is_directory: bool| {
+        let path = cmdr_fs::app_path::AppPath::from_normalized(path).expect("canonical");
+        let candidates = if is_directory {
+            AppNameCandidates::for_directory(path)
+        } else {
+            AppNameCandidates::for_file(path)
+        };
+        candidates.current().map(AppPathBuf::into_string)
+    };
+    assert_eq!(next("/inbox/a\\b.txt", false).as_deref(), Some("/inbox/a\\b (1).txt"));
+    assert_eq!(
+        next("/inbox/photo (1).jpg", false).as_deref(),
+        Some("/inbox/photo (2).jpg")
+    );
+    assert_eq!(next("/inbox/my.dir", true).as_deref(), Some("/inbox/my.dir (1)"));
+    assert_eq!(
+        next("sftp://h/x/notes.txt", false).as_deref(),
+        Some("sftp://h/x/notes (1).txt")
+    );
+}

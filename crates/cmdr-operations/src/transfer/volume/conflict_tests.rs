@@ -45,7 +45,7 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
     let result = apply_volume_conflict_resolution(
         ConflictResolution::Overwrite,
         &dest_recursive,
-        Path::new("/photos"),
+        cmdr_fs::app_path!("/photos"),
         true,
         DestinationType::AskAgain,
         &Arc::new(engine.new_operation_state(std::time::Duration::from_millis(0))),
@@ -56,7 +56,7 @@ async fn dir_overwrite_must_merge_not_replace_even_with_recursive_delete() {
 
     // The resolver should hand back the same path (caller will merge into it)
     // and must NOT request a safe-replace finalize (dirs merge, not replace).
-    assert_eq!(result.write_path, PathBuf::from("/photos"));
+    assert_eq!(result.write_path, cmdr_fs::app_path!("/photos").to_owned());
     assert_eq!(result.replaces, Replaces::Nothing);
 
     // CRITICAL: files unique to dest must still be there. If this fails, the
@@ -116,9 +116,9 @@ async fn a_source_whose_type_cannot_be_established_never_clears_the_destination_
 
     let result = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/album"),
+        &crate::testing::app_path_of(Path::new("/album")),
         &dest_dyn,
-        Path::new("/album"),
+        &crate::testing::app_path_of(Path::new("/album")),
         &config,
         &events,
         "op-stat-fail-source",
@@ -174,9 +174,9 @@ async fn a_destination_whose_type_cannot_be_established_is_left_alone() {
 
     let result = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &dest_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &config,
         &events,
         "op-stat-fail-dest",
@@ -225,9 +225,9 @@ async fn a_destination_that_raced_away_still_resolves_as_a_plain_write() {
 
     let resolved = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &dest_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &config,
         &events,
         "op-dest-gone",
@@ -244,7 +244,7 @@ async fn a_destination_that_raced_away_still_resolves_as_a_plain_write() {
     // Resolves as file→file: a swap at the original's name, exactly as it would
     // if the destination were a plain file.
     assert_eq!(resolved.replaces, Replaces::Swap);
-    assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
+    assert_eq!(resolved.write_path, cmdr_fs::app_path!("/notes.txt").to_owned());
 }
 
 const PROBE_OUTAGE_CADENCE: &[std::time::Duration] = &[
@@ -304,9 +304,9 @@ async fn a_share_that_drops_as_the_destination_is_probed_is_waited_for() {
         Duration::from_secs(20),
         resolve_volume_conflict(
             &source_dyn,
-            Path::new("/notes.txt"),
+            &crate::testing::app_path_of(Path::new("/notes.txt")),
             &dest_dyn,
-            Path::new("/notes.txt"),
+            &crate::testing::app_path_of(Path::new("/notes.txt")),
             &config,
             &events,
             "op-probe-outage",
@@ -326,7 +326,7 @@ async fn a_share_that_drops_as_the_destination_is_probed_is_waited_for() {
         .expect("Overwrite resolves to a write path");
     assert!(nas.reconnect_attempts() > 0, "the share dropped");
     assert_eq!(resolved.replaces, Replaces::Swap);
-    assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
+    assert_eq!(resolved.write_path, cmdr_fs::app_path!("/notes.txt").to_owned());
     assert_eq!(
         dest.get_metadata(app_path!("/notes.txt")).await.unwrap().size,
         Some(3),
@@ -373,9 +373,9 @@ async fn a_share_that_stays_gone_as_the_destination_is_probed_says_it_lost_the_c
 
     let failure = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &dest_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &config,
         &events,
         "op-probe-gone",
@@ -451,9 +451,9 @@ async fn a_blanket_file_overwrite_asks_the_destination_type_once() {
 
     let resolved = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &dest_dyn,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         &config,
         &CollectorEventSink::new(),
         "op-one-stat",
@@ -487,7 +487,7 @@ async fn file_overwrite_keeps_the_original_and_writes_at_its_name() {
     let resolved = apply_volume_conflict_resolution(
         ConflictResolution::Overwrite,
         &dest_dyn,
-        Path::new("/notes.txt"),
+        cmdr_fs::app_path!("/notes.txt"),
         false,
         DestinationType::AskAgain,
         &Arc::new(engine.new_operation_state(std::time::Duration::from_millis(0))),
@@ -513,7 +513,7 @@ async fn file_overwrite_keeps_the_original_and_writes_at_its_name() {
         Replaces::Swap,
         "file→file Overwrite must replace the original by a swap"
     );
-    assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
+    assert_eq!(resolved.write_path, cmdr_fs::app_path!("/notes.txt").to_owned());
 }
 
 /// A destination that publishes every write whole (an object store) keeps the
@@ -530,7 +530,7 @@ async fn file_overwrite_on_a_whole_publishing_destination_writes_in_place() {
     let resolved = apply_volume_conflict_resolution(
         ConflictResolution::Overwrite,
         &dest_dyn,
-        Path::new("/notes.txt"),
+        cmdr_fs::app_path!("/notes.txt"),
         false,
         DestinationType::AskAgain,
         &Arc::new(engine.new_operation_state(std::time::Duration::from_millis(0))),
@@ -539,7 +539,7 @@ async fn file_overwrite_on_a_whole_publishing_destination_writes_in_place() {
     .unwrap()
     .expect("file→file Overwrite must resolve to a write path, not Skip");
 
-    assert_eq!(resolved.write_path, PathBuf::from("/notes.txt"));
+    assert_eq!(resolved.write_path, cmdr_fs::app_path!("/notes.txt").to_owned());
     assert_eq!(resolved.replaces, Replaces::InPlace);
     assert!(
         dest.exists(app_path!("/notes.txt")).await,

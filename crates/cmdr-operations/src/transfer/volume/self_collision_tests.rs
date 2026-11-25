@@ -425,9 +425,9 @@ async fn resolve(
     };
     resolve_volume_conflict(
         source_volume,
-        Path::new(source_path),
+        &crate::testing::app_path_of(Path::new(source_path)),
         dest_volume,
-        Path::new(dest_path),
+        &crate::testing::app_path_of(Path::new(dest_path)),
         &config,
         events,
         "op-resolve",
@@ -439,7 +439,7 @@ async fn resolve(
     )
     .await
     .expect("resolution must succeed")
-    .map(|resolved| resolved.write_path)
+    .map(|resolved| crate::testing::engine_path_of(&resolved.write_path))
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

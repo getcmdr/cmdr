@@ -47,9 +47,9 @@ async fn resolve_file_over_folder(
 
     let resolved = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes"),
+        &crate::testing::app_path_of(Path::new("/notes")),
         &dest_dyn,
-        Path::new("/notes"),
+        &crate::testing::app_path_of(Path::new("/notes")),
         &config,
         &events,
         "op-blanket-cross-type",
@@ -123,9 +123,9 @@ async fn a_blanket_overwrite_never_deletes_a_file_a_folder_landed_on() {
 
         let resolved = resolve_volume_conflict(
             &source_dyn,
-            Path::new("/thing"),
+            &crate::testing::app_path_of(Path::new("/thing")),
             &dest_dyn,
-            Path::new("/thing"),
+            &crate::testing::app_path_of(Path::new("/thing")),
             &config,
             &events,
             "op-blanket-folder-over-file",
@@ -187,9 +187,9 @@ async fn resolve_file_over_folder_with_latch(
 
     let resolved = resolve_volume_conflict(
         &source_dyn,
-        Path::new("/notes"),
+        &crate::testing::app_path_of(Path::new("/notes")),
         &dest_dyn,
-        Path::new("/notes"),
+        &crate::testing::app_path_of(Path::new("/notes")),
         &config,
         &events,
         op,

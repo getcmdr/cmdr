@@ -116,8 +116,11 @@ Where a symbol lives and who calls it: `codegraph_search` / `codegraph_explore`.
   no-subtree-walk perf pin), `rename_merge_stat_tests.rs` (a stat that refuses to answer), and
   `operations_host/backend_suites/rename_merge_mtp_tests.rs` (a virtual MTP device).
 - **Naming a destination is `naming.rs`, not `conflict.rs`.** `find_unique_volume_name` (plus `resolve_local_path`, the
-  root-anchoring its `O_EXCL` reservation needs) walks the shared `unique_name::NameCandidates` and owns only HOW a pick
-  is held on a volume; `conflict.rs` decides POLICY and asks it for a name. Its tests are `naming_tests.rs`.
+  root-anchoring its `O_EXCL` reservation needs) walks `unique_name::AppNameCandidates` (the shared ` (N)` sequence over
+  an app path's own split and join, so a POSIX server's `a\b.txt` numbers as `a\b (1).txt` beside it on Windows too,
+  #1470) and owns only HOW a pick is held on a volume; `conflict.rs` decides POLICY and asks it for a name. The resolver
+  takes and answers app paths (`ResolvedConflict::write_path`); the op's `ClaimedNames` ledger and a local placeholder
+  key by the `std::path` spelling, since a reservation only lands on a local disk. Its tests are `naming_tests.rs`.
 - **Duplicating in place is pinned once, for both engines**, in `self_collision_tests.rs` (declared from `mod.rs`, so
   `super::` is `volume`): it drives the real `copy_volumes_with_progress` and `move_within_same_volume_with_progress`
   over one `InMemoryVolume` used as BOTH sides, and pins the folding cases at the `resolve_volume_conflict` seam,

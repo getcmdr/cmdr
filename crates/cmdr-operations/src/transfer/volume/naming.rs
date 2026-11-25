@@ -7,14 +7,15 @@
 //! `ClaimedNames` ledger over both. Kept out of `conflict.rs`, which decides
 //! conflict POLICY and only asks this for a name.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::super::super::look_alike::{LookAlike, look_alike_in};
+use super::super::super::unique_name::AppNameCandidates;
 use super::super::super::unique_name::ClaimedNames;
-use super::super::super::unique_name::NameCandidates;
+use super::listed_name::std_of;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
@@ -28,14 +29,14 @@ use cmdr_fs::volume::Volume;
 /// backend gets a probe, which leaves nothing behind and must NOT be deleted (the
 /// name may be free for a completely unrelated reason).
 pub(super) struct ClaimedName {
-    pub(super) path: PathBuf,
+    pub(super) path: AppPathBuf,
     /// `true` ⇒ a zero-byte placeholder exists at `path` right now.
     pub(super) reserved_on_disk: bool,
 }
 
 impl ClaimedName {
     /// A name found free by probing, with nothing written to hold it.
-    fn probed(path: PathBuf) -> Self {
+    fn probed(path: AppPathBuf) -> Self {
         Self {
             path,
             reserved_on_disk: false,
@@ -80,26 +81,40 @@ impl ClaimedName {
 /// volume dest numbers identically (`photo (1).jpg` continues to `photo (2).jpg`,
 /// and `is_directory` also picks the candidate KIND, so `my.dir` numbers whole).
 /// This function owns only the reservation.
+///
+/// The candidates are the app path's own split and join
+/// (`unique_name::AppNameCandidates`), so a POSIX server's `a\b.txt` numbers as
+/// `a\b (1).txt` beside it on every host (#1470). The op's ledger and a local
+/// placeholder key by the `std::path` spelling (`std_of`): a reservation only
+/// ever lands on a local disk, whose names never hold a POSIX server's `\`.
 pub(super) async fn find_unique_volume_name(
     dest_volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
     is_directory: bool,
     claimed: &ClaimedNames,
 ) -> ClaimedName {
     let local_root = dest_volume.local_path().filter(|_| !is_directory);
     let mut candidates = if is_directory {
-        NameCandidates::for_directory(path)
+        AppNameCandidates::for_directory(path)
     } else {
-        NameCandidates::for_file(path)
+        AppNameCandidates::for_file(path)
     };
 
     loop {
+        // A folder that can't hold the name (a drive folder and a `\`) has no
+        // pick: the clash's own path goes back, and the write that follows refuses
+        // to land on the occupied name. The walk and the drivers refuse such a name
+        // before it ever reaches a resolver, so this is the fail-closed answer.
+        let Some(candidate) = candidates.current() else {
+            return ClaimedName::probed(path.to_owned());
+        };
         // A pick is a NEW name, so it takes the destination's spelling
         // (`Volume::spell_new_name`), whatever the clashing name it counts up
         // from was spelled in.
-        let new_path = spelled_for(dest_volume, candidates.current());
+        let new_path = spelled_for(dest_volume, candidate);
+        let new_native = std_of(&new_path).into_owned();
 
-        if !claimed.claim(&new_path) {
+        if !claimed.claim(&new_native) {
             // Spoken for by another source of this same operation.
             candidates.advance();
             continue;
@@ -108,7 +123,7 @@ pub(super) async fn find_unique_volume_name(
         if let Some(root) = &local_root {
             // Local-FS dest: reserve the name with an O_CREAT|O_EXCL placeholder
             // so no concurrent writer can sneak a file in before our write lands.
-            let local_path = resolve_local_path(&root.as_std_legacy(), &new_path);
+            let local_path = resolve_local_path(&root.as_std_legacy(), &new_native);
             match std::fs::OpenOptions::new()
                 .write(true)
                 .create_new(true)
@@ -117,7 +132,7 @@ pub(super) async fn find_unique_volume_name(
                 Ok(_) => {
                     // On the op's ledger until a write lands on it, so a write
                     // that never does can't leave it behind.
-                    claimed.hold_placeholder(&new_path);
+                    claimed.hold_placeholder(&new_native);
                     return ClaimedName {
                         path: new_path,
                         reserved_on_disk: true,
@@ -137,9 +152,7 @@ pub(super) async fn find_unique_volume_name(
             // before returning to keep the residual window as narrow as we can.
             // A byte-exact backend also holds names in other spellings, which
             // the probe can't see and which are just as taken.
-            if !dest_volume.exists(&AppPath::legacy_unchecked(&new_path)).await
-                && !holds_a_look_alike(dest_volume, &new_path).await
-            {
+            if !dest_volume.exists(&new_path).await && !holds_a_look_alike(dest_volume, &new_path).await {
                 return ClaimedName::probed(new_path);
             }
             candidates.advance();
@@ -148,19 +161,28 @@ pub(super) async fn find_unique_volume_name(
         // Safety limit to prevent an infinite loop.
         if candidates.attempts() > 1000 {
             // Extremely unlikely to happen.
-            return ClaimedName::probed(candidates.current());
+            return ClaimedName::probed(candidates.current().unwrap_or_else(|| path.to_owned()));
         }
     }
 }
 
 /// `path` with its leaf spelled the way `dest_volume` wants a new name.
-fn spelled_for(dest_volume: &Arc<dyn Volume>, path: PathBuf) -> PathBuf {
-    let (Some(parent), Some(name)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
+fn spelled_for(dest_volume: &Arc<dyn Volume>, path: AppPathBuf) -> AppPathBuf {
+    // A name holding an escape (a Linux name that isn't UTF-8) has no text to respell,
+    // as its `std::path` name had none.
+    let (Some(parent), Some(name)) = (
+        path.parent(),
+        path.file_name()
+            .filter(|name| !name.chars().any(cmdr_fs::app_path::is_escape)),
+    ) else {
         return path;
     };
     match dest_volume.spell_new_name(name) {
         Cow::Borrowed(_) => path,
-        Cow::Owned(spelled) => parent.join(spelled),
+        Cow::Owned(spelled) => AppName::from_listed_text(&spelled)
+            .ok()
+            .and_then(|spelled| ListedFolder::new(parent).join(&spelled).ok())
+            .unwrap_or(path),
     }
 }
 
@@ -169,12 +191,12 @@ fn spelled_for(dest_volume: &Arc<dyn Volume>, path: PathBuf) -> PathBuf {
 /// A listing that fails leaves the probe's "free" standing: the pick is a new
 /// name either way, so the worst case is an identical-looking sibling, never a
 /// write over somebody's file.
-async fn holds_a_look_alike(dest_volume: &Arc<dyn Volume>, path: &Path) -> bool {
-    let (Some(parent), Some(name)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
+async fn holds_a_look_alike(dest_volume: &Arc<dyn Volume>, path: &AppPath) -> bool {
+    let (Some(parent), Some(name)) = (path.parent(), path.file_name()) else {
         return false;
     };
     matches!(
-        look_alike_in(dest_volume.as_ref(), parent, name).await,
+        look_alike_in(dest_volume.as_ref(), &std_of(parent), name).await,
         Ok(LookAlike::One(_) | LookAlike::Several)
     )
 }

@@ -32,13 +32,19 @@ async fn local_fs_rename_reserves_the_chosen_name_on_disk() {
         crate::host::testing::pane_order_host(),
     ));
 
-    let claimed = find_unique_volume_name(&vol, &target, false, &ClaimedNames::default()).await;
+    let claimed = find_unique_volume_name(
+        &vol,
+        &crate::testing::app_path_of(&target),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await;
     let unique = claimed.path;
 
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "notes (1).txt");
+    assert_eq!(unique.file_name().unwrap(), "notes (1).txt");
     // The O_EXCL placeholder must already exist on disk after the call.
     assert!(
-        unique.exists(),
+        crate::testing::engine_path_of(&unique).exists(),
         "reservation must create the placeholder on a local-FS dest"
     );
     // And the caller is TOLD, because it owes taking the placeholder back if its
@@ -48,10 +54,15 @@ async fn local_fs_rename_reserves_the_chosen_name_on_disk() {
         "a reservation that put a file on disk has to say so"
     );
     // A second call escalates to (2), proving the first reservation persisted.
-    let next = find_unique_volume_name(&vol, &target, false, &ClaimedNames::default())
-        .await
-        .path;
-    assert_eq!(next.file_name().unwrap().to_string_lossy(), "notes (2).txt");
+    let next = find_unique_volume_name(
+        &vol,
+        &crate::testing::app_path_of(&target),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
+    assert_eq!(next.file_name().unwrap(), "notes (2).txt");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -66,11 +77,19 @@ async fn local_fs_rename_keeps_extension_in_the_right_place() {
         temp.path().to_path_buf(),
         crate::host::testing::pane_order_host(),
     ));
-    let unique = find_unique_volume_name(&vol, &target, false, &ClaimedNames::default())
-        .await
-        .path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "report (1).pdf");
-    assert!(unique.exists(), "reservation must create the placeholder");
+    let unique = find_unique_volume_name(
+        &vol,
+        &crate::testing::app_path_of(&target),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
+    assert_eq!(unique.file_name().unwrap(), "report (1).pdf");
+    assert!(
+        crate::testing::engine_path_of(&unique).exists(),
+        "reservation must create the placeholder"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -83,12 +102,18 @@ async fn non_local_dest_does_not_reserve_a_placeholder() {
     dst.create_file(app_path!("/notes.txt"), b"old").await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
-    let claimed = find_unique_volume_name(&dst_dyn, Path::new("/notes.txt"), false, &ClaimedNames::default()).await;
+    let claimed = find_unique_volume_name(
+        &dst_dyn,
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await;
     let unique = claimed.path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "notes (1).txt");
+    assert_eq!(unique.file_name().unwrap(), "notes (1).txt");
     // No placeholder was created on the in-memory volume.
     assert!(
-        !dst.exists(&AppPath::legacy_unchecked(&unique)).await,
+        !dst.exists(&unique).await,
         "non-local dest must not pre-create the renamed name"
     );
     // So nothing owes a cleanup, and a caller that deleted this name would be
@@ -112,10 +137,15 @@ async fn local_fs_rename_continues_a_trailing_sequence() {
         crate::host::testing::pane_order_host(),
     ));
 
-    let unique = find_unique_volume_name(&vol, &target, false, &ClaimedNames::default())
-        .await
-        .path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "notes (2).txt");
+    let unique = find_unique_volume_name(
+        &vol,
+        &crate::testing::app_path_of(&target),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
+    assert_eq!(unique.file_name().unwrap(), "notes (2).txt");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -126,10 +156,15 @@ async fn non_local_dest_continues_a_trailing_sequence_too() {
     dst.create_file(app_path!("/notes (1).txt"), b"old").await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
-    let unique = find_unique_volume_name(&dst_dyn, Path::new("/notes (1).txt"), false, &ClaimedNames::default())
-        .await
-        .path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "notes (2).txt");
+    let unique = find_unique_volume_name(
+        &dst_dyn,
+        &crate::testing::app_path_of(Path::new("/notes (1).txt")),
+        false,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
+    assert_eq!(unique.file_name().unwrap(), "notes (2).txt");
 }
 
 /// A DIRECTORY never takes the `O_CREAT|O_EXCL` reservation, even on a local-FS
@@ -149,13 +184,18 @@ async fn a_directory_name_is_never_reserved_with_a_file_placeholder() {
         crate::host::testing::pane_order_host(),
     ));
 
-    let unique = find_unique_volume_name(&vol, &target, true, &ClaimedNames::default())
-        .await
-        .path;
+    let unique = find_unique_volume_name(
+        &vol,
+        &crate::testing::app_path_of(&target),
+        true,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
 
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "docs (1)");
+    assert_eq!(unique.file_name().unwrap(), "docs (1)");
     assert!(
-        !unique.exists(),
+        !crate::testing::engine_path_of(&unique).exists(),
         "the picked directory name must be left free for the merge walker to create"
     );
 }
@@ -168,10 +208,15 @@ async fn a_dot_in_a_directory_name_is_part_of_the_name_on_a_volume() {
     dst.create_directory(app_path!("/backup.2024")).await.unwrap();
     let dst_dyn: Arc<dyn Volume> = dst.clone();
 
-    let unique = find_unique_volume_name(&dst_dyn, Path::new("/backup.2024"), true, &ClaimedNames::default())
-        .await
-        .path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "backup.2024 (1)");
+    let unique = find_unique_volume_name(
+        &dst_dyn,
+        &crate::testing::app_path_of(Path::new("/backup.2024")),
+        true,
+        &ClaimedNames::default(),
+    )
+    .await
+    .path;
+    assert_eq!(unique.file_name().unwrap(), "backup.2024 (1)");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -182,11 +227,11 @@ async fn a_non_numeric_parenthetical_is_not_a_sequence_on_a_volume() {
 
     let unique = find_unique_volume_name(
         &dst_dyn,
-        Path::new("/Report (final).pdf"),
+        &crate::testing::app_path_of(Path::new("/Report (final).pdf")),
         false,
         &ClaimedNames::default(),
     )
     .await
     .path;
-    assert_eq!(unique.file_name().unwrap().to_string_lossy(), "Report (final) (1).pdf");
+    assert_eq!(unique.file_name().unwrap(), "Report (final) (1).pdf");
 }

@@ -18,7 +18,7 @@ use super::super::transfer_driver::{ConflictDecision, ConflictDecisionInput, Res
 use super::super::transfer_probe::{DriverPhase, OperationProbe};
 use super::conflict::resolve_volume_conflict;
 use super::displaced_destination::DisplacedLedger;
-use super::listed_name::{on_volume, std_of};
+use super::listed_name::std_of;
 use super::preflight::SourceHint;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
@@ -79,8 +79,8 @@ impl TopLevelConflicts {
             LogPrivate::path(initial_dest.as_str()),
             source_is_directory_hint,
         );
-        // The resolver and its namer still take `std::path` values.
-        let (source_std, initial_std) = (std_of(&source_path), std_of(&initial_dest));
+        // The probe's step text still takes a `std::path` value.
+        let initial_std = std_of(&initial_dest);
         // Parked on a PERSON, unbounded by design and with nothing else
         // running. A dump that names it has explained the whole stall;
         // `paused=` covers the pause gate and nothing else covered this.
@@ -89,9 +89,9 @@ impl TopLevelConflicts {
         }
         let resolved = resolve_volume_conflict(
             &self.source_volume,
-            &source_std,
+            &source_path,
             &self.dest_volume,
-            &initial_std,
+            &initial_dest,
             &self.config,
             &*self.events,
             &self.operation_id,
@@ -125,9 +125,7 @@ impl TopLevelConflicts {
                     self.displaced.hold(aside);
                 }
                 ConflictDecision::Proceed {
-                    // The resolver's pick, back in the drivers' app spelling (the
-                    // resolver goes typed in a later pass, #1225).
-                    dest_path: on_volume(&rc.write_path).into_owned(),
+                    dest_path: rc.write_path,
                     replaces: rc.replaces,
                     dest_name_claimed: rc.reserved_placeholder,
                 }

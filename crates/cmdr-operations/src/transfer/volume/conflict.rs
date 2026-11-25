@@ -21,8 +21,8 @@
 //!   `../../conflict.rs::resolution_for_clash` holds the rule.
 //! - Rename: Find unique name like "file (1).txt"
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use super::super::super::conflict::{
@@ -39,8 +39,9 @@ use super::super::staged_write::Replaces;
 use super::super::volume_outage::through_outages;
 use super::displaced_destination::{DisplacedDestination, displace_destination};
 use super::item_identity::is_the_same_item;
+use super::listed_name::std_of;
 use super::naming::find_unique_volume_name;
-use super::transfer_error::{AtPath, PathRole, PathedVolumeError};
+use super::transfer_error::{AtPath, PathRole, PathedVolumeError, failed_path_text};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::{LogKind, LogPrivate};
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
@@ -54,8 +55,8 @@ use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 /// replaces (`staged_write.rs`).
 #[derive(Debug)]
 pub(super) struct ResolvedConflict {
-    /// Where the streaming writer should land bytes.
-    pub write_path: PathBuf,
+    /// Where the streaming writer should land bytes, as the volume spells it.
+    pub write_path: AppPathBuf,
     /// `true` ⇒ resolving this clash RESERVED `write_path` with a zero-byte
     /// `O_EXCL` placeholder (a `Rename` pick on a local-FS destination). A caller
     /// whose write then never happens owes taking it back: on disk that
@@ -81,9 +82,9 @@ pub(super) struct ResolvedConflict {
 )]
 pub(super) async fn resolve_volume_conflict(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_app: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_app: &AppPath,
     config: &VolumeCopyConfig,
     events: &dyn OperationEventSink,
     operation_id: &str,
@@ -120,15 +121,14 @@ pub(super) async fn resolve_volume_conflict(
     // the DESTINATION reaches the same arm's bare `delete`. An unanswerable
     // stat fails the item instead.
     //
-    // Both sides in their volume's spelling, made once for every stat this
-    // conflict asks (a borrow, no copy, for any name that's valid UTF-8).
-    let (source_app, dest_app) = (
-        AppPath::legacy_unchecked(source_path),
-        AppPath::legacy_unchecked(dest_path),
-    );
+    // Both sides as the volume spells them, and in the `std::path` spelling the
+    // conflict event's text, the identity checks, and the aside still take (a
+    // borrow for UTF-8).
+    let (source_std, dest_std) = (std_of(source_app), std_of(dest_app));
+    let (source_path, dest_path): (&Path, &Path) = (&source_std, &dest_std);
     let source_is_directory = match source_is_directory_hint {
         Some(is_dir) => is_dir,
-        None => source_volume.is_directory(&source_app).await.at_source(source_path)?,
+        None => source_volume.is_directory(source_app).await.at_source(source_app)?,
     };
 
     // A source that would land on ITSELF is a request to DUPLICATE it, never a
@@ -141,7 +141,7 @@ pub(super) async fn resolve_volume_conflict(
     // child onto the destination it was handed, so a renamed root carries its
     // whole subtree. `../DETAILS.md` § "Self-collision (duplicating in place)".
     if is_the_same_item(source_volume, source_path, dest_volume, dest_path) {
-        let unique = find_unique_volume_name(dest_volume, dest_path, source_is_directory, &state.claimed_names).await;
+        let unique = find_unique_volume_name(dest_volume, dest_app, source_is_directory, &state.claimed_names).await;
         let kind = if source_is_directory {
             LogKind::DirPath
         } else {
@@ -150,7 +150,7 @@ pub(super) async fn resolve_volume_conflict(
         log::info!(
             "resolve_volume_conflict: {} is already in the destination, duplicating it as {}",
             LogPrivate::new(kind, source_path),
-            LogPrivate::new(kind, &unique.path)
+            LogPrivate::new(kind, unique.path.as_str())
         );
         return Ok(Some(ResolvedConflict {
             write_path: unique.path,
@@ -160,7 +160,7 @@ pub(super) async fn resolve_volume_conflict(
         }));
     }
 
-    let destination_is_directory = resolve_dest_is_directory(state, dest_volume, dest_path).await?;
+    let destination_is_directory = resolve_dest_is_directory(state, dest_volume, dest_app).await?;
 
     // Dir-vs-dir is NOT a conflict — it's an unconditional merge. No policy
     // lookup, no `write-conflict` emit, no Stop prompt: a source folder landing
@@ -173,7 +173,7 @@ pub(super) async fn resolve_volume_conflict(
     // `conflict_resolution`, so even Stop / Skip / Rename merge the folder.
     if source_is_directory && destination_is_directory {
         return Ok(Some(ResolvedConflict {
-            write_path: dest_path.to_path_buf(),
+            write_path: dest_app.to_owned(),
             reserved_placeholder: false,
             replaces: Replaces::Nothing,
             displaced: None,
@@ -213,7 +213,7 @@ pub(super) async fn resolve_volume_conflict(
             // `write-conflict` that no one will ever answer (the dialog is tearing
             // down) — a hang. Bail with `Cancelled` before emitting anything.
             if state.work_stopped() {
-                return Err(cancelled_at(dest_path));
+                return Err(cancelled_at(dest_app));
             }
 
             // Re-check the latch under the lock. While this task waited on the
@@ -231,9 +231,9 @@ pub(super) async fn resolve_volume_conflict(
                 let effective = reduce_volume_conditional_resolution(
                     saved,
                     source_volume,
-                    &source_app,
+                    source_app,
                     dest_volume,
-                    (dest_path, &dest_app),
+                    (dest_path, dest_app),
                     source_size_hint,
                     dest_size_hint,
                 )
@@ -241,7 +241,7 @@ pub(super) async fn resolve_volume_conflict(
                 return apply_volume_conflict_resolution(
                     effective,
                     dest_volume,
-                    dest_path,
+                    dest_app,
                     source_is_directory,
                     DestinationType::AskAgain,
                     state,
@@ -268,12 +268,12 @@ pub(super) async fn resolve_volume_conflict(
             // policies. Each is bounded by the time the user takes to click,
             // so the cost is invisible.
             let source_modified: Option<i64> = source_volume
-                .get_metadata(&source_app)
+                .get_metadata(source_app)
                 .await
                 .ok()
                 .and_then(|m| m.modified_at)
                 .map(|s| s as i64);
-            let destination_meta = dest_volume.get_metadata(&dest_app).await.ok();
+            let destination_meta = dest_volume.get_metadata(dest_app).await.ok();
             let destination_modified: Option<i64> =
                 destination_meta.as_ref().and_then(|m| m.modified_at).map(|s| s as i64);
 
@@ -377,9 +377,9 @@ pub(super) async fn resolve_volume_conflict(
                     let effective = reduce_volume_conditional_resolution(
                         answered,
                         source_volume,
-                        &source_app,
+                        source_app,
                         dest_volume,
-                        (dest_path, &dest_app),
+                        (dest_path, dest_app),
                         source_size,
                         dest_size,
                     )
@@ -387,7 +387,7 @@ pub(super) async fn resolve_volume_conflict(
                     apply_volume_conflict_resolution(
                         effective,
                         dest_volume,
-                        dest_path,
+                        dest_app,
                         source_is_directory,
                         DestinationType::AskAgain,
                         state,
@@ -395,7 +395,7 @@ pub(super) async fn resolve_volume_conflict(
                     .await
                 }
                 // Sender dropped = operation cancelled
-                Err(_) => Err(cancelled_at(dest_path)),
+                Err(_) => Err(cancelled_at(dest_app)),
             }
             // `_dispatch_guard` drops here, releasing the next queued task.
         }
@@ -404,7 +404,7 @@ pub(super) async fn resolve_volume_conflict(
             apply_volume_conflict_resolution(
                 ConflictResolution::Overwrite,
                 dest_volume,
-                dest_path,
+                dest_app,
                 source_is_directory,
                 DestinationType::JustAsked {
                     is_directory: destination_is_directory,
@@ -417,7 +417,7 @@ pub(super) async fn resolve_volume_conflict(
             apply_volume_conflict_resolution(
                 ConflictResolution::Rename,
                 dest_volume,
-                dest_path,
+                dest_app,
                 source_is_directory,
                 DestinationType::JustAsked {
                     is_directory: destination_is_directory,
@@ -430,9 +430,9 @@ pub(super) async fn resolve_volume_conflict(
             let effective = reduce_volume_conditional_resolution(
                 resolution,
                 source_volume,
-                &source_app,
+                source_app,
                 dest_volume,
-                (dest_path, &dest_app),
+                (dest_path, dest_app),
                 source_size_hint,
                 dest_size_hint,
             )
@@ -440,7 +440,7 @@ pub(super) async fn resolve_volume_conflict(
             apply_volume_conflict_resolution(
                 effective,
                 dest_volume,
-                dest_path,
+                dest_app,
                 source_is_directory,
                 DestinationType::JustAsked {
                     is_directory: destination_is_directory,
@@ -561,13 +561,10 @@ async fn reduce_volume_conditional_resolution(
 async fn resolve_dest_is_directory(
     state: &Arc<WriteOperationState>,
     dest_volume: &Arc<dyn Volume>,
-    path: &Path,
+    path: &AppPath,
 ) -> Result<bool, PathedVolumeError> {
     let asked = through_outages(state, &[dest_volume], || async move {
-        dest_volume
-            .entry_kind(&AppPath::legacy_unchecked(path))
-            .await
-            .at_destination(path)
+        dest_volume.entry_kind(path).await.at_destination(path)
     })
     .await;
     match asked {
@@ -579,7 +576,7 @@ async fn resolve_dest_is_directory(
 
 /// The cancel that ended a clash, as the walk and the drivers expect it:
 /// `VolumeError::Cancelled`, which the post-loop reclassifies as a cancel.
-fn cancelled_at(dest_path: &Path) -> PathedVolumeError {
+fn cancelled_at(dest_path: &AppPath) -> PathedVolumeError {
     PathedVolumeError::new(
         PathRole::Destination,
         dest_path,
@@ -605,7 +602,7 @@ enum DestinationType {
 async fn apply_volume_conflict_resolution(
     resolution: ConflictResolution,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_app: &AppPath,
     source_is_directory: bool,
     destination_type: DestinationType,
     // The operation's state: its ledger of names already handed out (the
@@ -617,8 +614,8 @@ async fn apply_volume_conflict_resolution(
         // Should not happen - Stop waits for user input
         ConflictResolution::Stop => Err(PathedVolumeError::new(
             PathRole::Destination,
-            dest_path,
-            VolumeError::AlreadyExists(dest_path.display().to_string()),
+            dest_app,
+            VolumeError::AlreadyExists(failed_path_text(dest_app)),
         )),
         ConflictResolution::Skip => Ok(None),
         ConflictResolution::Overwrite => {
@@ -661,7 +658,7 @@ async fn apply_volume_conflict_resolution(
             // the contract.
             let dest_is_dir = match destination_type {
                 DestinationType::JustAsked { is_directory } => is_directory,
-                DestinationType::AskAgain => resolve_dest_is_directory(state, dest_volume, dest_path).await?,
+                DestinationType::AskAgain => resolve_dest_is_directory(state, dest_volume, dest_app).await?,
             };
 
             if !dest_is_dir && !source_is_directory {
@@ -669,14 +666,14 @@ async fn apply_volume_conflict_resolution(
                 // else a swap the write's landing makes. No delete here.
                 if dest_volume.publishes_writes_whole() {
                     return Ok(Some(ResolvedConflict {
-                        write_path: dest_path.to_path_buf(),
+                        write_path: dest_app.to_owned(),
                         reserved_placeholder: false,
                         replaces: Replaces::InPlace,
                         displaced: None,
                     }));
                 }
                 return Ok(Some(ResolvedConflict {
-                    write_path: dest_path.to_path_buf(),
+                    write_path: dest_app.to_owned(),
                     reserved_placeholder: false,
                     replaces: Replaces::Swap,
                     displaced: None,
@@ -689,10 +686,11 @@ async fn apply_volume_conflict_resolution(
             let displaced = if dest_is_dir == source_is_directory {
                 None
             } else {
-                displace_destination(state, dest_volume, dest_path, dest_is_dir).await?
+                // The aside still names its paths by `std::path` (#1225).
+                displace_destination(state, dest_volume, &std_of(dest_app), dest_is_dir).await?
             };
             Ok(Some(ResolvedConflict {
-                write_path: dest_path.to_path_buf(),
+                write_path: dest_app.to_owned(),
                 reserved_placeholder: false,
                 replaces: Replaces::Nothing,
                 displaced,
@@ -701,7 +699,7 @@ async fn apply_volume_conflict_resolution(
         ConflictResolution::Rename => {
             // Find a unique name - we need to check what exists on the volume
             let unique =
-                find_unique_volume_name(dest_volume, dest_path, source_is_directory, &state.claimed_names).await;
+                find_unique_volume_name(dest_volume, dest_app, source_is_directory, &state.claimed_names).await;
             Ok(Some(ResolvedConflict {
                 write_path: unique.path,
                 reserved_placeholder: unique.reserved_on_disk,

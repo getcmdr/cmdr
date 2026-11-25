@@ -550,8 +550,9 @@ pub async fn move_within_same_volume_with_progress(
                 let overwritten_sources = Arc::clone(&overwritten_sources);
                 let displaced_dests = Arc::clone(&displaced_dests);
                 let operation_id = operation_id.clone();
-                let source_path_owned = std_of(input.source_path).into_owned();
-                let initial_dest_owned = std_of(input.initial_dest_path).into_owned();
+                let (source_app, initial_dest_app) = (input.source_path.to_owned(), input.initial_dest_path.to_owned());
+                let source_path_owned = std_of(&source_app).into_owned();
+                let initial_dest_owned = std_of(&initial_dest_app).into_owned();
                 let dest_size_hint = input.dest_size_hint;
                 Box::pin(async move {
                     log::debug!(
@@ -569,9 +570,9 @@ pub async fn move_within_same_volume_with_progress(
                     // Same volume on both sides; pass `&volume` twice.
                     let resolved = resolve_volume_conflict(
                         &volume,
-                        &source_path_owned,
+                        &source_app,
                         &volume,
-                        &initial_dest_owned,
+                        &initial_dest_app,
                         &config,
                         &*events,
                         &operation_id,
@@ -605,7 +606,9 @@ pub async fn move_within_same_volume_with_progress(
                             // original goes ASIDE here and the rename lands in the
                             // closure. For dir-merge / Rename there's none and the
                             // resolved path is used as-is.
-                            match rc.replaces.clone().replaced_file(&rc.write_path) {
+                            // This engine's bodies take the pick's `std::path` spelling.
+                            let write_std = std_of(&rc.write_path).into_owned();
+                            match rc.replaces.clone().replaced_file(&write_std) {
                                 Some(orig) => {
                                     // A file→file overwrite: record it so the journal
                                     // finalizes this move `not_rollbackable` (the
@@ -640,12 +643,8 @@ pub async fn move_within_same_volume_with_progress(
                                     // someone wrote into is theirs, stays, and
                                     // the no-replace rename refuses it as a clash.
                                     if rc.reserved_placeholder {
-                                        super::naming::take_back_reservation(
-                                            &volume,
-                                            &rc.write_path,
-                                            &state.claimed_names,
-                                        )
-                                        .await;
+                                        super::naming::take_back_reservation(&volume, &write_std, &state.claimed_names)
+                                            .await;
                                     }
                                     // A cross-type Overwrite's aside: the rename
                                     // in the closure answers for it too.
@@ -658,7 +657,7 @@ pub async fn move_within_same_volume_with_progress(
                                             .insert(source_path_owned.clone(), displaced);
                                     }
                                     ConflictDecision::Proceed {
-                                        dest_path: on_volume(&rc.write_path).into_owned(),
+                                        dest_path: rc.write_path,
                                         replaces: Replaces::Nothing,
                                         dest_name_claimed: false,
                                     }

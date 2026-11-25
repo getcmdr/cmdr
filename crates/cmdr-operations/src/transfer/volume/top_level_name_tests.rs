@@ -58,9 +58,21 @@ async fn transfer(
     dest: &Arc<InMemoryVolume>,
     dest_dir: &AppPath,
 ) -> Vec<crate::types::WriteConflictEvent> {
+    transfer_answering(driver, source, sources, dest, dest_dir, ConflictResolution::Skip).await
+}
+
+/// [`transfer`], answering every question with `answer`.
+async fn transfer_answering(
+    driver: Driver,
+    source: &Arc<InMemoryVolume>,
+    sources: &[String],
+    dest: &Arc<InMemoryVolume>,
+    dest_dir: &AppPath,
+    answer: ConflictResolution,
+) -> Vec<crate::types::WriteConflictEvent> {
     let engine = TestOperations::new();
     let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
-    let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Skip, false));
+    let events = Arc::new(ConflictResponderSink::new(&state, answer, false));
     let config = VolumeCopyConfig::default();
     let (src, dst) = (
         Arc::clone(source) as Arc<dyn Volume>,
@@ -228,6 +240,46 @@ async fn a_scheme_root_lands_in_a_folder_named_after_its_server() {
         assert!(
             !dest.exists(at("/inbox/f.txt")).await,
             "{driver:?}: mixed into the destination"
+        );
+    }
+}
+
+/// ❗ #1470: a Rename of a top-level `a\b.txt` clashing at a remote destination picks
+/// `a\b (1).txt` BESIDE it, ❌ never `b (1).txt` inside a folder `a` (Windows' `Path`
+/// split), and the user's original stays as it was.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_rename_of_a_backslash_name_picks_its_new_name_beside_it() {
+    for driver in [Driver::SerialCopy, Driver::CrossVolumeMove] {
+        let (source, sources) = server_with(&["a\\b.txt"], driver).await;
+        let dest = Arc::new(InMemoryVolume::new("Other server").with_space_info(10_000_000, 10_000_000));
+        dest.create_directory(at("/inbox")).await.unwrap();
+        dest.create_file(at("/inbox/a\\b.txt"), b"the user's own")
+            .await
+            .unwrap();
+
+        transfer_answering(
+            driver,
+            &source,
+            &sources,
+            &dest,
+            at("/inbox"),
+            ConflictResolution::Rename,
+        )
+        .await;
+
+        assert_eq!(
+            read(&dest, at("/inbox/a\\b (1).txt")).await.as_deref(),
+            Some("/a\\b.txt".as_bytes()),
+            "{driver:?}"
+        );
+        assert_eq!(
+            read(&dest, at("/inbox/a\\b.txt")).await.as_deref(),
+            Some(&b"the user's own"[..]),
+            "{driver:?}"
+        );
+        assert!(
+            !dest.exists(at("/inbox/a/b (1).txt")).await,
+            "{driver:?}: split into a folder"
         );
     }
 }

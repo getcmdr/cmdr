@@ -24,7 +24,7 @@ use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::copy_concurrent::ConcurrentCopy;
 use super::copy_concurrent_task::CopyTask;
 use super::landing::{DestFolder, Landing, NewName, landing_at};
-use super::listed_name::{TopLevel, label_of, on_volume, std_of, top_level};
+use super::listed_name::{TopLevel, label_of, std_of, top_level};
 use super::merge_ctx::MergeProbe;
 use super::preflight::SourceFileFacts;
 use super::strategy::{Replaces, resolve_source_is_directory};
@@ -138,9 +138,7 @@ impl ConcurrentCopy<'_> {
                     return Ok(None);
                 }
                 Some(rc) => {
-                    // The resolver's pick, back in the drivers' app spelling (the
-                    // resolver goes typed in a later pass, #1225).
-                    dest_item_path = on_volume(&rc.write_path).into_owned();
+                    dest_item_path = rc.write_path;
                     replaces = rc.replaces;
                     // ❗ Claimed only when the pick put a placeholder of ours
                     // there. A pick that reserved nothing (every remote
@@ -312,20 +310,18 @@ impl ConcurrentCopy<'_> {
         // window drains but fills no further until they answer, so a dump
         // taken now has to say so rather than leave the pre-check's phase
         // standing.
-        // The resolver and its namer still take `std::path` values.
-        let (source_std, dest_std) = (std_of(source_path), std_of(dest_item_path));
         if let Some(probe) = self.op_probe.as_ref() {
             probe.set_driver_phase_at(
                 super::super::transfer_probe::DriverPhase::ResolvingConflict,
                 None,
-                &dest_std,
+                &std_of(dest_item_path),
             );
         }
         let resolved = resolve_volume_conflict(
             &self.source_volume,
-            &source_std,
+            source_path,
             &self.dest_volume,
-            &dest_std,
+            dest_item_path,
             self.config,
             &*self.events,
             self.operation_id,

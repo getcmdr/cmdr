@@ -54,7 +54,7 @@
 //! `name → MergeChildResolution` map so a late collision on an already-resolved
 //! child finalizes its stored decision instead of re-prompting.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -122,7 +122,7 @@ enum MergeChildResolution {
     /// The resolver said Proceed. `replace` names the file a file→file
     /// Overwrite replaces (set it aside, then rename onto its name): a
     /// safe-replace's `orig`, or `write_path` itself for an in-place one.
-    Proceed { write_path: PathBuf, replace: Replaces },
+    Proceed { write_path: AppPathBuf, replace: Replaces },
 }
 
 /// Recursively merges `source_dir` into the existing `dest_dir` on the same
@@ -351,11 +351,13 @@ async fn resolve_child(
     let source_is_directory_hint = Some(merges_as_a_directory(entry));
     let source_size_hint = if merges_as_a_directory(entry) { None } else { entry.size };
 
+    // This engine walks `std::path` values; the resolver takes them as the volume
+    // spells them.
     let resolved = resolve_volume_conflict(
         ctx.volume,
-        child_source,
+        &on_volume(child_source),
         ctx.volume,
-        child_dest,
+        &on_volume(child_dest),
         ctx.config,
         ctx.events,
         ctx.operation_id,
@@ -403,17 +405,17 @@ async fn apply_child_decision(
     aside: Option<DisplacedDestination>,
     note_both_halves: &(dyn Fn(&Path, &Path) + Sync),
 ) -> Result<(), WriteOperationError> {
-    let (write_path, replace) = match decision {
+    // The resolved name in the volume's spelling, for whichever of its stat or its
+    // placeholder's delete this child takes, and in the `std::path` one the renames
+    // below still take.
+    let (write_app, write_path, replace) = match decision {
         MergeChildResolution::Skip => return Ok(()),
         MergeChildResolution::Proceed { write_path, replace } => {
-            let replace = replace.replaced_file(&write_path);
-            (write_path, replace)
+            let write_std = std_of(&write_path).into_owned();
+            let replace = replace.replaced_file(&write_std);
+            (write_path, write_std, replace)
         }
     };
-
-    // The resolved name in the volume's spelling, made once for whichever of its
-    // stat or its placeholder's delete this child takes (a borrow for UTF-8).
-    let write_app = AppPath::legacy_unchecked(&write_path);
     if merges_as_a_directory(entry) {
         // A directory child that resolved to Proceed is a cross-type
         // Overwrite/Rename (dir source vs a same-named dest FILE). The resolver

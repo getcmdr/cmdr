@@ -42,7 +42,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
 use super::landing::{DestFolder, NewName, where_it_lands};
-use super::listed_name::{ListedName, into_std, listed_path, on_volume, shown_under, std_of};
+use super::listed_name::{ListedName, into_std, listed_path, shown_under, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
 use super::preflight::SourceFileFacts;
@@ -1102,11 +1102,11 @@ async fn merge_level<'a>(
                 .drive(resolve_merge_child(
                     ctx,
                     source_volume,
-                    &std_of(&child_source),
+                    &child_source,
                     entry,
                     descends,
                     dest_volume,
-                    &child_dest_std,
+                    &child_dest,
                     hit,
                 ))
                 .await?
@@ -1129,7 +1129,7 @@ async fn merge_level<'a>(
                 } => {
                     // The resolver's answer, in the volume's spelling: the
                     // clash's own path, or the free name a `Rename` picked.
-                    write_dest = on_volume(&write_path).into_owned();
+                    write_dest = write_path;
                     replaces = replace;
                     reserved_placeholder = reserved;
                     // ❗ Ours to clear only when the pick put a placeholder
@@ -1300,7 +1300,7 @@ enum MergeChildDecision {
     /// `write_path` to hold the name, which the leaf owes taking back if its
     /// write never happens (`naming.rs::ClaimedName`).
     Proceed {
-        write_path: PathBuf,
+        write_path: AppPathBuf,
         replace: Replaces,
         reserved_placeholder: bool,
     },
@@ -1317,12 +1317,12 @@ enum MergeChildDecision {
 async fn resolve_merge_child(
     ctx: &MergeCtx<'_>,
     source_volume: &Arc<dyn Volume>,
-    child_source: &Path,
+    child_source: &AppPath,
     entry: &FileEntry,
     // Whether the child is a folder to THIS walk: a link it carries isn't.
     source_is_directory: bool,
     dest_volume: &Arc<dyn Volume>,
-    child_dest: &Path,
+    child_dest: &AppPath,
     dest_hit: &FileEntry,
 ) -> Result<MergeChildDecision, PathedVolumeError> {
     // Deep children aren't top-level sources, so no preflight hint exists for

@@ -18,6 +18,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
 use cmdr_fs::ignore_poison::IgnorePoison;
 
 use super::host::EngineHost;
@@ -190,6 +191,72 @@ impl<'a> NameCandidates<'a> {
     /// How many candidates this search has already rejected.
     pub(super) fn attempts(&self) -> u32 {
         self.counter.saturating_sub(self.start)
+    }
+}
+
+/// [`NameCandidates`] over an app path (the volume namer's): the same base,
+/// extension, and counter, split and joined by the app path's own arithmetic, so a
+/// POSIX server's `a\b.txt` numbers as `a\b (1).txt` beside it on every host, where
+/// Windows' `Path` split it into `b (1).txt` inside `a` (#1470). The stem and
+/// extension read as the lossy text `Path` read them (`caf\u{FFFD}` for a Linux name
+/// that isn't UTF-8, #1316), so every other name numbers byte for byte as before.
+pub(super) struct AppNameCandidates<'a> {
+    parent: &'a AppPath,
+    base: String,
+    extension: Option<String>,
+    counter: u32,
+    start: u32,
+}
+
+impl<'a> AppNameCandidates<'a> {
+    /// Candidates for a FILE, as [`NameCandidates::for_file`].
+    pub(super) fn for_file(path: &'a AppPath) -> Self {
+        let stem = path.file_stem().map(lossy).unwrap_or_default();
+        let extension = path.extension().map(lossy);
+        Self::from_parts(path, stem, extension)
+    }
+
+    /// Candidates for a DIRECTORY, as [`NameCandidates::for_directory`].
+    pub(super) fn for_directory(path: &'a AppPath) -> Self {
+        let name = path.file_name().map(lossy).unwrap_or_default();
+        Self::from_parts(path, name, None)
+    }
+
+    fn from_parts(path: &'a AppPath, stem: String, extension: Option<String>) -> Self {
+        let (base, counter) = split_sequence(&stem);
+        Self {
+            parent: path.parent().unwrap_or(path),
+            base: base.to_string(),
+            extension,
+            counter,
+            start: counter,
+        }
+    }
+
+    /// The candidate to try right now; `None` when the folder can't hold it (a
+    /// drive folder and a name holding `\`), which no other candidate fixes.
+    pub(super) fn current(&self) -> Option<AppPathBuf> {
+        let name = numbered_name(&self.base, self.extension.as_deref(), self.counter);
+        let name = AppName::from_listed_text(&name).ok()?;
+        ListedFolder::new(self.parent).join(&name).ok()
+    }
+
+    /// Moves past a candidate the caller found taken.
+    pub(super) fn advance(&mut self) {
+        self.counter = self.counter.saturating_add(1);
+    }
+
+    /// How many candidates this search has already rejected.
+    pub(super) fn attempts(&self) -> u32 {
+        self.counter.saturating_sub(self.start)
+    }
+}
+
+/// An app-spelled name part as the lossy text `Path`'s `to_string_lossy` gave it.
+fn lossy(part: &str) -> String {
+    match cmdr_fs::app_path::unescape_bytes(part) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        Err(_) => part.to_owned(),
     }
 }
 
