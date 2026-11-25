@@ -12,6 +12,8 @@ exports[`Windows typography and motion (\`app-type-motion-windows.css\`) > keeps
   "--transition-base": "150ms ease",
   "--transition-fast": "100ms ease",
   "--transition-slow": "200ms ease",
+  "--transition-wait-reveal-delay": "0ms",
+  "--transition-wait-reveal-ramp": "0ms",
 }
 `;
 
