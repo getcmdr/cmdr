@@ -3050,10 +3050,11 @@ cached `TransferDialog` preview when available, else `volume.scan_for_copy_batch
 (`move_within_same_volume_with_progress`) is a server-side rename — it moves ZERO bytes — so a deep recursive pre-flight
 scan there was pure waste that cost 30–40 s of "Verifying before move…" on a NAS (a real field incident: a same-NAS
 folder move blocked for 30–40 s before the 100 ms rename). It now calls `top_level_move_hints` instead: top-level
-`is_directory`/size hints only (one `list_directory` per distinct parent, O(distinct parents), never a subtree walk),
-`files_total` = number of selected top-level items, `bytes_total = 0`. The FE hides the Size bar on `bytes_total == 0`,
-which is honest — a rename moves no bytes, so a Size bar would be a lie. `known_directory_paths` (keeps bulk-skip
-file-only) comes from the same top-level hints. The perf contract is pinned by
+`is_directory`/size hints only (one `list_directory` per distinct parent, O(distinct parents), never a subtree walk;
+parent and name split by the app path, so on Windows a POSIX volume's `/src/a\b.txt` is listed in `/src`, never
+`/src/a`: `volume/preflight_hints_tests.rs`), `files_total` = number of selected top-level items, `bytes_total = 0`. The
+FE hides the Size bar on `bytes_total == 0`, which is honest — a rename moves no bytes, so a Size bar would be a lie.
+`known_directory_paths` (keeps bulk-skip file-only) comes from the same top-level hints. The perf contract is pinned by
 `volume/rename_merge_tests.rs::non_conflicting_move_does_no_subtree_walk` (a counting volume asserts no interior
 listing + O(top-level) stat count) and the SMB integration pin
 `smb_integration_same_share_nonconflicting_move_no_subtree_walk`.
