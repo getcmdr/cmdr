@@ -71,51 +71,13 @@ pub(super) fn repair_dir_stats_upward(conn: &rusqlite::Connection, start_id: i64
     let mut steps = super::delta::ChainSteps::new("repair_dir_stats_upward", start_id);
     let mut current_id = start_id;
     while current_id != 0 && steps.another(conn) {
-        // A queued walk can name a directory something DELETED while it waited: a
-        // truncating rescan, or a subtree the reconciler reaped. Recomputing that
-        // from children finds none and writes a ZEROED `dir_stats` row for an entry
-        // that no longer exists — and `TruncateData` resets the id counter, so the
-        // ghost lands on whatever the next scan puts at the same id. Stop instead;
-        // the delete walked its own debit up this chain already, so there is nothing
-        // left here to roll up. A failed read is not "no row" (the ledger's rule), so
-        // it queues and stops like every other read below.
-        match entry_exists(conn, current_id) {
-            Ok(true) => {}
-            Ok(false) => return wrote,
-            Err(e) => {
-                log::debug!(target: "indexing::writer", "repair_dir_stats_upward: existence check failed for id={current_id}: {e}");
-                repairs.queue(current_id, "repair_dir_stats_upward existence");
-                return wrote;
-            }
+        match repair_one_level(conn, current_id, repairs) {
+            // This ancestor already agrees with its children, so the change below it
+            // never reached here and nothing above can change either. Gone and failed
+            // stop too: see `LevelRepair`.
+            LevelRepair::Agrees | LevelRepair::Gone | LevelRepair::Failed => return wrote,
+            LevelRepair::Rewrote => wrote = true,
         }
-
-        // A read that fails tells us nothing, and this walk is the last line of
-        // defense against drift: stop and hand the id back to the deferred queue
-        // so a later tick tries again, rather than acting on a guess.
-        let (fresh, stored) = match (
-            recompute_dir_stats_from_children(conn, current_id),
-            IndexStore::get_dir_stats_by_id(conn, current_id),
-        ) {
-            (Ok(fresh), Ok(stored)) => (fresh, stored),
-            (Err(e), _) | (_, Err(e)) => {
-                log::debug!(target: "indexing::writer", "repair_dir_stats_upward: read failed for id={current_id}: {e}");
-                repairs.queue(current_id, "repair_dir_stats_upward read");
-                return wrote;
-            }
-        };
-
-        if stored.as_ref() == Some(&fresh) {
-            // This ancestor already agrees with its children, so the change below
-            // it never reached here and nothing above can change either.
-            break;
-        }
-
-        if let Err(e) = IndexStore::upsert_dir_stats_by_id(conn, std::slice::from_ref(&fresh)) {
-            log::debug!(target: "indexing::writer", "repair_dir_stats_upward: upsert failed for id={current_id}: {e}");
-            repairs.queue(current_id, "repair_dir_stats_upward upsert");
-            return wrote;
-        }
-        wrote = true;
 
         if current_id == ROOT_ID {
             break;
@@ -133,8 +95,70 @@ pub(super) fn repair_dir_stats_upward(conn: &rusqlite::Connection, start_id: i64
     wrote
 }
 
+/// What [`repair_one_level`] did to one directory's row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum LevelRepair {
+    /// The stored row already equals the recompute; nothing above can move either.
+    Agrees,
+    /// The row was rewritten, so the parent owes a recompute too.
+    Rewrote,
+    /// The directory no longer exists: something deleted it while the repair
+    /// waited. The delete walked its own debit up the chain, so nothing is owed.
+    Gone,
+    /// A read or write failed; the id went to the deferred queue for a later try.
+    Failed,
+}
+
+/// Recompute ONE directory's `dir_stats` row from its committed children and
+/// rewrite it if it differs. The step both [`repair_dir_stats_upward`] and the
+/// level-ordered roll-up drain (`pending_rollups.rs`) are made of.
+pub(super) fn repair_one_level(conn: &rusqlite::Connection, id: i64, repairs: &DeferredRepairs) -> LevelRepair {
+    // A queued walk can name a directory something DELETED while it waited: a
+    // truncating rescan, or a subtree the reconciler reaped. Recomputing that
+    // from children finds none and writes a ZEROED `dir_stats` row for an entry
+    // that no longer exists — and `TruncateData` resets the id counter, so the
+    // ghost lands on whatever the next scan puts at the same id. Stop instead.
+    // A failed read is not "no row" (the ledger's rule), so it queues like every
+    // other read below.
+    match entry_exists(conn, id) {
+        Ok(true) => {}
+        Ok(false) => return LevelRepair::Gone,
+        Err(e) => {
+            log::debug!(target: "indexing::writer", "repair_one_level: existence check failed for id={id}: {e}");
+            repairs.queue(id, "repair_dir_stats_upward existence");
+            return LevelRepair::Failed;
+        }
+    }
+
+    // A read that fails tells us nothing, and this is the last line of defense
+    // against drift: hand the id back to the deferred queue so a later tick tries
+    // again, rather than acting on a guess.
+    let (fresh, stored) = match (
+        recompute_dir_stats_from_children(conn, id),
+        IndexStore::get_dir_stats_by_id(conn, id),
+    ) {
+        (Ok(fresh), Ok(stored)) => (fresh, stored),
+        (Err(e), _) | (_, Err(e)) => {
+            log::debug!(target: "indexing::writer", "repair_one_level: read failed for id={id}: {e}");
+            repairs.queue(id, "repair_dir_stats_upward read");
+            return LevelRepair::Failed;
+        }
+    };
+
+    if stored.as_ref() == Some(&fresh) {
+        return LevelRepair::Agrees;
+    }
+
+    if let Err(e) = IndexStore::upsert_dir_stats_by_id(conn, std::slice::from_ref(&fresh)) {
+        log::debug!(target: "indexing::writer", "repair_one_level: upsert failed for id={id}: {e}");
+        repairs.queue(id, "repair_dir_stats_upward upsert");
+        return LevelRepair::Failed;
+    }
+    LevelRepair::Rewrote
+}
+
 /// Whether `id` still names a row in `entries`. See the delete guard in
-/// [`repair_dir_stats_upward`] for why a repair asks.
+/// [`repair_one_level`] for why a repair asks.
 fn entry_exists(conn: &rusqlite::Connection, id: i64) -> Result<bool, IndexStoreError> {
     use rusqlite::OptionalExtension;
     Ok(conn

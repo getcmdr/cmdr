@@ -44,7 +44,7 @@ fn wide_parent(writer: &IndexWriter, width: i64, size: u64) {
 /// linear and quadratic, and it's what a well-meaning "repair it right here, it's
 /// race-free that way" would put back.
 ///
-/// Reads `rollup_walks`, the writer's own count of drained roll-ups, so the
+/// Reads `rollup_recomputes`, the writer's own count of drained roll-ups, so the
 /// assertion is about the mechanism rather than about a stopwatch. Pre-fix this
 /// number was exactly `width`.
 #[test]
@@ -72,7 +72,7 @@ fn a_burst_of_roots_under_one_parent_costs_a_handful_of_rollups() {
     }
     settle_the_writer(&writer);
 
-    let walks = writer.rollup_walks();
+    let walks = writer.rollup_recomputes();
     assert!(
         walks <= (WIDTH as u64) / 10,
         "{} sharing one parent cost {}; the burst must coalesce, \
@@ -261,6 +261,97 @@ fn a_delete_inside_the_pending_window_leaves_no_ghost_row() {
         (0, 0),
         "and the delete's own debit still reached the root"
     );
+    check_db_consistency(&conn);
+
+    writer.shutdown();
+}
+
+/// One wide directory whose `width` children each hold ONE frontier root:
+/// `big` → `mid-i` → `sub-i` → a file. The shape a phase that stops one level
+/// below a wide directory leaves behind (`C:\Windows\WinSxS`, a `node_modules`).
+/// Every `mid`, `big`, and the root are blanked to epoch 0, the way a live
+/// new-dir upsert leaves them, so only a roll-up can put them back.
+fn wide_grandparent(db_path: &std::path::Path, writer: &IndexWriter, width: i64) -> Vec<i64> {
+    let mut entries = vec![dir_row(10, ROOT_ID, "big")];
+    let mut listed = vec![ROOT_ID, 10];
+    let mut subs = Vec::new();
+    for index in 0..width {
+        let mid = 100 + index * 3;
+        entries.push(dir_row(mid, 10, &format!("mid-{index}")));
+        entries.push(dir_row(mid + 1, mid, "sub"));
+        entries.push(file_row(mid + 2, mid + 1, "leaf", 1000));
+        listed.extend([mid, mid + 1]);
+        subs.push(mid + 1);
+    }
+    writer.send(WriteMessage::InsertEntriesV2(entries)).unwrap();
+    writer
+        .send(WriteMessage::MarkDirsListed { ids: listed, epoch: 1 })
+        .unwrap();
+    writer
+        .send(WriteMessage::ComputeAllAggregates {
+            source: AggSource::Maps,
+        })
+        .unwrap();
+    settle_the_writer(writer);
+    let conn = IndexStore::open_write_connection(db_path).unwrap();
+    conn.execute(
+        "UPDATE dir_stats SET min_subtree_epoch = 0
+         WHERE entry_id IN (SELECT id FROM entries WHERE parent_id = 10) OR entry_id IN (10, ?1)",
+        [ROOT_ID],
+    )
+    .unwrap();
+    subs
+}
+
+/// **The GitHub issue #1480 guard.** Frontier roots one level BELOW a wide
+/// directory each queue a DIFFERENT parent (`mid-i`), so the set can't coalesce
+/// them, and every one of those chains runs through `big`. Walking each chain to
+/// the root recomputed `big` from all `width` of its children once per chain:
+/// `O(width²)` again, one level up from the case above. A stopped first index of
+/// a Windows `C:` (WinSxS's ~15,000 component folders, each with `f` and `r`
+/// inside) held the writer in one drain for over an hour.
+///
+/// The drain must recompute each directory ONCE, children before parents: `width`
+/// mids, then `big`, then the root.
+#[test]
+fn roots_under_a_wide_grandparent_recompute_it_once() {
+    const WIDTH: i64 = 300;
+
+    let (db_path, _dir) = setup_db();
+    let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
+    let subs = wide_grandparent(&db_path, &writer, WIDTH);
+    let before = writer.rollup_recomputes();
+
+    for sub in subs {
+        writer
+            .send(WriteMessage::ComputeSubtreeAggregates { root_id: sub })
+            .unwrap();
+    }
+    settle_the_writer(&writer);
+
+    let recomputes = writer.rollup_recomputes() - before;
+    assert!(
+        recomputes <= WIDTH as u64 + 2,
+        "{} under one wide grandparent cost {}; each directory must be recomputed once \
+         (the mids, then `big`, then the root), or a wide directory is quadratic again",
+        pluralize(WIDTH as u64, "frontier root"),
+        pluralize(recomputes, "recompute"),
+    );
+
+    let conn = IndexStore::open_read_connection(&db_path).unwrap();
+    let big = IndexStore::get_dir_stats_by_id(&conn, 10).unwrap().unwrap();
+    assert_eq!(
+        (
+            big.recursive_logical_size,
+            big.recursive_file_count,
+            big.recursive_dir_count,
+            big.min_subtree_epoch
+        ),
+        (WIDTH as u64 * 1000, WIDTH as u64, WIDTH as u64 * 2, 1),
+        "one recompute per level still lands the whole truth, coverage included"
+    );
+    let root = IndexStore::get_dir_stats_by_id(&conn, ROOT_ID).unwrap().unwrap();
+    assert_eq!(root.min_subtree_epoch, 1, "and carries it the rest of the way up");
     check_db_consistency(&conn);
 
     writer.shutdown();

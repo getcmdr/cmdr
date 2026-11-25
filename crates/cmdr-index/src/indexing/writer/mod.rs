@@ -557,6 +557,10 @@ impl WriteMessage {
 /// handler stuck in a loop holds everything queued behind it and the open batch's lock.
 const SLOW_MESSAGE: Duration = Duration::from_secs(10);
 
+/// What `BusyOn` and the slow-work warning call the caught-up point's ledger settle
+/// (`pending_rollups::settle_the_ledger`): writer work that belongs to no message.
+const LEDGER_SETTLE: &str = "ledger settle";
+
 // ── IndexWriter handle ───────────────────────────────────────────────
 
 /// Handle for sending messages to the writer thread.
@@ -608,13 +612,13 @@ pub struct IndexWriter {
     /// its own `Arc` clone and always ticks it; only the reader here is test-gated.
     #[cfg_attr(not(test), allow(dead_code, reason = "test-only observable"))]
     idle_epoch: Arc<AtomicU64>,
-    /// How many ancestor roll-up walks the writer has run out of `pending_rollups`.
+    /// How many single-directory roll-up recomputes the writer has run out of `pending_rollups`.
     /// One per drained id, so a test that covers `N` frontier roots under one parent
     /// reads the coalescing straight off it: `N` before the queue existed, a handful
     /// after. The writer thread holds its own `Arc` clone and always counts; only the
     /// reader here is test-gated.
     #[cfg_attr(not(test), allow(dead_code, reason = "test-only observable"))]
-    rollup_walks: Arc<AtomicU64>,
+    rollup_recomputes: Arc<AtomicU64>,
     /// The per-volume fatal-storage-failure signal. The writer thread trips this on
     /// the first fatal DB error (`SQLITE_IOERR` / corruption / full / read-only) and
     /// then exits, rather than logging and retrying forever. Shared with the live
@@ -696,8 +700,8 @@ impl IndexWriter {
         let queue_depth_clone = Arc::clone(&queue_depth);
         let idle_epoch = Arc::new(AtomicU64::new(0));
         let idle_epoch_clone = Arc::clone(&idle_epoch);
-        let rollup_walks = Arc::new(AtomicU64::new(0));
-        let rollup_walks_clone = Arc::clone(&rollup_walks);
+        let rollup_recomputes = Arc::new(AtomicU64::new(0));
+        let rollup_recomputes_clone = Arc::clone(&rollup_recomputes);
         let failure_signal = Arc::new(IndexFailureSignal::new(Arc::clone(&events)));
         let failure_signal_clone = Arc::clone(&failure_signal);
         let busy_on = Arc::new(BusyOn::default());
@@ -722,7 +726,7 @@ impl IndexWriter {
                         mutation_tracker_clone,
                         queue_depth_clone,
                         idle_epoch_clone,
-                        rollup_walks_clone,
+                        rollup_recomputes_clone,
                         failure_signal_clone,
                         busy_on_clone,
                     )
@@ -741,7 +745,7 @@ impl IndexWriter {
             mutation_tracker,
             queue_depth,
             idle_epoch,
-            rollup_walks,
+            rollup_recomputes,
             failure_signal,
             busy_on,
             volume_id: volume_id_shared,
@@ -855,12 +859,12 @@ impl IndexWriter {
         self.idle_epoch.load(Ordering::SeqCst)
     }
 
-    /// How many ancestor roll-up walks the writer has run (see the `rollup_walks`
+    /// How many single-directory roll-up recomputes the writer has run (see the `rollup_recomputes`
     /// field). Against the number of frontier roots covered, this is the coalescing
     /// factor — the scaling guard in `aggregation/tests.rs` reads exactly that.
     #[cfg(test)]
-    pub(crate) fn rollup_walks(&self) -> u64 {
-        self.rollup_walks.load(Ordering::SeqCst)
+    pub(crate) fn rollup_recomputes(&self) -> u64 {
+        self.rollup_recomputes.load(Ordering::SeqCst)
     }
 
     /// Non-blocking send. Unlike `send`, never parks the caller when the channel
@@ -1228,7 +1232,7 @@ fn writer_loop(
     mutation_tracker: Arc<MutationTracker>,
     queue_depth: Arc<AtomicUsize>,
     idle_epoch: Arc<AtomicU64>,
-    rollup_walks: Arc<AtomicU64>,
+    rollup_recomputes: Arc<AtomicU64>,
     failure_signal: Arc<IndexFailureSignal>,
     busy_on: Arc<BusyOn>,
 ) {
@@ -1253,7 +1257,7 @@ fn writer_loop(
     let repairs = DeferredRepairs::new();
     // Ancestors a finished subtree aggregate owes a roll-up, coalesced per burst and
     // drained at the same caught-up point. See `pending_rollups.rs`.
-    let rollups = PendingRollups::new(rollup_walks);
+    let rollups = PendingRollups::new(rollup_recomputes);
     // Coalesces mutations that are ALREADY QUEUED into one transaction, so the live
     // path stops paying a COMMIT + WAL frame write per message. See `batch.rs`.
     let mut batch = ImplicitBatch::new();
@@ -1309,7 +1313,7 @@ fn writer_loop(
         // quit's last writes back, then exit.
         let Some(msg) = msg else {
             batch.close(&conn, &mut probe, &failure_signal, &mut deferred_checkpoint);
-            settle_the_ledger(&conn, &rollups, &repairs);
+            settle_the_ledger(&conn, &rollups, &repairs, &|| false);
             break;
         };
 
@@ -1394,7 +1398,7 @@ fn writer_loop(
             // `Shutdown` is a batch barrier, so the last batch already committed above.
             // Settle before going, or a quit inside a burst leaves the ancestors that
             // burst coalesced permanently short of it.
-            settle_the_ledger(&conn, &rollups, &repairs);
+            settle_the_ledger(&conn, &rollups, &repairs, &|| false);
             log::debug!("Writer: shutdown after processing {} messages", stats.current.total);
             return;
         }
@@ -1472,11 +1476,32 @@ fn writer_loop(
         // failed an original write (a checkpoint, a long reader) has had its chance
         // to clear. This is also where a burst of subtree aggregates pays for its
         // ancestors exactly once, which is what keeps a wide directory linear.
-        if settled && settle_the_ledger(&conn, &rollups, &repairs) {
-            // A roll-up moved ancestor sizes no message handler emitted for, so the
-            // panes would otherwise keep showing the pre-burst number until something
-            // else refreshed them.
-            emit_full_refresh(events.as_ref());
+        //
+        // The settle is work the writer does BETWEEN messages, so it's bracketed like
+        // one: a flush stuck behind it names it, and a long one says so when it ends.
+        // It gives the writer back to a waiting message after a slice
+        // (`pending_rollups.rs`), so a live change never queues behind it for long.
+        let mut owes_more = false;
+        if settled {
+            busy_on.start(LEDGER_SETTLE);
+            let settle_start = Instant::now();
+            let drained = settle_the_ledger(&conn, &rollups, &repairs, &|| queue_depth.load(Ordering::Relaxed) > 0);
+            let took = settle_start.elapsed();
+            busy_on.end();
+            probe.time_in_processing += took;
+            if took >= SLOW_MESSAGE {
+                log::warn!(
+                    "Writer: the {LEDGER_SETTLE} held '{volume_id}' for {:.1} s; everything queued behind it waited",
+                    took.as_secs_f64()
+                );
+            }
+            if drained.moved {
+                // A roll-up moved ancestor sizes no message handler emitted for, so the
+                // panes would otherwise keep showing the pre-burst number until
+                // something else refreshed them.
+                emit_full_refresh(events.as_ref());
+            }
+            owes_more = drained.owes_more;
         }
 
         // The writer is now genuinely caught up for this iteration, so publish it. This
@@ -1484,8 +1509,9 @@ fn writer_loop(
         // out from inside `process_message`, before the two hooks above. `SeqCst` (not
         // `Relaxed`, unlike the heuristic `queue_depth`) so a reader that sees the tick
         // is guaranteed to see the hooks' effects too — a `Relaxed` tick would buy a
-        // rarer race than the fixed sleep it replaces.
-        if settled {
+        // rarer race than the fixed sleep it replaces. A settle that gave the writer
+        // back with roll-ups still owed hasn't settled, so it doesn't tick.
+        if settled && !owes_more {
             idle_epoch.fetch_add(1, Ordering::SeqCst);
         }
     }

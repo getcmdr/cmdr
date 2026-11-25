@@ -44,8 +44,7 @@ each.
   on an empty queue. Every new `WriteMessage` needs a `BatchRole`; a reply, emit, or pragma must be `Barrier`.
 - **`flush_blocking` ≠ settled**: it replies from inside the handler, before the end-of-iteration hourglass clear and
   `settle_the_ledger`. A test reading `dir_stats` back needs `tests::settle_the_writer`; ❌ never move the reply.
-- **The subtree handler QUEUES its ancestor roll-up** (`pending_rollups.rs`), drained at the caught-up point, because
-  repairing per message made a wide directory `O(width²)`. Safe: a repair recomputes from committed children. A quit
-  drains it; a crash mid-burst is a rescan we accept.
+- **The subtree handler QUEUES its ancestor roll-up** (`pending_rollups.rs`), drained when caught up, deepest first,
+  each dir ONCE, yielding to a waiting message. ❌ Never walk each chain alone: a shared wide ancestor goes `O(width²)`.
 
 Depth, the caught-up point, the heal, and maintenance: `DETAILS.md`; read it before non-trivial work here.

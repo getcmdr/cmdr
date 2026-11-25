@@ -468,12 +468,36 @@ routinely — a folder somebody opened stops the group, and so does a search tak
 or a `completion_retry` pass. Queued, the same burst costs ONE walk: 400 roots under one parent measure 1 roll-up, down
 from 400 (`aggregation/tests.rs::a_burst_of_roots_under_one_parent_costs_a_handful_of_rollups`, which pins the ratio).
 
+**The drain is level-ordered: each owed directory is recomputed ONCE, children before parents.** The set only coalesces
+roots that share a PARENT. Roots one level lower each queue a different parent, and every one of those chains runs
+through the same wide grandparent, so walking each chain to the root on its own recomputed that grandparent once per
+chain: `O(W²)` one level up. That held a Windows `C:` writer in one drain for over an hour (GitHub issue #1480: a phase
+stopped with 38,135 folders to walk, and WinSxS's ~15,000 component folders each hold `f` and `r`). The drain therefore
+reads every queued id's chain once (shared prefixes once), orders the owed directories by depth in a max-heap, and pops
+deepest first: a rewrite owes the parent, an agreeing row owes nothing (the per-chain short-circuit, kept), and a parent
+several children owe is in the heap once. The cost is one recompute per directory that needs one: 300 roots under a
+300-child grandparent measure 302 recomputes, down from 601, and the old shape took 2.4 s at 1,000 and over 8 s at 4,000
+on an M-series debug build (`aggregation/rollup_tests.rs::roots_under_a_wide_grandparent_recompute_it_once`).
+`rollup_recomputes` counts single-directory recomputes, so both scaling guards read the same mechanism.
+
+**A drain gives the writer back.** It checks, after each recompute past a 250 ms slice (`DRAIN_SLICE`, the implicit
+batch's cap), whether a message is waiting (`queue_depth > 0`); if one is, what's still owed goes back in the set for
+the next caught-up point, the deferred repairs wait too (they want final rows), and the iteration doesn't tick
+`idle_epoch` (it hasn't settled). So a live change waits about one slice behind a drain, never the whole drain. Exit
+paths never yield. Safe for the same reason deferring is: every recompute is absolute
+(`pending_rollups.rs::tests::a_waiting_message_takes_the_writer_back_and_nothing_owed_is_lost`). Each drain runs in one
+`BEGIN IMMEDIATE` (one commit, not one per rewritten row); if it doesn't commit, everything it was asked for is queued
+again.
+
+**The settle is bracketed like a message.** `BusyOn` names it (`ledger settle`), so a flush stuck behind it says so
+instead of "between messages", and one that holds the writer past `SLOW_MESSAGE` warns when it ends. Before this, work
+between messages was invisible to both the flush-wait line and the heartbeat, which only beats between iterations.
+
 **Why it self-limits rather than trading one stall for another.** The drain runs only when the queue is empty, so while
-the writer is inside an `O(W)` roll-up the walker keeps queueing roots, and every one of them joins the NEXT single
-walk. A burst therefore costs about what the work that filled it cost: the roll-up can at worst double a first index,
-never square it, however wide the directory. The empty queue is also what makes each drain see final rows, which is why
-the trigger is the caught-up point rather than a timer or a size cap (that guardrail lives with the code, in
-`pending_rollups.rs`).
+the writer is inside a roll-up the walker keeps queueing roots, and every one of them joins the NEXT drain. A burst
+therefore costs about what the work that filled it cost. The empty queue is also what makes each drain see final rows,
+which is why the trigger is the caught-up point rather than a timer or a size cap (that guardrail lives with the code,
+in `pending_rollups.rs`); the slice only ever ENDS a drain early, it never starts one.
 
 **Why deferring is race-free.** Four things, and all four have to hold:
 
