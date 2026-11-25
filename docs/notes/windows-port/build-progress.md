@@ -541,3 +541,9 @@ target dirs, about 170 GB on `D:`, plus idle `cmd` windows on the desktop). So:
   script block, so run it through `cmd /c '…'`; and a `ssh -M -S` control socket under the scratchpad's long path
   exceeds the Unix socket limit, so keep it short. Fixtures, the mount point, and the data dir are gone; `cmdr-m6` is
   back on `origin/main`, clean.
+- **2026-11-25, PRs #1447–#1459 on the desktop** (`ecafa5824c`, the warm pair, `CARGO_BUILD_JOBS=2`, a debug app build
+  17 min): `real-windows-check-2026-11-25.md`. Gotchas: injected `mouse_event` drags never start an OLE drag from
+  Explorer here, so drag needs a human; Windows mounts SMB only on port 445, so a non-445 fixture share needs SFTP
+  instead; Cmdr's first network use raises a Firewall prompt that adds two Block rules at once (remove them after); a
+  scale change through `SPI_SETLOGICALDPIOVERRIDE` applies live but leaves a `PerMonitorSettings` key and moves other
+  windows. Fixtures, the data dir, the rules, and the scale change are undone; `cmdr-m6` is on `origin/main`, clean.
