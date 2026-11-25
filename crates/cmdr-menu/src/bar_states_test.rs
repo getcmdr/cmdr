@@ -336,6 +336,7 @@ file_delete_permanently file.deletePermanently@file 1 0 0 1
 rename file.rename@file 1 0 0 1
 multi_rename file.multiRename@file 1 0 1 1
 show_in_finder file.showInFinder@file 1 0 1 1
+open_terminal_here file.openTerminalHere@file 1 0 1 0
 tell_me_about file.tellMeAbout@file 1 0 1 1
 quit app.quit@app 1 1 1 1
 undo_trash edit.undoTrash@file 1 0 1 0

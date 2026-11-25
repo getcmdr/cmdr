@@ -61,8 +61,9 @@ use crate::spec::SortCheck::{self, Column, Order};
 use crate::spec::ViewMode;
 use crate::spec::{
     Accelerator, BarMenu, CheckRole, Entry, EntryKind, Label, NONE, Pane, Platform, Predefined, SEPARATOR, SubmenuRole,
-    SubmenuSpec, check, cmd_or_ctrl, displayed_item, item, labeled_item, macos, macos_menu, macos_only, menu,
-    predefined, same_on_all, shown_off_macos, shown_on_all, shown_split, split, submenu, windows_and_linux,
+    SubmenuSpec, check, cmd_or_ctrl, displayed_item, item, labeled_item, macos, macos_and_windows, macos_menu,
+    macos_only, menu, predefined, same_on_all, shown_off_macos, shown_on_all, shown_split, split, submenu,
+    windows_and_linux,
 };
 use cmdr_sort::{SortColumn, SortOrder};
 
@@ -319,10 +320,14 @@ pub const MENU_BAR: &[BarMenu] = &[
                 SHOW_IN_FILE_MANAGER_KEY,
                 SHOW_IN_FILE_MANAGER_ACCELERATOR,
             ),
-            // Next to Show in Finder: the same gesture aimed at another app. macOS only, like the
-            // launch module behind it. Built enabled; `set_open_terminal_here_enabled` greys it out
-            // while the focused pane sits somewhere a shell can't `cd` into.
-            macos_only(item(OPEN_TERMINAL_HERE_ID, "menu.file.openTerminalHere", macos("F9"))),
+            // Next to Show in Finder: the same gesture aimed at another app. macOS and Windows, like
+            // the launch module behind it. Built enabled; `set_open_terminal_here_enabled` greys it
+            // out while the focused pane sits somewhere a shell can't `cd` into.
+            macos_and_windows(item(
+                OPEN_TERMINAL_HERE_ID,
+                "menu.file.openTerminalHere",
+                same_on_all("F9"),
+            )),
             // Get info and Quick Look open macOS's own panels, so they're macOS only, like the
             // `get_info` and `quick_look` capabilities (the app's `menu/capability_rows_test.rs`
             // keeps the two in step).

@@ -413,6 +413,13 @@ pub const MACOS_ONLY: Platforms = PerPlatform {
     linux: false,
 };
 
+/// On macOS and Windows, for a feature Linux has no backend for yet ("Open terminal here").
+pub const MACOS_AND_WINDOWS: Platforms = PerPlatform {
+    macos: true,
+    windows: true,
+    linux: false,
+};
+
 /// On Windows and Linux, which have no app menu.
 pub const WINDOWS_AND_LINUX: Platforms = PerPlatform {
     macos: false,
@@ -557,6 +564,15 @@ pub const fn submenu(
 pub const fn macos_only(entry: Entry) -> Entry {
     Entry {
         on: MACOS_ONLY,
+        kind: entry.kind,
+    }
+}
+
+/// This row on macOS and Windows alone: a feature with no Linux backend yet, so Linux builds no
+/// row for it (the app's `menu/capability_rows_test.rs` keeps it in step with the capability).
+pub const fn macos_and_windows(entry: Entry) -> Entry {
+    Entry {
+        on: MACOS_AND_WINDOWS,
         kind: entry.kind,
     }
 }

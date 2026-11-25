@@ -311,9 +311,10 @@ menu menu.bar.file
   14 item multi_rename menu.file.multiRename [Ctrl+M] tracked
   15 separator
   16 item show_in_finder menu.file.showInFileManager [Ctrl+Shift+E] tracked
-  17 item tell_me_about menu.file.tellMeAbout [Ctrl+Shift+Enter] tracked
-  18 separator
-  19 item quit menu.file.quit tracked
+  17 item open_terminal_here menu.file.openTerminalHere [F9] tracked
+  18 item tell_me_about menu.file.tellMeAbout [Ctrl+Shift+Enter] tracked
+  19 separator
+  20 item quit menu.file.quit tracked
 menu menu.bar.edit
   0 item undo_trash menu.edit.undoTrash disabled tracked
   1 separator

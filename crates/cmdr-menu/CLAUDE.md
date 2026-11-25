@@ -25,10 +25,11 @@ menus through `cmdr-listing-wasm` (`crates/cmdr-listing-wasm/CLAUDE.md`).
   stale one fails. It also compares what a row SHOWS; off macOS (a page-drawn bar, nothing registers) only that.
 - **macOS's bar never registers a key the page owns** (native text keys), past a row's own built key:
   `page_owned_keys.tsv`, generated like the registry file, ❌ never by hand (`DETAILS.md` § "Keys the page owns").
-- **Three platforms, no leftover**: a row is on every platform, `macos_only`, or `windows_and_linux`; an accelerator is
-  `same_on_all`, `cmd_or_ctrl!`, `macos`, or `split(macos, windows, linux)`, and a shown key is `shown_on_all`,
-  `shown_split`, or `shown_off_macos` (`displayed_item`, or `.shown(…)` where the row registers nothing), each in that
-  platform's spelling. Windows has the Linux bar until its menu model is decided (`DETAILS.md` § "Three platforms").
+- **Three platforms, no leftover**: a row is on every platform, `macos_only`, `macos_and_windows`, or
+  `windows_and_linux`; an accelerator is `same_on_all`, `cmd_or_ctrl!`, `macos`, or `split(macos, windows, linux)`, and
+  a shown key is `shown_on_all`, `shown_split`, or `shown_off_macos` (`displayed_item`, or `.shown(…)` where the row
+  registers nothing), each in that platform's spelling. Windows has the Linux bar until its menu model is decided
+  (`DETAILS.md` § "Three platforms").
 - **A context menu is rows for a set of facts** (`file_menu`, `tab_menu`, …): a new item is a row there plus its lane in
   `context_click`; `every_row_the_crate_builds_has_a_click` fails a row whose pick does nothing. A `Slot` is a group
   only the OS fills (Open with, Share, tags, the provider, Services): the desktop builds it, the demo leaves it out. A

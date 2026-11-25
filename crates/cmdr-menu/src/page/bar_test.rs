@@ -27,6 +27,7 @@ menu menu_file menu.bar.file
   item multi_rename menu.file.multiRename [Ctrl+M|Control+M]
   separator
   item show_in_finder menu.file.showInFileManager [Ctrl+Shift+E|Control+Shift+E]
+  item open_terminal_here menu.file.openTerminalHere [F9|F9]
   item tell_me_about menu.file.tellMeAbout [Ctrl+Shift+Enter|Control+Shift+Enter]
   separator
   item quit menu.file.quit

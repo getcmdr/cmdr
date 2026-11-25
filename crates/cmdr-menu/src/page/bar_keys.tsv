@@ -12,6 +12,7 @@ windows	main	file_delete_permanently	Shift+F8	file.deletePermanently
 windows	main	rename	F2	file.rename
 windows	main	multi_rename	Control+M	file.multiRename
 windows	main	show_in_finder	Control+Shift+E	file.showInFinder
+windows	main	open_terminal_here	F9	file.openTerminalHere
 windows	main	tell_me_about	Control+Shift+Enter	file.tellMeAbout
 windows	main	edit_cut	Control+X	edit.cut
 windows	main	edit_copy	Control+C	edit.copy
