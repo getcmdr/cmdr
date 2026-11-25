@@ -1207,10 +1207,14 @@ identical-looking twin beside the user's entry.
   Every folder + name join on these paths goes typed or by text, never `Path::join`: a new name (the spelled path, a
   forced rename's look-alike, the validity check, a create) through `wire_paths::seam_child`, a listed or minted one (a
   compress landing, a bulk rename's hop temp, the respell compare) through `unique_name::sibling_in`; on Windows
-  `Path::join` put a `\` into a remote `/share`, which a store keyed by app paths reads as ONE name in `/`. Local root
-  renames skip all of it. A target that matched the SOURCE in another case (Samba and a QNAP fold case) is settled from
-  the same listing (`ListedFolders::entries_in`): source's name listed, target's not, so it's a case-only rename of one
-  file and F2 asks nothing.
+  `Path::join` put a `\` into a remote `/share`, which a store keyed by app paths reads as ONE name in `/`. Every split
+  of such a path into folder and name goes by the app path too (`look_alike.rs::folder_and_name`,
+  `rename/bulk.rs::folder_of`, the bulk rows' names via `label_of`): on Windows `Path` read a POSIX volume's
+  `/share/a\b.txt` as `b.txt` in `/share/a`, so a rename or bulk rename to it landed in that other folder, a bulk row to
+  it was refused as changing folders, and a share that refuses `\` passed it. Local root renames skip all of it. A
+  target that matched the SOURCE in another case (Samba and a QNAP fold case) is settled from the same listing
+  (`ListedFolders::entries_in`): source's name listed, target's not, so it's a case-only rename of one file and F2 asks
+  nothing.
 - **Respelling can land on an exact name.** `place_new_entry` answers `Free(spelled)` when the folder holds the SPELLED
   name byte for byte (`among` treats an exact entry as "no look-alike"); a create or rename then hears the backend's
   `AlreadyExists`. A write that would REPLACE silently instead must ask `look_alike_in` with the ASKED name, which finds

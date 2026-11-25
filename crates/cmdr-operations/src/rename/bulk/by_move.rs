@@ -15,18 +15,18 @@
 //!   every other approved operation is (`source_binding.rs`).
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::plan::{RenamePlanStep, build_execution_plan, spelled_destinations};
-use super::{BulkRenameRow, RenameStartError};
+use super::{BulkRenameRow, RenameStartError, folder_of};
 use crate::event_sinks::OperationEventSink;
 use crate::routed_writes::{first_routed, routed_transfer_refusal};
 use crate::source_binding::ExpectedSources;
+use crate::transfer::volume::label_of;
 use crate::transfer::volume::{PathRole, unregistered_volume_error};
 use crate::types::{ConflictResolution, HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationStartResult};
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::twin_path;
 use cmdr_fs::volume::{RenameWork, Volume};
 use cmdr_operation_log::types::Initiator;
 
@@ -148,16 +148,12 @@ impl crate::Operations {
     ) -> Result<RenamesStarted, RenameStartError> {
         if rows
             .iter()
-            .any(|row| twin_path::folder_of(&row.source) != twin_path::folder_of(&row.destination))
+            .any(|row| folder_of(&row.source) != folder_of(&row.destination))
         {
             return Err(RenameStartError::NotInOneFolder);
         }
         let rows = spelled_destinations(volume, rows);
-        let Some(parent) = rows
-            .first()
-            .and_then(|row| twin_path::folder_of(&row.source))
-            .map(Path::to_path_buf)
-        else {
+        let Some(parent) = rows.first().and_then(|row| folder_of(&row.source)) else {
             return Err(RenameStartError::NothingToRename);
         };
         let (renames, left_out) = move_order(&rows);
@@ -206,13 +202,15 @@ fn move_order(rows: &[BulkRenameRow]) -> (Vec<(AppPathBuf, String)>, Vec<usize>)
         match step {
             RenamePlanStep::Direct(index) | RenamePlanStep::CaseOnly(index) => {
                 let row = &rows[index];
-                let Some(name) = row.destination.file_name() else {
+                // The app path's own last name: a POSIX volume's `a\b.txt` is one name on
+                // every host, where Windows' `Path` read it as `b.txt`.
+                let Some(name) = label_of(&crate::wire_paths::seam_path(&row.destination)) else {
                     left_out.push(index);
                     continue;
                 };
                 // The move start's one crossing for a row, until `BulkRenameRow` is typed.
                 let source = crate::wire_paths::seam_path(&row.source).into_owned();
-                moves.push((source, name.to_string_lossy().into_owned()));
+                moves.push((source, name));
             }
             RenamePlanStep::Cycle(indices) => left_out.extend(indices),
         }
@@ -266,5 +264,24 @@ mod tests {
         assert_eq!(moves, vec![(app_path!("/d/old").to_owned(), "new".to_string())]);
         left_out.sort_unstable();
         assert_eq!(left_out, vec![0, 1]);
+    }
+
+    /// A POSIX volume's `\` is a name character on every host: the new name is the whole
+    /// `x\b`, and the folder the move lands in is `/d`, where Windows' `Path` read `b` in
+    /// `/d/x`.
+    #[test]
+    fn a_backslash_name_moves_as_one_name_in_its_own_folder() {
+        for name in ["x\\b", "foo\\..", "..\\bar", "a:b", "trail.", "trail ", "C:\\x"] {
+            let rows = vec![row("1", "/d/x\\a", &format!("/d/{name}"))];
+            let (moves, left_out) = move_order(&rows);
+            assert_eq!(
+                moves,
+                vec![(app_path!("/d/x\\a").to_owned(), name.to_string())],
+                "{name:?}"
+            );
+            assert!(left_out.is_empty());
+            assert_eq!(folder_of(&rows[0].source), Some(PathBuf::from("/d")));
+            assert_eq!(folder_of(&rows[0].destination), Some(PathBuf::from("/d")), "{name:?}");
+        }
     }
 }
