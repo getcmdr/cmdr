@@ -200,3 +200,119 @@ desktop, plus what the 2026-11-23 pass owed. Refs #942.
   lists nothing, no firewall rule or prompt for `cmdr.exe`, no Recent shortcuts, `D:\w1481`, `C:\Users\Admin\w1481`, and
   this run's job folders removed, `cmdr-m6` back on `origin/main` (`63cea1bd89`) clean (`D:\targets\m6` holds the fix's
   build), David's Task Manager left open.
+
+## Second pass (2026-11-25, later)
+
+A check of what landed after the first pass: PRs #1461, #1462, #1463, #1465, #1471, #1473, #1483, #1485, #1486, #1488,
+and #1493.
+
+- **Build**: `main` at `3c2a8dea4c` (all eleven merged; PR #1490 still open) in the warm pair, `CARGO_BUILD_JOBS=2`,
+  `pnpm tauri build --debug --no-bundle` through `run-on-desktop.sh` (17 min, 15m 33s in cargo).
+- **How it ran**: as the first pass: a fresh `CMDR_DATA_DIR` (`D:\w1125b\data`, wiped between the two index runs), MCP
+  over `ssh -L`, the same PowerShell driver in Admin's session, fixtures under `C:\Users\Admin\w1125b`. Mappings and
+  `subst` ran in Admin's desktop session. No USB stick plugged in. Screenshots in the session scratchpad's `shots2/`.
+
+### A. Index stall (#1480, PR #1485): pass, #1480 closed
+
+- **Run 1** (nothing opened during the walk): home, then the whole volume, 677,672 entries in 260.2 s, "covered end to
+  end". Heartbeats on `root` every 5.0–5.4 s except one 44.9 s gap:
+  `one ComputeSubtreeAggregates held 'root' for 42.2 s` (237,830 dirs under one frontier root). Then the ledger heal:
+  `ComputeAllAggregates: done, 257146 directories in 51.4s`, `one PayLedgerIfUnpaid held 'root' for 51.4 s`, two
+  `Waited 30 s … to flush` warnings, and a live batch waiting 51.0 s (`process_live_batch_slow`). No drain yielded.
+- **Run 2** (wide folders opened during the whole-volume walk: `WinSxS`, `Program Files`, `ProgramData`, then test
+  folders): the walk stopped as in #1480, `Phases: 'root' stops with 2 folders still to walk` at 08:56:16.7, after
+  562,503 entries in 684.6 s.
+  - Heartbeats every ~5 s; gaps of 12.0 s and 11.5 s (two 10.7 s subtree aggregates) and 52.3 s (the heal's
+    `PayLedgerIfUnpaid`, after the phases restarted).
+  - 1,267 `Ancestor roll-up:` drains, 271 ending with folders left (yielded), 49 "nothing moved". The largest: 1,057
+    newly queued, chains read in 25 ms, 256 recomputes in 250 ms, 801 left; the longest chain read of any yielded drain
+    25 ms; peak `rollups_owed` 801.
+  - From about 08:51 to 08:56 one or two folders stayed owed (`still owes 1 directory … after 60 s and 58 drains` up to
+    `after 242 s and 220 drains`): each drain did ONE recompute in 470–750 ms, a wide parent re-owed by each newly
+    walked child. It never stalled the writer.
+  - **Time to settled**: the last owing drain ended 0.3 s before the stop line, and the first beat after it (08:56:22.0)
+    reads `rollups_owed=0`: at most 5.3 s.
+- **Live changes**: create, rename, and delete in `w1125b\live` showed in `list_dir` (`source: index`) within 0.3–1.0 s
+  of the command returning, during run 1's walk and after run 2 settled (`indexStatus: fresh`, authoritative).
+- **Exactness**: after each clean quit, `drift_audit_against_a_copied_index` on a copy of `index-root.db` (+ `-wal`),
+  run on the Mac: pass both times.
+- **Filed**: the 42–52 s single-message holds, during which live changes and flushes wait (#1499, low).
+
+### B. Drive notifications (PRs #1463, #1493): 7 pass, 1 fail
+
+- Pass: `Watching for drives arriving and leaving` at startup.
+- Pass: `net use W: \\localhost\C$\Users\Admin\w1125b`: `Volume Arrived: ['W'] (… network true)`, `Drive arrived` 0.27 s
+  later, in `list_volumes` 1.3 s after the command, as `w1125b (\\localhost\C$\Users\Admin) (W:)` (Explorer's name),
+  `indexStatus: off`. `W:/` lands on that volume (`smb-localhost-c-users-admin-w-…`).
+- Pass: `net use W: /delete` removed the row 0.26 s after the notice, and the pane on `W:/` fell back to `~`.
+- Fail, #1492 reopened: a pane on `//localhost/C$/Users/Admin/w1125b` with `W:` mapped to the whole share: on unmap the
+  backend logs `Keeping share //localhost/C$/: its mapped letter went, the share still answers` and
+  `still serves from its active root`, yet the pane goes to `~` 110 ms later (three times).
+- Pass: `subst X: C:\Users\Admin\w1125b` makes an `X:` row (`path-x-…`, local, not indexed), `X:/` lands on it, and
+  `subst X: /d` removes it and the pane falls back.
+- Pass: quit with `W:` mapped: the process was gone within 1.4 s of the quit call.
+
+### C. USB stick: not checkable
+
+- No stick plugged in. "Safely remove" isn't scriptable, and PR #1490 (eject) isn't on this commit.
+
+### D. Open with, F4, terminal (PR #1462): 9 pass, 1 fail
+
+- Fail, #1498: the Open with submenu draws no app icons (`.txt`: "Notepad (default)", "WordPad", "Choose another app";
+  `.jpg`: "Photos (default)", "Snip & Sketch", "Paint 3D", "Paint", …), three menus in a row. Settings' "Edit files in"
+  draws the same handlers' icons.
+- Pass: the default is marked; picking WordPad opened `note.txt` in WordPad; `.json` offers only "Choose another app"
+  (Windows has no handler for it); Open with is greyed for `.exe`, `.bat`, and `.lnk`.
+- Pass: F4 on "System default" opens `data.json` and `marker.bat` in Notepad; the `.bat` never ran (its marker file
+  never appeared).
+- Pass: "Edit files in" lists "System default (Notepad)", "WordPad", and "Choose an app…", with icons.
+- Pass: F9 with the default opens Windows PowerShell in the pane's folder (`PS C:\Users\Admin\w1125b\openwith>`; no
+  Windows Terminal or `pwsh` installed); with Command Prompt, `cmd` in the folder; Command Prompt on
+  `\\localhost\C$\…\openwith` shows "Command Prompt can't start in a network folder…" and starts nothing.
+
+### E. Icons round two (PR #1473): 7 pass, 1 fail
+
+- Pass: a `.lnk` to Paint draws Paint's icon with the arrow, readable at 100 %; a `.lnk` to `\\localhost\C$\…\calc.exe`
+  draws the generic page with the arrow.
+- Pass: the volume picker draws the Windows-logo drive on `C:` and a globe on the mapped `W:`.
+- Pass: a read-only folder whose `desktop.ini` names a local `red.ico` draws it.
+- Pass, security: a read-only folder whose first `IconResource=` is `\\192.0.2.1\x\a.ico` (a local one after it) and one
+  with `CLSID2=` plus `IconFile=\\192.0.2.1\x\b.ico` both draw the generic folder. `Get-NetTCPConnection` showed nothing
+  to `192.0.2.1` or to port 445 and `Get-SmbConnection` was empty before, after listing them, and at the end.
+- Pass: on Cmdr gold, Desktop, Documents, Downloads, Music, Pictures, and Videos keep their own icons.
+- Fail, #1479 reopened: on Cmdr gold, 3D Objects, Contacts, Favorites, Links, OneDrive, Saved Games, and Searches turn
+  into plain gold folders; on "System theme color" they draw their icons (twice).
+
+### F. Small fixes (PR #1488): 3 pass
+
+- Pass: Ctrl+V on an empty clipboard shows the quiet "No files on the clipboard. Copy files first with Ctrl+C."
+- Pass: Cmdr Ctrl+X, Explorer Ctrl+V (moved), then Cmdr Ctrl+V: the same quiet note, and the clipboard is empty after.
+- Pass: `%APPDATA%\com.veszelovszki.cmdr\license.json` kept its size, modified time (05:27:29 UTC), and SHA-256 across
+  both quits.
+
+### G. Engine (PRs #1465, #1486): 3 pass, remote half not reached
+
+- Pass: New folder with `a\b` is refused ("Folder names here can't contain "\""), OK greyed; rename to `x\y` is refused
+  (red outline, nothing renamed on disk); a new folder `newdir` gets the cursor.
+- Not reached: the SFTP half (a top-level remote `top\level.txt` to a local and a remote folder, the conflict Rename on
+  `a\b.txt`). Adding an SFTP server takes the Servers UI or a `propose_server` approval with a typed password, which
+  didn't fit the time.
+- Seen: Enter sent about 0.1 s after retyping a valid name over an invalid one in New folder did nothing; with a 1 s
+  pause it created the folder.
+
+### H. Crash capture (PR #1471): not checkable
+
+- The repo documents no debug command or environment variable that crashes a dev build on purpose.
+
+### I. Store kind (PR #1461): pass
+
+- Settings > Updates & privacy shows "Check for updates" and the usual toggles, no Store or package wording.
+
+### Mami after the second pass
+
+- Cmdr quit; no `cmdr`, `cargo`, `node`, Notepad, WordPad, PowerShell, `cmd`, or Explorer window of this run left.
+- `net use` and `subst` in Admin's session list nothing; the display scale wasn't touched; no firewall rule or prompt
+  for `cmdr.exe`; the clipboard is empty; nothing went to the Recycle Bin.
+- `C:\Users\Admin\w1125b`, `D:\w1125b` (data dir, build log, driver), this run's job folders, and the three Recent
+  shortcuts it made removed. The private SFTP container on the Mac removed.
+- `cmdr-m6` on `origin/main` (`3c2a8dea4c`), clean; David's Task Manager and Settings windows left open.
