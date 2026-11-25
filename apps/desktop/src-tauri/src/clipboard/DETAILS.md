@@ -151,3 +151,7 @@ markdown sniff, and the flavor mapping are unit-testable with no Tauri runtime o
   and reports its end (the file, or the typed refusal) on `clipboard-paste-settled`, never a timeout that drops the
   write. The reply and event types (`PasteClipboardReply`, `ClipboardPasteSettled`) live in `mod.rs` beside
   `PastedClipboardFile`, so the non-macOS stub shares them.
+- **Windows and Linux** read no content yet (`platform/unsupported.rs`), so their `paste_as_file` answers `Done { file:
+  None }`, macOS's answer for an empty clipboard: a Ctrl+V with no files shows the quiet "No files on the clipboard"
+  note. ❌ Never a `NotSupported` refusal: the frontend renders a refusal as a red "couldn't create a file" toast with a
+  report button (#1477, seen on Windows 10 22H2, 2026-11-25).

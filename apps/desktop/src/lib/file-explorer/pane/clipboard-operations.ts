@@ -156,10 +156,17 @@ function clipboardFilesRefusalMessage(error: unknown): string | null {
   return null
 }
 
-/** Tells the person about a clipboard refusal they can act on, and logs every one. */
+/**
+ * Tells the person about a clipboard refusal they can act on, and logs every one: a refusal the
+ * toast explains is an expected state (a warning), anything else an error.
+ */
 function reportClipboardFailure(what: string, error: unknown): void {
   const message = clipboardFilesRefusalMessage(error)
-  if (message !== null) addToast(message, { level: 'warn' })
+  if (message !== null) {
+    addToast(message, { level: 'warn' })
+    log.warn('{what} refused: {error}', { what, error })
+    return
+  }
   log.error('{what} failed: {error}', { what, error })
 }
 

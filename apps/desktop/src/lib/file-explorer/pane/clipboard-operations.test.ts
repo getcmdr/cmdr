@@ -217,6 +217,8 @@ describe('clipboard refusals a person can act on', () => {
     ).copyToClipboard()
 
     expect(addToastSpy).toHaveBeenCalledWith(expect.stringContaining('“dup.”'), { level: 'warn' })
+    // An expected refusal the toast explains isn't an error: no backtrace, no error-report line.
+    expect(logErrorSpy).not.toHaveBeenCalled()
   })
 
   it('says another app holds the clipboard when a cut can’t reach it', async () => {
