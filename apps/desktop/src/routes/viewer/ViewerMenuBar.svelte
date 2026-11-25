@@ -56,8 +56,8 @@
             })
     })
 
-    function pick(menuId: string, via: BarPickVia): void {
-        pickMenuBarItem(menuId, via).catch((error: unknown) => {
+    function pick(menuId: string, via: BarPickVia, textField: HTMLElement | null = null): void {
+        pickMenuBarItem(menuId, via, textField).catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }
@@ -84,8 +84,8 @@
         revealOnly={layout === 'barOnAlt'}
         ariaLabel={tString('ui.menuBar.label')}
         keyScope="Viewer window"
-        onPick={(menuId: string, via: BarPickVia) => {
-            pick(menuId, via)
+        onPick={(menuId: string, via: BarPickVia, textField: HTMLElement | null) => {
+            pick(menuId, via, textField)
         }}
         onFocusOrigin={(origin: Element | null) => {
             focusOrigin = origin

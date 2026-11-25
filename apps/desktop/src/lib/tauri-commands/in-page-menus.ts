@@ -28,16 +28,25 @@ const log = getAppLogger('inPageMenus')
 
 /**
  * A pick from the in-page bar (the main bar's or the viewer's), run by the handler a native click
- * reaches. A row that edits the focused text field comes back as `textEdit`, since only the page
- * can reach its field: the edit runs here, on the field that holds focus (the bar has handed it
- * back by the time a pick is sent), as the text-field menu runs its own (`#lib/context-menu`).
- * `via`: `pick` for the person's own pick of a row, `key` for a chord a window fires (a file-moving
- * row's key stays refused in a text field, its pick doesn't: `routes/(main)/text-field-gate.ts`).
+ * reaches. `via`: `click` for the person's click on a row, `key` for the menu's own keys or a chord
+ * a window fires (a file-moving row's key stays refused in a text field, its click doesn't:
+ * `routes/(main)/text-field-gate.ts`).
+ *
+ * `textField` is the field the menu was opened over (it kept focus the whole time), or null. It's
+ * the pick's target, decided as the menu opened: an Edit row comes back as `textEdit` and runs on
+ * that field alone, and only while it still holds focus, and a key's pick never runs one of
+ * `FILE_MOVING_COMMAND_IDS` in the main window, whatever has focus by the time the command lands
+ * (#1464; the text-field gate, `routes/(main)/text-field-gate.ts`, has the set). Without one, a
+ * `textEdit` runs on whatever field holds focus (the viewer's search box), as before.
  */
-export async function pickMenuBarItem(menuId: string, via: BarPickVia): Promise<BarPickOutcome> {
-  const outcome = await commands.pickMenuBarItem(menuId, via)
+export async function pickMenuBarItem(
+  menuId: string,
+  via: BarPickVia,
+  textField: HTMLElement | null = null,
+): Promise<BarPickOutcome> {
+  const outcome = await commands.pickMenuBarItem(menuId, via, textField ? 'textField' : 'elsewhere')
   if (outcome.kind === 'textEdit') {
-    const target = textTargetOf(document.activeElement)
+    const target = textTargetOf(textField ?? document.activeElement)
     if (target.kind === 'field') await runTextFieldEdit(target.field, outcome.edit, { readClipboardText })
   }
   return outcome

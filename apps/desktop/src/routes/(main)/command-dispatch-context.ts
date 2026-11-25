@@ -21,6 +21,12 @@ import type { ExplorerAPI } from './explorer-api'
  * - `barClick`: an `execute-command` from a row the person clicked on a bar the page draws or its
  *   main-menu button (off macOS; `road: barClick`). Never a key: the open menu's own keys arrive as
  *   `menu`, and a chord a bar row shows as `keyboard` in this window and as `menu` from another.
+ * - `barKeyInTextField`: an `execute-command` from a row a KEY picked on a bar the page draws (or
+ *   its main-menu button) that took the keyboard from a text field (`road: barKeyInTextField`).
+ *   The text-field gate refuses a `FILE_MOVING_COMMAND_IDS` command from it whatever has focus
+ *   when it lands, since the pick was aimed at the field (#1464). It is NOT `menu` for the checks
+ *   that compare to `'menu'`: an open dialog's menu claim (`runMenuClaim`), the keyboard+menu
+ *   double-fire dedup (a page bar never double-fires), and onboarding's "used the menu" tally.
  * - `contextMenu`: an `execute-command` from a right-click menu's own row (`road: contextMenu`).
  *   Only rows with an id the bar doesn't share say so (today "Tell me about this"); a context row
  *   sharing the bar's id arrives as `menu`.
@@ -33,6 +39,7 @@ export const DISPATCH_SOURCES = [
   'keyboard',
   'menu',
   'barClick',
+  'barKeyInTextField',
   'contextMenu',
   'mouse',
   'palette',

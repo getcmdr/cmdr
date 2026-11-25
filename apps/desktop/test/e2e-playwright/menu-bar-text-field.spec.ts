@@ -5,6 +5,10 @@
  * letter once opened File > Delete from a field (review of #1281), and with "Skip confirmation" on
  * that trashes with no prompt. Real X keys and clicks only (`helpers/x11-keys.ts`), every letter
  * read off the menu's own underlines, so no label is read.
+ *
+ * Regression anchor (#1464): the bar taking the keyboard re-ran an explorer focus effect that pulled
+ * focus from the field into the file list, and the stray-Alt pick then trashed `file-b.txt`. A
+ * pick's target is now where focus was when the menu opened, and the effect no longer re-runs.
  */
 import os from 'node:os'
 import { test, expect } from './fixtures.js'

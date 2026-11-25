@@ -43,10 +43,11 @@ export function createMainMenus(): MainMenus {
 
 /**
  * Runs a row the bar or the main-menu button picked, as a native click would. `via` says whether a
- * pointer click or a key picked it, which the text-field gate needs (`text-field-gate.ts`).
+ * pointer click or a key picked it, which the text-field gate needs (`text-field-gate.ts`), and
+ * `textField` is the field the menu was opened over, the pick's target (`pickMenuBarItem`).
  */
-export function pickMainMenuRow(menuId: string, via: BarPickVia): void {
-  pickMenuBarItem(menuId, via).catch((error: unknown) => {
+export function pickMainMenuRow(menuId: string, via: BarPickVia, textField: HTMLElement | null): void {
+  pickMenuBarItem(menuId, via, textField).catch((error: unknown) => {
     log.warn("Couldn't run a menu bar pick: {error}", { error })
   })
 }

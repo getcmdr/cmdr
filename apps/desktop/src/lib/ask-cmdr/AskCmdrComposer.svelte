@@ -47,10 +47,13 @@
     let dragOver = $state(false)
 
     // Focus the composer when it mounts (the rail mounts on open, so opening focuses here), and
-    // again on each `requestComposerFocus()` (New chat, the sessions panel closing).
+    // again on each `requestComposerFocus()` (New chat, the sessions panel closing). The `.focus()`
+    // is untracked: focus handlers run inside it, and the `$state` they read (the menu bar's
+    // `active`) would re-run this and pull focus from wherever the person is typing (#1464).
     $effect(() => {
         dependOn(askCmdrState.composerFocusRequest)
-        textarea?.focus()
+        const box = textarea
+        untrack(() => box?.focus())
     })
 
     // A draft handed over for this composer (`openNewChatWith`): take it once, then clear it, so a

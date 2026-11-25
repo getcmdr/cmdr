@@ -147,7 +147,15 @@
         // Restore focus to wherever it was before we opened (the focused pane's list, by
         // way of the explorer, after a "Switch pane" too). Without this, focus falls to
         // <body> after close and keyboard nav stops working until the user clicks back in.
-        restoreFocus(focusOrigin, { leaving: overlayElement })
+        // A microtask later, out of the teardown: Svelte hands a teardown the values state had
+        // BEFORE the change being flushed, so the focus handlers this restore runs read the old
+        // focused pane after a "Switch pane" and put focus back on the pane it left (Linux E2E,
+        // `keyboard-focus.spec.ts`; an explorer effect that re-ran on every focus move hid it).
+        const origin = focusOrigin
+        const leaving = overlayElement
+        queueMicrotask(() => {
+            restoreFocus(origin, { leaving })
+        })
         announceCount.cancel()
     })
 

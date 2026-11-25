@@ -57,7 +57,13 @@ export function createListFocus(deps: ListFocusDeps): ListFocus {
   // pane now shows none), both only while focus is adrift (`isFocusAdrift`).
   $effect(() => {
     const listbox = deps.getListbox()
-    if (listbox && untrack(deps.isFocusedPane) && isFocusAdrift()) focusLaidOut(listbox)
+    // The focus is untracked: the focus handlers it runs must not hand their `$state` reads to
+    // this effect, which would then re-run on them (#1464, `pane/DETAILS.md` § Focus model).
+    if (listbox && untrack(deps.isFocusedPane) && isFocusAdrift()) {
+      untrack(() => {
+        focusLaidOut(listbox)
+      })
+    }
   })
   $effect(() => () => {
     // After the flush, so the replacement list (if any) is mounted and bound.

@@ -379,7 +379,9 @@
         const el = submenuEl
         if (!el || submenuPosition === null || !menu.submenuEntered) return
         if (el.contains(document.activeElement)) return
-        submenuDescendant.focus(el, untrack(() => (submenuActiveValue === null ? undefined : submenuRowId(submenuActiveValue))))
+        untrack(() => {
+            submenuDescendant.focus(el, submenuActiveValue === null ? undefined : submenuRowId(submenuActiveValue))
+        })
     })
 </script>
 

@@ -57,6 +57,11 @@ pub enum CommandRoad {
     /// not a chord and not the open menu's own keys, so this alone lets a file-moving row run with
     /// a text field focused (`routes/(main)/text-field-gate.ts`).
     BarClick,
+    /// A key picked a row of a bar the page draws (or of its main-menu button) that took the
+    /// keyboard from a text field. The main window refuses a file-moving command from it whatever
+    /// holds focus by the time it lands: the pick was aimed at the field, and focus moving on in
+    /// the meantime can't hand the command to the file list (#1464).
+    BarKeyInTextField,
 }
 
 /// `queue-select-all`: Edit > Select all (⌘A) while the operation queue window

@@ -116,15 +116,18 @@ async function setup(
   const picked: string[] = []
   /** How each pick came, in `picked`'s order: a pointer click, or a key. */
   const vias: BarPickVia[] = []
+  /** The text field each pick says the bar was opened over, in `picked`'s order. */
+  const fields: (HTMLElement | null)[] = []
   const target = document.createElement('div')
   document.body.append(target)
   const component = mount(MenuBar, {
     target,
     props: {
       menus: props.menus ?? MENUS,
-      onPick: (id: string, via: BarPickVia) => {
+      onPick: (id: string, via: BarPickVia, textField: HTMLElement | null) => {
         picked.push(id)
         vias.push(via)
+        fields.push(textField)
       },
       ariaLabel: 'Menu bar',
       flavor: props.flavor ?? 'desktop',
@@ -137,7 +140,7 @@ async function setup(
     void unmount(component)
   })
   await settle()
-  return { picked, vias, bar: target.querySelector<HTMLElement>('[role="menubar"]') }
+  return { picked, vias, fields, bar: target.querySelector<HTMLElement>('[role="menubar"]') }
 }
 
 /** Lets the placement pass and the focus effect run. */
@@ -571,6 +574,34 @@ describe('MenuBar keys on Windows', () => {
     expect(document.activeElement).toBe(field)
     expect(field.hasAttribute('aria-activedescendant')).toBe(false)
     expect(blurs).toBe(0)
+  })
+
+  // Regression anchor (#1464): an app effect pulled focus from the field into the file list while
+  // the menu was open, and the pick, read against focus on arrival, deleted or cut the file. The
+  // target is the field the bar took the keyboard from, decided then and carried with the pick.
+  it('hands each pick the text field it was opened over, even once focus moved on, and null elsewhere', async () => {
+    const field = document.createElement('input')
+    document.body.append(field)
+    field.focus()
+    const { picked, fields } = await setup()
+
+    titles()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    await settle()
+    const list = pane()
+    expect(document.activeElement).toBe(list)
+    rows()[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+    rows()[1].click()
+    await settle()
+    expect(picked).toEqual(['file_rename'])
+    expect(fields).toEqual([field])
+
+    // From the list, a pick names no field.
+    list.focus()
+    down('f', { code: 'KeyF', altKey: true })
+    await settle()
+    await press('Enter')
+    expect(picked).toEqual(['file_rename', 'file_rename'])
+    expect(fields).toEqual([field, null])
   })
 
   it('opens a hovered submenu after the menu delay, not at once', async () => {

@@ -12,8 +12,8 @@ it; feature must-knows live in each directory's colocated `CLAUDE.md`, and the m
 - Global CSS is `app.css` (tokens, base) plus `app-field` / `app-utilities` / `app-tooltip` / `app-file-list`, loaded
   AFTER it by `routes/+layout.svelte`. Never `@import` those four: that hoists and inverts the cascade.
 - ❌ Never write a raw `line-height` number (stylelint rejects all but `0`). Leading comes from the
-  `--font-line-height-*` tokens, which text surfaces inherit, so a component usually writes nothing. Which token where:
-  `docs/design-system.md` § Leading; who inherits what: `DETAILS.md` § Leading.
+  `--font-line-height-*` tokens, which text surfaces inherit. Which token where: `docs/design-system.md` § Leading; who
+  inherits what: `DETAILS.md` § Leading.
 - A frosted-glass surface uses the `--color-bg-glass` / `--glass-backdrop` / `--color-border-glass` tokens: they follow
   the Liquid Glass slider and go opaque under the `html.reduce-transparency` CLASS, ❌ never
   `@media (prefers-reduced-transparency)` (WKWebView ignores it). `DETAILS.md` § Glass material.
@@ -23,6 +23,7 @@ it; feature must-knows live in each directory's colocated `CLAUDE.md`, and the m
 - A new user-facing action needs its id in `COMMAND_IDS`, a `command-registry.ts` entry, and a handler in
   `routes/(main)/command-handlers/` (a missing one is a compile error). `cmdr/no-raw-command-dispatch`;
   `lib/commands/CLAUDE.md`.
+- ❌ `untrack` a focus call in a `$effect` (`cmdr/no-tracked-focus-in-effect`, `lib/file-explorer/pane/DETAILS.md`).
 - ❌ A keydown handler matches the WHOLE combo — `eventMatchesCommand(e, 'some.command')` from `#lib/shortcuts` — never
   a hand-rolled `e.key === 'a' && e.metaKey`: that's a modifier SUPERSET, so `⌥⌘A` fires it too
   (`cmdr/no-raw-key-match`). See `lib/shortcuts/CLAUDE.md`.
@@ -34,8 +35,7 @@ it; feature must-knows live in each directory's colocated `CLAUDE.md`, and the m
   (set it on the wrapping span). Custom glyphs, the Debug "Graphics" catalog, other Iconify sets:
   `docs/guides/icons.md`.
 - ❌ A size or duration becomes text in ONE place: `#lib/units` (`formatByteSize` / `formatDuration`), `<Size bytes>` in
-  markup. Never a private `formatBytes` or a `1024` ladder: four copies once drifted and two windows disagreed.
-  `cmdr/no-private-unit-format`.
+  markup, ❌ never a private `formatBytes` or `1024` ladder (four copies drifted). `cmdr/no-private-unit-format`.
 - A `lib/ui/` wrapper takes its `@ark-ui/svelte` component's name, 1:1 (raise any divergence). Feature code imports the
   wrapper, never `@ark-ui/svelte` (`cmdr/no-raw-ark-import`).
 - **Every window, pane, dialog, and rail has an error boundary**: a route dialog's `{#if}` goes INSIDE a

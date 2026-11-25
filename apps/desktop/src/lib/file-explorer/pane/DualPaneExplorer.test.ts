@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { flushSync, mount, unmount } from 'svelte'
 import { tick } from 'svelte'
 import DualPaneExplorer from './DualPaneExplorer.svelte'
+import MenuBar from '#lib/ui/MenuBar.svelte'
+import { withConventions } from '#lib/platform/test-platform.js'
 
 // Mock the app-status-store to avoid Tauri dependency in tests
 vi.mock('#lib/app-status-store.js', () => ({
@@ -310,6 +312,69 @@ describe('DualPaneExplorer', () => {
     expect(unlistens.filter((unlisten) => unlisten.mock.calls.length === 0)).toHaveLength(0)
     expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('derived_inert'))
     warn.mockRestore()
+  })
+})
+
+describe('DualPaneExplorer and focus it does not own', () => {
+  // Regression anchor (#1464, Linux E2E): the startup effect that puts focus on the pane also
+  // tracked every `$state` read by the focus handlers its `.focus()` ran synchronously, the menu
+  // bar's `active` among them. So the bar taking the keyboard re-ran it, which pulled focus out of
+  // the text field the bar was opened from: the inline rename ended, and File > Delete or
+  // Edit > Cut then acted on the file list.
+  it('leaves focus in a text field when the menu bar takes the keyboard from it', async () => {
+    withConventions('windows')
+    const barTarget = document.createElement('div')
+    document.body.append(barTarget)
+    const bar = mount(MenuBar, {
+      target: barTarget,
+      props: {
+        menus: [
+          {
+            id: 'menu_file',
+            title: { text: 'File' },
+            rows: [
+              {
+                kind: 'item',
+                id: 'file_delete',
+                label: { text: 'Delete' },
+                shortcut: null,
+                ariaKeyshortcuts: null,
+                enabled: true,
+              },
+            ],
+          },
+        ],
+        onPick: () => {},
+        ariaLabel: 'Menu bar',
+        flavor: 'desktop',
+      },
+    })
+    flushSync()
+    const target = document.createElement('div')
+    document.body.append(target)
+    const explorer = mount(DualPaneExplorer, { target })
+    try {
+      for (let i = 0; i < 10; i++) await tick()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      await tick()
+      expect(target.querySelectorAll('.file-pane')).toHaveLength(2)
+      expect(target.contains(document.activeElement)).toBe(true)
+
+      const field = document.createElement('input')
+      document.body.append(field)
+      field.focus()
+      const title = barTarget.querySelector<HTMLElement>('.menu-bar-title')
+      title?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 }))
+      flushSync()
+      for (let i = 0; i < 4; i++) await tick()
+
+      expect(document.querySelector('[data-command-menu="bar"]')).not.toBeNull()
+      expect(document.activeElement).toBe(field)
+    } finally {
+      await unmount(explorer)
+      await unmount(bar)
+      document.body.replaceChildren()
+    }
   })
 })
 

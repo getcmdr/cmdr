@@ -23,10 +23,11 @@
         /** The bar's menus, as the backend answers them (`get_menu_bar`), kept live by the caller. */
         menus: readonly BarMenuView[]
         /**
-         * A row was picked, by menu id, and `via` a pointer click or a key (F10 then letters,
-         * arrows then Enter). The menu is closed and focus is back where it was.
+         * A row was picked, by menu id, `via` a pointer click or a key (F10 then letters, arrows
+         * then Enter), with the text field the menu was opened over, or null: the pick's target,
+         * which `pickMenuBarItem` takes. The menu is closed and focus is back where it was.
          */
-        onPick: (menuId: string, via: BarPickVia) => void
+        onPick: (menuId: string, via: BarPickVia, textField: HTMLElement | null) => void
         /** Its tooltip and accessible name ("Main menu"). */
         label: string
         /** F10 opens it from anywhere in the window: GNOME's HIG key, where no bar takes it. */
@@ -46,13 +47,20 @@
 
     const rows = $derived(primaryMenuRows(menus, { standardGroup: convention('menuModel') === 'primaryMenu' }))
 
+    /** The text field the open menu left focus in, decided as it opened: its picks' target. */
+    let openedOver: HTMLElement | null = null
+
     const menu = createContextMenu({
         onPick: (menuId, via) => {
-            onPick(menuId, via)
+            const textField = openedOver
+            openedOver = null
+            onPick(menuId, via, textField)
         },
         accessKeys: () => convention('accessKeys') !== 'none',
-        onClose: () => {
+        // `onClose` runs BEFORE `onPick` when a pick closed the menu, so a pick keeps the field for it.
+        onClose: ({ picked }) => {
             expanded = false
+            if (!picked) openedOver = null
         },
     })
 
@@ -62,6 +70,7 @@
         // A text field being edited keeps focus: the menu's cursor is its `aria-activedescendant`.
         const active = document.activeElement
         const focusHolder = isTextInputFocused() && active instanceof HTMLElement ? active : undefined
+        openedOver = focusHolder ?? null
         // At the button's trailing bottom corner: the menu flips left, so it hangs under the button.
         menu.open({ rows, at: { x: rect.right, y: rect.bottom }, fromKeyboard, label, opener: button, focusHolder })
         expanded = true

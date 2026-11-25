@@ -7,6 +7,7 @@
   a live region; the bubble's one polite status announces a settled group.
 -->
 <script lang="ts">
+    import { untrack } from 'svelte'
     import Icon from '#lib/ui/Icon.svelte'
     import { groupKey, type DisplayLine } from './ask-cmdr-rounds'
     import { groupSummaryText } from './ask-cmdr-tool-group-summary'
@@ -36,7 +37,12 @@
     // DOM drops it, focus moves to the toggle.
     $effect.pre(() => {
         if (open || !bodyEl || !toggleEl) return
-        if (bodyEl.contains(document.activeElement)) toggleEl.focus()
+        const toggleButton = toggleEl
+        if (bodyEl.contains(document.activeElement)) {
+            untrack(() => {
+                toggleButton.focus()
+            })
+        }
     })
 
     function toggle(): void {

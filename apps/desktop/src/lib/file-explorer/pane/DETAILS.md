@@ -298,6 +298,19 @@ switched (VoiceOver run, 2026-10-15). The id lands a frame after focus and again
 (`../views/list-focus.svelte.ts`). Focus that falls to `<body>` (its element unmounted) comes home when the focused
 pane's list mounts, unmounts, or lands a new folder's cursor row (same file; a Brief/Full toggle, a tab close, Backspace
 on a focused path segment). ❌ Never focus a row: rows unmount under virtualization and focus drops to `<body>`.
+Gotcha/Why: an `$effect` that calls `focusActivePane` must call it `untrack`ed. A `.focus()` runs every focus handler
+synchronously inside the effect, so each `$state` they read (the menu bar's `active` in its `focusin`) becomes the
+effect's dependency. The startup "focus after initialization" effect tracked that way, so the bar taking the keyboard
+re-ran it and pulled focus out of the text field the bar was opened from: the inline rename ended and Edit > Cut cut the
+file, or File > Delete trashed it (#1464, reproduced on the Linux E2E lane at about 9 in 100 runs, pinned by
+`DualPaneExplorer.test.ts` § "focus it does not own"). The Ask Cmdr composer's focus effect had the same shape
+(`AskCmdrComposer.menu-bar-focus.test.ts`). `cmdr/no-tracked-focus-in-effect` (`apps/desktop/eslint-plugins/`) flags the
+class: in a `$effect` body that runs synchronously, any `.focus(` / `.select(` and any call whose name has `focus` or
+`select` as a camelCase word (`focusActivePane`, `refocus`, `selectAll`), unless it's inside `untrack`, deferred
+(`tick().then`, `setTimeout`, `queueMicrotask`, `requestAnimationFrame`), a handler, a stored callback (`set…`, `on…`,
+`register…`), or the cleanup. Readers (`is…`, `get…`) and `register…` names aren't moves. A name heuristic, since the
+original bug went through `focusActivePane`; opt out per line with
+`// eslint-disable-next-line cmdr/no-tracked-focus-in-effect -- <reason>`.
 
 **Focus nobody at the keyboard asked for** goes through `followFocusedPane` (`active-pane-focus.ts`): a tool's
 `switchPane`, `swapPanes`, and `moveCursor`, and the cancel flow's landing. It moves focus only while it's the

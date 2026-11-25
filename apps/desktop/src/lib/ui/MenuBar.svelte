@@ -22,10 +22,11 @@
         /** The bar's menus, as the backend answers them (`get_menu_bar`), kept live by the caller. */
         menus: readonly BarMenuView[]
         /**
-         * A row was picked, by menu id, and `via` a pointer click or a key (the bar's Enter, Space,
-         * or a row's letter). Focus is already back where it was.
+         * A row was picked, by menu id, `via` a pointer click or a key (the bar's Enter, Space, or
+         * a row's letter), with the text field the bar was opened over, or null: the pick's
+         * target, which `pickMenuBarItem` takes. Focus is already back where it was.
          */
-        onPick: (menuId: string, via: BarPickVia) => void
+        onPick: (menuId: string, via: BarPickVia, textField: HTMLElement | null) => void
         ariaLabel: string
         /** How it behaves. Defaults to this platform's: `mac` where the OS owns the bar, else `desktop`. */
         flavor?: MenuFlavor
@@ -80,8 +81,8 @@
 
     const bar = createMenuBar({
         getMenus: () => menus,
-        onPick: (menuId, via) => {
-            onPick(menuId, via)
+        onPick: (menuId, via, textField) => {
+            onPick(menuId, via, textField)
         },
         flavor: () => flavor,
         accessKeys: () => convention('accessKeys') !== 'none',
@@ -133,7 +134,11 @@
                 holder.removeAttribute('aria-activedescendant')
             }
         }
-        if (document.activeElement !== title) title.focus({ preventScroll: true })
+        if (document.activeElement !== title) {
+            untrack(() => {
+                title.focus({ preventScroll: true })
+            })
+        }
     })
 
     /** The title the keyboard is on while a text field keeps focus, drawn as a focused one. */
