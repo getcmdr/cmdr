@@ -18,10 +18,11 @@
 //! lands the pane on the nearest parent through the usual `directory-deleted`.
 
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-use crate::ignore_poison::RwLockIgnorePoison;
+use crate::ignore_poison::{IgnorePoison, RwLockIgnorePoison};
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::WatchCoverage;
 
@@ -55,33 +56,20 @@ pub(crate) fn release_with(announced: &Path, quiet: Duration) -> usize {
     let Some(held) = hold_at_or_below(announced) else {
         return 0;
     };
-    let count = held.len();
+    let count = held.listing_ids.len();
     take_back_after(held, quiet);
     count
 }
 
-/// Listing watches let go until someone hands them back: a write's quiet period
-/// ([`release_with`]), or a drive's removal or lock query (Windows,
-/// `volumes/platform/windows/watcher/`), which takes them back only if the removal is refused.
-/// Dropping it re-arms nothing: a drive that left takes its panes elsewhere, which closes the
-/// listings.
-#[derive(Debug)]
-pub(crate) struct HeldWatches {
+/// Listing watches a write let go, until its quiet period hands them back.
+struct HeldWatches {
     generation: u64,
     listing_ids: Vec<String>,
 }
 
-impl HeldWatches {
-    /// How many watches it holds.
-    pub(crate) fn len(&self) -> usize {
-        self.listing_ids.len()
-    }
-}
-
-/// Closes every listing watch on `root` or a folder below it, synchronously, under one fresh
-/// generation, with no timer to bring them back: [`take_back_after`] does, or nothing. `None`
-/// when no watch was there, without taking the write lock.
-pub(crate) fn hold_at_or_below(announced: &Path) -> Option<HeldWatches> {
+/// Closes every listing watch on `announced` or a folder below it, synchronously, under one
+/// fresh generation. `None` when no watch was there, without taking the write lock.
+fn hold_at_or_below(announced: &Path) -> Option<HeldWatches> {
     let target = cmdr_local::reading::listing_spelling_of(announced);
     let any_below = WATCHER_MANAGER
         .read_ignore_poison()
@@ -120,6 +108,70 @@ pub(crate) fn hold_at_or_below(announced: &Path) -> Option<HeldWatches> {
     })
 }
 
+/// Drives held for a removal or lock query, in the listing spelling: nothing under one re-arms
+/// (a write's quiet timer included) until [`take_back_drive`].
+static HELD_DRIVES: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+
+// The Windows drive watcher's doors (`volumes/platform/windows/watcher/`), pinned here so every
+// OS builds them and their cells run everywhere.
+const _: fn(&Path) -> usize = hold_drive;
+const _: fn(&Path) = take_back_drive;
+const _: fn(&Path) = forget_drive;
+
+/// Holds every listing watch on the drive at `root`: closes them now and keeps them closed,
+/// whatever else releases or re-arms below it, until [`take_back_drive`] or [`forget_drive`]. A
+/// second hold of a held drive closes what armed since and changes nothing else. Answers how
+/// many it closed.
+pub(crate) fn hold_drive(root: &Path) -> usize {
+    let target = cmdr_local::reading::listing_spelling_of(root);
+    {
+        let mut held = HELD_DRIVES.lock_ignore_poison();
+        if !held.contains(&target) {
+            held.push(target);
+        }
+    }
+    hold_at_or_below(root).map_or(0, |held| held.listing_ids.len())
+}
+
+/// The removal was refused: re-arm and re-read every watch under `root` that's let go, whichever
+/// release let it go last. Nothing when the drive isn't held.
+pub(crate) fn take_back_drive(root: &Path) {
+    let target = cmdr_local::reading::listing_spelling_of(root);
+    {
+        let mut held = HELD_DRIVES.lock_ignore_poison();
+        let before = held.len();
+        held.retain(|drive| drive != &target);
+        if held.len() == before {
+            return;
+        }
+    }
+    let released: Vec<(String, u64)> = WATCHER_MANAGER
+        .read_ignore_poison()
+        .watches
+        .iter()
+        .filter(|(_, w)| w.path.starts_with(&target))
+        .filter_map(|(id, w)| w.released.map(|generation| (id.clone(), generation)))
+        .collect();
+    for (id, generation) in released {
+        schedule_rearm(id, generation, Duration::ZERO);
+    }
+}
+
+/// The drive left: stop holding it, re-arming nothing (its panes move off it, which closes the
+/// listings).
+pub(crate) fn forget_drive(root: &Path) {
+    let target = cmdr_local::reading::listing_spelling_of(root);
+    HELD_DRIVES.lock_ignore_poison().retain(|drive| drive != &target);
+}
+
+/// Whether `path` lies on a drive a removal query holds.
+fn on_a_held_drive(path: &Path) -> bool {
+    HELD_DRIVES
+        .lock_ignore_poison()
+        .iter()
+        .any(|drive| path.starts_with(drive))
+}
+
 /// A watch on `target` or below it whose stream pins its ancestors. A released one counts
 /// (a second write restarts its quiet period), and so does a test build's scripted one, so
 /// the mechanism runs under test on every OS.
@@ -152,9 +204,9 @@ fn close_now(stream: WatchStream) {
     }
 }
 
-/// After `quiet` (zero for a refused removal), re-arms what [`hold_at_or_below`] let go and
-/// re-reads each listing, skipping one a later release or a close took over.
-pub(crate) fn take_back_after(held: HeldWatches, quiet: Duration) {
+/// After `quiet`, re-arms what [`hold_at_or_below`] let go and re-reads each listing, skipping
+/// one a later release or a close took over.
+fn take_back_after(held: HeldWatches, quiet: Duration) {
     for id in held.listing_ids {
         schedule_rearm(id, held.generation, quiet);
     }
@@ -184,6 +236,11 @@ pub(crate) fn rearm(listing_id: &str, generation: u64) -> bool {
     else {
         return false;
     };
+    if on_a_held_drive(&path) {
+        // Its drive is being removed: re-arming would reopen a handle the removal waits on.
+        // `take_back_drive` brings it back if the removal is refused.
+        return false;
+    }
     let stream = match arm_stream(listing_id, &path) {
         Ok(stream) => stream,
         Err(e) => {

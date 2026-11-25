@@ -15,6 +15,14 @@ const BSD: [(i32, OsErrorClass); 6] = [
 
 pub(crate) const TABLES: &[&[(i32, OsErrorClass)]] = &[&POSIX, &BSD];
 
+/// No code here reads differently on a network share.
+pub(crate) const ON_A_SHARE: &[(i32, OsErrorClass)] = &[];
+
+/// Never asked: [`ON_A_SHARE`] is empty here.
+pub(crate) fn is_on_a_share(_path: &str) -> bool {
+    false
+}
+
 pub(crate) fn class_of(code: i32) -> OsErrorClass {
     super::class_in(TABLES, code)
 }

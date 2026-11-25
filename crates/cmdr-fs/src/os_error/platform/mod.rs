@@ -15,6 +15,8 @@ mod unix;
 const _: fn(i32) -> OsErrorClass = class_of;
 const _: fn(OsErrorClass) -> Option<i32> = code_of;
 const _: &[&[(i32, OsErrorClass)]] = TABLES;
+const _: &[(i32, OsErrorClass)] = ON_A_SHARE;
+const _: fn(&str) -> bool = is_on_a_share;
 
 /// The class of a code this OS produced; [`OsErrorClass::Other`] for one no caller
 /// tells apart.
@@ -25,6 +27,13 @@ pub(super) use imp::code_of;
 
 /// Every code this OS names, with its class, in lookup order.
 pub(super) use imp::TABLES;
+
+/// The codes whose class differs when the call met a network share, checked before
+/// [`TABLES`].
+pub(super) use imp::ON_A_SHARE;
+
+/// Whether a path lies on a network share the OS mounted, asked only for an [`ON_A_SHARE`] code.
+pub(super) use imp::is_on_a_share;
 
 /// The arms' one lookup: `code`'s class in `tables`, or `Other`.
 fn class_in(tables: &[&[(i32, OsErrorClass)]], code: i32) -> OsErrorClass {

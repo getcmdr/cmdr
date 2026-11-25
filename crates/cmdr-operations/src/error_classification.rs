@@ -26,7 +26,10 @@ use super::types::{PermissionSide, ReadOnlySide, WriteOperationError};
 /// (the wording localizes; the substrings don't match) and was the exact
 /// shape AGENTS.md bans.
 pub(super) fn classify_io_error(e: &std::io::Error, path: String) -> WriteOperationError {
-    if let Some(class) = OsErrorClass::of_io(e) {
+    // A few Windows codes mean the link dropped on a share and the drive leaving elsewhere
+    // (`ERROR_DEV_NOT_EXIST`), so the class reads where the call failed.
+    let class = OsErrorClass::of_io_at(e, &path);
+    if let Some(class) = class {
         match class {
             OsErrorClass::ReadOnlyFilesystem => {
                 // EROFS came back from a WRITE, so the refusing half is the

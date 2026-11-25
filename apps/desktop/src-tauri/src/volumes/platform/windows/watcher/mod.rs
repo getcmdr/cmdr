@@ -25,8 +25,9 @@ mod worker;
 mod tests;
 
 use std::sync::Mutex;
-use std::sync::mpsc::{self, Sender, SyncSender};
+use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
 use std::thread::JoinHandle;
+use std::time::Duration;
 
 use log::{error, info, warn};
 use tauri::AppHandle;
@@ -39,7 +40,11 @@ enum Job {
     Rescan,
     /// A removal or lock query for the handle registered as `registration`: let go of the
     /// drive, then answer on `done` (the window answers Windows only after).
-    LetGo { registration: usize, done: SyncSender<()> },
+    LetGo {
+        registration: usize,
+        cause: cmdr_fs::volume::windows_device_change::LetGoCause,
+        done: SyncSender<()>,
+    },
     /// The removal was refused, or the lock ended: take the drive back.
     TakeBack { registration: usize },
     /// The drive is going or gone: drop its handle and registration.
@@ -82,12 +87,12 @@ struct DriveWatch {
     jobs: Sender<Job>,
     /// The window, as an integer so the watch is `Send`.
     window: isize,
-    window_thread: Option<JoinHandle<()>>,
-    worker_thread: Option<JoinHandle<()>>,
+    window_thread: Option<Finishing>,
+    worker_thread: Option<Finishing>,
     /// Answers once the worker has read its baseline: a test waits on it before changing a
     /// drive, the app never does.
     #[cfg_attr(not(test), expect(dead_code, reason = "only a test waits for the baseline"))]
-    baseline: mpsc::Receiver<()>,
+    baseline: Receiver<()>,
 }
 
 impl DriveWatch {
@@ -98,9 +103,7 @@ impl DriveWatch {
         let (jobs, inbox) = mpsc::channel();
         let (ready_tx, ready) = mpsc::sync_channel(1);
         let window_jobs = jobs.clone();
-        let window_thread = std::thread::Builder::new()
-            .name("drive-events".to_owned())
-            .spawn(move || window::run(window_jobs, ready_tx))
+        let window_thread = Finishing::spawn("drive-events", move || window::run(window_jobs, ready_tx))
             .map_err(|e| format!("couldn't start the drive events thread: {e}"))?;
         let window = match ready.recv() {
             Ok(Ok(window)) => window,
@@ -109,10 +112,8 @@ impl DriveWatch {
         };
         let worker = worker::Worker::new(window, announce);
         let (baseline_tx, baseline) = mpsc::sync_channel(1);
-        let worker_thread = std::thread::Builder::new()
-            .name("drive-events-worker".to_owned())
-            .spawn(move || worker.run(&inbox, &baseline_tx))
-            .map_err(|e| {
+        let worker_thread =
+            Finishing::spawn("drive-events-worker", move || worker.run(&inbox, &baseline_tx)).map_err(|e| {
                 window::close(window);
                 format!("couldn't start the drive events worker: {e}")
             })?;
@@ -129,17 +130,54 @@ impl DriveWatch {
 impl Drop for DriveWatch {
     fn drop(&mut self) {
         window::close(self.window);
-        if let Some(thread) = self.window_thread.take()
-            && thread.join().is_err()
-        {
-            error!(target: "volumes::windows", "The drive events thread panicked");
+        if let Some(thread) = self.window_thread.take() {
+            thread.join_within(QUIT_WAIT);
         }
-        // a worker that already ended needs no stop
+        // A worker that already ended needs no stop.
         let _ = self.jobs.send(Job::Stop);
-        if let Some(thread) = self.worker_thread.take()
-            && thread.join().is_err()
-        {
-            error!(target: "volumes::windows", "The drive events worker panicked");
+        if let Some(thread) = self.worker_thread.take() {
+            thread.join_within(QUIT_WAIT);
+        }
+    }
+}
+
+/// How long the watch's end waits for each thread. ❗ Quit must never hang on it: the worker can
+/// be mid-read of a dead mapped drive or in an index stop, so past this it's left to finish on
+/// its own, and the process ending takes it.
+const QUIT_WAIT: Duration = Duration::from_secs(2);
+
+/// A thread that says when it's done, so its join can be bounded.
+struct Finishing {
+    name: &'static str,
+    handle: JoinHandle<()>,
+    done: Receiver<()>,
+}
+
+impl Finishing {
+    fn spawn(name: &'static str, body: impl FnOnce() + Send + 'static) -> std::io::Result<Self> {
+        let (done_tx, done) = mpsc::sync_channel(1);
+        let handle = std::thread::Builder::new().name(name.to_owned()).spawn(move || {
+            // Dropped on any exit, a panic included, so the joiner always hears.
+            let _done = done_tx;
+            body();
+        })?;
+        Ok(Self { name, handle, done })
+    }
+
+    fn join_within(self, wait: Duration) {
+        match self.done.recv_timeout(wait) {
+            // The sender drops when the body ends, so either answer means it has.
+            Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => {
+                if self.handle.join().is_err() {
+                    // allowed-log-private: a thread's own name, no user value
+                    error!(target: "volumes::windows", "The {} thread panicked", self.name);
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                let seconds = wait.as_secs();
+                // allowed-log-private: a thread's own name, no user value
+                warn!(target: "volumes::windows", "The {} thread didn't end within {seconds} s; leaving it to finish on its own", self.name);
+            }
         }
     }
 }

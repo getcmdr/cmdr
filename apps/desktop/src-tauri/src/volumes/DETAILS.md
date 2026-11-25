@@ -157,17 +157,34 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
   a Device", learn.microsoft.com, read 2026-11-25).
   - `DBT_DEVICEQUERYREMOVE`, or a volume lock (`DBT_CUSTOMEVENT` `GUID_IO_VOLUME_LOCK`: format, `chkdsk /f`): the window
     waits (8 s at most) while the worker closes its handle, marks an unmount pending at the drive-release gate, stops
-    the index (`stop_removable_volume`, 6 s), and lets go of every listing watch on the drive
-    (`file_system::watcher::release::hold_at_or_below`); then it answers `TRUE`. A handle still open past the wait makes
-    Windows refuse the removal honestly ("in use").
-  - `DBT_DEVICEQUERYREMOVEFAILED`, `GUID_IO_VOLUME_LOCK_FAILED`, `GUID_IO_VOLUME_UNLOCK`: the handle reopens, the
-    watches re-arm and re-read (`take_back_after`), and an index the query stopped resumes through the gate
-    (`DriveRelease::resume`, the worker as `ResumeOwner`), which still checks intent and presence.
-  - `DBT_DEVICEREMOVEPENDING` / `DBT_DEVICEREMOVECOMPLETE` on the handle: the handle closes, the registration ends, and
-    the table is re-read.
-  - Proved on the Windows lane by `a_removal_query_lets_go_of_the_drive_and_a_refusal_takes_it_back` (NTFS refuses to
-    rename a folder above an open handle, so the rename going through proves both handles closed). The query itself
-    needs a real removable device.
+    the index (`stop_removable_volume`, 6 s), and holds every listing watch on the drive
+    (`file_system::watcher::release::hold_drive`: nothing under it re-arms, a Cmdr write's quiet timer included); then
+    it answers `TRUE`. A handle still open past the wait makes Windows refuse the removal honestly ("in use").
+  - **Decision/Why: one let-go per drive at a time.** A removal can bring a query AND a lock, and a refusal can bring a
+    `DBT_DEVICEQUERYREMOVEFAILED` AND a `GUID_IO_VOLUME_UNLOCK`. A second let-go only notes the lock, and a take-back
+    with nothing let go does nothing: a second release would move the drive's epoch (the resume then refuses as
+    `EpochMoved`), and a second hold re-marked the watches under a newer generation the first take-back skipped.
+  - `DBT_DEVICEQUERYREMOVEFAILED`, `GUID_IO_VOLUME_LOCK_FAILED`, `GUID_IO_VOLUME_UNLOCK`: the handle reopens, every
+    let-go watch on the drive re-arms and re-reads (`take_back_drive`), and an index the query stopped resumes through
+    the gate (`DriveRelease::resume`, the worker as `ResumeOwner`), which still checks intent and presence. After a
+    lock it rescans instead (`Index::rescan_volume` through the gate): a format or `chkdsk /f` rewrote the drive under
+    the same id.
+  - `DBT_DEVICEREMOVEPENDING` / `DBT_DEVICEREMOVECOMPLETE` on the handle: the handle closes, the registration ends, the
+    drive stops being held, and the table is re-read. The unmount-pending flag lifts only when the drive leaves the
+    table (and the registry), so no index start lands in between.
+  - An unreadable table is read once more after 2 s (a pull can leave the mount table briefly unreadable, and no
+    later signal is due); a second failure waits for the next signal.
+  - The watch's end joins each thread for 2 s at most: the worker can be mid-read of a dead mapped drive or in an
+    index stop, and quit must never hang on it.
+  - The Shell registration is `SHCNRF_ShellLevel` only, with no recursive entry: drive and media notices are the
+    Shell's own, and an interrupt-level registration would have the Shell watch the file system in Cmdr's process, a
+    handle no let-go closes.
+  - Proved on the Windows lane by `a_removal_query_lets_go_of_the_drive_and_a_refusal_takes_it_back` (the query sent
+    through the window as Windows sends it; NTFS refuses to rename a folder above an open handle, so the rename going
+    through proves both handles closed, and the refusal after the pane's watch stops proves the root handle came
+    back), plus the two-let-go and two-take-back cells. The query from Windows itself needs a real removable device.
+- **A share dropping isn't a drive leaving**: `ERROR_DEV_NOT_EXIST` on a mapped drive or UNC path is the link going away
+  (`OsErrorClass::of_io_at`, the transfer engine's retry and outage wait), and on a local drive the drive leaving.
 - **Eject from Cmdr is task 39b**: `is_ejectable` stays `false` and the eject refuses as `NotEjectable`; the real one is
   `CM_Request_Device_EjectW` beside this watcher.
 - **Real-Windows checklist** (a USB stick, not yet run): plug in, the stick's row appears with no refresh; open it in a
@@ -176,7 +193,9 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
   "Safely remove" mid-copy: Windows says it's in use, and the pane and index come back (log: "Taking … back"); pull it
   mid-copy: the copy ends with "the drive went away" wording, no hang; `net use Z: \\localhost\C$` and `net use Z:
   /delete` in a console: the row comes and goes (or not: the `net use` line above); mount and eject an ISO from
-  Explorer; insert and remove an SD card in a reader.
+  Explorer; insert and remove an SD card in a reader; with Cmdr open and both panes elsewhere (no pane on the stick),
+  "Safely remove" succeeds; format the stick from Explorer with it indexed: the index rescans afterwards (log:
+  "Rescanning … after its lock").
 
 ## Location categories
 

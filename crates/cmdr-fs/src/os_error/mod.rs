@@ -148,6 +148,20 @@ impl OsErrorClass {
         err.raw_os_error().map(Self::of_code)
     }
 
+    /// [`of_io`](Self::of_io) for a call that failed on `path` (its native text): a few codes mean the link
+    /// dropped when `path` is on a network share (a Windows mapped drive or UNC path) and the
+    /// device going away elsewhere. Only those codes ask where `path` lies (a drive-type read,
+    /// ❌ never a call to the server).
+    #[must_use]
+    pub fn of_io_at(err: &std::io::Error, path: &str) -> Option<Self> {
+        let code = err.raw_os_error()?;
+        let on_a_share = platform::ON_A_SHARE
+            .iter()
+            .find_map(|&(named, class)| (named == code).then_some(class))
+            .filter(|_| platform::is_on_a_share(path));
+        Some(on_a_share.unwrap_or_else(|| Self::of_code(code)))
+    }
+
     /// This OS's code for the class, for a backend that reports a class it read off
     /// the wire as an OS error. `None` for a class this OS has no code for
     /// ([`InUseByAnotherApp`](Self::InUseByAnotherApp) and [`Other`](Self::Other) on

@@ -143,3 +143,29 @@ fn a_drive_that_went_away_reads_as_no_device() {
         "ERROR_NOT_READY stays the class's code"
     );
 }
+
+/// On a share, `ERROR_DEV_NOT_EXIST` is the link dropping, which the transfer engine retries
+/// and waits out; on a local drive it's the drive going away.
+#[cfg(windows)]
+#[test]
+fn a_share_dropping_is_transport_and_a_drive_leaving_is_not() {
+    let gone = std::io::Error::from_raw_os_error(55);
+    let on_share = OsErrorClass::of_io_at(&gone, r"\\testnas.local\media\a.txt").expect("an OS code");
+    assert!(on_share.is_transport(), "{on_share:?}");
+    let long_unc = OsErrorClass::of_io_at(&gone, r"\\?\UNC\testnas.local\media\a.txt");
+    assert!(long_unc.is_some_and(OsErrorClass::is_transport), "{long_unc:?}");
+    let system = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_owned());
+    let local = format!(r"{system}\x.txt");
+    assert_eq!(OsErrorClass::of_io_at(&gone, &local), Some(OsErrorClass::NoDevice));
+    assert_eq!(
+        OsErrorClass::of_io_at(&gone, &format!(r"\\?\{system}\x.txt")),
+        Some(OsErrorClass::NoDevice),
+        "a long local path is no share"
+    );
+    let not_ready = std::io::Error::from_raw_os_error(21);
+    assert_eq!(
+        OsErrorClass::of_io_at(&not_ready, r"\\testnas.local\media"),
+        Some(OsErrorClass::NoDevice),
+        "only the share table's codes read differently"
+    );
+}

@@ -61,12 +61,22 @@ pub enum VolumeEvent {
     Removed,
 }
 
+/// Why a handle registration is asked to let go.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LetGoCause {
+    /// A removal (`DBT_DEVICEQUERYREMOVE`).
+    Removal,
+    /// A volume lock (`GUID_IO_VOLUME_LOCK`): a format, `chkdsk /f`, or anything else that may
+    /// rewrite the volume before it unlocks.
+    Lock,
+}
+
 /// What a handle registration hears about its device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HandleEvent {
     /// Let go: a removal is being asked for (`DBT_DEVICEQUERYREMOVE`), or a lock
     /// (`GUID_IO_VOLUME_LOCK`). Both wait for every open handle to close.
-    LetGo,
+    LetGo(LetGoCause),
     /// Take it back: the removal was refused, the lock failed, or the lock ended.
     TakeBack,
     /// The device is going or gone (`DBT_DEVICEREMOVEPENDING`, `DBT_DEVICEREMOVECOMPLETE`):
@@ -190,11 +200,11 @@ fn decode_volume(event: usize, bytes: &[u8]) -> Option<DeviceChange> {
 fn decode_handle(event: usize, bytes: &[u8]) -> Option<DeviceChange> {
     let registration = usize_at(bytes, HANDLE_REGISTRATION_OFFSET)?;
     let event = match event {
-        DBT_DEVICEQUERYREMOVE => HandleEvent::LetGo,
+        DBT_DEVICEQUERYREMOVE => HandleEvent::LetGo(LetGoCause::Removal),
         DBT_DEVICEQUERYREMOVEFAILED => HandleEvent::TakeBack,
         DBT_DEVICEREMOVEPENDING | DBT_DEVICEREMOVECOMPLETE => HandleEvent::Gone,
         DBT_CUSTOMEVENT => match guid_at(bytes, HANDLE_EVENT_GUID_OFFSET)? {
-            GUID_IO_VOLUME_LOCK => HandleEvent::LetGo,
+            GUID_IO_VOLUME_LOCK => HandleEvent::LetGo(LetGoCause::Lock),
             GUID_IO_VOLUME_LOCK_FAILED | GUID_IO_VOLUME_UNLOCK => HandleEvent::TakeBack,
             _ => return None,
         },
@@ -434,7 +444,7 @@ mod tests {
             event,
             registration: 0xbeef,
         };
-        assert_eq!(at(DBT_DEVICEQUERYREMOVE), read(HandleEvent::LetGo));
+        assert_eq!(at(DBT_DEVICEQUERYREMOVE), read(HandleEvent::LetGo(LetGoCause::Removal)));
         assert_eq!(at(DBT_DEVICEQUERYREMOVEFAILED), read(HandleEvent::TakeBack));
         assert_eq!(at(DBT_DEVICEREMOVEPENDING), read(HandleEvent::Gone));
         assert_eq!(at(DBT_DEVICEREMOVECOMPLETE), read(HandleEvent::Gone));
@@ -445,7 +455,7 @@ mod tests {
     fn a_volume_lock_lets_go_and_its_end_takes_back() {
         let custom = |guid| decode(DBT_CUSTOMEVENT, Some(&handle(7, guid)));
         let read = |event| DeviceChange::Handle { event, registration: 7 };
-        assert_eq!(custom(GUID_IO_VOLUME_LOCK), read(HandleEvent::LetGo));
+        assert_eq!(custom(GUID_IO_VOLUME_LOCK), read(HandleEvent::LetGo(LetGoCause::Lock)));
         assert_eq!(custom(GUID_IO_VOLUME_LOCK_FAILED), read(HandleEvent::TakeBack));
         assert_eq!(custom(GUID_IO_VOLUME_UNLOCK), read(HandleEvent::TakeBack));
         assert_eq!(custom(0x1234), DeviceChange::Other, "another driver's event");

@@ -655,11 +655,13 @@ fn a_write_at_or_above_a_watched_folder_releases_its_watch_until_the_writes_go_q
     }
 }
 
-/// A drive's removal query (Windows, task 39) holds every watch on the drive with no timer:
-/// they stay let go, claiming nothing, until the removal is refused and they're taken back.
+/// A drive's removal query (Windows, task 39) holds every watch on the drive: they stay let go,
+/// claiming nothing, through a second query and through Cmdr's own write on the drive (whose
+/// quiet timer would otherwise re-arm one and reopen a handle the removal waits on), until the
+/// removal is refused and they're taken back, however many releases came between.
 #[test]
 fn a_held_drive_keeps_its_watches_let_go_until_they_are_taken_back() {
-    use crate::file_system::watcher::release::{hold_at_or_below, take_back_after};
+    use crate::file_system::watcher::release::{forget_drive, hold_drive, release_with, take_back_drive};
     use crate::file_system::watcher::{coverage_for_listings, start_watching, stop_watching};
     use crate::test_support::{TestDir, wait_until};
     use cmdr_fs::testing::unique_test_id;
@@ -674,20 +676,38 @@ fn a_held_drive_keeps_its_watches_let_go_until_they_are_taken_back() {
     start_watching(&shown_id, &shown).expect("arm");
     let coverage = |id: &String| coverage_for_listings(std::slice::from_ref(id));
 
-    let held = hold_at_or_below(&drive).expect("two watches on the drive");
-    assert_eq!(held.len(), 2);
+    assert_eq!(hold_drive(&drive), 2, "both watches on the drive let go");
+    assert_eq!(hold_drive(&drive), 2, "a second query re-marks them and holds on");
+    assert_eq!(
+        release_with(&shown, Duration::from_millis(50)),
+        1,
+        "a write on the drive"
+    );
     // allowed-test-sleep: a negative assertion over a window; nothing may re-arm a held watch
     std::thread::sleep(Duration::from_millis(1_500));
     assert_eq!(coverage(&root_id), WatchCoverage::None, "no quiet timer brings it back");
-    assert_eq!(coverage(&shown_id), WatchCoverage::None);
+    assert_eq!(coverage(&shown_id), WatchCoverage::None, "not even the write's own");
 
-    take_back_after(held, Duration::ZERO);
+    take_back_drive(&drive);
     wait_until(Duration::from_secs(10), "both watches re-arm", || {
         coverage(&root_id) == WatchCoverage::EveryWriter && coverage(&shown_id) == WatchCoverage::EveryWriter
     });
-    assert!(
-        hold_at_or_below(&drive.join("elsewhere")).is_none(),
-        "a drive with no watch holds nothing"
+    take_back_drive(&drive);
+    assert_eq!(
+        coverage(&root_id),
+        WatchCoverage::EveryWriter,
+        "a second take-back changes nothing"
+    );
+
+    hold_drive(&drive);
+    forget_drive(&drive);
+    take_back_drive(&drive);
+    // allowed-test-sleep: a negative assertion over a window; a drive that left re-arms nothing
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(
+        coverage(&root_id),
+        WatchCoverage::None,
+        "a forgotten drive is never taken back"
     );
 
     stop_watching(&root_id);

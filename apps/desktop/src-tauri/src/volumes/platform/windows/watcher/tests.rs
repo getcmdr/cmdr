@@ -12,12 +12,14 @@ use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::unique_test_id;
 use cmdr_fs::volume::WatchCoverage;
 use cmdr_fs::volume::path_grammar::{PathFlavor, app_spelling};
-use cmdr_fs::volume::windows_device_change::{self as change, DeviceChange, HandleEvent, VolumeEvent};
+use cmdr_fs::volume::windows_device_change::{self as change, DeviceChange, HandleEvent, LetGoCause, VolumeEvent};
+use windows_sys::Win32::Foundation::{HWND, LPARAM};
 use windows_sys::Win32::Storage::FileSystem::GetLogicalDrives;
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     DBT_DEVTYP_HANDLE, DBT_DEVTYP_VOLUME, DBTF_MEDIA, DEV_BROADCAST_HANDLE, DEV_BROADCAST_VOLUME, GUID_IO_VOLUME_LOCK,
-    GUID_IO_VOLUME_LOCK_FAILED, GUID_IO_VOLUME_UNLOCK,
+    GUID_IO_VOLUME_LOCK_FAILED, GUID_IO_VOLUME_UNLOCK, SendMessageW, WM_DEVICECHANGE,
 };
+use windows_sys::core::GUID;
 
 use super::{Announce, DriveWatch, Job, Lifecycle};
 use crate::file_system::volume::manager::get_volume_manager;
@@ -90,19 +92,44 @@ impl DriveWatch {
             .expect("the worker answers")
     }
 
-    /// What the window does on a removal query, without one: the worker lets go, then answers.
-    fn let_go(&self, registration: usize) {
-        let (done, answer) = mpsc::sync_channel(1);
-        self.jobs
-            .send(Job::LetGo { registration, done })
-            .expect("the worker runs");
-        answer
-            .recv_timeout(Duration::from_secs(20))
-            .expect("the worker lets go");
+    /// Sends the window a handle event for `registration`, as Windows does: synchronously,
+    /// answering what the window answered. A query returns only once the worker let go.
+    fn send_handle_event(&self, event: usize, registration: usize, guid: GUID) -> isize {
+        let broadcast = DEV_BROADCAST_HANDLE {
+            dbch_size: u32::try_from(size_of::<DEV_BROADCAST_HANDLE>()).expect("a small struct"),
+            dbch_devicetype: DBT_DEVTYP_HANDLE,
+            dbch_hdevnotify: registration as *mut core::ffi::c_void,
+            dbch_eventguid: guid,
+            ..DEV_BROADCAST_HANDLE::default()
+        };
+        // SAFETY: the watch's own window, alive until the watch drops; `broadcast` outlives the
+        // call, which returns only after the window procedure did.
+        unsafe {
+            SendMessageW(
+                self.window as HWND,
+                WM_DEVICECHANGE,
+                event,
+                (&raw const broadcast) as LPARAM,
+            )
+        }
     }
 
-    fn take_back(&self, registration: usize) {
-        self.jobs.send(Job::TakeBack { registration }).expect("the worker runs");
+    fn query_remove(&self, registration: usize) {
+        let answer = self.send_handle_event(change::DBT_DEVICEQUERYREMOVE, registration, GUID::from_u128(0));
+        assert_eq!(answer, 1, "the window grants the query");
+    }
+
+    fn lock(&self, registration: usize) {
+        let answer = self.send_handle_event(change::DBT_CUSTOMEVENT, registration, GUID_IO_VOLUME_LOCK);
+        assert_eq!(answer, 1, "the window grants the lock");
+    }
+
+    fn refuse_removal(&self, registration: usize) {
+        self.send_handle_event(change::DBT_DEVICEQUERYREMOVEFAILED, registration, GUID::from_u128(0));
+    }
+
+    fn unlock(&self, registration: usize) {
+        self.send_handle_event(change::DBT_CUSTOMEVENT, registration, GUID_IO_VOLUME_UNLOCK);
     }
 }
 
@@ -140,7 +167,7 @@ fn the_broadcast_layouts_match_windows_own_structs() {
         (change::GUID_IO_VOLUME_LOCK_FAILED, GUID_IO_VOLUME_LOCK_FAILED),
         (change::GUID_IO_VOLUME_UNLOCK, GUID_IO_VOLUME_UNLOCK),
     ] {
-        let ours = windows_sys::core::GUID::from_u128(ours);
+        let ours = GUID::from_u128(ours);
         assert_eq!(
             (ours.data1, ours.data2, ours.data3, ours.data4),
             (theirs.data1, theirs.data2, theirs.data3, theirs.data4)
@@ -167,7 +194,7 @@ fn windows_own_broadcast_structs_decode() {
     assert_eq!(
         change::decode(change::DBT_CUSTOMEVENT, Some(bytes_of(&lock))),
         DeviceChange::Handle {
-            event: HandleEvent::LetGo,
+            event: HandleEvent::LetGo(LetGoCause::Lock),
             registration: 0x5a5a,
         }
     );
@@ -247,45 +274,133 @@ fn a_subst_drive_arriving_and_leaving_reaches_the_watcher() {
     drop(watch);
 }
 
-/// #1363 part 2, #1340: a removal query closes every handle Cmdr holds on the drive (its own
-/// root handle and a pane's listing watch), proved by NTFS: a folder above an open handle
-/// can't be renamed. A refused removal takes both back.
+/// A folder above `drive`, which NTFS refuses to rename while any handle is open below it.
+struct Pinned {
+    dir: TestDir,
+    parent: std::path::PathBuf,
+    drive: std::path::PathBuf,
+}
+
+impl Pinned {
+    fn new(tag: &str) -> Self {
+        let dir = TestDir::new(tag);
+        let parent = dir.join("parent");
+        let drive = parent.join("drive");
+        std::fs::create_dir_all(&drive).expect("mkdir");
+        Self { dir, parent, drive }
+    }
+
+    fn root(&self) -> String {
+        let root = app_spelling(&self.drive.to_string_lossy(), PathFlavor::Windows);
+        assert!(AppPath::from_normalized(&root).is_ok(), "{root} is an app path");
+        root
+    }
+
+    /// Whether some handle below the parent still pins it; a rename that went through is put
+    /// back.
+    fn is_pinned(&self) -> bool {
+        let moved = self.dir.join("moved");
+        match std::fs::rename(&self.parent, &moved) {
+            Ok(()) => {
+                std::fs::rename(&moved, &self.parent).expect("put it back");
+                false
+            }
+            Err(refused) => {
+                assert_eq!(refused.kind(), std::io::ErrorKind::PermissionDenied, "{refused:?}");
+                true
+            }
+        }
+    }
+}
+
+/// A pane's real listing watch on `drive`, and the means to wait for it.
+fn watch_listing(drive: &std::path::Path, tag: &str) -> String {
+    let listing = unique_test_id(tag);
+    watch_for_real(&listing);
+    start_watching(&listing, drive).expect("arm a real watch");
+    listing
+}
+
+fn rearmed(listing: &str) -> bool {
+    coverage_for_listings(&[listing.to_owned()]) == WatchCoverage::EveryWriter
+}
+
+/// #1363 part 2, #1340: a removal query, sent through the window as Windows sends it, closes
+/// every handle Cmdr holds on the drive (its own root handle and a pane's listing watch) before
+/// the window answers, proved by NTFS: a folder above an open handle can't be renamed. A refused
+/// removal takes both back, the root handle on its own too.
 #[test]
 fn a_removal_query_lets_go_of_the_drive_and_a_refusal_takes_it_back() {
-    let dir = TestDir::new("removal-query");
-    let parent = dir.join("parent");
-    let drive = parent.join("drive");
-    std::fs::create_dir_all(&drive).expect("mkdir");
-    let root = app_spelling(&drive.to_string_lossy(), PathFlavor::Windows);
-    assert!(AppPath::from_normalized(&root).is_ok(), "{root} is an app path");
-
+    let pinned = Pinned::new("removal-query");
     let watch = DriveWatch::started(Recorder::default());
-    let listing = unique_test_id("removal-query");
-    watch_for_real(&listing);
-    start_watching(&listing, &drive).expect("arm a real watch");
+    let listing = watch_listing(&pinned.drive, "removal-query");
     let registration = watch
-        .track("removal-query-volume", &root)
+        .track("removal-query-volume", &pinned.root())
         .expect("a folder's handle registers for its volume's removal queries");
+    assert!(pinned.is_pinned(), "the handles pin the parent");
 
-    let refused = std::fs::rename(&parent, dir.join("moved")).expect_err("the open handles pin the parent");
-    assert_eq!(refused.kind(), std::io::ErrorKind::PermissionDenied, "{refused:?}");
-
-    watch.let_go(registration);
+    watch.query_remove(registration);
     assert_eq!(
         coverage_for_listings(std::slice::from_ref(&listing)),
         WatchCoverage::None,
         "a let-go watch claims nothing"
     );
-    std::fs::rename(&parent, dir.join("moved")).expect("let go, nothing pins the parent");
-    std::fs::rename(dir.join("moved"), &parent).expect("put it back");
+    assert!(!pinned.is_pinned(), "let go, nothing pins the parent");
 
-    watch.take_back(registration);
+    watch.refuse_removal(registration);
     wait_until(Duration::from_secs(10), "the listing watch to re-arm", || {
-        coverage_for_listings(std::slice::from_ref(&listing)) == WatchCoverage::EveryWriter
+        rearmed(&listing)
     });
-    let refused = std::fs::rename(&parent, dir.join("moved")).expect_err("taken back, the handles pin it again");
-    assert_eq!(refused.kind(), std::io::ErrorKind::PermissionDenied, "{refused:?}");
+    stop_watching(&listing);
+    assert!(pinned.is_pinned(), "taken back, the root handle alone pins it again");
+    drop(watch);
+}
 
+/// A removal can bring a query AND a volume lock, and a refusal one take-back: the second
+/// let-go changes nothing, and the one take-back restores everything.
+#[test]
+fn a_query_and_a_lock_let_go_once_and_one_take_back_restores_it() {
+    let pinned = Pinned::new("query-and-lock");
+    let watch = DriveWatch::started(Recorder::default());
+    let listing = watch_listing(&pinned.drive, "query-and-lock");
+    let registration = watch.track("query-and-lock-volume", &pinned.root()).expect("registers");
+
+    watch.query_remove(registration);
+    watch.lock(registration);
+    assert!(!pinned.is_pinned(), "let go");
+
+    watch.refuse_removal(registration);
+    wait_until(Duration::from_secs(10), "the listing watch to re-arm", || {
+        rearmed(&listing)
+    });
+    stop_watching(&listing);
+    assert!(pinned.is_pinned(), "the root handle is back");
+    drop(watch);
+}
+
+/// A refusal and a lock's end can both arrive: the second take-back does nothing, and the drive
+/// still lets go on the next query.
+#[test]
+fn a_second_take_back_changes_nothing_and_the_next_query_still_lets_go() {
+    let pinned = Pinned::new("two-take-backs");
+    let watch = DriveWatch::started(Recorder::default());
+    let listing = watch_listing(&pinned.drive, "two-take-backs");
+    let registration = watch.track("two-take-backs-volume", &pinned.root()).expect("registers");
+
+    watch.query_remove(registration);
+    watch.refuse_removal(registration);
+    watch.unlock(registration);
+    wait_until(Duration::from_secs(10), "the listing watch to re-arm", || {
+        rearmed(&listing)
+    });
+    assert!(pinned.is_pinned(), "taken back once");
+
+    watch.query_remove(registration);
+    assert!(!pinned.is_pinned(), "the next query lets go again");
+    watch.refuse_removal(registration);
+    wait_until(Duration::from_secs(10), "the listing watch to re-arm again", || {
+        rearmed(&listing)
+    });
     stop_watching(&listing);
     drop(watch);
 }

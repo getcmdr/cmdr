@@ -876,8 +876,10 @@ Pinned by `watcher_fsevents_test.rs` (synthetic events, including a drop at `/` 
   `None`; after 1 s with no further announce at or above it, it re-arms and re-reads (the pane lands on a parent if
   its folder went with the write). An announce inside a watched folder (every file of a copy) releases nothing and
   costs a read lock. Another program's rename of an ancestor still fails (#1340, decided: live with it).
-- **A drive's removal query holds its watches** (`hold_at_or_below` / `take_back_after`, the same pair a write's release runs): the same close, under one
-  generation, with NO quiet timer, so "Safely remove" of a drive a pane shows goes through. The Windows drive watcher
+- **A drive's removal query holds its watches** (`hold_drive` / `take_back_drive` / `forget_drive`): the same close,
+  but held: nothing under a held drive re-arms (`rearm` refuses there), a Cmdr write's 1 s quiet timer included, or
+  it would reopen a handle the removal waits on. `take_back_drive` re-arms every let-go watch under the drive whatever
+  release let it go last, so a second hold or a write during the hold can't leave one behind. The Windows drive watcher
   (`volumes/DETAILS.md` § "Windows: drive arrival and removal") takes them back only if the removal is refused; a
   removal that went through moves the pane, which closes the listing.
 - **A watch the OS stopped** (a fatal completion error, which the patched notify now reports): notify unwatches after

@@ -14,24 +14,31 @@
 //! 1. Its handle closes.
 //! 2. The drive-release gate marks an unmount pending (no start lands meanwhile) and stops its
 //!    index (`Index::stop_removable_volume`), the stop macOS's unmount approver runs.
-//! 3. Every listing watch on it lets go (`file_system::watcher::release::hold_at_or_below`).
+//! 3. Every listing watch on it lets go and stays let go (`file_system::watcher::release::hold_drive`),
+//!    a Cmdr write's quiet timer included.
+//!
+//! ❗ **One let-go per drive at a time.** A removal can bring a query AND a volume lock, and a
+//! refusal can bring two take-backs: a second let-go only notes a lock, and a take-back with
+//! nothing let go does nothing. A second release would move the drive's epoch and void the
+//! resume; a second hold would orphan the first's watches.
 //!
 //! A refused removal (or an ended lock) takes it all back: the handle reopens, the watches re-arm
 //! and re-read, and an index the query stopped resumes through the gate, which still checks the
-//! drive's intent. A removal that went through leaves it all let go; the volume's own removal
-//! then unregisters it and moves its panes.
+//! drive's intent. After a lock it rescans instead: a format or `chkdsk /f` rewrote the drive
+//! under the same id. A removal that went through leaves it all let go; the volume's own removal
+//! then unregisters it, moves its panes, and only then lifts the unmount-pending flag.
 
 use std::collections::{HashMap, HashSet};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, SyncSender};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::windows_device_change::{diff_drives, hears_removal_queries};
+use cmdr_fs::volume::windows_device_change::{LetGoCause, diff_drives, hears_removal_queries};
 use cmdr_fs::volume::windows_volume_ids::WindowsDrive;
 use log::{debug, info, warn};
 use windows_sys::Win32::Foundation::{GetLastError, HANDLE, INVALID_HANDLE_VALUE};
@@ -45,13 +52,19 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 };
 
 use super::{Announce, Job};
-use crate::file_system::volume::drive_release::{self, LateRelease, ResumeCandidate, ResumeOwner, VolumeRelease};
-use crate::file_system::watcher::release::{HeldWatches, hold_at_or_below, take_back_after};
+use crate::file_system::volume::drive_release::{
+    self, Gated, LateRelease, ResumeCandidate, ResumeOwner, StartKind, VolumeRelease,
+};
+use crate::file_system::watcher::release::{forget_drive, hold_drive, take_back_drive};
 use crate::ignore_poison::IgnorePoison;
 
 /// How long a query's index stop may take. Inside the window's own wait, so the answer to
 /// Windows comes after it.
 const INDEX_LET_GO: Duration = Duration::from_secs(6);
+
+/// How long after an unreadable drive table the worker reads it once more: a pull can leave the
+/// mount table briefly unreadable, and no later signal is due.
+const RETRY_UNREADABLE: Duration = Duration::from_secs(2);
 
 /// One drive the worker holds a handle on.
 struct Sentinel {
@@ -60,8 +73,14 @@ struct Sentinel {
     root: String,
     /// The open root handle; `None` while let go.
     handle: Option<OwnedHandle>,
-    /// What a query let go of, to take back if it's refused.
-    held: Option<HeldWatches>,
+    /// The let-go in force, if any.
+    let_go: Option<LetGo>,
+}
+
+/// A let-go in force on a drive.
+struct LetGo {
+    /// Whether a volume lock came with it (or alone), so the take-back rescans.
+    locked: bool,
 }
 
 impl Sentinel {
@@ -80,6 +99,11 @@ pub(super) struct Worker<A: Announce> {
     known: Vec<WindowsDrive>,
     /// By registration (`HDEVNOTIFY` as an integer).
     sentinels: HashMap<usize, Sentinel>,
+    /// Volumes with an unmount pending at the gate, lifted when the drive leaves the table or
+    /// its removal is refused.
+    pending: HashSet<String>,
+    /// When to read an unreadable table once more.
+    retry_at: Option<Instant>,
     announce: A,
     owner: Arc<QueryOwner>,
 }
@@ -90,6 +114,8 @@ impl<A: Announce> Worker<A> {
             window,
             known: Vec::new(),
             sentinels: HashMap::new(),
+            pending: HashSet::new(),
+            retry_at: None,
             announce,
             owner: Arc::new(QueryOwner::default()),
         }
@@ -113,12 +139,31 @@ impl<A: Announce> Worker<A> {
         }
         // Nobody waits on it but a test.
         let _ = baseline.try_send(());
-        while let Ok(job) = inbox.recv() {
+        loop {
+            let job = match self.retry_at {
+                Some(at) => match inbox.recv_timeout(at.saturating_duration_since(Instant::now())) {
+                    Ok(job) => job,
+                    Err(RecvTimeoutError::Timeout) => {
+                        self.retry_at = None;
+                        self.rescan_once_more();
+                        continue;
+                    }
+                    Err(RecvTimeoutError::Disconnected) => break,
+                },
+                None => match inbox.recv() {
+                    Ok(job) => job,
+                    Err(_) => break,
+                },
+            };
             match job {
                 Job::Rescan => self.rescan(),
-                Job::LetGo { registration, done } => {
-                    self.let_go(registration);
-                    // a window that stopped waiting answered already
+                Job::LetGo {
+                    registration,
+                    cause,
+                    done,
+                } => {
+                    self.let_go(registration, cause);
+                    // A window that stopped waiting answered already.
                     let _ = done.send(());
                 }
                 Job::TakeBack { registration } => self.take_back(registration),
@@ -128,7 +173,7 @@ impl<A: Announce> Worker<A> {
                 }
                 #[cfg(test)]
                 Job::Track { volume_id, root, done } => {
-                    // the test is waiting on it
+                    // The test is waiting on it.
                     let _ = done.send(self.track(&volume_id, &root));
                 }
                 Job::Stop => break,
@@ -138,34 +183,60 @@ impl<A: Announce> Worker<A> {
         for registration in registrations {
             self.forget(registration);
         }
+        let pending: Vec<String> = self.pending.drain().collect();
+        drive_release::gate().clear_unmount_pending(&pending);
     }
 
     /// Re-reads the drive table and announces each root that left or arrived. A table that
-    /// wouldn't answer changes nothing: ❌ never read as every drive gone.
+    /// wouldn't answer changes nothing (❌ never read as every drive gone) and is read once more
+    /// shortly.
     fn rescan(&mut self) {
+        if !self.read_table() {
+            self.retry_at = Some(Instant::now() + RETRY_UNREADABLE);
+        }
+    }
+
+    /// The one retry after an unreadable table; a second failure waits for the next signal.
+    fn rescan_once_more(&mut self) {
+        if !self.read_table() {
+            warn!(target: "volumes::windows", "The drive table still wouldn't answer; waiting for the next drive signal");
+        }
+    }
+
+    /// One read and diff. `false` when the table wouldn't answer.
+    fn read_table(&mut self) -> bool {
         let Some(now) = super::super::listed_drive_table() else {
             warn!(target: "volumes::windows", "The drive table wouldn't answer; keeping the drives as they were");
-            return;
+            return false;
         };
+        self.retry_at = None;
         let changes = diff_drives(&self.known, &now);
         self.known = now.to_vec();
         self.owner.set_listed(&self.known);
-        if changes.is_empty() {
-            return;
-        }
         for drive in &changes.left {
             info!(target: "volumes::windows", "Drive left: {}", LogPrivate::dir_path(&drive.root));
             if let Some(registration) = self.registration_at(&drive.root) {
                 self.forget(registration);
             }
             self.announce.left(&drive.root);
+            // Only now, with the root gone from the table and the registry: no index start can
+            // land on the drive any more.
+            self.lift_pending(&drive.id);
         }
         for drive in &changes.arrived {
             info!(target: "volumes::windows", "Drive arrived: {}", LogPrivate::dir_path(&drive.root));
+            self.lift_pending(&drive.id);
             self.announce.arrived(&drive.root);
             if hears_removal_queries(drive) {
                 self.track(&drive.id, &drive.root);
             }
+        }
+        true
+    }
+
+    fn lift_pending(&mut self, volume_id: &str) {
+        if self.pending.remove(volume_id) {
+            drive_release::gate().clear_unmount_pending(&[volume_id.to_owned()]);
         }
     }
 
@@ -189,29 +260,37 @@ impl<A: Announce> Worker<A> {
                 volume_id: volume_id.to_owned(),
                 root: root.to_owned(),
                 handle: Some(handle),
-                held: None,
+                let_go: None,
             },
         );
         Some(registration)
     }
 
-    /// A removal or lock query: let go of everything Cmdr holds on the drive.
-    fn let_go(&mut self, registration: usize) {
+    /// A removal or lock query: let go of everything Cmdr holds on the drive, once.
+    fn let_go(&mut self, registration: usize, cause: LetGoCause) {
         let Some(sentinel) = self.sentinels.get_mut(&registration) else {
             debug!(target: "volumes::windows", "A removal query for a drive no longer held");
             return;
         };
-        info!(target: "volumes::windows", "Letting go of {} for its removal", LogPrivate::dir_path(&sentinel.root));
+        let locked = cause == LetGoCause::Lock;
+        if let Some(let_go) = sentinel.let_go.as_mut() {
+            // Already let go: a second release would move the epoch and void the resume.
+            let_go.locked |= locked;
+            debug!(target: "volumes::windows", "A second {cause:?} query for a drive already let go");
+            return;
+        }
+        info!(target: "volumes::windows", "Letting go of {} for {cause:?}", LogPrivate::dir_path(&sentinel.root));
+        sentinel.let_go = Some(LetGo { locked });
         drop(sentinel.handle.take());
-        let ids = vec![sentinel.volume_id.clone()];
+        let volume_id = sentinel.volume_id.clone();
+        let root = sentinel.native_root();
+        let ids = vec![volume_id.clone()];
         let gate = drive_release::gate();
         gate.set_unmount_pending(&ids);
-        if let Some(root) = sentinel.native_root()
-            && let Some(held) = hold_at_or_below(&root)
-        {
-            debug!(target: "volumes::windows", "Let go of {} listing watch(es)", held.len());
-            // A second query while held keeps the first hold: its watches are already let go.
-            sentinel.held.get_or_insert(held);
+        self.pending.insert(volume_id);
+        if let Some(root) = root {
+            let closed = hold_drive(&root);
+            debug!(target: "volumes::windows", "Let go of {closed} listing watch(es)");
         }
         let owner = Arc::clone(&self.owner);
         let release = gate.release(
@@ -227,33 +306,43 @@ impl<A: Announce> Worker<A> {
         }
     }
 
-    /// The removal was refused or the lock ended: take back what the query let go of.
+    /// The removal was refused or the lock ended: take back what the let-go let go of. Nothing
+    /// when nothing is let go (a refusal and a lock's end can both arrive).
     fn take_back(&mut self, registration: usize) {
         let Some(sentinel) = self.sentinels.get_mut(&registration) else {
+            return;
+        };
+        let Some(let_go) = sentinel.let_go.take() else {
+            debug!(target: "volumes::windows", "A take-back for a drive that wasn't let go");
             return;
         };
         info!(target: "volumes::windows", "Taking {} back: its removal didn't happen", LogPrivate::dir_path(&sentinel.root));
         if sentinel.handle.is_none() {
             sentinel.handle = open_root(&sentinel.root);
         }
-        let ids = vec![sentinel.volume_id.clone()];
-        let gate = drive_release::gate();
-        gate.clear_unmount_pending(&ids);
-        if let Some(held) = sentinel.held.take() {
-            take_back_after(held, Duration::ZERO);
+        let volume_id = sentinel.volume_id.clone();
+        if let Some(root) = sentinel.native_root() {
+            take_back_drive(&root);
         }
-        if let Some(epoch) = self.owner.epoch_of(&sentinel.volume_id) {
-            let candidate = ResumeCandidate {
-                volume_id: sentinel.volume_id.clone(),
-                epoch,
-            };
+        self.lift_pending(&volume_id);
+        let Some(epoch) = self.owner.epoch_of(&volume_id) else {
+            return;
+        };
+        if let_go.locked {
+            // A lock may have rewritten the drive under the same id (a format, `chkdsk /f`): its
+            // rows can't be trusted, so it walks again instead of resuming as it was.
+            self.owner.forget(&volume_id);
+            rescan_after_a_lock(volume_id);
+        } else {
+            let candidate = ResumeCandidate { volume_id, epoch };
             let owner: Arc<dyn ResumeOwner> = Arc::clone(&self.owner) as Arc<dyn ResumeOwner>;
-            drop(gate.resume(vec![candidate], owner));
+            drop(drive_release::gate().resume(vec![candidate], owner));
         }
     }
 
-    /// The drive is going or gone: close its handle and end its registration. What a query let
-    /// go of stays let go; the volume's removal moves its panes.
+    /// The drive is going or gone: close its handle, end its registration, and stop holding its
+    /// watches. What a query let go of stays let go; the unmount-pending flag lifts once the
+    /// drive leaves the table (`read_table`).
     fn forget(&mut self, registration: usize) {
         let Some(sentinel) = self.sentinels.remove(&registration) else {
             return;
@@ -262,9 +351,36 @@ impl<A: Announce> Worker<A> {
         // SAFETY: `registration` is the `HDEVNOTIFY` `register` got, ended once: it's out of the
         // map now.
         unsafe { UnregisterDeviceNotification(registration as *mut core::ffi::c_void) };
-        drive_release::gate().clear_unmount_pending(std::slice::from_ref(&sentinel.volume_id));
+        if let Some(root) = native_root(&sentinel.root) {
+            forget_drive(&root);
+        }
         self.owner.forget(&sentinel.volume_id);
     }
+}
+
+/// An index a lock stopped walks its drive again, through the gate like every non-root start.
+/// A person's rescan is the start this is (the lock only made the index's rows untrustworthy);
+/// the take-back has lifted the unmount-pending flag already, so it doesn't wait on one.
+fn rescan_after_a_lock(volume_id: String) {
+    tauri::async_runtime::spawn(async move {
+        let id = volume_id.clone();
+        let gated = drive_release::gate()
+            .start(&volume_id, StartKind::UserRescan, move || async move {
+                crate::index_host::index().rescan_volume(&id).await
+            })
+            .await;
+        match gated {
+            Gated::Ran(Ok(outcome)) => {
+                info!(target: "volumes::windows", "Rescanning {volume_id} after its lock: {outcome:?}");
+            }
+            Gated::Ran(Err(e)) => {
+                warn!(target: "volumes::windows", "{volume_id} couldn't rescan after its lock: {e}");
+            }
+            Gated::Skipped(reason) => {
+                info!(target: "volumes::windows", "{volume_id} didn't rescan after its lock: {reason:?}");
+            }
+        }
+    });
 }
 
 /// A handle on `root`'s folder, any sharing allowed, so it's in nobody's way but a removal's.

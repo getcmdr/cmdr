@@ -22,6 +22,7 @@ const WIN32: [(i32, OsErrorClass); 49] = [
     // (ERROR_DEVICE_NOT_CONNECTED, ERROR_DEVICE_REMOVED), a dismounted volume's
     // (ERROR_FILE_INVALID), a letter whose device is gone (ERROR_DEV_NOT_EXIST), a card reader
     // whose card left (ERROR_NO_MEDIA_IN_DRIVE). All read as "the drive went away" (task 39).
+    // On a share it's the connection dropping instead: `ON_A_SHARE`.
     (55, OsErrorClass::NoDevice),              // ERROR_DEV_NOT_EXIST
     (1006, OsErrorClass::NoDevice),            // ERROR_FILE_INVALID
     (1112, OsErrorClass::NoDevice),            // ERROR_NO_MEDIA_IN_DRIVE
@@ -69,6 +70,35 @@ const WIN32: [(i32, OsErrorClass); 49] = [
 ];
 
 pub(crate) const TABLES: &[&[(i32, OsErrorClass)]] = &[&WIN32];
+
+/// Codes that mean something else on a mapped drive or UNC path: `ERROR_DEV_NOT_EXIST` there is
+/// mostly the share dropping ("the specified network resource or device is no longer
+/// available"), the link going away the transfer engine retries and waits out, like
+/// `ERROR_NETNAME_DELETED`.
+pub(crate) const ON_A_SHARE: &[(i32, OsErrorClass)] = &[(55, OsErrorClass::ConnectionReset)];
+
+/// A UNC path (`\\server\share\x`, `\\?\UNC\…`, or forward slashes), or one on a mapped drive
+/// (`GetDriveTypeW` answers `DRIVE_REMOTE` from the redirector's own table, no server round
+/// trip).
+pub(crate) fn is_on_a_share(path: &str) -> bool {
+    use std::os::windows::ffi::OsStrExt as _;
+    const DRIVE_REMOTE: u32 = 4;
+    let text = path.replace('/', "\\");
+    let plain = text.strip_prefix(r"\\?\").unwrap_or(&text);
+    if plain.starts_with(r"UNC\") || (plain == text && text.starts_with(r"\\")) {
+        return true;
+    }
+    let bytes = plain.as_bytes();
+    if bytes.len() < 2 || !bytes[0].is_ascii_alphabetic() || bytes[1] != b':' {
+        return false;
+    }
+    let root: Vec<u16> = std::ffi::OsStr::new(&format!("{}:\\", char::from(bytes[0])))
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    // SAFETY: `root` is a NUL-terminated drive root that outlives the call.
+    unsafe { windows_sys::Win32::Storage::FileSystem::GetDriveTypeW(root.as_ptr()) == DRIVE_REMOTE }
+}
 
 pub(crate) fn class_of(code: i32) -> OsErrorClass {
     super::class_in(TABLES, code)

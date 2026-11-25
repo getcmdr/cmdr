@@ -27,9 +27,8 @@ use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows_sys::Win32::UI::Shell::Common::ITEMIDLIST;
 use windows_sys::Win32::UI::Shell::{
     CSIDL_DESKTOP, ILFree, SHCNE_DRIVEADD, SHCNE_DRIVEREMOVED, SHCNE_MEDIAINSERTED, SHCNE_MEDIAREMOVED,
-    SHCNRF_InterruptLevel, SHCNRF_NewDelivery, SHCNRF_ShellLevel, SHChangeNotification_Lock,
-    SHChangeNotification_Unlock, SHChangeNotifyDeregister, SHChangeNotifyEntry, SHChangeNotifyRegister,
-    SHGetSpecialFolderLocation,
+    SHCNRF_NewDelivery, SHCNRF_ShellLevel, SHChangeNotification_Lock, SHChangeNotification_Unlock,
+    SHChangeNotifyDeregister, SHChangeNotifyEntry, SHChangeNotifyRegister, SHGetSpecialFolderLocation,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DEV_BROADCAST_HDR, DefWindowProcW, DestroyWindow, DispatchMessageW, GWLP_USERDATA, GetMessageW,
@@ -190,9 +189,12 @@ impl ShellNotice {
             warn!(target: "volumes::windows", "No Shell drive notices: the desktop's item list wouldn't come (HRESULT {found:#x})");
             return None;
         }
+        // Drive and media notices are the Shell's own: no file-system watch (`SHCNRF_InterruptLevel`,
+        // a recursive entry) is wanted, and one would be a handle in this process that a drive's
+        // removal query doesn't close.
         let entry = SHChangeNotifyEntry {
             pidl: desktop,
-            fRecursive: 1,
+            fRecursive: 0,
         };
         let events = SHCNE_DRIVEADD | SHCNE_DRIVEREMOVED | SHCNE_MEDIAINSERTED | SHCNE_MEDIAREMOVED;
         // SAFETY: `window` is this thread's window, which pumps the posted message; `entry`
@@ -200,7 +202,7 @@ impl ShellNotice {
         let id = unsafe {
             SHChangeNotifyRegister(
                 window,
-                SHCNRF_ShellLevel | SHCNRF_InterruptLevel | SHCNRF_NewDelivery,
+                SHCNRF_ShellLevel | SHCNRF_NewDelivery,
                 events as i32,
                 WM_SHELL_DRIVES,
                 1,
@@ -333,11 +335,18 @@ fn on_device_change(window: HWND, state: &WindowState, event: usize, broadcast: 
             Some(1)
         }
         DeviceChange::Handle {
-            event: HandleEvent::LetGo,
+            event: HandleEvent::LetGo(cause),
             registration,
         } => {
             let (done, answered) = mpsc::sync_channel(1);
-            send(state, Job::LetGo { registration, done });
+            send(
+                state,
+                Job::LetGo {
+                    registration,
+                    cause,
+                    done,
+                },
+            );
             if answered.recv_timeout(LET_GO_WAIT).is_err() {
                 warn!(
                     target: "volumes::windows",
