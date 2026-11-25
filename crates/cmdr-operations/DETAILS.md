@@ -2492,7 +2492,9 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   Rollback are the ordinary cancel.
 - **Only a typed refusal asks**: `WriteOperationError::NameTooLong` or `InvalidName` (`refusal_reason`), ❌ never a
   message. A landing refused as `InvalidName` for a name longer than `MAX_SCRATCH_NAME_BYTES` reads as `NameTooLong`,
-  since the temp in the same folder (at most that long) was accepted (`transfer_error.rs::from_landing`).
+  since the temp in the same folder (at most that long) was accepted (`transfer_error.rs::from_landing`). The name is
+  the app path's last one, measured whole on every host (a POSIX server's `a\b.txt`, where Windows' `Path` measured
+  `b.txt`).
 - **Who asks is whoever may wait on a person** (`transfer/volume/refused_item.rs`): the merge WALKER for its leaves (a
   leaf hands back `LeafEnd::Refused`, since a leaf may never wait on one), and the top-level dispatch for a source whose
   OWN name was refused (the concurrent driver's spawned task, the serial closures, the local `copy_single_item`). Each

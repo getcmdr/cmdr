@@ -701,16 +701,26 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
     }
 }
 
+/// `path`'s last name as the native bytes it spells, split by the app path: a POSIX
+/// volume's `a\b.txt` is one name on every host, where Windows' `Path` measured `b.txt`
+/// and missed a name the share refused for its length. Byte for byte `Path`'s name on
+/// macOS and Linux, a name that isn't UTF-8 included.
+fn leaf(path: &Path) -> Option<Vec<u8>> {
+    let app = super::listed_name::on_volume(path);
+    let name = cmdr_fs::app_path::PathArithmetic::file_name(&*app)?;
+    // An escape that isn't bytes (a Windows unpaired surrogate) counts as its app text.
+    Some(cmdr_fs::app_path::unescape_bytes(name).map_or_else(|_| name.as_bytes().to_vec(), Cow::into_owned))
+}
+
 /// The UTF-8 byte length of `path`'s last component.
 fn leaf_bytes(path: &Path) -> usize {
-    path.file_name().map_or(0, |name| name.as_encoded_bytes().len())
+    leaf(path).map_or(0, |name| name.len())
 }
 
 /// Whether `path`'s last component is longer than any filesystem Cmdr writes
 /// to can store (`cmdr_fs::validation::over_every_name_limit`).
 fn over_every_name_limit(path: &Path) -> bool {
-    path.file_name()
-        .is_some_and(|name| cmdr_fs::validation::over_every_name_limit(&name.to_string_lossy()))
+    leaf(path).is_some_and(|name| cmdr_fs::validation::over_every_name_limit(&String::from_utf8_lossy(&name)))
 }
 
 /// What tier 2 reports when it ends a wait.

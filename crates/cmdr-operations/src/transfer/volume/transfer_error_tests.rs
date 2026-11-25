@@ -633,6 +633,50 @@ fn a_long_name_refused_at_the_landing_is_too_long() {
     );
 }
 
+/// The whole `\` name is measured, on every host: on Windows `Path` measured only the part
+/// after the last `\` of a POSIX server's name, and a long name refused for its length
+/// read as "not allowed". Hostile spellings keep their own reading: short, not allowed.
+#[test]
+fn a_long_backslash_name_is_measured_whole() {
+    let half = "Ölmalmen – a very long live recording title ".repeat(2);
+    let dest = PathBuf::from(format!("/share/music/{half}\\{half}.flac"));
+    let landing = |dest: &Path| {
+        let failure = FinalizeFailure {
+            error: VolumeError::InvalidName("refused".into()),
+            aftermath: None,
+        };
+        WriteFailure::from(PathedVolumeError::from_landing(failure, dest)).error
+    };
+    let error = landing(&dest);
+    assert!(
+        matches!(error, WriteOperationError::NameTooLong { .. }),
+        "got {error:?}"
+    );
+
+    let leaf = format!("{}\\{}", "a".repeat(150), "a".repeat(150));
+    let path = format!("/share/{leaf}");
+    let error = map_volume_error(&path, PathRole::Destination, VolumeError::InvalidName("refused".into()));
+    assert!(
+        matches!(error, WriteOperationError::NameTooLong { .. }),
+        "got {error:?}"
+    );
+
+    for dest in [
+        Path::new("/share/foo\\.."),
+        Path::new("/share/..\\bar"),
+        Path::new("/share/a:b"),
+        Path::new("/share/trail."),
+        Path::new("/share/trail "),
+        Path::new("/share/C:\\x"),
+    ] {
+        let error = landing(dest);
+        assert!(
+            matches!(error, WriteOperationError::InvalidName { .. }),
+            "{dest:?}: {error:?}"
+        );
+    }
+}
+
 /// A short name refused at the landing fit the temp's budget whole, so its
 /// length proves nothing: it stays the "name not allowed" refusal.
 #[test]
