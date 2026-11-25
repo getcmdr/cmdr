@@ -616,7 +616,7 @@ async fn scan_preview_reads_a_backslash_name_from_its_own_folder() {
     let vid = unique("backslash");
     let vol = Arc::new(CountingWatchedVolume::new("watched-vol", true));
     panes.show_volume(&vid, vol.clone() as Arc<dyn Volume>);
-    let mut names = vec!["sub\\a.jpg", "foo\\..", "..\\bar", "a:b", "trail.", "trail ", "C:\\x"];
+    let mut names = ["sub\\a.jpg", "foo\\..", "..\\bar", "a:b", "trail.", "trail ", "C:\\x"];
     let _own = insert_listing(
         &panes,
         "own",

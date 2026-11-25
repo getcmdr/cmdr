@@ -380,7 +380,7 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             // `Path` read.
             let by_name: HashMap<String, &FileEntry> = cached_entries
                 .iter()
-                .filter_map(|e| Some((label_of(&*listed_path(e).ok()?)?, e)))
+                .filter_map(|e| Some((label_of(&listed_path(e).ok()?)?, e)))
                 .collect();
 
             for &index in paths_in_group {
