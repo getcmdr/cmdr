@@ -397,6 +397,27 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
     }
 }
 
+/// #1491: a move within one remote volume names `/dst/a/b.txt` `a\b.txt` in `/dst`.
+/// That's ONE new name beside the folder `a` on every host, so the file moves there; on
+/// Windows `std::path` read `/dst\a\b.txt` as the source itself, and the move skipped
+/// it as already in place, reporting it done.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_move_named_with_a_backslash_lands_as_one_name_beside_the_folder() {
+    for route in [Route::MoveWithin, Route::MoveWithinByCopy] {
+        let rig = Rig::new(route).await;
+        let source = rig.file_at_dest_path("a/b.txt", b"moved").await;
+
+        rig.run(vec![source.clone()], names(&[(&source, "a\\b.txt")])).await;
+
+        assert_eq!(rig.dest_names().await, vec!["a", "a\\b.txt"], "{route:?}");
+        assert_eq!(rig.read_dest("a\\b.txt").await, b"moved", "{route:?}");
+        assert!(
+            !rig.source.exists(&app(&source)).await,
+            "{route:?}: the move took the original"
+        );
+    }
+}
+
 /// A source renamed to another source's ORIGINAL name, while that one is
 /// renamed onward, lands each where it was asked.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

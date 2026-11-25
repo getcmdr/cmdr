@@ -106,14 +106,15 @@ fn validate_leaves_for_route(
 /// listing path passes through).
 pub(crate) fn transfer_would_land_on_its_source(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
 ) -> bool {
     match (source_volume.local_path(), dest_volume.local_path()) {
+        // Both local: the OS answers by `dev+ino`, on the paths it spells.
         (Some(source_root), Some(dest_root)) => super::validation::may_be_same_file(
-            &std_root(&source_root).join(source_path),
-            &cmdr_fs::volume::root_anchored(&std_root(&dest_root), dest_path),
+            &on_local_root(&std_root(&source_root), &engine_path(source_path)),
+            &cmdr_fs::volume::root_anchored(&std_root(&dest_root), &engine_path(dest_path)),
         ),
         _ => super::transfer::volume::is_the_same_item(source_volume, source_path, dest_volume, dest_path),
     }
@@ -642,18 +643,17 @@ impl crate::Operations {
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`). Before the
         // target names, which key on the source path.
         let (typed_sources, names): (Vec<AppPathBuf>, Vec<String>) = renames.into_iter().unzip();
-        let renames: Vec<(PathBuf, String)> = typed_sources
-            .iter()
-            .map(|source| engine_path(source))
-            .zip(names)
-            .collect();
         let dest_path = text_without_trailing_separators(dest_path);
+        // Keyed by the typed source the drivers carry, each name read as ONE name by
+        // the app path's rules (a POSIX server's `a\b` too, on every host).
         let target_names =
-            TargetNames::new(renames.iter().cloned()).map_err(|NotAName(name)| WriteOperationError::InvalidName {
-                path: name,
-                message: "a new name is one name, not a path".into(),
+            TargetNames::new(typed_sources.iter().cloned().zip(names.iter().cloned())).map_err(|NotAName(name)| {
+                WriteOperationError::InvalidName {
+                    path: name,
+                    message: "a new name is one name, not a path".into(),
+                }
             })?;
-        let (sources, names): (Vec<PathBuf>, Vec<String>) = renames.into_iter().unzip();
+        let sources: Vec<PathBuf> = typed_sources.iter().map(|source| engine_path(source)).collect();
         // Never the person's own home folder, nor a folder holding it (`home_folder.rs`).
         if let Some(refusal) = self.home_folder_guard(&volume_id, &sources, HomeFolderAction::Rename) {
             return Err(refusal);

@@ -101,3 +101,33 @@ fn ensure_zip_writable_refuses_every_document_container() {
     // if the guard were "fixed" by refusing everything.
     assert!(ensure_zip_writable(Path::new("/x/real.zip"), ReadOnlySide::Destination).is_ok());
 }
+
+/// A zip on a server reads its inner path UNDER the archive on every host: on Windows
+/// `Path::join` made `/share/a.zip\dir/x.txt`, a name no route serves, so a duplicate
+/// went unseen until the edit failed. An inner `..` is no known duplicate.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_remote_archive_finds_its_inner_path() {
+    use cmdr_fs::volume::{InMemoryVolume, RoutedKind};
+    let engine = TestOperations::new();
+    let archive = Path::new("/share/a.zip");
+    let (id, _parent) = register_remote_zip(&engine, archive, &[("dir/x.txt", b"x")]).await;
+    // The archive's own volume, served at the zip as the registry mounts one.
+    let inside = InMemoryVolume::new("a.zip");
+    inside
+        .create_directory_all(cmdr_fs::app_path!("/share/a.zip/dir"))
+        .await
+        .expect("seed inner dir");
+    inside
+        .create_file(cmdr_fs::app_path!("/share/a.zip/dir/x.txt"), b"x")
+        .await
+        .expect("seed inner file");
+    engine.volumes().route(
+        cmdr_fs::app_path!("/share/a.zip"),
+        RoutedKind::Archive,
+        Arc::new(inside) as Arc<dyn Volume>,
+    );
+
+    assert!(archive_inner_exists(engine.host(), &id, archive, "dir/x.txt").await);
+    assert!(!archive_inner_exists(engine.host(), &id, archive, "dir/y.txt").await);
+    assert!(!archive_inner_exists(engine.host(), &id, archive, "../a.zip").await);
+}

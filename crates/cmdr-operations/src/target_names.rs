@@ -10,50 +10,43 @@
 //! engine builds its top-level destination paths.
 //!
 //! ❗ A name, never a path: [`TargetNames::new`] refuses a name that isn't one
-//! plain path component, so a map can't send a source anywhere but into the
-//! destination folder it was given.
+//! plain name by the app path's rules (`AppName::from_listed_text`), so a map
+//! can't send a source anywhere but into the destination folder it was given.
+//! A POSIX server's `a\b` is one name on every host (on Windows `std::path`'s
+//! components split it and refused it).
 
 use std::collections::HashMap;
-use std::ffi::{OsStr, OsString};
-use std::path::{Component, Path, PathBuf};
+
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf};
 
 /// The NAME each renamed top-level source takes at the destination, by source
-/// path.
+/// path, as the app text it was sent.
 // DEFAULT-OK: an empty map is the ordinary transfer, every source keeping its
 // own name.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub(crate) struct TargetNames(HashMap<PathBuf, OsString>);
+pub(crate) struct TargetNames(HashMap<AppPathBuf, String>);
 
-/// A target name that isn't one plain path component (empty, `.`, `..`, or
-/// holding a separator).
+/// A target name that isn't one plain name (empty, `.`, `..`, holding a `/`
+/// or a NUL).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct NotAName(pub(crate) String);
 
 impl TargetNames {
-    /// The map for `renames`, refusing any name that isn't one plain component.
-    pub(crate) fn new(renames: impl IntoIterator<Item = (PathBuf, String)>) -> Result<Self, NotAName> {
+    /// The map for `renames`, refusing any name that isn't one plain name.
+    pub(crate) fn new(renames: impl IntoIterator<Item = (AppPathBuf, String)>) -> Result<Self, NotAName> {
         let mut names = HashMap::new();
         for (source, name) in renames {
-            let mut components = Path::new(&name).components();
-            match (components.next(), components.next()) {
-                (Some(Component::Normal(_)), None) if !name.contains('/') => {
-                    names.insert(source, OsString::from(name));
-                }
-                _ => return Err(NotAName(name)),
+            if AppName::from_listed_text(&name).is_err() {
+                return Err(NotAName(name));
             }
+            names.insert(source, name);
         }
         Ok(Self(names))
     }
 
-    /// The name `source` takes at the destination: its target name, else its
-    /// own.
-    pub(crate) fn name_for<'a>(&'a self, source: &'a Path) -> Option<&'a OsStr> {
-        self.chosen_for(source).or_else(|| source.file_name())
-    }
-
     /// The target name `source` was given, `None` when it keeps its own.
-    pub(crate) fn chosen_for(&self, source: &Path) -> Option<&OsStr> {
-        self.0.get(source).map(OsString::as_os_str)
+    pub(crate) fn chosen_for(&self, source: &AppPath) -> Option<&str> {
+        self.0.get(source).map(String::as_str)
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -64,25 +57,36 @@ impl TargetNames {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cmdr_fs::app_path;
+
+    fn renamed(name: &str) -> Result<TargetNames, NotAName> {
+        TargetNames::new([(app_path!("/a/foo").to_owned(), name.to_string())])
+    }
 
     #[test]
     fn a_renamed_source_takes_its_target_name_and_the_rest_keep_their_own() {
-        let names = TargetNames::new([(PathBuf::from("/a/foo"), "bar".to_string())]).unwrap();
-        assert_eq!(names.name_for(Path::new("/a/foo")), Some(OsStr::new("bar")));
-        assert_eq!(names.name_for(Path::new("/a/other")), Some(OsStr::new("other")));
+        let names = renamed("bar").expect("one name");
+        assert_eq!(names.chosen_for(app_path!("/a/foo")), Some("bar"));
+        assert_eq!(names.chosen_for(app_path!("/a/other")), None);
         assert!(TargetNames::default().is_empty());
     }
 
     /// ❗ A name can't smuggle in a path: the source would land outside the
     /// folder the move was given.
     #[test]
-    fn a_target_name_that_isnt_one_plain_component_is_refused() {
-        for bad in ["", ".", "..", "x/y", "/abs", "../up"] {
-            assert_eq!(
-                TargetNames::new([(PathBuf::from("/a/foo"), bad.to_string())]),
-                Err(NotAName(bad.to_string())),
-                "{bad:?}"
-            );
+    fn a_target_name_that_isnt_one_plain_name_is_refused() {
+        for bad in ["", ".", "..", "x/y", "/abs", "../up", "/etc/x", "a\0b"] {
+            assert_eq!(renamed(bad), Err(NotAName(bad.to_string())), "{bad:?}");
+        }
+    }
+
+    /// A name holding `\`, `:`, or a trailing dot or space is ONE name on every host:
+    /// a POSIX server holds it whole (Windows' `std::path` split `a\b` and refused it).
+    #[test]
+    fn a_hostile_looking_name_is_one_name_on_every_host() {
+        for one in ["a\\b", "foo\\..", "..\\bar", "a:b", "x.", "x ", "C:\\x"] {
+            let names = renamed(one).expect("one name");
+            assert_eq!(names.chosen_for(app_path!("/a/foo")), Some(one), "{one:?}");
         }
     }
 }

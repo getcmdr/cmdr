@@ -140,7 +140,7 @@ pub(super) async fn resolve_volume_conflict(
     // what was asked. Nothing propagates the new name: `merge_level` joins each
     // child onto the destination it was handed, so a renamed root carries its
     // whole subtree. `../DETAILS.md` § "Self-collision (duplicating in place)".
-    if is_the_same_item(source_volume, source_path, dest_volume, dest_path) {
+    if is_the_same_item(source_volume, source_app, dest_volume, dest_app) {
         let unique = find_unique_volume_name(dest_volume, dest_app, source_is_directory, &state.claimed_names).await;
         let kind = if source_is_directory {
             LogKind::DirPath

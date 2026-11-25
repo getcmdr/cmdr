@@ -40,7 +40,10 @@ impl super::Operations {
         let volume_id_str = volume_id.clone().unwrap_or_else(|| "root".to_string());
         // A route (inside a `.zip`, or a repo's `.git/<category>/` trees) serves `dir`
         // read-only; the drive underneath would take a real file there.
-        let first_candidate = dir.join(numbered_name(stem, Some(ext), 0));
+        // Joined the app path's way: on Windows `Path::join` put a `\` between a POSIX
+        // volume's folder and the name (`/share\pasted.png`, one name in `/`).
+        let first_candidate = crate::wire_paths::seam_child(dir, &numbered_name(stem, Some(ext), 0))
+            .map_err(|reason| MutationError::NameNotAllowed { reason })?;
         let first_candidate = crate::wire_paths::seam_path(&first_candidate);
         if route_serving(self.host(), &volume_id_str, &first_candidate)
             .await
@@ -85,7 +88,8 @@ impl super::Operations {
             let mut counter: u32 = 0;
             loop {
                 let name = numbered_name(stem, Some(ext), counter);
-                let path = dir.join(&name);
+                let path = crate::wire_paths::seam_child(dir, &name)
+                    .map_err(|reason| MutationError::NameNotAllowed { reason })?;
                 // Register the destination with the downloads watcher's ignore set
                 // before the syscall (no-op outside ~/Downloads).
                 self.host().announce(&path);

@@ -85,12 +85,22 @@ pub async fn archive_inner_exists(
     let is_remote = parent.as_ref().is_some_and(|p| !p.supports_local_fs_access());
 
     if is_remote {
+        // Joined the app path's way: on Windows `Path::join` put a `\` after the
+        // remote archive (`/share/a.zip\dir/x.txt`), a name no route serves, so a
+        // duplicate went unseen until the edit itself failed. An inner path no typed
+        // join takes (a `..`) isn't a known duplicate.
+        let archive = AppPath::legacy_unchecked(archive_path);
         let full_path = if inner_path.is_empty() {
-            archive_path.to_path_buf()
+            archive.into_owned()
         } else {
-            archive_path.join(inner_path)
+            let Some(joined) = cmdr_fs::app_path::RelativeAppPath::new(inner_path)
+                .ok()
+                .and_then(|inner| archive.join_relative(inner).ok())
+            else {
+                return false;
+            };
+            joined
         };
-        let full_path = AppPath::legacy_unchecked(&full_path);
         let resolved = host.volumes().resolve(parent_volume_id, &full_path).await;
         return match resolved.volume {
             Some(volume) if resolved.routed == Some(RoutedKind::Archive) => volume.exists(&full_path).await,

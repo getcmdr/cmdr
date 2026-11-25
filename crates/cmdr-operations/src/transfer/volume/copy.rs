@@ -949,11 +949,9 @@ pub async fn copy_volumes_with_progress(
     // these to a free ` (N)` name instead of ever asking. Local twin:
     // `../copy/mod.rs`. `DETAILS.md` § "Self-collision (duplicating in place)".
     pre_skip_paths.retain(|source| {
-        let chosen = config.leaves.chosen_for(&std_of(source));
+        let chosen = config.leaves.chosen_name(&std_of(source));
         match top_level(dest_path, source, chosen) {
-            TopLevel::At(lands_at) => {
-                !is_the_same_item(&source_volume, &std_of(source), &dest_volume, &std_of(&lands_at))
-            }
+            TopLevel::At(lands_at) => !is_the_same_item(&source_volume, source, &dest_volume, &lands_at),
             TopLevel::Refused(_) => true,
         }
     });

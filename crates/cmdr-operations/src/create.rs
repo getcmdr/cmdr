@@ -67,8 +67,13 @@ async fn refuse_routed_create(
     parent_path: &str,
     name: &str,
 ) -> Option<MutationError> {
-    let new_path = Path::new(parent_path).join(name);
-    let new_path = crate::wire_paths::seam_path(&new_path);
+    // Joined the app path's way (#1491): on Windows `Path::join` put a `\` between a
+    // POSIX volume's folder and the name (`/repo/.git\x`), one name the route gate
+    // couldn't place. A name that's no plain name has no place to route: the name
+    // check after this gate refuses it, typed.
+    let name = cmdr_fs::app_path::AppName::from_listed_text(name).ok()?;
+    let parent = crate::wire_paths::seam_path(Path::new(parent_path));
+    let new_path = cmdr_fs::app_path::ListedFolder::new(&parent).join(&name).ok()?;
     route_serving(host, volume_id.unwrap_or("root"), &new_path)
         .await
         .map(|_| routed_mutation_refusal(&new_path))

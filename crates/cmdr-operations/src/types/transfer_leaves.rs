@@ -100,14 +100,22 @@ impl TransferLeaves {
         }
     }
 
-    /// The name `source` lands as when its caller chose one; `None` when it
-    /// keeps its own.
-    pub(crate) fn chosen_for(&self, source: &Path) -> Option<&OsStr> {
+    /// The name `source` lands as when its caller chose one, as the app text it
+    /// was sent; `None` when it keeps its own. The volume engine reads it by the
+    /// app path's rules (`transfer/volume/listed_name.rs::top_level`), so a POSIX
+    /// server's `a\b.txt` stays one name on Windows.
+    pub(crate) fn chosen_name(&self, source: &Path) -> Option<&str> {
         match &self.form {
             Form::Own => None,
-            Form::Single(leaf) => Some(OsStr::new(leaf)),
-            Form::PerSource(names) => names.get(source).map(OsStr::new),
+            Form::Single(leaf) => Some(leaf),
+            Form::PerSource(names) => names.get(source).map(String::as_str),
         }
+    }
+
+    /// [`Self::chosen_name`] for the LOCAL engines, which join it onto a native
+    /// path the OS spells.
+    pub(crate) fn chosen_for(&self, source: &Path) -> Option<&OsStr> {
+        self.chosen_name(source).map(|leaf| leaf.as_ref())
     }
 
     /// The name `source` lands as: the chosen one, else its own. `None` only

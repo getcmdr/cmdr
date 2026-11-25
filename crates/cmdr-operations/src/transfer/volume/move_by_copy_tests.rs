@@ -148,7 +148,7 @@ async fn a_rename_that_copies_moves_the_folder_to_its_new_name() {
     seed_tree(&volume, "/a/foo").await;
     let state = state_with(
         &engine,
-        TargetNames::new([(PathBuf::from("/a/foo"), "bar".to_string())]).unwrap(),
+        TargetNames::new([(cmdr_fs::app_path!("/a/foo").to_owned(), "bar".to_string())]).unwrap(),
     );
 
     let (result, _) = run_move(&volume, &state, &["/a/foo"], "/a").await;
@@ -168,7 +168,7 @@ async fn a_target_name_renames_in_one_call_where_the_volume_can() {
     seed_tree(&volume, "/a/foo").await;
     let state = state_with(
         &engine,
-        TargetNames::new([(PathBuf::from("/a/foo"), "bar".to_string())]).unwrap(),
+        TargetNames::new([(cmdr_fs::app_path!("/a/foo").to_owned(), "bar".to_string())]).unwrap(),
     );
 
     let (result, _) = run_move(&volume, &state, &["/a/foo"], "/a").await;

@@ -12,8 +12,7 @@
 //! `#[tauri::command]` wrapper that calls `Operations::scan_volume_for_conflicts_within`
 //! with the production budget.
 
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::sync::Arc;
 
 use tokio::time::Duration;
@@ -122,7 +121,7 @@ impl crate::Operations {
         source_items: Vec<SourceItemInput>,
         dest_path: String,
         source_volume_id: Option<String>,
-        source_paths: Option<Vec<String>>,
+        source_paths: Option<Vec<AppPathBuf>>,
     ) -> Result<Vec<ScanConflict>, VolumeScanError> {
         log::debug!(
             target: CONFLICT_LOG_TARGET,
@@ -164,9 +163,7 @@ impl crate::Operations {
         // Same anchoring the copy op applies: the dialog's box is volume-relative,
         // so without it the scan asks a share for a path outside its mount and
         // reports "no conflicts" for a folder full of them.
-        let dest_path = resolve_dest_path(&volume, &dest_path)
-            .map(|anchored| crate::wire_paths::engine_path(&anchored))
-            .map_err(|_| no_such_place(&dest_path))?;
+        let dest_path = resolve_dest_path(&volume, &dest_path).map_err(|_| no_such_place(&dest_path))?;
 
         let mut source_items: Vec<cmdr_fs::volume::SourceItemInfo> = source_items
             .into_iter()
@@ -182,17 +179,14 @@ impl crate::Operations {
         // the same resolve the batch stat pays for, and it stays `None` when the
         // caller sent no source volume: the filter is then inert and the scan keeps
         // its name-only behavior.
-        let mut resolved_source: Option<(Arc<dyn Volume>, Vec<PathBuf>)> = None;
+        let mut resolved_source: Option<(Arc<dyn Volume>, Vec<AppPathBuf>)> = None;
 
         // Resolve real per-item types and sizes from the source volume when the
         // caller supplied it. One `get_metadata` per top-level path, O(top-level
         // items) and never recursive. `resolve_source` routes an archive-inner
         // source through its ArchiveVolume.
-        if let (Some(src_volume_id), Some(src_paths)) = (source_volume_id, source_paths) {
-            let paths: Vec<PathBuf> = src_paths.iter().map(PathBuf::from).collect();
-            let first = paths
-                .first()
-                .map(|path| crate::wire_paths::seam_path(path).into_owned());
+        if let (Some(src_volume_id), Some(paths)) = (source_volume_id, source_paths) {
+            let first = paths.first().cloned();
             // The listing cache keys a pane by the caller's volume id, which the
             // resolve below moves; the stat leg asks the cache with it.
             let stat_volume_id = src_volume_id.clone();
@@ -254,7 +248,7 @@ impl crate::Operations {
             |detail| VolumeScanError::Unexpected { detail },
             async move {
                 volume
-                    .scan_for_conflicts(&source_items, &on_volume(&dest_path))
+                    .scan_for_conflicts(&source_items, &dest_path)
                     .await
                     .map_err(|error| VolumeScanError::Volume { error })
             },
@@ -298,7 +292,7 @@ impl crate::Operations {
 /// batch, and the expensive `dev+ino` arm only runs when both sides are local.
 fn drop_self_collisions(
     conflicts: Vec<ScanConflict>,
-    resolved_source: Option<&(Arc<dyn Volume>, Vec<PathBuf>)>,
+    resolved_source: Option<&(Arc<dyn Volume>, Vec<AppPathBuf>)>,
     dest_volume: &Arc<dyn Volume>,
 ) -> Vec<ScanConflict> {
     let Some((source_volume, source_paths)) = resolved_source else {
@@ -307,9 +301,14 @@ fn drop_self_collisions(
     conflicts
         .into_iter()
         .filter(|conflict| {
-            let dest_path = Path::new(&conflict.dest_path);
+            // The backend built this row's path: read it as a listed row, so a POSIX
+            // server's `a\b.txt` is one name on Windows. A row no typed reading takes
+            // (a `..`) is no source, so its collision stays.
+            let Ok(dest_path) = AppPath::from_listed_row(&conflict.dest_path) else {
+                return true;
+            };
             !source_paths.iter().any(|source_path| {
-                transfer_would_land_on_its_source(source_volume, source_path, dest_volume, dest_path)
+                transfer_would_land_on_its_source(source_volume, source_path, dest_volume, &dest_path)
             })
         })
         .collect()
@@ -351,14 +350,14 @@ async fn stat_source_paths(
     listings: &dyn ListingHost,
     source_volume: &Arc<dyn Volume>,
     source_volume_id: &str,
-    paths: &[PathBuf],
-) -> Vec<(PathBuf, FileEntry)> {
+    paths: &[AppPathBuf],
+) -> Vec<(AppPathBuf, FileEntry)> {
     use futures_util::stream::{self, StreamExt};
 
     let (mut stats, unanswered) = stats_from_watched_panes(listings, source_volume_id, paths);
-    let stated: Vec<(PathBuf, FileEntry)> = stream::iter(unanswered)
+    let stated: Vec<(AppPathBuf, FileEntry)> = stream::iter(unanswered)
         .map(|path| async move {
-            let entry = source_volume.get_metadata(&on_volume(&path)).await.ok()?;
+            let entry = source_volume.get_metadata(&path).await.ok()?;
             Some((path, entry))
         })
         .buffer_unordered(SOURCE_STAT_CONCURRENCY)
@@ -378,33 +377,32 @@ async fn stat_source_paths(
 fn stats_from_watched_panes(
     listings: &dyn ListingHost,
     source_volume_id: &str,
-    paths: &[PathBuf],
-) -> (Vec<(PathBuf, FileEntry)>, Vec<PathBuf>) {
+    paths: &[AppPathBuf],
+) -> (Vec<(AppPathBuf, FileEntry)>, Vec<AppPathBuf>) {
     use std::collections::HashMap;
 
-    let mut by_parent: HashMap<&Path, Vec<&PathBuf>> = HashMap::new();
+    // Split by the app path, so on Windows a POSIX server's `a\b.txt` is one name in
+    // its folder. A root has no folder to list it in: it's stated.
+    let mut by_parent: HashMap<&AppPath, Vec<&AppPathBuf>> = HashMap::new();
+    let mut unanswered = Vec::new();
     for path in paths {
-        by_parent
-            .entry(path.parent().unwrap_or(Path::new("/")))
-            .or_default()
-            .push(path);
+        match path.parent() {
+            Some(parent) => by_parent.entry(parent).or_default().push(path),
+            None => unanswered.push(path.clone()),
+        }
     }
 
     let mut answered = Vec::new();
-    let mut unanswered = Vec::new();
     for (parent, children) in by_parent {
-        let listing = listings.authoritative_listing(source_volume_id, parent);
+        // The listing oracle still keys by `std::path`: the bridge's spelling of the folder.
+        let listing = listings.authoritative_listing(source_volume_id, &parent.as_std_legacy());
         let by_name: HashMap<&str, &FileEntry> = listing
             .iter()
             .flatten()
             .map(|entry| (entry.name.as_str(), entry))
             .collect();
         for path in children {
-            match path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .and_then(|name| by_name.get(name))
-            {
+            match path.file_name().and_then(|name| by_name.get(name)) {
                 Some(entry) => answered.push((path.clone(), (*entry).clone())),
                 None => unanswered.push(path.clone()),
             }
@@ -423,13 +421,13 @@ fn stats_from_watched_panes(
 /// dir-dir case never renders one.
 fn merge_source_types_from_stats(
     source_items: &mut [cmdr_fs::volume::SourceItemInfo],
-    stats: &[(PathBuf, FileEntry)],
-    single_source: Option<&Path>,
+    stats: &[(AppPathBuf, FileEntry)],
+    single_source: Option<&AppPath>,
 ) {
     use std::collections::HashMap;
     let by_name: HashMap<&str, &FileEntry> = stats
         .iter()
-        .filter_map(|(path, entry)| path.file_name().and_then(|n| n.to_str()).map(|n| (n, entry)))
+        .filter_map(|(path, entry)| path.file_name().map(|n| (n, entry)))
         .collect();
     // One explicit target name may differ from its original source basename.
     // Bind that alias by the actual stat path, never by a guessed filename.
@@ -487,12 +485,6 @@ pub struct SourceItemInput {
     /// dir-vs-dir collision the FE can classify as a silent merge.
     #[serde(default)]
     pub is_directory: bool,
-}
-
-/// A path the pre-flight holds as a `std::path` value (the sources and destination it is
-/// handed) as the app path a volume takes, losslessly: the one crossing here.
-fn on_volume(path: &Path) -> std::borrow::Cow<'_, AppPath> {
-    AppPath::legacy_unchecked(path)
 }
 
 #[cfg(test)]

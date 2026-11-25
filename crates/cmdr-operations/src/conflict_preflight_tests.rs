@@ -14,7 +14,7 @@ use cmdr_fs::volume::WatchCoverage;
 use cmdr_fs::volume::{InMemoryVolume, SourceItemInfo};
 use cmdr_listing::testing::{TestListing, WatchCoverageVolume};
 use cmdr_local::LocalPosixVolume;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -52,7 +52,7 @@ async fn a_check_against_volumes_that_never_answer_gives_up_inside_its_budget() 
             }],
             String::from("/incoming"),
             Some(String::from("wedged-source")),
-            Some(vec![String::from("/media/holiday.mov")]),
+            Some(crate::testing::app_paths_of([String::from("/media/holiday.mov")])),
         ),
     )
     .await
@@ -106,7 +106,7 @@ async fn a_source_that_never_answers_still_lets_the_destination_answer() {
             vec![input("photo.jpg")],
             dest_dir.path().to_string_lossy().into_owned(),
             Some(String::from("starving-source")),
-            Some(vec![String::from("/media/photo.jpg")]),
+            Some(crate::testing::app_paths_of([String::from("/media/photo.jpg")])),
         )
         .await
         .expect("the destination is fine, so the check answers rather than blaming it");
@@ -148,10 +148,10 @@ async fn a_same_folder_copy_finds_no_conflicts() {
             vec![input("photo.jpg"), input("docs")],
             dir.path().to_string_lossy().into_owned(),
             Some(String::from("self-collision-scan")),
-            Some(vec![
+            Some(crate::testing::app_paths_of([
                 dir.path().join("photo.jpg").to_string_lossy().into_owned(),
                 dir.path().join("docs").to_string_lossy().into_owned(),
-            ]),
+            ])),
         )
         .await
         .expect("the scan answers");
@@ -195,7 +195,11 @@ async fn a_different_file_of_the_same_name_is_still_a_conflict() {
             vec![input("photo.jpg")],
             dest_dir.path().to_string_lossy().into_owned(),
             Some(String::from("self-collision-scan-source")),
-            Some(vec![source_dir.path().join("photo.jpg").to_string_lossy().into_owned()]),
+            Some(crate::testing::app_paths_of([source_dir
+                .path()
+                .join("photo.jpg")
+                .to_string_lossy()
+                .into_owned()])),
         )
         .await
         .expect("the scan answers");
@@ -233,7 +237,10 @@ async fn a_source_reached_through_a_symlinked_parent_finds_no_conflicts() {
             vec![input("photo.jpg")],
             real.to_string_lossy().into_owned(),
             Some(String::from("self-collision-scan-symlink")),
-            Some(vec![link.join("photo.jpg").to_string_lossy().into_owned()]),
+            Some(crate::testing::app_paths_of([link
+                .join("photo.jpg")
+                .to_string_lossy()
+                .into_owned()])),
         )
         .await
         .expect("the scan answers");
@@ -269,7 +276,7 @@ async fn a_same_folder_copy_on_a_remote_volume_finds_no_conflicts() {
             vec![input("photo.jpg")],
             String::from("/photos"),
             Some(String::from("self-collision-scan-device")),
-            Some(vec![String::from("/photos/Photo.JPG")]),
+            Some(crate::testing::app_paths_of([String::from("/photos/Photo.JPG")])),
         )
         .await
         .expect("the scan answers");
@@ -315,7 +322,7 @@ async fn a_source_from_a_case_differing_folder_is_still_a_conflict() {
             vec![input("photo.jpg")],
             String::from("/photos"),
             Some(String::from("self-collision-scan-case-parent")),
-            Some(vec![String::from("/PHOTOS/photo.jpg")]),
+            Some(crate::testing::app_paths_of([String::from("/PHOTOS/photo.jpg")])),
         )
         .await
         .expect("the scan answers");
@@ -351,7 +358,7 @@ async fn the_same_path_on_two_volumes_is_still_a_conflict() {
             vec![input("photo.jpg")],
             String::from("/photos"),
             Some(String::from("self-collision-scan-two-source")),
-            Some(vec![String::from("/photos/photo.jpg")]),
+            Some(crate::testing::app_paths_of([String::from("/photos/photo.jpg")])),
         )
         .await
         .expect("the scan answers");
@@ -401,7 +408,10 @@ async fn source_stats_come_from_the_watched_pane_they_were_picked_in() {
             vec![input("a.jpg"), input("Burst")],
             String::from("/"),
             Some(String::from("pane-stat-source")),
-            Some(vec![format!("{dir}/a.jpg"), format!("{dir}/Burst")]),
+            Some(crate::testing::app_paths_of([
+                format!("{dir}/a.jpg"),
+                format!("{dir}/Burst"),
+            ])),
         )
         .await
         .expect("the scan answers");
@@ -430,14 +440,14 @@ fn input(name: &str) -> SourceItemInput {
     }
 }
 
-fn stat(path: &str, is_dir: bool, bytes: u64) -> (PathBuf, FileEntry) {
+fn stat(path: &str, is_dir: bool, bytes: u64) -> (app_path::AppPathBuf, FileEntry) {
     let name = Path::new(path)
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or_default()
         .to_string();
     (
-        PathBuf::from(path),
+        AppPath::from_normalized(path).expect("canonical").to_owned(),
         FileEntry {
             size: Some(bytes),
             ..FileEntry::new(name, path.to_string(), is_dir, false)
@@ -493,12 +503,12 @@ fn keeps_caller_values_when_no_stat_hit() {
 fn a_named_target_keeps_its_original_sources_type_and_size() {
     let mut items = vec![item("new-name.txt")];
     let stats = vec![stat("/src/original.txt", false, 42)];
-    merge_source_types_from_stats(&mut items, &stats, Some(Path::new("/src/original.txt")));
+    merge_source_types_from_stats(&mut items, &stats, Some(app_path!("/src/original.txt")));
     assert_eq!(items[0].name, "new-name.txt");
     assert_eq!(items[0].size, 42);
     assert!(!items[0].is_directory);
 
     let stats = vec![stat("/src/original-folder", true, 999)];
-    merge_source_types_from_stats(&mut items, &stats, Some(Path::new("/src/original-folder")));
+    merge_source_types_from_stats(&mut items, &stats, Some(app_path!("/src/original-folder")));
     assert!(items[0].is_directory);
 }

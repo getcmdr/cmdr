@@ -297,6 +297,10 @@ pub async fn scan_volume_for_conflicts(
         Ok(None) => dest_path,
         Err(refusal) => return Err(refusal.into_scan_error(dest_path)),
     };
+    // The sources are only hints for the dialog (types and sizes, the self-collision
+    // filter): a set the edge refuses (a `..` no pane sends) falls back to the
+    // name-only check the caller's items already allow, ❌ never a failed scan.
+    let source_paths = source_paths.and_then(|texts| wire_path::start_paths(texts.iter().map(String::as_str)).ok());
     engine
         .scan_volume_for_conflicts_within(
             Deadline::new(CONFLICT_CHECK_BUDGET),
