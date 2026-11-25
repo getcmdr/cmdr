@@ -33,6 +33,27 @@ fn a_sibling_joins_with_its_folders_own_separator() {
     );
 }
 
+/// A volume rescue splits by the app path: a POSIX server's `a\b.txt` is one name on every
+/// host, where Windows' `Path` rescued it as `b (recovered).txt` inside `/dest/a`.
+#[test]
+fn a_volume_rescue_keeps_a_backslash_name_whole_in_its_folder() {
+    use cmdr_fs::app_path;
+    for (orig, rescued) in [
+        (app_path!("/dest/a\\b.txt"), "/dest/a\\b (recovered).txt"),
+        (app_path!("/dest/foo\\.."), "/dest/foo\\. (recovered)."),
+        (app_path!("/dest/..\\bar"), "/dest/. (recovered).\\bar"),
+        (app_path!("/dest/a:b"), "/dest/a:b (recovered)"),
+        (app_path!("/dest/trail."), "/dest/trail (recovered)."),
+        (app_path!("/dest/C:\\x"), "/dest/C:\\x (recovered)"),
+        (app_path!("/dest/notes.txt"), "/dest/notes (recovered).txt"),
+    ] {
+        let recovered = recovered_sibling_app(orig).expect("a rescue name");
+        assert_eq!(recovered.as_str(), rescued, "{orig:?}");
+        let next = AppNameCandidates::for_file(&recovered).current().expect("a pick");
+        assert_eq!(next.parent(), Some(app_path!("/dest")), "{orig:?}: {next:?}");
+    }
+}
+
 #[test]
 fn reserves_the_chosen_name_on_disk() {
     let temp = TempDir::new().unwrap();
