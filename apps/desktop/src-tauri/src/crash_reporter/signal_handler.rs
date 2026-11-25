@@ -75,8 +75,8 @@ pub fn current_image_base() -> u64 {
 }
 
 pub fn install(raw_crash_path: &Path) {
-    // Pre-open the fd for the raw crash file. O_WRONLY | O_CREAT | O_TRUNC
-    // will be applied at write time by truncating to 0 first. Without one the
+    // Pre-open the fd for the raw crash file; the handler truncates it to 0
+    // before writing. Without one the
     // handlers still go in: a fault on a mapped file whose disk went away is
     // recovered either way, and only the crash record is lost.
     match open_raw_crash_file(raw_crash_path) {
@@ -110,20 +110,14 @@ pub fn install(raw_crash_path: &Path) {
     }
 }
 
-/// The raw crash file, opened for the handler to write, or `None`.
+/// The raw crash file, opened for the handler to write, or `None`. Made fresh and owner-only
+/// (`cmdr_fs::private_file`): the next-launch pass already read or kept aside whatever was here, and
+/// a file reused in place would keep its older, looser mode.
 fn open_raw_crash_file(raw_crash_path: &Path) -> Option<RawFd> {
-    let path_cstr = std::ffi::CString::new(raw_crash_path.as_os_str().as_encoded_bytes()).ok()?;
-    // SAFETY: `path_cstr` is a valid, NUL-terminated C string (built above and held
-    // alive across the call). `open` returns a fresh fd or a negative value on failure,
-    // which we check below.
-    let fd = unsafe {
-        libc::open(
-            path_cstr.as_ptr(),
-            libc::O_WRONLY | libc::O_CREAT | libc::O_TRUNC,
-            0o644,
-        )
-    };
-    (fd >= 0).then_some(fd)
+    use std::os::unix::io::IntoRawFd;
+    let _ = std::fs::remove_file(raw_crash_path);
+    let file = cmdr_fs::private_file::create_new(raw_crash_path).ok()?;
+    Some(file.into_raw_fd())
 }
 
 /// Puts `sig` back on its default action. `sigaction` is async-signal-safe.

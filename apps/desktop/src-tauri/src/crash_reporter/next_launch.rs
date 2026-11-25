@@ -30,18 +30,75 @@ pub(super) fn process_pending_crash(crash_json_path: &Path, raw_crash_path: &Pat
 
 fn process_evidence(crash_json_path: &Path, raw_crash_path: &Path) {
     super::pending_delivery::restore_unfinished_sends(crash_json_path);
-    if let Some(mut report) = read_crash_report(crash_json_path) {
-        finish_panic_report(crash_json_path, &mut report);
+    let records = raw_crash_records(raw_crash_path);
+    let slot_taken = match read_crash_report(crash_json_path) {
+        Some(mut report) => {
+            finish_panic_report(crash_json_path, &mut report);
+            // `finish_panic_report` drops a report already delivered in-session, which frees the slot.
+            crash_json_path.exists()
+        }
+        None => false,
+    };
+
+    // One pending slot: the oldest record fills it if it's free, and every later one waits for a
+    // later launch rather than being lost under the report already pending.
+    let mut slot_taken = slot_taken;
+    for record in records {
+        if std::fs::metadata(&record).map_or(true, |m| m.len() == 0) {
+            // A clean session's empty file, or one that's gone already.
+            let _ = std::fs::remove_file(&record);
+        } else if slot_taken {
+            keep_for_a_later_launch(&record, raw_crash_path);
+        } else {
+            super::platform::convert_raw_crash(crash_json_path, &record);
+            let _ = std::fs::remove_file(&record);
+            // An unreadable record wrote nothing, so the next one may still take the slot.
+            slot_taken = crash_json_path.exists();
+        }
+    }
+}
+
+/// Every raw crash file beside `raw_crash_path` that no running process still holds, oldest first:
+/// the fixed `crash-report.raw`, a Windows per-process `crash-report.<pid>-<ms>.raw`, and a record
+/// an earlier launch kept aside (`crash-report.kept-<ms>.raw`).
+fn raw_crash_records(raw_crash_path: &Path) -> Vec<std::path::PathBuf> {
+    let Some(dir) = raw_crash_path.parent() else {
+        return Vec::new();
+    };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut records: Vec<(std::time::SystemTime, std::path::PathBuf)> = entries
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            name.starts_with("crash-report.") && name.ends_with(".raw")
+        })
+        .map(|entry| entry.path())
+        .filter(|path| path.is_file() && !super::platform::raw_crash_file_in_use(path))
+        .map(|path| (crash_time_of(&path), path))
+        .collect();
+    records.sort();
+    records.into_iter().map(|(_, path)| path).collect()
+}
+
+/// Moves a record off the fixed name, which this session's capture is about to truncate, so it
+/// survives until a launch with a free slot. A record under any other name is already safe.
+fn keep_for_a_later_launch(record: &Path, raw_crash_path: &Path) {
+    if record != raw_crash_path {
         return;
     }
-
-    #[cfg(unix)]
-    if raw_crash_path.exists() {
-        convert_raw_signal_crash(crash_json_path, raw_crash_path);
-        let _ = std::fs::remove_file(raw_crash_path);
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |since| since.as_nanos());
+    let kept = raw_crash_path.with_file_name(format!("crash-report.kept-{stamp}.raw"));
+    match std::fs::rename(record, &kept) {
+        Ok(()) => log::info!(
+            "Crash reporter: a crash report is still pending, so a newer native crash waits for a later launch"
+        ),
+        Err(e) => log::warn!("Crash reporter: couldn't keep a newer native crash for a later launch: {e}"),
     }
-    #[cfg(not(unix))]
-    let _ = raw_crash_path;
 }
 
 /// Top up the panic hook's report with what it couldn't know, rewriting only if something changed.
@@ -91,19 +148,14 @@ fn finish_panic_report(crash_json_path: &Path, report: &mut CrashReport) {
 
 /// Read the async-signal-safe handler's raw file and write a real report in its place.
 #[cfg(unix)]
-fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
-    use super::{
-        CACHED_SETTINGS, CRASH_FILE_VERSION, CRASH_SHORT_ID_PREFIX, current_build_mode, signal_handler, symbolicate,
-    };
+pub(super) fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
+    use super::{signal_handler, symbolicate};
 
     // The raw file is written BY THE HANDLER, mid-crash, so its mtime is when the app actually
     // died. Read it before anything else touches the file. Everything downstream wants that moment
     // rather than now: it's what matches macOS's own report to this crash, and what a later log
-    // bundle scopes itself around. `now` only as a fallback, which keeps the field populated on a
-    // filesystem that won't answer.
-    let crash_time = std::fs::metadata(raw_crash_path)
-        .and_then(|m| m.modified())
-        .unwrap_or_else(|_| std::time::SystemTime::now());
+    // bundle scopes itself around.
+    let crash_time = crash_time_of(raw_crash_path);
 
     let Some((signal, addresses, image_base, crash_app_version)) = signal_handler::read_raw_crash(raw_crash_path)
     else {
@@ -121,53 +173,16 @@ fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
         addresses.iter().map(|a| format!("0x{a:016x}")).collect()
     };
 
-    let mut report = CrashReport {
-        version: CRASH_FILE_VERSION,
-        // When the app DIED, taken from the raw file the handler wrote, never the moment this next
-        // launch got round to assembling the report. The gap between the two is however long the
-        // machine sat closed, and everything that reads this field (the macOS-report match, the
-        // crash-loop check, a log bundle's window) wants the crash.
-        timestamp: to_iso8601(crash_time),
-        signal: Some(signal_name(signal)),
-        // A signal carries no payload, but an uncaught Objective-C exception's SIGABRT leaves its
-        // `<name>: <reason>` behind (`objc_exception.rs`). Redacted and capped with the rest by
-        // `prepare_for_delivery` below.
-        panic_message: objc_exception_line(raw_crash_path, crash_time),
-        backtrace_frames,
-        thread_name: None,
-        thread_count: 0,
-        app_version: crash_app_version,
-        os_version: crate::platform::os_version(),
-        os: crate::platform::os_name(),
-        arch: std::env::consts::ARCH.to_string(),
-        uptime_secs: 0.0, // Unknown for signal crashes from previous session
-        active_settings: CACHED_SETTINGS.get().cloned().unwrap_or_default(),
-        possible_crash_loop: false,
-        // No ambiguity on this path: SIGSEGV/SIGBUS/SIGABRT are unrecoverable, the handler re-raises
-        // them, and we're reading the evidence from the NEXT launch. The app is definitively gone.
-        app_fate: AppFate::Ended,
-        // A signal crash is never delivered in-session: the process died in the handler.
-        reported_in_session: false,
-        build_mode: Some(current_build_mode().to_string()),
-        short_id: Some(crate::short_id::generate(CRASH_SHORT_ID_PREFIX)),
-        // Signal path: the async-signal-safe handler couldn't touch the diag id (no alloc/lock). We
-        // attach it HERE, where the full stdlib is available. `email` stays `None` (send-time
-        // field, set by the dialog).
-        diag_id: crate::install_id::diagnostics_id(),
-        email: None,
-        // The data dir is the crash file's parent; the snapshot reads only index sizes and capacity.
-        system_snapshot: crash_json_path
-            .parent()
-            .map(crate::diagnostics_snapshot::SystemSnapshot::collect_stable),
-        // The base recorded BY THE CRASHED PROCESS, never this one's: ASLR gives the relaunched
-        // process a different slide, which would make every offset wrong. `0` means that build
-        // couldn't resolve it (non-macOS Unix).
-        image_base: (image_base != 0).then(|| format!("0x{image_base:x}")),
-        // Filled in just below: the constructor stays a plain description of what the raw file
-        // held, and the one field that comes from outside it is attached separately.
-        os_exception: None,
-        os_frames: Vec::new(),
-    };
+    let mut report = native_crash_report(crash_json_path, crash_time, signal_name(signal), crash_app_version);
+    // A signal carries no payload, but an uncaught Objective-C exception's SIGABRT leaves its
+    // `<name>: <reason>` behind (`objc_exception.rs`). Redacted and capped with the rest by
+    // `prepare_for_delivery` below.
+    report.panic_message = objc_exception_line(raw_crash_path, crash_time);
+    report.backtrace_frames = backtrace_frames;
+    // The base recorded BY THE CRASHED PROCESS, never this one's: ASLR gives the relaunched
+    // process a different slide, which would make every offset wrong. `0` means that build
+    // couldn't resolve it (non-macOS Unix).
+    report.image_base = (image_base != 0).then(|| format!("0x{image_base:x}"));
 
     // The payoff for the signal path. `backtrace_frames` above are bare addresses; this is the same
     // stack with names on it, system frames included.
@@ -178,6 +193,105 @@ fn convert_raw_signal_crash(crash_json_path: &Path, raw_crash_path: &Path) {
 
     if let Err(e) = write_crash_report(crash_json_path, &report) {
         log::warn!("Crash reporter: couldn't write symbolicated crash report: {e}");
+    }
+}
+
+/// Read the Windows exception filter's record (`exception_filter.rs`) and write a real report in
+/// its place. Compiled on every host for its tests; only Windows writes the record.
+#[cfg(any(windows, test))]
+pub(super) fn convert_raw_exception_crash(crash_json_path: &Path, raw_crash_path: &Path) {
+    // Read first, for the same reason as on the signal path: the mtime is when the app died.
+    let crash_time = crash_time_of(raw_crash_path);
+    let Ok(data) = std::fs::read(raw_crash_path) else {
+        return;
+    };
+    let Some(record) = super::platform::exception_record::parse(&data) else {
+        // Every session leaves an empty file (the filter opens it at install), so only a
+        // non-empty one that doesn't parse is worth a line.
+        if !data.is_empty() {
+            log::info!("Crash reporter: raw exception record unreadable, discarding");
+        }
+        return;
+    };
+
+    let mut report = native_crash_report(crash_json_path, crash_time, record.signal(), record.app_version.clone());
+    report.backtrace_frames = record.raw_frames();
+    // Recorded by the crashed process, like the signal path's. The frames below don't need it
+    // (each is relative to its own module), but it keeps the field meaning one thing everywhere.
+    let image_base = record.header.image_base;
+    report.image_base = (image_base != 0).then(|| format!("0x{image_base:x}"));
+    report.uptime_secs = record.header.uptime_ms as f64 / 1000.0;
+    // Windows' own exception record plays the part macOS's `.ips` plays: the reason in one line,
+    // and the faulting thread's stack with a name on every frame an image holds.
+    report.os_exception = Some(record.exception_line());
+    report.os_frames = record.module_frames();
+
+    report.prepare_for_delivery();
+
+    if let Err(e) = write_crash_report(crash_json_path, &report) {
+        log::warn!("Crash reporter: couldn't write the native crash report: {e}");
+    }
+}
+
+/// The raw file's mtime: the moment the handler wrote it, so the moment the app died. `now` only as
+/// a fallback, which keeps the timestamp populated on a filesystem that won't answer.
+fn crash_time_of(raw_crash_path: &Path) -> std::time::SystemTime {
+    std::fs::metadata(raw_crash_path)
+        .and_then(|m| m.modified())
+        .unwrap_or_else(|_| std::time::SystemTime::now())
+}
+
+/// What every native crash report holds before its OS's evidence goes on: the fields the next
+/// launch knows for any of them. The caller adds the stack and whatever the capture recorded.
+fn native_crash_report(
+    crash_json_path: &Path,
+    crash_time: std::time::SystemTime,
+    signal: String,
+    app_version: String,
+) -> CrashReport {
+    use super::{CACHED_SETTINGS, CRASH_FILE_VERSION, CRASH_SHORT_ID_PREFIX, current_build_mode};
+
+    // When the app DIED, taken from the raw file the handler wrote, never the moment this next
+    // launch got round to assembling the report. The gap between the two is however long the
+    // machine sat closed, and everything that reads this field (the macOS-report match, the
+    // crash-loop check, a log bundle's window) wants the crash.
+    let timestamp = to_iso8601(crash_time);
+    // A native crash within seconds of this launch is the app dying on start, again: the frontend
+    // asks rather than auto-sending a report per relaunch, as it already did for a panic.
+    let possible_crash_loop = is_crash_loop(&timestamp);
+    CrashReport {
+        version: CRASH_FILE_VERSION,
+        timestamp,
+        signal: Some(signal),
+        panic_message: None,
+        backtrace_frames: Vec::new(),
+        thread_name: None,
+        thread_count: 0,
+        app_version,
+        os_version: crate::platform::os_version(),
+        os: crate::platform::os_name(),
+        arch: std::env::consts::ARCH.to_string(),
+        uptime_secs: 0.0, // Unknown unless the capture recorded it
+        active_settings: CACHED_SETTINGS.get().cloned().unwrap_or_default(),
+        possible_crash_loop,
+        // No ambiguity on this path: a native crash is unrecoverable, the handler hands it on to
+        // the OS, and we're reading the evidence from the NEXT launch. The app is definitively gone.
+        app_fate: AppFate::Ended,
+        // A native crash is never delivered in-session: the process died in the handler.
+        reported_in_session: false,
+        build_mode: Some(current_build_mode().to_string()),
+        short_id: Some(crate::short_id::generate(CRASH_SHORT_ID_PREFIX)),
+        // The handler couldn't touch the diag id (no alloc/lock). We attach it HERE, where the full
+        // stdlib is available. `email` stays `None` (send-time field, set by the dialog).
+        diag_id: crate::install_id::diagnostics_id(),
+        email: None,
+        // The data dir is the crash file's parent; the snapshot reads only index sizes and capacity.
+        system_snapshot: crash_json_path
+            .parent()
+            .map(crate::diagnostics_snapshot::SystemSnapshot::collect_stable),
+        image_base: None,
+        os_exception: None,
+        os_frames: Vec::new(),
     }
 }
 

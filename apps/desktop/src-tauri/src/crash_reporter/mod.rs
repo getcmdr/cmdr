@@ -2,7 +2,8 @@
 //!
 //! Two capture paths handle different crash types:
 //! - **Panic hook**: full stdlib access, writes JSON crash file directly
-//! - **Signal handler**: async-signal-safe only, writes raw addresses to a pre-opened fd
+//! - **Signal handler** (Windows: the exception filter): async-signal-safe only, writes raw
+//!   addresses to a pre-opened file
 
 mod contain;
 mod next_launch;
@@ -362,7 +363,7 @@ pub fn init<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     let _ = CRASH_PATH.set(crash_path);
 
     // After `process_pending_crash` read the previous session's raw file and sidecar, never before.
-    platform::install_native_crash_hooks(&raw_crash_path, &data_dir);
+    platform::install_native_crash_hooks(&platform::session_raw_crash_path(&raw_crash_path), &data_dir);
 }
 
 /// Returns the pending crash report from a previous session, if any.
@@ -520,7 +521,10 @@ fn current_image_base_hex() -> Option<String> {
 
 fn build_panic_report(info: &std::panic::PanicHookInfo<'_>) -> CrashReport {
     let backtrace = std::backtrace::Backtrace::force_capture();
-    let backtrace_frames = parse_backtrace_frames(&backtrace.to_string());
+    let backtrace_frames = prefer_named_frames(
+        parse_backtrace_frames(&backtrace.to_string()),
+        platform::module_backtrace_frames,
+    );
 
     let message = extract_panic_message(info);
     let sanitized_message = message.map(|m| sanitize_panic_message(&m));
@@ -624,6 +628,22 @@ fn cap_panic_message(message: String) -> String {
     capped
 }
 
+/// The std backtrace when it names our code, else the platform's `module+0xoffset` walk.
+///
+/// A shipped Windows binary has no PDB beside it, so std can name only the Windows DLLs' exports
+/// and every frame of ours reads `<unknown>`, which no build's symbols can resolve later. The
+/// module-relative walk can be resolved against that release's PDB. A build that does name our
+/// frames (any Unix build, a Windows dev build) keeps its std backtrace.
+fn prefer_named_frames(frames: Vec<String>, module_frames: impl FnOnce() -> Option<Vec<String>>) -> Vec<String> {
+    let names_our_code = frames
+        .iter()
+        .any(|frame| frame.contains("cmdr_lib::") || frame.contains("cmdr::"));
+    if names_our_code {
+        return frames;
+    }
+    module_frames().filter(|walk| !walk.is_empty()).unwrap_or(frames)
+}
+
 fn parse_backtrace_frames(backtrace_str: &str) -> Vec<String> {
     // Each frame line from std::backtrace looks like:
     //   0: std::backtrace::Backtrace::create
@@ -688,7 +708,9 @@ pub fn note_in_session_report_delivered() {
 
 fn write_crash_report(path: &Path, report: &CrashReport) -> Result<(), String> {
     let json = serde_json::to_string_pretty(report).map_err(|e| format!("serialize crash report: {e}"))?;
-    std::fs::write(path, json).map_err(|e| format!("write crash file: {e}"))
+    // Private to this user from its first byte, as the raw record is: a report holds no path, but it
+    // describes this person's machine and what Cmdr was doing on it.
+    cmdr_fs::private_file::write_atomically(path, json.as_bytes()).map_err(|e| format!("write crash file: {e}"))
 }
 
 fn read_crash_report(path: &Path) -> Option<CrashReport> {

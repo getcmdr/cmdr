@@ -4,7 +4,11 @@
 use std::path::Path;
 
 use super::super::objc_exception;
-pub(crate) use super::unix::current_image_base;
+#[cfg(test)]
+pub(crate) use super::unix::sample_raw_crash;
+pub(crate) use super::unix::{
+    convert_raw_crash, current_image_base, module_backtrace_frames, raw_crash_file_in_use, session_raw_crash_path,
+};
 
 /// Signal handlers, then the Objective-C exception handler.
 pub(crate) fn install_native_crash_hooks(raw_crash_path: &Path, data_dir: &Path) {

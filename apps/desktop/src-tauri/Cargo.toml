@@ -363,9 +363,13 @@ arboard = { version = "3.7", default-features = false }
 # read (`SPI_GETHIGHCONTRAST`), the user's languages and format locale (`intl/platform/`), and the
 # windows' `SC_KEYMENU` guard (`platform/windows/keymenu.rs`: comctl32's `SetWindowSubclass`, in
 # `Win32_UI_Shell`), and "Go to Recycle Bin" (`commands/file_actions/platform/windows.rs`: the Shell's
-# `ShellExecuteExW` in a COM apartment), and the updater's "is this the Store's package?" question
-# (`updater/platform/windows.rs`: `GetCurrentPackageFullName`). Already in the lockfile through the workspace crates.
+# `ShellExecuteExW` in a COM apartment), the updater's "is this the Store's package?" question
+# (`updater/platform/windows.rs`: `GetCurrentPackageFullName`), and the crash reporter's native-crash
+# capture (`crash_reporter/platform/exception_filter.rs`: the unhandled-exception filter, the stack walk,
+# `VirtualQuery`, `NtQueryVirtualMemory` for an image's name, `WriteFile` to the pre-opened record, and the
+# Toolhelp thread count). Already in the lockfile through the workspace crates.
 windows-sys = { version = "0.61", features = [
+    "Wdk_Storage_FileSystem",
     "Wdk_System_SystemServices",
     "Win32_Foundation",
     "Win32_Globalization",
@@ -376,6 +380,11 @@ windows-sys = { version = "0.61", features = [
     "Win32_Storage_Packaging_Appx",
     "Win32_System_LibraryLoader",
     "Win32_System_Com",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_IO",
+    "Win32_System_Kernel",
+    "Win32_System_Memory",
     "Win32_System_ProcessStatus",
     "Win32_System_Registry",
     "Win32_System_SystemInformation",

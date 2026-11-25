@@ -745,8 +745,9 @@ Each lands behind a seam from Phases 1–5, verified on the Windows lane (task 5
       proxy, PAC server, or WPAD network configured in Windows' settings (the builder's stay untouched), Windows 11's
       EcoQoS read-back, and a WinGet / Scoop `adb` install. Left: the `cmdr-sftp` agent's Pageant support (§ "Windows
       build state").
-47. [S] Windows. Crash minidumps (`crash-handler` + `minidumper`) and Windows-shaped crash cards in the api-server.
-    Needs 23.
+47. [S] Windows. Native-crash capture (our own unhandled-exception filter and record, no minidump: why in
+    `apps/desktop/src-tauri/src/crash_reporter/DETAILS.md` § Windows native crashes) and Windows-shaped crash cards in
+    the api-server. Needs 23.
 48. [XS] Windows. **Done**. WebView2 specifics: every `cmdr-media` URL comes from `mediaUrl` via `convertFileSrc`
     (`http://cmdr-media.localhost/<token>` there, pinned by `media-view.test.ts`; the handler reads only the path), and
     `tauri.windows.conf.json` restates the CSP with that origin, held to the shared one by `tauri_config.rs`.

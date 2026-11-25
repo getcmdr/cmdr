@@ -89,3 +89,87 @@ fn a_fresh_crash_stamp_is_canonical_utc() {
     let parsed = crate::timestamps::parse_rfc3339(&stamp).expect("parses");
     assert_eq!(crate::timestamps::rfc3339(parsed), stamp);
 }
+
+/// The raw crash files waiting in `dir`, by name.
+fn raw_records_in(dir: &std::path::Path) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(dir)
+        .expect("list the dir")
+        .filter_map(Result::ok)
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|name| name.starts_with("crash-report.") && name.ends_with(".raw"))
+        .collect();
+    names.sort();
+    names
+}
+
+/// A native crash written moments ago is the app dying on start again, so the next launch asks
+/// before sending, as it does for a panic. Before, the native path never checked, and a macOS crash
+/// loop auto-sent a report on every relaunch.
+#[test]
+fn a_native_crash_just_before_this_launch_is_flagged_as_a_possible_loop() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let json = dir.path().join(super::CRASH_FILE_NAME);
+    let raw = dir.path().join(super::RAW_CRASH_FILE_NAME);
+
+    std::fs::write(&raw, super::platform::sample_raw_crash()).expect("write the record");
+    super::next_launch::process_pending_crash(&json, &raw);
+    let report = super::read_crash_report(&json).expect("converted");
+    assert!(report.possible_crash_loop, "a crash written just now");
+
+    std::fs::remove_file(&json).expect("dismiss");
+    let file = std::fs::File::create(&raw).expect("create the record");
+    std::io::Write::write_all(&mut &file, &super::platform::sample_raw_crash()).expect("write");
+    file.set_modified(SystemTime::now() - Duration::from_secs(3600))
+        .expect("age it");
+    drop(file);
+    super::next_launch::process_pending_crash(&json, &raw);
+    let report = super::read_crash_report(&json).expect("converted");
+    assert!(!report.possible_crash_loop, "a crash from an hour ago");
+}
+
+/// A native crash in a session that started with a report still pending used to be lost: the
+/// next launch returned before reading the record, and the capture truncated it. It now waits
+/// aside, and the first launch with a free slot offers it.
+#[test]
+fn a_native_crash_behind_a_pending_report_waits_for_the_next_free_slot() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let json = dir.path().join(super::CRASH_FILE_NAME);
+    let raw = dir.path().join(super::RAW_CRASH_FILE_NAME);
+
+    std::fs::write(&raw, super::platform::sample_raw_crash()).expect("first crash");
+    super::next_launch::process_pending_crash(&json, &raw);
+    let first = super::read_crash_report(&json).expect("the first crash is pending");
+
+    std::fs::write(&raw, super::platform::sample_raw_crash()).expect("second crash");
+    super::next_launch::process_pending_crash(&json, &raw);
+    assert_eq!(
+        super::read_crash_report(&json).expect("still pending").short_id,
+        first.short_id,
+        "the pending report stays the one on offer"
+    );
+    assert!(!raw.exists(), "off the name this session's capture truncates");
+    let waiting = raw_records_in(dir.path());
+    assert_eq!(waiting.len(), 1, "the second crash waits: {waiting:?}");
+
+    std::fs::remove_file(&json).expect("the person dismisses the first");
+    super::next_launch::process_pending_crash(&json, &raw);
+    let second = super::read_crash_report(&json).expect("the second crash is offered now");
+    assert_ne!(second.short_id, first.short_id);
+    assert!(
+        raw_records_in(dir.path()).is_empty(),
+        "consumed: {:?}",
+        raw_records_in(dir.path())
+    );
+}
+
+/// An empty record is a clean session's leftover and goes away without making a report.
+#[test]
+fn an_empty_record_is_dropped_without_a_report() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let json = dir.path().join(super::CRASH_FILE_NAME);
+    let raw = dir.path().join(super::RAW_CRASH_FILE_NAME);
+    std::fs::write(&raw, b"").expect("write");
+    super::next_launch::process_pending_crash(&json, &raw);
+    assert!(!json.exists());
+    assert!(raw_records_in(dir.path()).is_empty());
+}

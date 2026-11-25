@@ -207,8 +207,8 @@ all three; nextest never sees the race, so a test green only under nextest is th
 
 ## Crash file lifecycle
 
-1. App crashes; the panic hook writes `crash-report.json`, or the signal handler writes its async-signal-safe
-   `crash-report.raw` artifact.
+1. App crashes; the panic hook writes `crash-report.json`, or the signal handler (Windows: the exception filter) writes
+   its async-signal-safe `crash-report.raw` artifact.
 2. Next launch: `check_pending_crash_report` finds the file, parses it defensively (discards if corrupt), and runs the
    common delivery transform before anything reaches the frontend.
 3. If `updates.crashReports` is `true` and it's not a crash loop: auto-send and show a toast.
@@ -267,8 +267,9 @@ These are reporter gates, not release-pipeline behavior.
   handler; `live` is always `None` for crashes (see the `CLAUDE.md` invariant). PII-free: no hostname, paths, or volume
   names.
 - `imageBase` (optional): the main executable's load address at crash time, as `"0x…"`. See § Image base.
-- `osException` (optional) and `osFrames`: macOS's own verdict on the same crash, lifted from the report `ReportCrash`
-  writes. See § macOS crash reports.
+- `osException` (optional) and `osFrames`: the OS's own verdict on the same crash: on macOS lifted from the report
+  `ReportCrash` writes (§ macOS crash reports), on Windows rendered from the exception record and the module-relative
+  stack walk (§ Windows native crashes).
 - `appFate`: `"unknown"` / `"unconfirmed"` / `"ended"` / `"keptRunning"` (§ App fate). PII-free by construction: a
   four-value enum about the app's own behavior. Stored server-side in `crash_reports.app_fate`, where the nightly crash
   email reads it to rank a real crash apart from a panic the app walked away from
@@ -376,6 +377,147 @@ the gap:
   sidecar whatever happened, so it can't attach itself to a later crash.
 - `panic_message` was the honest field to reuse: it's "the message the process died with", already redacted, capped,
   stored, and shown in the crash email, so no wire, schema, or policy change was needed.
+
+## Windows native crashes
+
+`platform/exception_filter.rs` captures, `platform/exception_record.rs` holds the format, and
+`next_launch::convert_raw_exception_crash` assembles. Same file (`crash-report.raw`), same report, same consent flow, toast, endpoint, and delivery transform as
+the Unix signal path; only the capture differs.
+
+### What it catches
+
+- **An unhandled structured exception**, through `SetUnhandledExceptionFilter`: access violation, stack overflow,
+  illegal instruction, divide by zero, an uncaught C++ exception (`MSVC_CPP_EXCEPTION`, from WebView2's in-process
+  code, say). The filter records, then hands on to the filter that was there before or returns
+  `EXCEPTION_CONTINUE_SEARCH`, so Windows Error Reporting ends the process exactly as it would without us (the
+  macOS re-raise's twin).
+- **The C runtime's `abort()`**, through a CRT `SIGABRT` handler (`signal()`), which `abort()` calls before it ends the
+  process. Recorded as `SIGABRT`, `osException: "abort() called"`.
+- **Not a vectored handler**, on purpose: a VEH sees every first-chance exception, including the ones COM and WebView2
+  raise and catch themselves as a matter of course. The unhandled filter sees only the ones that would end the process.
+
+### What it can't catch (known gaps)
+
+- **`__fastfail`**: Rust's own `std::process::abort()` (and so a double panic or a panic across `extern "C"`), MSVC's
+  stack-cookie failure (`STATUS_STACK_BUFFER_OVERRUN`), and heap corruption end the process in the kernel without
+  running any handler. A panic that leads to one already wrote `crash-report.json` from the hook first, so the gap is
+  a native fastfail with no panic before it. The fix, if these turn up, is reading WER's own report at the next launch
+  (`Report.wer` under `%LOCALAPPDATA%\Microsoft\Windows\WER\ReportArchive`), the `.ips` reader's twin: unbuilt and
+  unverified.
+- **WebView2's own processes** (`msedgewebview2.exe`: the browser, renderer, and GPU processes) are not Cmdr's process,
+  so nothing here sees them crash. Cmdr keeps running; the host is told through WebView2's `ProcessFailed` event, which
+  nothing handles yet. Their crash dumps go to WebView2's own Crashpad folder, which we don't read.
+- **A read of a mapped file whose disk went away** (`EXCEPTION_IN_PAGE_ERROR`) is recorded as a crash, not recovered
+  as on Unix (`cmdr_fs::mapped_file_faults` is a no-op on Windows). Recovering needs a VEH, and Windows can't replace
+  one page of a file view the way `mmap(MAP_FIXED)` does: it would mean unmapping the whole view and racing to
+  reserve zeros at the same range. A follow-up with its own design: #1475.
+
+### Why our own record, not a minidump or a crate
+
+Candidates checked 2026-11-25 on crates.io and GitHub: `crash-handler` 0.8.1 (EmbarkStudios, MIT OR Apache-2.0,
+2026-09-25, not archived), `minidumper` 0.11.0 (same repo, 2026-07-20), `minidump-writer` 0.14.0 (rust-minidump, MIT,
+2026-11-17), `minidump-processor` 0.27.0 (MIT, 2026-08-11), `sentry` 0.49.6 (MIT), `crashpad-rs` 0.2.7 (MIT, 4,147
+downloads, last release 2025-08-28).
+
+- **A minidump holds memory**: stacks and, by default, the referenced heap, so file names, paths, and file contents.
+  It can't be uploaded as is, so a minidump design means writing one and then running `minidump-processor` locally
+  to extract what we'd send anyway: a large dependency tree to recover a stack we can walk directly.
+- **`MiniDumpWriteDump` must run in another process** (Microsoft documents in-process use as unreliable), which is why
+  `minidumper` is a client/server pair: a second Cmdr process alive the whole session, against "respect the user's
+  resources".
+- **`crash-handler`'s Windows arm is the same mechanism we use** (`SetUnhandledExceptionFilter`, a `SIGABRT` handler,
+  plus a VEH and the CRT's purecall and invalid-parameter handlers), but its filter takes a `parking_lot` mutex and
+  calls a boxed user callback, which our "no lock in the crash path" rule forbids (read in crash-handler's Windows
+  `state.rs` on GitHub at 0.8.1, 2026-11-25).
+- **Sentry and Crashpad** are built around a third-party service or a large C++ build.
+- Our own: about 300 lines, no new crate (only `windows-sys` features), and the payload is exactly the fields macOS
+  already sends.
+
+### The crash path's rules
+
+- **No allocation, no lock, no formatting.** The record is assembled through `exception_record::Sink` in a static
+  buffer (about 6 KB, sized for the largest record; a piece that doesn't fit ends the record there) and written in one
+  `WriteFile` to a handle opened at `install`. Calls made: `RtlCaptureStackBackTrace`, `VirtualQuery` (is this address
+  in an image, and which), `NtQueryVirtualMemory(MemoryMappedFilenameInformation)` into a stack buffer (an image's file
+  name; chosen over `GetMappedFileNameW`, whose wrappers may allocate), `SetFilePointerEx` / `SetEndOfFile` /
+  `WriteFile`, atomics.
+- **The walk starts at the fault.** `RtlCaptureStackBackTrace` from the filter walks through the filter and Windows'
+  dispatcher first; frames above the exception address are dropped. If the walk never passes it, the address leads.
+- **Stack overflow**: the filter runs on the overflowed thread. On a thread Rust's runtime made (the main thread and
+  every `std::thread`, tokio's workers included) that's inside the 20 KB reserve std sets with
+  `SetThreadStackGuarantee`, and the walk's stack buffers are under 2 KB (the record buffer is static for this
+  reason). Rust's own stack-overflow VEH prints its line and continues the search, so our filter still runs (pinned by
+  `a_stack_overflow_leaves_a_record_of_the_recursion` on the Windows lane). **A thread the OS made for someone else
+  has no reserve**: COM's and the thread pool's workers, WebView2's callbacks on them, a thread an injected DLL starts.
+  An overflow there gets only the guard page's few KB, so the record may stop after its header, or never be written.
+  Cmdr itself starts no thread outside `std` (no `CreateThread` / `_beginthreadex` in our code, checked 2026-11-25), so
+  there's no thread of ours to give a guarantee to.
+- **One record per process** (`RECORDING`): a fault inside the capture, or a second thread crashing at once, can't
+  overwrite the first.
+
+### One record file per process, and the next launch's pass
+
+Windows doesn't stop a second instance, so the record is per process: `crash-report.<pid>-<start ms>.raw`
+(`platform::session_raw_crash_path`), made with `cmdr_fs::private_file::create_new` (owner-only, as is the
+`crash-report.json` it becomes, written with `private_file::write_atomically` on every OS). The process holds it open
+for writing for its whole life, and that is the liveness test: the next launch opens each record refusing to share
+writing, and a sharing violation means a live instance still owns it (`platform::raw_crash_file_in_use`, by error
+code). Pinned by `a_second_instance_leaves_a_live_instances_record_alone`, with a real second process.
+
+`next_launch::process_evidence` then works the same on every OS: every `crash-report*.raw` not in use, oldest first;
+an empty one (a clean session's) is deleted; the first non-empty one fills the pending slot if it's free; any further
+one, or every one while a report is already pending, **waits for a later launch**. Unix has one fixed name, which the
+new session's handler is about to recreate, so a record waiting there moves to `crash-report.kept-<ns>.raw` first (its
+mtime, the crash time, survives the rename). Before, a native crash in a session that started with a report pending
+was lost: the pass returned early and the handler truncated the file. Known gap: on macOS a record kept aside loses
+its Objective-C exception sidecar, which the pass deletes every launch.
+
+A native crash within 5 s of the launch that assembles it is flagged `possibleCrashLoop` (`native_crash_report`), so
+the frontend asks instead of auto-sending; the panic path always did this, the native path on macOS and Linux didn't.
+
+### What a Windows native crash report contains
+
+The macOS field set, filled from Windows' exception record:
+
+- `signal`: the exception's name (`EXCEPTION_ACCESS_VIOLATION`, `EXCEPTION_STACK_OVERFLOW`, `SIGABRT`), or
+  `EXCEPTION 0x…` for a code without one.
+- `osException`: one line, like `EXCEPTION_ACCESS_VIOLATION (0xC0000005): reading 0x0000000000000010, at
+  cmdr.exe+0x1a2b`. For an access violation the operation and target address (as macOS's `KERN_INVALID_ADDRESS at
+  0x…`), for an in-page error also the failed read's NTSTATUS.
+- `osFrames`: the faulting thread's stack, up to 64 frames, as `<image file name>+0x<offset>` (`cmdr.exe+0x1a2b`,
+  `ntdll.dll+0x9f3c`), or a bare address outside any image. The offset is stable across launches and machines, so it
+  groups, and resolves against the release's PDB (our frames) or Microsoft's symbol server (Windows DLLs, keyed by the
+  `osVersion` build). The crash card shows these under "Top of the stack".
+- `backtraceFrames`: the same frames as bare addresses, as on the macOS signal path. `imageBase`: `cmdr.exe`'s load
+  address. `uptimeSecs`: from the record. `threadCount`: 0 (unknown at assembly).
+- Everything else as on every report (version, OS, arch, settings flags, `diagId`, `appFate: ended`, snapshot).
+
+**Image names are file names, never paths**: the kernel spells an image `\Device\HarddiskVolume3\Users\<name>\…\cmdr.exe`,
+and `write_module` keeps only what follows the last backslash before anything reaches the disk; `parse` cuts again on
+read. A name can still name third-party software injected into Cmdr (a shell extension, an antivirus hook), like a
+macOS `.ips` frame naming a third-party image; that's in the report preview the person sees.
+
+### Panics on Windows: the PDB question
+
+The release profile is `lto = "thin"` with cargo's defaults otherwise (`debug = false`, `strip = "none"`). On MSVC,
+rustc then still links with `/DEBUG`, so the build writes `cmdr.pdb` (public symbols) BESIDE the exe, and the
+installers ship only the exe. std's backtrace finds no PDB on the user's machine, names only the Windows DLLs' exports,
+and prints our frames as `<unknown>` with no address, which nothing can resolve later (reasoned from the rustc MSVC
+linker args and std's backtrace printer; **unverified on a shipped build**, check on a real machine).
+
+So the panic hook, when std named none of our code (`prefer_named_frames`: no `cmdr_lib::` / `cmdr::` frame), takes
+the same `module+0xoffset` walk instead (`platform::module_backtrace_frames`). Dev and test builds have the PDB and keep
+std's names. To resolve a release's frames: **archive that release's `cmdr.pdb` with its build** (#1474, a release-pipeline
+step for task 52, tens of MB per release, nothing added to the installer), then `cdb`/`llvm-symbolizer` against the
+offsets. The server's `topFunction` reads `unknown` for these until symbolication exists, as for a macOS signal crash.
+
+### Microsoft Store (MSIX) builds
+
+Nothing here is Store-specific, and the capture works the same in a packaged app (the data dir moves under the
+package's virtualized `LocalAppData`, which `config::resolved_app_data_dir` already answers). Two differences to know
+when the `StorePackage` install kind lands (#1461): the Store collects Windows Error Reporting crashes for packaged apps
+into Partner Center's health reports, which then overlap ours (our filter hands on, so WER still sees each crash); and
+the Store build's PDB is the one to archive, since its binary differs from the NSIS one.
 
 ## A dead mapped page is recovered before anything is recorded
 
