@@ -513,6 +513,58 @@ async fn move_into_a_top_level_symlink_preserves_the_source_and_surfaces_the_ski
     );
 }
 
+/// DATA SAFETY: a POSIX server's `x\a.txt` and `y\a.txt` moved into a zip holding `a.txt`.
+/// On Windows the pull's scratch split each into `a.txt`: under Overwrite it replaced the
+/// zip's own `a.txt`, and both pulled onto one scratch file before the move deleted both
+/// originals. On every host now: the zip's `a.txt` keeps its bytes, and each original either
+/// landed as its own entry (macOS, Linux) or stays where it was (Windows, refused per item).
+#[tokio::test]
+async fn moving_a_backslash_name_into_a_zip_is_refused_and_keeps_both_files() {
+    let engine = TestOperations::new();
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let archive = tmp.path().join("a.zip");
+    write_multi_zip(&archive, &[("a.txt", b"old")]);
+    let (_id, source) = register_remote_source(&engine, &[("x\\a.txt", b"new"), ("y\\a.txt", b"other")]).await;
+    let events = Arc::new(CollectorEventSink::new());
+
+    engine
+        .route_archive_copy_into(
+            Arc::clone(&events) as Arc<dyn OperationEventSink>,
+            Arc::clone(&source) as Arc<dyn Volume>,
+            vec![PathBuf::from("/x\\a.txt"), PathBuf::from("/y\\a.txt")],
+            archive.clone(),
+            unique_lane_id(),
+            ConflictResolution::Overwrite,
+            0,
+            true, // is_move
+            None,
+            None,
+        )
+        .await
+        .expect("start move-into");
+    wait_until_async(Duration::from_secs(5), "the write-complete event", || {
+        !events.complete.lock_ignore_poison().is_empty()
+    })
+    .await;
+
+    assert_eq!(read_entry(&archive, "a.txt").as_deref(), Some(&b"old"[..]));
+    for (name, bytes) in [("x\\a.txt", &b"new"[..]), ("y\\a.txt", &b"other"[..])] {
+        let landed = read_entry(&archive, name);
+        let kept = source
+            .exists(
+                &cmdr_fs::app_path::AppPathBuf::parse(&format!("/{name}"), cmdr_fs::app_path::PathFlavor::Posix)
+                    .expect("one name"),
+            )
+            .await;
+        if cfg!(windows) {
+            assert!(landed.is_none() && kept, "{name}: refused, and its original stays");
+        } else {
+            assert_eq!(landed.as_deref(), Some(bytes), "{name}: lands as its own entry");
+        }
+        assert!(landed.is_some() || kept, "{name}: never lost");
+    }
+}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn move_into_a_dir_containing_a_symlink_preserves_the_whole_source_tree() {
