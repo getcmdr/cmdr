@@ -37,6 +37,25 @@ function describeUnwritableUpdate({ version, blocker }: UnwritableUpdate): strin
     : tString('updates.status.unwritableStandard', { version })
 }
 
+/** The sentence for a copy Cmdr can't update itself: the Store's, or any other package's. */
+function describeUpdatesElsewhere(by: UpdatesElsewhere): string {
+  return by === 'store' ? tString('updates.status.updatedByStore') : tString('updates.status.sideloadedPackage')
+}
+
+/** The idle sentence: a terminal answer from the last check, "no updates found", or nothing before any check. */
+function describeIdle(state: UpdateStatusReadable, prev: string): string {
+  if (state.managed !== null) return describeManagedOutcome(state.managed)
+  if (state.unwritable !== null) return describeUnwritableUpdate(state.unwritable)
+  if (state.noBuild) return tString('updates.status.noBuildForThisPlatform')
+  if (state.updatesElsewhere !== null) return describeUpdatesElsewhere(state.updatesElsewhere)
+  // Two sub-cases share idle. If we just finished a successful check (we have a previousVersion
+  // and no nextVersion), say "no updates found". Before any check has run, say nothing.
+  if (state.previousVersion !== null && state.nextVersion === null) {
+    return tString('updates.status.noUpdates', { version: prev })
+  }
+  return ''
+}
+
 export function formatUpdateStatus(state: UpdateStatusReadable): string | null {
   if (state.failure !== null) return null
 
@@ -45,17 +64,7 @@ export function formatUpdateStatus(state: UpdateStatusReadable): string | null {
 
   switch (state.status) {
     case 'idle':
-      if (state.managed !== null) return describeManagedOutcome(state.managed)
-      if (state.unwritable !== null) return describeUnwritableUpdate(state.unwritable)
-      if (state.noBuild) return tString('updates.status.noBuildForThisPlatform')
-      if (state.updatesElsewhere === 'store') return tString('updates.status.updatedByStore')
-      if (state.updatesElsewhere === 'package') return tString('updates.status.sideloadedPackage')
-      // Two sub-cases share idle. If we just finished a successful check (we have a previousVersion
-      // and no nextVersion), say "no updates found". Before any check has run, say nothing.
-      if (state.previousVersion !== null && state.nextVersion === null) {
-        return tString('updates.status.noUpdates', { version: prev })
-      }
-      return ''
+      return describeIdle(state, prev)
     case 'checking':
       return tString('updates.status.checking')
     case 'downloading':

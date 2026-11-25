@@ -256,28 +256,9 @@ async function runUpdateFlow(
   // The check got an answer, so the next breakage speaks.
   checkFailureLog.clear()
 
-  switch (outcome.kind) {
-    case 'upToDate':
-      finishCheckWithNoUpdate(trigger, currentVersion, staged)
-      return
-    case 'updatesDisabledByPolicy':
-    case 'heldByPolicy':
-      finishCheckWithManagedOutcome(trigger, outcome, staged)
-      return
-    case 'automaticChecksDisabledByPolicy':
-      finishRefusedAutomaticCheck(trigger, staged)
-      return
-    case 'noBuildForThisPlatform':
-      finishCheckWithNoBuild(trigger, staged)
-      return
-    case 'updatedByStore':
-      finishCheckUpdatedElsewhere(trigger, 'store')
-      return
-    case 'sideloadedPackage':
-      finishCheckUpdatedElsewhere(trigger, 'package')
-      return
-    case 'available':
-      break
+  if (outcome.kind !== 'available') {
+    finishCheckWithoutUpdate({ trigger, outcome, currentVersion, staged })
+    return
   }
   const update: UpdateInfo = { version: outcome.version }
 
@@ -492,6 +473,45 @@ function finishCheckWithNoBuild(trigger: UpdateCheckTrigger, staged: string | nu
   updateState.status = 'idle'
   updateState.nextVersion = null
   updateState.noBuild = true
+}
+
+/** Every answer but `available`: each one ends the check its own way. */
+function finishCheckWithoutUpdate({
+  trigger,
+  outcome,
+  currentVersion,
+  staged,
+}: {
+  trigger: UpdateCheckTrigger
+  outcome: Exclude<UpdateCheckOutcome, { kind: 'available' }>
+  currentVersion: string
+  staged: string | null
+}): void {
+  switch (outcome.kind) {
+    case 'upToDate':
+      finishCheckWithNoUpdate(trigger, currentVersion, staged)
+      return
+    case 'updatesDisabledByPolicy':
+    case 'heldByPolicy':
+      finishCheckWithManagedOutcome(trigger, outcome, staged)
+      return
+    case 'automaticChecksDisabledByPolicy':
+      finishRefusedAutomaticCheck(trigger, staged)
+      return
+    case 'noBuildForThisPlatform':
+      finishCheckWithNoBuild(trigger, staged)
+      return
+    case 'updatedByStore':
+    case 'sideloadedPackage':
+      finishCheckUpdatedElsewhere(trigger, UPDATES_ELSEWHERE[outcome.kind])
+      return
+  }
+}
+
+/** Who updates a package, by the backend's answer. */
+const UPDATES_ELSEWHERE: Record<'updatedByStore' | 'sideloadedPackage', UpdatesElsewhere> = {
+  updatedByStore: 'store',
+  sideloadedPackage: 'package',
 }
 
 /**
