@@ -68,8 +68,8 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/crash_reporter/next_launch.rs": {
-      "negated": 3,
-      "outsideSeam": 11
+      "negated": 2,
+      "outsideSeam": 10
     },
     "apps/desktop/src-tauri/src/crash_reporter/signal_handler.rs": {
       "negated": 1,

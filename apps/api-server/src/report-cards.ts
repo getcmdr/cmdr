@@ -15,6 +15,7 @@
  * `@mention`, or a cross-repo reference.
  */
 
+import type { ClientOs } from './client-os'
 import { formatBytes } from './types'
 
 /**
@@ -238,6 +239,8 @@ export interface CrashIssueInput {
   createdAt: string
   appVersion: string
   osVersion: string
+  /** The OS the crash happened on (`osOfRow`), which names whose verdict `osException` is. */
+  os: ClientOs
   arch: string
   signal: string
   topFunction: string
@@ -251,8 +254,15 @@ export interface CrashIssueInput {
   email?: string | null
 }
 
-/** Frames of the macOS stack a crash card shows. The full list is in the D1 row. */
+/** Frames of the OS-named stack (`osFrames`) a crash card shows. The full list is in the D1 row. */
 const CRASH_FRAMES_SHOWN = 12
+
+/** Whose verdict a crash's `osException` is: macOS's own crash report, or Windows' exception record. */
+const osVerdictHeading: Record<ClientOs, string> = {
+  macos: 'macOS says',
+  windows: 'Windows says',
+  linux: 'Linux says',
+}
 
 /**
  * The issue for one crash. The row's technical facts go in the body (the privacy policy keeps them
@@ -277,7 +287,7 @@ export function buildCrashIssue(input: CrashIssueInput): IssueContent {
     `**Reported**: ${input.createdAt.replace('T', ' ').slice(0, 16)} UTC`,
   ]
   if (input.panicMessage) lines.push('', '**Panic message**', '', fencedBlock(input.panicMessage))
-  if (input.osException) lines.push('', '**macOS says**', '', fencedBlock(input.osException))
+  if (input.osException) lines.push('', `**${osVerdictHeading[input.os]}**`, '', fencedBlock(input.osException))
   if (input.osFrames.length) {
     const shown = input.osFrames.slice(0, CRASH_FRAMES_SHOWN)
     const rest = input.osFrames.length - shown.length

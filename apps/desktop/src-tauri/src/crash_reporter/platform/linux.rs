@@ -2,7 +2,11 @@
 
 use std::path::Path;
 
-pub(crate) use super::unix::current_image_base;
+#[cfg(test)]
+pub(crate) use super::unix::sample_raw_crash;
+pub(crate) use super::unix::{
+    convert_raw_crash, current_image_base, module_backtrace_frames, raw_crash_file_in_use, session_raw_crash_path,
+};
 
 /// Signal handlers only: Linux has no second exception channel to catch.
 pub(crate) fn install_native_crash_hooks(raw_crash_path: &Path, _data_dir: &Path) {

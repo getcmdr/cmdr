@@ -35,6 +35,7 @@ import {
 } from './report-cards'
 import { readReportFacts } from './telemetry/error-report-amend'
 import { PRESIGN_TTL_HOURS, buildPresignedUrl } from './telemetry/error-report'
+import { osOfRow } from './client-os'
 import type { Bindings } from './types'
 
 /**
@@ -112,7 +113,7 @@ export async function fileCrashCards(env: Bindings): Promise<void> {
   if (!resolveIssueTarget(env)) return
 
   const { results } = await env.TELEMETRY_DB.prepare(
-    `SELECT id, created_at, app_version, os_version, arch, signal, top_function, short_id, email, panic_message, app_fate, image_base, os_exception, os_frames
+    `SELECT id, created_at, app_version, os_version, os, arch, signal, top_function, short_id, email, panic_message, app_fate, image_base, os_exception, os_frames
          FROM crash_reports
          WHERE issue_number IS NULL AND ${RELEASE_ONLY}
          ORDER BY id
@@ -124,6 +125,7 @@ export async function fileCrashCards(env: Bindings): Promise<void> {
       created_at: string
       app_version: string
       os_version: string
+      os: string | null
       arch: string
       signal: string
       top_function: string
@@ -145,6 +147,7 @@ export async function fileCrashCards(env: Bindings): Promise<void> {
         createdAt: row.created_at,
         appVersion: row.app_version,
         osVersion: row.os_version,
+        os: osOfRow({ os: row.os, osVersion: row.os_version }),
         arch: row.arch,
         signal: row.signal,
         topFunction: row.top_function,

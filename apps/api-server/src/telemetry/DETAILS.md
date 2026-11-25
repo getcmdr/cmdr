@@ -83,7 +83,11 @@ that matter are usually in WebKit or AppKit. `os_frames` is stored as the client
 `backtrace` byte budget, so a long stack can leave a partial array in the column: the digest's reader treats a parse
 failure as "no frames" rather than an error. NULL when macOS wrote no report, which is the normal case for a panic that
 unwound. The allowlist and what it deliberately leaves behind: `apps/desktop/src-tauri/src/crash_reporter/DETAILS.md` §
-macOS crash reports.
+macOS crash reports. **On Windows** the same two columns hold the client's reading of Windows' exception record (a line
+like `EXCEPTION_ACCESS_VIOLATION (0xC0000005): reading 0x…, at cmdr.exe+0x1a2b`) and the faulting thread's stack as
+`<image file name>+0x<offset>`, and `signal` holds the exception's name (`EXCEPTION_STACK_OVERFLOW`, or `SIGABRT` for an
+`abort()`). No schema change: the crash card heads the line with the row's OS (`osOfRow`: "Windows says"). The client
+side: `crash_reporter/DETAILS.md` § Windows native crashes.
 
 **`top_function` derivation (`extractTopFunction`):** the grouping key is the topmost backtrace frame that is real
 application code. Frames belonging to the panic machinery are skipped first (`crash_reporter`, `std::panicking`,

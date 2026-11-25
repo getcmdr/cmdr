@@ -26,6 +26,12 @@ Some notes here are load-bearing rather than historical. Those are grouped below
   and Local staying off, plus every flagged take per round in `about-verdict-eval/`. Read it before changing the
   verdict's prompt, projection, or default model.
 
+**Drafts waiting on David:**
+
+- `windows-port/privacy-policy-windows-draft.md`: the privacy policy's Windows crash-report sentence, rewritten for what
+  PR #1471 sends (module-relative frames that can name third-party software, panics included). Must be published before
+  any Windows build reaches anyone outside.
+
 **Dated records:**
 
 - `windows-port/windows-lister-2026-11.md`: the Windows lister priced on the hosted runner's NTFS, find data against a

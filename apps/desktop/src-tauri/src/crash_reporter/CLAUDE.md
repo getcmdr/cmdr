@@ -9,10 +9,9 @@ reporter's Flow B. Everything else: `error_reporter/`.
   **`pending_delivery.rs`**: pending-file send and dismissal. **`contain.rs`**: parser exemption.
   **`panic_courier.rs`** / **`survival.rs`**: survived-panic delivery and amendments. **`signal_handler.rs`** /
   **`symbolicate.rs`** / **`os_crash_report.rs`** / **`objc_exception.rs`** (an uncaught exception's
-  reason): native crash evidence; `platform/` arms it. Tests are siblings.
+  reason): native crash evidence; `platform/` arms it (Windows: `exception_filter.rs` writes an
+  `exception_record.rs` record). Tests are siblings.
 - IPC: `commands/crash_reporter.rs`. Frontend: `src/lib/crash-reporter/`.
-
-Both paths write `crash-report.json` in the app data dir: the hook with full stdlib, the handler async-signal-safe.
 
 ## Must-knows (invariants and guardrails)
 
@@ -20,8 +19,7 @@ Both paths write `crash-report.json` in the app data dir: the hook with full std
   to `updates.errorReports` (an unbounded log bundle) or `updates.attachEmailToReports` (an identity).
   `#lib/crash-reporter/DETAILS.md` § The three report consents.
 - **The pending file is authoritative at send.** Send takes only the preview's `short_id` plus optional email, reloads
-  the file, checks the id, and reapplies `prepare_for_delivery` (typed-field validation, report-scoped redaction and
-  caps on every string, panic message and thread name included).
+  the file, checks the id, and reapplies `prepare_for_delivery` (validation, redaction, and caps on every string).
 - **`system_snapshot` and the macOS extract attach in `process_pending_crash`, NEVER in the compromised hook or
   handler.** The snapshot is stable-only (`live: None`), since live values describe the new process.
 - **Attach the diagnostics id (`diag_`), NEVER the analytics id (`anal_`)** (`analytics/CLAUDE.md` § "Two ids that
@@ -53,7 +51,7 @@ Both paths write `crash-report.json` in the app data dir: the hook with full std
 - **What we lift from macOS's own crash report is an ALLOWLIST** (exception + the faulting thread's frames), so a
   future macOS field can't ship itself. ❌ Never widen it to `crashReporterKey`, `bootSessionUUID`, or the
   `parentProc` / `coalitionName` family: they name the machine and other apps. DETAILS § macOS crash reports.
+- **Windows: an image reaches disk as a file name only** (`write_module`). ❌ Never a minidump: it holds memory.
 
-Delivery paths, the crash-file lifecycle, the managed-policy step, the macOS-report allowlist, and the "what we send /
-never send" catalog: `DETAILS.md`. Read it before any non-trivial work here: editing, planning, reorganizing, or
-advising.
+Delivery paths, the crash-file lifecycle, the managed-policy step, the OS-report allowlists, and the "what we send /
+never send" catalog: `DETAILS.md`. Read it before any non-trivial work here.

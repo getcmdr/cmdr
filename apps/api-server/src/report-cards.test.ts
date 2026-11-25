@@ -162,6 +162,7 @@ describe('buildCrashIssue', () => {
     createdAt: '2026-10-13T08:12:00Z',
     appVersion: '0.52.0',
     osVersion: '27.0',
+    os: 'macos',
     arch: 'aarch64',
     signal: 'SIGABRT',
     topFunction: 'cmdr::listing::sort',
@@ -179,6 +180,22 @@ describe('buildCrashIssue', () => {
     expect(body).toContain('EXC_CRASH (SIGABRT)')
     expect(body).toContain('frame two')
     expect(labels).toEqual(['crash-report', 'unprocessed'])
+  })
+
+  it('credits the exception line to the OS the crash happened on', () => {
+    expect(buildCrashIssue(crash).body).toContain('**macOS says**')
+    const windows = buildCrashIssue({
+      ...crash,
+      os: 'windows',
+      osVersion: 'Windows 11 Pro 24H2 (build 26100)',
+      signal: 'EXCEPTION_ACCESS_VIOLATION',
+      osException: 'EXCEPTION_ACCESS_VIOLATION (0xC0000005): reading 0x0000000000000010, at cmdr.exe+0x1a2b',
+      osFrames: ['cmdr.exe+0x1a2b', 'ntdll.dll+0x5000'],
+    })
+    expect(windows.body).toContain('**Windows says**')
+    expect(windows.body).not.toContain('macOS says')
+    expect(windows.body).toContain('ntdll.dll+0x5000')
+    expect(windows.title).toContain('(EXCEPTION_ACCESS_VIOLATION) on 0.52.0 (Windows 11 Pro 24H2 (build 26100))')
   })
 
   it('says "panic" when the app survived, because that ranks lower than a crash', () => {
