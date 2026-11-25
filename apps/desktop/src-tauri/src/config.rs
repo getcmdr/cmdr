@@ -40,24 +40,19 @@ pub fn resolved_app_data_dir<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, 
     Ok(dir)
 }
 
-/// Where the `tauri-plugin-store` file `store_file` (a constant like `license.json`, ❌ never
-/// path text) lives, for Rust to open it by (`app.store(…)`):
+/// Where the `tauri-plugin-store` file `store_file` (a plain file name like `license.json`, ❌
+/// never path text) lives, for the plugin to open it by (`app.store(…)`, the frontend's `load`):
 /// inside `CMDR_DATA_DIR` when that's set, else the bare name, which the plugin resolves to the
-/// identifier's data folder as it always did (production). The frontend's stores reach the same
-/// paths through `get_isolated_store_path`. ❌ Never hand the plugin a bare name from Rust: it
-/// ignores `CMDR_DATA_DIR`, so a test or dev instance reads and rewrites the real install's file
-/// (`license.json` on quit, #1484). An override dir that can't be created still wins: the save
-/// then fails there, ❌ never lands in the real folder.
-pub fn plugin_store_path<R: Runtime>(app: &AppHandle<R>, store_file: &'static str) -> PathBuf {
-    let Some(override_dir) = data_dir_from_env(std::env::var("CMDR_DATA_DIR").ok().as_deref()) else {
-        return PathBuf::from(store_file);
-    };
-    match resolved_app_data_dir(app) {
-        Ok(dir) => dir.join(store_file),
-        Err(e) => {
-            log::warn!("Couldn't create the CMDR_DATA_DIR folder for a store file: {e}");
-            override_dir.join(store_file)
-        }
+/// identifier's data folder as it always did (production). Rust's stores, the startup recovery
+/// check, and the frontend's (`get_isolated_store_path`) all take it, so they agree on one file.
+/// ❌ Never hand the plugin a bare name from Rust: it ignores `CMDR_DATA_DIR`, so a test or dev
+/// instance reads and rewrites the real install's file (`license.json` on quit, #1484). Creates
+/// nothing: the plugin's save makes the folder, and an override it can't make fails the save
+/// there, ❌ never in the real folder.
+pub fn plugin_store_path(store_file: &str) -> PathBuf {
+    match data_dir_from_env(std::env::var("CMDR_DATA_DIR").ok().as_deref()) {
+        Some(dir) => dir.join(store_file),
+        None => PathBuf::from(store_file),
     }
 }
 
