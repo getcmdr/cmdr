@@ -123,13 +123,7 @@ async fn read(volume: &InMemoryVolume, path: &AppPath) -> Option<Vec<u8>> {
 /// Names a POSIX server lists that std's Windows split reads as more than one name, or
 /// that a Windows volume would refuse: each lands whole on a remote destination.
 fn hostile_names() -> Vec<&'static str> {
-    let mut names = vec!["a:b", "trail.", "trail "];
-    // The test double keys its store by `std::path` (`InMemoryVolume`), which on Windows
-    // can't hold a source named with a `\`.
-    if cfg!(unix) {
-        names.extend(["a\\b.txt", "foo\\..", "..\\bar"]);
-    }
-    names
+    vec!["a:b", "trail.", "trail ", "a\\b.txt", "foo\\..", "..\\bar"]
 }
 
 /// ❗ #1457: a top-level `a\b.txt` lands as `a\b.txt` on a POSIX destination, ❌ never as
@@ -173,11 +167,7 @@ async fn a_top_level_remote_name_lands_whole_on_a_remote_destination() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn a_top_level_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_item() {
     for driver in DRIVERS {
-        let refused: &[&str] = if cfg!(unix) {
-            &["a\\b.txt", "foo\\..", "..\\bar"]
-        } else {
-            &[]
-        };
+        let refused: &[&str] = &["a\\b.txt", "foo\\..", "..\\bar"];
         let landing = ["a:b", "trail.", "trail "];
         let names: Vec<&str> = refused.iter().chain(landing.iter()).copied().collect();
         let (source, sources) = server_with(&names, driver).await;

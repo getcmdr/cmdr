@@ -197,15 +197,11 @@ async fn run_remote_names_case(driver: Driver, refusing: bool) {
     for dir in ["/album", "/album/a:b", "/album/a"] {
         source.create_directory(at(dir)).await.unwrap();
     }
-    let backslash_names: &[(&str, &str)] = if cfg!(unix) {
-        &[
-            ("/inbox/album/back\\slash.txt", "/album/back\\slash.txt"),
-            // `a\b.txt` beside a real folder `a` holding `b.txt`: two files, ❌ never one.
-            ("/inbox/album/a\\b.txt", "/album/a\\b.txt"),
-        ]
-    } else {
-        &[]
-    };
+    let backslash_names: &[(&str, &str)] = &[
+        ("/inbox/album/back\\slash.txt", "/album/back\\slash.txt"),
+        // `a\b.txt` beside a real folder `a` holding `b.txt`: two files, ❌ never one.
+        ("/inbox/album/a\\b.txt", "/album/a\\b.txt"),
+    ];
     for file in [
         "/album/ok.txt",
         "/album/12:00 notes.txt",

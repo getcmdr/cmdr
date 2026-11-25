@@ -2043,11 +2043,28 @@ included; the hidden couplings it found are why waves B and C differ from round 
     back through `on_volume` in `top_level_conflict.rs`, `copy_concurrent_source.rs`, and `move_same.rs` (it used to
     cross inside `copy_single_path`); the same-volume engine and the archive move-out cross their `std::path` sources
     once into the typed driver (`on_volume`, replacing the closures' own bridge calls).
-- **Left in 10a after the ninth pass's milestone 1**: `InMemoryVolume`'s `PathBuf` store (milestone 2, which re-enables
-  the `\` cells on Windows); the resolver's `ResolvedConflict.write_path` and `naming.rs` (a `Rename` pick on a `\` name
-  still splits on Windows: #1470); `DisplacedDestination`'s aside mint; the create, rename-validity, and
-  preflight-sources entry points, `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's
-  `std::path` body (`move_same.rs`, `top_level_move_hints`); `scan_walker`'s cached walk (with 10f's lossless row).
+- **Tenth pass** (2026-11-25, branch `app-path-pass-10`; the lead, plus helper `inmem-typed` on the in-memory store in
+  its own worktree, cherry-picked): the test double, the resolver, and the aside take app paths. Bridge calls 880 → 842
+  (`cmdr-operations` 423 → 416, `cmdr-fs` 205 → 174), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 267; no entry
+  grew. Wrapper lines in `cmdr-operations` production code (uncounted, #1469): `std_of(` 73 → 77, `on_volume(` 38 → 36,
+  `seam_path(` 17, `engine_path(` 16, `into_std(` 5. Hazards 62 → 62 (nothing on the list; the resolver's read-backs
+  were wrapper crossings). What it is:
+  - **`InMemoryVolume` keys its store by `AppPathBuf`** (`cmdr-fs` `in_memory/keys.rs`, `scan.rs`), its arithmetic the
+    app path's, so on Windows `/a\b.txt` is one file in `/` beside `/a/b.txt` and `foo\..` a name; listing text,
+    `FileEntry.path`, and error text stay byte for byte (lossy decode of an escape, as `display()`); a drive path keys
+    as `/C:/x` off Windows, as `Path` read it. Re-enabled on Windows: `refused_class_tests.rs`' `\` names,
+    `listed_row_tests.rs::a_backslash_name_copies_and_moves_as_one_name`, and `top_level_name_tests.rs`' `\` cells
+    (#1457's Windows proof).
+  - **The resolver takes and answers app paths** (`ResolvedConflict::write_path`), and the volume namer walks
+    `unique_name::AppNameCandidates`, so a Rename of `a\b.txt` picks `a\b (1).txt` beside it (#1470); the op's
+    `ClaimedNames` ledger keys by the `std::path` spelling (a reservation only lands on a local disk).
+  - **`DisplacedDestination` mints its aside typed** (`staged_paths.rs::typed_aside`), beside the original; a bridge
+    value or an escape-range name keeps the `std::path` mint.
+- **Left in 10a after the tenth pass**: the create, rename-validity, and preflight-sources entry points,
+  `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's `std::path` body (`move_same.rs`,
+  `rename_merge.rs`, `top_level_move_hints`); the op's `ClaimedNames` ledger and the staged writes' placeholder release
+  (`std::path` keys); `scan_walker`'s cached walk (with 10f's lossless row); #1316 (a Rename or ` (recovered)` name of a
+  non-UTF-8 Linux name stays lossy, byte for byte as before).
 
 ### 10b. `cmdr-index`
 
