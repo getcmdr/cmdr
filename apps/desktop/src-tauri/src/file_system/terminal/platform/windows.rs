@@ -14,7 +14,7 @@
 //!   its window, and it lets every inheritable handle leak into the terminal. Here the
 //!   child inherits no handles and its console sets up its own.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use cmdr_fs::app_path::{AppPath, NativeRefusal};
 
