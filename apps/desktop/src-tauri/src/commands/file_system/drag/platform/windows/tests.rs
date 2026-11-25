@@ -22,7 +22,7 @@ use super::effects::{
     DropIntent, OFFERED_EFFECTS, clear_intent, drop_effect, hover_effect, intent, modifiers_of, set_intent,
 };
 use super::{crossed, native_drag_drop};
-use crate::platform::shell::in_apartment;
+use crate::platform::apartment::in_apartment;
 use crate::system_events::{DragModifiers, NativeDragDrop};
 use crate::test_support::TestDir;
 

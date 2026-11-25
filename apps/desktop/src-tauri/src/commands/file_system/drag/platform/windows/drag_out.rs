@@ -60,7 +60,7 @@ pub(super) fn start(app: AppHandle, natives: Vec<PathBuf>, locality: SessionLoca
         .name("drag-out-items".to_string())
         .stack_size(ITEMS_THREAD_STACK)
         .spawn(move || {
-            let built = crate::platform::shell::in_apartment(|| item_lists(&natives, || still_wanted(generation)));
+            let built = crate::platform::apartment::in_apartment(|| item_lists(&natives, || still_wanted(generation)));
             let items = match built {
                 Ok(Ok(items)) => items,
                 Ok(Err(end)) => return report(&app, end),
