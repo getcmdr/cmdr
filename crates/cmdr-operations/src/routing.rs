@@ -111,11 +111,15 @@ pub(crate) fn transfer_would_land_on_its_source(
     dest_path: &AppPath,
 ) -> bool {
     match (source_volume.local_path(), dest_volume.local_path()) {
-        // Both local: the OS answers by `dev+ino`, on the paths it spells.
-        (Some(source_root), Some(dest_root)) => super::validation::may_be_same_file(
-            &on_local_root(&std_root(&source_root), &engine_path(source_path)),
-            &cmdr_fs::volume::root_anchored(&std_root(&dest_root), &engine_path(dest_path)),
-        ),
+        // Both local: the OS answers by `dev+ino`, on the paths it spells. A path with no
+        // native spelling is no file here, so it's no self-collision (the conflict stays).
+        (Some(source_root), Some(dest_root)) => match (source_path.to_native(), dest_path.to_native()) {
+            (Ok(source), Ok(dest)) => super::validation::may_be_same_file(
+                &on_local_root(&std_root(&source_root), &source),
+                &cmdr_fs::volume::root_anchored(&std_root(&dest_root), &dest),
+            ),
+            _ => false,
+        },
         _ => super::transfer::volume::is_the_same_item(source_volume, source_path, dest_volume, dest_path),
     }
 }

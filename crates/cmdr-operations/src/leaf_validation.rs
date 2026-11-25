@@ -14,7 +14,6 @@ use super::transfer::volume::native_roots;
 use super::types::{NamedLeavesRefusal, TransferLeaves, WriteOperationError};
 use super::unique_name::sibling_in;
 use super::validation::{first_shared_name, validate_path_length};
-use super::wire_paths::{engine_path, seam_path};
 use cmdr_fs::file_identity::FileId;
 use cmdr_fs::volume::Volume;
 
@@ -234,12 +233,18 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
     let mut landings: Vec<(&Path, PathBuf)> = Vec::with_capacity(items.len());
     let mut taken: HashSet<String> = HashSet::with_capacity(items.len());
     for (source, chosen) in items {
-        let own = own_leaf(source, identity);
-        let Some(leaf) = chosen.map(OsStr::new).or(own.as_deref()) else {
-            continue;
+        // A chosen leaf is app text, joined as text; an own name is the path's.
+        let (landing, key) = match chosen {
+            Some(leaf) => (sibling_in(destination, leaf), fold_name(leaf).into_owned()),
+            None => match own_leaf(source, identity) {
+                Some(own) => (
+                    landing_at(destination, own),
+                    fold_name(&own.to_string_lossy()).into_owned(),
+                ),
+                None => continue,
+            },
         };
-        let landing = landing_at(destination, leaf);
-        if !taken.insert(fold_name(&leaf.to_string_lossy()).into_owned()) {
+        if !taken.insert(key) {
             return Err(LandingClash::SameName { landing });
         }
         landings.push((source, landing));
@@ -276,7 +281,7 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
             continue;
         };
         let already_there =
-            folded(&parent, identity) == destination_key || destination_id.is_some_and(|id| stat(&parent) == Some(id));
+            folded(parent, identity) == destination_key || destination_id.is_some_and(|id| stat(parent) == Some(id));
         if already_there {
             return Err(LandingClash::AlreadyInDestination {
                 source: source.to_path_buf(),
@@ -304,43 +309,41 @@ fn landing_at(destination: &Path, leaf: &OsStr) -> PathBuf {
 /// On a [`LeafIdentity::Names`] route the app path's canonical text, split by
 /// [`app_reading`].
 fn folded(path: &Path, identity: LeafIdentity) -> String {
-    if let Some(app) = app_reading(path, identity)
-        && let Ok(canonical) = app.to_canonical()
-    {
-        return fold_name(canonical.as_str()).into_owned();
+    if let Some(app) = app_reading(path, identity) {
+        return fold_name(app.as_str()).into_owned();
     }
     let normal: PathBuf = path.components().collect();
     fold_name(&normal.to_string_lossy()).into_owned()
 }
 
-/// `path` as the app path it spells, on a route whose paths ARE app paths
-/// ([`LeafIdentity::Names`]: a remote volume's, an AI proposal's), so on Windows
-/// a POSIX server's `a\b.txt` is one name in its folder, ❌ never `b.txt` in `a`.
-/// `None` on a local route, whose native paths the OS splits by its own rules, and
-/// for text that isn't UTF-8 or holds an escape-range code point, which keeps the
-/// `std::path` reading byte for byte. So the app text IS the path's text, and on
-/// macOS and Linux both readings split it alike.
-fn app_reading(path: &Path, identity: LeafIdentity) -> Option<std::borrow::Cow<'_, AppPath>> {
-    let plain_text = path.to_str().is_some_and(|text| !text.chars().any(is_escape));
-    (identity == LeafIdentity::Names && plain_text).then(|| seam_path(path))
+/// `path` read as the canonical app path its own text is, on a route whose paths
+/// ARE app paths ([`LeafIdentity::Names`]: a remote volume's, an AI proposal's), so on
+/// Windows a POSIX server's `a\b.txt` is one name in its folder, ❌ never `b.txt` in
+/// `a`. No crossing: the app path borrows the path's text, so every split below is a
+/// slice of it. `None` on a local route, whose native paths the OS splits by its own
+/// rules, and for text that isn't UTF-8, holds an escape-range code point, or isn't
+/// canonical, which keeps the `std::path` reading byte for byte. On macOS and Linux
+/// both readings split such text alike.
+fn app_reading(path: &Path, identity: LeafIdentity) -> Option<&AppPath> {
+    let text = path.to_str().filter(|text| !text.chars().any(is_escape))?;
+    (identity == LeafIdentity::Names)
+        .then(|| AppPath::from_normalized(text).ok())
+        .flatten()
 }
 
-/// `path`'s last name, split as [`app_reading`] splits it (whose text is the
-/// path's own, so the name is the native name it spells).
-fn own_leaf(path: &Path, identity: LeafIdentity) -> Option<std::borrow::Cow<'_, OsStr>> {
+/// `path`'s last name, split as [`app_reading`] splits it.
+fn own_leaf(path: &Path, identity: LeafIdentity) -> Option<&OsStr> {
     match app_reading(path, identity) {
-        Some(app) => app
-            .file_name()
-            .map(|leaf| std::borrow::Cow::Owned(leaf.to_owned().into())),
-        None => path.file_name().map(std::borrow::Cow::Borrowed),
+        Some(app) => app.file_name().map(AsRef::as_ref),
+        None => path.file_name(),
     }
 }
 
 /// `path`'s folder, split as [`app_reading`] splits it.
-fn folder_of(path: &Path, identity: LeafIdentity) -> Option<std::borrow::Cow<'_, Path>> {
+fn folder_of(path: &Path, identity: LeafIdentity) -> Option<&Path> {
     match app_reading(path, identity) {
-        Some(app) => app.parent().map(|parent| std::borrow::Cow::Owned(engine_path(parent))),
-        None => path.parent().map(std::borrow::Cow::Borrowed),
+        Some(app) => app.parent().map(|parent| AsRef::<Path>::as_ref(parent.as_str())),
+        None => path.parent(),
     }
 }
 
