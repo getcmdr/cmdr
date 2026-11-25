@@ -41,6 +41,12 @@ services:
       - TRUSTED_PROXY=172.18.0.0/16
       - SECRET=${REMARK42_SECRET}
       - SITE=getcmdr
+      # David's GitHub (sha1 of login `vdavid`) and Google identities. Remark42 ids are unsalted
+      # hashes, so they match his ids on comments.veszelovszki.com. Admins can open the
+      # /web/deleteme.html links that "Request my data removal" mails to ADMIN_SHARED_EMAIL
+      # (unset, it falls back to the nonexistent admin@comments.getcmdr.com).
+      - ADMIN_SHARED_ID=github_19f281a8a9cfd76d63af2cb4fdc0081772686e38,google_de577435923750062d227db9347eab8880ea60f2
+      - ADMIN_SHARED_EMAIL=legal@getcmdr.com
       - AUTH_GOOGLE_CID=${AUTH_GOOGLE_CID}
       - AUTH_GOOGLE_CSEC=${AUTH_GOOGLE_CSEC}
       - AUTH_GITHUB_CID=${AUTH_GITHUB_CID}

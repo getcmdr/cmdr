@@ -18,8 +18,10 @@ where each item lives. If you find data the policy doesn't list, that's a bug in
    or email in the title or body; put identifying details only in a comment.
 3. **Find everything tied to that email**, store by store, following the policy: license and purchase records, report
    intake (crash, error, feedback, with their attachments and the reports-board comments), newsletter and beta lists,
-   and the support mailbox. Usage stats and website analytics use random ids that aren't linked to an email, so they
-   usually can't be found; say so in the answer rather than guessing.
+   blog comments (Remark42 keys them on the GitHub or Google account, not the email; a request from its "Request my data
+   removal" button carries a ready deletion link, see `../tooling/remark42.md` § Admin and data removal), and the
+   support mailbox. Usage stats and website analytics use random ids that aren't linked to an email, so they usually
+   can't be found; say so in the answer rather than guessing.
 4. **Do what was asked:**
    - **Access or export**: collect each store's records as JSON (one file per store, plus a short README saying what
      each is) and send them to the person. Leave out other people's data.

@@ -43,6 +43,20 @@ Stored on the server at `apps/website/.env`:
 
 These must match exactly in the OAuth app settings on GitHub / Google Cloud Console.
 
+## Admin and data removal
+
+- **Admins**: `docker-compose.yml` sets `ADMIN_SHARED_ID` to David's GitHub and Google ids and
+  `ADMIN_SHARED_EMAIL=legal@getcmdr.com` (the address the privacy policy gives for deletion requests). Remark42 ids are
+  unsalted hashes (GitHub: `github_` + sha1 of the login), so they're the same as his ids on
+  `comments.veszelovszki.com`. Unset, `admin_email` falls back to `admin@comments.getcmdr.com`, which doesn't exist.
+- **How a removal request works**: a signed-in commenter clicks "Request my data removal" in their profile. Remark42
+  mints a link (`/web/deleteme.html?site_id=getcmdr&token=…`, token valid three months, not usable for login), opens a
+  prefilled `mailto:` to `admin_email` with the user id and link, and signs them out. The commenter still has to send
+  that email. David then signs in to the comments on a getcmdr.com blog post (the session must belong to site `getcmdr`)
+  and opens the link: it hard-deletes the user's comments, stored details, and avatar, and shows the result as JSON.
+  Opened without an admin session, the page says "You are not logged in" and does nothing.
+- **Check it**: `curl -s 'https://comments.getcmdr.com/api/v1/config?site=getcmdr'` shows `admins` and `admin_email`.
+
 ## Client IP handling
 
 Vote dedup and rate limiting key off the client IP, which reaches Remark42 in `X-Forwarded-For`, so both ends are
