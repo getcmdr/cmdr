@@ -143,16 +143,35 @@ fn account_listing_for(
     ip_address: Option<&str>,
     port: u16,
 ) -> (smb_client::GuestAttempt, Option<SmbCredentials>) {
-    use crate::network::server_identity::{SmbServer, smb_server};
+    listing_ladder(
+        hostname,
+        ip_address,
+        port,
+        |server| manual_servers::typed_username(app, server),
+        keychain::cached_credentials,
+    )
+}
 
-    let typed = manual_servers::typed_username(app, &SmbServer::new(hostname, port))
-        .or_else(|| ip_address.and_then(|ip| manual_servers::typed_username(app, &SmbServer::new(ip, port))));
-    let Some(username) = typed else {
+/// [`account_listing_for`]'s decision, over its two lookups: the account the person
+/// typed for a server, and this session's cached password for a credential key.
+///
+/// ❗ `cached_password` is the ONLY credential source it's handed, so the ladder has no
+/// way to reach the Keychain; and it's asked only once an account is typed.
+fn listing_ladder(
+    hostname: &str,
+    ip_address: Option<&str>,
+    port: u16,
+    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
+    cached_password: impl Fn(&str) -> Option<SmbCredentials>,
+) -> (smb_client::GuestAttempt, Option<SmbCredentials>) {
+    use crate::network::server_identity::smb_server;
+
+    let Some(username) = typed_account(hostname, ip_address, port, typed_username) else {
         return (smb_client::GuestAttempt::Try, None);
     };
     let cached = std::iter::once(hostname)
         .chain(ip_address)
-        .find_map(|name| keychain::cached_credentials(&smb_server(name, port)))
+        .find_map(|name| cached_password(&smb_server(name, port)))
         .filter(|creds| creds.username == username);
     (smb_client::GuestAttempt::Skip, cached)
 }
@@ -165,15 +184,35 @@ fn guest_attempt_for(
     ip_address: Option<&str>,
     port: u16,
 ) -> smb_client::GuestAttempt {
+    guest_attempt(hostname, ip_address, port, |server| {
+        manual_servers::typed_username(app, server)
+    })
+}
+
+/// [`guest_attempt_for`]'s decision, over the typed-account lookup.
+fn guest_attempt(
+    hostname: &str,
+    ip_address: Option<&str>,
+    port: u16,
+    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
+) -> smb_client::GuestAttempt {
+    match typed_account(hostname, ip_address, port, typed_username) {
+        Some(_) => smb_client::GuestAttempt::Skip,
+        None => smb_client::GuestAttempt::Try,
+    }
+}
+
+/// The account the person typed for this host, by its hostname first, then its IP.
+fn typed_account(
+    hostname: &str,
+    ip_address: Option<&str>,
+    port: u16,
+    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
+) -> Option<String> {
     use crate::network::server_identity::SmbServer;
 
-    let typed = manual_servers::typed_username(app, &SmbServer::new(hostname, port))
-        .or_else(|| ip_address.and_then(|ip| manual_servers::typed_username(app, &SmbServer::new(ip, port))));
-    if typed.is_some() {
-        smb_client::GuestAttempt::Skip
-    } else {
-        smb_client::GuestAttempt::Try
-    }
+    typed_username(&SmbServer::new(hostname, port))
+        .or_else(|| ip_address.and_then(|ip| typed_username(&SmbServer::new(ip, port))))
 }
 
 /// Prefetches shares for a host, so its share list is cached by the time someone opens it.
@@ -710,3 +749,7 @@ pub fn set_network_enabled(enabled: bool, app_handle: tauri::AppHandle) {
         crate::network::clear_discovered_hosts(&app_handle);
     }
 }
+
+#[cfg(test)]
+#[path = "network_tests.rs"]
+mod tests;

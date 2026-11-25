@@ -375,6 +375,11 @@ Only the layout facts that none of those carry live here:
 - **Cargo features gate whole groups.** Every spec needs `playwright-e2e` (it's what grants the plugin's IPC
   permissions); the `mtp*` specs additionally need `virtual-mtp`; `smb.spec.ts` needs `smb-e2e` plus Docker (smb2's
   consumer containers). The two `server-ops-*` specs need no feature, only Docker: § "Real SFTP and WebDAV servers".
+  `smb.spec.ts` skips on macOS (mounting needs a permission prompt), so its SMB pins run only in the Linux Docker lane:
+  `./scripts/e2e-linux.sh --grep SMB` from `apps/desktop`.
+- **`smb.spec.ts` reads a share list through `cmdr://state`** (`paneRows`: volume id, rows, cursor), ❌ never its DOM,
+  and never its pane `path` or `volume` name, so its pins hold while the share list's rendering changes. Reach `..` by
+  `move_cursor { index: 0 }`: a file list's by-name lookup asks the backend listing, which has no `..` row.
 - **`helpers/` submodules may depend on `core.ts`, never on each other.** The single exception is `app-lifecycle` →
   `navigation`. `helpers.ts` is the flat re-export specs import from (`from './helpers.js'`), so a spec never reaches
   into `helpers/` directly.
