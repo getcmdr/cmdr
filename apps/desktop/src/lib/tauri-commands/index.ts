@@ -304,6 +304,7 @@ export {
   setSmbDirectConnectionEnabled,
   type DirectConnectionSwitch,
   getSmbShareParent,
+  shareParentFromWire,
   setSmbShareParentRow,
   type ShareParent,
   reconnectVolume,

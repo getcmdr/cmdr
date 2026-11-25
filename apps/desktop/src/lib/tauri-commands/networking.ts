@@ -476,8 +476,15 @@ export type ShareParent = Omit<ShareParentWire, 'host'> & { host: NetworkHost }
  */
 export async function getSmbShareParent(volumeId: string): Promise<ShareParent | null> {
   const parent = await commands.getSmbShareParent(volumeId)
-  if (!parent) return null
-  // The wire spells an unresolved name `null`; the frontend's `NetworkHost` leaves it out.
+  return parent ? shareParentFromWire(parent) : null
+}
+
+/**
+ * The frontend's `ShareParent` from the wire's, wherever one arrives (the command above, a
+ * top-folder listing's `listing-complete`). The wire spells an unresolved name `null`; the
+ * frontend's `NetworkHost` leaves it out.
+ */
+export function shareParentFromWire(parent: ShareParentWire): ShareParent {
   const { hostname, ipAddress, ...host } = parent.host
   return {
     ...parent,

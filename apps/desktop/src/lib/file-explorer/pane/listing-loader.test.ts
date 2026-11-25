@@ -64,6 +64,8 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   findFileIndex: h.findFileIndex,
   pathExistsChecked: h.pathExistsChecked,
   resolvePathVolume: h.resolvePathVolume,
+  // The wire-to-frontend conversion has its own test (`networking.test.ts`); here it passes through.
+  shareParentFromWire: (parent: unknown) => parent,
   trackEvent: h.trackEvent,
 }))
 vi.mock('./listing-liveness', () => ({

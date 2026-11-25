@@ -46,6 +46,7 @@ import {
   onListingComplete,
   onListingError,
   onListingCancelled,
+  shareParentFromWire,
   trackEvent,
   type ListingCompleteEvent,
   type UnlistenFn,
@@ -712,7 +713,7 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     // listing says where its `..` leads (#1238), and `hasParent` reads it synchronously, so
     // the row is in the rows' first frame (no late insert shifting every index by one) and
     // the cursor below counts it. It also replaces a `null` asked before the mount was up.
-    if (payload.shareParent) noteShareParent(load.volumeId, payload.shareParent)
+    if (payload.shareParent) noteShareParent(load.volumeId, shareParentFromWire(payload.shareParent))
     deps.setTotalCount(payload.totalCount)
     deps.setHiddenCount(payload.hiddenCount)
     // With the count, before any await: the rows that land now are in this column's
