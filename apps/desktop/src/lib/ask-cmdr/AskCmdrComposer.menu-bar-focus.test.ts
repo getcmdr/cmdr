@@ -29,10 +29,14 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-function mountInto<P extends Record<string, unknown>>(component: Parameters<typeof mount>[0], props: P): void {
-  const target = document.createElement('div')
-  document.body.append(target)
-  const mounted = mount(component, { target, props })
+/** A fresh mount target in the page, unmounted after the test. */
+function target(): HTMLDivElement {
+  const el = document.createElement('div')
+  document.body.append(el)
+  return el
+}
+
+function unmountAfter(mounted: Record<string, unknown>): void {
   teardowns.push(() => {
     void unmount(mounted)
   })
@@ -43,31 +47,37 @@ describe('the composer beside the in-window menu bar', () => {
   // the composer's focus effect, which moved focus into the composer and ended the inline rename.
   it('leaves focus in a text field when the bar takes the keyboard from it, and gives it back', async () => {
     teardowns.push(withConventions('windows'))
-    mountInto(MenuBar, {
-      menus: [
-        {
-          id: 'menu_edit',
-          title: { text: 'Edit' },
-          rows: [
-            {
-              kind: 'item',
-              id: 'edit_cut',
-              label: { text: 'Cut' },
-              shortcut: null,
-              ariaKeyshortcuts: null,
-              enabled: true,
-            },
-          ],
-        },
-      ],
-      onPick: () => {},
-      ariaLabel: 'Menu bar',
-      flavor: 'desktop',
+    const bar = mount(MenuBar, {
+      target: target(),
+      props: {
+        menus: [
+          {
+            id: 'menu_edit',
+            title: { text: 'Edit' },
+            rows: [
+              {
+                kind: 'item',
+                id: 'edit_cut',
+                label: { text: 'Cut' },
+                shortcut: null,
+                ariaKeyshortcuts: null,
+                enabled: true,
+              },
+            ],
+          },
+        ],
+        onPick: () => {},
+        ariaLabel: 'Menu bar',
+        flavor: 'desktop',
+      },
     })
+    unmountAfter(bar)
     flushSync()
-    mountInto(AskCmdrComposer, {
-      readSelection: () => Promise.resolve({ kind: 'refs' as const, refs: [], leftOut: 0 }),
+    const composer = mount(AskCmdrComposer, {
+      target: target(),
+      props: { readSelection: () => Promise.resolve({ kind: 'refs' as const, refs: [], leftOut: 0 }) },
     })
+    unmountAfter(composer)
     flushSync()
     expect(document.activeElement?.tagName).toBe('TEXTAREA')
 

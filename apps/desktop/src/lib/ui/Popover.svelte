@@ -28,7 +28,7 @@
      * first field unless focus is already inside, and traps as usual. `alsoInside` names that field,
      * so placing the caret in it isn't a click outside.
      */
-    import { onMount, onDestroy, tick, type Snippet } from 'svelte'
+    import { onMount, onDestroy, tick, untrack, type Snippet } from 'svelte'
     import { trapFocus } from '#lib/ui/focus-trap.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { placeOffAnchor } from './anchored-placement'
@@ -153,8 +153,11 @@
 
     $effect(() => {
         if (!open || passive) return
-        // On every open, and when a passive popover becomes an active one.
-        void focusFirst()
+        // On every open, and when a passive popover becomes an active one. Untracked: the focus
+        // handlers it runs must not hand their `$state` reads to this effect (#1464).
+        untrack(() => {
+            void focusFirst()
+        })
     })
 
     onMount(() => {

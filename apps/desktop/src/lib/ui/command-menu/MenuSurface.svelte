@@ -5,7 +5,7 @@
      * D5's accepted limit), and holds the roving focus while it's the surface the keyboard is in.
      * The look is `app-menu.css`'s tokens, ❌ never a value of its own.
      */
-    import { tick } from 'svelte'
+    import { tick, untrack } from 'svelte'
     import { dependOn } from '#lib/utils/reactivity.js'
     import type { Row } from '#lib/ipc/bindings.js'
     import { placeAtPoint, placeBesideRow, placeOffAnchor } from '../anchored-placement'
@@ -108,7 +108,9 @@
         }
         const target = index >= 0 ? el.querySelector<HTMLElement>(`#${CSS.escape(rowId(index))}`) : el
         if (!target || document.activeElement === target) return
-        target.focus({ preventScroll: true })
+        untrack(() => {
+            target.focus({ preventScroll: true })
+        })
         if (index >= 0) target.scrollIntoView({ block: 'nearest' })
     })
 

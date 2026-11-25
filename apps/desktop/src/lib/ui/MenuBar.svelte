@@ -134,7 +134,11 @@
                 holder.removeAttribute('aria-activedescendant')
             }
         }
-        if (document.activeElement !== title) title.focus({ preventScroll: true })
+        if (document.activeElement !== title) {
+            untrack(() => {
+                title.focus({ preventScroll: true })
+            })
+        }
     })
 
     /** The title the keyboard is on while a text field keeps focus, drawn as a focused one. */

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy, tick } from 'svelte'
+    import { onMount, onDestroy, tick, untrack } from 'svelte'
     import { SvelteSet } from 'svelte/reactivity'
     import { closeSelfWindow } from '#lib/child-window-close.js'
     import { showSelfWindow } from '#lib/child-window-show.js'
@@ -146,7 +146,8 @@
         const id = cursor.cursorId
         if (!gridOwnsFocus || id === null || !gridEl || !rowIds.includes(id)) return
         const active = document.activeElement
-        if (active === null || active === document.body || !gridEl.contains(active)) rowApis[id]?.focusRow()
+        const row = rowApis[id]
+        if (active === null || active === document.body || !gridEl.contains(active)) untrack(() => row?.focusRow())
     })
 
     /** The row Tab lands on: the cursor row, or the first row before there is one. */

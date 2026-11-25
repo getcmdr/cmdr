@@ -56,6 +56,7 @@ import noUnrenderedLogFields from './eslint-plugins/no-unrendered-log-fields.js'
 import noStringifiedLogValues from './eslint-plugins/no-stringified-log-values.js'
 import webkitFloorDom from './eslint-plugins/webkit-floor-dom.js'
 import noPlatformCopyBranch from './eslint-plugins/no-platform-copy-branch.js'
+import noTrackedFocusInEffect from './eslint-plugins/no-tracked-focus-in-effect.js'
 
 /* global process */
 const noTypecheck = process.env.ESLINT_NO_TYPECHECK === '1'
@@ -403,6 +404,7 @@ export default tseslint.config(
           'no-stringified-log-values': noStringifiedLogValues,
           'webkit-floor-dom': webkitFloorDom,
           'no-platform-copy-branch': noPlatformCopyBranch,
+          'no-tracked-focus-in-effect': noTrackedFocusInEffect,
         },
       },
     },
@@ -415,6 +417,9 @@ export default tseslint.config(
       // unresolved generic) is banned: use a single named object payload instead. Both a
       // dropped-parameter mismatch and a swapped-argument mismatch have shipped as real bugs.
       'cmdr/no-confusable-callback-params': 'error',
+      // A focus or select call inside a `$effect` runs `untrack`ed: the focus handlers it runs
+      // would hand the effect their `$state` reads, and it'd steal focus later (#1464).
+      'cmdr/no-tracked-focus-in-effect': 'error',
       'cmdr/no-raw-tauri-invoke': 'error',
       // Feature code imports typed wrappers from `#lib/tauri-commands`, never the
       // raw `commands`/`events` bindings (type imports from bindings stay fine).

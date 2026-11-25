@@ -25,7 +25,7 @@
     import { rollbackOperation, type OperationRow } from '#lib/tauri-commands/index.js'
     import { getAppLogger } from '#lib/logging/logger.js'
     import { SvelteMap, SvelteSet } from 'svelte/reactivity'
-    import { onDestroy, onMount } from 'svelte'
+    import { onDestroy, onMount, untrack } from 'svelte'
     import { claimMenuCommand } from '#lib/commands/menu-claims.js'
     import { claimKey } from '#lib/shortcuts/claim-key.js'
     import { eventMatchesCommand } from '#lib/shortcuts/index.js'
@@ -207,7 +207,7 @@
         }
         if (tree.opId !== wanted || tree.blank !== null) return
         treeFocusFor = null
-        treeGrid()?.focus()
+        untrack(() => treeGrid()?.focus())
     })
 
     function treeGrid(): HTMLElement | null {
