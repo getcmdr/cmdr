@@ -12,7 +12,6 @@ cmdr	logging::rotating_file::tests::a_writer_rotated_away_by_another_reopens_the
 cmdr	search::execute::tests::goldens::search_answers_match_the_goldens	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	search::execute::tests::goldens::the_other_platforms_goldens_hold_under_its_rules	fails	#1225: a POSIX fixture path read in the host flavor (cluster P) (windows-test-failures.md)
 cmdr	tools::suggestions::tests::input::an_age_predicate_arrives_in_days_and_leaves_in_seconds	fails	windows-port plan task 34 (windows-test-failures.md)
-cmdr	tools::suggestions::tests::names::a_file_never_lands_on_another_source_of_its_group	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr	tools::suggestions::tests::propose::a_selector_resolves_once_at_creation_and_freezes_what_it_found	fails	windows-port plan task 34 (windows-test-failures.md)
 cmdr	tools::suggestions::tests::propose::a_selector_that_matches_nothing_stages_nothing_and_says_so	fails	windows-port plan task 34 (windows-test-failures.md)
 cmdr	tools::suggestions::tests::propose::an_unreadable_index_refuses_differently_from_an_empty_one	fails	windows-port plan task 34 (windows-test-failures.md)
