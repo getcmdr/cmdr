@@ -58,7 +58,8 @@ pub(super) async fn swap_through_an_aside(
     dest_volume: &Arc<dyn Volume>,
     mut landing: Landing,
 ) -> Result<(), LandingError> {
-    match DisplacedDestination::hold_for_swap(&landing.state, landing.home(), landing.final_path(), landing.size).await
+    match DisplacedDestination::hold_for_swap(&landing.state, landing.home(), landing.final_path.app(), landing.size)
+        .await
     {
         Ok(aside) => landing.aside = Some(aside),
         Err(in_flight_temps::NotOnDisk) => {

@@ -547,7 +547,8 @@ async fn a_volume_overwrite_of_a_folder_that_holds_a_mounted_drive_refuses_and_r
         pane_order_host(),
     ));
 
-    let result = displace_destination(&state, &volume, std::path::Path::new("folder"), true).await;
+    let folder = crate::testing::app_path_of(std::path::Path::new("folder"));
+    let result = displace_destination(&state, &volume, &folder, true).await;
 
     assert_refused_at_the_mount(
         result

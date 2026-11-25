@@ -196,7 +196,7 @@
     "crates/cmdr-operations/src/transfer/volume/copy_tree_rows_tests.rs": 3,
     "crates/cmdr-operations/src/transfer/volume/copy_wedge_test_support.rs": 4,
     "crates/cmdr-operations/src/transfer/volume/dest_precheck_failure_tests.rs": 2,
-    "crates/cmdr-operations/src/transfer/volume/displaced_destination.rs": 2,
+    "crates/cmdr-operations/src/transfer/volume/displaced_destination.rs": 1,
     "crates/cmdr-operations/src/transfer/volume/displaced_destination_tests.rs": 1,
     "crates/cmdr-operations/src/transfer/volume/extract_quarantine.rs": 1,
     "crates/cmdr-operations/src/transfer/volume/faulty_volume_test_support.rs": 1,

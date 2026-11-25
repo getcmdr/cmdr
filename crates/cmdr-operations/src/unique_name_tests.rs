@@ -329,7 +329,7 @@ fn a_dangling_symlink_counts_as_taken() {
 #[test]
 fn app_name_candidates_number_a_name_holding_a_backslash_beside_it() {
     let next = |path: &str, is_directory: bool| {
-        let path = cmdr_fs::app_path::AppPath::from_normalized(path).expect("canonical");
+        let path = AppPath::from_normalized(path).expect("canonical");
         let candidates = if is_directory {
             AppNameCandidates::for_directory(path)
         } else {

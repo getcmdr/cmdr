@@ -110,7 +110,7 @@ impl StagedWrite {
                 recovered: None,
             }));
         };
-        match displace_destination(&self.state, dest_volume, self.final_path.path(), false).await {
+        match displace_destination(&self.state, dest_volume, self.final_path.app(), false).await {
             Ok(displaced) => {
                 self.publish(temp, size, Replacing::SetAside(displaced.map(Box::new)))
                     .rename(dest_volume)

@@ -107,7 +107,12 @@ impl Share {
     async fn displace(&self) -> Result<Option<DisplacedDestination>, PathedVolumeError> {
         tokio::time::timeout(
             WAIT,
-            displace_destination(&self.state, &self.volume(), Path::new(ORIGINAL), false),
+            displace_destination(
+                &self.state,
+                &self.volume(),
+                &crate::testing::app_path_of(Path::new(ORIGINAL)),
+                false,
+            ),
         )
         .await
         .expect("the rename aside ends, one way or the other")
@@ -261,13 +266,45 @@ async fn a_refused_rename_aside_fails_at_once_and_retires_its_record() {
         .arc();
     let volume = Arc::clone(&refusing) as Arc<dyn Volume>;
 
-    let failure = displace_destination(&share.state, &volume, Path::new(ORIGINAL), false)
-        .await
-        .expect_err("a refusal fails the rename");
+    let failure = displace_destination(
+        &share.state,
+        &volume,
+        &crate::testing::app_path_of(Path::new(ORIGINAL)),
+        false,
+    )
+    .await
+    .expect_err("a refusal fails the rename");
 
     assert!(refusing.fault_fired(FaultyOp::Rename));
     assert!(matches!(failure.error, VolumeError::PermissionDenied { .. }));
     assert_eq!(share.nas.reconnect_attempts(), 0, "nothing to wait for");
     assert_eq!(share.original().await.as_deref(), Some(BYTES));
     assert!(share.ledger.live_paths().is_empty(), "nothing claimed that isn't there");
+}
+
+/// An aside is minted BESIDE its original by the app path's own split, on every host: a
+/// POSIX server's `a\b`, `foo\..`, and `..\bar` each stay one name, so the aside is their
+/// sibling in the same folder (on Windows `Path` minted `a\b`'s inside a folder `a`, under
+/// a name the leftover sweep's `.cmdr-temp-` prefix never matched).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn an_aside_beside_a_backslash_name_is_its_sibling_on_every_host() {
+    use cmdr_fs::app_path::{AppPath, PathArithmetic, PathFlavor};
+    let engine = TestOperations::new();
+    let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
+    for name in [r"a\b", r"foo\..", r"..\bar"] {
+        let text = format!("/dst/{name}");
+        let original = AppPath::from_normalized_as(&text, PathFlavor::Posix).expect("a canonical path");
+        let aside = DisplacedDestination::hold_for_swap(&state, None, original, 1)
+            .await
+            .expect("no ledger home, nothing to confirm");
+        let aside_app = aside.aside_app().to_owned();
+        aside.forget();
+        assert_eq!(
+            aside_app.parent().map(AppPath::as_str),
+            Some("/dst"),
+            "{name:?}: {aside_app}"
+        );
+        let aside_name = aside_app.file_name().expect("an aside has a name");
+        assert!(aside_name.contains(".cmdr-temp-"), "{name:?}: {aside_name:?}");
+    }
 }

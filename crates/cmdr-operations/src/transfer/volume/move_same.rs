@@ -620,9 +620,10 @@ pub async fn move_within_same_volume_with_progress(
                                     // that replaces it is a separate call the
                                     // backend can refuse, and a delete makes that
                                     // refusal fatal to the user's file.
-                                    if let Some(displaced) = displace_destination(&state, &volume, &orig, false)
-                                        .await
-                                        .map_err(|e| e.into_write_error())?
+                                    if let Some(displaced) =
+                                        displace_destination(&state, &volume, &rc.write_path, false)
+                                            .await
+                                            .map_err(|e| e.into_write_error())?
                                     {
                                         displaced_dests
                                             .lock_ignore_poison()

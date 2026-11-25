@@ -453,7 +453,7 @@ async fn apply_child_decision(
         // same way.
         let displaced = match aside {
             Some(aside) => Some(aside),
-            None => displace_destination(ctx.state, ctx.volume, &write_path, false)
+            None => displace_destination(ctx.state, ctx.volume, &write_app, false)
                 .await
                 .map_err(|e| e.into_write_error())?,
         };
@@ -476,7 +476,8 @@ async fn apply_child_decision(
         // replacing rename is a separate call, and a backend that refuses it
         // after a delete leaves the user with neither copy.
         Some(orig) => {
-            let displaced = displace_destination(ctx.state, ctx.volume, &orig, false)
+            // `orig` is the resolved name itself (`Replaces::replaced_file`), as the volume spells it.
+            let displaced = displace_destination(ctx.state, ctx.volume, &write_app, false)
                 .await
                 .map_err(|e| e.into_write_error())?;
             // A file→file safe-replace: mark the op as having overwritten (not

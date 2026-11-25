@@ -22,6 +22,7 @@ use super::super::super::in_flight_temps::{self, ItemKind, NotOnDisk, RecordHome
 use super::super::super::state::WriteOperationState;
 use super::super::super::types::RecoveredOriginal;
 use super::super::recovered_name::rescue_out_of_temp_space;
+use super::super::staged_paths::{native_spelling, typed_aside};
 use super::super::volume_outage::{OutageEnd, OutageFailure, StartedOn, lost_connection, wait_after_failure};
 use super::cleanup::{TreeRemoval, remove_tree};
 use super::transfer_error::{PathRole, PathedVolumeError};
@@ -102,9 +103,12 @@ impl std::fmt::Debug for DisplacedDestination {
 pub(crate) async fn displace_destination(
     state: &Arc<WriteOperationState>,
     volume: &Arc<dyn Volume>,
-    original: &Path,
+    original_app: &AppPath,
     is_directory: bool,
 ) -> Result<Option<DisplacedDestination>, PathedVolumeError> {
+    // The record, the mount check, and the logs read the `std::path` spelling.
+    let original_std = native_spelling(original_app);
+    let original: &Path = &original_std;
     // A folder aside goes as a tree once its replacement lands
     // ([`DisplacedDestination::discard`]), so one with a drive mounted inside it
     // is refused before it's set aside.
@@ -113,7 +117,7 @@ pub(crate) async fn displace_destination(
             .await
             .map_err(|refusal| PathedVolumeError::refused(original, refusal))?;
     }
-    let aside = StagingTemp::mint_aside(original, uuid::Uuid::new_v4(), state.liveness_token());
+    let (aside, aside_app) = mint_aside(original_app, state);
     // On disk before the rename below puts the original here (`track_in`). The
     // rename goes ahead whether or not the line made it.
     let record = match state.dest_volume_id() {
@@ -131,7 +135,7 @@ pub(crate) async fn displace_destination(
         ),
         None => None,
     };
-    let displaced = DisplacedDestination::new(aside, original, is_directory, record, state);
+    let displaced = DisplacedDestination::new(aside, aside_app, original_app, is_directory, record, state);
     let volumes = [volume];
     let mut outages = 0;
     loop {
@@ -216,20 +220,37 @@ fn retire(state: &Arc<WriteOperationState>, record: Option<&TrackedRecord>) {
     }
 }
 
+/// The `.cmdr-temp-*` aside beside `original` and its app spelling: minted by the
+/// app path's own split and join (a POSIX server's `a\b.txt` sets aside BESIDE
+/// itself on Windows too, where `Path` minted it inside a folder `a`), else, for a
+/// path the typed mint leaves alone (a bridge value, an escape-range name), through
+/// `std::path` as it always was.
+fn mint_aside(original: &AppPath, state: &Arc<WriteOperationState>) -> (StagingTemp, AppPathBuf) {
+    let uuid = uuid::Uuid::new_v4();
+    if let Some((app, name)) = typed_aside(original, uuid) {
+        let path = native_spelling(&app).into_owned();
+        return (StagingTemp::adopt_named(path, name, state.liveness_token()), app);
+    }
+    let aside = StagingTemp::mint_aside(&native_spelling(original), uuid, state.liveness_token());
+    let app = AppPath::legacy_unchecked(aside.path()).into_owned();
+    (aside, app)
+}
+
 impl DisplacedDestination {
-    /// Holds `aside` as the place `original` goes, both spelled for the volume once.
+    /// Holds `aside` as the place `original_app` goes, both spelled for the volume.
     fn new(
         aside: StagingTemp,
-        original: &Path,
+        aside_app: AppPathBuf,
+        original_app: &AppPath,
         is_directory: bool,
         record: Option<TrackedRecord>,
         state: &Arc<WriteOperationState>,
     ) -> Self {
         Self {
-            aside_app: AppPath::legacy_unchecked(aside.path()).into_owned(),
-            original_app: AppPath::legacy_unchecked(original).into_owned(),
+            aside_app,
+            original_app: original_app.to_owned(),
             aside,
-            original: original.to_path_buf(),
+            original: native_spelling(original_app).into_owned(),
             is_directory,
             record,
             state: Arc::clone(state),
@@ -250,12 +271,13 @@ impl DisplacedDestination {
     pub(crate) async fn hold_for_swap(
         state: &Arc<WriteOperationState>,
         home: Option<RecordHome>,
-        original: &Path,
+        original_app: &AppPath,
         replacement_size: u64,
     ) -> Result<Self, NotOnDisk> {
-        let aside = StagingTemp::mint_aside(original, uuid::Uuid::new_v4(), state.liveness_token());
-        let record = in_flight_temps::hold_aside(state, home, aside.path(), original, replacement_size).await?;
-        Ok(Self::new(aside, original, false, record, state))
+        let (aside, aside_app) = mint_aside(original_app, state);
+        let original = native_spelling(original_app);
+        let record = in_flight_temps::hold_aside(state, home, aside.path(), &original, replacement_size).await?;
+        Ok(Self::new(aside, aside_app, original_app, false, record, state))
     }
 
     /// Where the original goes (or went).

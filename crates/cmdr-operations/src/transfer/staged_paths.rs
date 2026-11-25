@@ -11,7 +11,7 @@
 //! as text, ❌ never split it.
 
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic, is_escape};
-use cmdr_fs::staging::{StagingOwner, StagingTemp, temp_sibling_name_with_uuid};
+use cmdr_fs::staging::{StagingOwner, StagingTemp, aside_sibling_name_with_uuid, temp_sibling_name_with_uuid};
 use cmdr_fs::volume::Volume;
 use std::borrow::Cow;
 
@@ -69,13 +69,32 @@ impl Temp {
 /// `final_path`'s temp sibling and its last name, by the app path's own split
 /// and join; `None` where [`Temp::mint`] keeps the `std::path` mint.
 fn typed_sibling(final_path: &AppPath, uuid: uuid::Uuid) -> Option<(AppPathBuf, String)> {
+    typed_scratch(final_path, |name| temp_sibling_name_with_uuid(name, uuid))
+}
+
+/// A displaced destination's aside (`volume/displaced_destination.rs`): the
+/// `.cmdr-temp-*` sibling of `original` and its last name, by the app path's own
+/// split and join, as [`typed_sibling`] names a temp; `None` where the caller keeps
+/// the `std::path` mint (`StagingTemp::mint_aside`).
+pub(super) fn typed_aside(original: &AppPath, uuid: uuid::Uuid) -> Option<(AppPathBuf, String)> {
+    typed_scratch(original, |name| aside_sibling_name_with_uuid(name, uuid))
+}
+
+/// The scratch sibling `scratch_name` names beside `final_path`, typed, for a
+/// canonical path holding no escape-range code point.
+fn typed_scratch(final_path: &AppPath, scratch_name: impl FnOnce(&str) -> String) -> Option<(AppPathBuf, String)> {
     if !final_path.is_canonical() || final_path.as_str().chars().any(is_escape) {
         return None;
     }
     let (folder, name) = (final_path.parent()?, final_path.file_name()?);
-    let scratch = temp_sibling_name_with_uuid(name, uuid);
+    let scratch = scratch_name(name);
     let app = folder.join(AppName::from_app_spelling(&scratch).ok()?).ok()?;
     Some((app, scratch))
+}
+
+/// [`native_text`] for a sibling module (the aside mint): one named crossing.
+pub(super) fn native_spelling(path: &AppPath) -> Cow<'_, Path> {
+    native_text(path)
 }
 
 /// Tells the host the engine is about to write `path` on `volume`

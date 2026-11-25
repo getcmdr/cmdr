@@ -1112,15 +1112,17 @@ the temp; on a failure INSIDE it the original goes back to its name, and only wh
   new bytes — but the replacing rename is still a SEPARATE call, and an SMB `STATUS_SHARING_VIOLATION` (the source is
   open elsewhere), an MTP `MoveObject` refusal, or a session blip fails it. Freeing the name with a delete makes that
   ordinary failure fatal: the destination gone, the source not moved, neither copy where the user left it. So
-  `displaced_destination.rs::displace_destination` renames it to a `.cmdr-temp-<uuid>` sibling, the source rename runs,
-  and the aside is dropped on success or renamed back on failure. One extra call on every backend. Both sites:
-  `move_same.rs`'s resolver (top level, the entry crossing to the transfer closure through `displaced_dests` the way the
-  overwrite verdict crosses through `overwritten_sources`, with a post-loop sweep for anything whose rename never ran)
-  and `rename_merge.rs::rename_replacing` (deep children, both the file→file Overwrite and the
-  dir-subtree-over-a-dest-file case). A cross-type clash arrives already set aside by the resolver
-  (`ResolvedConflict::displaced`), and both sites answer for that aside the same way. ❗ The `.cmdr-temp-` marker is
-  deliberately the one `cleanup.rs::reap_stale_transfer_temps` does NOT match (it reaps `.cmdr-tmp-` only), so an aside
-  nothing could put back survives for the user. When the put-back refuses too — the same dead link —
+  `displaced_destination.rs::displace_destination` renames it to a `.cmdr-temp-<uuid>` sibling (minted by the app path's
+  own split and join, `staged_paths.rs::typed_aside`, so a POSIX server's `a\b.txt` sets aside beside itself on Windows
+  too; a bridge value or an escape-range name keeps the `std::path` mint), the source rename runs, and the aside is
+  dropped on success or renamed back on failure. One extra call on every backend. Both sites: `move_same.rs`'s resolver
+  (top level, the entry crossing to the transfer closure through `displaced_dests` the way the overwrite verdict crosses
+  through `overwritten_sources`, with a post-loop sweep for anything whose rename never ran) and
+  `rename_merge.rs::rename_replacing` (deep children, both the file→file Overwrite and the dir-subtree-over-a-dest-file
+  case). A cross-type clash arrives already set aside by the resolver (`ResolvedConflict::displaced`), and both sites
+  answer for that aside the same way. ❗ The `.cmdr-temp-` marker is deliberately the one
+  `cleanup.rs::reap_stale_transfer_temps` does NOT match (it reaps `.cmdr-tmp-` only), so an aside nothing could put
+  back survives for the user. When the put-back refuses too — the same dead link —
   `../recovered_name.rs::rescue_out_of_temp_space` gives it a ` (recovered)` name and the failure carries that path as a
   typed `WriteOperationError::OriginalsKeptAside`. The one delete that stays a delete is the `Rename`-policy branch
   clearing its own `O_EXCL` placeholder: that zero-byte file is ours, not the user's. Pinned by

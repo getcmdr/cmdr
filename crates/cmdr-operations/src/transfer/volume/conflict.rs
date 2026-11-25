@@ -686,8 +686,7 @@ async fn apply_volume_conflict_resolution(
             let displaced = if dest_is_dir == source_is_directory {
                 None
             } else {
-                // The aside still names its paths by `std::path` (#1225).
-                displace_destination(state, dest_volume, &std_of(dest_app), dest_is_dir).await?
+                displace_destination(state, dest_volume, dest_app, dest_is_dir).await?
             };
             Ok(Some(ResolvedConflict {
                 write_path: dest_app.to_owned(),
