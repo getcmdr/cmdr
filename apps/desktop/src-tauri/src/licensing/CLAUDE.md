@@ -32,6 +32,8 @@ counterpart: `src/lib/licensing/CLAUDE.md`.
   `UpstreamError`.
 - **`PUBLIC_KEY_HEX` and `LICENSE_SERVER_URL` share the `debug_assertions` gate.** Each build trusts only its own server's
   signer. ❌ Never put the production private key in `apps/api-server/.dev.vars`. `DETAILS.md` § Signing keys.
+- **Open `license.json` through `key_storage::license_store`, ❌ never `app.store("license.json")`**: a bare name
+  ignores `CMDR_DATA_DIR` and rewrites the real install's file (#1484).
 - **Verify/commit split keeps invalid keys off disk.** Verify (nothing stored) → validate → `commit_license`.
   `commit_license` deliberately skips `last_validation_timestamp`, so `needs_validation()` stays true.
 - **`validate_license_async` returns `Result`**: `Err` means "couldn't get a trustworthy answer", `Ok(Personal)` means

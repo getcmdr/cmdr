@@ -96,11 +96,13 @@ Authoritative files: `apps/desktop/src-tauri/src/config.rs`, `apps/desktop/scrip
 ### `tauri-plugin-store`
 
 When `CMDR_DATA_DIR` is set, the frontend loads each store from `<resolved_data_dir>/<name>` (absolute path) via
-`get_isolated_store_path`, matching the Rust side. Production (no `CMDR_DATA_DIR`) keeps the plain
-`BaseDirectory::AppData` path, byte-identical. Don't rely on the generated config's identifier alone: the Playwright E2E
-checker launches the pre-built binary directly (no wrapper, no `-c`), and a runtime `-c` identifier override does NOT
-redirect `app_data_dir()`, so without this the stores read the real prod files. The command sanitizes the
-frontend-supplied `store_name` (rejects path separators, `..`, absolute paths) so the resolved path can't escape the
+`get_isolated_store_path`, matching the Rust side. Rust opens its own stores (`license.json`) through
+`config::plugin_store_path`, ❌ never by bare name: the plugin resolves a bare name to the identifier's folder, so a
+test instance once rewrote the real install's `license.json` on quit (#1484). Production (no `CMDR_DATA_DIR`) keeps the
+plain `BaseDirectory::AppData` path, byte-identical. Don't rely on the generated config's identifier alone: the
+Playwright E2E checker launches the pre-built binary directly (no wrapper, no `-c`), and a runtime `-c` identifier
+override does NOT redirect `app_data_dir()`, so without this the stores read the real prod files. The command sanitizes
+the frontend-supplied `store_name` (rejects path separators, `..`, absolute paths) so the resolved path can't escape the
 data dir.
 
 Authoritative files: `apps/desktop/src-tauri/src/commands/settings.rs`, `apps/desktop/src/lib/settings/store-path.ts`.

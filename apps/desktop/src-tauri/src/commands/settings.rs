@@ -61,11 +61,12 @@ pub fn update_file_watcher_debounce(debounce_ms: u64) {
 /// falls back to the bare name), so a bad input can never escape the data dir.
 #[tauri::command]
 #[specta::specta]
-pub fn get_isolated_store_path(app: AppHandle, store_name: String) -> Option<String> {
+pub fn get_isolated_store_path(store_name: String) -> Option<String> {
     std::env::var("CMDR_DATA_DIR").ok().filter(|s| !s.is_empty())?;
     let name = sanitize_store_name(&store_name)?;
-    let dir = crate::config::resolved_app_data_dir(&app).ok()?;
-    Some(dir.join(name).to_string_lossy().into_owned())
+    // The same answer Rust's own stores and the startup recovery check take, so all three name
+    // one file. It creates nothing: the store plugin's save makes the folder.
+    Some(crate::config::plugin_store_path(name).to_string_lossy().into_owned())
 }
 
 /// Validates that `store_name` is a single plain filename safe to join onto the

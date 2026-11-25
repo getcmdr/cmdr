@@ -8,7 +8,7 @@
 //!
 //! What a license is worth offline is decided in `offline_policy.rs`.
 
-use crate::licensing::key_storage::save_license_file;
+use crate::licensing::key_storage::{self, save_license_file};
 use crate::licensing::license_key::{self, LicenseInfo, get_license_info};
 use crate::licensing::offline_policy::{self, CachedLicenseStatus, KeyTerms, LicenseState};
 use crate::licensing::verification::{LicenseActivationError, SignedValidationAnswer};
@@ -17,7 +17,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::Manager;
-use tauri_plugin_store::StoreExt;
 
 /// How often to re-validate license (7 days in seconds).
 const VALIDATION_INTERVAL_SECS: u64 = 7 * 24 * 60 * 60;
@@ -110,7 +109,7 @@ pub fn needs_validation(app: &tauri::AppHandle) -> bool {
         return false;
     }
 
-    let store = match app.store("license.json") {
+    let store = match key_storage::license_store(app) {
         Ok(s) => s,
         Err(_) => return true,
     };
@@ -128,7 +127,7 @@ pub fn needs_validation(app: &tauri::AppHandle) -> bool {
 /// Returns false if no `last_validation_timestamp` exists (license was committed locally but never
 /// server-verified).
 pub fn has_been_validated(app: &tauri::AppHandle) -> bool {
-    let store = match app.store("license.json") {
+    let store = match key_storage::license_store(app) {
         Ok(s) => s,
         Err(_) => return false,
     };
@@ -274,8 +273,7 @@ fn to_app_status(
 /// The status from the signed key and the last verified server answer, with no network involved.
 /// `offline_policy::resolve_license_state` makes the call; this adds the store reads and UI flags.
 fn get_cached_or_validate(app: &tauri::AppHandle, license_info: &LicenseInfo) -> AppStatus {
-    let cached: Option<CachedLicenseStatus> = app
-        .store("license.json")
+    let cached: Option<CachedLicenseStatus> = key_storage::license_store(app)
         .ok()
         .and_then(|store| store.get(STORE_KEY_CACHED_STATUS))
         .and_then(|v| serde_json::from_value(v).ok());
@@ -314,7 +312,7 @@ fn get_cached_or_validate(app: &tauri::AppHandle, license_info: &LicenseInfo) ->
 /// read the clock at all.
 fn effective_now(app: &tauri::AppHandle) -> u64 {
     let now = current_timestamp();
-    let Ok(store) = app.store("license.json") else {
+    let Ok(store) = key_storage::license_store(app) else {
         return now;
     };
     let high_water = store
@@ -330,7 +328,7 @@ fn effective_now(app: &tauri::AppHandle) -> u64 {
 
 /// Replace the clock guard with the server's signed time.
 fn set_clock_high_water(app: &tauri::AppHandle, timestamp: u64) {
-    if let Ok(store) = app.store("license.json") {
+    if let Ok(store) = key_storage::license_store(app) {
         store.set(STORE_KEY_CLOCK_HIGH_WATER, serde_json::json!(timestamp));
         save_license_file(&store);
     }
@@ -338,7 +336,7 @@ fn set_clock_high_water(app: &tauri::AppHandle, timestamp: u64) {
 
 /// Check if expiration modal has been shown for current expiration.
 fn expiration_modal_shown(app: &tauri::AppHandle) -> bool {
-    let store = match app.store("license.json") {
+    let store = match key_storage::license_store(app) {
         Ok(s) => s,
         Err(_) => return false,
     };
@@ -350,7 +348,7 @@ fn expiration_modal_shown(app: &tauri::AppHandle) -> bool {
 
 /// Mark expiration modal as shown.
 pub fn mark_expiration_modal_shown(app: &tauri::AppHandle) {
-    if let Ok(store) = app.store("license.json") {
+    if let Ok(store) = key_storage::license_store(app) {
         store.set(STORE_KEY_EXPIRATION_SHOWN, serde_json::json!(true));
         save_license_file(&store);
     }
@@ -359,7 +357,7 @@ pub fn mark_expiration_modal_shown(app: &tauri::AppHandle) {
 /// Check if we should show the commercial license reminder.
 /// Returns true if 30+ days have passed since the last dismissal or first launch.
 fn should_show_commercial_reminder(app: &tauri::AppHandle) -> bool {
-    let store = match app.store("license.json") {
+    let store = match key_storage::license_store(app) {
         Ok(s) => s,
         Err(_) => return false, // Can't check, don't show
     };
@@ -386,7 +384,7 @@ fn should_show_commercial_reminder(app: &tauri::AppHandle) -> bool {
 
 /// Mark commercial reminder as dismissed (resets the 30-day timer).
 pub fn mark_commercial_reminder_dismissed(app: &tauri::AppHandle) {
-    if let Ok(store) = app.store("license.json") {
+    if let Ok(store) = key_storage::license_store(app) {
         store.set(
             STORE_KEY_REMINDER_LAST_DISMISSED,
             serde_json::json!(current_timestamp()),
@@ -431,7 +429,7 @@ pub fn write_cached_status_without_validation(
     organization_name: Option<String>,
     expires_at: Option<String>,
 ) {
-    if let Ok(store) = app.store("license.json") {
+    if let Ok(store) = key_storage::license_store(app) {
         let cached = CachedLicenseStatus {
             status: status.to_string(),
             license_type,
@@ -458,7 +456,7 @@ pub fn update_cached_status(
     organization_name: Option<String>,
     expires_at: Option<String>,
 ) {
-    if let Ok(store) = app.store("license.json") {
+    if let Ok(store) = key_storage::license_store(app) {
         let cached = CachedLicenseStatus {
             status: status.to_string(),
             license_type,
@@ -519,8 +517,8 @@ pub fn refresh_window_title(app: &tauri::AppHandle) {
 /// Reset license data, returning the app to unlicensed (Personal) state.
 pub fn reset_license(app: &tauri::AppHandle) {
     license_key::clear_license_cache();
-    crate::licensing::key_storage::clear_stored_license(app);
-    if let Ok(store) = app.store("license.json") {
+    key_storage::clear_stored_license(app);
+    if let Ok(store) = key_storage::license_store(app) {
         store.delete(STORE_KEY_CACHED_STATUS);
         store.delete(STORE_KEY_LAST_VALIDATION);
         store.delete(STORE_KEY_EXPIRATION_SHOWN);

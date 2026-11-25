@@ -55,6 +55,18 @@ completion with nothing skipped (`files_skipped == 0`, no Locked item kept) runs
 A cancel, a failure, or a completion that skipped something forgets the claim. A one-file rename can finish before its
 start returns, so the ledger remembers the last 64 unclaimed endings, as `drop_in/folders.rs` does.
 
+**The other way round, nobody tells Cmdr** (#1478): Explorer pasting a Cmdr cut moves the files, but it ends a cut
+through `Paste Succeeded` on the source's data object, and Cmdr's plain-API cut has none, so the cut stays on the
+clipboard (seen on Windows 10 22H2, real-machine check, 2026-11-25). So the paste read (`commands/clipboard.rs::
+read_for_paste`) treats a clipboard-marked cut whose every file is gone as used up. Gone means `NotFound` while the
+parent still reads as a folder (`moved_away`): Windows answers `NotFound` for a missing DRIVE too (a pulled stick, a
+volume not mounted yet), and a cut there must stay and fail honestly at paste, ❌ never vanish; any other stat error isn't
+gone either. A used-up cut: it answers no files (the frontend's quiet "No files on the clipboard"), forgets the cut, and empties the clipboard
+when the cut is Cmdr's own (`drop_cut_mark`); another app's cut stays that app's to end. A cut with any file left still
+moves. Only the clipboard's own mark arms this, so macOS (no mark) is unchanged. Paste itself stays enabled on every OS,
+as it always was: nothing watches the clipboard to grey it out. The `OleSetClipboard` route would hear Explorer's
+`Paste Succeeded` too, but costs the STA thread and hand-written `IDataObject` above for the same visible outcome.
+
 **A refused cut disarms the earlier one** (`commands/clipboard.rs::disarm_earlier_cut`): a Ctrl+X that ends `Busy` or
 `NoPlainPath` leaves the clipboard as it was, so without this the next Ctrl+V would move the files cut BEFORE it. Cmdr's
 cut state goes, and on Windows the clipboard is emptied when it still holds exactly that earlier Cmdr cut. An
@@ -141,3 +153,7 @@ markdown sniff, and the flavor mapping are unit-testable with no Tauri runtime o
   and reports its end (the file, or the typed refusal) on `clipboard-paste-settled`, never a timeout that drops the
   write. The reply and event types (`PasteClipboardReply`, `ClipboardPasteSettled`) live in `mod.rs` beside
   `PastedClipboardFile`, so the non-macOS stub shares them.
+- **Windows and Linux** read no content yet (`platform/unsupported.rs`), so their `paste_as_file` answers `Done { file:
+  None }`, macOS's answer for an empty clipboard: a Ctrl+V with no files shows the quiet "No files on the clipboard"
+  note. ❌ Never a `NotSupported` refusal: the frontend renders a refusal as a red "couldn't create a file" toast with a
+  report button (#1477, seen on Windows 10 22H2, 2026-11-25).
