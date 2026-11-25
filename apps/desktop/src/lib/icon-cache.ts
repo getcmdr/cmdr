@@ -30,8 +30,10 @@ const STORAGE_KEY = 'cmdr-icon-cache'
  * 2: `dir` / `symlink-dir` stopped sampling the home directory, whose baked-in
  *    house badge every plain folder had been wearing.
  * 3: the envelope records the display variant its icons were drawn under.
+ * 4: on Windows, the shortcut types (`ext:lnk`, `ext:url`, …) carry the system's
+ *    shortcut arrow.
  */
-const CACHE_SCHEMA = 3
+const CACHE_SCHEMA = 4
 
 /** The persisted envelope. A bare map (no `version`) is a pre-schema build's. */
 interface StoredCache {

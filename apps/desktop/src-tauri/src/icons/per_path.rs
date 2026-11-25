@@ -29,7 +29,7 @@ use std::path::Path;
 use cmdr_fs::entry::TagRef;
 pub use cmdr_fs::icons::packages::PKG_KEY_PREFIX;
 
-use super::platform::{extended_attribute, tag_tinting_disabled};
+use super::platform::{draws_own_folder_icon, extended_attribute, tag_tinting_disabled};
 
 /// Byte offset of the Finder flags within a `com.apple.FinderInfo` buffer.
 ///
@@ -143,7 +143,14 @@ pub fn customization_emoji(customization: &[u8]) -> Option<String> {
 /// (the common case) or on any read error (permission, dead mount: the folder keeps the generic
 /// `dir` glyph). No NSWorkspace, no LaunchServices, so no TCC popup. Only for the visible paths
 /// the frontend asks about, ❌ never during bulk listing.
+///
+/// Windows keeps a custom folder icon in the folder's `desktop.ini` instead, which
+/// `draws_own_folder_icon` reads; such a folder is drawn as-is (`Artwork`: Cmdr's gold recolor
+/// would gray it into mush).
 pub fn custom_folder_icon(path: &Path) -> Option<CustomFolderIcon> {
+    if draws_own_folder_icon(path) {
+        return Some(CustomFolderIcon::Artwork);
+    }
     let finder_info = extended_attribute(path, "com.apple.FinderInfo")?;
     if !finder_info_has_custom_icon(&finder_info) {
         return None;

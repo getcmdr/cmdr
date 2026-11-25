@@ -4,8 +4,9 @@
  * When the app color is "Cmdr gold", generic folder icons get a grayscale-first
  * CSS filter (`.gold-folder`) that re-tints them gold regardless of the macOS
  * system accent. The subtle contract this pins:
- *   - special system folders (`special:*`) ARE recolored, so Downloads/Desktop/
- *     etc. don't leak the system accent through,
+ *   - special system folders (`special:*`) ARE recolored where the OS draws them
+ *     accent-tinted (macOS), so Downloads/Desktop/etc. don't leak the system accent
+ *     through, and keep their own colors where it doesn't (Windows, #1479),
  *   - packages (`pkg:*`, full-color `.app` icons) are NEVER recolored, since the
  *     filter would ruin them. Which custom-icon folders recolor is pinned in
  *     `FileIcon.custom-folder-icon.test.ts`.
@@ -34,6 +35,7 @@ vi.mock('#lib/settings/reactive-settings.svelte.js', () => ({
 }))
 
 import FileIcon from './FileIcon.svelte'
+import { withConventions } from '#lib/platform/test-platform.js'
 
 const baseEntry = {
   name: 'entry',
@@ -82,4 +84,24 @@ describe('FileIcon gold recolor gate', () => {
       expect(renderWithIconId(iconId).classList.contains('gold-folder')).toBe(false)
     },
   )
+})
+
+// #1479: Windows draws its standard folders as full-color artwork, which the filter grayed into
+// plain gold folders, so there only the generic folder is recolored.
+describe('FileIcon gold recolor where standard folders keep their own colors', () => {
+  let undo: (() => void) | undefined
+  afterEach(() => {
+    undo?.()
+    undo = undefined
+  })
+
+  it.each(['special:downloads', 'special:desktop'])('leaves %s in its own colors on Windows', (iconId) => {
+    undo = withConventions('windows')
+    expect(renderWithIconId(iconId).classList.contains('gold-folder')).toBe(false)
+  })
+
+  it.each(['dir', 'symlink-dir'])('still recolors the generic folder %s on Windows', (iconId) => {
+    undo = withConventions('windows')
+    expect(renderWithIconId(iconId).classList.contains('gold-folder')).toBe(true)
+  })
 })

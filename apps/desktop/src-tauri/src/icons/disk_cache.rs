@@ -63,7 +63,7 @@ static CACHE_DIR: LazyLock<Option<PathBuf>> = LazyLock::new(|| {
 /// permission error) — the caller then treats the entry as un-cacheable / a miss
 /// rather than caching against a token that can never be reproduced.
 fn staleness_token(real_path: &str) -> Option<u64> {
-    let modified = fs::metadata(real_path).ok()?.modified().ok()?;
+    let modified = super::platform::icon_source_modified(&crate::app_text::native_plain(real_path)?)?;
     let secs = modified.duration_since(UNIX_EPOCH).ok()?.as_secs();
     Some(secs)
 }
@@ -234,7 +234,9 @@ mod tests {
         /// Held for its `Drop`: it owns the base both paths below live in.
         _base: TestDir,
         cache_dir: PathBuf,
+        /// The target folder as app text, the form `get_icons` hands the tier.
         folder: String,
+        folder_native: PathBuf,
     }
 
     impl Fixture {
@@ -244,11 +246,11 @@ mod tests {
             let folder = base.join("folder");
             fs::create_dir_all(&cache_dir).expect("create cache dir");
             fs::create_dir_all(&folder).expect("create target folder");
-            let folder = folder.to_string_lossy().into_owned();
             let me = Self {
                 _base: base,
                 cache_dir,
-                folder,
+                folder: crate::app_text::of_native(&folder).expect("the fixture folder as app text"),
+                folder_native: folder,
             };
             me.set_folder_mtime(now_secs());
             me
@@ -258,7 +260,7 @@ mod tests {
         /// staleness token is deterministic (no sleeping).
         fn set_folder_mtime(&self, secs: u64) {
             let t = UNIX_EPOCH + std::time::Duration::from_secs(secs);
-            fs::set_times(&self.folder, fs::FileTimes::new().set_modified(t)).expect("set mtime");
+            fs::set_times(&self.folder_native, fs::FileTimes::new().set_modified(t)).expect("set mtime");
         }
     }
 
@@ -343,7 +345,7 @@ mod tests {
         let fx = Fixture::new("gone");
         let id = format!("path:{}", fx.folder);
         // Remove the target folder so its mtime is unresolvable.
-        let _ = fs::remove_dir_all(&fx.folder);
+        let _ = fs::remove_dir_all(&fx.folder_native);
 
         // Store is a no-op (no token), load is a miss.
         store_in(

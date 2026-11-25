@@ -2,12 +2,21 @@
 //! (`platform/windows/apartment.rs`). Types are asked through Cmdr's own empty sample files, so a type lookup
 //! never touches the user's file; a real place (a special folder, a program or shortcut with
 //! its own icon) is asked only when `place.rs` says it stays on this machine and holds its
-//! bytes, and a shortcut only when both places it names do (`shortcut.rs`).
+//! bytes, a shortcut only when both places it names do (`shortcut.rs`), and a customized folder
+//! only when its `desktop.ini` names a local icon (`desktop_ini.rs`). A link carries the
+//! system's shortcut arrow, and a drive the Shell mustn't be asked about its stock icon
+//! (`overlay.rs`).
 
+mod desktop_ini;
+mod overlay;
 mod place;
 mod shell_image;
 mod shortcut;
 
+#[cfg(test)]
+mod desktop_ini_tests;
+#[cfg(test)]
+mod overlay_tests;
 #[cfg(test)]
 mod tests;
 
@@ -20,12 +29,19 @@ pub(super) fn may_read_icon_location(path: &Path) -> bool {
 }
 
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use image::DynamicImage;
+use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_DIRECTORY;
 
 use super::super::image_to_data_url;
 use super::PathIcons;
 use crate::config::ICON_SIZE;
+pub(crate) use overlay::{StockDriveIcon, stock_drive_icon};
+
+/// Stack for the system drive's icon lookup: a Shell handler runs inside it, as on the icon
+/// threads.
+pub(crate) const PLACE_LOOKUP_STACK: usize = 8 * 1024 * 1024;
 
 /// The Shell's icon for `path`, ungated: callers here pass Cmdr's own samples, which may sit
 /// anywhere `%TEMP%` does (a network home folder included) and never touch a user's file.
@@ -56,14 +72,67 @@ pub(crate) fn native_icons(paths: Vec<PathBuf>) -> Vec<Option<String>> {
 }
 
 /// The place's own icon, or for a shortcut pointing past this machine its type's icon.
+///
+/// - A plain folder (not a special one, not a drive root) is ❌ never handed to the Shell: its
+///   icon is extracted from the one icon file its `desktop.ini` names, once vetted
+///   (`desktop_ini.rs`), else `None`, so the frontend keeps the generic folder.
+/// - A drive root is asked only for the system drive: any other one (an external disk, a mounted
+///   VHDX, both "fixed") could carry an `autorun.inf` or `desktop.ini` naming a share.
+/// - A special folder (Documents and friends) asks the Shell, from its known location.
 fn own_icon(native: &Path) -> Option<String> {
-    if !place::may_read(native) {
-        return None;
+    let attributes = place::local_attributes(native)?;
+    if attributes & FILE_ATTRIBUTE_DIRECTORY != 0 {
+        if native.parent().is_none() {
+            if !is_system_drive_root(native) {
+                return None;
+            }
+        } else if is_plain_folder(native) {
+            let img = desktop_ini::folder_icon(native, ICON_SIZE)?;
+            return image_to_data_url(&DynamicImage::ImageRgba8(img));
+        }
     }
     if shortcut::is_shortcut(native) && !shortcut::points_only_here(native) {
         return crate::icons::icon_sample_path("lnk").and_then(|sample| fetch_icon_for_path(&sample));
     }
     fetch_icon_for_path(native)
+}
+
+/// The Shell's icon for the system drive's root (its Windows logo), blocking. The caller runs
+/// it on a thread of its own with an 8 MB stack, like every real-place lookup.
+pub(crate) fn system_drive_icon() -> Option<String> {
+    crate::app_text::native_plain(&cmdr_fs::mount_layout::boot_volume_root()).and_then(|root| own_icon(&root))
+}
+
+/// Whether native root `root` (`C:\`) is the system drive's.
+fn is_system_drive_root(root: &Path) -> bool {
+    crate::app_text::of_native(root)
+        .is_some_and(|app| app.eq_ignore_ascii_case(&cmdr_fs::mount_layout::boot_volume_root()))
+}
+
+/// A folder that's neither a drive root (its icon comes with the drive) nor a special folder
+/// (Documents and friends keep their `special:` icon).
+fn is_plain_folder(native: &Path) -> bool {
+    native.parent().is_some() && crate::icons::special_folders::classify(native).is_none()
+}
+
+/// A folder marked customized whose `desktop.ini` names an icon file Cmdr vetted. A special
+/// folder answers no: it already shows its `special:` icon.
+pub(crate) fn draws_own_folder_icon(path: &Path) -> bool {
+    is_plain_folder(path) && desktop_ini::has_vetted_icon(path)
+}
+
+/// The later of the place's mtime and, for a folder, its `desktop.ini`'s: Explorer's Customize
+/// tab rewrites that file in place, which leaves the folder's own mtime alone.
+pub(crate) fn icon_source_modified(path: &Path) -> Option<SystemTime> {
+    let meta = std::fs::metadata(path).ok()?;
+    let own = meta.modified().ok()?;
+    if !meta.is_dir() {
+        return Some(own);
+    }
+    let ini = std::fs::metadata(path.join("desktop.ini"))
+        .and_then(|m| m.modified())
+        .ok();
+    Some(ini.map_or(own, |ini| ini.max(own)))
 }
 
 /// The generic file ids, through an extensionless sample: the Unix arms' `/etc/hosts` has no
@@ -109,8 +178,8 @@ pub(crate) fn tag_tinting_disabled() -> bool {
     false
 }
 
-/// No reader yet (an NTFS alternate data stream is where these would live), so a folder never
-/// reads as custom-iconed.
+/// No reader yet (an NTFS alternate data stream is where these would live); a customized
+/// folder is read from its `desktop.ini` instead ([`draws_own_folder_icon`]).
 pub(crate) fn extended_attribute(_path: &Path, _name: &str) -> Option<Vec<u8>> {
     None
 }

@@ -12,11 +12,11 @@ use crate::test_support::TestDir;
 
 const DATA_URL_PREFIX: &str = "data:image/webp;base64,";
 
-fn explorer_exe() -> PathBuf {
+pub(super) fn explorer_exe() -> PathBuf {
     PathBuf::from(std::env::var("SystemRoot").expect("SystemRoot is set on Windows")).join("explorer.exe")
 }
 
-fn set_attributes(path: &Path, attributes: u32) {
+pub(super) fn set_attributes(path: &Path, attributes: u32) {
     let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
     // SAFETY: `wide` is a NUL-terminated path to a file this test owns.
     let ok = unsafe { SetFileAttributesW(wide.as_ptr(), attributes) };
@@ -133,7 +133,7 @@ fn a_junction_is_never_asked() {
 }
 
 /// Writes a shortcut at `lnk` to `target`, with `icon` as its icon location when given.
-fn write_shortcut(lnk: &Path, target: &Path, icon: Option<&str>) {
+pub(super) fn write_shortcut(lnk: &Path, target: &Path, icon: Option<&str>) {
     use windows::Win32::System::Com::{CLSCTX_INPROC_SERVER, CoCreateInstance, IPersistFile};
     use windows::Win32::UI::Shell::{IShellLinkW, ShellLink};
     use windows::core::{HSTRING, Interface};

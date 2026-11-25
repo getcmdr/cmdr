@@ -15,6 +15,7 @@
     import { getSyncIconPath, getSyncStatusLabelKey, type ImageIndexBadge } from '../views/file-list-utils'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { tString } from '#lib/intl/messages.svelte.js'
+    import { convention } from '#lib/platform/conventions.js'
 
     interface Props {
         file: FileEntry
@@ -70,10 +71,16 @@
     //     (Downloads, Desktop, Documents, Movies, Music, Pictures, Public,
     //     Trash, home). Without this they keep the raw OS bitmap, whose folder
     //     tint is the system accent, so they'd leak through non-gold.
+    //     Only where the OS draws them accent-tinted (`standardFolderIcons`): Windows
+    //     draws them as full-color artwork, which the filter grays into a plain gold
+    //     folder (#1479), so there they keep their own pixels.
     // Deliberately EXCLUDED: `pkg:*` (full-color `.app`/bundle icons the filter
     // would destroy). Custom-icon folders are decided per folder below.
+    const tintsStandardFolders = convention('standardFolderIcons') === 'accentTinted'
     const isFolderIcon = $derived(
-        file.iconId === 'dir' || file.iconId === 'symlink-dir' || file.iconId.startsWith('special:'),
+        file.iconId === 'dir' ||
+            file.iconId === 'symlink-dir' ||
+            (tintsStandardFolders && file.iconId.startsWith('special:')),
     )
     // A custom-icon folder keeps the `dir` iconId, so `isFolderIcon` is true for it
     // too. Its icon gets the filter only when it's a macOS Customize Folder symbol or
