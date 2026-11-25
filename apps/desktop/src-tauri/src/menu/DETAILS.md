@@ -358,7 +358,7 @@ row is decided here or in the frontend.
 - **Live labels** come from the same pushes the native items get (`update_select_same_kind_menu`,
   `update_undo_trash_menu`, `update_pin_tab_menu`). ❗ The right-click Selection submenu's "same kind" label stays the
   caller's live value (`show_file_context_menu`'s `same_kind`), never this one, which the frontend debounces.
-- **`pick_menu_bar_item(menuId, via)`** answers `BarPickOutcome::{Ran, NotLive, TextEdit}`: a greyed row, or an id the bar doesn't
+- **`pick_menu_bar_item(menuId, via, origin)`** answers `BarPickOutcome::{Ran, NotLive, TextEdit}`: a greyed row, or an id the bar doesn't
   build, runs nothing. A live one runs `menu_handlers::handle_menu_pick`, the handler a native click reaches
   (`handle_menu_event` is a thin wrapper over it), after doing what a native check item does by itself: Show hidden
   files flips its stored check (and the native item, where one is built) first, since the handler reads the new state
@@ -368,6 +368,13 @@ row is decided here or in the frontend.
   open menu's own keys, or a chord a window without a bar fires) sends it down `Relay`, as a native accelerator, which
   the gate refuses for a file-moving row while a text field has focus. Regression anchor (review of #1281): a stray
   Alt, then `f`, then `l` in a text field opened File > Delete while the menu's keys still counted as a click.
+  `origin` (`BarPickOrigin`) is where focus was when the bar or menu took the keyboard: `textField` when it left focus
+  in a field (`MenuBarController.fieldHolder`, `MainMenuButton`'s `focusHolder`), else `elsewhere`. It's the pick's
+  target, decided as the menu opened, ❌ never re-read from focus later: from a text field, an Edit row answers
+  `TextEdit` in every window, main included (the page edits that field, only while it still holds focus, ❌ never the
+  file clipboard), and a key's plain command takes the `BarKeyInTextField` road, which the gate refuses for a
+  file-moving row whatever has focus on arrival. Regression anchor (#1464): an explorer effect pulled focus from the
+  field into the file list while the menu was open, so Edit > Cut cut the file and File > Delete trashed it.
   The calling window stands in for focus everywhere a row is window-bound (`menu_handlers::PickWindow`): a file-scoped
   row runs only from the main window's page, an Edit row asks `edit_road` about the page that sent it (so a Ctrl+V in
   the queue edits the queue's field, never the main window's files), Close closes the window that fired it, and the

@@ -95,7 +95,7 @@ export interface ListenerSetupContext {
    * with its own id takes `contextMenu`) and the mouse's side buttons. Each is bound to its road in
    * `+page.svelte`, so the dispatch core knows where a command came from.
    */
-  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'contextMenu' | 'mouse'>
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'barKeyInTextField' | 'contextMenu' | 'mouse'>
   /** The page's mount scope; every registered unlisten goes here. */
   scope: MountScope
   /** Write-only dialog setters (the component owns the `$state`). */
@@ -112,17 +112,20 @@ export interface ListenerSetupContext {
 /**
  * The dispatcher an `execute-command` takes by the road it says it came in on: a right-click
  * row's own (`contextMenu`), a page bar's click (`barClick`, which the text-field gate lets through),
- * or the menu's for everything else (a native bar's click or accelerator, the Dock, other windows).
+ * a page bar's key from a menu opened over a text field (`barKeyInTextField`, which it never lets
+ * move files), or the menu's for everything else (a native bar's click or accelerator, the Dock,
+ * other windows).
  */
 export function dispatcherForRoad(
   road: CommandRoad | undefined,
-  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'contextMenu'>,
+  dispatchers: Pick<CommandDispatchers, 'menu' | 'barClick' | 'barKeyInTextField' | 'contextMenu'>,
 ): CommandDispatchers['menu'] {
   // An emit that names no road (another window's, an E2E harness's) is the menu's, as before roads.
   // Regression anchor: an exhaustive switch returned nothing for it, so File > Tell me about this
   // from the harness threw "not a function" (Linux E2E lane, 2026-11-19).
   if (road === 'contextMenu') return dispatchers.contextMenu
   if (road === 'barClick') return dispatchers.barClick
+  if (road === 'barKeyInTextField') return dispatchers.barKeyInTextField
   return dispatchers.menu
 }
 

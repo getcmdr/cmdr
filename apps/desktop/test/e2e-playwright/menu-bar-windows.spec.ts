@@ -384,6 +384,9 @@ test.describe('The bar in the other windows (Linux)', () => {
 
   // Regression anchors (review of #1271): the bar's menu took focus from the rename field, whose blur
   // ended the rename; and Paste read the clipboard through a backend that said "not supported".
+  // #1464: the bar taking the keyboard re-ran an explorer focus effect that pulled focus from the
+  // field into the list, so the rename ended and Cut cut the file (about one run in 12 after the
+  // multi-window test below); no wait here can paper over that, the product must not do it.
   test('the main bar’s Edit > Cut and Paste edit the inline rename’s name, which stays open', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
     focusMainWindow()

@@ -34,6 +34,7 @@ function context(): WindowServicesContext {
       keyboard: dispatch,
       menu: dispatch,
       barClick: dispatch,
+      barKeyInTextField: dispatch,
       contextMenu: dispatch,
       mouse: dispatch,
       palette: dispatch,

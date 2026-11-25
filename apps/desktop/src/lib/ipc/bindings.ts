@@ -4851,10 +4851,12 @@ export const commands = {
    *  A page's click on a bar row (the main bar's or the viewer's), by menu id: runs the handler a
    *  native click reaches, or nothing for a row that's greyed out right now. `via` says whether the
    *  person picked the row or a window fired its chord (`BarPickVia`); `window` is the page that asked,
-   *  which a file-scoped command checks instead of focus (`menu_handlers::PickSource`).
+   *  which a file-scoped command checks instead of focus (`menu_handlers::PickSource`); `origin` is
+   *  whether the menu was opened over a text field, which decides the pick's target
+   *  (`page_bar::BarPickOrigin`).
    */
-  pickMenuBarItem: (menuId: string, via: BarPickVia) =>
-    __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId, via }),
+  pickMenuBarItem: (menuId: string, via: BarPickVia, origin: BarPickOrigin) =>
+    __TAURI_INVOKE<BarPickOutcome>('pick_menu_bar_item', { menuId, via, origin }),
   /**
    *  The in-page twin of every `show_*` popup command, where the platform's `contextMenus`
    *  convention is `inPage` (Windows): stashes the same `MenuState` facts the native command does,
@@ -8020,6 +8022,18 @@ export type BarMenuView = {
   rows: Row[]
 }
 
+/**
+ *  Where focus was when the bar or menu a pick came from took the keyboard: in a text field it
+ *  left focus in (`MenuBarController.fieldHolder`, `MainMenuButton`'s `focusHolder`), or anywhere
+ *  else. It's the pick's target, decided as the menu opened and carried with it, so nothing that
+ *  moves DOM focus while the menu is up or closing can retarget it to the file list (#1464).
+ */
+export type BarPickOrigin =
+  // A text field: an Edit row edits that field, and a key never moves files.
+  | 'textField'
+  // Anywhere else (the file list, a button, nothing): the row acts where focus is, as before.
+  | 'elsewhere'
+
 // What a page's pick of a bar row did.
 export type BarPickOutcome =
   // The row's handler ran.
@@ -8859,6 +8873,13 @@ export type CommandRoad =
    *  a text field focused (`routes/(main)/text-field-gate.ts`).
    */
   | 'barClick'
+  /**
+   *  A key picked a row of a bar the page draws (or of its main-menu button) that took the
+   *  keyboard from a text field. The main window refuses a file-moving command from it whatever
+   *  holds focus by the time it lands: the pick was aimed at the field, and focus moving on in
+   *  the meantime can't hand the command to the file list (#1464).
+   */
+  | 'barKeyInTextField'
 
 // What [`count_all`] decided for a listing.
 export type CommitCountPass =

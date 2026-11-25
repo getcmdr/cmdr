@@ -57,15 +57,18 @@ async function setup(props: { desktop?: ConventionsDesktop; opensOnF10?: boolean
   teardowns.push(withConventions(props.desktop ?? 'gnome'))
   const picked: string[] = []
   const vias: BarPickVia[] = []
+  /** The text field each pick says the menu was opened over, in `picked`'s order. */
+  const fields: (HTMLElement | null)[] = []
   const target = document.createElement('div')
   document.body.append(target)
   const component = mount(MainMenuButton, {
     target,
     props: {
       menus: MENUS,
-      onPick: (id: string, via: BarPickVia) => {
+      onPick: (id: string, via: BarPickVia, textField: HTMLElement | null) => {
         picked.push(id)
         vias.push(via)
+        fields.push(textField)
       },
       label: 'Main menu',
       opensOnF10: props.opensOnF10 ?? false,
@@ -77,7 +80,7 @@ async function setup(props: { desktop?: ConventionsDesktop; opensOnF10?: boolean
   await settle()
   const button = target.querySelector<HTMLButtonElement>('.main-menu-button')
   if (!button) throw new Error('no button')
-  return { picked, vias, button }
+  return { picked, vias, fields, button }
 }
 
 function down(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
@@ -221,7 +224,7 @@ describe('MainMenuButton', () => {
     field.addEventListener('blur', () => {
       blurs++
     })
-    const { picked, button } = await setup()
+    const { picked, fields, button } = await setup()
     await click(button)
     expect(document.activeElement).toBe(field)
     await press('ArrowDown')
@@ -230,6 +233,15 @@ describe('MainMenuButton', () => {
     expect(picked).toEqual(['rename'])
     expect(document.activeElement).toBe(field)
     expect(blurs).toBe(0)
+    // The pick carries its target, the field the menu opened over (#1464).
+    expect(fields).toEqual([field])
+
+    pane()
+    await click(button)
+    await press('ArrowDown')
+    await press('ArrowRight')
+    await press('Enter')
+    expect(fields).toEqual([field, null])
   })
 
   it('goes inert under a dialog, closing its menu', async () => {

@@ -550,7 +550,12 @@ dispatch path can't rely on the keydown bail.
   every key stays refused: the command's own (`keyboard`, or `menu` from another window's
   `pick_menu_bar_item(…, 'key')`) and the open menu's own keys (a stray Alt, then `f`, then `l` once opened Delete from
   a field: review of #1281). `text-field-gate.test.ts` walks every default key of every such command on all three OSes.
-  Off macOS Move here's `Ctrl+Shift+V` is also the field's paste as plain text, which the bar only shows.
+  A page bar's key from a menu opened over a text field takes its own road, `barKeyInTextField`, refused whatever has
+  focus when it lands: focus is read at dispatch, a backend round trip after the pick. Regression anchor (#1464): an
+  explorer effect pulled focus from the field into the file list while the bar's menu was open, so Alt, `f`, `l` trashed
+  the cursor file on the Linux E2E lane. The pick's target is where focus was when the menu opened
+  (`page_bar::BarPickOrigin`, `apps/desktop/src-tauri/src/menu/DETAILS.md` § The bar a page draws). Off macOS Move
+  here's `Ctrl+Shift+V` is also the field's paste as plain text, which the bar only shows.
 - **The text-editing family while a dialog is open.** `edit.cut` / `edit.copy` / `edit.paste` / `selection.selectAll`
   declare `IN_TEXT_INPUTS_ONLY`, so the dialog gate (§ The dialog gate) lets them through with focus in a text input,
   from every road, and refuses them otherwise. Their handlers branch on `isTextInputFocused()` and edit the text.

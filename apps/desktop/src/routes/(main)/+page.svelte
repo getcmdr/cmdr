@@ -802,6 +802,7 @@
         keyboard: gestureDispatcherFor('keyboard'),
         menu: gestureDispatcherFor('menu'),
         barClick: gestureDispatcherFor('barClick'),
+        barKeyInTextField: gestureDispatcherFor('barKeyInTextField'),
         contextMenu: gestureDispatcherFor('contextMenu'),
         mouse: gestureDispatcherFor('mouse'),
         palette: gestureDispatcherFor('palette'),

@@ -29,10 +29,12 @@ import { rowLabelText, type MenuFlavor } from './rows'
 export interface MenuBarDeps {
   getMenus: () => readonly BarMenuView[]
   /**
-   * A row was picked: its menu id, and whether a pointer click (`click`) or a key (`key`: the
-   * bar's own Enter, Space, or letter) picked it. Focus is already back where it was.
+   * A row was picked: its menu id, whether a pointer click (`click`) or a key (`key`: the bar's
+   * own Enter, Space, or letter) picked it, and the text field the bar took the keyboard from
+   * (`fieldHolder` as it was then), or null. The field is the pick's target, decided when the bar
+   * took the keyboard, so pass it on (`pickMenuBarItem`). Focus is already back where it was.
    */
-  onPick: (menuId: string, via: BarPickVia) => void
+  onPick: (menuId: string, via: BarPickVia, textField: HTMLElement | null) => void
   flavor: () => MenuFlavor
   /** Whether this platform has access keys (`convention('accessKeys')`). */
   accessKeys: () => boolean
@@ -139,8 +141,9 @@ export function createMenuBar(deps: MenuBarDeps): MenuBarController {
     flavor: deps.flavor,
     accessKeys: hasLetters,
     onPick: (row, via) => {
+      const textField = fieldHolder
       deactivate(true)
-      deps.onPick(row.id, via)
+      deps.onPick(row.id, via, textField)
     },
   })
 

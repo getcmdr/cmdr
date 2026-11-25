@@ -102,8 +102,8 @@
     /** The viewer bar's rows, bound out of `ViewerMenuBar` for the main-menu button. */
     let viewerMenus = $state<BarMenuView[]>([])
 
-    function pickViewerMenuRow(menuId: string, via: BarPickVia): void {
-        pickMenuBarItem(menuId, via).catch((error: unknown) => {
+    function pickViewerMenuRow(menuId: string, via: BarPickVia, textField: HTMLElement | null): void {
+        pickMenuBarItem(menuId, via, textField).catch((error: unknown) => {
             log.warn("Couldn't run a menu bar pick: {error}", { error })
         })
     }

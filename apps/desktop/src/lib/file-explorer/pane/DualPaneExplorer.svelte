@@ -871,11 +871,11 @@
         await fileOps.openDeleteDialog(args)
     }
 
-    // Focus the container after initialization so keyboard events work
+    // Focus the pane once, after initialization, so keyboard events work. Untracked: a `.focus()`
+    // runs focus handlers synchronously, and whatever `$state` they read (the menu bar's `active`)
+    // would re-run this later and pull focus out of a text field (#1464).
     $effect(() => {
-        if (initialized) {
-            focusActivePane()
-        }
+        if (initialized) untrack(focusActivePane)
     })
 
     /** Programmatically confirms an already-open dialog (for MCP). */

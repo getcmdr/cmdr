@@ -7,13 +7,18 @@ const ipc = vi.hoisted(() => ({
   asked: 0,
   /** What `pick_menu_bar_item` answers. */
   pickOutcome: null as BarPickOutcome | null,
+  /** Every `pick_menu_bar_item` call's arguments. */
+  picks: [] as unknown[][],
   /** Lets a test land events while `get_menu_bar` is in flight. */
   beforeAnswer: null as (() => void) | null,
 }))
 
 vi.mock('#lib/ipc/bindings.js', () => ({
   commands: {
-    pickMenuBarItem: () => Promise.resolve(ipc.pickOutcome ?? { kind: 'ran' }),
+    pickMenuBarItem: (...args: unknown[]) => {
+      ipc.picks.push(args)
+      return Promise.resolve(ipc.pickOutcome ?? { kind: 'ran' })
+    },
     getMenuBar: () => {
       ipc.asked++
       ipc.beforeAnswer?.()
@@ -210,5 +215,31 @@ describe('pickMenuBarItem', () => {
 
     expect(await pickMenuBarItem('file_copy', 'click')).toEqual({ kind: 'ran' })
     expect([field.selectionStart, field.selectionEnd]).toEqual([0, 0])
+  })
+
+  // Regression anchor (#1464): the target is the field the menu was opened over, carried with the
+  // pick, ❌ never whatever holds focus when the answer lands.
+  it('tells the backend whether the menu was opened over a text field', async () => {
+    ipc.picks = []
+    const field = focusedField()
+    await pickMenuBarItem('edit_cut', 'key', field)
+    await pickMenuBarItem('file_delete', 'key')
+    expect(ipc.picks).toEqual([
+      ['edit_cut', 'key', 'textField'],
+      ['file_delete', 'key', 'elsewhere'],
+    ])
+  })
+
+  it('edits only the field the menu was opened over, and nothing once that field lost focus', async () => {
+    const origin = focusedField()
+    ipc.pickOutcome = { kind: 'textEdit', edit: 'selectAll' }
+    await pickMenuBarItem('select_all', 'click', origin)
+    expect([origin.selectionStart, origin.selectionEnd]).toEqual([0, 'test_file_1'.length])
+
+    origin.setSelectionRange(0, 0)
+    const other = focusedField()
+    await pickMenuBarItem('select_all', 'click', origin)
+    expect([origin.selectionStart, origin.selectionEnd]).toEqual([0, 0])
+    expect([other.selectionStart, other.selectionEnd]).toEqual([0, 0])
   })
 })

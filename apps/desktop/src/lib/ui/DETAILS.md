@@ -1540,13 +1540,13 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
 - **Public API**:
   - `<MenuBar menus onPick ariaLabel flavor? keyScope? inert? takesWindowKeys? revealOnly? class?>`: `menus` is
     `get_menu_bar`'s answer kept live by the caller (`followMenuBar` from `#lib/tauri-commands` runs the ordering
-    contract), `onPick(id, via)` gets the row's menu id with focus already back where it was, and `via`: `click` for a
-    pointer click, `key` for Enter, Space, or a row's letter (send both through `pickMenuBarItem`). The main window's
-    text-field gate runs a file-moving row only when it was clicked, so ❌ never collapse `via`: the menu's own keys
-    typed from a field (a stray Alt, then `f`, then `l`) once opened File > Delete (review of #1281). The context menu's
-    `onPick(id, via)` and `MainMenuButton`'s say the same. `keyScope` reserves the window's own Alt+letter keys (the
-    viewer's `'Viewer window'`). `inert` adds to the dialogs it follows itself (`isAnySoftDialogOpen()`, the `desktop`
-    flavor only): pass the palette and the explorer overlays.
+    contract), `onPick(id, via, textField)` gets the row's menu id with focus already back where it was, the field it
+    was opened over (below), and `via`: `click` for a pointer click, `key` for Enter, Space, or a row's letter (send
+    both through `pickMenuBarItem`). The main window's text-field gate runs a file-moving row only when it was clicked,
+    so ❌ never collapse `via`: the menu's own keys typed from a field (a stray Alt, then `f`, then `l`) once opened
+    File > Delete (review of #1281). The context menu's `onPick(id, via)` and `MainMenuButton`'s say the same.
+    `keyScope` reserves the window's own Alt+letter keys (the viewer's `'Viewer window'`). `inert` adds to the dialogs
+    it follows itself (`isAnySoftDialogOpen()`, the `desktop` flavor only): pass the palette and the explorer overlays.
   - `createContextMenu({ onPick, flavor?, accessKeys?, onClose? })` (`command-menu/context-menu.svelte.ts`) and one
     `<ContextMenu {menu}>` per window; `menu.open({ rows, at, fromKeyboard, anchorElement?, label? })` with the rows
     `open_context_menu_in_page` answered, its `anchor` or the pointer as `at`, and `onPick` sending
@@ -1563,6 +1563,11 @@ for all of them; the look is `app-menu.css`'s tokens (`../../DETAILS.md` § Menu
     keyboard's title the field's `aria-activedescendant` (drawn as focused, `.is-keyboard`), keeps every key it doesn't
     use out of the field, and restores nothing on letting go. Regression anchor (review of #1271): a bar menu took focus
     from the inline rename, whose blur cancelled it, so Edit > Paste from the bar had no field left to act on.
+  - A pick carries its target: `onPick(id, via, textField)` hands on the field the bar (or `MainMenuButton`) was opened
+    over, captured as it took the keyboard, and the caller passes it to `pickMenuBarItem`, which tells the backend
+    (`origin`) and runs an Edit row on that field alone. ❌ Never re-read the target from focus at pick time: something
+    else moving focus while the menu is up (#1464: an explorer effect pulled it into the file list) would hand Edit >
+    Cut or File > Delete to the files. `apps/desktop/src-tauri/src/menu/DETAILS.md` § The bar a page draws.
   - `.is-keyboard` marks the keyboard's title whenever the bar is active with no menu open, field or not: Chromium
     doesn't count a modifier-only keydown as keyboard use, so after a lone Alt `:focus-visible` drew no ring (verified
     on Windows 10 22H2, WebView2 157.0.4341.60, by screenshot, 2026-11-19). Letting go with Escape or a second Alt puts

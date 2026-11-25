@@ -149,7 +149,12 @@ describe('a bar the page draws, with a text field focused', () => {
       taken.push(source)
       return Promise.resolve()
     }
-    const dispatchers = { menu: recorder('menu'), barClick: recorder('barClick'), contextMenu: recorder('contextMenu') }
+    const dispatchers = {
+      menu: recorder('menu'),
+      barClick: recorder('barClick'),
+      barKeyInTextField: recorder('barKeyInTextField'),
+      contextMenu: recorder('contextMenu'),
+    }
     void dispatcherForRoad(road, dispatchers)('file.delete')
     expect(taken, `the ${String(road)} road`).toHaveLength(1)
     return taken[0]
@@ -173,5 +178,17 @@ describe('a bar the page draws, with a text field focused', () => {
       // Another window fires it through `pick_menu_bar_item(…, 'key')`, which relays it.
       expect(isRefusedInTextField(commandId, sourceFor('relay'), true), `${commandId} from a window's key`).toBe(true)
     }
+  })
+
+  // Regression anchor (#1464): an app effect pulled focus from the field into the file list while
+  // the bar's menu was open, so the key's File > Delete, read against focus on arrival, trashed the
+  // file. The pick says it came from a field, and that alone refuses it.
+  it('refuses a key’s file-moving pick from a menu opened over a text field, whatever has focus by then', () => {
+    for (const commandId of FILE_MOVING_COMMAND_IDS) {
+      const source = sourceFor('barKeyInTextField')
+      expect(isRefusedInTextField(commandId, source, false), `${commandId}, focus moved on`).toBe(true)
+      expect(isRefusedInTextField(commandId, source, true), `${commandId}, focus still in the field`).toBe(true)
+    }
+    expect(isRefusedInTextField('file.copy', sourceFor('barKeyInTextField'), false)).toBe(false)
   })
 })

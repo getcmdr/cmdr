@@ -77,12 +77,27 @@ pub enum BarPickVia {
     Key,
 }
 
+/// Where focus was when the bar or menu a pick came from took the keyboard: in a text field it
+/// left focus in (`MenuBarController.fieldHolder`, `MainMenuButton`'s `focusHolder`), or anywhere
+/// else. It's the pick's target, decided as the menu opened and carried with it, so nothing that
+/// moves DOM focus while the menu is up or closing can retarget it to the file list (#1464).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum BarPickOrigin {
+    /// A text field: an Edit row edits that field, and a key never moves files.
+    TextField,
+    /// Anywhere else (the file list, a button, nothing): the row acts where focus is, as before.
+    Elsewhere,
+}
+
 impl BarPickVia {
     /// The road a command this pick runs takes into the main window.
-    pub fn road(self) -> crate::window_events::CommandRoad {
-        match self {
-            Self::Click => crate::window_events::CommandRoad::BarClick,
-            Self::Key => crate::window_events::CommandRoad::Relay,
+    pub fn road(self, origin: BarPickOrigin) -> crate::window_events::CommandRoad {
+        use crate::window_events::CommandRoad;
+        match (self, origin) {
+            (Self::Click, _) => CommandRoad::BarClick,
+            (Self::Key, BarPickOrigin::TextField) => CommandRoad::BarKeyInTextField,
+            (Self::Key, BarPickOrigin::Elsewhere) => CommandRoad::Relay,
         }
     }
 }
@@ -124,11 +139,20 @@ impl From<NativeEditSelector> for PageTextEdit {
 }
 
 /// The text edit a page's pick of `menu_id` hands back to the page, or `None` when the backend runs
-/// it: off macOS, an Edit row whose road is the focused field (`edit_road`). macOS's native bar
-/// runs those through the responder chain itself.
-fn page_text_edit(menu_id: &str, focus: FocusedWindows, native_bar: bool) -> Option<PageTextEdit> {
+/// it: off macOS, an Edit row whose road is the focused field (`edit_road`), and in any window an
+/// Edit row picked from a menu opened over a text field, which edits that field and ❌ never the
+/// file clipboard. macOS's native bar runs those through the responder chain itself.
+fn page_text_edit(
+    menu_id: &str,
+    focus: FocusedWindows,
+    origin: BarPickOrigin,
+    native_bar: bool,
+) -> Option<PageTextEdit> {
     if native_bar {
         return None;
+    }
+    if origin == BarPickOrigin::TextField {
+        return native_edit_selector_for(menu_id).map(Into::into);
     }
     match edit_road(menu_id, focus)? {
         EditRoad::FieldEdit(selector) => Some(selector.into()),
@@ -256,13 +280,19 @@ fn wire_revision(revision: u64) -> u32 {
 /// `via` names the road a command it runs takes into the main window (`BarPickVia::road`), and
 /// `window` the label of the page that asked, which every window-bound row acts on instead of
 /// focus (`menu_handlers::PickWindow`).
-pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia, window: &str) -> BarPickOutcome {
+pub fn pick(
+    app: &AppHandle<tauri::Wry>,
+    menu_id: &str,
+    via: BarPickVia,
+    origin: BarPickOrigin,
+    window: &str,
+) -> BarPickOutcome {
     let menu_state = app.state::<MenuState<tauri::Wry>>();
     if !is_live(&menu_state, menu_id) {
         return BarPickOutcome::NotLive;
     }
     if native_edit_selector_for(menu_id).is_some()
-        && let Some(edit) = page_text_edit(menu_id, windows_of_page(window), super::builds_native_bar())
+        && let Some(edit) = page_text_edit(menu_id, windows_of_page(window), origin, super::builds_native_bar())
     {
         return BarPickOutcome::TextEdit { edit };
     }
@@ -275,7 +305,7 @@ pub fn pick(app: &AppHandle<tauri::Wry>, menu_id: &str, via: BarPickVia, window:
             log::warn!(target: "menu", "couldn't flip the native Show hidden files check: {e}");
         }
     }
-    let source = super::menu_handlers::PickSource::page(via.road(), window);
+    let source = super::menu_handlers::PickSource::page(via.road(origin), window);
     super::menu_handlers::handle_menu_pick(app, menu_id, source);
     BarPickOutcome::Ran
 }
@@ -302,12 +332,61 @@ mod tests {
 
     /// A pointer click takes its own road, which the main window's text-field gate lets through;
     /// any key (the open menu's own, or a row's chord) takes the menu's, which the gate refuses for
-    /// a file-moving row.
+    /// a file-moving row while a field has focus, and a key from a menu opened over a text field
+    /// takes one the gate refuses it on whatever has focus by then (#1464).
     #[test]
     fn a_click_and_a_key_take_different_roads() {
         use crate::window_events::CommandRoad;
-        assert_eq!(BarPickVia::Click.road(), CommandRoad::BarClick);
-        assert_eq!(BarPickVia::Key.road(), CommandRoad::Relay);
+        for origin in [BarPickOrigin::TextField, BarPickOrigin::Elsewhere] {
+            assert_eq!(BarPickVia::Click.road(origin), CommandRoad::BarClick);
+        }
+        assert_eq!(BarPickVia::Key.road(BarPickOrigin::Elsewhere), CommandRoad::Relay);
+        assert_eq!(
+            BarPickVia::Key.road(BarPickOrigin::TextField),
+            CommandRoad::BarKeyInTextField
+        );
+    }
+
+    /// Regression anchor (#1464): the main bar's Edit > Cut, picked from a menu opened over the
+    /// inline rename, went to the main window as `edit.cut`, which read focus on arrival, found the
+    /// file list (something had pulled focus there meanwhile), and cut the file. A pick from a text
+    /// field edits that field in every window, and a non-Edit row still runs.
+    #[test]
+    fn an_edit_row_from_a_text_field_edits_the_field_even_in_the_main_window() {
+        use cmdr_menu::ids::{EDIT_COPY_ID, EDIT_CUT_ID, EDIT_PASTE_ID, FILE_COPY_ID, SELECT_ALL_ID};
+        let main = windows_of_page("main");
+        let from_field = BarPickOrigin::TextField;
+        assert_eq!(
+            page_text_edit(EDIT_CUT_ID, main, from_field, false),
+            Some(PageTextEdit::Cut)
+        );
+        assert_eq!(
+            page_text_edit(EDIT_COPY_ID, main, from_field, false),
+            Some(PageTextEdit::Copy)
+        );
+        assert_eq!(
+            page_text_edit(EDIT_PASTE_ID, main, from_field, false),
+            Some(PageTextEdit::Paste)
+        );
+        assert_eq!(
+            page_text_edit(SELECT_ALL_ID, main, from_field, false),
+            Some(PageTextEdit::SelectAll)
+        );
+        assert_eq!(page_text_edit(FILE_COPY_ID, main, from_field, false), None);
+        // macOS's responder chain still runs it.
+        assert_eq!(page_text_edit(EDIT_CUT_ID, main, from_field, true), None);
+    }
+
+    #[test]
+    fn origin_wire_words_are_the_frontends() {
+        assert_eq!(
+            serde_json::from_str::<BarPickOrigin>("\"textField\"").ok(),
+            Some(BarPickOrigin::TextField)
+        );
+        assert_eq!(
+            serde_json::from_str::<BarPickOrigin>("\"elsewhere\"").ok(),
+            Some(BarPickOrigin::Elsewhere)
+        );
     }
 
     /// A fresh `MenuState` reads as the bar a fresh app builds, the one the demo starts from too.
@@ -440,20 +519,35 @@ mod tests {
             queue: true,
         };
         assert_eq!(
-            page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, false),
+            page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, BarPickOrigin::Elsewhere, false),
             Some(PageTextEdit::Cut)
         );
         assert_eq!(
-            page_text_edit(VIEWER_EDIT_PASTE_ID, elsewhere, false),
+            page_text_edit(VIEWER_EDIT_PASTE_ID, elsewhere, BarPickOrigin::Elsewhere, false),
             Some(PageTextEdit::Paste)
         );
-        assert_eq!(page_text_edit(EDIT_COPY_ID, elsewhere, false), Some(PageTextEdit::Copy));
+        assert_eq!(
+            page_text_edit(EDIT_COPY_ID, elsewhere, BarPickOrigin::Elsewhere, false),
+            Some(PageTextEdit::Copy)
+        );
         // The main window decides file or text itself; the queue selects its rows.
-        assert_eq!(page_text_edit(EDIT_COPY_ID, main, false), None);
-        assert_eq!(page_text_edit(SELECT_ALL_ID, queue, false), None);
+        assert_eq!(
+            page_text_edit(EDIT_COPY_ID, main, BarPickOrigin::Elsewhere, false),
+            None
+        );
+        assert_eq!(
+            page_text_edit(SELECT_ALL_ID, queue, BarPickOrigin::Elsewhere, false),
+            None
+        );
         // macOS's responder chain runs it.
-        assert_eq!(page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, true), None);
-        assert_eq!(page_text_edit(cmdr_menu::ids::FILE_COPY_ID, elsewhere, false), None);
+        assert_eq!(
+            page_text_edit(VIEWER_EDIT_CUT_ID, elsewhere, BarPickOrigin::Elsewhere, true),
+            None
+        );
+        assert_eq!(
+            page_text_edit(cmdr_menu::ids::FILE_COPY_ID, elsewhere, BarPickOrigin::Elsewhere, false),
+            None
+        );
     }
 
     /// Regression anchor (review of #1281): a Ctrl+V in the queue window, read against a stale
@@ -465,20 +559,23 @@ mod tests {
         for window in ["queue", "settings", "viewer-1", "shortcuts", "debug"] {
             for id in [EDIT_CUT_ID, EDIT_COPY_ID, EDIT_PASTE_ID] {
                 assert!(
-                    page_text_edit(id, windows_of_page(window), false).is_some(),
+                    page_text_edit(id, windows_of_page(window), BarPickOrigin::Elsewhere, false).is_some(),
                     "{id}, picked in {window}, belongs to that window's own field"
                 );
             }
         }
         for id in [EDIT_CUT_ID, EDIT_COPY_ID, EDIT_PASTE_ID, SELECT_ALL_ID] {
             assert_eq!(
-                page_text_edit(id, windows_of_page("main"), false),
+                page_text_edit(id, windows_of_page("main"), BarPickOrigin::Elsewhere, false),
                 None,
                 "{id} from main"
             );
         }
         // The queue's Select all checks its rows.
-        assert_eq!(page_text_edit(SELECT_ALL_ID, windows_of_page("queue"), false), None);
+        assert_eq!(
+            page_text_edit(SELECT_ALL_ID, windows_of_page("queue"), BarPickOrigin::Elsewhere, false),
+            None
+        );
     }
 
     /// The wire the page reads: `{ kind, edit }`.
