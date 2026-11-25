@@ -12,6 +12,11 @@ import FilePane from './FilePane.svelte'
 import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
 import { waitForUpdates, useMountTarget, type ListenRecorder } from './integration-test-utils'
 import type { FilePaneAPI } from './types'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const here = path.dirname(fileURLToPath(import.meta.url))
 
 // ============================================================================
 // Mock setup (must be in each test file: Vitest hoists vi.mock calls)
@@ -205,5 +210,60 @@ describe('FilePane column header during a load', () => {
     // No settled rows means nothing to call empty: the loading view says what's happening.
     expect(getTarget().querySelector('.empty-folder-state')).toBeNull()
     await unmount(component)
+  })
+})
+
+/**
+ * Regression anchor (dev log 2026-11-25, 13:30:03, a 760 ms SMB listing): the loading view's
+ * cover hid the whole scroller with `visibility: hidden`, the focused listbox inside it went
+ * with it, and WebKit dropped focus to `<body>`: arrows and Escape (cancel the load) went
+ * nowhere. The listbox now stays visible and focused under the cover while its ROWS hide,
+ * and it says it's busy instead of pointing at a row nobody can see.
+ */
+describe('FilePane focus under the loading view', () => {
+  const { getTarget } = useMountTarget()
+
+  for (const viewMode of ['full', 'brief'] as const) {
+    it(`keeps the ${viewMode} list mounted and busy, with no hidden cursor row, while a load is covered`, async () => {
+      listDirectoryStartMock.mockImplementation((_v, _p, _h, _sb, _so, listingId: string) =>
+        Promise.resolve({ listingId, status: { status: 'loading' } }),
+      )
+      const props = $state({
+        initialPath: '/first',
+        volumeId: 'root',
+        volumePath: '/',
+        isFocused: true,
+        showHiddenFiles: true,
+        viewMode,
+      })
+      const component = mount(FilePane, { target: getTarget(), props })
+      await waitForUpdates()
+      events.recorder?.fireListingEvent('listing-complete', {
+        listingId: lastListingId(),
+        totalCount: 3,
+        volumeRoot: '/',
+      })
+      await waitForUpdates()
+
+      hangEveryLoad()
+      props.initialPath = '/slow'
+      flushSync()
+      await waitForUpdates(LISTING_LOADING_DELAY_MS + 50)
+
+      expect(getTarget().querySelector('.loading-container'), 'the loading view shows').toBeTruthy()
+      const listbox = getTarget().querySelector<HTMLElement>('[role="listbox"]')
+      expect(listbox, 'the listbox stays mounted under the cover').toBeTruthy()
+      expect(listbox?.getAttribute('aria-busy')).toBe('true')
+      expect(listbox?.hasAttribute('aria-activedescendant'), 'no hidden row as the active one').toBe(false)
+      await unmount(component)
+    })
+  }
+
+  // Scoped CSS never reaches the test DOM, so the hiding rule is pinned at the source: the
+  // cover hides the rows, and puts the focused listbox itself back to visible.
+  it.each(['BriefList.svelte', 'FullList.svelte'])('%s hides the rows under the cover, never the listbox', (file) => {
+    const source = readFileSync(path.join(here, '../views', file), 'utf8')
+    expect(source).toMatch(/\.is-covered \.listbox-region \{\s*visibility: visible;/)
+    expect(source).toMatch(/\.is-covered \.listbox-region > :global\(\*\) \{\s*visibility: hidden;/)
   })
 })

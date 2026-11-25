@@ -1058,7 +1058,8 @@
             role="listbox"
             aria-multiselectable="true"
             aria-label={listLabel ?? tString('fileExplorer.list.fileListAriaLabel')}
-            aria-activedescendant={listFocus.activeDescendant()}
+            aria-activedescendant={loadingOverlay ? undefined : listFocus.activeDescendant()}
+            aria-busy={loadingOverlay ? 'true' : undefined}
             tabindex="-1"
             onfocus={listFocus.handleFocus}
             onblur={listFocus.handleBlur}
@@ -1258,8 +1259,19 @@
     }
 
     /* The previous folder's rows stay laid out (scroll and measurements hold) but
-       unpainted and out of the a11y tree while the loading view stands in for them. */
+       unpainted and out of the a11y tree while the loading view stands in for them.
+       ❗ The listbox itself stays visible: it holds the pane's focus, and WebKit drops a
+       hidden element's focus to `<body>`, which left arrows and Escape (cancel the load)
+       going nowhere. It paints nothing of its own, and says `aria-busy` meanwhile. */
     .brief-list.is-covered {
+        visibility: hidden;
+    }
+
+    .is-covered .listbox-region {
+        visibility: visible;
+    }
+
+    .is-covered .listbox-region > :global(*) {
         visibility: hidden;
     }
 

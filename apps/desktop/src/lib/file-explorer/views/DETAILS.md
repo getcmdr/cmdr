@@ -76,8 +76,12 @@ grid template, same fetch loop, same DOM.
 the grace period, and the view lays it over a `.row-area` wrapper around the scroller, so the header above stays. While
 it's up the scroller is `visibility: hidden` (`is-covered`): the retained rows keep their layout, so scroll and
 measurements hold, but neither paint nor reach the a11y tree, and the pane's own background shows through. The empty
-state stays hidden too. ❌ Don't render the loading view in place of the list: unmounting the list is what blinked the
-column header out on every slow navigation (`../pane/DETAILS.md` has the pane side).
+state stays hidden too. ❗ The listbox itself is put back to `visibility: visible` (only its children hide): it holds
+the pane's DOM focus, and WebKit drops a hidden element's focus to `<body>`, so a slow listing used to leave arrows and
+Escape (cancel the load) going nowhere (focus watchdog, dev log 2026-11-25). It paints nothing of its own; while covered
+it says `aria-busy` and points `aria-activedescendant` at nothing, since its rows are hidden. Pinned in
+`../pane/file-pane-loading-header.svelte.test.ts`. ❌ Don't render the loading view in place of the list: unmounting the
+list is what blinked the column header out on every slow navigation (`../pane/DETAILS.md` has the pane side).
 
 ### FullList's siblings
 
