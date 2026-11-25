@@ -77,7 +77,7 @@ pub(crate) async fn open_in_editor(
         // A path with no native form has no file an editor opens: nothing launches.
         move || match crate::commands::wire_path::native(&path) {
             Ok(native) => {
-                crate::file_system::text_editor::open_in_editor(&native, &app_choice, ask_about_other_editors)
+                crate::file_system::text_editor::platform::open_in_editor(&native, &app_choice, ask_about_other_editors)
             }
             Err(_) => Err(OpenInEditorError::LaunchRefused { errno: None }),
         },

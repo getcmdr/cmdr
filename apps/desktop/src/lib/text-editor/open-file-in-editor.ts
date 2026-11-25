@@ -12,6 +12,7 @@ import { asOpenInEditorError, openInEditor } from '#lib/tauri-commands/index.js'
 import type { EditorOpenReport, OpenInEditorError } from '#lib/ipc/bindings.js'
 import { addToast, dismissToast } from '#lib/ui/toast/index.js'
 import { tString } from '#lib/intl/messages.svelte.js'
+import { basenameOf, type CanonicalPath } from '#lib/path/canonical.js'
 import { decideEditorHint } from './editor-hint'
 import { SYSTEM_DEFAULT_EDITOR_CHOICE } from './text-editor-choice'
 import {
@@ -90,15 +91,11 @@ function refusalText(refusal: OpenInEditorError | null, path: string): string {
       return tString('fileExplorer.edit.timedOut')
     // Windows: a path with no plain spelling (too long, a trailing dot, `CON`): Enter's words.
     case 'noPlainPath':
-      return tString('fileExplorer.open.noPlainPath', { fileName: baseName(path) })
+      // An app path: `/`-separated, a drive or share root kept whole (`basenameOf`).
+      return tString('fileExplorer.open.noPlainPath', { fileName: basenameOf(path as CanonicalPath) })
     default:
       return tString('fileExplorer.edit.launchRefused')
   }
-}
-
-/** The last name in an app path (`/`-separated on every OS). */
-function baseName(path: string): string {
-  return path.slice(path.lastIndexOf('/') + 1)
 }
 
 /**

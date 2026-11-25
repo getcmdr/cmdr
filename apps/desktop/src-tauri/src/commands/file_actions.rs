@@ -127,7 +127,7 @@ pub async fn open_in_editor(
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 pub async fn list_text_editors(app_choice: String) -> TimedOut<TextEditorList> {
     blocking_with_timeout_flag(TEXT_EDITORS_TIMEOUT, TextEditorList::default(), move || {
-        crate::file_system::text_editor::list_text_editors(&app_choice)
+        crate::file_system::text_editor::platform::list_text_editors(&app_choice)
     })
     .await
 }

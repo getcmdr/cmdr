@@ -478,6 +478,7 @@ pub(crate) const NATIVE_STRINGS: &[LocaleStrings] = &[
             ("menu.context.makeAvailableOffline", All("Make available offline")),
             ("menu.context.openInGoogleDrive", All("Open in Google Drive")),
             ("menu.context.openWith", All("Open with")),
+            ("menu.context.openWithChooseAnother", All("Choose another app")),
             ("menu.context.openWithDefault", All("{app} (default)")),
             ("menu.context.openWithLoading", All("Finding apps…")),
             ("menu.context.openWithOther", All("Other…")),

@@ -188,6 +188,6 @@ pub(crate) async fn open_in_editor(
     }
     #[cfg(not(feature = "playwright-e2e"))]
     {
-        crate::file_system::text_editor::open_in_editor(path, app_choice, ask_about_other_editors).await
+        crate::file_system::text_editor::platform::open_in_editor(path, app_choice, ask_about_other_editors).await
     }
 }

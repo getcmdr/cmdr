@@ -110,6 +110,4 @@ pub struct TextEditorList {
     pub chosen_id: Option<String>,
 }
 
-mod platform;
-
-pub use platform::*;
+pub(crate) mod platform;
