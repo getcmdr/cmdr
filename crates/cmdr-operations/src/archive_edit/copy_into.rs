@@ -174,6 +174,9 @@ struct MaterializedSources {
     /// Each original's volume-relative path and what the move carried out of it.
     /// Empty on a copy, which removes nothing.
     carried: Vec<(PathBuf, CarriedSource)>,
+    /// The sources left out of the pull (a name the zip can't take): counted as skipped, so
+    /// a move deletes no original.
+    refused: usize,
     /// Keeps the pulled copies alive for the op; `None` for a local source.
     _scratch: Option<ScratchDir>,
 }
@@ -261,6 +264,7 @@ async fn materialize_sources(
             absolute: source_paths.iter().map(|p| root.join(p)).collect(),
             source_volume: Arc::clone(source_volume),
             carried,
+            refused: 0,
             _scratch: None,
         });
     }
@@ -278,19 +282,36 @@ async fn materialize_sources(
     );
 
     let mut absolute = Vec::with_capacity(source_paths.len());
+    let mut refused: Vec<&PathBuf> = Vec::new();
     for src in source_paths {
-        let Some(name) = src.file_name().and_then(|n| n.to_str()) else {
+        // The entry takes the scratch file's name, so the scratch must hold the source's own
+        // name as the app path splits it. On Windows it can't hold a POSIX server's ONE name
+        // `x\a.txt` (it splits off `a.txt`, which an Overwrite then put over the zip's own
+        // `a.txt`, and two such sources pulled onto one file before a move deleted both
+        // originals). Such a source is refused, counted, and kept out of `carried`, so a
+        // move never deletes an original it didn't copy; so is a name that isn't UTF-8, or
+        // one a second source already pulled to. On macOS and Linux `x\a.txt` pulls whole.
+        let app_name =
+            cmdr_fs::app_path::PathArithmetic::file_name(&*crate::wire_paths::seam_path(src)).map(str::to_owned);
+        let name = src
+            .file_name()
+            .and_then(|n| n.to_str())
+            .filter(|name| app_name.as_deref() == Some(*name));
+        let dest_path = name.map(|name| crate::unique_name::sibling_in(scratch.path(), name));
+        let Some(dest_path) = dest_path.filter(|path| !absolute.contains(path)) else {
+            refused.push(src);
             continue;
         };
-        let dest_path = scratch.path().join(name);
         pull_one_source(source_volume, src, &dest_volume, &dest_path, state).await?;
         absolute.push(dest_path);
     }
+    carried.retain(|(path, _)| !refused.contains(&path));
 
     Ok(MaterializedSources {
         absolute,
         source_volume: Arc::clone(source_volume),
         carried,
+        refused: refused.len(),
         _scratch: Some(scratch),
     })
 }
@@ -454,6 +475,7 @@ impl crate::Operations {
                     let materialized =
                         materialize_sources(&source_volume, &source_paths, src_local_root, is_move, &state).await?;
                     let absolute_sources = materialized.absolute.clone();
+                    let refused = materialized.refused;
 
                     let (should_delete_sources, skipped_count) = run_managed_edit(
                         &parent_volume_id,
@@ -494,6 +516,8 @@ impl crate::Operations {
                                 // The user's compression level governs every newly added
                                 // entry in this edit (the mutator clamps it to 1..=9).
                                 plan.changeset.compression_level = compression_level;
+                                // A source the pull refused is a skip: a move deletes no original.
+                                plan.skipped_count += refused;
                                 let should_delete = is_move && plan.skipped_count == 0;
                                 mutator::apply(working, &plan.changeset, &*hooks_for_blocking).map_err(
                                     |e| match e {

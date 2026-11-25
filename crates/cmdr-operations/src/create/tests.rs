@@ -236,6 +236,38 @@ async fn create_on_an_opaque_backend_takes_posix_names() {
     }
 }
 
+/// Paste-as-file onto a server lands IN its folder, numbered on a clash, joined the app
+/// path's way (`seam_child`, ❌ never `Path::join`, which on Windows makes `/home\pasted.txt`).
+// macOS only: `create_numbered` is, as its one caller (the clipboard's paste) is.
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn a_numbered_create_on_a_server_lands_in_its_folder() {
+    let engine = TestOperations::new();
+    let server = Arc::new(InMemoryVolume::new("Server").with_backend_kind(BackendKind::Sftp));
+    server.create_directory(app_path!("/home")).await.expect("seed dir");
+    engine
+        .volumes()
+        .register("sftp-numbered", Arc::clone(&server) as Arc<dyn Volume>);
+
+    for want in ["pasted.txt", "pasted (1).txt"] {
+        let name = engine
+            .create_numbered_file(
+                Some("sftp-numbered".into()),
+                Path::new("/home"),
+                "pasted",
+                "txt",
+                b"x",
+                cmdr_operation_log::types::Initiator::User,
+            )
+            .await
+            .expect("lands");
+        assert_eq!(name, want);
+    }
+    assert!(server.exists(app_path!("/home/pasted.txt")).await);
+    assert!(server.exists(app_path!("/home/pasted (1).txt")).await);
+    assert!(!server.exists(app_path!("/home\\pasted.txt")).await);
+}
+
 #[tokio::test]
 async fn create_directory_nonexistent_parent() {
     let engine = TestOperations::new();

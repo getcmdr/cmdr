@@ -9,7 +9,6 @@ use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmet
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{NotAChildName, VolumeError};
 use std::borrow::Cow;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /// One listed name, checked as one plain name before anything joins it: the
@@ -128,15 +127,13 @@ pub(crate) enum TopLevel {
 /// split, so a POSIX server's `a\b.txt` is one name on every host, where
 /// `std::path`'s Windows split landed it as `b.txt` (#1457).
 ///
-/// A chosen name that isn't UTF-8 text answers [`TopLevel::Refused`], ❌ never the
-/// source's own name: landing it under a name the person didn't pick is worse than
-/// asking.
-pub(crate) fn top_level(dest_root: &AppPath, source: &AppPath, chosen: Option<&OsStr>) -> TopLevel {
+/// A chosen name is app text (`TransferLeaves::chosen_name`, `TargetNames::chosen_for`),
+/// read as one name by the app path's rules; one the folder can't hold answers
+/// [`TopLevel::Refused`], ❌ never the source's own name: landing it under a name the
+/// person didn't pick is worse than asking.
+pub(crate) fn top_level(dest_root: &AppPath, source: &AppPath, chosen: Option<&str>) -> TopLevel {
     let (name, shown): (Option<Cow<'_, AppName>>, Cow<'_, str>) = match chosen {
-        Some(chosen) => match chosen.to_str() {
-            Some(text) => (AppName::from_listed_text(text).ok(), Cow::Borrowed(text)),
-            None => return TopLevel::Refused(shown_under(dest_root, &chosen.to_string_lossy())),
-        },
+        Some(text) => (AppName::from_listed_text(text).ok(), Cow::Borrowed(text)),
         None => match own_name(source) {
             Some(own) => (
                 AppName::from_app_spelling(&own)

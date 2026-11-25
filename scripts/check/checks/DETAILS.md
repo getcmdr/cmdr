@@ -2508,9 +2508,23 @@ Checks by app and tech:
   acquisition that records no poison-handling choice, and a warn-only one for a failure that's silently discarded, on a
   per-file ratchet), app-path-std-bridge (the app path's transition-bridge calls, `legacy_unchecked` and
   `as_std_legacy`, counted per CALL per file (two on one line count two, so rustfmt splitting a line never moves the
-  count, #1317) on a ratchet that only shrinks: the conversion's progress meter; plus two text budgets, `appTextToPath`
-  and `pathFromBareText`, counted per line, a tripwire that refuses a production escape producer while either is above
-  zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text handed to an app-spelling door;
+  count, #1317) on a ratchet that only shrinks: the conversion's progress meter; `wrapperCalls` counts each call through
+  a named wrapper over the bridge (`appPathBridgeWrappers`: `std_of`, `into_std`, `on_volume`, `seam_path`,
+  `engine_path`; only in cmdr-operations and cmdr-fs, where they're defined crate-private; not a `.method(`, a `fn`
+  definition, or a `Type::` associated fn) so the OK line reads direct plus wrapper crossings (#1469; `label_of`,
+  `native_text`, and `own_name` aren't wrappers: they read app text with no `std::path` in it, `own_name`'s root case
+  crossing through `std_of`, counted at its definition); `stdJoin` counts, in the production code of cmdr-operations and
+  `operations_host/` (every line outside the ONE item a `#[cfg(test)]` / `#[cfg(all(test, ...))]` gates: a gated `use`
+  or helper `fn` hides nothing below it), each `with_file_name(`, `set_file_name(`, `Path::join(` / `PathBuf::join(`
+  call form, `.push(x)` onto a path-shaped binding (`*_path`, `*_dir`, `*_root`, `*_folder`, `dir`, `root`, `dest`, …,
+  not a tuple argument), and each `.join(x)` that no `Result` handler (`?`, `.ok()`, `.map_err(`, `.expect(`, `.unwrap`,
+  `.is_ok()`/`.is_err()`) follows, as a typed `AppPath` / `ListedFolder` join does, minus a separator-literal string
+  join, since on Windows `/share` joined with a name reads as one name in `/` on a POSIX volume; a native local join
+  opts out with `// allowed-std-join: <reason>` (an unused one fails). ❗ It can't see: a path built as text
+  (`PathBuf::from(format!("{dir}/{name}"))`), a `components()` rebuild, a `.push(` onto a `PathBuf` with another name
+  (`path`, `p`), a join split from its `Result` handler by a `let`, or an `extend` of names; plus two text budgets,
+  `appTextToPath` and `pathFromBareText`, counted per line, a tripwire that refuses a production escape producer while
+  either is above zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text handed to an app-spelling door;
   `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/`
   seam, on a per-file ratchet; § "Platform cfg placement"), os-test-gate-reason (an OS-gated test file or test module
   with no reason comment, on a shrink-only allowlist; § "OS-gated tests say why"), log-private-values (an unmarked path,

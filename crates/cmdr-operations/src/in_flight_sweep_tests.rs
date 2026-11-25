@@ -725,3 +725,36 @@ fn a_path_recorded_as_both_temp_and_landing_settles_as_the_landing() {
     );
     assert!(next_run.live_paths().is_empty(), "and neither record is left to retry");
 }
+
+/// A startup rescue on a server keeps `a\b.txt`'s bytes beside it, as ONE name in `/dst`,
+/// on every host: on Windows `std::path` read the name as `b.txt` in `a`, so the rescue went
+/// into the folder `a` (or failed there).
+#[tokio::test]
+async fn a_volume_rescue_of_a_backslash_name_stays_in_its_folder() {
+    use cmdr_fs::app_path;
+    use cmdr_fs::volume::InMemoryVolume;
+    let volume = Arc::new(InMemoryVolume::new("Server"));
+    for dir in [app_path!("/dst"), app_path!("/dst/a")] {
+        volume.create_directory(dir).await.expect("seed a folder");
+    }
+    volume
+        .create_file(app_path!("/dst/a\\b.txt"), b"taken")
+        .await
+        .expect("seed");
+    volume
+        .create_file(app_path!("/dst/.cmdr-tmp-x"), b"new")
+        .await
+        .expect("seed");
+
+    let kept = keep_beside(
+        &Surface::Volume(Arc::clone(&volume) as Arc<dyn Volume>),
+        Path::new("/dst/.cmdr-tmp-x"),
+        Path::new("/dst/a\\b.txt"),
+        Rescued::Landing,
+    )
+    .await;
+
+    assert_eq!(kept, Some(PathBuf::from("/dst/a\\b (recovered).txt")));
+    assert!(volume.exists(app_path!("/dst/a\\b (recovered).txt")).await);
+    assert!(!volume.exists(app_path!("/dst/a/b (recovered).txt")).await);
+}

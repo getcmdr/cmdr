@@ -7,10 +7,12 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use cmdr_fs::app_path::{AppPath, PathArithmetic, is_escape};
 use cmdr_fs::name_fold::fold_name;
 
 use super::transfer::volume::native_roots;
 use super::types::{NamedLeavesRefusal, TransferLeaves, WriteOperationError};
+use super::unique_name::sibling_in;
 use super::validation::{first_shared_name, validate_path_length};
 use cmdr_fs::file_identity::FileId;
 use cmdr_fs::volume::Volume;
@@ -48,7 +50,7 @@ pub(crate) fn validate_transfer_leaves(
     let Some(name) = leaves.single_leaf() else {
         return Ok(());
     };
-    let named_path = destination.join(name);
+    let named_path = sibling_in(destination, name);
     if sources.len() != 1
         || sources[0].file_name().is_none()
         || name.is_empty()
@@ -98,7 +100,7 @@ fn validate_per_source_leaves(
         .collect();
     landing_clash(&items, destination, identity).map_err(|clash| match clash {
         LandingClash::NotPlain { leaf, refusal } => WriteOperationError::InvalidName {
-            path: destination.join(leaf).display().to_string(),
+            path: sibling_in(destination, &leaf).display().to_string(),
             message: format!("Not a plain filename: {refusal:?}").into(),
         },
         LandingClash::SameName { landing } => refused(&landing, NamedLeavesRefusal::SameName),
@@ -113,7 +115,7 @@ fn validate_per_source_leaves(
     })?;
     for source in sources {
         let Some(leaf) = names.get(source) else { continue };
-        validate_path_length(&destination.join(leaf))?;
+        validate_path_length(&sibling_in(destination, leaf))?;
     }
     Ok(())
 }
@@ -231,11 +233,18 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
     let mut landings: Vec<(&Path, PathBuf)> = Vec::with_capacity(items.len());
     let mut taken: HashSet<String> = HashSet::with_capacity(items.len());
     for (source, chosen) in items {
-        let Some(leaf) = chosen.map(OsStr::new).or_else(|| source.file_name()) else {
-            continue;
+        // A chosen leaf is app text, joined as text; an own name is the path's.
+        let (landing, key) = match chosen {
+            Some(leaf) => (sibling_in(destination, leaf), fold_name(leaf).into_owned()),
+            None => match own_leaf(source, identity) {
+                Some(own) => (
+                    landing_at(destination, own),
+                    fold_name(&own.to_string_lossy()).into_owned(),
+                ),
+                None => continue,
+            },
         };
-        let landing = destination.join(leaf);
-        if !taken.insert(folded(Path::new(leaf))) {
+        if !taken.insert(key) {
             return Err(LandingClash::SameName { landing });
         }
         landings.push((source, landing));
@@ -245,13 +254,13 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
     // turns "a to b, b to c" into a lost file when the order runs wrong (a
     // move). Compared folded, and by file id where both have one, which catches
     // the same item reached through another spelling or a symlinked folder.
-    let by_name: HashMap<String, &Path> = items.iter().map(|(s, _)| (folded(s), *s)).collect();
+    let by_name: HashMap<String, &Path> = items.iter().map(|(s, _)| (folded(s, identity), *s)).collect();
     let by_inode: HashMap<Id, &Path> = match identity {
         LeafIdentity::NamesAndInodes => items.iter().filter_map(|(s, _)| Some((stat(s)?, *s))).collect(),
         LeafIdentity::Names => HashMap::new(),
     };
     for (source, landing) in landings {
-        let onto = by_name.get(&folded(&landing)).or_else(|| match identity {
+        let onto = by_name.get(&folded(&landing, identity)).or_else(|| match identity {
             LeafIdentity::NamesAndInodes => stat(&landing).and_then(|id| by_inode.get(&id)),
             LeafIdentity::Names => None,
         });
@@ -263,14 +272,16 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
 
     // Names go to OTHER folders. One already in the destination is a rename,
     // and the same-volume move's identity guard would drop a case-only one.
-    let destination_key = folded(destination);
+    let destination_key = folded(destination, identity);
     let destination_id = (identity == LeafIdentity::NamesAndInodes)
         .then(|| stat(destination))
         .flatten();
     for (source, _) in items {
-        let Some(parent) = source.parent() else { continue };
+        let Some(parent) = folder_of(source, identity) else {
+            continue;
+        };
         let already_there =
-            folded(parent) == destination_key || destination_id.is_some_and(|id| stat(parent) == Some(id));
+            folded(parent, identity) == destination_key || destination_id.is_some_and(|id| stat(parent) == Some(id));
         if already_there {
             return Err(LandingClash::AlreadyInDestination {
                 source: source.to_path_buf(),
@@ -280,11 +291,60 @@ fn landing_clash_with<Id: Copy + Eq + std::hash::Hash>(
     Ok(())
 }
 
+/// Where the plain name `leaf` lands in `destination`, for the clash rules, the
+/// refusals' text, and the length check: joined by text with the folder's own `/`
+/// (`unique_name::sibling_in`), so on Windows a POSIX folder takes `/dst/b.txt`,
+/// ❌ never `/dst\b.txt` (one name in `/` to the volume). A native folder the OS
+/// spells with `\` joins as `Path::join` did.
+fn landing_at(destination: &Path, leaf: &OsStr) -> PathBuf {
+    match leaf.to_str() {
+        Some(text) => sibling_in(destination, text),
+        // allowed-std-join: a name that isn't UTF-8 is a native name on a local route.
+        None => destination.join(leaf),
+    }
+}
+
 /// `path` under [`fold_name`], whole, for the per-source comparisons. Its
 /// components first, so a trailing `/` or a `.` can't make one folder two.
-fn folded(path: &Path) -> String {
+/// On a [`LeafIdentity::Names`] route the app path's canonical text, split by
+/// [`app_reading`].
+fn folded(path: &Path, identity: LeafIdentity) -> String {
+    if let Some(app) = app_reading(path, identity) {
+        return fold_name(app.as_str()).into_owned();
+    }
     let normal: PathBuf = path.components().collect();
     fold_name(&normal.to_string_lossy()).into_owned()
+}
+
+/// `path` read as the canonical app path its own text is, on a route whose paths
+/// ARE app paths ([`LeafIdentity::Names`]: a remote volume's, an AI proposal's), so on
+/// Windows a POSIX server's `a\b.txt` is one name in its folder, ❌ never `b.txt` in
+/// `a`. No crossing: the app path borrows the path's text, so every split below is a
+/// slice of it. `None` on a local route, whose native paths the OS splits by its own
+/// rules, and for text that isn't UTF-8, holds an escape-range code point, or isn't
+/// canonical, which keeps the `std::path` reading byte for byte. On macOS and Linux
+/// both readings split such text alike.
+fn app_reading(path: &Path, identity: LeafIdentity) -> Option<&AppPath> {
+    let text = path.to_str().filter(|text| !text.chars().any(is_escape))?;
+    (identity == LeafIdentity::Names)
+        .then(|| AppPath::from_normalized(text).ok())
+        .flatten()
+}
+
+/// `path`'s last name, split as [`app_reading`] splits it.
+fn own_leaf(path: &Path, identity: LeafIdentity) -> Option<&OsStr> {
+    match app_reading(path, identity) {
+        Some(app) => app.file_name().map(AsRef::as_ref),
+        None => path.file_name(),
+    }
+}
+
+/// `path`'s folder, split as [`app_reading`] splits it.
+fn folder_of(path: &Path, identity: LeafIdentity) -> Option<&Path> {
+    match app_reading(path, identity) {
+        Some(app) => app.parent().map(|parent| AsRef::<Path>::as_ref(parent.as_str())),
+        None => path.parent(),
+    }
 }
 
 /// `path`'s file id, following symlinks the way [`crate::validation::may_be_same_file`] does;
@@ -325,6 +385,48 @@ mod tests {
         let stat = |path: &Path| -> Option<(u64, u64)> { panic!("statted {}", path.display()) };
         let result = landing_clash_with(&items, Path::new("/Volumes/hung/dest"), LeafIdentity::Names, stat);
         assert_eq!(result, Ok(()));
+    }
+
+    fn names_only(items: &[(&str, Option<&str>)], destination: &str) -> Result<(), LandingClash> {
+        let items: Vec<(&Path, Option<&str>)> = items.iter().map(|(s, n)| (Path::new(*s), *n)).collect();
+        TransferLeaves::check_landings(&items, Path::new(destination))
+    }
+
+    /// A remote route's paths are app paths: a POSIX server's `a\b.txt` is ONE name in its
+    /// folder on every host, where Windows' `std::path` split it into `b.txt` in `a`.
+    #[test]
+    fn a_backslash_name_is_one_name_on_a_names_route() {
+        // A chosen `a\b.txt` lands beside `/dst/a`, not onto `/dst/a/b.txt`.
+        assert_eq!(names_only(&[("/dst/a/b.txt", Some("a\\b.txt"))], "/dst"), Ok(()));
+        // Two own names that differ by a `\` don't clash.
+        assert_eq!(
+            names_only(&[("/src/a\\b.txt", None), ("/src/b.txt", None)], "/dst"),
+            Ok(())
+        );
+        // A source already in the destination is one, whatever its name holds.
+        assert_eq!(
+            names_only(&[("/dst/a\\b.txt", Some("c.txt"))], "/dst"),
+            Err(LandingClash::AlreadyInDestination {
+                source: PathBuf::from("/dst/a\\b.txt")
+            })
+        );
+        // Hostile-looking chosen names land as one name, or are refused as no plain one.
+        for one_name in ["foo\\..", "..\\bar", "a:b", "x.", "C:\\x"] {
+            assert_eq!(
+                names_only(&[("/src/a.txt", Some(one_name))], "/dst"),
+                Ok(()),
+                "{one_name:?}"
+            );
+        }
+        for not_plain in ["/etc/x", "x ", ".."] {
+            assert!(
+                matches!(
+                    names_only(&[("/src/a.txt", Some(not_plain))], "/dst"),
+                    Err(LandingClash::NotPlain { .. })
+                ),
+                "{not_plain:?}"
+            );
+        }
     }
 
     #[test]

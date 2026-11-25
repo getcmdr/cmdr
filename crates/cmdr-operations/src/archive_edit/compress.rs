@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::super::OperationEventSink;
-use super::super::look_alike::{LookAlike, look_alike_in, spelled_new_path};
+use super::super::look_alike::{LookAlike, folder_and_name, look_alike_in, spelled_new_path};
 use super::super::transfer::volume::{PathRole, map_volume_error};
 use super::super::types::{ConflictResolution, ReadOnlySide, WriteOperationError, WriteOperationStartResult};
 use cmdr_fs::os_junk_files::OsJunkFiles;
@@ -23,12 +23,14 @@ async fn archive_landing(
     if parent.exists(target_app).await {
         return Ok((target, true));
     }
-    let (Some(dir), Some(name)) = (target.parent(), target.file_name().and_then(|name| name.to_str())) else {
+    // Split by the app path: on Windows `Path` read a POSIX server's `a\b.zip` as `b.zip`
+    // in `a`, so a look-alike there was the archive the compress replaced.
+    let Some((dir, name)) = folder_and_name(&target) else {
         return Ok((target, false));
     };
-    match look_alike_in(parent, dir, name).await {
+    match look_alike_in(parent, &dir, &name).await {
         Ok(LookAlike::None) => Ok((spelled_new_path(parent, &target), false)),
-        Ok(LookAlike::One(entry)) => Ok((crate::unique_name::sibling_in(dir, &entry.name), true)),
+        Ok(LookAlike::One(entry)) => Ok((crate::unique_name::sibling_in(&dir, &entry.name), true)),
         Ok(LookAlike::Several) => Err(WriteOperationError::DestinationExists {
             path: target.display().to_string(),
         }),

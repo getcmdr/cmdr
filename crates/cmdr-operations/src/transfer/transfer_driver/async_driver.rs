@@ -214,13 +214,11 @@ where
         // An explicit leaf names where the source lands (`TransferLeaves`), as
         // does a rename that runs as a move (`target_names.rs`); every other
         // source keeps its own name, split by the app path (#1457).
-        let chosen = {
-            let source_std = std_of(source_path);
-            config
-                .leaves
-                .chosen_for(&source_std)
-                .or_else(|| state.target_names.chosen_for(&source_std))
-        };
+        let source_std = std_of(source_path);
+        let chosen = config
+            .leaves
+            .chosen_name(&source_std)
+            .or_else(|| state.target_names.chosen_for(source_path));
         let initial_dest_path = match top_level(dest_root, source_path, chosen) {
             TopLevel::At(path) => path,
             // A name the folder can't hold: the closure asks about it, per item,

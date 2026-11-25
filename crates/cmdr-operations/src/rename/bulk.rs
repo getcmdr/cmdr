@@ -7,6 +7,7 @@
 
 use super::super::state::IntentCell;
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use std::borrow::Cow;
 use std::future::Future;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -135,13 +136,13 @@ impl crate::Operations {
         let rows: Vec<BulkRenameRow> = rows
             .into_iter()
             .map(|row| BulkRenameRow {
-                destination: twin_path::unpicked(&row.destination).into_owned(),
+                destination: unpicked(&row.destination),
                 ..row
             })
             .collect();
         if rows
             .iter()
-            .any(|row| twin_path::folder_of(&row.source) != twin_path::folder_of(&row.destination))
+            .any(|row| folder_of(&row.source) != folder_of(&row.destination))
         {
             return Err(RenameStartError::NotInOneFolder);
         }
@@ -748,6 +749,7 @@ async fn restore_remote_cycle(
 fn unique_temporary_path(source: &Path, row_id: &str) -> Option<PathBuf> {
     let parent = twin_path::folder_of(source)?;
     for _ in 0..16 {
+        // allowed-std-join: the LOCAL swap's hop temp, beside a native file it stats (remote rows hop typed).
         let candidate = parent.join(format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
         if std::fs::symlink_metadata(&candidate).is_err() {
             return Some(candidate);
@@ -756,10 +758,32 @@ fn unique_temporary_path(source: &Path, row_id: &str) -> Option<PathBuf> {
     None
 }
 
+/// The folder a row's `path` sits in, past a twin's pick, split the app path's way: a
+/// POSIX volume's `/dir/a\b.txt` is the one name `a\b.txt` in `/dir` on every host, where
+/// Windows' `Path` read it as `b.txt` inside `/dir/a`, so a row renaming `x.txt` to
+/// `a\b.txt` was refused as changing folders and one renaming `a\b.txt` to `a/c.txt`
+/// wasn't. A local Windows row (`C:\dir\x`, a bridge value) splits as `Path` splits it,
+/// as does every row on macOS and Linux.
+pub(super) fn folder_of(path: &Path) -> Option<PathBuf> {
+    let app = crate::wire_paths::seam_path(path);
+    twin_path::folder_of_app(&app).map(|folder| crate::transfer::volume::std_of(folder).into_owned())
+}
+
+/// A row's destination without its own twin's pick ([`twin_path::unpicked_app`]), the name
+/// joined back the app path's way (on Windows `Path::join` put a `\` between an MTP
+/// folder and the name, one name in its parent).
+fn unpicked(path: &Path) -> PathBuf {
+    let app = crate::wire_paths::seam_path(path);
+    match twin_path::unpicked_app(&app) {
+        Cow::Borrowed(_) => path.to_path_buf(),
+        Cow::Owned(unpicked) => crate::transfer::volume::into_std(unpicked),
+    }
+}
+
 async fn unique_remote_temporary_path(volume: &dyn Volume, source: &Path, row_id: &str) -> Option<Temporary> {
-    let parent = twin_path::folder_of(source)?;
+    let parent = folder_of(source)?;
     for _ in 0..16 {
-        let path = crate::unique_name::sibling_in(parent, &format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
+        let path = crate::unique_name::sibling_in(&parent, &format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
         let app = AppPath::legacy_unchecked(&path).into_owned();
         if volume.get_metadata(&app).await.is_err() {
             return Some(Temporary { path, app });

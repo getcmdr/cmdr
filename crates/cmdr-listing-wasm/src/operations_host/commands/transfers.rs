@@ -193,7 +193,7 @@ impl DemoOperations {
                         a.source_items,
                         a.dest_path,
                         a.source_volume_id,
-                        a.source_paths,
+                        a.source_paths.and_then(|texts| self.wire_paths(&texts).ok()),
                     )
                     .await,
                 )

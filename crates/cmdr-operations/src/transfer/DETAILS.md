@@ -1497,12 +1497,13 @@ arrival. Pinned by
 ❗ **A cleared way plus a refused second rename strands committed data**, and the landing gets it out of temp space on
 the spot. The bytes are complete by then, the destination name is now EMPTY, and the temp wears a `.cmdr-tmp-*` name,
 which a real name keeps out of every sweep's reach for good, recorded or not.
-`recovered_name.rs::rescue_out_of_temp_space` renames it to `<name> (recovered)<.ext>` and the failure carries that path
-as `FinalizeFailure::aftermath` (`LandingAftermath::NewDataKeptAt`), a claimed name's landing and a swap whose original
-couldn't go back alike; `stream_pipe_file` and `sequential_extract` label it with the DESTINATION
-(`PathedVolumeError::from_landing`), since a rescued file is one the user can't find on their own. A failure whose
-`delete` didn't succeed rescues nothing and reports nothing: the destination still holds whatever was in the way (§ "A
-landing that fails with nothing cleared takes its temp away" below). Pinned by
+`recovered_name.rs::rescue_out_of_temp_space` renames it to `<name> (recovered)<.ext>` (split and joined by the app
+path, `unique_name::recovered_sibling_app`, so a POSIX server's `a\b.txt` is rescued beside itself on Windows too) and
+the failure carries that path as `FinalizeFailure::aftermath` (`LandingAftermath::NewDataKeptAt`), a claimed name's
+landing and a swap whose original couldn't go back alike; `stream_pipe_file` and `sequential_extract` label it with the
+DESTINATION (`PathedVolumeError::from_landing`), since a rescued file is one the user can't find on their own. A failure
+whose `delete` didn't succeed rescues nothing and reports nothing: the destination still holds whatever was in the way
+(§ "A landing that fails with nothing cleared takes its temp away" below). Pinned by
 `staged_write.rs::a_landing_that_cleared_the_way_and_then_could_not_rename_rescues_the_new_bytes`.
 
 ❗ **And only for a name the CALLER claimed** (`LandingName`). `AlreadyExists` says something is in the way; only the
@@ -3050,10 +3051,11 @@ cached `TransferDialog` preview when available, else `volume.scan_for_copy_batch
 (`move_within_same_volume_with_progress`) is a server-side rename — it moves ZERO bytes — so a deep recursive pre-flight
 scan there was pure waste that cost 30–40 s of "Verifying before move…" on a NAS (a real field incident: a same-NAS
 folder move blocked for 30–40 s before the 100 ms rename). It now calls `top_level_move_hints` instead: top-level
-`is_directory`/size hints only (one `list_directory` per distinct parent, O(distinct parents), never a subtree walk),
-`files_total` = number of selected top-level items, `bytes_total = 0`. The FE hides the Size bar on `bytes_total == 0`,
-which is honest — a rename moves no bytes, so a Size bar would be a lie. `known_directory_paths` (keeps bulk-skip
-file-only) comes from the same top-level hints. The perf contract is pinned by
+`is_directory`/size hints only (one `list_directory` per distinct parent, O(distinct parents), never a subtree walk;
+parent and name split by the app path, so on Windows a POSIX volume's `/src/a\b.txt` is listed in `/src`, never
+`/src/a`: `volume/preflight_hints_tests.rs`), `files_total` = number of selected top-level items, `bytes_total = 0`. The
+FE hides the Size bar on `bytes_total == 0`, which is honest — a rename moves no bytes, so a Size bar would be a lie.
+`known_directory_paths` (keeps bulk-skip file-only) comes from the same top-level hints. The perf contract is pinned by
 `volume/rename_merge_tests.rs::non_conflicting_move_does_no_subtree_walk` (a counting volume asserts no interior
 listing + O(top-level) stat count) and the SMB integration pin
 `smb_integration_same_share_nonconflicting_move_no_subtree_walk`.

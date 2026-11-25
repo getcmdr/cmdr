@@ -619,6 +619,48 @@ async fn a_compress_whose_composed_name_the_share_holds_replaces_that_archive() 
     );
 }
 
+/// A POSIX server's `sub\café.zip` is one name in `/share` on every host: on Windows
+/// `Path` read it as `café.zip` in `/share/sub`, so a look-alike there was the archive the
+/// compress replaced. The decoy in `/share/sub` keeps its bytes.
+#[tokio::test]
+async fn a_compress_to_a_backslash_name_lands_in_its_own_folder() {
+    let engine = TestOperations::new();
+    let (parent_id, parent) = register_share(&engine, None).await;
+    parent
+        .create_directory(app_path!("/share/sub"))
+        .await
+        .expect("the decoy folder");
+    let decoy = PathBuf::from(format!("/share/sub/{CAFE_ZIP_NFD}"));
+    parent
+        .create_file(
+            &app_path!("/share/sub")
+                .join(AppName::from_app_spelling(CAFE_ZIP_NFD).expect("a plain name"))
+                .expect("a path in the decoy folder"),
+            &zip_bytes(&[("stale.txt", b"old")]),
+        )
+        .await
+        .expect("seed the decoy archive");
+
+    compress_to_share(&engine, &parent_id, &format!("sub\\{CAFE_ZIP_NFC}"))
+        .await
+        .expect("start compress");
+
+    let mut expected = vec!["sub".to_string(), format!("sub\\{CAFE_ZIP_NFC}")];
+    expected.sort();
+    assert_eq!(names_in_share(parent.as_ref()).await, expected);
+    assert_eq!(
+        read_remote_entry(parent.as_ref(), &in_share(&format!("sub\\{CAFE_ZIP_NFC}")), "new.txt")
+            .await
+            .as_deref(),
+        Some(b"brand new".as_slice())
+    );
+    assert_eq!(
+        read_remote_entry(parent.as_ref(), &decoy, "stale.txt").await.as_deref(),
+        Some(b"old".as_slice()),
+        "the decoy keeps its bytes"
+    );
+}
+
 /// Two archives fit the target and neither is spelled as asked: which one to
 /// replace is a guess, so compression refuses before writing.
 #[tokio::test]

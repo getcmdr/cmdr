@@ -56,7 +56,9 @@ use super::{ItemHome, ItemKind, Ledger, Record, RecordedTemp, SweepTally, Tracke
 use crate::host::EngineHost;
 use crate::transfer_sides::root_is_listed;
 use crate::types::{KeptLeftover, LeftoversKeptEvent};
-use crate::unique_name::{NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling};
+use crate::unique_name::{
+    AppNameCandidates, NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling, recovered_sibling_app,
+};
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
 
@@ -612,9 +614,22 @@ async fn recover(surface: &Surface, aside: &Path, destination: &Path, rescued: R
 /// [`recover`], answering the name the bytes are kept under, or `None` when
 /// they couldn't move and stay where they are (the record kept for a later try).
 async fn keep_beside(surface: &Surface, aside: &Path, destination: &Path, rescued: Rescued) -> Option<PathBuf> {
-    let recovered = recovered_sibling(destination);
-    let mut candidates = NameCandidates::for_file(&recovered);
-    // The bare ` (recovered)` name first; `NameCandidates` starts at ` (1)`.
+    // A volume's names split and join by the app path: on Windows `std::path` read a POSIX
+    // server's `a\b.txt` as `b.txt` in `a`, so the rescue went into a folder `a`. The local
+    // surface's names are the OS's own.
+    let app_recovered = match surface {
+        Surface::Volume(_) => Some(recovered_sibling_app(&crate::wire_paths::seam_path(destination))?),
+        Surface::Local => None,
+    };
+    let recovered = match &app_recovered {
+        Some(app) => crate::transfer::volume::into_std(app.clone()),
+        None => recovered_sibling(destination),
+    };
+    let mut candidates = match &app_recovered {
+        Some(app) => Candidates::Typed(AppNameCandidates::for_file(app)),
+        None => Candidates::Native(NameCandidates::for_file(&recovered)),
+    };
+    // The bare ` (recovered)` name first; the candidates start at ` (1)`.
     let mut candidate = recovered.clone();
     loop {
         match surface.rename_no_replace(aside, &candidate).await {
@@ -656,8 +671,34 @@ async fn keep_beside(surface: &Surface, aside: &Path, destination: &Path, rescue
             );
             return None;
         }
-        candidate = candidates.current();
-        candidates.advance();
+        candidate = match &mut candidates {
+            Candidates::Native(native) => {
+                let next = native.current();
+                native.advance();
+                next
+            }
+            Candidates::Typed(typed) => {
+                let next = crate::transfer::volume::into_std(typed.current()?);
+                typed.advance();
+                next
+            }
+        };
+    }
+}
+
+/// [`keep_beside`]'s ` (N)` names: the OS's split on the local surface, the app path's on
+/// a volume.
+enum Candidates<'a> {
+    Native(NameCandidates<'a>),
+    Typed(AppNameCandidates<'a>),
+}
+
+impl Candidates<'_> {
+    fn attempts(&self) -> u32 {
+        match self {
+            Candidates::Native(native) => native.attempts(),
+            Candidates::Typed(typed) => typed.attempts(),
+        }
     }
 }
 

@@ -7,10 +7,11 @@
 //! any engine runs, and `../../routing.rs` gives the pre-flight scan the answer
 //! this engine will give.
 
-use std::path::Path;
 use std::sync::Arc;
 
 use super::super::dest_name_index::fold;
+use super::listed_name::native_text;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use cmdr_fs::volume::Volume;
 
 /// Whether `source_path` and `dest_path` name the same item: the question
@@ -26,9 +27,9 @@ use cmdr_fs::volume::Volume;
 /// gives the pre-flight conflict scan the answer this engine will give.
 pub(crate) fn is_the_same_item(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
 ) -> bool {
     Arc::ptr_eq(source_volume, dest_volume) && is_the_same_volume_path(source_path, dest_path)
 }
@@ -57,15 +58,20 @@ pub(crate) fn is_the_same_item(
 ///
 /// The same-volume move drops its self-colliding sources with this before any
 /// engine runs (`move_same.rs`), which is why it isn't private to the resolver.
-pub(super) fn is_the_same_volume_path(source_path: &Path, dest_path: &Path) -> bool {
+///
+/// Split by the app path, so on Windows a POSIX server's `a\b.txt` is one name in
+/// its folder, ❌ never `b.txt` in `a` (#1491: a move to a chosen `a\b.txt` read
+/// `/dst/a/b.txt` as already in place). Each leaf is folded as the native text it
+/// spells (`native_text`), so a literal escape-range code point folds as it did.
+pub(super) fn is_the_same_volume_path(source_path: &AppPath, dest_path: &AppPath) -> bool {
     if source_path.parent() != dest_path.parent() {
         return false;
     }
     match (
-        source_path.file_name().and_then(|name| name.to_str()),
-        dest_path.file_name().and_then(|name| name.to_str()),
+        source_path.file_name().and_then(native_text),
+        dest_path.file_name().and_then(native_text),
     ) {
-        (Some(source), Some(dest)) => fold(source) == fold(dest),
+        (Some(source), Some(dest)) => fold(&source) == fold(&dest),
         _ => source_path == dest_path,
     }
 }

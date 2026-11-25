@@ -40,7 +40,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::resolve_volume_conflict;
 use super::displaced_destination::{DisplacedDestination, displace_destination};
 use super::item_identity::is_the_same_volume_path;
-use super::listed_name::{on_volume, std_of};
+use super::listed_name::{TopLevel, on_volume, std_of, top_level};
 use super::preflight::{SourceHint, source_merges_as_a_directory, std_sources_in_tree_order, top_level_move_hints};
 use super::rename_merge::{RenameMergeCtx, rename_merge_directory};
 use super::strategy::Replaces;
@@ -382,11 +382,12 @@ pub async fn move_within_same_volume_with_progress(
     // `../DETAILS.md` § "Self-collision (duplicating in place)".
     let (already_in_place, remaining): (Vec<PathBuf>, Vec<PathBuf>) =
         source_paths.iter().cloned().partition(|source| {
-            config
-                .leaves
-                .chosen_for(source)
-                .or_else(|| state.target_names.name_for(source))
-                .is_some_and(|name| is_the_same_volume_path(source, &dest_path.join(name)))
+            // Joined and split by the app path: a chosen `a\b.txt` is one name (#1491).
+            let source_app = on_volume(source);
+            let leaf = (config.leaves.chosen_name(source)).or_else(|| state.target_names.chosen_for(&source_app));
+            // A source with no name of its own (a root) lands as nothing in the folder.
+            matches!(top_level(&dest_app, &source_app, leaf),
+                TopLevel::At(lands) if lands != *dest_app && is_the_same_volume_path(&source_app, &lands))
         });
     for source in &already_in_place {
         log::info!(

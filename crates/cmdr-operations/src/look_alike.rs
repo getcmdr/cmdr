@@ -11,7 +11,7 @@
 //! `Report` and `report` read as two names, and a case-sensitive destination
 //! keeps both on purpose. `DETAILS.md` § "Look-alike names".
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, PathArithmetic};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -23,7 +23,9 @@ use cmdr_fs::volume::{Volume, VolumeError};
 
 use cmdr_fs::volume::host::listings::ListingHost;
 
+use crate::transfer::volume::{native_text, std_of};
 use crate::unique_name::sibling_in;
+use crate::wire_paths::seam_path;
 
 /// What a folder holds under another spelling of one name.
 #[derive(Debug)]
@@ -71,13 +73,21 @@ pub(crate) fn among<'a>(entries: impl IntoIterator<Item = &'a FileEntry>, name: 
 /// here keeps it one rule for every engine rather than a flag threaded through
 /// each of them.
 pub(crate) fn is_look_alike_clash(source: &Path, destination: &Path) -> bool {
-    match (
-        source.file_name().and_then(|n| n.to_str()),
-        destination.file_name().and_then(|n| n.to_str()),
-    ) {
-        (Some(source), Some(destination)) => differ_only_in_form(source, destination),
+    match (folder_and_name(source), folder_and_name(destination)) {
+        (Some((_, source)), Some((_, destination))) => differ_only_in_form(&source, &destination),
         _ => false,
     }
+}
+
+/// `path`'s folder and its last name as native text, split the app path's way: a POSIX
+/// volume's `/dir/a\b.txt` is the one name `a\b.txt` in `/dir` on every host, where
+/// Windows' `Path` split it into `b.txt` inside `/dir/a`, another folder. `None` at a
+/// root, for a trailing `..`, and for a name that isn't UTF-8 (no text to compare or
+/// respell, as `Path`'s `to_str` had none). On macOS and Linux it's `Path`'s own split.
+pub(crate) fn folder_and_name(path: &Path) -> Option<(PathBuf, String)> {
+    let app = seam_path(path);
+    let (folder, name) = (app.parent()?, app.file_name()?);
+    Some((std_of(folder).into_owned(), native_text(name)?.into_owned()))
 }
 
 /// `name`'s look-alike in `dir` on `volume`, for a caller whose exact lookup of
@@ -98,10 +108,10 @@ pub(crate) async fn look_alike_in(volume: &dyn Volume, dir: &Path, name: &str) -
 /// that follows lands on a look-alike or refuses it, so the answer the person
 /// sees is "there", ❌ never "free".
 pub async fn held_in_another_spelling(volume: &dyn Volume, path: &Path) -> Result<bool, VolumeError> {
-    let (Some(dir), Some(name)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
+    let Some((dir, name)) = folder_and_name(path) else {
         return Ok(false);
     };
-    Ok(!matches!(look_alike_in(volume, dir, name).await?, LookAlike::None))
+    Ok(!matches!(look_alike_in(volume, &dir, &name).await?, LookAlike::None))
 }
 
 /// Where a NEW entry a person named goes: a new folder or file, or a rename's
@@ -142,13 +152,14 @@ pub(crate) async fn place_new_entry(
 
 /// `path` spelled the way `volume` wants a NEW name (`Volume::spell_new_name`).
 /// Only for a name being created; one that addresses an existing entry keeps its
-/// stored bytes. Joined typed (`seam_child`), so on Windows a POSIX volume's folder never
-/// gains a `\`; a spelling with no typed join keeps `path` as it was.
+/// stored bytes. Split and joined typed ([`folder_and_name`], `seam_child`), so on Windows a
+/// POSIX volume's `a\b.txt` stays one name in its folder and the folder never gains a `\`;
+/// a spelling with no typed join keeps `path` as it was.
 pub(crate) fn spelled_new_path(volume: &dyn Volume, path: &Path) -> PathBuf {
-    match (path.parent(), path.file_name().and_then(|n| n.to_str())) {
-        (Some(dir), Some(name)) => crate::wire_paths::seam_child(dir, volume.spell_new_name(name).as_ref())
+    match folder_and_name(path) {
+        Some((dir, name)) => crate::wire_paths::seam_child(&dir, volume.spell_new_name(&name).as_ref())
             .unwrap_or_else(|_| path.to_path_buf()),
-        _ => path.to_path_buf(),
+        None => path.to_path_buf(),
     }
 }
 
@@ -255,13 +266,12 @@ impl<'v> ListedFolders<'v> {
         renaming: Option<&Path>,
     ) -> Result<NewEntry, VolumeError> {
         let spelled_path = spelled_new_path(self.volume, path);
-        let (Some(dir), Some(spelled)) = (spelled_path.parent(), spelled_path.file_name().and_then(|n| n.to_str()))
-        else {
+        let Some((dir, spelled)) = folder_and_name(&spelled_path) else {
             return Ok(NewEntry::Free(spelled_path));
         };
-        match self.look_alike_in(dir, spelled).await? {
+        match self.look_alike_in(&dir, &spelled).await? {
             LookAlike::None => Ok(NewEntry::Free(spelled_path)),
-            LookAlike::One(entry) if renaming == Some(sibling_in(dir, &entry.name).as_path()) => {
+            LookAlike::One(entry) if renaming == Some(sibling_in(&dir, &entry.name).as_path()) => {
                 Ok(NewEntry::Free(spelled_path))
             }
             LookAlike::One(entry) => Ok(NewEntry::Taken(entry)),

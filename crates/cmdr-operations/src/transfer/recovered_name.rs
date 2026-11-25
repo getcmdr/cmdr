@@ -28,8 +28,9 @@ use std::path::{Path, PathBuf};
 
 use super::super::state::WriteOperationState;
 use super::super::types::{StagedLeftoverFate, StagedLeftovers, WriteOperationError};
-use super::super::unique_name::{NameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling};
+use super::super::unique_name::{AppNameCandidates, RESCUE_NAME_ATTEMPTS, recovered_sibling_app};
 use super::staged_paths::{Spelled, Temp};
+use super::volume::into_std;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -96,25 +97,25 @@ impl From<VolumeError> for FinalizeFailure {
 /// TAKEN is the one answer a different name fixes.
 pub(crate) async fn rescue_out_of_temp_space(dest_volume: &dyn Volume, temp: &Path, orig: &Path) -> PathBuf {
     let temp_app = AppPath::legacy_unchecked(temp);
-    let recovered = recovered_sibling(orig);
-    match dest_volume
-        .rename(&temp_app, &AppPath::legacy_unchecked(&recovered), false)
-        .await
-    {
-        Ok(()) => return recovered,
+    // Split and joined by the app path: on Windows `Path` put a POSIX server's
+    // `a\b.txt` rescue into `a/b (recovered).txt`, another folder.
+    let Some(recovered) = recovered_sibling_app(&AppPath::legacy_unchecked(orig)) else {
+        return keeps_its_temp_name(temp);
+    };
+    match dest_volume.rename(&temp_app, &recovered, false).await {
+        Ok(()) => return into_std(recovered),
         Err(VolumeError::AlreadyExists(_)) => {}
         Err(_) => return keeps_its_temp_name(temp),
     }
     // Taken (an earlier rescue of the same file, or the user's own): continue
     // the house ` (N)` series off the recovered name.
-    let mut candidates = NameCandidates::for_file(&recovered);
+    let mut candidates = AppNameCandidates::for_file(&recovered);
     while candidates.attempts() < RESCUE_NAME_ATTEMPTS {
-        let candidate = candidates.current();
-        match dest_volume
-            .rename(&temp_app, &AppPath::legacy_unchecked(&candidate), false)
-            .await
-        {
-            Ok(()) => return candidate,
+        let Some(candidate) = candidates.current() else {
+            break;
+        };
+        match dest_volume.rename(&temp_app, &candidate, false).await {
+            Ok(()) => return into_std(candidate),
             Err(VolumeError::AlreadyExists(_)) => candidates.advance(),
             Err(_) => return keeps_its_temp_name(temp),
         }

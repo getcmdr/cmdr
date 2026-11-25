@@ -1207,10 +1207,14 @@ identical-looking twin beside the user's entry.
   Every folder + name join on these paths goes typed or by text, never `Path::join`: a new name (the spelled path, a
   forced rename's look-alike, the validity check, a create) through `wire_paths::seam_child`, a listed or minted one (a
   compress landing, a bulk rename's hop temp, the respell compare) through `unique_name::sibling_in`; on Windows
-  `Path::join` put a `\` into a remote `/share`, which a store keyed by app paths reads as ONE name in `/`. Local root
-  renames skip all of it. A target that matched the SOURCE in another case (Samba and a QNAP fold case) is settled from
-  the same listing (`ListedFolders::entries_in`): source's name listed, target's not, so it's a case-only rename of one
-  file and F2 asks nothing.
+  `Path::join` put a `\` into a remote `/share`, which a store keyed by app paths reads as ONE name in `/`. Every split
+  of such a path into folder and name goes by the app path too (`look_alike.rs::folder_and_name`,
+  `rename/bulk.rs::folder_of`, the bulk rows' names via `label_of`): on Windows `Path` read a POSIX volume's
+  `/share/a\b.txt` as `b.txt` in `/share/a`, so a rename or bulk rename to it landed in that other folder, a bulk row to
+  it was refused as changing folders, and a share that refuses `\` passed it. Local root renames skip all of it. A
+  target that matched the SOURCE in another case (Samba and a QNAP fold case) is settled from the same listing
+  (`ListedFolders::entries_in`): source's name listed, target's not, so it's a case-only rename of one file and F2 asks
+  nothing.
 - **Respelling can land on an exact name.** `place_new_entry` answers `Free(spelled)` when the folder holds the SPELLED
   name byte for byte (`among` treats an exact entry as "no look-alike"); a create or rename then hears the backend's
   `AlreadyExists`. A write that would REPLACE silently instead must ask `look_alike_in` with the ASKED name, which finds
@@ -2488,7 +2492,9 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   Rollback are the ordinary cancel.
 - **Only a typed refusal asks**: `WriteOperationError::NameTooLong` or `InvalidName` (`refusal_reason`), ❌ never a
   message. A landing refused as `InvalidName` for a name longer than `MAX_SCRATCH_NAME_BYTES` reads as `NameTooLong`,
-  since the temp in the same folder (at most that long) was accepted (`transfer_error.rs::from_landing`).
+  since the temp in the same folder (at most that long) was accepted (`transfer_error.rs::from_landing`). The name is
+  the app path's last one, measured whole on every host (a POSIX server's `a\b.txt`, where Windows' `Path` measured
+  `b.txt`).
 - **Who asks is whoever may wait on a person** (`transfer/volume/refused_item.rs`): the merge WALKER for its leaves (a
   leaf hands back `LeafEnd::Refused`, since a leaf may never wait on one), and the top-level dispatch for a source whose
   OWN name was refused (the concurrent driver's spawned task, the serial closures, the local `copy_single_item`). Each
@@ -2766,7 +2772,8 @@ write-error safety-net arms in each deferred also route through `sink.emit_error
 on MTP (and to a lesser degree SMB and big local trees) used to duplicate work the backend already had in the listing
 cache. Selecting 135 photos in a watched `/DCIM/Camera` (~15k entries) and pressing F5 would re-list the parent dir over
 USB just to look up size by name — ~17 s of "Verifying before copy…" while the listing was already fresh on the pane
-behind the dialog. `run_volume_scan_preview` now groups input sources by parent dir and consults
+behind the dialog. `run_volume_scan_preview` now groups input sources by parent dir (the app path's parent and name, so
+on Windows a POSIX volume's `/dcim/sub\a.jpg` is read from `/dcim`'s listing, never `/dcim/sub`'s) and consults
 `try_get_authoritative_listing(volume_id, parent)` first. On hit, sizes and `is_directory` flags come from the cached
 `FileEntry` for top-level files; top-level directories recurse via `scan_subtree_with_oracle`, which re-applies the
 oracle at every level (so a subfolder open in another pane also short-circuits). On miss, the call falls through to

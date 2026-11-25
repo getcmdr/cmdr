@@ -242,3 +242,78 @@ async fn a_look_alike_the_batch_moves_away_first_frees_the_name_for_a_chain() {
     assert_eq!(names_in(&volume).await, sorted(&["x.txt", CAFE_NFC]));
     assert_eq!(read(&volume, CAFE_NFC).await, b"SECOND");
 }
+
+// ---- A POSIX volume's `\` is a name character on every host ----
+//
+// On Windows `Path` read `/dir/sub\b.txt` as `b.txt` in `/dir/sub`: the batch refused a row
+// renaming `x.txt` to `sub\x.txt` as changing folders, respelled a new name into `/dir/sub`,
+// and hopped a swap through a temp there. These hold on every host.
+
+#[tokio::test]
+async fn a_backslash_name_renames_in_its_own_folder() {
+    let engine = TestOperations::new();
+    let (id, volume) = volume(&engine, "backslash", true).await;
+    // The folder `Path`'s Windows split would have landed the rows in.
+    volume.create_directory(app_path!("/dir/sub")).await.unwrap();
+    file(&volume, "sub\\a.txt", b"A").await;
+    file(&volume, "x.txt", b"X").await;
+
+    let rows = vec![
+        row(&volume, "sub\\a.txt", "sub\\cafe\u{301}.txt").await,
+        row(&volume, "x.txt", "sub\\x.txt").await,
+    ];
+    let skipped = run(&engine, &id, rows).await;
+
+    assert_eq!(skipped, 0);
+    assert_eq!(
+        names_in(&volume).await,
+        sorted(&["sub", "sub\\caf\u{e9}.txt", "sub\\x.txt"])
+    );
+    assert_eq!(read(&volume, "sub\\caf\u{e9}.txt").await, b"A");
+    let in_sub = volume.list_directory(app_path!("/dir/sub"), None).await.unwrap();
+    assert!(in_sub.is_empty(), "nothing landed in /dir/sub: {in_sub:?}");
+}
+
+/// `foo\..` is left out: on Windows `name_rules::ends_in_dot_name` reads its `..` as a
+/// dot name and refuses the row, as it refuses a typed `..`.
+#[tokio::test]
+async fn hostile_backslash_and_colon_names_rename_as_one_name() {
+    let engine = TestOperations::new();
+    let (id, volume) = volume(&engine, "hostile", false).await;
+    let names = ["..\\bar", "a:b", "trail.", "trail ", "C:\\x"];
+    let mut rows = Vec::new();
+    for (index, name) in names.iter().enumerate() {
+        let source = format!("s{index}.txt");
+        file(&volume, &source, b"x").await;
+        rows.push(BulkRenameRow {
+            row_id: index.to_string(),
+            ..row(&volume, &source, name).await
+        });
+    }
+    let skipped = run(&engine, &id, rows).await;
+
+    assert_eq!(skipped, 0);
+    assert_eq!(names_in(&volume).await, sorted(&names));
+}
+
+#[tokio::test]
+async fn a_swap_of_backslash_names_hops_through_its_own_folder() {
+    let engine = TestOperations::new();
+    let (id, volume) = volume(&engine, "backslash-swap", false).await;
+    file(&volume, "sub\\a.txt", b"A").await;
+    file(&volume, "sub\\b.txt", b"B").await;
+
+    let rows = vec![
+        row(&volume, "sub\\a.txt", "sub\\b.txt").await,
+        BulkRenameRow {
+            row_id: "2".to_string(),
+            ..row(&volume, "sub\\b.txt", "sub\\a.txt").await
+        },
+    ];
+    let skipped = run(&engine, &id, rows).await;
+
+    assert_eq!(skipped, 0);
+    assert_eq!(names_in(&volume).await, sorted(&["sub\\a.txt", "sub\\b.txt"]));
+    assert_eq!(read(&volume, "sub\\a.txt").await, b"B");
+    assert_eq!(read(&volume, "sub\\b.txt").await, b"A");
+}

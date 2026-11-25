@@ -805,7 +805,10 @@ The listing hot path builds one path per entry. Today that's two allocations (`P
   a named constructor.
 - **`app-path-std-bridge`** (new check, milestone 3, Go check runner): counts `legacy_unchecked` and `as_std_legacy` per
   file in a shrink-wrapping allowlist. It's the progress meter during the conversion; at zero, milestone 11 deletes both
-  functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`.
+  functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`. Its
+  `wrapperCalls` budget counts each call through a named wrapper over the bridge (`std_of`, `into_std`, `on_volume`,
+  `seam_path`, `engine_path`), so the meter reads direct plus wrapper crossings (#1469), and its `stdJoin` budget counts
+  the write engine's untyped `std::path` joins of a name onto a folder, the Windows `/share\name` trap.
 - **The escape gate** (added in the type's review, 2026-11-18; rebuilt after its second review, the lead's decision 2).
   The hazard: app TEXT holding a live escape turned into a `std::path` value carries the escape's own UTF-8 bytes, so
   `std::fs` opens a file literally named with it (`/d/caf\u{10FEE9}` becomes four byte escapes, a "not found", or a
@@ -2084,6 +2087,78 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `ClaimedNames` ledger and the staged writes' placeholder release (`std::path` keys); `scan_walker`'s cached walk (with
   10f's lossless row); #1316 (a Rename or ` (recovered)` name of a non-UTF-8 Linux name stays lossy, byte for byte as
   before).
+- **Eleventh pass, milestone 1** (2026-11-25, branch `worktree-agent-a87892783e590c297`; helpers `join-check` (the
+  check) and `split-sweep` (the sweep below), each in its own worktree, cherry-picked): #1491 fixed, the sweep's joins
+  typed, and a check that keeps them so. Bridge calls 816 → 813 (`cmdr-operations` 391 → 388), `appTextToPath` 33 → 32,
+  `pathFromBareText` 261 → 255; wrapper calls (new budget, #1469) 173 → 195, so every crossing 989 → 1,008 (the sweep's
+  typed splits hand their answers to `std::path` bodies through a wrapper: more crossings, each now named and counted);
+  `std::path` joins in the write engine (new budget, seeded on `main` at 80 by a scan that stopped at a file's first
+  test cfg) 76. Hazards 62 → 56. No pre-existing entry grew. What it is:
+  - **The sweep**: every production `.join(` / `with_file_name(` and `file_name()` / `parent()` split in
+    `cmdr-operations` and the app's `operations_host/`, read one by one (about 300 sites; about 150 native: the local
+    engine, tempdirs, the in-flight ledger, fixtures, thread joins). 14 real Windows bugs, each fixed with a cell that
+    runs on every host (red only on Windows, as each split equals `Path`'s on macOS and Linux), all where `std::path`
+    read a POSIX volume's `a\b.txt` as `b.txt` in `a`:
+    - a same-volume move to a chosen `a\b.txt` skipped as already in place, reported Done (`item_identity`, #1491; the
+      copy's pre-skip identity too);
+    - a rename-as-move to an object store refused a target name holding `\` (`TargetNames`);
+    - a named transfer onto a server: false `SameName` / `OntoASource`, a missed `AlreadyInDestination`
+      (`leaf_validation`);
+    - the conflict preflight's pane stats and self-collision filter took another entry's answers;
+    - `refuse_routed_create` joined before reading the name as one (#1491);
+    - a remote zip's duplicate pre-check joined `/share/a.zip\dir/x.txt`, which no route serves
+      (`archive_inner_exists`);
+    - a rename, new file, or new folder named `a\b.txt` was respelled into folder `a` or failed (`look_alike.rs`'s
+      splits undid the tenth pass's typed join; `folder_and_name`);
+    - a bulk rename refused `x.txt` → `sub\x.txt` as changing folders, moved rows into `sub`, put its hop temp there,
+      and let a share that refuses `\` take one (`rename/bulk.rs`, `by_move.rs`, `refused.rs`);
+    - a same-volume move listed `/src/a` for `a\b.txt`'s hint and failed or took another entry's kind
+      (`preflight.rs::top_level_move_hints`);
+    - a failed landing's ` (recovered)` rescue went into folder `a` or stayed on a temp name (`recovered_name.rs`);
+    - a long `a\b.txt` the server refused read "not allowed" for "name too long" (`transfer_error.rs`);
+    - a compress to `sub\a.zip` replaced a look-alike in `sub` (`archive_edit/compress.rs`), and the remote edit's temp
+      reap swept `sub` (`archive_edit/remote.rs`);
+    - a transfer or delete preview took `sub/a.jpg`'s size and kind for `sub\a.jpg` (`scan_preview/volume.rs`).
+  - **Typed now**: `is_the_same_item` / `is_the_same_volume_path` (`&AppPath`), `TargetNames` (`AppPathBuf` keys, names
+    checked by `AppName::from_listed_text`), `TransferLeaves::chosen_name` (the volume engine's leaf as app text;
+    `chosen_for` stays for the local engines), `listed_name::top_level` (`Option<&str>`), the preflight-sources entry
+    point (`scan_volume_for_conflicts_within` takes `Option<Vec<AppPathBuf>>`, read at the app's and the demo's edge; a
+    refused set falls back to the name-only check), and `leaf_validation` on a name-only route (it reads the path's own
+    text as its canonical `AppPath`, no crossing).
+  - **The check** (`scripts/check/checks/desktop-rust-app-path-std-join.go`, inside `app-path-std-bridge`): two new
+    per-file ratchets. `wrapperCalls` counts each call through `std_of`, `into_std`, `on_volume`, `seam_path`, and
+    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (1,008: 813 direct + 195
+    through a wrapper; seeded at this branch's true count). `stdJoin` counts a production `Path::join` /
+    `with_file_name` in `cmdr-operations` and `operations_host/` (a typed join is told apart by the `Result` it
+    returns); a native one opts out with `// allowed-std-join: <reason>`.
+  - **Behavior changes**: a rename-as-move's target name holding a NUL refuses at the start (no volume stores one); a
+    preflight whose sources the edge refuses runs name-only; on Windows, the preflight's local self-collision asks the
+    OS only for typed ends with a native spelling (else the conflict stays).
+  - **Byte-exact on macOS and Linux** by construction: the typed splits and joins equal `Path`'s for canonical UTF-8
+    text, and every typed reading falls back to the `std::path` one (the lenient reader splits by the host's rules) for
+    text that isn't UTF-8, holds an escape-range code point, or isn't canonical, so a native Windows `C:\x\a.txt` still
+    splits at `\`. Suites on macOS: `cmdr-operations` 2,699, `cmdr-listing-wasm` 146, green.
+  - **After review** (same PR): `stdJoin` read only up to a file's first `#[cfg(test)]`, so a gated helper hid
+    production joins below it; it now skips just the gated item, sees `Path::join(`, `set_file_name`, and a `.push` onto
+    a path-shaped binding, and was re-seeded at its true count, **76**; wrapper calls end at **195** (1,008 crossings).
+    `start_rename_by_move` keys its target names by `wire_paths::engine_twin` (the source the drivers carry; the
+    reported `/a/x/` miss didn't reproduce through the public start, pinned anyway). `keep_beside` names a volume's
+    startup rescue typed. A remote zip's duplicate pre-check normalizes `dir/x/`, `dir//x`, `./x` as the index does.
+    **The zip question**: a move of a remote `x\a.txt` into a zip on Windows DID replace and lose data (the pull's
+    scratch split it into `a.txt`, an Overwrite replaced the zip's `a.txt`, and `x\a.txt` plus `y\a.txt` pulled onto one
+    scratch file before the move deleted both originals), and a remote name that isn't UTF-8 was skipped by the pull yet
+    deleted by the move on every host; both are refused per item now, counted, and kept. macOS and Linux still land
+    `x\a.txt` as its own entry, as fresh compress pins; how a zip on Windows should name it is David's call.
+  - **Found, not fixed** (each a refusal, a label, or a design call): `validation::first_shared_name` refuses remote
+    `x\a.txt` and `y\a.txt` as sharing a name, and `name_rules::ends_in_dot_name` reads `foo\..` as `..` (refusals);
+    progress labels and summary names in `rename/bulk.rs`, `delete/volume_walker.rs`, `delete/already_gone.rs`,
+    `summary.rs`, `types/leftovers.rs`, `left_in_source.rs`; `transfer_tree/model.rs`' `components()` attribution;
+    `rollback.rs:275` and `fresh_compress.rs:252` refresh a pane by the `std::path` parent.
+- **Left in 10a after the eleventh pass**: the create and rename-validity entry points (`create_*_managed` and
+  `check_rename_validity_impl` still take the parent as text, so `create.rs` holds 8 tripwire sites and `validity.rs`
+  2); the same-volume engine's `std::path` body (`move_same.rs`, `rename_merge.rs`); `ClaimedNames` and the placeholder
+  release (`std::path` keys: on Windows `a\b (1).txt` and `a/b (1).txt` hash as one key, so a claim can shadow the
+  other; a leftover placeholder at worst); `scan_walker`'s cached walk (10f's lossless row); #1316.
 
 ### 10b. `cmdr-index`
 
@@ -2679,9 +2754,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
       Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as
       text and `seam_path` re-escapes it as literal: a mangled name. 10 of the 11 are new here (`create.rs:55` is on the
       list).
-    - **Corrected hazard count: 62** after 10a's ninth pass, milestone 1 (26 on the list, 26 off it, 10 `seam_path`: the
-      two driver roots `journal.rs::record_volume_transfer_source` read are typed now); 64 after the eighth (26, 26, 12,
-      those two new there); 62 before it (26, 26, 10); 76 at the snapshot (37, 27, 12), 15 gone with 10a's seventh pass:
+    - **Corrected hazard count: 56** after 10a's eleventh pass (22 on the list, 25 off it, 9 `seam_path`: the
+      preflight's sources, `leaf_validation`'s leaf join, `target_names`, and `transfer_leaves`' two went typed). **62**
+      after 10a's ninth pass, milestone 1 (26 on the list, 26 off it, 10 `seam_path`: the two driver roots
+      `journal.rs::record_volume_transfer_source` read are typed now); 64 after the eighth (26, 26, 12, those two new
+      there); 62 before it (26, 26, 10); 76 at the snapshot (37, 27, 12), 15 gone with 10a's seventh pass:
       `resolve_dest_path` (off the list), the 11 walker and destination sites, and the `seam_path` crossings at
       `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`, one new (the anchor's fallback).
       The demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no
@@ -2691,6 +2768,29 @@ included; the hidden couplings it found are why waves B and C differ from round 
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
     and the local trash's native records. Each either moves behind a named native door the scanner doesn't match (as the
     app's `src/native_text.rs` did) or takes an `allowed-â¦` directive, which is a check change and David's call.
+  - **The exemptions to decide** (2026-11-25, after 10a's eleventh pass; "door" = a named native door in `cmdr-fs`, like
+    the app's `native_text::env_path`; "directive" = a new `allowed-native-text: <reason>` the scanner honors):
+    1. `cmdr-adb` `server.rs::locate_adb_binary`: the adb path from an env var is OS text: door.
+    2. `cmdr-adb` `server/binary_search.rs::env_dir`: `ANDROID_HOME`-style env dirs are OS text: door.
+    3. `cmdr-adb` `server/binary_search.rs::resolve`: a hardcoded native search path: door.
+    4. `cmdr-fs` `sqlite_util.rs::database_files`: a DB's `-wal`/`-shm` siblings are the app's own files: door.
+    5. `cmdr-operations` `in_flight_log_writer.rs::swap_in`: the ledger log's own file on local disk: door.
+    6. `cmdr-index` `manager/start.rs::start_scan`: `CMDR_E2E_START_PATH` is OS text: door.
+    7. `cmdr-index` seven benches and spikes: a root from an env var is OS text: door (one `env_path`).
+    8. `cmdr-sftp` `volume/testing.rs::fixture_key_path`: the fixture's key dir env var: door (`var_os`).
+    9. `cmdr-smb` `volume/test_support.rs::make_test_volume_full`: a fixture's local mount point: door.
+    10. `cmdr-fs` `testing/disk_images/facts.rs::image_named`: `hdiutil` output is OS text: door.
+    11. `cmdr-archive` `apple_double.rs::push_unique`: an xattr key, not a path: directive.
+    12. `cmdr-archive` `read/tar.rs::pax_xattrs`: a PAX record's xattr key, not a path: directive.
+    13. `cmdr-smb` `volume/copy_xattrs.rs::source_xattrs`: a stream name used as an xattr key: directive.
+    14. Three test xattr-key literals (`cmdr-archive` two, `cmdr-fs` `caps_tests.rs`), not paths: directive.
+    15. `cmdr-restic` `tree_tests.rs::file`: `rustic_core` takes node names as `OsStr`, upstream API: directive.
+    16. `cmdr-operations` `delete/cloud_trash.rs::facts_from` and `trash_tests.rs:363`: trash records are local only
+        (`trash_files_start` runs only on the local `root` disk, else `TrashNotSupported`, verified 2026-11-25 from the
+        code): directive.
+    17. The write engine's native joins (`stdJoin`, 76: the local engine, tempdirs, the in-flight ledger): per-site
+        `allowed-std-join`, ❌ not a path-wide exemption, which would silence remote-reaching code that lands there
+        later.
   - **The list** (line numbers at this branch's commit; the meter re-derives them, so re-run the check's regexes after
     any edit):
     - `apps/desktop/src-tauri/src/agent/store/migrations.rs`

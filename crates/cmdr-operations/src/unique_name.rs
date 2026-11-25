@@ -352,7 +352,7 @@ pub(super) const RESCUE_NAME_ATTEMPTS: u32 = 8;
 /// displaced-original rescue (`overwrite::DisplacedEntry::keep_as_recovered_sibling`)
 /// both start here, so a person meets one convention rather than two. When it's
 /// taken, both continue the house ` (N)` series off it through
-/// [`NameCandidates`].
+/// [`NameCandidates`]. The volume rescue takes [`recovered_sibling_app`].
 pub(super) fn recovered_sibling(orig: &Path) -> PathBuf {
     let parent = orig.parent().unwrap_or(Path::new(""));
     let stem = orig.file_stem().map(|s| s.to_string_lossy().to_string());
@@ -364,6 +364,24 @@ pub(super) fn recovered_sibling(orig: &Path) -> PathBuf {
         (None, _) => format!("cmdr{RECOVERED_SUFFIX}"),
     };
     sibling_in(parent, &name)
+}
+
+/// [`recovered_sibling`] for a path on a volume, split and joined by the app path's own
+/// arithmetic, so a POSIX server's `/dir/a\b.txt` rescues as `/dir/a\b (recovered).txt`
+/// on every host, where Windows' `Path` split it into `/dir/a/b (recovered).txt`, another
+/// folder. The stem and extension read as the lossy text `Path` read them, so every other
+/// name rescues byte for byte as before. `None` when the folder can't hold the name (a
+/// drive folder and a name holding `\`), which no ` (N)` fixes.
+pub(super) fn recovered_sibling_app(orig: &AppPath) -> Option<AppPathBuf> {
+    let parent = orig.parent().unwrap_or(orig);
+    let name = match (orig.file_stem().map(lossy), orig.extension()) {
+        (Some(stem), Some(ext)) => format!("{stem}{RECOVERED_SUFFIX}.{}", lossy(ext)),
+        (Some(stem), None) => format!("{stem}{RECOVERED_SUFFIX}"),
+        (None, _) => format!("cmdr{RECOVERED_SUFFIX}"),
+    };
+    ListedFolder::new(parent)
+        .join(&AppName::from_listed_text(&name).ok()?)
+        .ok()
 }
 
 /// `name` in `parent`, joined with the separator `parent` is spelled with. A

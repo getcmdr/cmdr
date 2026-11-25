@@ -73,14 +73,23 @@ type appPathStdBridgeAllowlist struct {
 	// PathFromBareText is the per-file budget of a bare path- or name-shaped identifier (or a
 	// collection mapped) handed to a `std::path` constructor: the coarse floor beside `AppTextToPath`.
 	PathFromBareText map[string]int `json:"pathFromBareText"`
+	// WrapperCalls is the per-file budget of calls through a named bridge wrapper
+	// (`appPathBridgeWrappers`), so the meter reads direct plus wrapper crossings (#1469).
+	WrapperCalls map[string]int `json:"wrapperCalls"`
+	// StdJoin is the per-file budget of `std::path` joins of a name onto a folder in the write
+	// engine's production code (`stdJoinRoots`).
+	StdJoin map[string]int `json:"stdJoin"`
 }
 
 type appPathScan struct {
-	bridge     []appPathStdBridgeSite
-	textToPath []appPathStdBridgeSite
-	bareText   []appPathStdBridgeSite
-	producers  []appPathStdBridgeSite
-	osTextHops []appPathStdBridgeSite
+	bridge       []appPathStdBridgeSite
+	wrapperCalls []appPathStdBridgeSite
+	stdJoins     []appPathStdBridgeSite
+	joinOrphans  []orphanDirective
+	textToPath   []appPathStdBridgeSite
+	bareText     []appPathStdBridgeSite
+	producers    []appPathStdBridgeSite
+	osTextHops   []appPathStdBridgeSite
 }
 
 type appPathStdBridgeSite struct {
@@ -107,6 +116,9 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 			return CheckResult{}, fmt.Errorf("failed to scan Rust files: %w", scanErr)
 		}
 		scan.bridge = append(scan.bridge, rootScan.bridge...)
+		scan.wrapperCalls = append(scan.wrapperCalls, rootScan.wrapperCalls...)
+		scan.stdJoins = append(scan.stdJoins, rootScan.stdJoins...)
+		scan.joinOrphans = append(scan.joinOrphans, rootScan.joinOrphans...)
 		scan.textToPath = append(scan.textToPath, rootScan.textToPath...)
 		scan.bareText = append(scan.bareText, rootScan.bareText...)
 		scan.producers = append(scan.producers, rootScan.producers...)
@@ -124,6 +136,10 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 		shrinkwrapCountAllowlist(allowlist.AppTextToPath, textCounts, "no app text turned into a std path left")...)
 	staleChanges = append(staleChanges,
 		shrinkwrapCountAllowlist(allowlist.PathFromBareText, bareCounts, "no bare path text turned into a std path left")...)
+	staleChanges = append(staleChanges,
+		shrinkwrapCountAllowlist(allowlist.WrapperCalls, siteCounts(scan.wrapperCalls), "no bridge wrapper calls left")...)
+	staleChanges = append(staleChanges,
+		shrinkwrapCountAllowlist(allowlist.StdJoin, siteCounts(scan.stdJoins), "no std path joins left")...)
 	if len(staleChanges) > 0 && !ctx.CI {
 		if err := writeJSONAllowlist(filepath.Join(ctx.RootDir, appPathStdBridgeAllowlistRelPath), allowlist); err != nil {
 			return CheckResult{}, err
@@ -137,15 +153,14 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 		return CheckResult{}, fmt.Errorf("%s", strings.Join(appendNonEmpty(failures, staleMsg), "\n"))
 	}
 
-	total := 0
-	for _, n := range allowlist.Files {
-		total += n
-	}
-	okMsg := fmt.Sprintf("%d Rust %s scanned, %d app-path bridge %s left in %d %s, %d app-text-to-std-path %s left",
+	total, wrapperTotal, joinTotal := budgetTotal(allowlist.Files), budgetTotal(allowlist.WrapperCalls), budgetTotal(allowlist.StdJoin)
+	okMsg := fmt.Sprintf("%d Rust %s scanned, %d app-path bridge %s left (%d direct in %d %s + %d through a wrapper), "+
+		"%d app-text-to-std-path %s, %d std path %s in the write engine left",
 		scanned, Pluralize(scanned, "file", "files"),
-		total, Pluralize(total, "call", "calls"),
-		len(allowlist.Files), Pluralize(len(allowlist.Files), "file", "files"),
-		textTotal, Pluralize(textTotal, "site", "sites"))
+		total+wrapperTotal, Pluralize(total+wrapperTotal, "crossing", "crossings"),
+		total, len(allowlist.Files), Pluralize(len(allowlist.Files), "file", "files"), wrapperTotal,
+		textTotal, Pluralize(textTotal, "site", "sites"),
+		joinTotal, Pluralize(joinTotal, "join", "joins"))
 	if staleMsg != "" {
 		return SuccessWithChanges(okMsg + "; " + staleMsg), nil
 	}
@@ -158,6 +173,9 @@ func RunAppPathStdBridge(ctx *CheckContext) (CheckResult, error) {
 func (scan *appPathScan) classify(line string, site appPathStdBridgeSite, testFile bool) {
 	for range appPathStdBridgePattern.FindAllStringSubmatchIndex(line, -1) {
 		scan.bridge = append(scan.bridge, site)
+	}
+	for range wrapperCallCount(line, site.relPath) {
+		scan.wrapperCalls = append(scan.wrapperCalls, site)
 	}
 	member := false
 	for _, pattern := range appTextToPathPatterns {
@@ -181,6 +199,14 @@ func (scan *appPathScan) classify(line string, site appPathStdBridgeSite, testFi
 	if !testFile && escapeProducerPattern.MatchString(line) {
 		scan.producers = append(scan.producers, site)
 	}
+}
+
+func budgetTotal(budget map[string]int) int {
+	total := 0
+	for _, n := range budget {
+		total += n
+	}
+	return total
 }
 
 func siteCounts(sites []appPathStdBridgeSite) map[string]int {
@@ -238,22 +264,16 @@ func shrinkwrapCountAllowlist(files map[string]int, counts map[string]int, goneR
 // loadAppPathStdBridgeAllowlist reads the budget. A missing or unparsable file yields an
 // empty one, so every call gets reported.
 func loadAppPathStdBridgeAllowlist(rootDir string) appPathStdBridgeAllowlist {
-	list := appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}, PathFromBareText: map[string]int{}}
-	data, err := os.ReadFile(filepath.Join(rootDir, appPathStdBridgeAllowlistRelPath))
-	if err != nil {
-		return list
+	var list appPathStdBridgeAllowlist
+	if data, err := os.ReadFile(filepath.Join(rootDir, appPathStdBridgeAllowlistRelPath)); err == nil {
+		if json.Unmarshal(data, &list) != nil {
+			list = appPathStdBridgeAllowlist{}
+		}
 	}
-	if err := json.Unmarshal(data, &list); err != nil {
-		return appPathStdBridgeAllowlist{Files: map[string]int{}, AppTextToPath: map[string]int{}, PathFromBareText: map[string]int{}}
-	}
-	if list.Files == nil {
-		list.Files = map[string]int{}
-	}
-	if list.AppTextToPath == nil {
-		list.AppTextToPath = map[string]int{}
-	}
-	if list.PathFromBareText == nil {
-		list.PathFromBareText = map[string]int{}
+	for _, budget := range []*map[string]int{&list.Files, &list.AppTextToPath, &list.PathFromBareText, &list.WrapperCalls, &list.StdJoin} {
+		if *budget == nil {
+			*budget = map[string]int{}
+		}
 	}
 	return list
 }
@@ -285,6 +305,11 @@ func scanForAppPathStdBridge(rootDir, srcDir string) (appPathScan, int, error) {
 			return readErr
 		}
 		testFile := isRustTestFile(relPath) || strings.Contains(relPath, "/testing/") || strings.Contains(relPath, "test_support")
+		if !testFile && inStdJoinScope(relPath) {
+			joins, orphans := scanStdJoins(relPath, lines)
+			scan.stdJoins = append(scan.stdJoins, joins...)
+			scan.joinOrphans = append(scan.joinOrphans, orphans...)
+		}
 		for idx, line := range lines {
 			if strings.HasPrefix(strings.TrimLeft(line, " \t"), "//") {
 				continue
@@ -306,6 +331,20 @@ func (scan *appPathScan) failures(allowlist appPathStdBridgeAllowlist) ([]string
 				"`join`, `parent`, `strip_prefix`, and the native crossings `to_native` / `from_native`; "+
 				"the bridge only shrinks, crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
 			len(over), Pluralize(len(over), "call", "calls"), appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.wrapperCalls, siteCounts(scan.wrapperCalls), allowlist.WrapperCalls); len(over) > 0 {
+		failures = append(failures, fmt.Sprintf(
+			"found %d %s through a named bridge wrapper (`%s`) over the file's budget in %s: a wrapper call "+
+				"crosses `std::path` like a direct bridge call, so speak `AppPath` arithmetic instead "+
+				"(crates/cmdr-fs/DETAILS.md § \"App paths\"):\n%s",
+			len(over), Pluralize(len(over), "call", "calls"), strings.Join(appPathBridgeWrappers, "`, `"),
+			appPathStdBridgeAllowlistRelPath, formatSites(over)))
+	}
+	if over := overBudget(scan.stdJoins, siteCounts(scan.stdJoins), allowlist.StdJoin); len(over) > 0 {
+		failures = append(failures, formatStdJoinFailure(over))
+	}
+	if len(scan.joinOrphans) > 0 {
+		failures = append(failures, formatOrphanDirectives(stdJoinDirective, scan.joinOrphans))
 	}
 	if over := overBudget(scan.textToPath, siteCounts(scan.textToPath), allowlist.AppTextToPath); len(over) > 0 {
 		failures = append(failures, fmt.Sprintf(

@@ -463,8 +463,11 @@ specific to volumes:
   together (`dest_name_index::fold`, which is `cmdr_fs::name_fold`'s NFC + lowercase, the same key `DestNameIndex`
   buckets destination names under). The leaf fold settles a case-differing name (SMB shares, macOS volumes) and an
   NFC/NFD-differing one, which is most of what `dev+ino` buys the local engine. A non-UTF-8 leaf can't be folded the way
-  a backend would, so there only a byte-exact match counts. It's answered at the TOP of `resolve_volume_conflict`,
-  before the destination probe and before the dir/dir short-circuit below, because both are wrong for this shape.
+  a backend would, so there only a byte-exact match counts. Both paths are `AppPath`s, split by the app path's rules: on
+  Windows `std::path` split a POSIX server's `a\b.txt` into `b.txt` in `a`, so a same-volume move to a chosen `a\b.txt`
+  from `/dst/a/b.txt` read as already in place and reported Done without moving (#1491, `named_leaves_volume_tests.rs`).
+  It's answered at the TOP of `resolve_volume_conflict`, before the destination probe and before the dir/dir
+  short-circuit below, because both are wrong for this shape.
 - **The PARENTS are compared as they are, never folded** (the rule lives on `is_the_same_volume_path`, and so does the
   ban on widening it). `fold` answers "would this backend treat these two names as the same, within one listing", and
   the only component a transfer has a listing for is the leaf. Whether `/DCIM` and `/dcim` are one directory is the

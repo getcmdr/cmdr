@@ -605,3 +605,63 @@ async fn scan_preview_keeps_a_result_per_source_that_differs_only_in_a_bare_sche
     let keys: Vec<&str> = result.per_path.iter().map(|(path, _)| path.as_str()).collect();
     assert_eq!(keys, ["sftp:", "sftp://"]);
 }
+
+/// A POSIX volume's `sub\a.jpg` is one name in `/dcim` on every host, so the pane's
+/// listing of `/dcim` answers for it. On Windows `Path` read it as `a.jpg` in
+/// `/dcim/sub`, and a pane showing `/dcim/sub` answered with that other file's size;
+/// the delete's outage re-check (`entry_in_parent_listing`) read the same wrong entry.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn scan_preview_reads_a_backslash_name_from_its_own_folder() {
+    let panes = PaneListings::new();
+    let vid = unique("backslash");
+    let vol = Arc::new(CountingWatchedVolume::new("watched-vol", true));
+    panes.show_volume(&vid, vol.clone() as Arc<dyn Volume>);
+    let mut names = ["sub\\a.jpg", "foo\\..", "..\\bar", "a:b", "trail.", "trail ", "C:\\x"];
+    let _own = insert_listing(
+        &panes,
+        "own",
+        &vid,
+        "/dcim",
+        names.iter().map(|name| make_file_entry(name, "/dcim", 1000)).collect(),
+    );
+    // The decoy `Path`'s Windows split pointed at.
+    let _decoy = insert_listing(
+        &panes,
+        "decoy",
+        &vid,
+        "/dcim/sub",
+        vec![make_file_entry("a.jpg", "/dcim/sub", 9999)],
+    );
+
+    names.sort_unstable();
+    let sources: Vec<PathBuf> = names
+        .iter()
+        .map(|name| PathBuf::from(format!("/dcim/{name}")))
+        .collect();
+    let result = run_oracle_aware_batch_scan(
+        panes.as_ref(),
+        vol.as_ref(),
+        &vid,
+        &sources,
+        &|| false,
+        None,
+        &|_: cmdr_fs::volume::ListingProgress| {},
+        None,
+        cmdr_fs::os_junk_files::OsJunkFiles::Include,
+    )
+    .await
+    .expect("oracle-aware batch scan should succeed");
+
+    assert_eq!(vol.list_dir_count(), 0, "answered from the panes' listings");
+    assert_eq!(result.aggregate.file_count, 7);
+    assert_eq!(result.aggregate.total_bytes, 7000, "no decoy's 9,999 bytes");
+
+    let entry = super::scan_preview::entry_in_parent_listing(
+        panes.as_ref(),
+        vol.as_ref(),
+        &vid,
+        std::path::Path::new("/dcim/sub\\a.jpg"),
+    )
+    .expect("the listed entry");
+    assert_eq!(entry.size, Some(1000), "the entry in /dcim, not the decoy");
+}

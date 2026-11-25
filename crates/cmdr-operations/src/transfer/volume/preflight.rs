@@ -25,7 +25,7 @@
 //! top-level directories from the file-only bulk-skip.
 
 use crate::rt::Instant;
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -42,7 +42,7 @@ use super::super::super::types::{
 use super::super::volume_outage::{OutageAnnounce, OutageEnd, through_outages, wait_while_out};
 use super::folder_metadata::SourceFolderDates;
 use super::link_carry::LinkCarry;
-use super::listed_name::{on_volume, std_of};
+use super::listed_name::{native_text, on_volume, std_of};
 use super::scan_wait::ScanWait;
 use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_failure_after_wait, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -573,11 +573,22 @@ pub(super) async fn top_level_move_hints(
     }
 
     // Group what's left by parent and list each parent once, indexing entries
-    // by name for an O(1) per-source lookup.
-    let mut by_parent: HashMap<PathBuf, Vec<&PathBuf>> = HashMap::new();
+    // by name for an O(1) per-source lookup. Split by the app path: on Windows
+    // `Path` read a POSIX volume's `/share/a\b.txt` as `b.txt` in `/share/a`,
+    // so the move listed a folder that may not be there (failing the move) or
+    // took the hint of `/share/a/b.txt`, another entry.
+    let mut by_parent: HashMap<AppPathBuf, Vec<(&PathBuf, String)>> = HashMap::new();
     for path in from_listing {
-        let parent = path.parent().map(Path::to_path_buf).unwrap_or_default();
-        by_parent.entry(parent).or_default().push(path);
+        let app = on_volume(path);
+        // A source with no listed name of its own (a root, a trailing `..`, a name
+        // that isn't UTF-8) gets no hint: the move asks `entry_kind` of it.
+        let (Some(parent), Some(name)) = (app.parent(), app.file_name().and_then(native_text)) else {
+            continue;
+        };
+        by_parent
+            .entry(parent.to_owned())
+            .or_default()
+            .push((path, name.into_owned()));
     }
 
     for (parent, paths) in by_parent {
@@ -586,15 +597,15 @@ pub(super) async fn top_level_move_hints(
         // the lost connection, the parent as context.
         let entries = through_outages(state, &[volume], || async {
             volume
-                .list_directory(&AppPath::legacy_unchecked(&parent), None)
+                .list_directory(&parent, None)
                 .await
                 .map_err(|e| PathedVolumeError::new(PathRole::Source, &parent, e))
         })
         .await
         .map_err(|failure| WriteFailure::from(failure).error)?;
         let by_name: HashMap<&str, &cmdr_fs::entry::FileEntry> = entries.iter().map(|e| (e.name.as_str(), e)).collect();
-        for path in paths {
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        for (path, name) in paths {
+            let name = name.as_str();
             // A folder the listing can't vouch for (a Samba share lists a link
             // as one) gets no hint, so the move asks `entry_kind` of it
             // (`crate::hidden_links`, #613).

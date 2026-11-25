@@ -2,27 +2,24 @@
 //! rename (`name_rules::check_new_name`, #1229): a row whose new name the folder
 //! refuses fails in place, before anything moves, and the rest run.
 
-use cmdr_fs::twin_path;
-
 use super::super::super::host::EngineHost;
-use super::{BulkRenameOutcome, BulkRenameRow, BulkRenameRun};
+use super::{BulkRenameOutcome, BulkRenameRow, BulkRenameRun, folder_of};
+use crate::transfer::volume::label_of;
 
 /// Which rows' new names their folder refuses, in row order. Every row shares
 /// one folder (`NotInOneFolder` refused the rest), so the rules are looked up
 /// once. A `.` or `..` target is caught on the raw path: `Path::file_name`
 /// can't see it (`name_rules::ends_in_dot_name`).
 pub(super) async fn refused_rows(host: &EngineHost, volume_id: &str, rows: &[BulkRenameRow]) -> Vec<bool> {
-    let Some(folder) = rows.first().and_then(|row| twin_path::folder_of(&row.destination)) else {
+    let Some(folder) = rows.first().and_then(|row| folder_of(&row.destination)) else {
         return vec![false; rows.len()];
     };
-    let rules = crate::name_rules::name_rules_at(host, volume_id, folder).await;
+    let rules = crate::name_rules::name_rules_at(host, volume_id, &folder).await;
     rows.iter()
         .map(|row| {
-            let name = row
-                .destination
-                .file_name()
-                .map(|name| name.to_string_lossy())
-                .unwrap_or_default();
+            // The app path's own last name: on Windows `Path` read a POSIX volume's
+            // `a\b.txt` as `b.txt`, so a share that refuses `\` passed the row.
+            let name = label_of(&crate::wire_paths::seam_path(&row.destination)).unwrap_or_default();
             crate::name_rules::ends_in_dot_name(&row.destination)
                 || cmdr_fs::validation::validate_filename(&name, rules).is_err()
         })

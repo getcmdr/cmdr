@@ -249,6 +249,9 @@ mod link_following_backend_tests;
 /// holding `\` is one name.
 #[cfg(test)]
 mod listed_row_tests;
+/// A same-volume move's top-level hints read each source in its own folder.
+#[cfg(test)]
+mod preflight_hints_tests;
 /// A copy's own scan over a share that drops mid-walk waits for it.
 #[cfg(test)]
 mod preflight_outage_tests;
