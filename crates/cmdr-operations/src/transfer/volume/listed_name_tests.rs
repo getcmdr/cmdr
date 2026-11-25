@@ -5,17 +5,22 @@ use super::*;
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::PathFlavor;
 
+/// A test's path text as the app path a pane holds on every host: canonical POSIX or
+/// scheme text, a drive or UNC path, or (a scheme root's trailing `/`) the wire's reading.
+fn parse(text: &str) -> AppPathBuf {
+    AppPath::from_normalized(text)
+        .or_else(|_| AppPath::from_normalized_as(text, PathFlavor::Windows))
+        .map(ToOwned::to_owned)
+        .or_else(|_| AppPathBuf::from_wire(text))
+        .unwrap_or_else(|why| panic!("{text}: {why}"))
+}
+
 fn at(dest: &str, source: &str, chosen: Option<&OsStr>) -> TopLevel {
-    let parse = |text: &str| {
-        AppPathBuf::from_wire(text)
-            .or_else(|_| AppPathBuf::parse(text, PathFlavor::Windows))
-            .unwrap_or_else(|why| panic!("{text}: {why}"))
-    };
     top_level(&parse(dest), &parse(source), chosen)
 }
 
 fn landed(text: &str) -> TopLevel {
-    TopLevel::At(AppPathBuf::from_wire(text).unwrap_or_else(|why| panic!("{text}: {why}")))
+    TopLevel::At(parse(text))
 }
 
 /// ❗ A root keeps the last name `Path::file_name` read for it on `main`, so copying a
