@@ -3,6 +3,9 @@
 //!
 //! Only order-free work goes here. A step whose position in the setup hook is part of its
 //! contract stays on the spine in `lib.rs`, where its ordering comment can be read at the call.
+// Windows: overrides the crate-wide `expect(dead_code)` (`lib.rs`), so an installer nothing calls
+// warns on every OS.
+#![warn(dead_code)]
 
 use tauri::AppHandle;
 
@@ -11,7 +14,14 @@ use tauri::AppHandle;
 #[cfg_attr(target_os = "windows", path = "windows.rs")]
 mod imp;
 
-const _: fn(&AppHandle) = install;
+/// The signature pin, in an `_`-named fn: a `const _: fn(..) = install;` would count as a use
+/// (`volumes/platform/mod.rs`, `_startup_signatures`).
+fn _signature() {
+    let _: fn(&AppHandle) = install;
+}
+
+#[cfg(test)]
+mod seams_test;
 
 /// Starts this OS's installers. Call once, from the setup hook, on the main thread.
 ///

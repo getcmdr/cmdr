@@ -1,6 +1,9 @@
 //! How each OS finds its volumes: the locations it lists, the mount a path sits on, its SMB
 //! mounts, and the watcher that notices a mount come and go. A platform seam
 //! (`docs/guides/platform-seams.md`).
+// Windows: overrides the crate-wide `expect(dead_code)` (`lib.rs`) here, so a seam function no
+// caller reaches warns on every OS. #1481 was a drive watcher nothing started.
+#![warn(dead_code)]
 
 use std::path::Path;
 use std::sync::Arc;
@@ -46,8 +49,15 @@ const _: fn(&str) -> Option<u64> = mount_identity_at;
 const _: fn(u64) -> Option<bool> = has_mount_identity;
 const _: fn(&Path) -> Option<(String, String)> = mount_type_and_source_for;
 const _: fn(&str) -> Option<SpaceInfo> = live_volume_space;
-const _: fn(&AppHandle) = start_volume_watcher;
-const _: fn() = stop_volume_watcher;
+/// The watcher's start and stop, pinned like the rest but in an `_`-named fn: rustc counts a
+/// `const _: fn(..) = f;` as a use of `f`, which would keep a watcher nobody starts from ever
+/// warning; an `_`-named fn pins the signature without being one (verified with rustc 1.100,
+/// 2026-11-25).
+fn _startup_signatures() {
+    let _: fn(&AppHandle) = start_volume_watcher;
+    let _: fn() = stop_volume_watcher;
+}
+
 const _: fn() -> Arc<dyn Volume> = root_volume;
 const _: fn(&str, &Path, MountClass) -> Arc<dyn Volume> = local_volume_on_mount;
 const _: fn(&dyn Volume) -> bool = is_local_volume;

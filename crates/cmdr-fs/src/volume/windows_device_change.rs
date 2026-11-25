@@ -254,6 +254,29 @@ pub fn diff_drives(known: &[WindowsDrive], now: &[WindowsDrive]) -> DriveTableCh
     }
 }
 
+/// The roots a re-read found gone, sorted by what each one leaving means.
+// DEFAULT-OK: empty is "nothing left", the truthful answer for no leaving roots.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct Leaving {
+    /// Roots that really left: announce each one's leave.
+    pub gone: Vec<WindowsDrive>,
+    /// A whole-share mapping's UNC alias whose mapped letter went while the share still answers:
+    /// no leave, since a pane on `//server/share/…` is still on a live share. Its root is adopted
+    /// again as the share's own volume (the same id, `unc_drive`'s), so the letter's leave
+    /// promotes it rather than taking the volume down (#1492).
+    pub kept_shares: Vec<WindowsDrive>,
+}
+
+/// Sorts `left` ([`diff_drives`]): an alias root that `still_answers` stays as its share, the
+/// rest are gone. Only an alias is asked, so a dead server costs no probe of a letter.
+pub fn sort_leaving(left: &[WindowsDrive], still_answers: impl Fn(&WindowsDrive) -> bool) -> Leaving {
+    let (kept_shares, gone) = left
+        .iter()
+        .cloned()
+        .partition(|drive| drive.is_alias && still_answers(drive));
+    Leaving { gone, kept_shares }
+}
+
 /// Whether Cmdr keeps a handle on `drive` to hear its removal query (`DBT_DEVTYP_HANDLE`): a
 /// local disk, stick, card, or disc that isn't the system drive. A share, a `subst` folder,
 /// and a RAM disk have no device to remove, and an alias root is its drive's second address.
@@ -342,6 +365,36 @@ mod tests {
         };
         let changes = diff_drives(&[alias.clone(), mapped.clone()], &[]);
         assert_eq!(changes.left, [alias, mapped]);
+    }
+
+    /// #1492: unmapping a whole-share letter keeps the share's UNC root while the share answers,
+    /// so a pane on it stays; a share that doesn't answer leaves with its letter.
+    #[test]
+    fn a_whole_share_letter_leaving_keeps_its_share_while_the_share_answers() {
+        let mapped = crate::volume::windows_volume_ids::mapped_drive("Z:/", Some(r"\\testnas.local\media"), "C:/");
+        let alias = WindowsDrive {
+            root: "//testnas.local/media/".to_string(),
+            is_alias: true,
+            share_root: None,
+            ..mapped.clone()
+        };
+        let left = diff_drives(&[alias.clone(), mapped.clone()], &[]).left;
+
+        let answering = sort_leaving(&left, |_| true);
+        assert_eq!(answering.gone, std::slice::from_ref(&mapped));
+        assert_eq!(answering.kept_shares, std::slice::from_ref(&alias));
+
+        let dead = sort_leaving(&left, |_| false);
+        assert_eq!(dead.gone, [alias, mapped.clone()]);
+        assert!(dead.kept_shares.is_empty());
+
+        let asked = std::cell::Cell::new(0);
+        let letter_only = sort_leaving(std::slice::from_ref(&mapped), |_| {
+            asked.set(asked.get() + 1);
+            true
+        });
+        assert_eq!(letter_only.gone, [mapped]);
+        assert_eq!(asked.get(), 0, "a letter is never probed");
     }
 
     /// #1481: a drive mapped to a folder below a share arrives as its own volume at its letter,

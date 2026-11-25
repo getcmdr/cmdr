@@ -380,7 +380,9 @@ static INDEX_STATUS_READS: BlockingBudget = BlockingBudget::new(8);
 /// its own row's status, ❌ never the whole resource or its healthy rows.
 #[cfg(not(target_os = "linux"))]
 async fn index_statuses(rows: &[&crate::volume_listing::LocationInfo]) -> Vec<Option<cmdr_index::VolumeIndexStatus>> {
-    // A boot volume rooted at a drive (`C:/`, not `/`) is Windows' layout, a volume per drive.
+    // A boot volume rooted at a drive (`C:/`, not `/`) is Windows' layout, a volume per drive. A
+    // runtime fact, ❌ not `cfg!(windows)`: that's one more platform cfg outside a seam, which
+    // `platform-cfg-placement` refuses.
     let a_volume_per_drive = cmdr_fs::mount_layout::boot_volume_root() != "/";
     let reads = rows.iter().map(|loc| {
         let (path, id) = (loc.path.clone(), loc.id.clone());

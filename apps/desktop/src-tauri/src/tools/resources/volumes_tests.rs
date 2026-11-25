@@ -86,6 +86,15 @@ async fn a_mapped_drive_reads_its_own_index_status_and_not_the_system_drives() {
     use cmdr_index::testing::reserve_initializing_index_for_test;
 
     let _root = reserve_initializing_index_for_test(cmdr_index::ROOT_VOLUME_ID, IndexVolumeKind::Local);
+    // Forgets the stand-in root index however the cell ends, a failed assert included.
+    struct ForgetRoot;
+    impl Drop for ForgetRoot {
+        fn drop(&mut self) {
+            // a cell that already ended has nothing left to forget
+            let _ = index().forget_volume(cmdr_index::ROOT_VOLUME_ID);
+        }
+    }
+    let _forget = ForgetRoot;
     assert_eq!(
         index_status_token(&index().volume_status(cmdr_index::ROOT_VOLUME_ID)),
         "fresh",
@@ -123,7 +132,6 @@ async fn a_mapped_drive_reads_its_own_index_status_and_not_the_system_drives() {
         mount_account: None,
     };
     let volumes = snapshot_volumes_from(std::slice::from_ref(&row)).await;
-    let _ = index().forget_volume(cmdr_index::ROOT_VOLUME_ID);
 
     let summary = volumes
         .iter()

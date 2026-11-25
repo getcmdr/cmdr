@@ -126,7 +126,6 @@
       "outsideSeam": 3
     },
     "apps/desktop/src-tauri/src/file_system/volume/drive_release/release.rs": {
-      "negated": 1,
       "outsideSeam": 1
     },
     "apps/desktop/src-tauri/src/file_system/volume/drive_release/resume.rs": {

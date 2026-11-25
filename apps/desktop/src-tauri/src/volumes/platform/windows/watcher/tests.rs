@@ -69,8 +69,8 @@ impl Recorder {
 
 impl DriveWatch {
     /// Starts a watch and waits until its worker has read the drives already there.
-    fn started(recorder: Recorder) -> Self {
-        let watch = Self::start(recorder).expect("the drive watch starts");
+    fn started(announce: impl Announce) -> Self {
+        let watch = Self::start(announce).expect("the drive watch starts");
         watch
             .baseline
             .recv_timeout(Duration::from_secs(10))
@@ -298,9 +298,34 @@ fn admin_share_path(dir: &std::path::Path) -> String {
     format!(r"\\localhost\{drive}$\{rest}")
 }
 
+/// `net use {letter}: {unc}`, taken down when the guard drops. `None` only off CI, on a machine
+/// that wouldn't map it (no admin share, no Server service); on CI that fails the cell, so it
+/// can't pass while testing nothing.
+fn map_drive(letter: char, unc: &str) -> Option<NetUse> {
+    let guard = NetUse(letter);
+    let mapped = Command::new("net")
+        .args([
+            "use".to_owned(),
+            format!("{letter}:"),
+            unc.to_owned(),
+            "/persistent:no".to_owned(),
+        ])
+        .status()
+        .expect("run net use");
+    if mapped.success() {
+        return Some(guard);
+    }
+    assert!(
+        std::env::var_os("CI").is_none(),
+        "net use {letter}: {unc} failed on CI ({mapped})"
+    );
+    log::warn!(target: "volumes::windows", "Skipping: this machine wouldn't map {unc} ({mapped})");
+    None
+}
+
 /// #1481: a drive mapped from a console (`net use`, `WNetAddConnection2`) to a folder below a
 /// share reaches the watcher with no refresh, as a share of its own rooted at the folder, and
-/// nothing indexes it. A runner whose admin share can't be mapped skips, saying so.
+/// nothing indexes it.
 #[test]
 fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
     let dir = TestDir::new("mapped-folder");
@@ -310,20 +335,9 @@ fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
     let recorder = Recorder::default();
     let watch = DriveWatch::started(recorder.clone());
 
-    let mapping = NetUse(letter);
-    let mapped = Command::new("net")
-        .args([
-            "use".to_owned(),
-            format!("{letter}:"),
-            unc.clone(),
-            "/persistent:no".to_owned(),
-        ])
-        .status()
-        .expect("run net use");
-    if !mapped.success() {
-        log::warn!(target: "volumes::windows", "Skipping: this machine wouldn't map {unc} ({mapped})");
+    let Some(mapping) = map_drive(letter, &unc) else {
         return;
-    }
+    };
     wait_until(Duration::from_secs(15), "the mapped drive's arrival", || {
         recorder.saw_arrive(&root)
     });
@@ -335,9 +349,10 @@ fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
     );
     let id = crate::volumes::volume_id_for_mount(&root);
     assert_eq!(id, expected.id, "the drive keys on the folder it maps");
+    let share_root = cmdr_fs::volume::windows_volume_ids::unc_app_root(&unc).expect("a share");
     assert_ne!(
         id,
-        crate::volumes::volume_id_for_mount(&format!("//localhost/{letter}$/")),
+        crate::volumes::volume_id_for_mount(&share_root),
         "a folder below the share isn't the share"
     );
     Lifecycle.arrived(&root);
@@ -360,6 +375,64 @@ fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
         recorder.saw_leave(&root)
     });
     drop(watch);
+}
+
+/// The app's lifecycle, recorded too, so a cell can wait for what the watcher announced.
+#[derive(Clone, Default)]
+struct RecordedLifecycle(Recorder);
+
+impl Announce for RecordedLifecycle {
+    fn arrived(&self, root: &str) {
+        Lifecycle.arrived(root);
+        self.0.arrived(root);
+    }
+
+    fn left(&self, root: &str) {
+        Lifecycle.left(root);
+        self.0.left(root);
+    }
+}
+
+/// #1492: with a letter mapped to a whole share, unmapping the letter keeps the share's volume
+/// at its UNC root while the share still answers, so a pane on `//server/share/…` stays.
+#[test]
+fn unmapping_a_whole_share_keeps_the_share_a_unc_pane_is_on() {
+    let dir = TestDir::new("mapped-share");
+    let letter = free_letter('F'..='I');
+    let root = format!("{letter}:/");
+    let unc = admin_share_path(dir.as_ref());
+    let share_root = cmdr_fs::volume::windows_volume_ids::unc_app_root(&unc).expect("a share");
+    let share = share_root.trim_end_matches('/').replace('/', r"\");
+    let recorder = RecordedLifecycle::default();
+    let watch = DriveWatch::started(recorder.clone());
+
+    let Some(mapping) = map_drive(letter, &share) else {
+        return;
+    };
+    wait_until(Duration::from_secs(15), "the mapped share's arrival", || {
+        recorder.0.saw_arrive(&root)
+    });
+    let id = crate::volumes::volume_id_for_mount(&root);
+    assert_eq!(
+        id,
+        crate::volumes::volume_id_for_mount(&share_root),
+        "a whole-share letter and its UNC root are one volume"
+    );
+
+    drop(mapping);
+    wait_until(Duration::from_secs(15), "the mapped share's removal", || {
+        recorder.0.saw_leave(&root)
+    });
+    assert!(
+        !recorder.0.saw_leave(&share_root),
+        "the share still answers, so its UNC root doesn't leave"
+    );
+    let volume = get_volume_manager()
+        .get(&id)
+        .expect("the share's volume stays registered");
+    assert_eq!(volume.root().as_str(), share_root, "at the share's own root");
+    drop(watch);
+    get_volume_manager().unregister(&id);
 }
 
 /// A folder above `drive`, which NTFS refuses to rename while any handle is open below it.

@@ -48,8 +48,11 @@ pub(crate) struct Release {
 impl Release {
     /// The answer for `volume_id`, `None` when the release wasn't asked about it.
     #[cfg_attr(
-        all(not(test), not(target_os = "macos")),
-        expect(dead_code, reason = "only the macOS unmount approver reads a release's own answer")
+        all(not(test), target_os = "linux"),
+        expect(
+            dead_code,
+            reason = "the macOS unmount approver and the macOS and Windows unmount handler read a release's own answer"
+        )
     )]
     pub(crate) fn outcome(&self, volume_id: &str) -> Option<VolumeRelease> {
         self.volumes

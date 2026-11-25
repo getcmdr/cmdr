@@ -124,7 +124,13 @@ tested on every OS.
 
 `platform/windows/watcher/` (task 39a): a drive arriving or leaving reaches the volume list, the panes, and the index by
 subscription, and Windows' "Safely remove" goes through while Cmdr shows the drive. `platform/startup/windows.rs`
-starts it; ❗ the app's Windows `expect(dead_code)` hid that nothing did until #1481.
+starts it. Nothing did until #1481, and no lint said so, for two reasons: the app's crate-wide Windows
+`expect(dead_code)`, and, on EVERY OS, the seam's `const _: fn(&AppHandle) = start_volume_watcher;` pin, which rustc
+counts as a use (verified with rustc 1.100 on a two-function crate, 2026-11-25: the pinned fn didn't warn, an unpinned
+one did). So the watcher's pins sit in an `_`-named fn (`_startup_signatures`), which checks the signature without
+being a use, and `volumes/platform/` and `platform/startup/` carry `#![warn(dead_code)]` over the Windows `expect`.
+`apps/desktop/src-tauri/src/platform/startup/seams_test.rs` pins each install-at-startup call in its OS's file. ⚠️ The other facades' `const _`
+pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still hide an uncalled seam fn.
 
 - **Shape.** A `drive-events` thread owns a hidden top-level window (`window.rs`); a `drive-events-worker` thread does
   every read (`worker.rs`). The window reads nothing from a drive (a dead network drive would hang the procedure, and
@@ -199,6 +205,10 @@ starts it; ❗ the app's Windows `expect(dead_code)` hid that nothing did until 
     through the window as Windows sends it; NTFS refuses to rename a folder above an open handle, so the rename going
     through proves both handles closed, and the refusal after the pane's watch stops proves the root handle came
     back), plus the two-let-go and two-take-back cells. The query from Windows itself needs a real removable device.
+- **A whole-share letter leaving keeps its share** (#1492): when `net use W: \\server\share` goes, its UNC alias
+  `//server/share/` leaves the table too, but while the share answers a stat (2 s at most, on a thread of its own) the
+  worker announces no leave for it and adopts it again first (`windows_device_change::sort_leaving`), so `W:/`'s leave
+  promotes the share's root and a pane on `//server/share/…` stays. A share that doesn't answer leaves with its letter.
 - **A share dropping isn't a drive leaving**: `ERROR_DEV_NOT_EXIST` on a mapped drive or UNC path is the link going away
   (`OsErrorClass::of_io_at`, the transfer engine's retry and outage wait), and on a local drive the drive leaving.
 - **Eject from Cmdr is task 39b**: `is_ejectable` stays `false` and the eject refuses as `NotEjectable`; the real one is

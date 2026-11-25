@@ -38,7 +38,7 @@ use std::time::{Duration, Instant};
 
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::log_private::LogPrivate;
-use cmdr_fs::volume::windows_device_change::{LetGoCause, diff_drives, hears_removal_queries};
+use cmdr_fs::volume::windows_device_change::{LetGoCause, diff_drives, hears_removal_queries, sort_leaving};
 use cmdr_fs::volume::windows_volume_ids::WindowsDrive;
 use log::{debug, info, warn};
 use windows_sys::Win32::Foundation::{GetLastError, HANDLE, INVALID_HANDLE_VALUE};
@@ -65,6 +65,26 @@ const INDEX_LET_GO: Duration = Duration::from_secs(6);
 /// How long after an unreadable drive table the worker reads it once more: a pull can leave the
 /// mount table briefly unreadable, and no later signal is due.
 const RETRY_UNREADABLE: Duration = Duration::from_secs(2);
+
+/// How long the worker asks a share whose mapped letter went whether it still answers. A dead
+/// server would hold the read for minutes; past this the share leaves with its letter.
+const SHARE_PROBE_WAIT: Duration = Duration::from_secs(2);
+
+/// Whether the UNC root `root` (`//server/share/`) answers a stat within `wait`. The stat runs
+/// on a thread of its own, left to finish alone when it outlives the wait.
+fn answers_within(root: &str, wait: Duration) -> bool {
+    let Some(native) = native_root(root) else {
+        return false;
+    };
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let spawned = std::thread::Builder::new()
+        .name("share-probe".to_owned())
+        .spawn(move || {
+            // The receiver may have stopped waiting.
+            let _ = tx.send(std::fs::metadata(&native).is_ok_and(|meta| meta.is_dir()));
+        });
+    spawned.is_ok() && rx.recv_timeout(wait).unwrap_or(false)
+}
 
 /// One drive the worker holds a handle on.
 struct Sentinel {
@@ -213,7 +233,14 @@ impl<A: Announce> Worker<A> {
         let changes = diff_drives(&self.known, &now);
         self.known = now.to_vec();
         self.owner.set_listed(&self.known);
-        for drive in &changes.left {
+        let leaving = sort_leaving(&changes.left, |alias| answers_within(&alias.root, SHARE_PROBE_WAIT));
+        // First, so the letter's leave below promotes the share's root instead of ending the
+        // volume a UNC pane is on (#1492). Registration is idempotent.
+        for share in &leaving.kept_shares {
+            info!(target: "volumes::windows", "Keeping share {}: its mapped letter went, the share still answers", LogPrivate::dir_path(&share.root));
+            self.announce.arrived(&share.root);
+        }
+        for drive in &leaving.gone {
             info!(target: "volumes::windows", "Drive left: {}", LogPrivate::dir_path(&drive.root));
             if let Some(registration) = self.registration_at(&drive.root) {
                 self.forget(registration);
