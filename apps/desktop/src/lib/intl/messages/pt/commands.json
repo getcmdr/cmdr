@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "O Prompt de Comando não consegue iniciar em uma pasta de rede. Escolha PowerShell ou Windows Terminal em Configurações, em “Navegação e operações de arquivo”, ou mapeie o compartilhamento como unidade de rede com uma letra de unidade.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "O Cmdr não conseguiu iniciar seu app de terminal. Abra o app uma vez e tente de novo.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

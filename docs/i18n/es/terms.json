@@ -3016,7 +3016,8 @@
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Google Cloud’s own Spanish console names that page Configuración; a third-party label is quoted from its own UI.",
       "aboutThis.folderClass.versionControl": "A git repository's own configuration (.git/config), not Cmdr's Settings: la configuración de un repositorio, as git's own Spanish says.",
-      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configuración > Teclado > Ver y personalizar atajos, gnome-control-center es.po) and the linuxKde branch KDE's (Preferencias del sistema > Teclado > Atajos de teclado, systemsettings es.po): a desktop's settings app, not Cmdr's Ajustes."
+      "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configuración > Teclado > Ver y personalizar atajos, gnome-control-center es.po) and the linuxKde branch KDE's (Preferencias del sistema > Teclado > Atajos de teclado, systemsettings es.po): a desktop's settings app, not Cmdr's Ajustes.",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names Cmdr's settings window with Windows' word, the ruling's windows form."
     },
     "decision": "Ask Cmdr",
     "windows": {

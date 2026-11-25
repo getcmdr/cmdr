@@ -832,7 +832,7 @@
     "distinct": ["command-palette"],
     "en": "command",
     "match": ["command", "commands"],
-    "notMatch": ["git command", "mount command"],
+    "notMatch": ["git command", "mount command", "command prompt"],
     "sense": "An action the user can run from the command palette or a menu, or a terminal command."
   },
   "command-line": {
@@ -2949,7 +2949,8 @@
     "distinct": ["dialog", "query"],
     "en": "prompt",
     "match": ["prompt", "prompts"],
-    "sense": "A dialog asking the user something (a system prompt), or the text sent to an AI model."
+    "sense": "A dialog asking the user something (a system prompt), or the text sent to an AI model.",
+    "notMatch": ["command prompt"]
   },
   "properties": {
     "distinct": ["get-info"],
@@ -4021,7 +4022,8 @@
     "distinct": ["powershell"],
     "en": "terminal",
     "match": ["terminal", "open terminal here"],
-    "sense": "A terminal app in general, and Apple's Terminal app by name."
+    "sense": "A terminal app in general, and Apple's Terminal app by name.",
+    "notMatch": ["windows terminal"]
   },
   "text-editor": {
     "distinct": ["edit"],

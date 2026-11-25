@@ -1299,6 +1299,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Opdrachtprompt kan niet starten in een netwerkmap. Kies PowerShell of Windows Terminal in Instellingen, onder ‘Navigatie en bewerkingen’, of koppel de gedeelde map als netwerkschijf aan een stationsletter.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr kon je terminal-app niet starten. Open hem zelf een keer en probeer het dan opnieuw.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

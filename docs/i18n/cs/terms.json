@@ -521,7 +521,8 @@
     "decision": "Volume is svazek, drive is disk",
     "note": "loc. pl. discích (o vašich souborech, discích a historii)",
     "exceptions": {
-      "search.coverage.unnamedDrive": "the fallback stands for a drive or a server: toto umístění"
+      "search.coverage.unnamedDrive": "the fallback stands for a drive or a server: toto umístění",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names a drive the way Windows does (Map network drive), the ruling's windows form."
     },
     "windows": {
       "chosen": "jednotka",

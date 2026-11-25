@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Příkazový řádek se nedá spustit v síťové složce. Vyberte PowerShell nebo Windows Terminal v Nastavení v části Navigace a operace se soubory, nebo sdílenou složku připojte jako síťovou jednotku s písmenem.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr nedokázal spustit vaši terminálovou aplikaci. Zkuste ji jednou otevřít ručně a pak se vraťte.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

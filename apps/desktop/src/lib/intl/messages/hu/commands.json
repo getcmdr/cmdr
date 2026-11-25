@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "A Parancssor nem tud hálózati mappában elindulni. Válaszd a PowerShellt vagy a Windows Terminalt a Beállításokban, a „Navigáció és fájlműveletek” alatt, vagy csatlakoztasd a megosztást hálózati meghajtóként egy meghajtóbetűjellel.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "A Cmdr nem tudta elindítani a terminálappodat. Nyisd meg egyszer magad, aztán próbáld újra.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

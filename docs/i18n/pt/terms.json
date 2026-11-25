@@ -1097,7 +1097,8 @@
       "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
       "fileExplorer.navigation.driveIndex.refusedIndexingOff": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
       "fileExplorer.navigation.driveIndex.tooltipIndexingOff": "Names the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
-      "search.coverage.toast.indexingOff": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it."
+      "search.coverage.toast.indexingOff": "Names and quotes the Settings label “Indexação de disco” (settings.indexing.enabled.label), a plain value every OS reads, so the windows branch keeps disco to match it.",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names a drive the way Windows does (Map network drive), the ruling's windows form."
     },
     "decision": "`drive` is always `disco`",
     "windows": {
@@ -2913,7 +2914,8 @@
       "errors.listing.storageFull.suggestion": "The windows branch names Windows' own Settings app: Configurações > Sistema > Armazenamento (MS pt-BR).",
       "errors.listing.serverRefused.explanation": "The windows branch means a setting on the PC, which Windows pt-BR calls configuração; the other branch macOS reads keeps ajuste.",
       "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome branch quotes GNOME Settings' own path (Configurações > Teclado > Veja e personalize atalhos, gnome-control-center pt_BR.po) and the linuxKde branch KDE's (Configurações do sistema > Teclado > Atalhos, systemsettings and kcm_keyboard pt_BR.po): a desktop's settings app, not Cmdr's Ajustes.",
-      "settings.fileOperations.mtpEnabled.description": "Quotes the Android phone path, and Android pt-BR names its Settings app Configurações (AOSP settings_label), not Cmdr’s window."
+      "settings.fileOperations.mtpEnabled.description": "Quotes the Android phone path, and Android pt-BR names its Settings app Configurações (AOSP settings_label), not Cmdr’s window.",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names Cmdr's settings window with Windows' word, the ruling's windows form."
     },
     "windows": {
       "chosen": "Configurações",

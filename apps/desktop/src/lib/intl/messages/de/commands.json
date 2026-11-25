@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Die Eingabeaufforderung kann nicht in einem Netzwerkordner starten. Wähle PowerShell oder Windows Terminal in den Einstellungen unter „Navigation & Dateioperationen“ oder verbinde die Freigabe als Netzlaufwerk mit einem Laufwerkbuchstaben.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr konnte deine Terminal-App nicht starten. Öffne sie einmal selbst und versuche es dann noch mal.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

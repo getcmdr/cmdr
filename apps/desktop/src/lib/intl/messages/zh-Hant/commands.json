@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "命令提示字元無法在網路資料夾中啟動。請在「設定」的「導覽與檔案操作」裡選擇 PowerShell 或 Windows Terminal，或把這個共享資料夾連線成有磁碟機代號的網路磁碟機。",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr 沒能啟動你的終端機 App。先自己開啟一次，然後再試試。",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

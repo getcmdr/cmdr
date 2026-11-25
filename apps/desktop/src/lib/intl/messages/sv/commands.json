@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Kommandotolken kan inte starta i en nätverksmapp. Välj PowerShell eller Windows Terminal i Inställningar, under ”Navigering och filåtgärder”, eller anslut den delade mappen som en nätverksenhet med en enhetsbeteckning.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr kunde inte starta din terminalapp. Öppna den själv en gång och försök igen.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

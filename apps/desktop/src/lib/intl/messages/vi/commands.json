@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Dấu nhắc Lệnh không thể khởi động trong thư mục mạng. Hãy chọn PowerShell hoặc Windows Terminal trong Cài đặt, mục “Điều hướng & thao tác tệp”, hoặc ánh xạ mục chia sẻ thành ổ đĩa mạng có ký tự ổ đĩa.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr chưa khởi động được ứng dụng terminal của bạn. Hãy tự mở nó một lần rồi thử lại.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

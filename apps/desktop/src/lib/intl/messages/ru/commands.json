@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Командная строка не может запуститься в сетевой папке. Выберите PowerShell или Windows Terminal в параметрах, в разделе «Навигация и файловые операции», или подключите общую папку как сетевой диск с буквой.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr не удалось запустить ваше приложение терминала. Откройте его один раз вручную, а потом вернитесь.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

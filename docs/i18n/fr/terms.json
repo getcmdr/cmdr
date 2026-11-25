@@ -1217,7 +1217,8 @@
     "confidence": "high",
     "exceptions": {
       "settings.indexing.overriddenBadge": "The badge sits inside the Indexation section, so it drops du disque to stay three words: Désactivé avec l'indexation.",
-      "settings.indexing.silencedDrives.label": "The prompts ask whether to index a drive; Demandes d'indexation names them without stacking disque."
+      "settings.indexing.silencedDrives.label": "The prompts ask whether to index a drive; Demandes d'indexation names them without stacking disque.",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names a drive the way Windows does (Map network drive), the ruling's windows form."
     },
     "forms": "masculine (le disque, ce disque); network drive → disque réseau",
     "sources": "macOS Finder (Disque de démarrage, Disques externes)",
@@ -3175,7 +3176,8 @@
     "exceptions": {
       "servers.sheet.s3GcsKeyHelp": "Third-party UI: Google Cloud’s French console names Cloud Storage’s settings page Paramètres, so the hint quotes the vendor’s word (tentative).",
       "shortcuts.conflict.takenByLinuxDesktops": "The linuxGnome and linuxKde branches quote the desktop's own settings app, never Cmdr's Réglages: GNOME Paramètres > Clavier > Voir et personnaliser les raccourcis (gnome-control-center.po fr) and KDE Configuration du système > Clavier > Raccourcis (systemsettings.po fr, kcm_keyboard and kcm_keys metadata). Verified read-only, 2026-11-18.",
-      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own path on the phone: French Android names its Settings app Paramètres (see usb-preferences), not Apple's Réglages."
+      "settings.fileOperations.mtpEnabled.description": "Quotes Android's own path on the phone: French Android names its Settings app Paramètres (see usb-preferences), not Apple's Réglages.",
+      "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Windows-only toast: names Cmdr's settings window with Windows' word, the ruling's windows form."
     },
     "forms": "Cmdr’s own window → les Réglages (Ouvrir les réglages, Activez-la dans les Réglages); breadcrumbs Réglages > IA, Réglages › Mises à jour et confidentialité (mirror EN’s separator); Apple’s app is Réglages Système",
     "sources": "macOS (Réglages Système CFBundleName)",

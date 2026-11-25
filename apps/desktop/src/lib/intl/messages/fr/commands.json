@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "L’Invite de commandes ne peut pas démarrer dans un dossier réseau. Choisissez PowerShell ou Windows Terminal dans les paramètres, sous « Navigation et opérations », ou connectez le partage comme lecteur réseau avec une lettre de lecteur.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr n’a pas pu lancer votre app de terminal. Ouvrez-la une fois vous-même, puis réessayez.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

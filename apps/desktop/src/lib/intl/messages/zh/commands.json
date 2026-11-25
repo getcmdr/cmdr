@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "命令提示符无法在网络文件夹中启动。请在“设置”的“导航与文件操作”里选择 PowerShell 或 Windows Terminal，或者把这个共享映射为带盘符的网络驱动器。",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr 没能启动你的终端 App。先自己打开一次，然后再试试。",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"

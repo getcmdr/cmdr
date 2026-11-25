@@ -1296,6 +1296,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "sourceHash": "7851182"
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Símbolo del sistema no puede iniciarse en una carpeta de red. Elige PowerShell o Windows Terminal en Configuración, en “Navegación y operaciones de archivos”, o conecta el recurso compartido como unidad de red con una letra de unidad.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "sourceHash": "5c3fd61"
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr no ha podido iniciar tu app de terminal. Ábrela tú una vez y vuelve a intentarlo.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "sourceHash": "dd7296e"
