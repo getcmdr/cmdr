@@ -5,11 +5,10 @@
 //! edit's) join through it without closing a module cycle through `landing.rs`.
 //! `DETAILS.md` § "Listed names are untrusted".
 
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic, is_escape, unescape_bytes};
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::volume::{ChildName, NotAChildName, VolumeError};
+use cmdr_fs::volume::{NotAChildName, VolumeError};
 use std::borrow::Cow;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /// One listed name, checked as one plain name before anything joins it: the
@@ -22,7 +21,7 @@ use std::path::{Path, PathBuf};
 /// (`VolumeError::InvalidName`), ❌ never joined raw.
 pub(crate) struct ListedName<'a> {
     /// The text as listed, `None` for a native name that isn't UTF-8.
-    pub(super) text: Option<&'a str>,
+    pub(super) text: Option<Cow<'a, str>>,
     pub(super) app: Cow<'a, AppName>,
 }
 
@@ -36,19 +35,19 @@ impl<'a> ListedName<'a> {
     /// it.
     pub(crate) fn new(text: &'a str) -> Result<Self, NotAChildName> {
         Ok(Self {
-            text: Some(text),
+            text: Some(Cow::Borrowed(text)),
             app: AppName::from_listed_text(text)?,
         })
     }
 
-    /// The last name of a `std::path` the driver hands in (a top-level
-    /// destination), refused as `ChildName` refuses it on this host: `native`
-    /// as the driver spelled it, and `app` the same name in the bridge's
-    /// spelling of the whole path ([`on_volume`]), so the two name one file.
-    pub(super) fn native(native: &'a OsStr, app: &'a str) -> Result<Self, NotAChildName> {
-        ChildName::new(native)?;
+    /// The last name of an app path a driver hands in (a top-level
+    /// destination), in the app's spelling: one plain name on every host, so a
+    /// POSIX server's `a\b.txt` stays one (#1457). Its listed text is the native
+    /// name it spells, `None` for one that isn't UTF-8, as the bridge's
+    /// `std::path` name read it.
+    pub(super) fn app(app: &'a str) -> Result<Self, NotAChildName> {
         Ok(Self {
-            text: native.to_str(),
+            text: native_text(app),
             app: Cow::Borrowed(AppName::from_app_spelling(app)?),
         })
     }
@@ -60,12 +59,72 @@ impl<'a> ListedName<'a> {
     }
 }
 
+/// The native text an app-spelled name spells: itself when it holds no escape
+/// (nearly every name), its decoded bytes when those are UTF-8 (a literal
+/// escape-range code point the bridge escaped), else `None` (a Linux name that
+/// isn't UTF-8, a Windows unpaired surrogate).
+pub(super) fn native_text(app: &str) -> Option<Cow<'_, str>> {
+    if !app.chars().any(is_escape) {
+        return Some(Cow::Borrowed(app));
+    }
+    let bytes = unescape_bytes(app).ok()?;
+    String::from_utf8(bytes.into_owned()).ok().map(Cow::Owned)
+}
+
+/// The last name of `path` as a progress event shows it: the app path's own split
+/// (a POSIX server's `a\b.txt` is one name), read as the lossy native text the
+/// `std::path` name showed, so a Linux name that isn't UTF-8 reads as it did.
+pub(crate) fn label_of(path: &AppPath) -> Option<String> {
+    let name = path.file_name()?;
+    Some(match unescape_bytes(name) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        Err(_) => name.to_owned(),
+    })
+}
+
 /// `name` in `dir`. The join refuses only on Windows: a drive or UNC folder
 /// takes no name holding `\` (a POSIX server's `a\b`), which is the destination
 /// refusing that name, per item.
 pub(super) fn join_under(dir: &ListedFolder<'_>, name: &AppName) -> Result<AppPathBuf, VolumeError> {
     dir.join(name)
         .map_err(|_| VolumeError::from(NotAChildName(name.shown().into_owned())))
+}
+
+/// Where a TOP-LEVEL source lands in the destination folder a driver was handed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum TopLevel {
+    /// At this path: the folder itself for a source with no name of its own (a
+    /// volume's root), else its chosen name or its own, joined typed.
+    At(AppPathBuf),
+    /// The folder can't hold the name (a drive or UNC folder takes no `\`: a POSIX
+    /// server's `a\b.txt` copied onto NTFS). The path is display text only, for
+    /// the per-item question; nothing is written for it.
+    Refused(AppPathBuf),
+}
+
+/// Where `source` lands in `dest_root`, as `chosen` (a name its caller picked:
+/// `TransferLeaves`, a rename's target name) or its own last name: the app path's
+/// split, so a POSIX server's `a\b.txt` is one name on every host, where
+/// `std::path`'s Windows split landed it as `b.txt` (#1457).
+pub(crate) fn top_level(dest_root: &AppPath, source: &AppPath, chosen: Option<&str>) -> TopLevel {
+    let name = match chosen {
+        Some(chosen) => AppName::from_listed_text(chosen).ok(),
+        None => match source.file_name() {
+            Some(own) => AppName::from_app_spelling(own).ok().map(Cow::Borrowed),
+            None => return TopLevel::At(dest_root.to_owned()),
+        },
+    };
+    let shown = chosen.or_else(|| source.file_name()).unwrap_or_default();
+    match name.and_then(|name| ListedFolder::new(dest_root).join(&name).ok()) {
+        Some(path) => TopLevel::At(path),
+        None => TopLevel::Refused(shown_under(dest_root, shown)),
+    }
+}
+
+/// `name` under `dir` as display text only, for the question about a name `dir`
+/// can't hold: the folder's text and the name as listed. ❌ Never written to.
+pub(crate) fn shown_under(dir: &AppPath, name: &str) -> AppPathBuf {
+    on_volume(Path::new(&format!("{}/{name}", dir.as_str().trim_end_matches('/')))).into_owned()
 }
 
 /// A listed child's own path (`FileEntry.path`, which the backend that listed it
@@ -91,7 +150,7 @@ pub(crate) fn on_volume(path: &Path) -> Cow<'_, AppPath> {
 /// An app path in the `std::path` spelling the engine's bodies still take (the
 /// exact native bytes back, the bridge's way out): ONE named crossing for this
 /// module and the walk, until those bodies take app paths.
-pub(super) fn std_of(path: &AppPath) -> Cow<'_, Path> {
+pub(crate) fn std_of(path: &AppPath) -> Cow<'_, Path> {
     path.as_std_legacy()
 }
 

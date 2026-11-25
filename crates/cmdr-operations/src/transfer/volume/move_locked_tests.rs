@@ -13,6 +13,7 @@ use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::testing::metadata_fixture::{LOCKED_FLAG, MetadataFixture, flags};
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_local::LocalVolume;
+use std::path::Path;
 
 fn local_source(fixture: &MetadataFixture) -> Arc<dyn Volume> {
     Arc::new(LocalVolume::local_folder(
@@ -47,9 +48,9 @@ async fn run(
         "op-move-locked",
         state,
         source,
-        sources,
+        &crate::testing::app_paths_of(sources),
         Arc::clone(dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

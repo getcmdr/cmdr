@@ -5,6 +5,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[tokio::test]
 async fn named_volume_moves_honor_skip_and_overwrite_at_the_requested_leaf() {
@@ -47,9 +48,9 @@ async fn named_volume_moves_honor_skip_and_overwrite_at_the_requested_leaf() {
                     "named-cross-move",
                     &state,
                     Arc::clone(&source),
-                    &sources,
+                    &crate::testing::app_paths_of(&sources),
                     Arc::clone(&dest),
-                    Path::new("/dest"),
+                    &crate::testing::app_path_of(Path::new("/dest")),
                     &config,
                 )
                 .await
@@ -104,9 +105,9 @@ async fn named_volume_folder_moves_keep_empty_directories() {
                 "named-cross-folder",
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/dest"),
+                &crate::testing::app_path_of(Path::new("/dest")),
                 &config,
             )
             .await

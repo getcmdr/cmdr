@@ -9,7 +9,9 @@ use super::super::super::state::WriteOperationState;
 use super::super::super::types::{ConflictResolution, TransferLeaves, WriteOperationPhase, WriteOperationType};
 use super::DriverConfig;
 use crate::testing::TestOperations;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::ignore_poison::IgnorePoison;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -51,11 +53,11 @@ impl CallLog {
     pub(super) fn new() -> Arc<Self> {
         Arc::new(Self::default())
     }
-    pub(super) fn record(&self, src: &Path, dest: Option<&Path>) {
-        self.invoked_for.lock_ignore_poison().push(src.to_path_buf());
+    pub(super) fn record<P: TestPath + ?Sized>(&self, src: &P, dest: Option<&P>) {
+        self.invoked_for.lock_ignore_poison().push(src.test_path());
         self.invoked_dests
             .lock_ignore_poison()
-            .push(dest.map(|p| p.to_path_buf()));
+            .push(dest.map(TestPath::test_path));
     }
     pub(super) fn sources(&self) -> Vec<PathBuf> {
         self.invoked_for.lock_ignore_poison().clone()
@@ -63,4 +65,28 @@ impl CallLog {
     pub(super) fn dests(&self) -> Vec<Option<PathBuf>> {
         self.invoked_dests.lock_ignore_poison().clone()
     }
+}
+
+/// A path a driver hands its closures, as the call log records it: the sync
+/// driver's `std::path` values, and the async driver's app paths (test paths are
+/// POSIX text, so their app text is their `std::path` text).
+pub(super) trait TestPath {
+    fn test_path(&self) -> PathBuf;
+}
+
+impl TestPath for Path {
+    fn test_path(&self) -> PathBuf {
+        self.to_path_buf()
+    }
+}
+
+impl TestPath for AppPath {
+    fn test_path(&self) -> PathBuf {
+        crate::testing::engine_path_of(self)
+    }
+}
+
+/// A test's pre-skip set as the async driver takes it.
+pub(super) fn typed_set(set: &HashSet<PathBuf>) -> HashSet<AppPathBuf> {
+    set.iter().map(|path| crate::testing::app_path_of(path)).collect()
 }

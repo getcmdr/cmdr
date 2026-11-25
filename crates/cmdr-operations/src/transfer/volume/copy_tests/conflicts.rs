@@ -6,6 +6,7 @@ use super::*;
 use crate::testing::TestOperations;
 use crate::transfer::conflict_responder_test_support::ConflictResponderSink;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_multi_file_copy_skip_conflict() {
@@ -34,9 +35,9 @@ async fn test_multi_file_copy_skip_conflict() {
         "test-op-skip",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/new.txt"), PathBuf::from("/conflict.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/new.txt"), PathBuf::from("/conflict.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -75,9 +76,9 @@ async fn test_multi_file_copy_overwrite_conflict() {
         "test-op-overwrite",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/file.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/file.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -128,9 +129,9 @@ async fn test_overwrite_on_a_whole_publishing_destination_replaces_in_place() {
         "test-op-overwrite-in-place",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/file.txt"), PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/file.txt"), PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -195,9 +196,9 @@ async fn test_a_failed_in_place_overwrite_leaves_the_original() {
         "test-op-failed-in-place",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/file.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/file.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -249,9 +250,9 @@ async fn test_volume_overwrite_file_over_existing_folder() {
         "test-op-file-over-folder",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -298,9 +299,9 @@ async fn test_volume_overwrite_folder_over_existing_file() {
         "test-op-folder-over-file",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -350,9 +351,9 @@ async fn test_volume_blanket_overwrite_refuses_both_cross_type_shapes() {
         "test-op-blanket-cross-type",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/notes"), PathBuf::from("/thing")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes"), PathBuf::from("/thing")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -409,14 +410,14 @@ async fn test_skipped_files_count_toward_progress() {
         "test-op-skip-progress",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
             PathBuf::from("/d.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

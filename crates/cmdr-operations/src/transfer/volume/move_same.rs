@@ -11,8 +11,8 @@
 //! copy-then-delete engine instead (`moves_by_copy`, `DETAILS.md` § "A
 //! same-volume move whose renames copy").
 
-use cmdr_fs::app_path::AppPath;
-use std::collections::HashMap;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 
 use crate::summary::volume_items;
@@ -40,7 +40,8 @@ use super::super::volume_outage::through_outages;
 use super::conflict::resolve_volume_conflict;
 use super::displaced_destination::{DisplacedDestination, displace_destination};
 use super::item_identity::is_the_same_volume_path;
-use super::preflight::{SourceHint, source_merges_as_a_directory, sources_in_tree_order, top_level_move_hints};
+use super::listed_name::{on_volume, std_of};
+use super::preflight::{SourceHint, source_merges_as_a_directory, std_sources_in_tree_order, top_level_move_hints};
 use super::rename_merge::{RenameMergeCtx, rename_merge_directory};
 use super::strategy::Replaces;
 use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_volume_error};
@@ -277,7 +278,7 @@ async fn moves_by_copy(
 fn journal_same_volume_moved_item(
     scope: &crate::scope::OpScope,
     journal_volumes: Option<&(String, String)>,
-    overwritten_sources: &std::sync::Mutex<std::collections::HashSet<PathBuf>>,
+    overwritten_sources: &std::sync::Mutex<HashSet<PathBuf>>,
     merge_overwrote: &std::sync::atomic::AtomicBool,
     entry_type: cmdr_operation_log::types::EntryType,
     source: &Path,
@@ -360,11 +361,13 @@ pub async fn move_within_same_volume_with_progress(
     // A destination folder that takes no writes is refused first, with the reason
     // its backend gave, before the folder is created or anything renamed
     // (`copy.rs::destination_refusal`).
-    if let Some(refusal) = super::copy::destination_refusal(&*volume, dest_path).await {
+    // The async driver and the copy engine take app paths, crossed here once (#1225).
+    let dest_app = on_volume(dest_path);
+    if let Some(refusal) = super::copy::destination_refusal(&*volume, &dest_app).await {
         return Err(refusal);
     }
     volume
-        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
+        .create_directory_all(&dest_app)
         .await
         .map_err(|e| map_volume_error(&dest_path.display().to_string(), PathRole::Destination, e))?;
 
@@ -411,14 +414,15 @@ pub async fn move_within_same_volume_with_progress(
             "move_within_same_volume: volumeName={:?} renames by copy, so op={operation_id} copies then deletes", // allowed-pluralize-noun: `{:?}` is the volume's name, and "renames" is a verb
             LogPrivate::volume(volume.name())
         );
+        let sources: Vec<AppPathBuf> = source_paths.iter().map(|path| on_volume(path).into_owned()).collect();
         return super::move_cross::move_volumes_with_progress(
             events,
             operation_id,
             state,
             Arc::clone(&volume),
-            source_paths,
+            &sources,
             Arc::clone(&volume),
-            dest_path,
+            &dest_app,
             config,
         )
         .await
@@ -443,7 +447,7 @@ pub async fn move_within_same_volume_with_progress(
     let total_files = source_paths.len() + already_in_place;
     let total_bytes = 0u64;
     let known_directory_paths = top_level.known_directory_paths();
-    let ordered_sources = sources_in_tree_order(
+    let ordered_sources = std_sources_in_tree_order(
         source_paths,
         &top_level.source_hints,
         &TreeOrder::active(state.scope().host()),
@@ -467,8 +471,7 @@ pub async fn move_within_same_volume_with_progress(
     // (in a separate driver callback), so the overwrite verdict crosses to the
     // record point through this shared set. `None` journal target ⇒ no journaling.
     let journal_volumes = state.journal_volumes.clone();
-    let overwritten_sources: Arc<std::sync::Mutex<std::collections::HashSet<PathBuf>>> =
-        Arc::new(std::sync::Mutex::new(std::collections::HashSet::new()));
+    let overwritten_sources: Arc<std::sync::Mutex<HashSet<PathBuf>>> = Arc::new(std::sync::Mutex::new(HashSet::new()));
     // Its twin, and for the same reason: a file→file Overwrite renames the
     // destination ASIDE in the resolver, and the rename that replaces it happens
     // in the transfer closure, so the entry has to cross between them. Keyed by
@@ -479,8 +482,9 @@ pub async fn move_within_same_volume_with_progress(
 
     // Bulk-skip is file-only. Top-level directory matches are excluded so
     // their non-conflicting children still move.
+    let typed_sources: Vec<AppPathBuf> = source_paths.iter().map(|path| on_volume(path).into_owned()).collect();
     let pre_skip_paths = build_pre_skip_set(
-        source_paths,
+        &typed_sources,
         config.conflict_resolution,
         &config.pre_known_conflicts,
         &known_directory_paths,
@@ -516,8 +520,8 @@ pub async fn move_within_same_volume_with_progress(
         &*events,
         state,
         operation_id,
-        source_paths,
-        dest_path,
+        &typed_sources,
+        &dest_app,
         total_files,
         total_bytes,
         bulk_skip_files,
@@ -546,8 +550,8 @@ pub async fn move_within_same_volume_with_progress(
                 let overwritten_sources = Arc::clone(&overwritten_sources);
                 let displaced_dests = Arc::clone(&displaced_dests);
                 let operation_id = operation_id.clone();
-                let source_path_owned = input.source_path.to_path_buf();
-                let initial_dest_owned = input.initial_dest_path.to_path_buf();
+                let source_path_owned = std_of(input.source_path).into_owned();
+                let initial_dest_owned = std_of(input.initial_dest_path).into_owned();
                 let dest_size_hint = input.dest_size_hint;
                 Box::pin(async move {
                     log::debug!(
@@ -622,7 +626,7 @@ pub async fn move_within_same_volume_with_progress(
                                             .insert(source_path_owned.clone(), displaced);
                                     }
                                     ConflictDecision::Proceed {
-                                        dest_path: orig,
+                                        dest_path: on_volume(&orig).into_owned(),
                                         replaces: Replaces::Nothing,
                                         dest_name_claimed: false,
                                     }
@@ -654,7 +658,7 @@ pub async fn move_within_same_volume_with_progress(
                                             .insert(source_path_owned.clone(), displaced);
                                     }
                                     ConflictDecision::Proceed {
-                                        dest_path: rc.write_path,
+                                        dest_path: on_volume(&rc.write_path).into_owned(),
                                         replaces: Replaces::Nothing,
                                         dest_name_claimed: false,
                                     }
@@ -676,7 +680,7 @@ pub async fn move_within_same_volume_with_progress(
             let journal_volumes = journal_volumes.clone();
             let overwritten_sources = Arc::clone(&overwritten_sources);
             let displaced_dests = Arc::clone(&displaced_dests);
-            move |ctx: TransferContext<'_>| -> TransferFut<'_> {
+            move |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let volume = Arc::clone(&volume);
                 let source_hints = Arc::clone(&source_hints);
                 let state = Arc::clone(&state);
@@ -687,15 +691,20 @@ pub async fn move_within_same_volume_with_progress(
                 let journal_volumes = journal_volumes.clone();
                 let overwritten_sources = Arc::clone(&overwritten_sources);
                 let displaced_dests = Arc::clone(&displaced_dests);
-                let source_path = ctx.source_path.to_path_buf();
-                let dest_item_path = ctx
+                // Both item paths as the driver hands them, and as this engine's bodies take them.
+                let source_app = ctx.source_path.to_owned();
+                let dest_item_app = ctx
                     .dest_path
                     .expect("async driver always supplies dest_path")
-                    .to_path_buf();
-                // Both item paths in the volume's spelling, made once for every call below.
-                let source_app = AppPath::legacy_unchecked(&source_path).into_owned();
-                let dest_item_app = AppPath::legacy_unchecked(&dest_item_path).into_owned();
+                    .to_owned();
+                let (source_path, dest_item_path) =
+                    (std_of(&source_app).into_owned(), std_of(&dest_item_app).into_owned());
+                // A same-volume name always joins (a drive volume lists no `\`); failed, never written, if not.
+                let dest_name_refused = ctx.dest_name_refused;
                 Box::pin(async move {
+                    if dest_name_refused {
+                        return Err(super::refused_item::name_refused_at(&dest_item_app).into_write_error());
+                    }
                     // Source type from the top-level hint; falls back to the
                     // volume's `entry_kind` only when no hint reached us (a
                     // source missing from its parent listing). A rename moves zero

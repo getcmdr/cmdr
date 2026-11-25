@@ -21,6 +21,7 @@ use crate::Operations;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 use crate::types::{
     ConflictResolution, WriteCancelledEvent, WriteCompleteEvent, WriteConflictResolvedEvent, WriteErrorEvent,
@@ -192,9 +193,9 @@ async fn merge_never_deletes_unshadowed_dest_files_under_every_policy() {
             &format!("op-invariant-{policy:?}-{scripted:?}"),
             &state,
             Arc::clone(&source),
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await;
@@ -293,9 +294,9 @@ async fn merge_cancel_mid_stream_preserves_unshadowed_dest_files() {
         op_id.as_str(),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -334,9 +335,9 @@ async fn skip_all_merges_folder_and_skips_only_clashing_files() {
         "op-skip-all-merge",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -385,9 +386,9 @@ async fn a_deep_skip_credits_both_progress_bars() {
         "op-deep-skip-progress",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -442,9 +443,9 @@ async fn a_deep_skip_stays_out_of_the_rate() {
         "op-deep-skip-rate",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -501,9 +502,9 @@ async fn stop_mode_deep_file_clash_emits_conflict_and_resumes() {
         "op-stop-deep",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -591,9 +592,9 @@ async fn merge_reports_exact_byte_total_across_levels() {
         "op-byte-total",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -655,9 +656,9 @@ async fn deep_merge_clash_reports_the_real_destination_size() {
         "op-deep-dest-size",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -708,9 +709,9 @@ async fn overwrite_all_smaller_keeps_a_larger_destination_on_the_first_deep_clas
         "op-deep-overwrite-smaller",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

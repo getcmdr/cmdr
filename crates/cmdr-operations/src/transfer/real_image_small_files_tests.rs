@@ -166,9 +166,9 @@ async fn volume_copy_onto(shape: Shape) {
         "op-small-files-volume",
         &state,
         source_volume,
-        &[PathBuf::from("/tree")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
         dest_volume,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

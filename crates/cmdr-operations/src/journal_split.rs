@@ -49,7 +49,9 @@ pub(super) fn journal_split_app(path: &AppPath) -> (String, String) {
 /// [`journal_split_app`] as a `host` build splits it, whatever this build's host is (so
 /// every OS tests both).
 fn journal_split_app_as(path: &AppPath, host: PathFlavor) -> (String, String) {
-    if host == PathFlavor::Windows && path.as_str().contains('\\') {
+    // Canonical only: a bridge value still spelled natively (`C:\x\f.txt`, a Windows
+    // suite's root) holds its `\` as separators, which `journal_split` reads as such.
+    if host == PathFlavor::Windows && path.as_str().contains('\\') && path.is_canonical() {
         let name = path.file_name().unwrap_or_default().to_owned();
         let dir = path
             .parent()

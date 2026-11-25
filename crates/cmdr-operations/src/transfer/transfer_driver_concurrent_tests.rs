@@ -48,7 +48,7 @@ async fn concurrent_per_file_callback_is_cancel_only_not_pause_aware() {
     );
     let leaf = ledger
         .for_source(
-            std::path::Path::new("/src/f"),
+            cmdr_fs::app_path!("/src/f"),
             Arc::new(Mutex::new(std::time::Instant::now())),
         )
         .begin_leaf(None);

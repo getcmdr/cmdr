@@ -28,6 +28,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 use std::time::Instant;
 
 use crate::outage_slot::OutagePolicy;
@@ -229,9 +230,9 @@ async fn one_folders_subtree_fills_the_operation_window() {
         "merge-window-one-folder",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &overwrite_config(),
     )
     .await;
@@ -293,9 +294,9 @@ async fn four_folder_sources_share_one_window_rather_than_taking_one_each() {
         "merge-window-n-squared",
         &state,
         source,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &overwrite_config(),
     )
     .await;
@@ -356,9 +357,9 @@ async fn a_cap_of_one_keeps_a_subtree_strictly_one_operation_at_a_time() {
         "merge-window-mtp-shape",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &overwrite_config(),
     )
     .await;
@@ -409,9 +410,9 @@ async fn deep_prompts_keep_listing_order_while_the_copies_overlap() {
         guard.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &config,
     )
     .await;
@@ -464,9 +465,9 @@ async fn a_cancel_mid_subtree_leaves_no_leaf_still_writing() {
                 operation_id.as_str(),
                 &state,
                 source,
-                &[PathBuf::from("/album")],
+                &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
                 dest_volume,
-                Path::new("/out"),
+                &crate::testing::app_path_of(Path::new("/out")),
                 &overwrite_config(),
             )
             .await
@@ -576,9 +577,9 @@ async fn a_rolled_back_wide_window_copy_leaves_no_directory_it_created() {
         "merge-window-rollback",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &config,
     )
     .await;
@@ -635,9 +636,9 @@ async fn a_failing_leaf_names_itself_and_its_landed_siblings_stay_recorded() {
         "merge-window-leaf-failure",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &overwrite_config(),
     )
     .await;
@@ -813,14 +814,16 @@ async fn a_walker_waiting_out_an_outage_keeps_its_leaves_moving() {
     );
     let sources = [PathBuf::from("/album")];
     let config = overwrite_config();
+    let typed_dest = crate::testing::app_path_of(Path::new("/out"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         Arc::new(CollectorEventSink::new()),
         "merge-window-walker-outage",
         &state,
         source,
-        &sources,
+        &typed_sources,
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &typed_dest,
         &config,
     );
     let result = tokio::time::timeout(Duration::from_secs(5), copy)

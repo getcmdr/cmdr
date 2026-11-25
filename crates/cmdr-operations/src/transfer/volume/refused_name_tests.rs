@@ -141,9 +141,9 @@ async fn run(
                 "op-refused",
                 state,
                 source,
-                &seeded.paths,
+                &crate::testing::app_paths_of(&seeded.paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await
@@ -154,9 +154,9 @@ async fn run(
                 "op-refused",
                 state,
                 source,
-                &seeded.paths,
+                &crate::testing::app_paths_of(&seeded.paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await

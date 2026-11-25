@@ -73,9 +73,9 @@ async fn copy(
         "op-copy-flags",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         source as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         config,
     )
     .await

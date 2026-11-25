@@ -89,9 +89,9 @@ async fn run_case(driver: Driver) {
             "op",
             &state,
             src,
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             dst,
-            inbox,
+            &crate::testing::app_path_of(inbox),
             &config,
         )
         .await
@@ -101,9 +101,9 @@ async fn run_case(driver: Driver) {
             "op",
             &state,
             src,
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             dst,
-            inbox,
+            &crate::testing::app_path_of(inbox),
             &config,
         )
         .await
@@ -239,9 +239,9 @@ async fn run_remote_names_case(driver: Driver, refusing: bool) {
             "op",
             &state,
             src,
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             dst,
-            inbox,
+            &crate::testing::app_path_of(inbox),
             &config,
         )
         .await
@@ -251,9 +251,9 @@ async fn run_remote_names_case(driver: Driver, refusing: bool) {
             "op",
             &state,
             src,
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             dst,
-            inbox,
+            &crate::testing::app_path_of(inbox),
             &config,
         )
         .await
@@ -394,9 +394,9 @@ async fn a_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_item() {
         "op",
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("C:/inbox"),
+        &crate::testing::app_path_of(Path::new("C:/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await;

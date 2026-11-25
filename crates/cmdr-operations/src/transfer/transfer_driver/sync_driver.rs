@@ -137,13 +137,14 @@ where
             continue;
         }
 
-        let ctx = TransferContext {
+        let ctx: TransferContext<'_> = TransferContext {
             events,
             state,
             operation_id,
             operation_type: config.operation_type,
             source_path,
             dest_path: None,
+            dest_name_refused: false,
             replaces: &Replaces::Nothing,
             dest_name_claimed: false,
             files_done_so_far: files_done,

@@ -513,9 +513,9 @@ async fn a_volume_copy_onto_a_local_disk_announces_its_destination_and_temp() {
         "announce-volume-copy",
         &rig.state(),
         source,
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

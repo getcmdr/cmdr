@@ -8,6 +8,7 @@
 
 use cmdr_fs::app_path;
 use std::cell::Cell;
+use std::path::Path;
 use std::rc::Rc;
 
 use super::*;
@@ -50,9 +51,9 @@ async fn run_move(
         "op-vanished",
         state,
         source,
-        sources,
+        &crate::testing::app_paths_of(sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

@@ -617,9 +617,9 @@ async fn a_volume_move_of_a_folder_that_holds_a_mounted_drive_refuses_and_moves_
             "op-volume-move-nested-mount",
             &state,
             Arc::clone(&source),
-            &[std::path::PathBuf::from(source_path)],
+            &crate::testing::app_paths_of(&[std::path::PathBuf::from(source_path)]),
             Arc::clone(&dest),
-            std::path::Path::new("/"),
+            &crate::testing::app_path_of(std::path::Path::new("/")),
             &VolumeCopyConfig::default(),
         )
         .await;

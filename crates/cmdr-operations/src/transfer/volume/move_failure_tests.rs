@@ -20,6 +20,7 @@ use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, PermissionRefusal, PermissionSide};
 use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError};
+use std::path::Path;
 
 /// Cross-volume MOVE, file→file Overwrite, streaming write SUCCEEDS but every
 /// rename of the landing FAILS. The swap moves the original aside before the
@@ -52,9 +53,9 @@ async fn cross_volume_move_preserves_new_data_on_finalize_failure() {
         "op-move-finalize-fail",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/f.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/f.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -119,9 +120,9 @@ async fn cross_volume_move_error_names_the_child_that_failed_not_the_selected_fo
         "op-move-deep-child-error",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/tree")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await;
@@ -175,9 +176,9 @@ async fn cross_volume_move_delete_error_names_the_child_that_failed_not_the_sele
         "op-move-deep-child-delete-error",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/tree")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await;
@@ -241,9 +242,9 @@ async fn a_cross_type_move_that_fails_halfway_keeps_the_file_it_was_replacing() 
         "op-move-cross-type-fails",
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             // Only an answered prompt may cross types.
             conflict_resolution: ConflictResolution::Stop,
@@ -291,9 +292,9 @@ async fn cross_volume_move_that_cannot_remove_the_original_says_the_copy_landed(
         "op-move-source-not-removed",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/locked.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/locked.jpg")]),
         Arc::clone(&dest),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &config_default(),
     )
     .await;
@@ -351,9 +352,9 @@ async fn a_move_whose_destination_wont_confirm_its_flush_keeps_the_source() {
         "op-move-unconfirmed-flush",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/f.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/f.txt")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await;
@@ -390,9 +391,9 @@ async fn a_copy_whose_destination_wont_confirm_its_flush_completes_unconfirmed()
         "op-copy-unconfirmed-flush",
         &make_state(&engine),
         source,
-        &[PathBuf::from("/f.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/f.txt")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await

@@ -112,9 +112,9 @@ async fn a_serial_copy_fails_the_item_whose_destination_stat_times_out() {
         "op-precheck-serial-copy",
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config,
     )
     .await;
@@ -164,9 +164,9 @@ async fn a_concurrent_copy_fails_the_item_whose_destination_stat_times_out() {
         "op-precheck-concurrent-copy",
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config,
     )
     .await;
@@ -208,9 +208,9 @@ async fn a_cross_volume_move_fails_the_item_whose_destination_stat_times_out() {
         "op-precheck-cross-move",
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config,
     )
     .await;

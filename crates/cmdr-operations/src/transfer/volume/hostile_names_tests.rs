@@ -94,9 +94,9 @@ async fn a_copy_refuses_a_listed_name_that_isnt_one_plain_component() {
             "hostile-name-copy",
             &make_state(&engine),
             source,
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             dest,
-            Path::new("/inbox"),
+            &crate::testing::app_path_of(Path::new("/inbox")),
             &config(),
         )
         .await;
@@ -142,9 +142,9 @@ async fn a_copy_refuses_a_folder_listed_under_a_parent_name() {
         "hostile-dir-copy",
         &make_state(&engine),
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         dest,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config(),
     )
     .await;
@@ -194,9 +194,9 @@ async fn a_copy_never_merges_through_a_destination_link() {
             "link-then-dir-copy",
             &make_state(&engine),
             source,
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             dest,
-            Path::new("/inbox"),
+            &crate::testing::app_path_of(Path::new("/inbox")),
             &VolumeCopyConfig {
                 conflict_resolution: policy,
                 ..config()
@@ -247,9 +247,9 @@ async fn a_copy_with_a_file_and_folder_listed_under_one_name_stays_inside() {
             "file-and-dir-one-name",
             &make_state(&engine),
             source,
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             dest,
-            Path::new("/inbox"),
+            &crate::testing::app_path_of(Path::new("/inbox")),
             &VolumeCopyConfig {
                 conflict_resolution: policy,
                 ..config()

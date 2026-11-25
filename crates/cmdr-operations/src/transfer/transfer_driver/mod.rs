@@ -114,7 +114,9 @@
 
 use std::collections::HashSet;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 
 use super::staged_write::Replaces;
 use std::pin::Pin;
@@ -172,10 +174,10 @@ pub(super) type FetchFut<'a> = Pin<Box<dyn Future<Output = Result<NameAtDest, Wr
 #[derive(Debug)]
 pub(super) enum NameAtDest {
     /// Nothing holds the name: the new entry goes here.
-    Free(PathBuf),
+    Free(AppPathBuf),
     /// The entry at `path` holds it, `size` bytes big (`0` when the backend
     /// reports none). The resolver decides what happens to it.
-    Taken { path: PathBuf, size: u64 },
+    Taken { path: AppPathBuf, size: u64 },
 }
 
 /// Per-call future shape for [`drive_transfer_serial_async`]'s `conflict_resolver`
@@ -195,7 +197,10 @@ pub(super) type TransferFut<'a> =
 /// list) is CAPTURED by the closure itself, not passed through this struct.
 /// That way, the driver doesn't grow new fields every time a new operation
 /// joins.
-pub(super) struct TransferContext<'a> {
+///
+/// `P` is how the driver spells a path: the sync driver's local engines hand
+/// `std::path` values, the async driver's volume engines app paths.
+pub(super) struct TransferContext<'a, P: ?Sized = Path> {
     /// Event sink for emitting progress / conflict / source-item-done events
     /// from within the closure (used by sync local-copy for mid-flight conflict
     /// events and for `write-source-item-done`).
@@ -209,13 +214,19 @@ pub(super) struct TransferContext<'a> {
     /// resolution); for the sync driver this is whatever path the caller
     /// passed in `sources` (typically also a top-level path, sometimes a
     /// per-file `FileInfo.path` if the caller pre-flattened).
-    pub source_path: &'a Path,
+    pub source_path: &'a P,
     /// The destination path the driver is asking the closure to write to. For
     /// the async driver this is the path that came out of conflict resolution
-    /// (so it may differ from `dest_root.join(source_path.file_name())` under
+    /// (so it may differ from the source's own name in `dest_root` under
     /// Rename). For the sync driver this is `None` (the closure derives the
     /// destination from its own destination root + `source_path`).
-    pub dest_path: Option<&'a Path>,
+    pub dest_path: Option<&'a P>,
+    /// The destination folder can't hold the source's name at all (a drive
+    /// folder and a POSIX server's `a\b.txt`, `volume/landing.rs::TopLevel`), so
+    /// `dest_path` is display text only: the closure writes nothing and asks
+    /// about the item, per item, as for any refused name. No resolver ran.
+    /// `false` for the sync driver.
+    pub dest_name_refused: bool,
     /// What the write does to a file at the destination name. `dest_path` is
     /// always the name the file lands at, so under `Replaces::Swap` it's the
     /// user's original, which the closure's staged write replaces in its
@@ -334,11 +345,11 @@ impl PostLoopIntent {
 /// `known_directory_paths`; the helper falls through to the per-iter
 /// resolution path for those (which handles individual child conflicts).
 pub(super) fn build_pre_skip_set(
-    sources: &[PathBuf],
+    sources: &[AppPathBuf],
     config_resolution: ConflictResolution,
     config_pre_known_conflicts: &[String],
-    known_directory_paths: &HashSet<PathBuf>,
-) -> HashSet<PathBuf> {
+    known_directory_paths: &HashSet<AppPathBuf>,
+) -> HashSet<AppPathBuf> {
     if config_resolution != ConflictResolution::Skip || config_pre_known_conflicts.is_empty() {
         return HashSet::new();
     }
@@ -349,10 +360,9 @@ pub(super) fn build_pre_skip_set(
             if known_directory_paths.contains(*p) {
                 return false;
             }
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .map(|n| names.contains(n))
-                .unwrap_or(false)
+            // The app path's own last name: a POSIX server's `a\b.txt` is one name
+            // on Windows too, as the pre-flight's conflict list names it.
+            p.file_name().is_some_and(|n| names.contains(n))
         })
         .cloned()
         .collect()
@@ -476,8 +486,8 @@ pub(super) fn emit_source_outcome(
 /// What the async driver hands the caller's resolver callback when it detects
 /// a top-level dest conflict.
 pub(super) struct ConflictDecisionInput<'a> {
-    pub source_path: &'a Path,
-    pub initial_dest_path: &'a Path,
+    pub source_path: &'a AppPath,
+    pub initial_dest_path: &'a AppPath,
     /// Pre-fetched dest metadata so the resolver doesn't re-stat (the driver
     /// already paid the `get_metadata` cost to discover the conflict).
     pub dest_size_hint: Option<u64>,
@@ -516,7 +526,7 @@ pub(super) enum ConflictDecision {
     /// reserved_placeholder`), which is all a landing may ever clear there
     /// (`TransferContext::dest_name_claimed`).
     Proceed {
-        dest_path: PathBuf,
+        dest_path: AppPathBuf,
         replaces: Replaces,
         dest_name_claimed: bool,
     },

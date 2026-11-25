@@ -95,9 +95,9 @@ async fn volume_copy_journals_under_the_real_volume_ids_not_root() {
         op_id,
         &state,
         source as Arc<dyn Volume>,
-        &[std::path::PathBuf::from("/a.txt"), std::path::PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[std::path::PathBuf::from("/a.txt"), std::path::PathBuf::from("/b.txt")]),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -168,9 +168,9 @@ async fn overwriting_volume_copy_finalizes_not_rollbackable() {
         op_id,
         &state,
         source as Arc<dyn Volume>,
-        &[std::path::PathBuf::from("/dup.txt")],
+        &crate::testing::app_paths_of(&[std::path::PathBuf::from("/dup.txt")]),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &cfg,
     )
     .await
@@ -218,12 +218,12 @@ async fn cross_volume_move_journals_per_leaf_move_rows() {
         op_id,
         &state,
         source as Arc<dyn Volume>,
-        &[
+        &crate::testing::app_paths_of(&[
             std::path::PathBuf::from("/one.txt"),
             std::path::PathBuf::from("/two.txt"),
-        ],
+        ]),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -430,9 +430,9 @@ impl VolumeLoop {
             &self.op_id,
             &state,
             Arc::clone(&self.source) as Arc<dyn Volume>,
-            &paths,
+            &crate::testing::app_paths_of(&paths),
             Arc::clone(&self.dest) as Arc<dyn Volume>,
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()

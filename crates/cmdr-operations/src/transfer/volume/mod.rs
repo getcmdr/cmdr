@@ -66,7 +66,7 @@ pub(crate) use displaced_destination::{DisplacedDestination, displace_destinatio
 /// move (`archive_edit`).
 pub(crate) use item_identity::is_the_same_item;
 /// The one way a listed name joins under a folder (the remote zip edit's temp reap).
-pub(crate) use listed_name::{ListedName, into_std, listed_path, on_volume};
+pub(crate) use listed_name::{ListedName, TopLevel, into_std, label_of, listed_path, on_volume, std_of, top_level};
 /// Move ONE file across two volumes, staged and mid-file cancelable, with no
 /// driver above it (the operation-log rollback's cross-volume restore).
 pub(crate) use move_file::move_file_across_volumes;
@@ -194,6 +194,10 @@ mod refused_name_tests;
 /// A name the destination's RULES refuse is refused before any write.
 #[cfg(test)]
 mod refused_class_tests;
+
+/// A top-level source's name lands whole, and a drive folder asks about one it can't hold (#1457).
+#[cfg(test)]
+mod top_level_name_tests;
 
 /// A stopped transfer names the new files its stop kept at the destination.
 #[cfg(test)]

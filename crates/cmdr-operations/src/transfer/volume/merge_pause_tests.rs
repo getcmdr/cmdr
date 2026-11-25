@@ -21,6 +21,7 @@ use crate::types::{
     WriteConflictResolvedEvent, WriteErrorEvent, WriteSettledEvent, WriteSourceItemDoneEvent,
 };
 use cmdr_fs::app_path;
+use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
@@ -109,9 +110,9 @@ async fn a_paused_cross_volume_merge_stops_walking_until_it_resumes() {
             "op-merge-pause",
             &state_for_copy,
             source_for_copy,
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             dest_for_copy,
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await

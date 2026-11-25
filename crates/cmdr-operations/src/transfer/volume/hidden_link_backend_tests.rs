@@ -254,9 +254,9 @@ async fn a_copy_never_merges_into_a_hidden_destination_link() {
         "op-hidden-copy-dest-link",
         &make_state(&engine),
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("dst"),
+        &crate::testing::app_path_of(Path::new("dst")),
         &config(ConflictResolution::Skip),
     )
     .await;
@@ -289,9 +289,9 @@ async fn a_cross_volume_move_of_a_folder_holding_a_hidden_link_spares_the_target
         "op-hidden-cross-move",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("src/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("src/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(ConflictResolution::Skip),
     )
     .await;

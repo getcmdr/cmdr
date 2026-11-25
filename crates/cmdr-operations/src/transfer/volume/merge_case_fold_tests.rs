@@ -28,6 +28,7 @@ use cmdr_fs::volume::{
     VolumeReadStream,
 };
 use std::future::Future;
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
 use unicode_normalization::UnicodeNormalization;
@@ -299,9 +300,9 @@ async fn merge_album(
         label,
         &state,
         Arc::clone(source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -408,9 +409,9 @@ async fn an_unanswerable_probe_fails_the_item_instead_of_writing() {
         "op-fold-unanswerable",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -606,9 +607,9 @@ async fn a_name_that_fills_up_after_the_listing_is_not_cleared_by_the_landing() 
         "op-late-arrival",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

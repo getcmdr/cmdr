@@ -17,6 +17,7 @@ use crate::types::{ConflictResolution, WriteConflictResolvedEvent, WriteErrorEve
 use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress, SpaceInfo, VolumeReadStream};
+use std::path::Path;
 
 // ── Phase 4.2 concurrency tests ──────────────────────────────────
 //
@@ -54,9 +55,9 @@ async fn test_concurrent_copy_50_files_all_succeed() {
         "test-op-concurrent-50",
         &state,
         Arc::clone(&source),
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -200,9 +201,9 @@ async fn test_concurrent_copy_aborts_on_first_error() {
         "test-op-concurrent-err",
         &state,
         Arc::clone(&source),
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -299,9 +300,9 @@ async fn test_concurrent_copy_cancellation_mid_batch() {
         "test-op-concurrent-cancel",
         &state,
         Arc::clone(&source),
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -393,9 +394,9 @@ async fn a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one()
                 "op-prompt-holds-the-batch",
                 &state,
                 source,
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 dest,
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -477,9 +478,9 @@ async fn progress_from_parallel_tasks_never_steps_backwards() {
         "op-parallel-progress",
         &state,
         source,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await

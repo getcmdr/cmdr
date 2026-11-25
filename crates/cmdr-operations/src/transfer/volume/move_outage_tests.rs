@@ -108,9 +108,9 @@ async fn move_from(
         op.id().as_str(),
         state,
         source,
-        &[PathBuf::from(path)],
+        &crate::testing::app_paths_of(&[PathBuf::from(path)]),
         Arc::clone(dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

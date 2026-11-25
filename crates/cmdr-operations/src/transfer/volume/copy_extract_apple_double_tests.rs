@@ -12,6 +12,7 @@ use cmdr_archive::ArchiveFormat;
 use cmdr_fs::testing::metadata_fixture::{QUARANTINE_VALUE, QUARANTINE_XATTR, TAGS_XATTR, set_xattr};
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_local::LocalPosixVolume;
+use std::path::Path;
 
 /// An `ArchiveVolume` over `archive` on a local-backed parent, on a lane of its
 /// own.
@@ -42,9 +43,9 @@ async fn copy_out(source: &Arc<dyn Volume>, sources: &[PathBuf], dest_dir: &Path
         "extract-apple-double-op",
         state,
         Arc::clone(source),
-        sources,
+        &crate::testing::app_paths_of(sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()

@@ -42,11 +42,11 @@ async fn stream_pipe_file_retries_once_on_stale_destination_handle() {
 
     let bytes = copy_single_path(
         &source,
-        Path::new("a.txt"),
+        &crate::testing::app_path_of(Path::new("a.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("a.txt"),
+        &crate::testing::app_path_of(Path::new("a.txt")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),

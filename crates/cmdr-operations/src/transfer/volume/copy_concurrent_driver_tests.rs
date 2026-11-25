@@ -40,6 +40,7 @@ use cmdr_fs::staging::STAGING_TEMP_MARKER;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError, VolumeReadStream};
 use std::collections::HashSet;
 use std::future::Future;
+use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
 use super::super::faulty_volume::forward_volume_methods;
@@ -145,9 +146,9 @@ struct Harness {
     state: Arc<WriteOperationState>,
     events: Arc<dyn OperationEventSink>,
     config: VolumeCopyConfig,
-    source_paths: Vec<PathBuf>,
-    pre_skip_paths: HashSet<PathBuf>,
-    source_hints: HashMap<PathBuf, SourceHint>,
+    source_paths: Vec<AppPathBuf>,
+    pre_skip_paths: HashSet<AppPathBuf>,
+    source_hints: HashMap<AppPathBuf, SourceHint>,
     dest_index: Option<DestNameIndex>,
     journal_volumes: Option<(String, String)>,
     op_probe: Option<Arc<OperationProbe>>,
@@ -168,7 +169,7 @@ impl Harness {
             state: Arc::clone(&state),
             events: Arc::clone(&events),
             config: merge_config(),
-            source_paths: source_paths.to_vec(),
+            source_paths: crate::testing::app_paths_of(source_paths),
             pre_skip_paths: HashSet::new(),
             source_hints: HashMap::new(),
             dest_index: None,
@@ -200,7 +201,7 @@ impl Harness {
             source_volume: source,
             source_paths: &self.source_paths,
             dest_volume: dest,
-            dest_path: Path::new("/"),
+            dest_path: app_path!("/"),
             config: &self.config,
             concurrency,
             file_window: super::super::merge_ctx::FileWindow::new(concurrency),
@@ -531,11 +532,11 @@ async fn a_pre_skipped_source_is_dropped_without_being_counted_again() {
 
     let sources = vec![PathBuf::from("/a.txt")];
     let mut harness = Harness::new(&engine, &sources);
-    harness.pre_skip_paths.insert(PathBuf::from("/a.txt"));
+    harness.pre_skip_paths.insert(app_path!("/a.txt").to_owned());
 
     let ctx = harness.ctx(source as Arc<dyn Volume>, dest, 4);
     let prepared = ctx
-        .prepare_source(0, Path::new("/a.txt"))
+        .prepare_source(0, app_path!("/a.txt"))
         .await
         .expect("a pre-skip is not a failure");
 
@@ -568,7 +569,7 @@ async fn a_conflict_resolved_to_skip_credits_both_progress_axes_once() {
     harness.seed_hints_from_preflight(&source).await;
 
     let ctx = harness.ctx(Arc::clone(&source), dest, 4);
-    let prepared = ctx.prepare_source(0, Path::new("/a.txt")).await.unwrap();
+    let prepared = ctx.prepare_source(0, app_path!("/a.txt")).await.unwrap();
 
     assert!(prepared.is_none(), "Skip means no task");
     assert_eq!(
@@ -595,14 +596,14 @@ async fn a_file_overwrite_is_prepared_as_a_swap() {
 
     let ctx = harness.ctx(source as Arc<dyn Volume>, dest, 4);
     let task = ctx
-        .prepare_source(0, Path::new("/a.txt"))
+        .prepare_source(0, app_path!("/a.txt"))
         .await
         .unwrap()
         .expect("an Overwrite spawns a task");
 
     assert_eq!(
         task.dest_path,
-        PathBuf::from("/a.txt"),
+        app_path!("/a.txt").to_owned(),
         "the task writes at the name the user ends up with"
     );
     assert_eq!(task.replaces, super::super::strategy::Replaces::Swap);

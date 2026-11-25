@@ -29,6 +29,7 @@
 
 use cmdr_fs::app_path;
 use cmdr_operation_log::types::OperationId;
+use std::path::Path;
 use std::pin::Pin;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -300,9 +301,9 @@ async fn a_folder_moves_leaves_each_get_a_row_and_the_dump_declares_the_real_wid
         "probe-rows-move",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -329,9 +330,9 @@ async fn a_folder_copys_leaves_each_get_a_row_and_the_dump_declares_the_real_wid
         "probe-rows-copy",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -370,9 +371,9 @@ async fn every_row_in_one_dump_carries_its_own_number() {
         "probe-rows-unique",
         &state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest_volume),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await;

@@ -5,6 +5,7 @@
 use super::*;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_multi_file_copy_all_files_arrive() {
@@ -24,13 +25,13 @@ async fn test_multi_file_copy_all_files_arrive() {
         "test-op-1",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -71,9 +72,9 @@ async fn test_multi_file_copy_progress_tracking() {
         "test-op-2",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/x.bin"), PathBuf::from("/y.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/x.bin"), PathBuf::from("/y.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -122,9 +123,9 @@ async fn test_cross_volume_copy_serial_emits_intra_file_progress() {
         "op-copy-serial-intra",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.bin"), PathBuf::from("/b.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.bin"), PathBuf::from("/b.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -216,9 +217,9 @@ async fn test_cross_volume_copy_directory_source_progress_is_leaf_granular() {
         "op-copy-dir-leaf",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/folder")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/folder")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -312,9 +313,9 @@ async fn test_cross_volume_copy_concurrent_emits_intra_file_progress() {
         "op-copy-concurrent-intra",
         &state,
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -378,9 +379,9 @@ async fn test_cross_volume_copy_serial_reaches_files_done_n() {
         "op-copy-serial-files-n",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -440,9 +441,9 @@ async fn test_cross_volume_copy_concurrent_reaches_files_done_n() {
         "op-copy-concurrent-files-n",
         &state,
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

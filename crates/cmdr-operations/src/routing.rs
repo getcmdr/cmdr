@@ -51,13 +51,11 @@ fn landing_parent(
     dest_volume: &Arc<dyn Volume>,
     dest_path: &AppPath,
     into_zip: bool,
-) -> Result<PathBuf, WriteOperationError> {
+) -> Result<AppPathBuf, WriteOperationError> {
     if into_zip {
-        return Ok(engine_path(dest_path));
+        return Ok(dest_path.to_owned());
     }
-    resolve_dest_path(dest_volume, dest_path.as_str())
-        .map(|anchored| engine_path(&anchored))
-        .map_err(|_| no_such_destination(dest_path.as_str()))
+    resolve_dest_path(dest_volume, dest_path.as_str()).map_err(|_| no_such_destination(dest_path.as_str()))
 }
 
 /// The routed start's one check of a transfer's leaves
@@ -342,8 +340,9 @@ impl crate::Operations {
         // `GitPortalVolume` (copy out of `.git/branches/<name>/…`). Both then read
         // through the cross-volume engine.
         let (source_volume, _source_route) = self.one_source_volume(&source_volume_id, &source_paths).await?;
+        let typed_sources = source_paths;
         // `x/link/` names the link, ❌ never its target (`wire_paths.rs`).
-        let source_paths = engine_paths(&source_paths);
+        let source_paths = engine_paths(&typed_sources);
 
         // A `.zip`-crossing dest routes the whole copy to the managed archive-edit
         // driver (one `{ add }` changeset).
@@ -357,7 +356,8 @@ impl crate::Operations {
         if into_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("copy into a zip"));
         }
-        let dest_path = landing_parent(&dest_volume, &dest_path, into_zip)?;
+        let dest_app = landing_parent(&dest_volume, &dest_path, into_zip)?;
+        let dest_path = engine_path(&dest_app);
         if into_zip {
             refuse_per_source_leaves_here(&config.leaves, &dest_path)?;
         }
@@ -393,10 +393,10 @@ impl crate::Operations {
             events,
             source_volume_id,
             source_volume,
-            source_paths,
+            typed_sources,
             dest_volume_id,
             dest_volume,
-            dest_path,
+            dest_app,
             config,
             initiator,
             expected_sources,
@@ -463,7 +463,8 @@ impl crate::Operations {
         if into_zip && expected_sources.is_some() {
             return Err(route_cannot_hold_a_binding("move into a zip"));
         }
-        let dest_path = landing_parent(&dest_volume, &dest_path, into_zip)?;
+        let dest_app = landing_parent(&dest_volume, &dest_path, into_zip)?;
+        let dest_path = engine_path(&dest_app);
         if out_of_zip || into_zip {
             refuse_per_source_leaves_here(&config.leaves, &dest_path)?;
         }
@@ -514,10 +515,10 @@ impl crate::Operations {
             events,
             source_volume_id,
             source_volume,
-            source_paths,
+            typed_sources,
             dest_volume_id,
             dest_volume,
-            dest_path,
+            dest_app,
             config,
             TargetNames::default(),
             initiator,
@@ -690,10 +691,10 @@ impl crate::Operations {
             events,
             volume_id.clone(),
             Arc::clone(&volume),
-            sources,
+            typed_sources,
             volume_id,
             volume,
-            engine_path(&dest_app),
+            dest_app,
             config,
             target_names,
             initiator,

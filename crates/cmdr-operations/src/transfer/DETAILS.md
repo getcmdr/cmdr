@@ -2945,17 +2945,18 @@ generic-over-AsyncFnMut-or-FnMut driver. Conflict resolution lives in the driver
 the sync path. **Why**: `copy_files_with_progress_inner` is sync inside `spawn_blocking`; the three volume ops are
 async. A single generic driver would either force the sync path through a `Pin<Box<dyn Future>>` per source (allocation
 per call, no real benefit since the I/O is sync) or use a trait so gnarly that the closures stop reading as
-straight-line transfer code. Two siblings share `TransferContext`, `TransferOutcome`, `TransferLoopOutcome`, and
-`build_pre_skip_set` / `emit_progress_and_status` helpers — the duplication is small. For conflict resolution: local-FS
-conflicts surface mid-flight at parent directories inside `copy_single_item` (a file blocking `create_dir_all`), which
-the driver can't pre-detect via top-level `dest.get_metadata`; so the sync driver delegates conflict resolution to the
-closure entirely. Volume ops have only top-level conflicts that always reduce to `resolve_volume_conflict`, so the async
-driver owns that dispatch (uniform shape across all 3 volume ops, exactly what we want to deduplicate). The data-safety
-contract (closure never invoked for pre-skipped / resolved-as-Skip / post-cancel) is enforced in both shapes by the
-driver's loop structure and pinned by the `transfer_driver_*_tests.rs` suite. Volume copy's two paths are sibling
-modules over that shared driver: `volume/copy_serial.rs` supplies the copy-specific closures, and
-`volume/copy_concurrent.rs` runs its own window of spawned tasks rather than becoming a third driver mode (one-of-four
-abstraction not worth its weight).
+straight-line transfer code. Two siblings share `TransferContext` (generic over how a path is spelled: `std::path` for
+the sync driver, app paths for the async one, #1225), `TransferOutcome`, `TransferLoopOutcome`, and the
+`emit_progress_and_status` helper — the duplication is small. `build_pre_skip_set` is the async driver's alone. For
+conflict resolution: local-FS conflicts surface mid-flight at parent directories inside `copy_single_item` (a file
+blocking `create_dir_all`), which the driver can't pre-detect via top-level `dest.get_metadata`; so the sync driver
+delegates conflict resolution to the closure entirely. Volume ops have only top-level conflicts that always reduce to
+`resolve_volume_conflict`, so the async driver owns that dispatch (uniform shape across all 3 volume ops, exactly what
+we want to deduplicate). The data-safety contract (closure never invoked for pre-skipped / resolved-as-Skip /
+post-cancel) is enforced in both shapes by the driver's loop structure and pinned by the `transfer_driver_*_tests.rs`
+suite. Volume copy's two paths are sibling modules over that shared driver: `volume/copy_serial.rs` supplies the
+copy-specific closures, and `volume/copy_concurrent.rs` runs its own window of spawned tasks rather than becoming a
+third driver mode (one-of-four abstraction not worth its weight).
 
 **Decision**: `copy_files_with_progress_inner` aligns `scan_result.files` to the driver's `&[PathBuf]` API via a paired
 `Vec<&FileInfo>` and a closure-captured `slice::Iter` advanced in lock-step with the driver iteration. **Why**: The sync

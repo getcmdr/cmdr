@@ -99,9 +99,9 @@ async fn run(
                 "op-kept",
                 state,
                 source,
-                &paths,
+                &crate::testing::app_paths_of(&paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await
@@ -112,9 +112,9 @@ async fn run(
                 "op-kept",
                 state,
                 source,
-                &paths,
+                &crate::testing::app_paths_of(&paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await
@@ -187,9 +187,9 @@ async fn a_failure_that_names_its_own_rescue_lists_only_the_others() {
         "op-kept-own",
         &state,
         source as Arc<dyn Volume>,
-        &[PathBuf::from("/f0.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/f0.txt")]),
         Arc::clone(&inner) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config,
     )
     .await

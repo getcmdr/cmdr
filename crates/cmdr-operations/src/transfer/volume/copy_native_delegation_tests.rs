@@ -56,11 +56,10 @@ async fn a_copy_between_two_local_volumes_needs_no_export_streams() {
             events,
             "source".to_string(),
             source,
-            // Absolute, as the app sends a local source (`on_local_root`: an absolute path wins).
-            vec![src_dir.join("notes.txt")],
+            crate::testing::app_paths_of(vec![src_dir.join("notes.txt")]),
             "dest".to_string(),
             dest,
-            PathBuf::from("/"),
+            crate::testing::app_path_of(&PathBuf::from("/")),
             VolumeCopyConfig::default(),
             cmdr_operation_log::types::Initiator::User,
             None,

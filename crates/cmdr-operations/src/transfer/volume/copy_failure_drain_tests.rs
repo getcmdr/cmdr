@@ -14,6 +14,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 use crate::types::CancelRollbackOutcome;
 use cmdr_fs::staging::STAGING_TEMP_MARKER;
@@ -89,14 +90,16 @@ async fn a_failure_lets_every_sibling_close_its_own_write() {
     let state = make_state(&engine);
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         "failure-drain-siblings",
         &state,
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -159,14 +162,16 @@ async fn a_sibling_that_never_stops_is_abandoned_at_the_drain_deadline() {
     let state = make_state(&engine);
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         "failure-drain-wedged-sibling",
         &state,
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -205,14 +210,16 @@ async fn a_failure_while_paused_wakes_the_parked_siblings_to_stop() {
     let state = make_state(&engine);
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         "failure-drain-paused",
         &state,
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -262,14 +269,16 @@ async fn a_rollback_during_the_drain_ends_as_one_rollback() {
     let op = engine.register_state("failure-drain-rollback", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);

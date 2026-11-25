@@ -117,9 +117,9 @@ async fn smb_integration_copy_100_unique_files_no_cross_contamination() {
         "test-op-100-unique",
         &state,
         Arc::clone(&vol),
-        &source_paths,
+        &cmdr_operations::testing::app_paths_of(&source_paths),
         Arc::clone(&dest_vol),
-        Path::new("/"),
+        &cmdr_operations::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -417,9 +417,9 @@ async fn run_concurrent_write_pass(
             "regression-op",
             &state,
             Arc::clone(&src_vol),
-            &source_rel_paths,
+            &cmdr_operations::testing::app_paths_of(&source_rel_paths),
             Arc::clone(&dst_vol),
-            &dest_dir_abs,
+            &cmdr_operations::testing::app_path_of(&dest_dir_abs),
             &config,
         ),
     )

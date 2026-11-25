@@ -9,6 +9,7 @@
 //! refusal AT the item it owns, so a deep refusal answered Stop doesn't get
 //! asked about again on its way up.
 
+use cmdr_fs::app_path::AppPath;
 use std::path::Path;
 
 use super::super::super::refused_name::{RefusedItem, RefusedNameAnswer, ask_async, refusal_reason};
@@ -63,6 +64,16 @@ pub(super) fn refused_here(subject: &RefusalSubject<'_>, error: &PathedVolumeErr
         return None;
     }
     refusal_reason(&error.clone().into_write_error())
+}
+
+/// The destination refusing the name `dest` ends in, before anything is written
+/// for it: what [`skip_if_refused`] turns into the question for that item.
+pub(super) fn name_refused_at(dest: &AppPath) -> PathedVolumeError {
+    PathedVolumeError::new(
+        PathRole::Destination,
+        dest,
+        VolumeError::InvalidName("The destination's filesystem doesn't take this name".into()),
+    )
 }
 
 /// Whether `error` is a source item with no bytes to copy and no way to land as

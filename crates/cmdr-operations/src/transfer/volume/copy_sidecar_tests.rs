@@ -58,9 +58,9 @@ async fn a_copy_out_of_a_fat_folder_leaves_paired_sidecars_behind() {
         "op-volume-sidecar-copy",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("folder")],
+        &crate::testing::app_paths_of(&[PathBuf::from("folder")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new(""),
+        &crate::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await

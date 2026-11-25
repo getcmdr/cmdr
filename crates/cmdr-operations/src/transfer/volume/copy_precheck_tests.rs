@@ -34,6 +34,7 @@ use cmdr_fs::volume::{
     StreamWritten, VolumeReadStream,
 };
 use std::ops::ControlFlow;
+use std::path::Path;
 use unicode_normalization::UnicodeNormalization;
 
 /// How a case- and normalization-insensitive backend compares two names.
@@ -348,9 +349,9 @@ async fn run_copy(
         guard.id().as_str(),
         &state,
         Arc::clone(source) as Arc<dyn Volume>,
-        paths,
+        &crate::testing::app_paths_of(paths),
         Arc::clone(dest) as Arc<dyn Volume>,
-        Path::new(dest_dir),
+        &crate::testing::app_path_of(Path::new(dest_dir)),
         &config,
     )
     .await

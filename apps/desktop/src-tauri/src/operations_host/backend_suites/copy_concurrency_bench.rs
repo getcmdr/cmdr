@@ -477,9 +477,9 @@ async fn timed_copy(corpus: &Corpus, dest: &Arc<dyn Volume>, dir: &str, window: 
                 operation_id.as_str(),
                 &state,
                 source_vol,
-                &source_paths,
+                &cmdr_operations::testing::app_paths_of(&source_paths),
                 dest_vol,
-                Path::new(&dir),
+                &cmdr_operations::testing::app_path_of(Path::new(&dir)),
                 &config,
             )
             .await

@@ -131,9 +131,9 @@ async fn a_selected_link_to_a_folder_copies_as_the_folder_through_a_preview() {
         "op-selected-link-folder",
         &make_state(&engine),
         boot_volume(),
-        std::slice::from_ref(&link),
+        &crate::testing::app_paths_of(std::slice::from_ref(&link)),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_with_preview(preview_id),
     )
     .await;
@@ -159,9 +159,9 @@ async fn a_selected_link_counts_what_it_points_at() {
         "op-selected-link-totals",
         &make_state(&engine),
         boot_volume(),
-        std::slice::from_ref(&link),
+        &crate::testing::app_paths_of(std::slice::from_ref(&link)),
         dest_volume(),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_with_preview(preview_id),
     )
     .await;
@@ -204,9 +204,9 @@ async fn a_selected_link_to_a_file_copies_the_file_through_a_preview() {
         "op-selected-link-file",
         &make_state(&engine),
         boot_volume(),
-        std::slice::from_ref(&link),
+        &crate::testing::app_paths_of(std::slice::from_ref(&link)),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_with_preview(preview_id),
     )
     .await;
@@ -237,9 +237,9 @@ async fn a_selected_link_moved_through_a_preview_removes_the_link_never_the_targ
         "op-selected-link-move",
         &make_state(&engine),
         boot_volume(),
-        std::slice::from_ref(&link),
+        &crate::testing::app_paths_of(std::slice::from_ref(&link)),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_with_preview(preview_id),
     )
     .await;

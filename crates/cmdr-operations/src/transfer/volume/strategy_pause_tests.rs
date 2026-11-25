@@ -74,11 +74,11 @@ async fn streaming_copy_parks_mid_file_while_paused_then_resumes() {
     let op = tokio::spawn(async move {
         copy_single_path(
             &source_drv,
-            Path::new("/big.bin"),
+            &crate::testing::app_path_of(Path::new("/big.bin")),
             Some(false),
             SourceFileFacts::default(),
             &dest_drv,
-            Path::new("/big.bin"),
+            &crate::testing::app_path_of(Path::new("/big.bin")),
             &state_drv,
             &CreatedPaths::default(),
             &progress_drv,
@@ -163,11 +163,11 @@ async fn streaming_copy_cancel_while_paused_mid_file_unblocks() {
         let state_ref = &state_drv;
         copy_single_path(
             &source_drv,
-            Path::new("/big.bin"),
+            &crate::testing::app_path_of(Path::new("/big.bin")),
             Some(false),
             SourceFileFacts::default(),
             &dest_drv,
-            Path::new("big.bin"),
+            &crate::testing::app_path_of(Path::new("big.bin")),
             state_ref,
             &CreatedPaths::default(),
             &progress_drv,
@@ -256,11 +256,11 @@ async fn paused_mtp_copy_parks_in_place_then_resumes_byte_exact() {
     let op = tokio::spawn(async move {
         copy_single_path(
             &source_drv,
-            Path::new("/movie.bin"),
+            &crate::testing::app_path_of(Path::new("/movie.bin")),
             Some(false),
             SourceFileFacts::default(),
             &dest_drv,
-            Path::new("movie.bin"),
+            &crate::testing::app_path_of(Path::new("movie.bin")),
             &state_drv,
             &CreatedPaths::default(),
             &progress_drv,
@@ -363,11 +363,11 @@ async fn paused_mtp_copy_cancel_while_paused_keeps_no_partial() {
         let state_ref = &state_drv;
         copy_single_path(
             &source_drv,
-            Path::new("/movie.bin"),
+            &crate::testing::app_path_of(Path::new("/movie.bin")),
             Some(false),
             SourceFileFacts::default(),
             &dest_drv,
-            Path::new("movie.bin"),
+            &crate::testing::app_path_of(Path::new("movie.bin")),
             state_ref,
             &CreatedPaths::default(),
             &progress_drv,
@@ -445,11 +445,11 @@ async fn unpaused_mtp_copy_streams_straight_through() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/movie.bin"),
+        &crate::testing::app_path_of(Path::new("/movie.bin")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("movie.bin"),
+        &crate::testing::app_path_of(Path::new("movie.bin")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -540,11 +540,11 @@ async fn a_destination_that_buffers_ahead_parks_on_the_operation_pause() {
     let op = tokio::spawn(async move {
         copy_single_path(
             &source,
-            Path::new("/big.bin"),
+            &crate::testing::app_path_of(Path::new("/big.bin")),
             Some(false),
             SourceFileFacts::default(),
             &dest,
-            Path::new("/big.bin"),
+            &crate::testing::app_path_of(Path::new("/big.bin")),
             &state_drv,
             &CreatedPaths::default(),
             &progress_drv,

@@ -12,6 +12,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::volume::InMemoryVolume;
 use cmdr_local::LocalPosixVolume;
+use std::path::Path;
 
 // ========================================================================
 // Extract-out: copy a file + a directory subtree OUT of a zip archive
@@ -85,9 +86,9 @@ async fn extract_out_copies_a_file_and_a_directory_subtree_out_of_a_zip() {
         "extract-out-op",
         &state,
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -146,9 +147,9 @@ async fn extract_out_walks_a_folder_whose_rows_are_relative_to_the_archive() {
         "extract-out-relative-op",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("docs")],
+        &crate::testing::app_paths_of(&[PathBuf::from("docs")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -210,9 +211,9 @@ async fn the_executable_bit_survives_an_extract_out_of_a_zip() {
         "extract-out-exec-bit-op",
         &make_state(&engine),
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()
@@ -300,9 +301,9 @@ async fn extracting_a_symlink_entry_writes_a_regular_file_never_a_symlink() {
         "symlink-extract-op",
         &state,
         Arc::clone(&source),
-        &[zip_path.join("link")],
+        &crate::testing::app_paths_of(&[zip_path.join("link")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -415,9 +416,9 @@ mod quarantine {
             "extract-out-quarantine-op",
             state,
             Arc::clone(source),
-            sources,
+            &crate::testing::app_paths_of(sources),
             Arc::clone(dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()
@@ -653,9 +654,9 @@ mod quarantine {
             "extract-out-quarantine-cancel-op",
             &state,
             source,
-            &[archive.join("App")],
+            &crate::testing::app_paths_of(&[archive.join("App")]),
             dest,
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()

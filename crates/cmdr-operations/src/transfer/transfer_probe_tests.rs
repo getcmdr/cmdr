@@ -376,7 +376,7 @@ fn a_transfer_publishing_progress_across_file_boundaries_is_never_called_still()
         Duration::ZERO,
     );
     let source = ledger.for_source(
-        Path::new("/src/item"),
+        cmdr_fs::app_path!("/src/item"),
         Arc::new(Mutex::new(Instant::now() - Duration::from_secs(1))),
     );
     let leaf_bytes = 2_800_000_u64;

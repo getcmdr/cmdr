@@ -98,9 +98,9 @@ async fn run(
                 "op-failure-side",
                 &state,
                 source,
-                paths,
+                &crate::testing::app_paths_of(paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await
@@ -111,9 +111,9 @@ async fn run(
                 "op-failure-side",
                 &state,
                 source,
-                paths,
+                &crate::testing::app_paths_of(paths),
                 dest,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config,
             )
             .await

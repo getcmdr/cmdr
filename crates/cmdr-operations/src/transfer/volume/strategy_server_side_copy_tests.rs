@@ -857,9 +857,9 @@ async fn a_folder_copied_on_the_server_counts_and_shows_every_file() {
         "op-server-copy-folder",
         &state,
         Arc::clone(&as_volume),
-        &[std::path::PathBuf::from("/Photos/Lisbon trip")],
+        &crate::testing::app_paths_of(&[std::path::PathBuf::from("/Photos/Lisbon trip")]),
         Arc::clone(&as_volume),
-        Path::new("/Backup"),
+        &crate::testing::app_path_of(Path::new("/Backup")),
         &crate::VolumeCopyConfig::default(),
     )
     .await

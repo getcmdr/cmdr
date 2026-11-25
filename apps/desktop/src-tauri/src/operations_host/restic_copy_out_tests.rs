@@ -111,9 +111,9 @@ async fn a_copy_out_lands_a_file_and_a_folder_with_their_dates_and_modes() {
         "restic-copy-out-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         source,
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         dest,
-        &dest_root,
+        &cmdr_operations::testing::app_path_of(&dest_root),
         &quick_progress(),
     )
     .await;
@@ -249,9 +249,9 @@ async fn a_copy_out_with_no_password_asks_for_one_and_goes_through_after_the_unl
             "restic-copy-password-op",
             &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
             source,
-            &sources,
+            &cmdr_operations::testing::app_paths_of(&sources),
             Arc::clone(&dest),
-            &dest_root,
+            &cmdr_operations::testing::app_path_of(&dest_root),
             &quick_progress(),
         )
         .await
@@ -309,9 +309,9 @@ async fn a_special_file_in_a_snapshot_is_skipped_and_its_siblings_land() {
         "restic-copy-fifo-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         source,
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         dest,
-        &dest_root,
+        &cmdr_operations::testing::app_path_of(&dest_root),
         &quick_progress(),
     )
     .await;
@@ -359,9 +359,9 @@ async fn a_restore_lands_links_as_links_verbatim_nested_and_selected() {
         "restic-restore-links-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         source,
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         dest,
-        &dest_root,
+        &cmdr_operations::testing::app_path_of(&dest_root),
         &quick_progress(),
     )
     .await;
@@ -417,9 +417,9 @@ async fn a_restore_onto_a_destination_with_no_links_counts_each_as_a_skip() {
             &format!("restic-restore-no-links-{tag}"),
             &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
             source,
-            &sources,
+            &cmdr_operations::testing::app_paths_of(&sources),
             Arc::clone(&dest) as Arc<dyn Volume>,
-            Path::new("/inbox"),
+            &cmdr_operations::testing::app_path_of(Path::new("/inbox")),
             &quick_progress(),
         )
         .await;
@@ -456,9 +456,9 @@ async fn a_symlink_in_a_snapshot_doesnt_stop_its_folder_from_copying_out() {
         "restic-copy-link-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         source,
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         dest,
-        &dest_root,
+        &cmdr_operations::testing::app_path_of(&dest_root),
         &quick_progress(),
     )
     .await;

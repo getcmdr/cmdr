@@ -130,9 +130,9 @@ async fn copy_with_a_name_taken_at_landing(
         "test-op-name-taken-at-landing",
         &make_state(engine),
         source as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/dest"),
+        &crate::testing::app_path_of(Path::new("/dest")),
         &VolumeCopyConfig {
             conflict_resolution: policy,
             ..VolumeCopyConfig::default()
@@ -243,9 +243,9 @@ async fn copy_through_a_late_error_at_landing(
         lane,
         &make_state(engine),
         source as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&nas) as Arc<dyn Volume>,
-        Path::new("/dest"),
+        &crate::testing::app_path_of(Path::new("/dest")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -401,9 +401,9 @@ async fn copy_onto_a_claimed_name_someone_saves_over(
         "test-op-claimed-name-saved-over",
         &make_state(engine),
         source as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Rename,
             ..VolumeCopyConfig::default()
@@ -502,9 +502,9 @@ async fn rename_pick_whose_name_is_taken_at_landing(
         "test-op-rename-pick-taken-at-landing",
         &make_state(engine),
         source as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/dest"),
+        &crate::testing::app_path_of(Path::new("/dest")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Rename,
             ..VolumeCopyConfig::default()
@@ -669,9 +669,9 @@ async fn a_rename_placeholder_someone_wrote_into_is_never_cleared() {
         "test-op-rename-placeholder-written-into",
         &make_state(&engine),
         source as Arc<dyn Volume>,
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Rename,
             ..VolumeCopyConfig::default()

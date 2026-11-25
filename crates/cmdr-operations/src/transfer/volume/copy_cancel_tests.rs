@@ -19,6 +19,7 @@ use super::*;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 use crate::types::CancelRollbackOutcome;
 use cmdr_fs::testing::wait_until_async;
@@ -81,14 +82,16 @@ async fn cancel_reaches_a_driver_parked_on_its_in_flight_tasks() {
     let op = engine.register_state("cancel-parked-driver", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -131,14 +134,16 @@ async fn rollback_reaches_a_parked_driver_and_undoes_what_landed() {
     let op = engine.register_state("rollback-parked-driver", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -191,14 +196,16 @@ async fn a_task_that_never_winds_down_is_abandoned_at_the_deadline() {
     let op = engine.register_state("abandon-wedged-task", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -270,14 +277,16 @@ async fn an_abort_shortens_the_drain_window_a_cancel_already_armed() {
     let op = engine.register_state("abort-shortens-drain", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);
@@ -390,9 +399,9 @@ async fn refusing_a_conflict_prompt_mid_copy_sweeps_the_partials_and_reports_can
             op.id().as_str(),
             op.state(),
             Arc::clone(&fx.source),
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             Arc::clone(&fx.dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         ),
     )
@@ -474,14 +483,16 @@ async fn rollback_undoes_what_an_abandoned_folder_task_already_landed() {
     let op = engine.register_state("rollback-abandoned-folder-task", make_state(&engine));
     let config = VolumeCopyConfig::default();
 
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&fx.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&fx.dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);

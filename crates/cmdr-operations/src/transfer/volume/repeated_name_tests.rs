@@ -56,9 +56,9 @@ async fn copy_twins_under(policy: ConflictResolution) -> BTreeSet<String> {
         "repeated-name-copy",
         &make_state(&engine),
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         dest,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &VolumeCopyConfig {
             conflict_resolution: policy,
             progress_interval_ms: 0,

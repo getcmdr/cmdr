@@ -84,9 +84,9 @@ async fn copy(
         op,
         &make_state(engine),
         Arc::clone(source) as Arc<dyn Volume>,
-        paths,
+        &crate::testing::app_paths_of(paths),
         dest,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -318,9 +318,9 @@ async fn copy_onto_a_share(
         registered.id().as_str(),
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[album],
+        &crate::testing::app_paths_of(&[album]),
         Arc::clone(&share) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await

@@ -19,6 +19,7 @@ use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 // ========================================================================
 // Cross-volume file→file Overwrite safe-replace (data-loss regression)
@@ -182,9 +183,9 @@ async fn cross_volume_overwrite_preserves_dest_on_midstream_failure() {
         "test-op-midstream-fail",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -233,9 +234,9 @@ async fn cross_volume_overwrite_success_replaces_and_cleans_temp() {
         "test-op-overwrite-success",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/file.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/file.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -281,13 +282,13 @@ async fn cross_volume_overwrite_concurrent_replaces_and_cleans_temp() {
         "test-op-overwrite-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -487,9 +488,9 @@ async fn cross_volume_overwrite_serial_preserves_new_data_on_finalize_failure() 
         "test-op-finalize-fail-serial",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -531,13 +532,13 @@ async fn cross_volume_overwrite_concurrent_preserves_new_data_on_finalize_failur
         "test-op-finalize-fail-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

@@ -199,11 +199,11 @@ async fn copy_one_to(
 
     copy_single_path(
         &source,
-        Path::new("/notes.txt"),
+        &crate::testing::app_path_of(Path::new("/notes.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        dest_path,
+        &crate::testing::app_path_of(dest_path),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),

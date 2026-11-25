@@ -21,6 +21,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::state::ConflictResolutionResponse;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 use crate::types::ConflictResolution;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeReadStream};
@@ -231,13 +232,13 @@ async fn concurrent_merge_with_two_deep_clashes_serializes_prompts() {
         "op-concurrent-two-clashes",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/one"),
             PathBuf::from("/two"),
             PathBuf::from("/three.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -296,13 +297,13 @@ async fn top_level_and_deep_clash_share_the_dispatch_mutex() {
         "op-top-vs-deep",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/top.txt"),
             PathBuf::from("/dir"),
             PathBuf::from("/extra.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -391,13 +392,13 @@ async fn cancel_while_queued_unblocks_both_no_hang() {
             op_id.as_str(),
             &state,
             Arc::clone(&source),
-            &[
+            &crate::testing::app_paths_of(&[
                 PathBuf::from("/one"),
                 PathBuf::from("/two"),
                 PathBuf::from("/three.txt"),
-            ],
+            ]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         ),
     )
@@ -459,9 +460,9 @@ async fn answering_a_deep_prompt_frees_a_driver_queued_behind_it() {
             "op-deep-prompt-then-top-level",
             &state,
             Arc::clone(&source),
-            &deep_prompt_sources(),
+            &crate::testing::app_paths_of(deep_prompt_sources()),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         ),
     )
@@ -512,9 +513,9 @@ async fn cancel_frees_a_driver_queued_behind_a_deep_prompt() {
             &op_id,
             &state,
             Arc::clone(&source),
-            &deep_prompt_sources(),
+            &crate::testing::app_paths_of(deep_prompt_sources()),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         ),
     )
@@ -599,9 +600,9 @@ async fn a_task_failing_while_the_driver_is_queued_behind_a_deep_prompt_still_fr
             "op-failure-behind-deep-prompt",
             &state,
             Arc::clone(&source),
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         ),
     )

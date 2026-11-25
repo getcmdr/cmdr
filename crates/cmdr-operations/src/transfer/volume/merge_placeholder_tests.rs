@@ -21,6 +21,7 @@ use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError, VolumeReadStream};
 use cmdr_local::LocalPosixVolume;
+use std::path::Path;
 
 use super::super::faulty_volume::forward_volume_methods;
 
@@ -123,9 +124,9 @@ async fn a_merge_child_that_never_lands_takes_its_rename_placeholder_back() {
         "op-merge-rename-placeholder",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -178,9 +179,9 @@ async fn a_merge_child_that_lands_keeps_its_rename_name() {
         "op-merge-rename-placeholder-ok",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -237,9 +238,9 @@ async fn an_empty_file_that_lands_on_its_reservation_is_kept() {
                 "op-empty-rename-lands-move",
                 &make_state(&engine),
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -249,9 +250,9 @@ async fn an_empty_file_that_lands_on_its_reservation_is_kept() {
                 "op-empty-rename-lands-copy",
                 &make_state(&engine),
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -322,14 +323,16 @@ async fn a_merge_child_abandoned_at_the_drain_deadline_takes_its_rename_placehol
         progress_interval_ms: 0,
         ..VolumeCopyConfig::default()
     };
+    let typed_dest = crate::testing::app_path_of(Path::new("/"));
+    let typed_sources = crate::testing::app_paths_of(&sources);
     let copy = copy_volumes_with_progress(
         events.clone(),
         op.id().as_str(),
         op.state(),
         Arc::clone(&gated.source),
-        &sources,
+        &typed_sources,
         Arc::clone(&dest),
-        Path::new("/"),
+        &typed_dest,
         &config,
     );
     tokio::pin!(copy);

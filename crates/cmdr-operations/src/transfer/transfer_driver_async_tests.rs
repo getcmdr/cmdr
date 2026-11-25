@@ -34,6 +34,7 @@ use super::{
     drive_transfer_serial_async,
 };
 use crate::testing::TestOperations;
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_operation_log::types::OperationId;
 use std::collections::HashSet;
@@ -62,8 +63,8 @@ type FetchFut<'a> = Pin<Box<dyn Future<Output = Result<NameAtDest, WriteOperatio
 
 /// A fetcher's answer for `p`: taken by an entry of `size` bytes AT `p`, or free
 /// there. These cells never respell, so both arms carry the path as asked.
-fn answer(p: &Path, size: Option<u64>) -> FetchFut<'static> {
-    let p = p.to_path_buf();
+fn answer(p: &AppPath, size: Option<u64>) -> FetchFut<'static> {
+    let p = p.to_owned();
     Box::pin(async move {
         Ok(match size {
             Some(size) => NameAtDest::Taken { path: p, size },
@@ -72,11 +73,11 @@ fn answer(p: &Path, size: Option<u64>) -> FetchFut<'static> {
     })
 }
 
-fn free(p: &Path) -> FetchFut<'static> {
+fn free(p: &AppPath) -> FetchFut<'static> {
     answer(p, None)
 }
 
-fn taken(p: &Path, size: u64) -> FetchFut<'static> {
+fn taken(p: &AppPath, size: u64) -> FetchFut<'static> {
     answer(p, Some(size))
 }
 
@@ -109,19 +110,19 @@ async fn async_driver_does_not_invoke_closure_for_pre_skipped_sources() {
         &sink,
         &state,
         &op_id,
-        &sources,
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(&sources),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         200,
         1,
         100,
-        &pre_skip,
+        &super::test_support::typed_set(&pre_skip),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) }, // no conflicts
+        |p: &AppPath| -> FetchFut<'_> { free(p) }, // no conflicts
         |_input: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { panic!("conflict resolver must NEVER be called when there's no conflict") })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -157,27 +158,27 @@ async fn async_driver_does_not_invoke_closure_when_conflict_resolved_as_skip() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a.txt", "/b.txt"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a.txt", "/b.txt"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         200,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> {
-            let conflict = p == Path::new("/dest/a.txt");
+        |p: &AppPath| -> FetchFut<'_> {
+            let conflict = p == cmdr_fs::app_path!("/dest/a.txt");
             answer(p, conflict.then_some(50))
         },
         |input: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async move {
-                assert_eq!(input.source_path, Path::new("/a.txt"));
-                assert_eq!(input.initial_dest_path, Path::new("/dest/a.txt"));
+                assert_eq!(input.source_path, cmdr_fs::app_path!("/a.txt"));
+                assert_eq!(input.initial_dest_path, cmdr_fs::app_path!("/dest/a.txt"));
                 assert_eq!(input.dest_size_hint, Some(50));
                 Ok(ConflictDecision::Skip { bytes_accounted: 0 })
             })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -213,21 +214,21 @@ async fn async_driver_pre_cancel_does_not_invoke_closure_or_resolver() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         0,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |_p: &Path| -> FetchFut<'_> {
+        |_p: &AppPath| -> FetchFut<'_> {
             Box::pin(async { panic!("dest_meta_fetcher must NEVER be called after pre-cancel") })
         },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { panic!("conflict resolver must NEVER be called after pre-cancel") })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -257,19 +258,19 @@ async fn async_driver_cancel_after_first_blocks_second() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b", "/c"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b", "/c"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         3,
         300,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { unreachable!("no conflicts in this test") })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             let state_for_closure = Arc::clone(&state_for_closure);
             Box::pin(async move {
@@ -302,17 +303,17 @@ async fn async_driver_post_loop_intent_catches_late_cancel_race() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/only"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/only"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         1,
         100,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let state_for_closure = Arc::clone(&state_for_closure);
             Box::pin(async move {
                 // Closure finishes successfully, then user clicks Rollback.
@@ -350,25 +351,25 @@ async fn async_driver_proceed_with_rewritten_dest_reaches_closure() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a.txt"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a.txt"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         1,
         100,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { taken(p, 50) }, // always a conflict
+        |p: &AppPath| -> FetchFut<'_> { taken(p, 50) }, // always a conflict
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async {
                 Ok(ConflictDecision::Proceed {
-                    dest_path: PathBuf::from("/dest/a (1).txt"),
+                    dest_path: cmdr_fs::app_path!("/dest/a (1).txt").to_owned(),
                     replaces: Replaces::Nothing,
                     dest_name_claimed: false,
                 })
             })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -399,15 +400,15 @@ async fn async_driver_resolver_error_propagates_as_failed_intent() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a.txt"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a.txt"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         1,
         0,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { taken(p, 0) },
+        |p: &AppPath| -> FetchFut<'_> { taken(p, 0) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async {
                 Err(WriteOperationError::IoError {
@@ -416,7 +417,7 @@ async fn async_driver_resolver_error_propagates_as_failed_intent() {
                 })
             })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { panic!("closure must NEVER fire when resolver errored") })
         },
     )
@@ -446,15 +447,15 @@ async fn async_driver_resolver_cancel_ends_the_loop_as_cancelled() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a.txt", "/b.txt"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a.txt", "/b.txt"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         0,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { taken(p, 0) },
+        |p: &AppPath| -> FetchFut<'_> { taken(p, 0) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async {
                 Err(WriteOperationError::Cancelled {
@@ -462,7 +463,7 @@ async fn async_driver_resolver_cancel_ends_the_loop_as_cancelled() {
                 })
             })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { panic!("closure must NEVER fire when the clash was cancelled") })
         },
     )
@@ -491,27 +492,27 @@ async fn async_driver_no_conflict_skips_resolver_entirely() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         200,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             let r = Arc::clone(&r);
             Box::pin(async move {
                 r.fetch_add(1, Ordering::SeqCst);
                 Ok(ConflictDecision::Proceed {
-                    dest_path: PathBuf::new(),
+                    dest_path: cmdr_fs::app_path!("/").to_owned(),
                     replaces: Replaces::Nothing,
                     dest_name_claimed: false,
                 })
             })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { Ok(TransferOutcome::Transferred { bytes: 100 }) })
         },
     )
@@ -548,15 +549,15 @@ async fn async_driver_apply_to_all_resolver_decision_persists_across_sources() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b", "/c"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b", "/c"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         3,
         300,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { taken(p, 0) }, // every source conflicts
+        |p: &AppPath| -> FetchFut<'_> { taken(p, 0) }, // every source conflicts
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             let r = Arc::clone(&r);
             let latched = Arc::clone(&latched_for_resolver);
@@ -570,7 +571,7 @@ async fn async_driver_apply_to_all_resolver_decision_persists_across_sources() {
                 Ok(ConflictDecision::Skip { bytes_accounted: 0 })
             })
         },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -608,22 +609,25 @@ async fn async_driver_progress_accounting_sums_correctly() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/x1", "/x2", "/conflict", "/clean"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/x1", "/x2", "/conflict", "/clean"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         4,
         400,
         2,
-        200, // 2 bulk-skipped, 100 bytes each
-        &pre_skip,
+        200,
+        &super::test_support::typed_set(
+            // 2 bulk-skipped, 100 bytes each
+            &pre_skip,
+        ),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> {
-            let conflict = p == Path::new("/dest/conflict");
+        |p: &AppPath| -> FetchFut<'_> {
+            let conflict = p == cmdr_fs::app_path!("/dest/conflict");
             answer(p, conflict.then_some(50))
         },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { Ok(ConflictDecision::Skip { bytes_accounted: 50 }) })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { Ok(TransferOutcome::Transferred { bytes: 100 }) })
         },
     )
@@ -654,25 +658,25 @@ async fn async_driver_skip_counters_zero_when_nothing_skipped() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         200,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async {
                 Ok(ConflictDecision::Proceed {
-                    dest_path: PathBuf::from("/never"),
+                    dest_path: cmdr_fs::app_path!("/never").to_owned(),
                     replaces: Replaces::Nothing,
                     dest_name_claimed: false,
                 })
             })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { Ok(TransferOutcome::Transferred { bytes: 100 }) })
         },
     )
@@ -700,19 +704,19 @@ async fn async_driver_status_cache_matches_emitted_progress() {
         &sink,
         &state,
         op_id.as_str(),
-        &paths(&["/a"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         1,
         100,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { taken(p, 50) }, // conflict
+        |p: &AppPath| -> FetchFut<'_> { taken(p, 50) }, // conflict
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { Ok(ConflictDecision::Skip { bytes_accounted: 0 }) })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { panic!("closure should not fire under Skip") })
         },
     )
@@ -744,17 +748,17 @@ async fn async_driver_emitted_bytes_equal_sum_of_transferred() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b", "/c"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b", "/c"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         3,
         60,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let b = Arc::clone(&b);
             Box::pin(async move {
                 let n = b.lock().unwrap().next().unwrap();
@@ -783,17 +787,17 @@ async fn async_driver_threads_running_totals_through_context() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b", "/c"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b", "/c"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         3,
         300,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let s = Arc::clone(&s);
             Box::pin(async move {
                 s.lock().unwrap().push((ctx.files_done_so_far, ctx.bytes_done_so_far));
@@ -826,17 +830,17 @@ async fn async_driver_default_dest_joins_source_basename() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/foo/bar.txt"]),
-        Path::new("/dest/root"),
+        &crate::testing::app_paths_of(paths(&["/foo/bar.txt"])),
+        &crate::testing::app_path_of(Path::new("/dest/root")),
         1,
         100,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |p: &Path| -> FetchFut<'_> { free(p) },
+        |p: &AppPath| -> FetchFut<'_> { free(p) },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-        |ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             let log_clone = Arc::clone(&log_clone);
             Box::pin(async move {
                 log_clone.record(ctx.source_path, ctx.dest_path);
@@ -875,24 +879,24 @@ async fn async_driver_dest_meta_fetcher_polled_exactly_once_per_non_skipped_sour
         &sink,
         &state,
         &op_id,
-        &paths(&["/skip", "/a", "/b"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/skip", "/a", "/b"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         3,
         300,
         1,
         100,
-        &pre_skip,
+        &super::test_support::typed_set(&pre_skip),
         &copy_config(),
-        |path: &Path| -> FetchFut<'_> {
+        |path: &AppPath| -> FetchFut<'_> {
             let p = Arc::clone(&p);
-            let path = path.to_path_buf();
+            let path = path.to_owned();
             Box::pin(async move {
-                p.lock().unwrap().push(path.clone());
+                p.lock().unwrap().push(crate::testing::engine_path_of(&path));
                 Ok(NameAtDest::Free(path))
             })
         },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { Ok(TransferOutcome::Transferred { bytes: 100 }) })
         },
     )
@@ -931,21 +935,21 @@ async fn async_driver_cancel_check_precedes_pre_skip_check_precedes_conflict_res
         &sink,
         &state,
         &op_id,
-        &paths(&["/a"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         1,
         100,
         0,
         0,
-        &pre_skip,
+        &super::test_support::typed_set(&pre_skip),
         &copy_config(),
-        |_p: &Path| -> FetchFut<'_> {
+        |_p: &AppPath| -> FetchFut<'_> {
             Box::pin(async { panic!("cancel check must short-circuit BEFORE any fetcher call") })
         },
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { panic!("cancel check must short-circuit BEFORE any resolver call") })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { panic!("cancel check must short-circuit BEFORE any closure call") })
         },
     )
@@ -990,24 +994,24 @@ async fn driver_future_is_send_across_spawn() {
             &sink,
             &state_clone,
             &op_id_clone,
-            &paths(&["/a"]),
-            Path::new("/dest"),
+            &crate::testing::app_paths_of(paths(&["/a"])),
+            &crate::testing::app_path_of(Path::new("/dest")),
             1,
             100,
             0,
             0,
-            &HashSet::new(),
+            &super::test_support::typed_set(&HashSet::new()),
             &copy_config(),
-            |p: &Path| -> FetchFut<'_> {
+            |p: &AppPath| -> FetchFut<'_> {
                 let r = Arc::clone(shared_ref);
-                let p = p.to_path_buf();
+                let p = p.to_owned();
                 Box::pin(async move {
                     r.fetch_add(1, Ordering::SeqCst);
                     Ok(NameAtDest::Free(p))
                 })
             },
             |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-            |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+            |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let r = Arc::clone(shared_ref);
                 Box::pin(async move {
                     r.fetch_add(1, Ordering::SeqCst);
@@ -1066,17 +1070,17 @@ async fn async_driver_parks_while_paused_then_resumes_to_completion() {
             &sink,
             &state_drv,
             &op,
-            &srcs,
-            Path::new("/dest"),
+            &crate::testing::app_paths_of(&srcs),
+            &crate::testing::app_path_of(Path::new("/dest")),
             4,
             0,
             0,
             0,
-            &HashSet::new(),
+            &super::test_support::typed_set(&HashSet::new()),
             &copy_config(),
-            |p: &Path| -> FetchFut<'_> { free(p) },
+            |p: &AppPath| -> FetchFut<'_> { free(p) },
             |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-            |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+            |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let t = Arc::clone(transferred_ref);
                 let e = Arc::clone(entered_ref);
                 let g = Arc::clone(gate_ref);
@@ -1166,17 +1170,17 @@ async fn async_driver_cancel_while_paused_unblocks_and_cancels() {
             &sink,
             &state_drv,
             op.as_str(),
-            &srcs,
-            Path::new("/dest"),
+            &crate::testing::app_paths_of(&srcs),
+            &crate::testing::app_path_of(Path::new("/dest")),
             4,
             0,
             0,
             0,
-            &HashSet::new(),
+            &super::test_support::typed_set(&HashSet::new()),
             &copy_config(),
-            |p: &Path| -> FetchFut<'_> { free(p) },
+            |p: &AppPath| -> FetchFut<'_> { free(p) },
             |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> { Box::pin(async { unreachable!() }) },
-            |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+            |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let t = Arc::clone(transferred_ref);
                 let e = Arc::clone(entered_ref);
                 let g = Arc::clone(gate_ref);
@@ -1258,15 +1262,15 @@ async fn async_driver_fails_the_item_whose_destination_probe_refuses() {
         &sink,
         &state,
         &op_id,
-        &paths(&["/a", "/b"]),
-        Path::new("/dest"),
+        &crate::testing::app_paths_of(paths(&["/a", "/b"])),
+        &crate::testing::app_path_of(Path::new("/dest")),
         2,
         200,
         0,
         0,
-        &HashSet::new(),
+        &super::test_support::typed_set(&HashSet::new()),
         &copy_config(),
-        |_p: &Path| -> FetchFut<'_> {
+        |_p: &AppPath| -> FetchFut<'_> {
             Box::pin(async {
                 Err(WriteOperationError::ConnectionInterrupted {
                     path: "/dest/a".to_string(),
@@ -1276,7 +1280,7 @@ async fn async_driver_fails_the_item_whose_destination_probe_refuses() {
         |_i: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             Box::pin(async { panic!("a probe that couldn't answer resolves nothing") })
         },
-        |_ctx: TransferContext<'_>| -> TransferFut<'_> {
+        |_ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
             Box::pin(async { panic!("a probe that couldn't answer must never reach a write") })
         },
     )

@@ -26,6 +26,7 @@ use cmdr_fs::app_path;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, UnwritableReason, WriteAccess};
 use cmdr_local::LocalPosixVolume;
+use std::path::Path;
 
 /// Happy path: every source lands at dest and is gone from source. Completion
 /// event reports the right totals.
@@ -48,9 +49,9 @@ async fn cross_volume_move_happy_path() {
         "op-move-happy",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt"), PathBuf::from("/dir")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt"), PathBuf::from("/dir")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -99,9 +100,9 @@ async fn cross_volume_move_conflict_skip_preserves_source_and_dest() {
         "op-move-skip",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/keep.txt"), PathBuf::from("/fresh.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/keep.txt"), PathBuf::from("/fresh.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -155,9 +156,9 @@ async fn cross_volume_move_conflict_overwrite_replaces_dest_and_deletes_source()
         "op-move-overwrite",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/f.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/f.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -191,9 +192,9 @@ async fn cross_volume_move_conflict_rename_keeps_dest_and_renames_incoming() {
         "op-move-rename",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -250,9 +251,9 @@ async fn cross_volume_move_conflict_stop_resolves_via_oneshot() {
         "op-move-stop",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/x.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/x.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -302,15 +303,15 @@ async fn cross_volume_move_pre_known_conflicts_bulk_skip() {
         "op-move-bulk-skip",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
             PathBuf::from("/d.txt"),
             PathBuf::from("/e.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -421,9 +422,9 @@ async fn cross_volume_move_top_level_directory_excluded_from_bulk_skip() {
         "op-move-bulk-skip-dir-excluded",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/file.txt"), PathBuf::from("/docs")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/file.txt"), PathBuf::from("/docs")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -488,9 +489,9 @@ async fn cross_volume_move_on_real_local_volumes() {
         "op-move-real-fs",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("doc.txt"), PathBuf::from("note.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("doc.txt"), PathBuf::from("note.txt")]),
         Arc::clone(&dest),
-        Path::new(""),
+        &crate::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -547,9 +548,9 @@ async fn a_cross_volume_move_carries_the_executable_bit() {
         "op-move-exec-bit",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("run.sh"), PathBuf::from("scripts")],
+        &crate::testing::app_paths_of(&[PathBuf::from("run.sh"), PathBuf::from("scripts")]),
         Arc::clone(&dest),
-        Path::new(""),
+        &crate::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -594,9 +595,9 @@ async fn cross_volume_move_creates_missing_nested_dest() {
         "op-move-mkdir",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/incoming/2026/trip"),
+        &crate::testing::app_path_of(Path::new("/incoming/2026/trip")),
         &config,
     )
     .await;
@@ -668,9 +669,9 @@ async fn a_move_into_a_directory_reaps_the_stale_temps_a_crash_left_there() {
         "op-move-reap",
         &state,
         source,
-        &[PathBuf::from("/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes.txt")]),
         dest,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &test_support::config_default(),
     )
     .await
@@ -714,9 +715,9 @@ async fn a_cross_volume_move_into_a_folder_that_takes_no_writes_is_refused_befor
         "op-move-unwritable",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/locked/inbox"),
+        &crate::testing::app_path_of(Path::new("/locked/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -793,10 +794,10 @@ async fn a_volume_move_reports_why_it_cant_roll_back() {
                 Arc::clone(&events) as Arc<dyn OperationEventSink>,
                 "source-vol".to_string(),
                 Arc::clone(&source),
-                vec![PathBuf::from(file)],
+                crate::testing::app_paths_of(vec![PathBuf::from(file)]),
                 dest_volume_id.to_string(),
                 dest_volume,
-                PathBuf::from("/moved"),
+                crate::testing::app_path_of(&PathBuf::from("/moved")),
                 VolumeCopyConfig {
                     preview_id: Some(preview_id.clone()),
                     ..VolumeCopyConfig::default()
@@ -854,10 +855,10 @@ async fn a_local_move_from_a_folder_volume_never_reads_a_failure_as_a_disconnect
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             "vol-dropbox".to_string(),
             source,
-            vec![PathBuf::from("/a.txt")],
+            crate::testing::app_paths_of(vec![PathBuf::from("/a.txt")]),
             "vol-stick".to_string(),
             dest,
-            PathBuf::from("/"),
+            crate::testing::app_path_of(&PathBuf::from("/")),
             VolumeCopyConfig::default(),
             crate::target_names::TargetNames::default(),
             cmdr_operation_log::types::Initiator::User,

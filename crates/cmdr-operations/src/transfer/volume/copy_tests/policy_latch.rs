@@ -6,6 +6,7 @@ use super::*;
 use crate::testing::TestOperations;
 use crate::transfer::conflict_responder_test_support::ConflictResponderSink;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_skip_all_answer_becomes_the_reported_policy() {
@@ -32,9 +33,9 @@ async fn a_skip_all_answer_becomes_the_reported_policy() {
         "test-op-policy-latch",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

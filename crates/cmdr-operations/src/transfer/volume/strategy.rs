@@ -16,7 +16,7 @@ use super::super::super::state::WriteOperationState;
 // this module's API) name the staging choice without a second import path.
 pub(super) use super::super::staged_write::{LandingName, Replaces, WriteStaging, resolve_staging, staging_for};
 use super::super::transfer_driver::{LeafProgressLedger, SourceProgress};
-use super::listed_name::on_volume;
+use super::listed_name::{on_volume, std_of};
 use super::merge::copy_directory_streaming;
 use super::merge_ctx::{CreatedPaths, MergeCtx};
 use super::preflight::SourceFileFacts;
@@ -41,16 +41,12 @@ use cmdr_fs::volume::{Volume, VolumeError};
 /// which the caller surfaces as that source's failure rather than guessing.
 pub(super) async fn resolve_source_is_directory(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     hint: Option<bool>,
 ) -> Result<bool, VolumeError> {
     match hint {
         Some(known) => Ok(known),
-        None => {
-            source_volume
-                .is_directory(&AppPath::legacy_unchecked(source_path))
-                .await
-        }
+        None => source_volume.is_directory(source_path).await,
     }
 }
 
@@ -71,11 +67,11 @@ pub(super) async fn resolve_source_is_directory(
 )]
 pub(super) async fn copy_single_path(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     source_is_directory: Option<bool>,
     source_facts: SourceFileFacts,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
     state: &Arc<WriteOperationState>,
     created: &CreatedPaths,
     // This source's view of the operation's leaf accounting. Every file that
@@ -105,35 +101,28 @@ pub(super) async fn copy_single_path(
     // it (`crate::name_rules::DestinationNames`): the caller asks about it like
     // a landing's refusal.
     if super::landing::destination_refuses(state, dest_path) {
-        return Err(VolumeError::InvalidName(
-            "The destination's filesystem doesn't take this name".into(),
-        ))
-        .at_destination(dest_path);
+        return Err(super::refused_item::name_refused_at(dest_path));
     }
-    // The driver still hands `std::path` values in; from here every body takes
-    // the app paths, made once (a borrow for UTF-8).
-    let (source_app, dest_app) = (on_volume(source_path), on_volume(dest_path));
-
     // A selected link this copy carries is a leaf, whatever the scan or a hint
     // says it points at. It joins the source's ledger like a walked leaf (a
     // file source records nothing here otherwise), because a link's identity is
     // its target, ❌ never a byte count.
     if let Some(target) = merge
         .and_then(|ctx| ctx.links)
-        .and_then(|links| links.selected_target(source_path))
+        .and_then(|links| links.selected_target(&std_of(source_path)))
     {
         let leaf = progress.begin_leaf(progress.node());
         land_link(
             source_volume,
-            &source_app,
+            source_path,
             target,
             dest_volume,
-            &dest_app,
+            dest_path,
             state,
             staging,
         )
         .await?;
-        created.record_link(dest_app.into_owned(), target.to_path_buf());
+        created.record_link(dest_path.to_owned(), target.to_path_buf());
         leaf.complete(0);
         return Ok(0);
     }
@@ -148,7 +137,7 @@ pub(super) async fn copy_single_path(
         // extract O(n²). Route it to the one-pass extractor instead, which decodes
         // the stream once. Random-access sources (a folder on any real FS, a plain
         // `.tar`, a zip) keep the per-entry walk below — zero regression.
-        if source_volume.extraction_is_sequential(&source_app) {
+        if source_volume.extraction_is_sequential(source_path) {
             return Box::pin(super::sequential_extract::extract_sequential_subtree(
                 source_volume,
                 source_path,
@@ -193,10 +182,10 @@ pub(super) async fn copy_single_path(
         // undo's own recheck (`journal_landed::LandedReadBack`), so only its bytes go up.
         let bytes = stream_pipe_file(
             source_volume,
-            &source_app,
+            source_path,
             source_facts,
             dest_volume,
-            &dest_app,
+            dest_path,
             state,
             &on_chunk,
             staging,
@@ -232,7 +221,7 @@ pub(crate) async fn pull_path_to_local(
     let progress = LeafProgressLedger::silent_source(Arc::clone(state));
     copy_single_path(
         source_volume,
-        source_path,
+        &on_volume(source_path),
         // The caller probed the source itself, so this is a known answer.
         Some(source_is_directory),
         // Nothing known about the file: the stream reports the REAL length, so a
@@ -241,7 +230,7 @@ pub(crate) async fn pull_path_to_local(
         // anyone, so its modes carry nothing.
         SourceFileFacts::default(),
         dest_volume,
-        dest_path,
+        &on_volume(dest_path),
         state,
         &created,
         &progress,

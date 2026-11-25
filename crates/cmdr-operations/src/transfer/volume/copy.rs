@@ -20,7 +20,7 @@ use std::collections::HashSet;
 use std::future::Future;
 
 use crate::summary::volume_items;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
@@ -31,13 +31,14 @@ use super::super::super::event_sinks::OperationEventSink;
 use super::super::super::host::OperationErrorReport;
 use super::super::super::journal;
 use super::super::super::manager;
-use super::super::super::source_binding::{ExpectedSources, retain_bound_sources_on};
+use super::super::super::source_binding::{ExpectedSources, retain_bound_app_sources_on};
 use super::super::super::state::{OperationIntent, WindDown, WriteOperationState};
 use super::super::super::transfer_tree::{TreeLanding, TreeOrder};
 use super::super::super::types::{
     CancelRollback, SpaceShortfall, VolumeCopyConfig, WriteCancelledEvent, WriteCompleteEvent, WriteOperationConfig,
     WriteOperationError, WriteOperationPhase, WriteOperationStartResult, WriteOperationType, WriteProgressEvent,
 };
+use super::super::super::wire_paths::{engine_path, engine_paths};
 use super::super::dest_name_index::DestNameIndex;
 use super::super::transfer_driver::{LeafProgressLedger, build_pre_skip_set};
 use super::link_carry::LinkCarry;
@@ -51,7 +52,8 @@ use super::super::super::ledger::WrittenFile;
 use super::cleanup::volume_rollback_with_progress;
 use super::displaced_destination::DisplacedLedger;
 use super::item_identity::is_the_same_item;
-use super::transfer_error::{PathRole, WriteFailure, write_error_event_from};
+use super::listed_name::{TopLevel, std_of, top_level};
+use super::transfer_error::{PathRole, WriteFailure, failed_path_text, write_error_event_from};
 
 /// How long a cancelled or rolled-back operation waits for its in-flight copy
 /// tasks to wind down before abandoning them.
@@ -168,14 +170,17 @@ impl crate::Operations {
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
         source_volume: Arc<dyn Volume>,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_volume: Arc<dyn Volume>,
-        dest_path: PathBuf,
+        dest_path: AppPathBuf,
         config: VolumeCopyConfig,
         initiator: cmdr_operation_log::types::Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // The native shortcut and the summary still take `std::path` values: the
+        // start's crossing, made once. The streaming engine takes the app paths.
+        let (source_natives, dest_native) = (engine_paths(&source_paths), engine_path(&dest_path));
         // Optimization: If both volumes are local filesystem paths, use the battle-tested
         // copy.rs implementation which has proper cancellation support via macOS copyfile API.
         #[cfg(not(target_family = "wasm"))]
@@ -190,11 +195,11 @@ impl crate::Operations {
             // joined: the IPC boundary already anchors what the transfer dialog
             // sends, and a raw join would re-root an absolute dest under itself
             // (`/Volumes/USB/sub` → `/Volumes/USB/Volumes/USB/sub`).
-            let absolute_sources: Vec<PathBuf> = source_paths
+            let absolute_sources: Vec<PathBuf> = source_natives
                 .iter()
                 .map(|p| super::on_local_root(&src_root, p))
                 .collect();
-            let absolute_dest = cmdr_fs::volume::root_anchored(&dest_root, &dest_path);
+            let absolute_dest = cmdr_fs::volume::root_anchored(&dest_root, &dest_native);
 
             // Convert VolumeCopyConfig to WriteOperationConfig, preserving preview_id
             // and the pre-flight conflict list so local↔local copies get the same
@@ -270,7 +275,7 @@ impl crate::Operations {
             source_volume_id,
             dest_volume_id,
             source_paths.len(),
-            LogPrivate::dir_path(&dest_path)
+            LogPrivate::dir_path(&dest_native)
         );
 
         // The per-leaf record points inside `copy_volumes_with_progress` journal under
@@ -296,9 +301,9 @@ impl crate::Operations {
             destination: Some(dest_volume.name().to_string()),
             items: Some(volume_items(
                 &*source_volume,
-                &source_paths,
+                &source_natives,
                 config.source_kinds,
-                Some((&*dest_volume, &dest_path)),
+                Some((&*dest_volume, &dest_native)),
             )),
         };
         let descriptor = manager::OperationDescriptor {
@@ -365,7 +370,7 @@ impl crate::Operations {
                 // moment there is: an approved operation can sit queued behind a long
                 // transfer, so the check belongs after admission, not at approval.
                 // `../../source_binding.rs`.
-                let bound = retain_bound_sources_on(
+                let bound = retain_bound_app_sources_on(
                     source_volume.as_ref(),
                     &*events,
                     op_id.as_str(),
@@ -505,11 +510,8 @@ impl crate::Operations {
 /// dialog's preview and the transfer that follows it.
 /// `a_destination_that_cant_report_free_space_is_still_copyable_into` and its
 /// sibling in `copy_space_tests.rs` hold both sides.
-async fn dest_space_if_known(dest_volume: &dyn Volume, dest_path: &Path) -> Result<Option<SpaceInfo>, VolumeError> {
-    match dest_volume
-        .get_space_info_at(&AppPath::legacy_unchecked(dest_path))
-        .await
-    {
+async fn dest_space_if_known(dest_volume: &dyn Volume, dest_path: &AppPath) -> Result<Option<SpaceInfo>, VolumeError> {
+    match dest_volume.get_space_info_at(dest_path).await {
         Ok(info) => Ok(Some(info)),
         Err(VolumeError::NotSupported) => Ok(None),
         Err(other) => Err(other),
@@ -543,10 +545,10 @@ fn room_to_check(dest_space: Option<SpaceInfo>) -> Option<u64> {
 /// tolerance the space pre-flight gives `NotSupported`. The answer can go stale
 /// before the first write, the one window this guard accepts: a write refused
 /// later is still refused, with the backend's own error.
-pub(super) async fn destination_refusal(dest_volume: &dyn Volume, dest_path: &Path) -> Option<WriteOperationError> {
-    match dest_volume.write_access_at(&AppPath::legacy_unchecked(dest_path)).await {
+pub(super) async fn destination_refusal(dest_volume: &dyn Volume, dest_path: &AppPath) -> Option<WriteOperationError> {
+    match dest_volume.write_access_at(dest_path).await {
         cmdr_fs::volume::WriteAccess::Unwritable { reason } => Some(WriteOperationError::DestinationNotWritable {
-            path: dest_path.display().to_string(),
+            path: failed_path_text(dest_path),
             reason,
         }),
         _ => None,
@@ -641,9 +643,9 @@ pub async fn copy_volumes_with_progress(
     operation_id: &str,
     state: &Arc<WriteOperationState>,
     source_volume: Arc<dyn Volume>,
-    source_paths: &[PathBuf],
+    source_paths: &[AppPathBuf],
     dest_volume: Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
     config: &VolumeCopyConfig,
 ) -> Result<(), WriteFailure> {
     log::debug!(
@@ -681,22 +683,22 @@ pub async fn copy_volumes_with_progress(
     // path spaces), so the guard only fires when source and dest are the same
     // volume.
     if Arc::ptr_eq(&source_volume, &dest_volume) {
+        // Compared as `Path` compares them: a guard refuses at least what it did.
+        let dest_std = std_of(dest_path);
         for source in source_paths {
+            let source_std = std_of(source);
             // The copied item lands under `dest_path` (e.g. `/A/sub/A` for
             // source `/A` into dest dir `/A/sub`), so an overlap means
             // `dest_path` is at or below the source directory.
             // Only a DIRECTORY source can contain the destination; a file source
             // can't, and a missing source surfaces later as a per-source copy
             // error, so `Ok(false)` / `Err(_)` fall through without rejecting.
-            if (dest_path == source.as_path() || dest_path.starts_with(source))
-                && matches!(
-                    dest_volume.is_directory(&AppPath::legacy_unchecked(source)).await,
-                    Ok(true)
-                )
+            if (*dest_std == *source_std || dest_std.starts_with(&source_std))
+                && matches!(dest_volume.is_directory(source).await, Ok(true))
             {
                 return Err(WriteFailure::synthetic(WriteOperationError::DestinationInsideSource {
-                    source: source.display().to_string(),
-                    destination: dest_path.display().to_string(),
+                    source: failed_path_text(source),
+                    destination: failed_path_text(dest_path),
                 }));
             }
         }
@@ -712,7 +714,7 @@ pub async fn copy_volumes_with_progress(
     // held to them before its write (`landing.rs::name_at_destination`, the walk).
     state
         .destination_names
-        .resolve_on(state.scope().host(), &dest_volume, dest_path)
+        .resolve_on(state.scope().host(), &dest_volume, &std_of(dest_path))
         .await;
 
     // Phase 0.5: Ensure the destination directory exists, creating it and any
@@ -722,7 +724,7 @@ pub async fn copy_volumes_with_progress(
     // dest-inside-source guard above so we never create a folder inside a
     // source. A merge into an already-existing dest is a no-op create.
     let dest_dir_creation = dest_volume
-        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
+        .create_directory_all(dest_path)
         .await
         .map_err(|e| WriteFailure::from_volume(dest_path, PathRole::Destination, e))?;
 
@@ -774,7 +776,19 @@ pub async fn copy_volumes_with_progress(
 
     // Which links land as links here, read before the scan so it counts each
     // selected one as the leaf it is (`link_carry.rs`).
-    let links = Arc::new(LinkCarry::for_copy(state, &source_volume, source_paths, &dest_volume, dest_path).await);
+    let links = Arc::new(
+        LinkCarry::for_copy(
+            state,
+            &source_volume,
+            &source_paths
+                .iter()
+                .map(|path| std_of(path).into_owned())
+                .collect::<Vec<_>>(),
+            &dest_volume,
+            &std_of(dest_path),
+        )
+        .await,
+    );
 
     // Phase 1: Preflight scan (reuses the dialog's cached preview when one is
     // available). Populates `total_files`, `total_bytes`, and per-source
@@ -791,9 +805,10 @@ pub async fn copy_volumes_with_progress(
         &links,
     )
     .await?;
-    state
-        .transfer_tree
-        .install(preflight.tree.take(), TreeLanding::under(dest_path, &config.leaves));
+    state.transfer_tree.install(
+        preflight.tree.take(),
+        TreeLanding::under(&std_of(dest_path), &config.leaves),
+    );
     let total_files = preflight.total_files;
     let total_bytes = preflight.total_bytes;
     let known_directory_paths = preflight.known_directory_paths();
@@ -920,7 +935,7 @@ pub async fn copy_volumes_with_progress(
     // dropping the whole subtree would lose non-conflicting files. Top-level
     // directory paths come from `preflight.known_directory_paths()` (computed
     // from the batched scan's `is_directory` hints).
-    let mut pre_skip_paths: HashSet<PathBuf> = build_pre_skip_set(
+    let mut pre_skip_paths: HashSet<AppPathBuf> = build_pre_skip_set(
         source_paths,
         config.conflict_resolution,
         &config.pre_known_conflicts,
@@ -934,11 +949,16 @@ pub async fn copy_volumes_with_progress(
     // these to a free ` (N)` name instead of ever asking. Local twin:
     // `../copy/mod.rs`. `DETAILS.md` § "Self-collision (duplicating in place)".
     pre_skip_paths.retain(|source| {
-        config
+        let chosen = config
             .leaves
-            .leaf_of(source)
-            .map(|leaf| !is_the_same_item(&source_volume, source, &dest_volume, &dest_path.join(leaf)))
-            .unwrap_or(true)
+            .chosen_for(&std_of(source))
+            .and_then(std::ffi::OsStr::to_str);
+        match top_level(dest_path, source, chosen) {
+            TopLevel::At(lands_at) => {
+                !is_the_same_item(&source_volume, &std_of(source), &dest_volume, &std_of(&lands_at))
+            }
+            TopLevel::Refused(_) => true,
+        }
     });
 
     let mut bulk_skip_files = 0usize;

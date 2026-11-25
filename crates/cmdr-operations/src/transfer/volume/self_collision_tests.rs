@@ -126,9 +126,9 @@ async fn duplicating_a_file_in_place_on_one_volume_renames_it_and_never_prompts(
         "op-volume-duplicate-file",
         &state,
         Arc::clone(&volume),
-        &[PathBuf::from("/photos/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photos/photo.jpg")]),
         Arc::clone(&volume),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &duplicate_config(),
     )
     .await
@@ -172,13 +172,13 @@ async fn duplicating_a_whole_series_at_once_gives_every_source_its_own_name() {
         "op-volume-duplicate-series",
         &state,
         Arc::clone(&volume),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/photos/photo.jpg"),
             PathBuf::from("/photos/photo (1).jpg"),
             PathBuf::from("/photos/photo (2).jpg"),
-        ],
+        ]),
         Arc::clone(&volume),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &duplicate_config(),
     )
     .await
@@ -249,9 +249,9 @@ async fn duplicating_a_folder_in_place_lands_the_whole_subtree_under_the_renamed
         "op-volume-duplicate-folder",
         &state,
         Arc::clone(&volume),
-        &[PathBuf::from("/photos/docs")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photos/docs")]),
         Arc::clone(&volume),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &duplicate_config(),
     )
     .await
@@ -294,9 +294,9 @@ async fn duplicating_an_empty_folder_in_place_lands_an_empty_sibling() {
         "op-volume-duplicate-empty-folder",
         &state,
         Arc::clone(&volume),
-        &[PathBuf::from("/photos/docs")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photos/docs")]),
         Arc::clone(&volume),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &duplicate_config(),
     )
     .await
@@ -334,9 +334,9 @@ async fn a_pre_known_conflict_naming_the_source_itself_does_not_skip_the_duplica
         "op-volume-duplicate-preknown",
         &state,
         Arc::clone(&volume),
-        &[PathBuf::from("/photos/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photos/photo.jpg")]),
         Arc::clone(&volume),
-        Path::new("/photos"),
+        &crate::testing::app_path_of(Path::new("/photos")),
         &config,
     )
     .await
@@ -374,9 +374,9 @@ async fn a_genuine_conflict_on_one_volume_still_raises_the_normal_flow() {
         "op-volume-real-conflict",
         &state,
         Arc::clone(&volume),
-        &[PathBuf::from("/from/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/from/photo.jpg")]),
         Arc::clone(&volume),
-        Path::new("/to"),
+        &crate::testing::app_path_of(Path::new("/to")),
         &duplicate_config(),
     )
     .await

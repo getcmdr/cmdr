@@ -129,6 +129,7 @@ fn sources_sort_into_the_order_their_rows_list_in() {
 
     sort_sources(
         &mut sources,
+        |source| std::borrow::Cow::Borrowed(source.as_path()),
         |source| folders.iter().any(|folder| folder == source),
         &english(),
     );

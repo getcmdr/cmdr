@@ -15,6 +15,7 @@ use crate::types::{ConflictResolution, WriteOperationError};
 use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
+use std::path::Path;
 use std::time::Instant;
 
 const WAIT: Duration = Duration::from_secs(10);
@@ -110,9 +111,9 @@ async fn a_folder_copy_waits_out_a_dropped_share_and_finishes() {
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -142,9 +143,9 @@ async fn a_multi_file_copy_waits_out_a_dropped_share_and_finishes() {
         op.id().as_str(),
         &state,
         source,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -184,9 +185,9 @@ async fn a_download_waits_out_a_source_share_that_drops_at_the_open() {
         op.id().as_str(),
         &state,
         source,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -227,9 +228,9 @@ async fn a_late_error_from_a_replaced_session_is_run_again_and_every_file_lands(
         op.id().as_str(),
         &state,
         source,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -279,9 +280,9 @@ async fn copy_that_the_share_stops(
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -391,9 +392,9 @@ async fn a_deep_clash_that_outlasts_its_outage_says_it_lost_the_connection() {
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -441,9 +442,9 @@ async fn a_cancel_during_the_wait_cancels_the_copy() {
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -495,9 +496,9 @@ async fn a_cancel_while_the_share_is_out_reports_at_once_and_cleans_up_once_it_i
             op.id().as_str(),
             &state,
             source,
-            &[PathBuf::from("/batch")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
             dest,
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config(),
         ),
     )
@@ -555,9 +556,9 @@ async fn a_copy_that_starts_while_the_share_is_gone_waits_for_it() {
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(),
     )
     .await
@@ -615,9 +616,9 @@ async fn copy_through_a_drop_at_landing(
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()
@@ -790,9 +791,9 @@ async fn copy_through_a_swallowed_single_shot_write(
         op.id().as_str(),
         &state,
         source,
-        &[PathBuf::from("/batch")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/batch")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()

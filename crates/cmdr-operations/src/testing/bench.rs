@@ -144,9 +144,9 @@ impl BenchEngine {
             &op_id,
             &fresh_state(&self.engine),
             source_volume,
-            sources,
+            &super::app_paths_of(sources),
             dest_volume,
-            dest_path,
+            &super::app_path_of(dest_path),
             &VolumeCopyConfig::default(),
         )
         .await

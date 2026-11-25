@@ -179,7 +179,7 @@ async fn the_stale_temp_reap_cannot_touch_rescued_data() {
     for name in names_in_root(&inner).await {
         inner.set_modified_at(&PathBuf::from("/").join(&name), Some(1));
     }
-    reap_stale_transfer_temps(&unwatched_state(&engine), &dest, Path::new("/")).await;
+    reap_stale_transfer_temps(&unwatched_state(&engine), &dest, cmdr_fs::app_path!("/")).await;
 
     assert_eq!(
         contents(&inner, Path::new("/notes (recovered).txt")).await.as_deref(),
@@ -407,9 +407,9 @@ async fn copy_over_a_file_the_server_wont_let_go(engine: &TestOperations, names:
         "test-op-refused-replace",
         &Arc::new(engine.new_operation_state(std::time::Duration::from_millis(50))),
         source as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         dest,
-        Path::new("/dest"),
+        &crate::testing::app_path_of(Path::new("/dest")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Overwrite,
             ..VolumeCopyConfig::default()

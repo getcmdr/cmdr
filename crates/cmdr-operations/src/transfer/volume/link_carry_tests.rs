@@ -69,9 +69,9 @@ async fn copy(
         "op-link-carry",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         source,
-        sources,
+        &crate::testing::app_paths_of(sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()
@@ -343,9 +343,9 @@ async fn a_move_still_follows_a_link_onto_a_destination_that_could_hold_it() {
         "op-link-carry-move",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         local_folder(&dir),
-        &[PathBuf::from("/tree")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -390,9 +390,9 @@ async fn a_link_meeting_a_file_honors_the_policy() {
             "op-link-carry-clash",
             &state,
             source,
-            &[PathBuf::from("/tree")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
             Arc::clone(&dest) as Arc<dyn Volume>,
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &VolumeCopyConfig {
                 conflict_resolution: policy,
                 progress_interval_ms: 0,
@@ -433,9 +433,9 @@ async fn a_link_meeting_a_real_folder_leaves_the_folder_alone() {
         "op-link-carry-folder",
         &state,
         source,
-        &[PathBuf::from("/tree")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/tree")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Overwrite,
             progress_interval_ms: 0,

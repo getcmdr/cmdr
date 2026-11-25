@@ -362,9 +362,9 @@ async fn smb_integration_many_files_at_full_concurrency_land_intact() {
                 operation_id.as_str(),
                 &state,
                 source_vol,
-                &source_paths,
+                &cmdr_operations::testing::app_paths_of(&source_paths),
                 dest_vol,
-                Path::new(&dest),
+                &cmdr_operations::testing::app_path_of(Path::new(&dest)),
                 &VolumeCopyConfig::default(),
             )
             .await
@@ -555,9 +555,9 @@ async fn smb_integration_a_wedged_copy_is_caught_and_names_its_phase() {
                 operation_id.as_str(),
                 &state,
                 source_vol,
-                &source_paths,
+                &cmdr_operations::testing::app_paths_of(&source_paths),
                 dest_vol,
-                Path::new(&dest),
+                &cmdr_operations::testing::app_path_of(Path::new(&dest)),
                 &VolumeCopyConfig::default(),
             )
             .await

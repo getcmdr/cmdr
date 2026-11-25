@@ -334,9 +334,9 @@ async fn smb_soak_copy_loop() {
             &format!("soak-iter-{iter_idx}"),
             &state,
             Arc::clone(&vol),
-            &source_paths,
+            &cmdr_operations::testing::app_paths_of(&source_paths),
             Arc::clone(&dest_vol),
-            Path::new("/"),
+            &cmdr_operations::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await;

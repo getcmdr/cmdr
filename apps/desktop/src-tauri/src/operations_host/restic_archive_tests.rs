@@ -87,9 +87,9 @@ async fn copy_out(
         "restic-archive-copy-out",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         source,
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         dest,
-        dest_root,
+        &cmdr_operations::testing::app_path_of(dest_root),
         &config,
     )
     .await;

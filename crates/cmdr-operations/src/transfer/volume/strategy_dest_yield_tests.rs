@@ -90,11 +90,11 @@ async fn dest_yield_parks_before_next_write_then_resumes_byte_exact() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -194,11 +194,11 @@ async fn dest_yield_waits_on_the_share_instead_of_re_asking_it() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -301,11 +301,11 @@ async fn single_shot_upload_stands_aside_even_below_the_min_progress_floor() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/photo.jpg"),
+                    &crate::testing::app_path_of(Path::new("/photo.jpg")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("photo.jpg"),
+                    &crate::testing::app_path_of(Path::new("photo.jpg")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -380,11 +380,11 @@ async fn dest_yield_hard_cap_bounds_the_park_under_continuous_browsing() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -449,11 +449,11 @@ async fn single_shot_dest_yield_is_still_hard_capped_under_continuous_browsing()
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/photo.jpg"),
+                    &crate::testing::app_path_of(Path::new("/photo.jpg")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("photo.jpg"),
+                    &crate::testing::app_path_of(Path::new("photo.jpg")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -518,11 +518,11 @@ async fn a_streaming_upload_below_the_floor_still_does_not_yield() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/photo.jpg"),
+        &crate::testing::app_path_of(Path::new("/photo.jpg")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("photo.jpg"),
+        &crate::testing::app_path_of(Path::new("photo.jpg")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -579,11 +579,11 @@ async fn dest_yield_cancel_while_parked_returns_cancelled_promptly() {
                 let state_ref = &state_drv;
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     state_ref,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -663,11 +663,11 @@ async fn non_opting_dest_never_dest_yields() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/movie.bin"),
+        &crate::testing::app_path_of(Path::new("/movie.bin")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("movie.bin"),
+        &crate::testing::app_path_of(Path::new("movie.bin")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),

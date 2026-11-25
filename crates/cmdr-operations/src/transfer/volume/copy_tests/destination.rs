@@ -5,6 +5,7 @@
 use super::*;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 // ========================================================================
 // Volume-aware destination auto-create (recursive `create_directory_all`).
@@ -33,9 +34,9 @@ async fn cross_volume_copy_creates_missing_nested_dest() {
         "test-mkdir-copy",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/incoming/2026/trip"),
+        &crate::testing::app_path_of(Path::new("/incoming/2026/trip")),
         &config,
     )
     .await;
@@ -94,9 +95,9 @@ async fn cross_volume_copy_into_existing_dest_is_a_no_op_create() {
         "test-mkdir-copy-existing",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/existing"),
+        &crate::testing::app_path_of(Path::new("/existing")),
         &config,
     )
     .await;
@@ -139,9 +140,9 @@ async fn a_destination_that_cannot_be_addressed_is_never_reported_as_a_missing_s
         "test-op-dest-not-found",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/report.pdf")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/report.pdf")]),
         Arc::clone(&dest),
-        Path::new("/photos/2026"),
+        &crate::testing::app_path_of(Path::new("/photos/2026")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -177,9 +178,9 @@ async fn an_explicit_volume_copy_name_uses_the_requested_leaf_and_conflict_polic
             "named-volume-copy",
             &make_state(&engine),
             Arc::clone(&source),
-            &[PathBuf::from("/original.txt")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/original.txt")]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await;
@@ -214,9 +215,9 @@ async fn an_explicit_volume_copy_folder_name_preserves_children_and_empty_folder
         "named-volume-folder-copy",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/original")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/original")]),
         Arc::clone(&dest),
-        Path::new("/nested"),
+        &crate::testing::app_path_of(Path::new("/nested")),
         &config,
     )
     .await;
@@ -246,9 +247,9 @@ async fn a_file_where_the_destination_folder_should_be_is_named_and_nothing_is_w
             "test-op-dest-file-in-the-way",
             &make_state(&engine),
             Arc::clone(&source),
-            &[PathBuf::from("/report.pdf")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/report.pdf")]),
             Arc::clone(&dest),
-            Path::new(destination),
+            &crate::testing::app_path_of(Path::new(destination)),
             &VolumeCopyConfig::default(),
         )
         .await

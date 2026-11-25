@@ -183,7 +183,7 @@ async fn a_cancel_during_the_operations_own_scan_stops_the_walk() {
 
     let outcome = scan_volume_sources(
         &as_volume,
-        &[PathBuf::from("/src")],
+        &[cmdr_fs::app_path!("/src").to_owned()],
         &config(),
         op.id().as_str(),
         WriteOperationType::Copy,
@@ -238,7 +238,7 @@ async fn a_pause_during_the_operations_own_scan_holds_it_until_resume() {
 
     let preflight = scan_volume_sources(
         &as_volume,
-        &[PathBuf::from("/src")],
+        &[cmdr_fs::app_path!("/src").to_owned()],
         &config(),
         op.id().as_str(),
         WriteOperationType::Copy,

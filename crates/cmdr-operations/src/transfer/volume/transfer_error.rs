@@ -50,8 +50,8 @@ impl WriteFailure {
     /// Construct a `WriteFailure` from an originating `VolumeError + path`, mapping it
     /// to a `WriteOperationError`. One spot to map, replacing per-call-site boilerplate.
     /// `role` says which volume the path came from (see `PathRole`).
-    pub(super) fn from_volume(path: &Path, role: PathRole, e: VolumeError) -> Self {
-        let error = map_volume_error(&path.display().to_string(), role, e);
+    pub(super) fn from_volume(path: &(impl FailedAt + ?Sized), role: PathRole, e: VolumeError) -> Self {
+        let error = map_volume_error(&failed_path_text(&path.failed_at()), role, e);
         Self { error }
     }
 

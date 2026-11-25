@@ -282,9 +282,9 @@ async fn copy_through_a_cut(conflict_resolution: ConflictResolution) {
             op_id.as_str(),
             &copy_state,
             source,
-            &[PathBuf::from("batch")],
+            &cmdr_operations::testing::app_paths_of(&[PathBuf::from("batch")]),
             through_proxy,
-            &dest_path,
+            &cmdr_operations::testing::app_path_of(&dest_path),
             &VolumeCopyConfig {
                 conflict_resolution,
                 progress_interval_ms: 0,
@@ -435,9 +435,9 @@ async fn smb_integration_a_cancel_while_the_share_is_out_reports_at_once_and_rem
             op_id.as_str(),
             &copy_state,
             source,
-            &[PathBuf::from("big.bin")],
+            &cmdr_operations::testing::app_paths_of(&[PathBuf::from("big.bin")]),
             dest,
-            &dest_path,
+            &cmdr_operations::testing::app_path_of(&dest_path),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()
@@ -839,9 +839,9 @@ async fn smb_integration_an_overwrite_copy_rides_out_a_share_that_keeps_going_aw
             op_id.as_str(),
             &copy_state,
             source,
-            &[PathBuf::from("batch")],
+            &cmdr_operations::testing::app_paths_of(&[PathBuf::from("batch")]),
             dest,
-            &dest_path,
+            &cmdr_operations::testing::app_path_of(&dest_path),
             &VolumeCopyConfig {
                 conflict_resolution: ConflictResolution::Overwrite,
                 progress_interval_ms: 0,
@@ -1022,9 +1022,9 @@ async fn smb_integration_a_download_carries_on_after_a_long_outage_instead_of_st
             op_id.as_str(),
             &copy_state,
             share,
-            &[source],
+            &cmdr_operations::testing::app_paths_of(&[source]),
             disk,
-            Path::new(""),
+            &cmdr_operations::testing::app_path_of(Path::new("")),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()
@@ -1133,9 +1133,9 @@ async fn smb_integration_an_upload_carries_on_after_a_long_outage_instead_of_sta
             op_id.as_str(),
             &copy_state,
             disk,
-            &[PathBuf::from("big.bin")],
+            &cmdr_operations::testing::app_paths_of(&[PathBuf::from("big.bin")]),
             share,
-            &dest,
+            &cmdr_operations::testing::app_path_of(&dest),
             &VolumeCopyConfig {
                 progress_interval_ms: 0,
                 ..VolumeCopyConfig::default()

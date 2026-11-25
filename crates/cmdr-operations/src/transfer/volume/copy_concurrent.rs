@@ -32,8 +32,8 @@
 //! Semantics, the cancel-drain contract, and the merge invariant: `DETAILS.md`.
 
 use crate::rt::Instant;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
@@ -53,10 +53,10 @@ use super::super::transfer_probe::OperationProbe;
 use super::copy::CopyCells;
 use super::copy::drain_deadline as drain_deadline_for;
 use super::copy_concurrent_task::{CopyTask, CopyTaskEnd, CopyTaskFailure, CopyTaskSuccess, run_copy_task};
-use super::listed_name::on_volume;
+use super::listed_name::{label_of, std_of};
 use super::merge_ctx::CreatedPaths;
 use super::preflight::SourceHint;
-use super::transfer_error::WriteFailure;
+use super::transfer_error::{WriteFailure, failed_path_text};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{Volume, VolumeError};
@@ -71,9 +71,9 @@ pub(super) struct ConcurrentCopy<'a> {
     pub(super) operation_id: &'a str,
     pub(super) state: &'a Arc<WriteOperationState>,
     pub(super) source_volume: Arc<dyn Volume>,
-    pub(super) source_paths: &'a [PathBuf],
+    pub(super) source_paths: &'a [AppPathBuf],
     pub(super) dest_volume: Arc<dyn Volume>,
-    pub(super) dest_path: &'a Path,
+    pub(super) dest_path: &'a AppPath,
     pub(super) config: &'a VolumeCopyConfig,
     /// Window width, from `transfer_concurrency`.
     pub(super) concurrency: usize,
@@ -91,8 +91,8 @@ pub(super) struct ConcurrentCopy<'a> {
     /// The one destination listing Phase 0.6 already paid for, indexed for name
     /// lookups. `None` ⇒ probe per file.
     pub(super) dest_index: &'a Option<DestNameIndex>,
-    pub(super) pre_skip_paths: &'a HashSet<PathBuf>,
-    pub(super) source_hints: &'a HashMap<PathBuf, SourceHint>,
+    pub(super) pre_skip_paths: &'a HashSet<AppPathBuf>,
+    pub(super) source_hints: &'a HashMap<AppPathBuf, SourceHint>,
     pub(super) progress_interval: Duration,
     /// Real (source, dest) volume ids for the operation-log journal. `None` for
     /// the both-local shortcut and in tests that install no journal.
@@ -162,7 +162,7 @@ struct ConcurrentDriver<'a> {
     /// The engine's runtime, which every task spawns on (`src/host/CLAUDE.md`).
     runtime: cmdr_fs::rt::Runtime,
     /// The sources still to prepare, in the order the user selected them.
-    sources: std::iter::Enumerate<std::slice::Iter<'a, PathBuf>>,
+    sources: std::iter::Enumerate<std::slice::Iter<'a, AppPathBuf>>,
     /// Set once the driver has SEEN its work stop (`state.stop_work`: the
     /// user's cancel or rollback, or its own first failure): from then on it
     /// stops waiting indefinitely for its tasks and gives them a bounded window
@@ -197,8 +197,8 @@ struct Settlements {
 
 /// One in-flight source's ledger, as the driver holds it.
 struct UnsettledSource {
-    source_path: PathBuf,
-    dest_path: PathBuf,
+    source_path: AppPathBuf,
+    dest_path: AppPathBuf,
     source_is_dir: bool,
     created: Arc<CreatedPaths>,
 }
@@ -318,7 +318,7 @@ impl<'a> ConcurrentDriver<'a> {
     async fn prepare_while_draining(
         &mut self,
         source_index: usize,
-        source_path: &Path,
+        source_path: &AppPath,
     ) -> Result<Option<CopyTask>, WriteFailure> {
         let Self {
             ctx,
@@ -609,7 +609,9 @@ impl Settlements {
         } else {
             SourceItemOutcome::Done
         };
-        emit_source_outcome(&*ctx.events, ctx.operation_id, &done_source, verdict, false);
+        // The sink and the event keep the `std::path` spelling (a borrow for UTF-8).
+        let done_source_std = std_of(&done_source);
+        emit_source_outcome(&*ctx.events, ctx.operation_id, &done_source_std, verdict, false);
 
         // Fold this source's deep-merge skips into the op-wide tally, and — when
         // the source landed with ZERO skips — record it as fully extracted so
@@ -621,12 +623,12 @@ impl Settlements {
             .deep_skipped_bytes
             .fetch_add(task_skipped_bytes, Ordering::Relaxed);
         if task_skipped_count == 0 {
-            ctx.events.note_source_landed_clean(&done_source);
+            ctx.events.note_source_landed_clean(&done_source_std);
         }
         // Record what the op wrote for rollback.
         // Whatever this source set aside is now fully replaced.
-        ctx.cells.displaced.landed_under(&recorded_path);
-        let file_name_done = recorded_path.file_name().map(|n| n.to_string_lossy().to_string());
+        ctx.cells.displaced.landed_under(&std_of(&recorded_path));
+        let file_name_done = label_of(&recorded_path);
         // Journal the per-leaf `rollback_unit` rows under the REAL volume ids (a
         // file source → one leaf at `recorded_path`; a dir source → one leaf per
         // `created_files` entry, source rebased from `done_source`). Created dirs
@@ -659,7 +661,7 @@ impl Settlements {
             ctx.cells
                 .copied_paths
                 .lock_ignore_poison()
-                .push(WrittenFile::volume_at(on_volume(&recorded_path).into_owned(), bytes));
+                .push(WrittenFile::volume_at(recorded_path, bytes));
         }
         // Per-file milestone emit. The task's `on_file_complete` bumped
         // the ledger's `files_done`; the FE's files-axis needs a Copying event that
@@ -689,7 +691,7 @@ impl Settlements {
             emit_source_outcome(
                 &*ctx.events,
                 ctx.operation_id,
-                &done_source,
+                &std_of(&done_source),
                 SourceItemOutcome::Failed,
                 false,
             );
@@ -757,16 +759,16 @@ impl Settlements {
             target: "copy",
             "copy_volumes_with_progress: op={} copy task for {} panicked: {ended}",
             ctx.operation_id,
-            LogPrivate::path(&unsettled.source_path),
+            LogPrivate::path(unsettled.source_path.as_str()),
         );
         emit_source_outcome(
             &*ctx.events,
             ctx.operation_id,
-            &unsettled.source_path,
+            &std_of(&unsettled.source_path),
             SourceItemOutcome::Failed,
             false,
         );
-        let path = unsettled.source_path.display().to_string();
+        let path = failed_path_text(&unsettled.source_path);
         unsettled.hand_over(ctx);
         self.keep_the_first_failure(
             ctx,

@@ -10,6 +10,7 @@ use crate::testing::TestOperations;
 use cmdr_fs::app_path;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::os_junk_files::{OsJunkFiles, SAMPLE_JUNK_NAMES};
+use std::path::Path;
 use std::time::Duration;
 
 /// Junk names from all three OSes, so each OS checks it skips another's junk too (#1416).
@@ -17,8 +18,8 @@ use std::time::Duration;
 const JUNK: [&str; 4] = SAMPLE_JUNK_NAMES;
 
 /// `dir`'s junk file number `n` as an app path.
-fn junk_in(dir: &str, n: usize) -> app_path::AppPathBuf {
-    app_path::AppPathBuf::parse(&format!("{dir}/{}", JUNK[n]), app_path::PathFlavor::Posix).expect("a canonical path")
+fn junk_in(dir: &str, n: usize) -> AppPathBuf {
+    AppPathBuf::parse(&format!("{dir}/{}", JUNK[n]), app_path::PathFlavor::Posix).expect("a canonical path")
 }
 
 async fn seed(source: &Arc<dyn Volume>) {
@@ -85,9 +86,9 @@ async fn a_volume_copy_that_skips_os_junk_files_writes_and_counts_none_of_them()
         "op-volume-copy-skip-mac",
         &skipping_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/work")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/work")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &skipping_config(),
     )
     .await
@@ -114,9 +115,9 @@ async fn a_volume_move_that_skips_os_junk_files_leaves_no_husk_in_the_source() {
         "op-volume-move-skip-mac",
         &skipping_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/work")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/work")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &skipping_config(),
     )
     .await
@@ -153,9 +154,9 @@ async fn a_volume_move_keeps_the_metadata_of_a_folder_that_stays() {
         "op-volume-move-kept",
         &skipping_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/work")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/work")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -205,9 +206,9 @@ async fn a_junk_file_the_source_holds_keeps_its_folder_and_the_move_succeeds() {
             "op-volume-move-held-junk",
             &skipping_state(&engine),
             Arc::clone(&refusing) as Arc<dyn Volume>,
-            &[PathBuf::from("/work")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/work")]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &skipping_config(),
         )
         .await

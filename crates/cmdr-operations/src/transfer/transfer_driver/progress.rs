@@ -34,7 +34,6 @@
 //! keeps the total from dipping between the two halves of that swap.
 
 use std::ops::ControlFlow;
-use std::path::Path;
 #[cfg(test)]
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -47,6 +46,7 @@ use crate::transfer_tree::{NodeId, TreeLeaf, TreeReporter};
 use crate::types::{WriteOperationPhase, WriteOperationType};
 use cmdr_fs::ignore_poison::IgnorePoison;
 
+use super::super::volume::{label_of, std_of};
 use super::emit_progress_and_status;
 
 /// The operation's byte total, split into the part that is settled and the part
@@ -190,13 +190,13 @@ impl LeafProgressLedger {
     /// previous source's last-emit instant says nothing about this one.
     pub(in crate::transfer) fn for_source(
         self: &Arc<Self>,
-        source: &Path,
+        source: &cmdr_fs::app_path::AppPath,
         last_emit: Arc<Mutex<crate::rt::Instant>>,
     ) -> Arc<SourceProgress> {
         Arc::new(SourceProgress {
             ledger: Arc::clone(self),
-            file_name: source.file_name().map(|name| name.to_string_lossy().into_owned()),
-            node: self.tree.source(source),
+            file_name: label_of(source),
+            node: self.tree.source(&std_of(source)),
             last_emit,
         })
     }
@@ -575,7 +575,7 @@ impl ObservedProgress {
         );
         Arc::new(Self {
             source: ledger.for_source(
-                Path::new("/src/item"),
+                cmdr_fs::app_path!("/src/item"),
                 Arc::new(Mutex::new(crate::rt::now() - Duration::from_secs(1))),
             ),
             bytes,
@@ -614,7 +614,7 @@ mod tests {
         );
         ledger.reseed_finished(seed);
         ledger.for_source(
-            Path::new("/src/item"),
+            cmdr_fs::app_path!("/src/item"),
             Arc::new(Mutex::new(crate::rt::now() - Duration::from_secs(1))),
         )
     }

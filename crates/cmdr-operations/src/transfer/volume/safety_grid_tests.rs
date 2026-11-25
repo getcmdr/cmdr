@@ -373,9 +373,9 @@ async fn run_tier_a_copy(engine: &TestOperations, cache: CacheState, cell: &str,
         guard.as_ref().map_or(op_id.as_str(), |g| g.id().as_str()),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -461,9 +461,9 @@ async fn run_tier_a_move(engine: &TestOperations, cache: CacheState, cell: &str,
         guard.as_ref().map_or(op_id.as_str(), |g| g.id().as_str()),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -816,9 +816,9 @@ async fn run_tier_b(engine: &TestOperations, kind: ItemKind, concurrent: bool, i
             &cell,
             &state,
             Arc::clone(&source),
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await
@@ -828,9 +828,9 @@ async fn run_tier_b(engine: &TestOperations, kind: ItemKind, concurrent: bool, i
             &cell,
             &state,
             Arc::clone(&source),
-            &sources,
+            &crate::testing::app_paths_of(&sources),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await

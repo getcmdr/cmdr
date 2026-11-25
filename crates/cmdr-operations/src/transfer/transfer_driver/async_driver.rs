@@ -1,9 +1,11 @@
 //! Async serial driver for volume copy/move operations.
 
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use super::super::staged_write::Replaces;
+use super::super::volume::{TopLevel, label_of, std_of, top_level};
 use crate::rt::Instant;
 use std::sync::Arc;
 
@@ -67,22 +69,22 @@ pub(in crate::transfer) async fn drive_transfer_serial_async<DestMetaFetcher, Co
     events: &dyn OperationEventSink,
     state: &Arc<WriteOperationState>,
     operation_id: &str,
-    sources: &[PathBuf],
-    dest_root: &Path,
+    sources: &[AppPathBuf],
+    dest_root: &AppPath,
     total_files: usize,
     total_bytes: u64,
     bulk_skip_files: usize,
     bulk_skip_bytes: u64,
-    pre_skip_paths: &HashSet<PathBuf>,
+    pre_skip_paths: &HashSet<AppPathBuf>,
     config: &DriverConfig,
     mut dest_meta_fetcher: DestMetaFetcher,
     mut conflict_resolver: ConflictResolver,
     mut transfer_one: TransferOne,
 ) -> TransferLoopOutcome
 where
-    DestMetaFetcher: for<'a> FnMut(&'a Path) -> FetchFut<'a>,
+    DestMetaFetcher: for<'a> FnMut(&'a AppPath) -> FetchFut<'a>,
     ConflictResolver: for<'a> FnMut(ConflictDecisionInput<'a>) -> ResolveFut<'a>,
-    TransferOne: for<'a> FnMut(TransferContext<'a>) -> TransferFut<'a>,
+    TransferOne: for<'a> FnMut(TransferContext<'a, AppPath>) -> TransferFut<'a>,
 {
     let mut files_done = 0usize;
     let mut bytes_done = 0u64;
@@ -93,55 +95,60 @@ where
     // closure failed on. Its rows in the tree, and its `write-source-item-done`
     // when the caller asked for those. Neither one feeds back into the loop.
     let tree = state.transfer_tree.reporter();
-    let skipped_whole = |source: &Path| {
-        tree.skip_whole(tree.source(source));
+    // The tree and the event keep the `std::path` spelling the scan recorded.
+    let skipped_whole = |source: &AppPath| {
+        let source = std_of(source);
+        tree.skip_whole(tree.source(&source));
         if config.report_source_outcomes {
-            emit_source_outcome(events, operation_id, source, SourceItemOutcome::Skipped, false);
+            emit_source_outcome(events, operation_id, &source, SourceItemOutcome::Skipped, false);
         }
     };
     // A cancel decided nothing about the source in hand, so it gets no verdict.
     // A move whose copy landed and whose original stayed (`SourceNotRemoved`)
     // didn't fail the item: its closure already said `Done`, source kept.
-    let failed_on = |source: &Path, error: &WriteOperationError| {
+    let failed_on = |source: &AppPath, error: &WriteOperationError| {
         let failed_the_item = !matches!(
             error,
             WriteOperationError::Cancelled { .. } | WriteOperationError::SourceNotRemoved { .. }
         );
         if config.report_source_outcomes && failed_the_item {
-            emit_source_outcome(events, operation_id, source, SourceItemOutcome::Failed, false);
+            emit_source_outcome(events, operation_id, &std_of(source), SourceItemOutcome::Failed, false);
         }
     };
 
     // A source skipped mid-loop moves the bars at once (throttled). With a
     // `skip_ledger` the leaves own the counts, so the skip is credited there
     // and sent in the ledger's order; otherwise the driver's own counts go out.
-    let tick_skipped =
-        |last_progress_time: &mut Instant, source: &Path, bytes_accounted: u64, files_done: usize, bytes_done: u64| {
-            let credited = config
-                .skip_ledger
-                .as_ref()
-                .map(|ledger| (ledger, ledger.credit_skipped_source(bytes_accounted)));
-            if crate::rt::since(*last_progress_time) < state.progress_interval {
-                return;
-            }
-            *last_progress_time = crate::rt::now();
-            let file_name = source.file_name().map(|n| n.to_string_lossy().to_string());
-            match credited {
-                Some((ledger, snapshot)) => ledger.emit(file_name, snapshot),
-                None => emit_progress_and_status(
-                    events,
-                    state,
-                    operation_id,
-                    config.operation_type,
-                    config.phase,
-                    file_name,
-                    files_done,
-                    total_files,
-                    bytes_done,
-                    total_bytes,
-                ),
-            }
-        };
+    let tick_skipped = |last_progress_time: &mut Instant,
+                        source: &AppPath,
+                        bytes_accounted: u64,
+                        files_done: usize,
+                        bytes_done: u64| {
+        let credited = config
+            .skip_ledger
+            .as_ref()
+            .map(|ledger| (ledger, ledger.credit_skipped_source(bytes_accounted)));
+        if crate::rt::since(*last_progress_time) < state.progress_interval {
+            return;
+        }
+        *last_progress_time = crate::rt::now();
+        let file_name = label_of(source);
+        match credited {
+            Some((ledger, snapshot)) => ledger.emit(file_name, snapshot),
+            None => emit_progress_and_status(
+                events,
+                state,
+                operation_id,
+                config.operation_type,
+                config.phase,
+                file_name,
+                files_done,
+                total_files,
+                bytes_done,
+                total_bytes,
+            ),
+        }
+    };
 
     // ---- Pre-known-conflicts bulk-skip prelude. ----
     for source in sources.iter().filter(|source| pre_skip_paths.contains(*source)) {
@@ -206,15 +213,71 @@ where
 
         // An explicit leaf names where the source lands (`TransferLeaves`), as
         // does a rename that runs as a move (`target_names.rs`); every other
-        // source keeps its own name.
-        let landing_name = config
-            .leaves
-            .chosen_for(source_path)
-            .or_else(|| state.target_names.name_for(source_path));
-        let initial_dest_path = if let Some(name) = landing_name {
-            dest_root.join(name)
-        } else {
-            dest_root.to_path_buf()
+        // source keeps its own name, split by the app path (#1457).
+        let chosen = {
+            let source_std = std_of(source_path);
+            config
+                .leaves
+                .chosen_for(&source_std)
+                .or_else(|| state.target_names.chosen_for(&source_std))
+                .and_then(std::ffi::OsStr::to_str)
+        };
+        let initial_dest_path = match top_level(dest_root, source_path, chosen) {
+            TopLevel::At(path) => path,
+            // A name the folder can't hold: the closure asks about it, per item,
+            // ❌ never the operation's failure. No pre-check, no resolver, and
+            // nothing is written for it.
+            TopLevel::Refused(shown) => {
+                let ctx: TransferContext<'_, AppPath> = TransferContext {
+                    events,
+                    state,
+                    operation_id,
+                    operation_type: config.operation_type,
+                    source_path,
+                    dest_path: Some(&shown),
+                    dest_name_refused: true,
+                    replaces: &Replaces::Nothing,
+                    dest_name_claimed: false,
+                    files_done_so_far: files_done,
+                    bytes_done_so_far: bytes_done,
+                    total_files,
+                    total_bytes,
+                };
+                match transfer_one(ctx).await {
+                    Ok(TransferOutcome::Skipped { bytes_accounted }) => {
+                        skipped_whole(source_path);
+                        files_done += 1;
+                        bytes_done += bytes_accounted;
+                        files_skipped += 1;
+                        bytes_skipped += bytes_accounted;
+                        state.note_skipped(1, bytes_accounted);
+                        tick_skipped(
+                            &mut last_progress_time,
+                            source_path,
+                            bytes_accounted,
+                            files_done,
+                            bytes_done,
+                        );
+                        continue;
+                    }
+                    // No closure writes for a refused name; counted as done if one did.
+                    Ok(TransferOutcome::Transferred { bytes }) => {
+                        files_done += 1;
+                        bytes_done += bytes;
+                        continue;
+                    }
+                    Err(e) => {
+                        failed_on(source_path, &e);
+                        return TransferLoopOutcome {
+                            files_done,
+                            bytes_done,
+                            files_skipped,
+                            bytes_skipped,
+                            intent: PostLoopIntent::stopped_by(e),
+                        };
+                    }
+                }
+            }
         };
 
         // Conflict detection via caller-supplied dest meta fetcher.
@@ -244,7 +307,7 @@ where
             NameAtDest::Taken { path: taken_path, size } => {
                 log::debug!(
                     "drive_transfer_serial_async: conflict detected at {}",
-                    LogPrivate::path(&taken_path)
+                    LogPrivate::path(taken_path.as_str())
                 );
                 let decision = conflict_resolver(ConflictDecisionInput {
                     source_path,
@@ -296,13 +359,14 @@ where
             }
         };
 
-        let ctx = TransferContext {
+        let ctx: TransferContext<'_, AppPath> = TransferContext {
             events,
             state,
             operation_id,
             operation_type: config.operation_type,
             source_path,
             dest_path: Some(&resolved_dest),
+            dest_name_refused: false,
             replaces: &replaces,
             dest_name_claimed,
             files_done_so_far: files_done,
@@ -330,7 +394,7 @@ where
                         operation_id,
                         config.operation_type,
                         config.phase,
-                        source_path.file_name().map(|n| n.to_string_lossy().to_string()),
+                        label_of(source_path),
                         files_done,
                         total_files,
                         bytes_done,

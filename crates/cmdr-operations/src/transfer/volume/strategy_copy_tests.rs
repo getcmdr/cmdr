@@ -45,11 +45,11 @@ async fn test_copy_single_path_local_to_local() {
 
     let bytes = copy_single_path(
         &source,
-        Path::new("source.txt"),
+        &crate::testing::app_path_of(Path::new("source.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("dest.txt"),
+        &crate::testing::app_path_of(Path::new("dest.txt")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -90,11 +90,11 @@ async fn test_copy_single_path_cancelled() {
 
     let result = copy_single_path(
         &source,
-        Path::new("source.txt"),
+        &crate::testing::app_path_of(Path::new("source.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("dest.txt"),
+        &crate::testing::app_path_of(Path::new("dest.txt")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -124,11 +124,11 @@ async fn test_streaming_copy_single_file() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/photo.jpg"),
+        &crate::testing::app_path_of(Path::new("/photo.jpg")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/photo.jpg"),
+        &crate::testing::app_path_of(Path::new("/photo.jpg")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -159,11 +159,11 @@ async fn test_streaming_copy_large_file_with_progress() {
 
     let bytes = copy_single_path(
         &source,
-        Path::new("/big.bin"),
+        &crate::testing::app_path_of(Path::new("/big.bin")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/big.bin"),
+        &crate::testing::app_path_of(Path::new("/big.bin")),
         &state,
         &CreatedPaths::default(),
         &progress.source,
@@ -217,13 +217,15 @@ async fn test_streaming_copy_cancel_mid_file() {
     let progress = ObservedProgress::new(&state, op.id().as_str());
 
     let created = CreatedPaths::default();
+    let typed_source = crate::testing::app_path_of(Path::new("/big.bin"));
+    let typed_dest = crate::testing::app_path_of(Path::new("/big.bin"));
     let copy = copy_single_path(
         &source,
-        Path::new("/big.bin"),
+        &typed_source,
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/big.bin"),
+        &typed_dest,
         &state,
         &created,
         &progress.source,
@@ -261,11 +263,11 @@ async fn test_streaming_copy_empty_file() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/empty.txt"),
+        &crate::testing::app_path_of(Path::new("/empty.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/empty.txt"),
+        &crate::testing::app_path_of(Path::new("/empty.txt")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -288,11 +290,11 @@ async fn test_streaming_copy_nonexistent_source_fails() {
     let state = make_state(&engine);
     let result = copy_single_path(
         &source,
-        Path::new("/nope.txt"),
+        &crate::testing::app_path_of(Path::new("/nope.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/nope.txt"),
+        &crate::testing::app_path_of(Path::new("/nope.txt")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -326,11 +328,11 @@ async fn test_streaming_copy_uses_streaming_for_non_local_volumes() {
     let progress = ObservedProgress::new(&state, "routing-leaf-count");
     let bytes = copy_single_path(
         &source,
-        Path::new("/test.txt"),
+        &crate::testing::app_path_of(Path::new("/test.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/test.txt"),
+        &crate::testing::app_path_of(Path::new("/test.txt")),
         &state,
         &CreatedPaths::default(),
         &progress.source,
@@ -372,11 +374,11 @@ async fn test_streaming_copy_directory_recursive() {
     let progress = ObservedProgress::new(&state, "routing-leaf-count");
     let bytes = copy_single_path(
         &source,
-        Path::new("/docs"),
+        &crate::testing::app_path_of(Path::new("/docs")),
         Some(true),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/docs"),
+        &crate::testing::app_path_of(Path::new("/docs")),
         &state,
         &CreatedPaths::default(),
         &progress.source,

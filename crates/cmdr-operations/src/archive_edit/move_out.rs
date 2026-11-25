@@ -29,6 +29,8 @@ use super::routing::{ensure_zip_writable, normalize_inner_path, read_only_error}
 use cmdr_archive::mutator::{self, Changeset, MutationError};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::Volume;
+// The archive engine keys its sources by `std::path`; the copy engine takes app paths.
+use crate::transfer::volume::on_volume;
 
 impl crate::Operations {
     /// Routes a MOVE whose SOURCE is inside a zip (extract-out + delete-inside) to a
@@ -175,9 +177,12 @@ impl crate::Operations {
                     op_id.as_str(),
                     &state,
                     Arc::clone(&source_volume),
-                    &source_paths,
+                    &source_paths
+                        .iter()
+                        .map(|path| on_volume(path).into_owned())
+                        .collect::<Vec<_>>(),
                     Arc::clone(&dest_volume),
-                    &dest_path,
+                    &on_volume(&dest_path),
                     &config,
                 )
                 .await;

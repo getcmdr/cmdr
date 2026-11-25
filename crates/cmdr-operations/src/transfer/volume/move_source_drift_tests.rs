@@ -171,9 +171,9 @@ async fn run_move(
         op_id,
         &make_state(engine),
         Arc::clone(source) as Arc<dyn Volume>,
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -351,9 +351,9 @@ async fn an_original_saved_over_while_its_sweep_is_held_survives() {
         "op-vol-drift-held",
         &Arc::new(state),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

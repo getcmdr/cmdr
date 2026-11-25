@@ -21,6 +21,7 @@ use cmdr_fs::volume::{
     StreamLength, StreamWriteProgress, StreamWritten, VolumeReadStream,
 };
 use std::future::Future;
+use std::path::Path;
 use std::pin::Pin as StdPin;
 use std::sync::atomic::AtomicU64;
 

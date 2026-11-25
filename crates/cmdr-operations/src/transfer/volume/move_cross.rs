@@ -16,9 +16,9 @@
 //! Semantics, flows, and decisions: `../DETAILS.md` § "Volume copy + move".
 
 use crate::rt::Instant;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -39,11 +39,14 @@ use super::super::transfer_driver::{
 use super::displaced_destination::DisplacedLedger;
 use super::held_sweeps::HeldSweeps;
 use super::link_carry::LinkCarry;
+use super::listed_name::std_of;
 use super::preflight::SourceFileFacts;
 use super::preflight::{SourceHint, scan_volume_sources, sources_in_tree_order};
-use super::refused_item::{RefusalSubject, has_no_content, skip_if_refused};
+use super::refused_item::{RefusalSubject, has_no_content, name_refused_at, skip_if_refused};
 use super::strategy::{copy_single_path, resolve_source_is_directory};
-use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, failed_native, map_volume_error};
+use super::transfer_error::{
+    PathRole, PathedVolumeError, WriteFailure, failed_native, failed_path_text, map_volume_error,
+};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -68,11 +71,15 @@ pub async fn move_volumes_with_progress(
     operation_id: &str,
     state: &Arc<WriteOperationState>,
     source_volume: Arc<dyn Volume>,
-    source_paths: &[PathBuf],
+    source_paths: &[AppPathBuf],
     dest_volume: Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
     config: &VolumeCopyConfig,
 ) -> Result<(), WriteFailure> {
+    // The seams still keyed by `std::path` (the mount table, the Locked plan) read
+    // the sources in that spelling, made once each.
+    let std_paths =
+        |sources: &[AppPathBuf]| -> Vec<PathBuf> { sources.iter().map(|source| std_of(source).into_owned()).collect() };
     // A volume this move needs is already gone (a Retry while the NAS is still
     // down): wait for it before the first step fails on it
     // (`preflight::wait_for_gone_volumes`).
@@ -87,7 +94,7 @@ pub async fn move_volumes_with_progress(
     // A source that is or holds a mount point (on a `LocalVolume`) would
     // have the drive's files copied off it and then deleted there: refused
     // before the destination is touched.
-    super::super::super::mount_boundary::refuse_moving_a_volume_mount(&*source_volume, source_paths, state)
+    super::super::super::mount_boundary::refuse_moving_a_volume_mount(&*source_volume, &std_paths(source_paths), state)
         .await
         .map_err(WriteFailure::synthetic)?;
 
@@ -111,10 +118,10 @@ pub async fn move_volumes_with_progress(
     // held to them before its write (`landing.rs::name_at_destination`, the walk).
     state
         .destination_names
-        .resolve_on(state.scope().host(), &dest_volume, dest_path)
+        .resolve_on(state.scope().host(), &dest_volume, &std_of(dest_path))
         .await;
     dest_volume
-        .create_directory_all(&AppPath::legacy_unchecked(dest_path))
+        .create_directory_all(dest_path)
         .await
         .map_err(|e| WriteFailure::from_volume(dest_path, PathRole::Destination, e))?;
 
@@ -137,9 +144,10 @@ pub async fn move_volumes_with_progress(
         &LinkCarry::default(),
     )
     .await?;
-    state
-        .transfer_tree
-        .install(preflight.tree.take(), TreeLanding::under(dest_path, &config.leaves));
+    state.transfer_tree.install(
+        preflight.tree.take(),
+        TreeLanding::under(&std_of(dest_path), &config.leaves),
+    );
     let total_files = preflight.total_files;
     let total_bytes = preflight.total_bytes;
     let known_directory_paths = preflight.known_directory_paths();
@@ -151,12 +159,14 @@ pub async fn move_volumes_with_progress(
         &TreeOrder::active(state.scope().host()),
     );
     let source_paths = ordered_sources.as_slice();
-    let source_hints: Arc<HashMap<PathBuf, SourceHint>> = Arc::new(preflight.source_hints);
+    let source_hints: Arc<HashMap<AppPathBuf, SourceHint>> = Arc::new(preflight.source_hints);
 
     // Asked before the first byte moves: the sweep deletes each original once
     // its copy lands, and a Locked one refuses, so the person decides now
     // whether to unlock them for it (`locked_sources.rs`).
-    let Some(locked) = plan_locked_on_volume(&*events, operation_id, state, &source_volume, source_paths).await else {
+    let Some(locked) =
+        plan_locked_on_volume(&*events, operation_id, state, &source_volume, &std_paths(source_paths)).await
+    else {
         return Err(WriteFailure::synthetic(WriteOperationError::Cancelled {
             message: "Operation cancelled by user".into(),
         }));
@@ -174,7 +184,12 @@ pub async fn move_volumes_with_progress(
     );
     // A Locked top-level item the person said to leave goes the same way. One
     // deeper down stays out of its folder's walk (`MergeCtx::locked`).
-    pre_skip_paths.extend(source_paths.iter().filter(|source| locked.skips(source)).cloned());
+    pre_skip_paths.extend(
+        source_paths
+            .iter()
+            .filter(|source| locked.skips(&std_of(source)))
+            .cloned(),
+    );
     let mut bulk_skip_files = 0usize;
     let mut bulk_skip_bytes = 0u64;
     for path in &pre_skip_paths {
@@ -369,7 +384,7 @@ pub async fn move_volumes_with_progress(
             let source_index = Arc::new(AtomicUsize::new(0));
             let displaced = Arc::clone(&displaced);
             let locked = Arc::clone(&locked);
-            move |ctx: TransferContext<'_>| -> TransferFut<'_> {
+            move |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let displaced = Arc::clone(&displaced);
                 let locked = Arc::clone(&locked);
                 let op_probe = Arc::clone(&op_probe);
@@ -387,11 +402,14 @@ pub async fn move_volumes_with_progress(
                 let last_progress_time = Arc::clone(&last_progress_time);
                 let deep_skipped_files = Arc::clone(&deep_skipped_files);
                 let held_sweeps = Arc::clone(&held_sweeps);
-                let source_path = ctx.source_path.to_path_buf();
+                let source_path = ctx.source_path.to_owned();
                 let dest_item_path = ctx
                     .dest_path
                     .expect("async driver always supplies dest_path")
-                    .to_path_buf();
+                    .to_owned();
+                // The destination folder can't hold this source's name: nothing is
+                // written, and the refusal below asks about it, per item.
+                let dest_name_refused = ctx.dest_name_refused;
                 // `Swap` ⇒ `dest_item_path` is the user's original, which the
                 // copy's landing replaces once its staged bytes are whole. That
                 // landing is inside the copy, so the source is held for its
@@ -409,6 +427,10 @@ pub async fn move_volumes_with_progress(
                 };
                 let bytes_done_so_far = ctx.bytes_done_so_far;
                 Box::pin(async move {
+                    // The seams still keyed by `std::path` (the probe, the sweep's
+                    // stamp, the sink, the refusal question) read these, a borrow
+                    // for UTF-8.
+                    let (source_std, dest_std) = (std_of(&source_path), std_of(&dest_item_path));
                     // Use the cached scan hint for type + size. A missing hint
                     // means UNKNOWN, so it falls back to a per-source
                     // `is_directory` probe (a cached preview without per-path
@@ -420,11 +442,7 @@ pub async fn move_volumes_with_progress(
                         {
                             Ok(is_dir) => is_dir,
                             Err(e) => {
-                                return Err(map_volume_error(
-                                    &source_path.display().to_string(),
-                                    PathRole::Source,
-                                    e,
-                                ));
+                                return Err(map_volume_error(&failed_path_text(&source_path), PathRole::Source, e));
                             }
                         };
                     let source_facts = SourceFileFacts::from_hint(hint);
@@ -485,7 +503,7 @@ pub async fn move_volumes_with_progress(
                     op_probe.set_driver_phase_at(
                         super::super::transfer_probe::DriverPhase::TransferringSource,
                         Some(source_row),
-                        &source_path,
+                        &source_std,
                     );
                     // Held for this source's whole transfer, copy phase AND any
                     // held sweeps after it; dropping it clears the row. Mirrors
@@ -499,40 +517,44 @@ pub async fn move_volumes_with_progress(
                         } else {
                             super::super::transfer_probe::TaskRole::File
                         },
-                        &source_path,
-                        &dest_item_path,
+                        &*source_std,
+                        &*dest_std,
                     );
                     let probe = task_probe.probe();
                     // A FILE source's stamp, taken before a byte is read. A
                     // folder's children are stamped by the walk's own listing.
-                    let stamp_before = if source_is_dir {
+                    let stamp_before = if source_is_dir || dest_name_refused {
                         None
                     } else {
-                        super::source_sweep::stamp_file(&source_volume, &source_path).await
+                        super::source_sweep::stamp_file(&source_volume, &source_std).await
                     };
-                    let copy_fut = copy_single_path(
-                        &source_volume,
-                        &source_path,
-                        Some(source_is_dir),
-                        source_facts,
-                        &dest_volume,
-                        &dest_item_path,
-                        &state,
-                        &created,
-                        &leaf_progress,
-                        Some(&merge_ctx),
-                        super::strategy::staging_for(&replaces, landing),
-                    );
-                    // Bind this source's probe as a task-local for the whole
-                    // copy phase, so `stream_pipe_file` and `CheckpointStream`
-                    // record their phases with no signature threading. Without
-                    // it the row stays parked at `spawned`, `wait_reason` can
-                    // never answer `Source` or `Destination`, and
-                    // `stream_pipe_file` can't arm a stall-abort.
-                    let bytes = match super::super::transfer_probe::CURRENT_TASK_PROBE
-                        .scope(Arc::clone(&probe), copy_fut)
-                        .await
-                    {
+                    let copied = if dest_name_refused {
+                        Err(name_refused_at(&dest_item_path))
+                    } else {
+                        let copy_fut = copy_single_path(
+                            &source_volume,
+                            &source_path,
+                            Some(source_is_dir),
+                            source_facts,
+                            &dest_volume,
+                            &dest_item_path,
+                            &state,
+                            &created,
+                            &leaf_progress,
+                            Some(&merge_ctx),
+                            super::strategy::staging_for(&replaces, landing),
+                        );
+                        // Bind this source's probe as a task-local for the whole
+                        // copy phase, so `stream_pipe_file` and `CheckpointStream`
+                        // record their phases with no signature threading. Without
+                        // it the row stays parked at `spawned`, `wait_reason` can
+                        // never answer `Source` or `Destination`, and
+                        // `stream_pipe_file` can't arm a stall-abort.
+                        super::super::transfer_probe::CURRENT_TASK_PROBE
+                            .scope(Arc::clone(&probe), copy_fut)
+                            .await
+                    };
+                    let bytes = match copied {
                         Ok(b) => b,
                         // A file with no bytes and no way to land as itself: one
                         // counted skip, before the sweep, so its only copy stays.
@@ -547,8 +569,8 @@ pub async fn move_volumes_with_progress(
                         // source stays whole: its only copy.
                         Err(e) if created.files.lock_ignore_poison().is_empty() => {
                             let subject = RefusalSubject {
-                                source: &source_path,
-                                dest: &dest_item_path,
+                                source: &source_std,
+                                dest: &dest_std,
                                 source_size,
                                 source_is_directory: source_is_dir,
                             };
@@ -594,7 +616,7 @@ pub async fn move_volumes_with_progress(
                         } else {
                             SourceItemOutcome::Done
                         };
-                    emit_source_outcome(&*events, &operation_id, &source_path, verdict, false);
+                    emit_source_outcome(&*events, &operation_id, &source_std, verdict, false);
                     // Held until the destination's barrier confirms its copy:
                     // until then the original is the only copy proven on a disk
                     // (`held_sweeps.rs`). The sweep removes the LEDGER the copy
@@ -605,12 +627,12 @@ pub async fn move_volumes_with_progress(
                         } else {
                             super::source_sweep::CarriedSource::File(stamp_before)
                         },
-                        source: source_path,
+                        source: source_path.clone(),
                         is_dir: source_is_dir,
                         skipped,
                         // The original's own name after an overwrite, a
                         // folder's destination root otherwise.
-                        landed: dest_item_path,
+                        landed: dest_item_path.clone(),
                         verdict,
                         created_files: std::mem::take(&mut *created.files.lock_ignore_poison()),
                         created_dirs: std::mem::take(&mut *created.dirs.lock_ignore_poison()),
@@ -773,14 +795,14 @@ pub async fn move_volumes_with_progress(
 /// actually failed on, which for a directory source is an item deep inside it,
 /// on the side that refused: ❌ never `source_path`, the top-level item, which
 /// tells the user nothing they can act on.
-fn copy_phase_failed(e: PathedVolumeError, source_path: &Path, dest_item_path: &Path) -> WriteOperationError {
+fn copy_phase_failed(e: PathedVolumeError, source_path: &AppPath, dest_item_path: &AppPath) -> WriteOperationError {
     log::warn!(
         target: "move",
         "move_between_volumes: copy phase failed for {} on the {:?} (under {} -> {}): {}",
         LogPrivate::path(&*failed_native(&e.path)),
         e.role,
-        LogPrivate::path(source_path),
-        LogPrivate::path(dest_item_path),
+        LogPrivate::path(source_path.as_str()),
+        LogPrivate::path(dest_item_path.as_str()),
         LogError(&e.error)
     );
     WriteFailure::from(e).error

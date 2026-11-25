@@ -7,12 +7,13 @@
 use super::super::super::types::ConflictResolution;
 use super::build_pre_skip_set;
 use super::test_support::paths;
+use crate::testing::{app_path_of, app_paths_of};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::Path;
 
 #[test]
 fn build_pre_skip_set_empty_when_not_skip() {
-    let sources = paths(&["/a.txt", "/b.txt"]);
+    let sources = app_paths_of(paths(&["/a.txt", "/b.txt"]));
     let empty_dirs = HashSet::new();
     for resolution in [
         ConflictResolution::Stop,
@@ -29,7 +30,7 @@ fn build_pre_skip_set_empty_when_not_skip() {
 
 #[test]
 fn build_pre_skip_set_empty_when_pre_known_list_empty() {
-    let sources = paths(&["/a.txt", "/b.txt"]);
+    let sources = app_paths_of(paths(&["/a.txt", "/b.txt"]));
     let empty_dirs = HashSet::new();
     let set = build_pre_skip_set(&sources, ConflictResolution::Skip, &[], &empty_dirs);
     assert!(set.is_empty());
@@ -40,7 +41,7 @@ fn build_pre_skip_set_matches_by_filename_only() {
     // Pre-known list contains FILE NAMES (the FE only knows leaf names from
     // the conflict scan). The driver must match by `file_name()`, not full
     // path.
-    let sources = paths(&["/photos/a.txt", "/docs/b.txt", "/docs/c.txt"]);
+    let sources = app_paths_of(paths(&["/photos/a.txt", "/docs/b.txt", "/docs/c.txt"]));
     let empty_dirs = HashSet::new();
     let set = build_pre_skip_set(
         &sources,
@@ -49,9 +50,9 @@ fn build_pre_skip_set_matches_by_filename_only() {
         &empty_dirs,
     );
     assert_eq!(set.len(), 2);
-    assert!(set.contains(&PathBuf::from("/photos/a.txt")));
-    assert!(set.contains(&PathBuf::from("/docs/c.txt")));
-    assert!(!set.contains(&PathBuf::from("/docs/b.txt")));
+    assert!(set.contains(&app_path_of(Path::new("/photos/a.txt"))));
+    assert!(set.contains(&app_path_of(Path::new("/docs/c.txt"))));
+    assert!(!set.contains(&app_path_of(Path::new("/docs/b.txt"))));
 }
 
 /// Directory-typed top-level sources are excluded from the bulk-skip set
@@ -61,9 +62,9 @@ fn build_pre_skip_set_matches_by_filename_only() {
 /// skipped individually while the non-conflicting ones still copy.
 #[test]
 fn build_pre_skip_set_excludes_known_directory_paths() {
-    let sources = paths(&["/photos/a.txt", "/docs", "/notes/c.txt"]);
+    let sources = app_paths_of(paths(&["/photos/a.txt", "/docs", "/notes/c.txt"]));
     let mut known_dirs = HashSet::new();
-    known_dirs.insert(PathBuf::from("/docs"));
+    known_dirs.insert(app_path_of(Path::new("/docs")));
     let set = build_pre_skip_set(
         &sources,
         ConflictResolution::Skip,
@@ -71,10 +72,10 @@ fn build_pre_skip_set_excludes_known_directory_paths() {
         &known_dirs,
     );
     assert_eq!(set.len(), 2);
-    assert!(set.contains(&PathBuf::from("/photos/a.txt")));
-    assert!(set.contains(&PathBuf::from("/notes/c.txt")));
+    assert!(set.contains(&app_path_of(Path::new("/photos/a.txt"))));
+    assert!(set.contains(&app_path_of(Path::new("/notes/c.txt"))));
     assert!(
-        !set.contains(&PathBuf::from("/docs")),
+        !set.contains(&app_path_of(Path::new("/docs"))),
         "known-directory path /docs must be excluded from bulk-skip"
     );
 }
@@ -88,10 +89,10 @@ fn build_pre_skip_set_excludes_known_directory_paths() {
 /// pins that the merge-not-skip-wholesale semantics hold at the bulk-skip gate.
 #[test]
 fn build_pre_skip_set_never_bulk_skips_a_merging_directory() {
-    let sources = paths(&["/photos", "/notes.txt"]);
+    let sources = app_paths_of(paths(&["/photos", "/notes.txt"]));
     let mut known_dirs = HashSet::new();
     // `/photos` is a directory (a dir-dir merge at the destination).
-    known_dirs.insert(PathBuf::from("/photos"));
+    known_dirs.insert(app_path_of(Path::new("/photos")));
     let set = build_pre_skip_set(
         &sources,
         ConflictResolution::Skip,
@@ -102,9 +103,9 @@ fn build_pre_skip_set_never_bulk_skips_a_merging_directory() {
     // Only the file is bulk-skipped; the merging folder is left to per-child
     // resolution so its non-clashing children still copy.
     assert_eq!(set.len(), 1);
-    assert!(set.contains(&PathBuf::from("/notes.txt")));
+    assert!(set.contains(&app_path_of(Path::new("/notes.txt"))));
     assert!(
-        !set.contains(&PathBuf::from("/photos")),
+        !set.contains(&app_path_of(Path::new("/photos"))),
         "a merging directory must never be bulk-skipped wholesale"
     );
 }
@@ -119,18 +120,22 @@ fn build_pre_skip_set_never_bulk_skips_a_merging_directory() {
 #[test]
 fn a_lossy_pre_known_conflict_skips_the_literal_sibling_and_never_the_non_utf8_source() {
     use std::os::unix::ffi::OsStrExt;
-    let raw = PathBuf::from("/d").join(std::ffi::OsStr::from_bytes(b"caf\xe9.txt"));
-    let sibling = PathBuf::from("/d/caf\u{FFFD}.txt");
-    let sources = vec![raw.clone(), sibling.clone()];
+    let raw = std::path::PathBuf::from("/d").join(std::ffi::OsStr::from_bytes(b"caf\xe9.txt"));
+    let sibling = std::path::PathBuf::from("/d/caf\u{FFFD}.txt");
+    let sources = app_paths_of([raw.clone(), sibling.clone()]);
     let set = build_pre_skip_set(
         &sources,
         ConflictResolution::Skip,
         &["caf\u{FFFD}.txt".into()],
         &HashSet::new(),
     );
-    assert_eq!(set, HashSet::from([sibling]), "only the literal sibling is pre-skipped");
+    assert_eq!(
+        set,
+        HashSet::from([app_path_of(&sibling)]),
+        "only the literal sibling is pre-skipped"
+    );
     assert!(
-        !set.contains(&raw),
+        !set.contains(&app_path_of(&raw)),
         "the non-UTF-8 source never matches a pre-known name"
     );
 }

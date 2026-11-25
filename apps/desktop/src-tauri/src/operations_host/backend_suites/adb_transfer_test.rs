@@ -274,9 +274,9 @@ async fn a_selected_link_moved_off_a_phone_lands_its_target_and_spares_it() {
         "move-off-phone-selected-link",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(200))),
         Arc::clone(&phone.volume),
-        std::slice::from_ref(&link),
+        &cmdr_operations::testing::app_paths_of(std::slice::from_ref(&link)),
         local_volume,
-        Path::new(""),
+        &cmdr_operations::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await;

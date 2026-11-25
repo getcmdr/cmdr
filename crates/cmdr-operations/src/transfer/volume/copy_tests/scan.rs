@@ -4,6 +4,7 @@
 use super::*;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[test]
 fn test_volume_copy_config_default() {
@@ -66,9 +67,9 @@ async fn a_volume_copy_hands_its_operation_the_tree_its_scan_recorded() {
         "op-volume-copy-tree",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/src/photos"), PathBuf::from("/src/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/src/photos"), PathBuf::from("/src/notes.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -136,9 +137,9 @@ async fn a_cached_preview_without_a_tree_gives_the_operation_its_sources_as_opaq
         "op-volume-copy-opaque-tree",
         &state,
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             preview_id: Some(preview_id),
             ..VolumeCopyConfig::default()

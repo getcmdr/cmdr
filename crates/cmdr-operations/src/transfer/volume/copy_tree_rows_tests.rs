@@ -9,6 +9,7 @@
 
 use cmdr_fs::app_path;
 use std::collections::BTreeSet;
+use std::path::Path;
 use std::sync::atomic::Ordering;
 
 use super::super::faulty_volume::{FaultyOp, FaultyVolume, forward_volume_methods};
@@ -74,9 +75,9 @@ async fn copy(
         "op-tree-rows",
         state,
         Arc::clone(source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         config,
     )
     .await
@@ -505,9 +506,9 @@ async fn a_cross_volume_move_reports_each_source_twice_and_the_sweep_has_the_las
         "op-tree-rows-move",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/src/keep"), PathBuf::from("/src/solo.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/src/keep"), PathBuf::from("/src/solo.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -555,9 +556,9 @@ async fn a_one_folder_transfer_completes_counting_its_files_not_its_sources() {
                 "op-leaf-count",
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -567,9 +568,9 @@ async fn a_one_folder_transfer_completes_counting_its_files_not_its_sources() {
                 "op-leaf-count",
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -614,9 +615,9 @@ async fn a_skipped_top_level_file_never_steps_the_file_bar_back() {
                 "op-skip-tick",
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await
@@ -626,9 +627,9 @@ async fn a_skipped_top_level_file_never_steps_the_file_bar_back() {
                 "op-skip-tick",
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest),
-                Path::new("/"),
+                &crate::testing::app_path_of(Path::new("/")),
                 &config,
             )
             .await

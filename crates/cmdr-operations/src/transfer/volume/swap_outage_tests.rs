@@ -267,9 +267,9 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
                     op.id().as_str(),
                     &state,
                     Arc::clone(&source),
-                    &sources,
+                    &crate::testing::app_paths_of(&sources),
                     dest,
-                    Path::new("/dest"),
+                    &crate::testing::app_path_of(Path::new("/dest")),
                     &config,
                 )
                 .await
@@ -280,9 +280,9 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
                     op.id().as_str(),
                     &state,
                     Arc::clone(&source),
-                    &sources,
+                    &crate::testing::app_paths_of(&sources),
                     dest,
-                    Path::new("/dest"),
+                    &crate::testing::app_path_of(Path::new("/dest")),
                     &config,
                 )
                 .await

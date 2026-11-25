@@ -398,13 +398,12 @@ async fn remove_what_a_live_destination_takes(
 pub(super) async fn reap_stale_transfer_temps(
     state: &WriteOperationState,
     volume: &Arc<dyn Volume>,
-    dir: &Path,
+    dir_app: &AppPath,
 ) -> Option<Vec<FileEntry>> {
-    let dir_app = AppPath::legacy_unchecked(dir);
-    let entries = match volume.list_directory(&dir_app, None).await {
+    let entries = match volume.list_directory(dir_app, None).await {
         Ok(entries) => entries,
         Err(e) => {
-            log::debug!(target: "copy", "skipping stale-temp reap of {}: {e}", LogPrivate::dir_path(dir), e = LogError(&e));
+            log::debug!(target: "copy", "skipping stale-temp reap of {}: {e}", LogPrivate::dir_path(dir_app.as_str()), e = LogError(&e));
             return None;
         }
     };
@@ -436,7 +435,7 @@ pub(super) async fn reap_stale_transfer_temps(
         let temp_app = match AppName::from_app_spelling(&entry.name) {
             Ok(_) => ListedName::new(&entry.name)
                 .ok()
-                .and_then(|name| name.under(&dir_app).ok()),
+                .and_then(|name| name.under(dir_app).ok()),
             Err(_) => None,
         };
         if is_stale_temp && temp_app.is_none() {

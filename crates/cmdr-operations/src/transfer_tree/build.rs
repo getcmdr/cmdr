@@ -320,15 +320,25 @@ fn source_label<'a>(root: &Path, source: &'a Path) -> std::borrow::Cow<'a, str> 
 /// found each one to be; a source it knows nothing about ranks as the file row
 /// it shows as. Sources with one label keep their given order, and all of them
 /// do if ranking them panics.
-pub(crate) fn sort_sources(sources: &mut [PathBuf], is_folder: impl Fn(&Path) -> bool, order: &TreeOrder) {
+///
+/// `path_of` reads a source as the tree's `std::path` rows key it (a volume
+/// driver holds its sources as app paths).
+pub(crate) fn sort_sources<S: Clone>(
+    sources: &mut [S],
+    path_of: impl Fn(&S) -> std::borrow::Cow<'_, Path>,
+    is_folder: impl Fn(&S) -> bool,
+    order: &TreeOrder,
+) {
     let ranked = built(order, "ranking the selection", || {
-        let root = common_ancestor(sources);
-        let mut ranked: Vec<(bool, String, PathBuf)> = sources
+        let paths: Vec<PathBuf> = sources.iter().map(|source| path_of(source).into_owned()).collect();
+        let root = common_ancestor(&paths);
+        let mut ranked: Vec<(bool, String, S)> = sources
             .iter()
-            .map(|source| {
+            .zip(&paths)
+            .map(|(source, path)| {
                 (
                     is_folder(source),
-                    source_label(&root, source).into_owned(),
+                    source_label(&root, path).into_owned(),
                     source.clone(),
                 )
             })

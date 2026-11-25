@@ -12,6 +12,7 @@ use crate::types::{ConflictResolution, WriteOperationError};
 use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
+use std::path::Path;
 
 const WAIT: Duration = Duration::from_secs(10);
 const CADENCE: &[Duration] = &[Duration::from_millis(10), Duration::from_millis(20)];
@@ -103,9 +104,9 @@ async fn run(
         op.id().as_str(),
         state,
         source,
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Stop,
             progress_interval_ms: 0,

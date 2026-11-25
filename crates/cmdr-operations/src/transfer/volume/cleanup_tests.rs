@@ -794,7 +794,7 @@ async fn the_stale_temp_reap_skips_what_the_ledger_records_however_old_it_looks(
     .expect("a ledger that keeps nothing on disk holds the landing in memory");
     let dest: Arc<dyn Volume> = Arc::clone(&volume) as Arc<dyn Volume>;
 
-    let listing = reap_stale_transfer_temps(&state, &dest, Path::new("/"))
+    let listing = reap_stale_transfer_temps(&state, &dest, cmdr_fs::app_path!("/"))
         .await
         .expect("the listing answers");
 
@@ -873,7 +873,7 @@ async fn the_stale_temp_reap_never_deletes_a_listed_name_that_isnt_one_plain_nam
     });
     let dest: Arc<dyn Volume> = Arc::clone(&volume) as Arc<dyn Volume>;
 
-    reap_stale_transfer_temps(&make_state(&engine), &dest, Path::new("/album")).await;
+    reap_stale_transfer_temps(&make_state(&engine), &dest, cmdr_fs::app_path!("/album")).await;
 
     let deletes = volume.deletes.lock_ignore_poison().clone();
     assert_eq!(

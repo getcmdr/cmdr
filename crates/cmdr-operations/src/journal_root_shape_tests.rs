@@ -4,7 +4,6 @@
 //! root. Undo reads exactly these two ends, so a row whose destination reads as its
 //! source (an earlier pass's first CI run) makes undo skip every file.
 
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -84,16 +83,22 @@ const SHAPES: &[Shape] = &[
     },
 ];
 
+/// A shape's path as a pane would hand it over: the app's own text, a drive path on
+/// every host (as a Windows pane names it), and a suite's volume-relative text as the
+/// bridge value the typed starts pass it on as.
+fn typed(text: &str) -> AppPathBuf {
+    AppPathBuf::from_wire(text)
+        .or_else(|_| AppPathBuf::parse(text, PathFlavor::Windows))
+        .unwrap_or_else(|_| crate::testing::app_path_of(std::path::Path::new(text)))
+}
+
 async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, String)> {
     let log = TestOperationLog::new("journal-root-shape");
     let engine = TestOperations::journaling_into(&log);
     let source = Arc::new(InMemoryVolume::new("Src").with_space_info(1_000_000, 900_000));
     let dest = Arc::new(InMemoryVolume::new("Dst").with_space_info(1_000_000, 900_000));
     for file in shape.files {
-        // A drive path is the app's on every host, as a Windows pane names it.
-        let path = AppPathBuf::from_wire(file)
-            .or_else(|_| AppPathBuf::parse(file, PathFlavor::Windows))
-            .unwrap_or_else(|why| panic!("{file}: {why}"));
+        let path = typed(file);
         // Its folders too, so a walk of the root lists them.
         if let Some(parent) = path.parent() {
             source.create_directory_all(parent).await.unwrap();
@@ -119,7 +124,8 @@ async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, Strin
         Some("dst"),
         shape.sources.len() as u64,
     );
-    let sources: Vec<PathBuf> = shape.sources.iter().map(PathBuf::from).collect();
+    let sources: Vec<AppPathBuf> = shape.sources.iter().map(|source| typed(source)).collect();
+    let dest_dir = typed(shape.dest);
     let config = VolumeCopyConfig {
         progress_interval_ms: 0,
         ..VolumeCopyConfig::default()
@@ -131,30 +137,10 @@ async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, Strin
     let events = Arc::new(CollectorEventSink::new());
     let result = match transfer {
         Transfer::Copy => {
-            copy_volumes_with_progress(
-                events,
-                &op_id,
-                &state,
-                src,
-                &sources,
-                dst,
-                Path::new(shape.dest),
-                &config,
-            )
-            .await
+            copy_volumes_with_progress(events, &op_id, &state, src, &sources, dst, &dest_dir, &config).await
         }
         Transfer::Move => {
-            move_volumes_with_progress(
-                events,
-                &op_id,
-                &state,
-                src,
-                &sources,
-                dst,
-                Path::new(shape.dest),
-                &config,
-            )
-            .await
+            move_volumes_with_progress(events, &op_id, &state, src, &sources, dst, &dest_dir, &config).await
         }
     };
     result.unwrap_or_else(|f| panic!("{transfer:?} {}: {:?}", shape.name, f.error));

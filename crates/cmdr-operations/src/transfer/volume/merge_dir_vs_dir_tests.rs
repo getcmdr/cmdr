@@ -20,6 +20,7 @@ use crate::transfer::conflict_responder_test_support::ConflictResponderSink;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::Volume;
+use std::path::Path;
 
 // ============================================================================
 // Helpers
@@ -75,9 +76,9 @@ async fn dir_vs_dir_never_prompts_top_level_or_deep_under_every_policy() {
             &format!("op-dirdir-{policy:?}"),
             &state,
             Arc::clone(&source),
-            &[PathBuf::from("/a")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/a")]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await;
@@ -149,9 +150,9 @@ async fn source_dir_over_dest_file_overwrite_replaces_file_with_dir() {
         "op-dir-over-file-overwrite",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -213,9 +214,9 @@ async fn source_dir_over_dest_file_skip_keeps_dest_file() {
         "op-dir-over-file-skip",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -262,9 +263,9 @@ async fn type_mismatch_inside_merge_routes_through_resolver_and_skip_keeps_dest(
         "op-type-mismatch-skip",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -311,9 +312,9 @@ async fn fresh_dest_level_streams_without_listing_or_prompting() {
         "op-fresh-level",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/brand-new")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/brand-new")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

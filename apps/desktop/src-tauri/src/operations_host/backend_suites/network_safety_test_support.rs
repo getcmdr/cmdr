@@ -111,9 +111,9 @@ pub(super) async fn a_failed_folder_copy_onto_a_users_folder_keeps_their_files(r
         "failed-merge-copy",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(0))),
         source,
-        &[PathBuf::from("album")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("album")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &config,
     )
     .await;
@@ -146,9 +146,9 @@ pub(super) async fn a_failed_folder_move_onto_a_users_folder_loses_no_byte(remot
         "failed-merge-move",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(0))),
         source,
-        &[PathBuf::from("album")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("album")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &config,
     )
     .await;
@@ -349,9 +349,9 @@ pub(super) async fn an_unknown_source_type_never_clears_a_server_folder(remote: 
         "unknown-source-type",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(0))),
         Arc::clone(&faulty) as Arc<dyn Volume>,
-        &[PathBuf::from("swap")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("swap")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &config,
     )
     .await;

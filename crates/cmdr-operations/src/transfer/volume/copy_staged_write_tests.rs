@@ -20,6 +20,7 @@ use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
 use cmdr_fs::testing::wait_until_async;
+use std::path::Path;
 use std::sync::atomic::Ordering;
 
 // ============================================================================
@@ -53,14 +54,16 @@ async fn abandoned_fresh_copy_leaves_no_partial_at_the_final_name() {
 
     {
         let sources = [PathBuf::from("/notes.txt")];
+        let typed_dest = crate::testing::app_path_of(Path::new("/"));
+        let typed_sources = crate::testing::app_paths_of(&sources);
         let copy = copy_volumes_with_progress(
             events.clone(),
             "test-op-abandon-fresh",
             &state,
             Arc::clone(&source),
-            &sources,
+            &typed_sources,
             Arc::clone(&dest),
-            Path::new("/"),
+            &typed_dest,
             &config,
         );
         tokio::pin!(copy);
@@ -121,14 +124,16 @@ async fn abandoned_overwrite_leaves_the_original_intact() {
 
     {
         let sources = [PathBuf::from("/notes.txt")];
+        let typed_dest = crate::testing::app_path_of(Path::new("/"));
+        let typed_sources = crate::testing::app_paths_of(&sources);
         let copy = copy_volumes_with_progress(
             events.clone(),
             "test-op-abandon-overwrite",
             &state,
             Arc::clone(&source),
-            &sources,
+            &typed_sources,
             Arc::clone(&dest),
-            Path::new("/"),
+            &typed_dest,
             &config,
         );
         tokio::pin!(copy);
@@ -176,14 +181,16 @@ async fn abandoned_directory_child_leaves_no_partial_at_the_final_name() {
 
     {
         let sources = [PathBuf::from("/folder")];
+        let typed_dest = crate::testing::app_path_of(Path::new("/"));
+        let typed_sources = crate::testing::app_paths_of(&sources);
         let copy = copy_volumes_with_progress(
             events.clone(),
             "test-op-abandon-dir-child",
             &state,
             Arc::clone(&source),
-            &sources,
+            &typed_sources,
             Arc::clone(&dest),
-            Path::new("/"),
+            &typed_dest,
             &config,
         );
         tokio::pin!(copy);
@@ -238,9 +245,9 @@ async fn a_completed_copy_lands_at_the_final_name_with_no_temp_left() {
         "test-op-staged-happy",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/notes.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/notes.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await

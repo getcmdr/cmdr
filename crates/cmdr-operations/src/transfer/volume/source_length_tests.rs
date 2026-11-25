@@ -136,9 +136,9 @@ async fn run(is_move: bool, source: Arc<MisdeclaringSource>, dest: Arc<InMemoryV
             "op-src-len",
             &state,
             source,
-            &paths,
+            &crate::testing::app_paths_of(&paths),
             dest,
-            Path::new("/inbox"),
+            &crate::testing::app_path_of(Path::new("/inbox")),
             &config,
         )
         .await
@@ -148,9 +148,9 @@ async fn run(is_move: bool, source: Arc<MisdeclaringSource>, dest: Arc<InMemoryV
             "op-src-len",
             &state,
             source,
-            &paths,
+            &crate::testing::app_paths_of(&paths),
             dest,
-            Path::new("/inbox"),
+            &crate::testing::app_path_of(Path::new("/inbox")),
             &config,
         )
         .await

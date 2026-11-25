@@ -19,6 +19,7 @@ use crate::testing::TestOperations;
 use crate::types::TransferWaitReason;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 /// Cross-volume move emits `bytes_total > 0` on every Copying-phase progress
 /// event. Without this, the FE's `TransferProgressDialog` hides the Size
@@ -45,9 +46,9 @@ async fn cross_volume_move_emits_bytes_total_on_progress() {
         "op-move-bytes-total",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -163,9 +164,9 @@ async fn cross_volume_move_emits_scan_phase_tallies_during_walk() {
         "op-move-scan-tally",
         &state,
         Arc::clone(&source),
-        &sources,
+        &crate::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -238,9 +239,9 @@ async fn cross_volume_move_emits_intra_file_progress() {
         "op-move-intra-file",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -310,9 +311,9 @@ async fn cross_volume_move_directory_source_progress_is_leaf_granular() {
         "op-move-dir-leaf",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/folder")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/folder")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -380,9 +381,9 @@ async fn cross_volume_move_tells_the_dialog_what_it_is_doing() {
         "op-move-activity",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -445,9 +446,9 @@ async fn a_cross_volume_move_in_flight_shows_its_source_and_phase() {
         "op-move-table",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/holiday.mov")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/holiday.mov")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

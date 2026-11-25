@@ -155,9 +155,9 @@ async fn sftp_integration_a_link_in_a_folder_moved_off_the_server_leaves_its_tar
         "move-off-link",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(200))),
         Arc::clone(&remote),
-        &[dir.join("tree")],
+        &cmdr_operations::testing::app_paths_of(&[dir.join("tree")]),
         local,
-        Path::new(""),
+        &cmdr_operations::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -199,9 +199,9 @@ async fn sftp_integration_a_copy_onto_the_server_lands_links_as_links() {
         "copy-on-links",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(200))),
         local,
-        &[PathBuf::from("/tree"), PathBuf::from("/alone")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("/tree"), PathBuf::from("/alone")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -252,9 +252,9 @@ async fn sftp_integration_a_selected_link_moved_off_the_server_lands_its_target_
         "move-off-selected-link",
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(200))),
         Arc::clone(&remote),
-        &[dir.join("ln")],
+        &cmdr_operations::testing::app_paths_of(&[dir.join("ln")]),
         local,
-        Path::new(""),
+        &cmdr_operations::testing::app_path_of(Path::new("")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -390,9 +390,9 @@ async fn sftp_integration_a_move_into_a_dialog_addressed_subfolder_lands_where_t
         "test-op-sftp-dialog-dest",
         &state,
         Arc::clone(&local),
-        &[PathBuf::from("clip.mp4")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("clip.mp4")]),
         Arc::clone(&remote),
-        &dest_path,
+        &cmdr_operations::testing::app_path_of(&dest_path),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -463,9 +463,9 @@ async fn sftp_integration_a_bare_server_path_destination_is_refused_before_anyth
         "test-op-sftp-bare-dest",
         &state,
         Arc::clone(&local),
-        &[PathBuf::from("clip.mp4")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("clip.mp4")]),
         Arc::clone(&remote),
-        &bare,
+        &cmdr_operations::testing::app_path_of(&bare),
         &VolumeCopyConfig::default(),
     )
     .await;

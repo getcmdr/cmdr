@@ -203,9 +203,9 @@ async fn smb_integration_move_into_a_subfolder_addressed_the_way_the_dialog_addr
         "test-op-smb-dialog-dest",
         &state,
         Arc::clone(&source_vol),
-        &[PathBuf::from("clip.mp4")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("clip.mp4")]),
         Arc::clone(&dest_vol),
-        &dest_path,
+        &cmdr_operations::testing::app_path_of(&dest_path),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -308,9 +308,9 @@ async fn smb_integration_a_running_copy_survives_the_volume_being_replaced() {
                 "test-op-smb-replace-mid-copy",
                 &state,
                 source_vol,
-                &names,
+                &cmdr_operations::testing::app_paths_of(&names),
                 dest_vol,
-                Path::new(&dest),
+                &cmdr_operations::testing::app_path_of(Path::new(&dest)),
                 &config,
             )
             .await

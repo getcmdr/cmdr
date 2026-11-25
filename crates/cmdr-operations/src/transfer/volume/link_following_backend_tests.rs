@@ -199,9 +199,9 @@ async fn a_copied_folder_holding_a_dir_link_ends_with_every_tree_row_done() {
         "op-follow-tree-rows",
         &state,
         source,
-        &[PathBuf::from("src/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("src/album")]),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(ConflictResolution::Stop),
     )
     .await;
@@ -302,9 +302,9 @@ async fn move_across(
         op_id,
         &make_state(engine),
         Arc::clone(source),
-        sources,
+        &crate::testing::app_paths_of(sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config(ConflictResolution::Skip),
     )
     .await;
@@ -576,9 +576,9 @@ async fn copy_album_onto(
         op_id,
         state,
         source,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(dest),
-        Path::new("dst"),
+        &crate::testing::app_path_of(Path::new("dst")),
         &config(resolution),
     )
     .await;
@@ -748,9 +748,9 @@ async fn a_blanket_overwrite_copy_leaves_a_top_level_dest_link_alone() {
         "op-top-dest-link-copy",
         &make_state(&engine),
         source,
-        &[PathBuf::from("/album/link")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album/link")]),
         Arc::clone(&dest),
-        Path::new("dst"),
+        &crate::testing::app_path_of(Path::new("dst")),
         &config(ConflictResolution::Overwrite),
     )
     .await;
@@ -818,9 +818,9 @@ async fn a_cross_volume_move_onto_a_deep_dest_link_keeps_the_target_and_the_unla
         "op-deep-dest-link-move",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("dst"),
+        &crate::testing::app_path_of(Path::new("dst")),
         &config(ConflictResolution::Overwrite),
     )
     .await;

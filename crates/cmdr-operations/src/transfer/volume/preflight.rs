@@ -25,7 +25,7 @@
 //! top-level directories from the file-only bulk-skip.
 
 use crate::rt::Instant;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -42,6 +42,7 @@ use super::super::super::types::{
 use super::super::volume_outage::{OutageAnnounce, OutageEnd, through_outages, wait_while_out};
 use super::folder_metadata::SourceFolderDates;
 use super::link_carry::LinkCarry;
+use super::listed_name::{on_volume, std_of};
 use super::scan_wait::ScanWait;
 use super::transfer_error::{PathRole, PathedVolumeError, WriteFailure, map_failure_after_wait, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -85,6 +86,23 @@ pub(super) struct SourceHint {
 /// file: that's an ORDER only, the row the tree shows for it, ❌ never an
 /// answer to "is it a directory?".
 pub(super) fn sources_in_tree_order(
+    sources: &[AppPathBuf],
+    hints: &HashMap<AppPathBuf, SourceHint>,
+    order: &TreeOrder,
+) -> Vec<AppPathBuf> {
+    let mut ordered = sources.to_vec();
+    sort_sources(
+        &mut ordered,
+        |source| std_of(source),
+        |source| hints.get(source).is_some_and(|hint| hint.is_directory),
+        order,
+    );
+    ordered
+}
+
+/// [`sources_in_tree_order`] for the same-volume move, whose sources are still
+/// `std::path` values.
+pub(super) fn std_sources_in_tree_order(
     sources: &[PathBuf],
     hints: &HashMap<PathBuf, SourceHint>,
     order: &TreeOrder,
@@ -92,6 +110,7 @@ pub(super) fn sources_in_tree_order(
     let mut ordered = sources.to_vec();
     sort_sources(
         &mut ordered,
+        |source| std::borrow::Cow::Borrowed(source.as_path()),
         |source| hints.get(source).is_some_and(|hint| hint.is_directory),
         order,
     );
@@ -157,7 +176,7 @@ impl SourceFileFacts {
 pub(super) struct VolumePreflight {
     pub total_files: usize,
     pub total_bytes: u64,
-    pub source_hints: HashMap<PathBuf, SourceHint>,
+    pub source_hints: HashMap<AppPathBuf, SourceHint>,
     /// The transfer tree the scan recorded (or the cached preview built), for
     /// the caller to install with where its sources land. `None` after a tree
     /// bug (`transfer_tree::built`).
@@ -170,7 +189,7 @@ impl VolumePreflight {
     /// pre-known conflict name aren't bulk-skipped (a top-level dir match
     /// means only some children collide; dropping the subtree would lose
     /// non-conflicting files).
-    pub(super) fn known_directory_paths(&self) -> HashSet<PathBuf> {
+    pub(super) fn known_directory_paths(&self) -> HashSet<AppPathBuf> {
         self.source_hints
             .iter()
             .filter(|&(_path, hint)| hint.is_directory)
@@ -201,7 +220,7 @@ impl VolumePreflight {
 )]
 pub(super) async fn scan_volume_sources(
     volume: &Arc<dyn Volume>,
-    source_paths: &[PathBuf],
+    source_paths: &[AppPathBuf],
     config: &VolumeCopyConfig,
     operation_id: &str,
     operation_type: WriteOperationType,
@@ -229,6 +248,10 @@ pub(super) async fn scan_volume_sources(
     if state.work_stopped() {
         return Err(cancelled_failure(events, operation_id, operation_type));
     }
+    // The preview store, the links, and the tree key the sources as `std::path`
+    // values, made once here.
+    let std_sources: Vec<PathBuf> = source_paths.iter().map(|path| std_of(path).into_owned()).collect();
+    let source_paths_std = std_sources.as_slice();
 
     // Cached preview from the TransferDialog: same scan results, no second
     // walk over the device. Unless it describes a different transfer: the local
@@ -242,9 +265,9 @@ pub(super) async fn scan_volume_sources(
     if let Some(mut cached) = config
         .preview_id
         .as_deref()
-        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths, config.os_junk_files))
+        .and_then(|preview_id| previews.take_cached_transfer_scan(preview_id, source_paths_std, config.os_junk_files))
         .filter(|cached| {
-            let describes_another_transfer = links.disagrees_with_preview(cached, source_paths);
+            let describes_another_transfer = links.disagrees_with_preview(cached, source_paths_std);
             if describes_another_transfer {
                 log::debug!(
                     "scan_volume_sources: op={} rescans: its preview counted a selected link differently from how this transfer takes it",
@@ -267,7 +290,7 @@ pub(super) async fn scan_volume_sources(
         let tree = cached
             .tree
             .take()
-            .or_else(|| from_per_path(source_paths, &cached.per_path, &TreeOrder::active(state.scope().host())));
+            .or_else(|| from_per_path(source_paths_std, &cached.per_path, &TreeOrder::active(state.scope().host())));
         let mut source_hints = HashMap::with_capacity(cached.per_path.len());
         for (path, scan) in cached.per_path {
             let size = if scan.top_level_is_directory {
@@ -276,7 +299,7 @@ pub(super) async fn scan_volume_sources(
                 scan.total_bytes
             };
             source_hints.insert(
-                path,
+                on_volume(&path).into_owned(),
                 SourceHint {
                     is_directory: scan.top_level_is_directory,
                     size,
@@ -350,7 +373,10 @@ pub(super) async fn scan_volume_sources(
     // `spawn_blocking` (the local one) can carry it across the closure.
     let stop = ScanStop::new(Arc::clone(state) as Arc<dyn ScanStopSignal>);
     // Every entry the scan counts also lands in the transfer's tree.
-    let recorder = Arc::new(TreeRecorder::new(source_paths, TreeOrder::active(state.scope().host())));
+    let recorder = Arc::new(TreeRecorder::new(
+        source_paths_std,
+        TreeOrder::active(state.scope().host()),
+    ));
     // A read the dropped share cut off waits for it and runs again, from the
     // directory it was listing (`scan_wait.rs`).
     let outages = ScanWait::new(
@@ -369,19 +395,13 @@ pub(super) async fn scan_volume_sources(
         .leaving_out(state.os_junk);
     // A carried link is one leaf with no bytes: nothing to walk, and walking what
     // it points at would count (and reserve room for) a tree this copy never writes.
-    let to_walk: Vec<PathBuf> = source_paths
+    let to_walk: Vec<AppPathBuf> = source_paths
         .iter()
-        .filter(|path| links.selected_target(path).is_none())
+        .filter(|path| links.selected_target(&std_of(path)).is_none())
         .cloned()
         .collect();
     let batch = volume
-        .scan_for_copy_batch_with_boundary(
-            &to_walk
-                .iter()
-                .map(|p| AppPath::legacy_unchecked(p).into_owned())
-                .collect::<Vec<_>>(),
-            &boundary,
-        )
+        .scan_for_copy_batch_with_boundary(&to_walk, &boundary)
         .await
         .map_err(|e| {
             // ❗ A stopped scan takes the operation's own cancel exit, so the
@@ -396,7 +416,7 @@ pub(super) async fn scan_volume_sources(
             if let Some((path, lost)) = outages.lost_connection() {
                 return WriteFailure::synthetic(map_failure_after_wait(&path, PathRole::Source, e, Some(lost)));
             }
-            let path = source_paths.first().cloned().unwrap_or_default();
+            let path = std_sources.first().cloned().unwrap_or_default();
             WriteFailure::from_volume(&path, PathRole::Source, e)
         })?;
 
@@ -433,7 +453,7 @@ pub(super) async fn scan_volume_sources(
             scan.total_bytes
         };
         source_hints.insert(
-            source_path.as_std_legacy().into_owned(),
+            source_path.clone(),
             SourceHint {
                 is_directory: scan.top_level_is_directory,
                 size,
@@ -463,10 +483,10 @@ pub(super) async fn scan_volume_sources(
 
 /// A carried link's hint: a file to every loop and conflict check, whatever the
 /// scan or a preview made of it, since this copy never looks behind it.
-fn note_carried_links(source_hints: &mut HashMap<PathBuf, SourceHint>, links: &LinkCarry) {
+fn note_carried_links(source_hints: &mut HashMap<AppPathBuf, SourceHint>, links: &LinkCarry) {
     for link in links.selected() {
         source_hints.insert(
-            link.clone(),
+            on_volume(link).into_owned(),
             SourceHint {
                 is_directory: false,
                 size: 0,
@@ -498,11 +518,11 @@ pub(super) struct TopLevelMoveHints {
 impl TopLevelMoveHints {
     /// Top-level paths that are directories — same role as
     /// [`VolumePreflight::known_directory_paths`] (keeps bulk-skip file-only).
-    pub(super) fn known_directory_paths(&self) -> HashSet<PathBuf> {
+    pub(super) fn known_directory_paths(&self) -> HashSet<AppPathBuf> {
         self.source_hints
             .iter()
             .filter(|&(_path, hint)| hint.is_directory)
-            .map(|(path, _hint)| path.clone())
+            .map(|(path, _hint)| on_volume(path).into_owned())
             .collect()
     }
 }

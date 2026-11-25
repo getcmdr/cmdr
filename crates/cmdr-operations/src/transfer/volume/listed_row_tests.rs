@@ -125,9 +125,9 @@ async fn the_merge_refuses_a_climbing_row() {
         "listed-row-merge",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config(),
     )
     .await;
@@ -162,9 +162,9 @@ async fn the_merge_reads_an_out_of_folder_row_as_listed() {
         "listed-row-merge-outside",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config(),
     )
     .await
@@ -191,9 +191,9 @@ async fn the_move_sweep_keeps_a_climbing_row() {
         "listed-row-sweep",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &config(),
     )
     .await;
@@ -271,9 +271,9 @@ async fn a_backslash_name_copies_and_moves_as_one_name() {
                 "bs-move",
                 &state,
                 src,
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 dst,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config(),
             )
             .await
@@ -283,9 +283,9 @@ async fn a_backslash_name_copies_and_moves_as_one_name() {
                 "bs-copy",
                 &state,
                 src,
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 dst,
-                Path::new("/inbox"),
+                &crate::testing::app_path_of(Path::new("/inbox")),
                 &config(),
             )
             .await

@@ -100,9 +100,9 @@ async fn copy_album_onto_the_server(
         label,
         &state,
         Arc::clone(&local),
-        &[PathBuf::from("album")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("album")]),
         Arc::clone(remote),
-        dir,
+        &cmdr_operations::testing::app_path_of(dir),
         &config(ConflictResolution::Skip),
     )
     .await;
@@ -220,9 +220,9 @@ async fn webdav_integration_a_refused_replace_keeps_the_users_file() {
         "refused-replace",
         &state,
         Arc::clone(&local),
-        &[PathBuf::from("report.txt")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("report.txt")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &config(ConflictResolution::Overwrite),
     )
     .await;
@@ -279,9 +279,9 @@ async fn webdav_integration_a_refused_upload_over_the_users_file_keeps_it() {
         "refused-upload",
         &state,
         Arc::clone(&local),
-        &[PathBuf::from("report.txt")],
+        &cmdr_operations::testing::app_paths_of(&[PathBuf::from("report.txt")]),
         Arc::clone(&remote),
-        &dir,
+        &cmdr_operations::testing::app_path_of(&dir),
         &config(ConflictResolution::Overwrite),
     )
     .await;
@@ -334,9 +334,9 @@ async fn webdav_integration_a_refused_server_side_copy_falls_back_to_streaming_a
         "server-copy-refused",
         &state,
         Arc::clone(&remote),
-        &[dir.join("from/photo.jpg")],
+        &cmdr_operations::testing::app_paths_of(&[dir.join("from/photo.jpg")]),
         Arc::clone(&remote),
-        &dir.join("to"),
+        &cmdr_operations::testing::app_path_of(&dir.join("to")),
         &config(ConflictResolution::Skip),
     )
     .await;

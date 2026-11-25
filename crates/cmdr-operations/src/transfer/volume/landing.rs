@@ -19,11 +19,10 @@
 //! crossings back to `std::path`). `DETAILS.md` § "Look-alike names and
 //! new-name spelling" and § "Listed names are untrusted".
 
-use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmetic};
 use std::sync::Arc;
 
-use super::listed_name::{ListedName, into_std, join_under, on_volume, std_of};
+use super::listed_name::{ListedName, join_under, native_text, std_of};
 use std::borrow::Cow;
 
 use super::super::super::look_alike::{LookAlike, look_alike_in};
@@ -54,13 +53,6 @@ impl Landing {
             Self::Free(path) => (path, None),
             Self::Taken { path, entry } => (path, Some(*entry)),
         }
-    }
-
-    /// [`Self::into_parts`], the path in the `std::path` spelling the engine's
-    /// bodies still take ([`into_std`]).
-    pub(super) fn into_std_parts(self) -> (PathBuf, Option<FileEntry>) {
-        let (path, entry) = self.into_parts();
-        (into_std(path), entry)
     }
 }
 
@@ -98,16 +90,16 @@ pub(super) fn top_level_precheck(
     dest_volume: &Arc<dyn Volume>,
     probe: Option<Arc<OperationProbe>>,
     new_name: NewName,
-) -> impl for<'a> FnMut(&'a Path) -> FetchFut<'a> + use<> {
+) -> impl for<'a> FnMut(&'a AppPath) -> FetchFut<'a> + use<> {
     let state = Arc::clone(state);
     let dest_volume = Arc::clone(dest_volume);
-    move |dest: &Path| -> FetchFut<'_> {
+    move |dest: &AppPath| -> FetchFut<'_> {
         let state = Arc::clone(&state);
         let dest_volume = Arc::clone(&dest_volume);
         let probe = probe.clone();
         Box::pin(async move {
             if let Some(probe) = probe {
-                probe.set_driver_phase_at(DriverPhase::PreparingNext, None, dest);
+                probe.set_driver_phase_at(DriverPhase::PreparingNext, None, &std_of(dest));
             }
             name_at_destination(&state, &dest_volume, dest, new_name).await
         })
@@ -134,7 +126,7 @@ pub(super) fn top_level_precheck(
 async fn name_at_destination(
     state: &Arc<WriteOperationState>,
     dest_volume: &Arc<dyn Volume>,
-    dest: &Path,
+    dest: &AppPath,
     new_name: NewName,
 ) -> Result<NameAtDest, WriteOperationError> {
     // A name the destination refuses never reaches the conflict flow: no probe
@@ -142,7 +134,7 @@ async fn name_at_destination(
     // nothing is set aside or replaced for it. `copy_single_path` refuses it
     // before any write, and the driver asks about it there.
     if destination_refuses(state, dest) {
-        return Ok(NameAtDest::Free(dest.to_path_buf()));
+        return Ok(NameAtDest::Free(dest.to_owned()));
     }
     // Pathed, so a share that stays gone is worded as the lost connection it is.
     let landing = through_outages(state, &[dest_volume], || async move {
@@ -152,9 +144,9 @@ async fn name_at_destination(
     })
     .await;
     match landing.map_err(|e| WriteFailure::from(e).error)? {
-        Landing::Free(path) => Ok(NameAtDest::Free(into_std(path))),
+        Landing::Free(path) => Ok(NameAtDest::Free(path)),
         Landing::Taken { path, entry } => Ok(NameAtDest::Taken {
-            path: into_std(path),
+            path,
             size: entry.size.unwrap_or(0),
         }),
     }
@@ -162,9 +154,14 @@ async fn name_at_destination(
 
 /// Whether the destination refuses `dest`'s own name
 /// (`crate::name_rules::DestinationNames`, resolved as the transfer starts).
-pub(super) fn destination_refuses(state: &WriteOperationState, dest: &Path) -> bool {
+///
+/// The app path's own last name, so a POSIX server's `a\b.txt` is checked as the
+/// one name it is, read as the native text it spells: a name that isn't UTF-8 has
+/// no Windows class to check, as its `std::path` name had none.
+pub(super) fn destination_refuses(state: &WriteOperationState, dest: &AppPath) -> bool {
     dest.file_name()
-        .is_some_and(|name| state.destination_names.refuses(name))
+        .and_then(native_text)
+        .is_some_and(|name| state.destination_names.refuses(std::ffi::OsStr::new(&*name)))
 }
 
 /// Where a TOP-LEVEL destination path the driver hands in lands: its last name
@@ -173,27 +170,25 @@ pub(super) fn destination_refuses(state: &WriteOperationState, dest: &Path) -> b
 /// describes (one probe, unless this operation made it).
 pub(super) async fn landing_at(
     dest_volume: &Arc<dyn Volume>,
-    dest: &Path,
+    dest: &AppPath,
     folder: DestFolder<'_>,
     new_name: NewName,
 ) -> Result<Landing, VolumeError> {
-    // Split the way the driver's `Path` splits it (a leading `//` is no UNC root
-    // on macOS or Linux), each half in the bridge's spelling.
-    if let (Some(dir), Some(native)) = (dest.parent(), dest.file_name()) {
-        let spelled = on_volume(Path::new(native));
-        let name = ListedName::native(native, spelled.as_str())?;
-        return where_it_lands(dest_volume, &on_volume(dir), &name, folder, new_name).await;
+    // Split by the app path's own arithmetic: a POSIX server's `a\b.txt` is one
+    // name on every host (#1457), and a bridge value splits as `Path` split it there.
+    if let (Some(dir), Some(name)) = (dest.parent(), dest.file_name()) {
+        let name = ListedName::app(name)?;
+        return where_it_lands(dest_volume, dir, &name, folder, new_name).await;
     }
-    let dest = on_volume(dest);
     if matches!(folder, DestFolder::CreatedByUs) {
-        return Ok(Landing::Free(dest.into_owned()));
+        return Ok(Landing::Free(dest.to_owned()));
     }
-    match dest_volume.get_metadata(&dest).await {
+    match dest_volume.get_metadata(dest).await {
         Ok(entry) => Ok(Landing::Taken {
-            path: dest.into_owned(),
+            path: dest.to_owned(),
             entry: Box::new(entry),
         }),
-        Err(VolumeError::NotFound(_)) => Ok(Landing::Free(dest.into_owned())),
+        Err(VolumeError::NotFound(_)) => Ok(Landing::Free(dest.to_owned())),
         Err(e) => Err(e),
     }
 }
@@ -220,7 +215,7 @@ pub(super) async fn where_it_lands(
     let under = ListedFolder::new(dest_dir);
     let asked = join_under(&under, &name.app)?;
     let free = |asked: AppPathBuf| -> Result<Landing, VolumeError> {
-        let spelled = match (new_name, name.text) {
+        let spelled = match (new_name, name.text.as_deref()) {
             (NewName::Respell, Some(text)) => match dest_volume.spell_new_name(text) {
                 Cow::Borrowed(same) if same == text => asked,
                 spelled => join_under(&under, &AppName::from_listed_text(&spelled)?)?,
@@ -239,7 +234,7 @@ pub(super) async fn where_it_lands(
 
     let may_be_a_look_alike = match folder {
         DestFolder::CreatedByUs => return free(asked),
-        DestFolder::Listed(index) => match index.lookup(name.text) {
+        DestFolder::Listed(index) => match index.lookup(name.text.as_deref()) {
             DestLookup::Absent => return free(asked),
             DestLookup::Present(entry) => return Ok(Landing::Taken { path: asked, entry }),
             DestLookup::LookAlike(entry) => return look_alike_at(entry),
@@ -257,7 +252,7 @@ pub(super) async fn where_it_lands(
             entry: Box::new(entry),
         }),
         Err(VolumeError::NotFound(_)) => {
-            let Some(text) = name.text.filter(|_| may_be_a_look_alike) else {
+            let Some(text) = name.text.as_deref().filter(|_| may_be_a_look_alike) else {
                 return free(asked);
             };
             match look_alike_in(dest_volume.as_ref(), &std_of(dest_dir), text).await? {

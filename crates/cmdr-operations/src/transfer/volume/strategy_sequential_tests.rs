@@ -178,11 +178,11 @@ async fn a_sequential_extract_carries_the_executable_bit() {
     let state = make_state(&engine);
     copy_single_path(
         &source,
-        &fixture.inner("bin"),
+        &crate::testing::app_path_of(&fixture.inner("bin")),
         Some(true),
         SourceFileFacts::default(),
         &dest,
-        Path::new("out"),
+        &crate::testing::app_path_of(Path::new("out")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -229,11 +229,11 @@ async fn sequential_extract_materializes_a_nested_subtree() {
 
     let bytes = copy_single_path(
         &source,
-        &fixture.inner("docs"),
+        &crate::testing::app_path_of(&fixture.inner("docs")),
         Some(true), // source is a directory
         SourceFileFacts::default(),
         &dest,
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -278,7 +278,7 @@ async fn sequential_extract_keeps_the_folders_dates() {
 
     copy_single_path(
         &source,
-        &fixture.inner("docs"),
+        &crate::testing::app_path_of(&fixture.inner("docs")),
         Some(true),
         SourceFileFacts {
             folder_dates: SourceFolderDates {
@@ -288,7 +288,7 @@ async fn sequential_extract_keeps_the_folders_dates() {
             ..SourceFileFacts::default()
         },
         &dest,
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -361,11 +361,11 @@ async fn sequential_extract_lands_empty_dirs_and_symlinks() {
 
     copy_single_path(
         &source,
-        &fixture.inner("docs"),
+        &crate::testing::app_path_of(&fixture.inner("docs")),
         Some(true),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -465,11 +465,11 @@ async fn sequential_extract_cancels_between_members() {
 
     let result = copy_single_path(
         &source,
-        &fixture.inner("docs"),
+        &crate::testing::app_path_of(&fixture.inner("docs")),
         Some(true),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -533,11 +533,11 @@ async fn sequential_extract_pauses_between_members_and_resumes() {
     let extractor = tokio::spawn(async move {
         copy_single_path(
             &source,
-            &source_root,
+            &crate::testing::app_path_of(&source_root),
             Some(true),
             SourceFileFacts::default(),
             &dest_for_extract,
-            Path::new("/out"),
+            &crate::testing::app_path_of(Path::new("/out")),
             &state_for_extract,
             &CreatedPaths::default(),
             &progress_for_extract,
@@ -617,9 +617,9 @@ async fn a_failed_sequential_extract_takes_back_every_unfilled_reservation() {
         "op-seq-extract-reservations",
         &make_state(&engine),
         source,
-        &[fixture.inner("album")],
+        &crate::testing::app_paths_of(&[fixture.inner("album")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             // Rename is what reserves the ` (N)` placeholders.
             conflict_resolution: ConflictResolution::Rename,

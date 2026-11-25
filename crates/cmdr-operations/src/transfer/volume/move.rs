@@ -25,15 +25,17 @@ use std::time::Duration;
 use super::super::super::event_sinks::OperationEventSink;
 use super::super::super::journal;
 use super::super::super::manager;
-use super::super::super::source_binding::{ExpectedSources, retain_bound_sources_on};
+use super::super::super::source_binding::{ExpectedSources, retain_bound_app_sources_on};
 use super::super::super::target_names::TargetNames;
 use super::super::super::types::{
     VolumeCopyConfig, WriteOperationConfig, WriteOperationError, WriteOperationStartResult, WriteOperationType,
 };
+use super::super::super::wire_paths::{engine_path, engine_paths};
+use cmdr_fs::app_path::AppPathBuf;
 // The same-volume rename path lives in `volume::move_same`; the dispatcher below
 // routes to its entry point.
 
-use super::transfer_error::{WriteFailure, write_error_event_from};
+use super::transfer_error::{WriteFailure, failed_path_text, write_error_event_from};
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
 use cmdr_operation_log::types::{OpKind, OperationId};
@@ -56,15 +58,19 @@ impl crate::Operations {
         events: Arc<dyn OperationEventSink>,
         source_volume_id: String,
         source_volume: Arc<dyn Volume>,
-        source_paths: Vec<PathBuf>,
+        source_paths: Vec<AppPathBuf>,
         dest_volume_id: String,
         dest_volume: Arc<dyn Volume>,
-        dest_path: PathBuf,
+        dest_path: AppPathBuf,
         config: VolumeCopyConfig,
         target_names: TargetNames,
         initiator: cmdr_operation_log::types::Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
+        // The same-volume engine, the native shortcut, and the summary still take
+        // `std::path` values: the start's crossing, made once. The cross-volume
+        // engine takes the app paths.
+        let (source_natives, dest_native) = (engine_paths(&source_paths), engine_path(&dest_path));
         // Same volume: use native rename/move (instant for MTP), or copy then
         // delete where the volume's renames copy (`move_same.rs`).
         if Arc::ptr_eq(&source_volume, &dest_volume) {
@@ -73,8 +79,8 @@ impl crate::Operations {
                     events,
                     source_volume_id,
                     source_volume,
-                    source_paths,
-                    dest_path,
+                    source_natives,
+                    dest_native,
                     config,
                     target_names,
                     initiator,
@@ -87,7 +93,7 @@ impl crate::Operations {
         // below have no use for a new name, and would silently drop it.
         if !target_names.is_empty() {
             return Err(WriteOperationError::IoError {
-                path: dest_path.display().to_string(),
+                path: failed_path_text(&dest_path),
                 message: "a rename that runs as a move stays on one volume".into(),
             });
         }
@@ -101,14 +107,14 @@ impl crate::Operations {
                 LogPrivate::dir_path(&dest_root)
             );
 
-            let absolute_sources: Vec<PathBuf> = source_paths
+            let absolute_sources: Vec<PathBuf> = source_natives
                 .iter()
                 .map(|p| super::on_local_root(&src_root, p))
                 .collect();
             // Anchored, not joined: the IPC boundary already anchors what the
             // transfer dialog sends, and a raw join would re-root an absolute dest
             // under itself (`/Volumes/USB/sub` → `/Volumes/USB/Volumes/USB/sub`).
-            let absolute_dest = cmdr_fs::volume::root_anchored(&dest_root, &dest_path);
+            let absolute_dest = cmdr_fs::volume::root_anchored(&dest_root, &dest_native);
 
             let write_config = WriteOperationConfig {
                 progress_interval_ms: config.progress_interval_ms,
@@ -190,9 +196,9 @@ impl crate::Operations {
             destination: Some(dest_volume.name().to_string()),
             items: Some(volume_items(
                 &*source_volume,
-                &source_paths,
+                &source_natives,
                 config.source_kinds,
-                Some((&*dest_volume, &dest_path)),
+                Some((&*dest_volume, &dest_native)),
             )),
         };
         let descriptor = manager::OperationDescriptor {
@@ -259,7 +265,7 @@ impl crate::Operations {
                 // moment there is: an approved operation can sit queued behind a long
                 // transfer, so the check belongs after admission, not at approval.
                 // `../../source_binding.rs`.
-                let bound = retain_bound_sources_on(
+                let bound = retain_bound_app_sources_on(
                     source_volume.as_ref(),
                     &*events,
                     op_id.as_str(),

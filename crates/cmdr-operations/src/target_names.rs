@@ -48,10 +48,12 @@ impl TargetNames {
     /// The name `source` takes at the destination: its target name, else its
     /// own.
     pub(crate) fn name_for<'a>(&'a self, source: &'a Path) -> Option<&'a OsStr> {
-        self.0
-            .get(source)
-            .map(OsString::as_os_str)
-            .or_else(|| source.file_name())
+        self.chosen_for(source).or_else(|| source.file_name())
+    }
+
+    /// The target name `source` was given, `None` when it keeps its own.
+    pub(crate) fn chosen_for(&self, source: &Path) -> Option<&OsStr> {
+        self.0.get(source).map(OsString::as_os_str)
     }
 
     pub(crate) fn is_empty(&self) -> bool {

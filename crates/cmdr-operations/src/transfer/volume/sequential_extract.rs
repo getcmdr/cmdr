@@ -112,9 +112,9 @@ impl ExtractPlan {
 )]
 pub(super) async fn extract_sequential_subtree(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
     state: &Arc<WriteOperationState>,
     created: &CreatedPaths,
     progress: &Arc<SourceProgress>,
@@ -141,7 +141,7 @@ pub(super) async fn extract_sequential_subtree(
 
     // Phase 2: one decode pass over the subtree's files.
     let mut extractor = source_volume
-        .open_sequential_extract(&AppPath::legacy_unchecked(source_path))
+        .open_sequential_extract(source_path)
         .await
         .at_source(source_path)?;
     let mut total_bytes = 0u64;

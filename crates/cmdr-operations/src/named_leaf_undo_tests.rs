@@ -222,9 +222,9 @@ async fn undoing_a_named_volume_copy_deletes_exactly_the_named_copy() {
         op_id,
         &state,
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/original.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/original.txt")]),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             leaves: crate::types::TransferLeaves::single("backup.txt"),
             progress_interval_ms: 0,
@@ -316,9 +316,9 @@ async fn undoing_a_named_volume_move_restores_the_original_name() {
                 op_id,
                 &state,
                 Arc::clone(&source) as Arc<dyn Volume>,
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 Arc::clone(&dest) as Arc<dyn Volume>,
-                Path::new("/dest"),
+                &crate::testing::app_path_of(Path::new("/dest")),
                 &config,
             )
             .await

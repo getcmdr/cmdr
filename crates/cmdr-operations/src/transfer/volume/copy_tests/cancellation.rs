@@ -3,6 +3,7 @@
 use super::*;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
+use std::path::Path;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_multi_file_copy_cancel_before_start() {
@@ -23,9 +24,9 @@ async fn test_multi_file_copy_cancel_before_start() {
         "test-op-pre-cancel",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -123,15 +124,15 @@ async fn test_multi_file_copy_cancel_mid_flight() {
         "test-op-cancel-mid",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/1.bin"),
             PathBuf::from("/2.bin"),
             PathBuf::from("/3.bin"),
             PathBuf::from("/4.bin"),
             PathBuf::from("/5.bin"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

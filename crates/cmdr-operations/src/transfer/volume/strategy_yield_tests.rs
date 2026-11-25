@@ -78,11 +78,11 @@ async fn auto_yield_parks_before_next_window_then_resumes_byte_exact() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -194,11 +194,11 @@ async fn auto_yield_debounces_a_burst_into_one_park() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -303,11 +303,11 @@ async fn auto_yield_min_progress_floor_prevents_starvation() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -399,11 +399,11 @@ async fn auto_yield_cancel_while_yielding_keeps_no_partial() {
                 let state_ref = &state_drv;
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     state_ref,
                     &CreatedPaths::default(),
                     &progress_drv,
@@ -486,11 +486,11 @@ async fn non_mtp_source_never_auto_yields_for_foreground() {
     let state = make_state(&engine);
     let bytes = copy_single_path(
         &source,
-        Path::new("/movie.bin"),
+        &crate::testing::app_path_of(Path::new("/movie.bin")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("movie.bin"),
+        &crate::testing::app_path_of(Path::new("movie.bin")),
         &state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(&state)),
@@ -543,11 +543,11 @@ async fn yield_capable_source_with_no_foreground_pending_never_self_yields() {
             let op = tokio::task::spawn_local(async move {
                 copy_single_path(
                     &source_drv,
-                    Path::new("/movie.bin"),
+                    &crate::testing::app_path_of(Path::new("/movie.bin")),
                     Some(false),
                     SourceFileFacts::default(),
                     &dest_drv,
-                    Path::new("movie.bin"),
+                    &crate::testing::app_path_of(Path::new("movie.bin")),
                     &state_drv,
                     &CreatedPaths::default(),
                     &LeafProgressLedger::silent_source(Arc::clone(&state)),

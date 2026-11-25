@@ -12,10 +12,10 @@
 //! being asked about. Pinned by
 //! `copy_concurrent_tests.rs::a_top_level_conflict_prompt_holds_back_its_source_and_every_later_one`.
 
+use super::listed_name::std_of;
 use crate::rt::Instant;
 use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::super::super::conflict::ApplyToAll;
@@ -30,7 +30,7 @@ use super::displaced_destination::DisplacedLedger;
 use super::link_carry::LinkCarry;
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::preflight::{SourceFileFacts, SourceHint};
-use super::refused_item::{RefusalSubject, has_no_content, skip_if_refused};
+use super::refused_item::{RefusalSubject, has_no_content, name_refused_at, skip_if_refused};
 use super::strategy::{LandingName, Replaces, copy_single_path, staging_for};
 use super::transfer_error::PathedVolumeError;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -46,7 +46,7 @@ use cmdr_fs::volume::Volume;
 /// wrote into a (possibly pre-existing, merged) dest directory and never the
 /// directory root.
 pub(super) struct CopyTaskSuccess {
-    pub(super) recorded_path: PathBuf,
+    pub(super) recorded_path: AppPathBuf,
     pub(super) source_is_dir: bool,
     pub(super) bytes: u64,
     /// Whether this source replaced any existing dest file (a top-level file→file
@@ -62,7 +62,7 @@ pub(super) struct CopyTaskSuccess {
     /// merge skipped in its subtree. `skipped_count == 0` means the whole
     /// subtree landed durably, so the out-of-zip move op may drop it from the
     /// archive; any deep skip keeps it.
-    pub(super) source_path: PathBuf,
+    pub(super) source_path: AppPathBuf,
     pub(super) skipped_count: usize,
     pub(super) skipped_bytes: u64,
 }
@@ -77,7 +77,7 @@ pub(super) enum CopyTaskEnd {
     /// journal or roll back, ❌ never a `recorded_path`. `created_dirs` is any
     /// folder the walk made before the refusal, which rollback still owns.
     Skipped {
-        source_path: PathBuf,
+        source_path: AppPathBuf,
         created_dirs: Vec<AppPathBuf>,
     },
 }
@@ -105,12 +105,12 @@ pub(super) enum CopyTaskEnd {
 /// at the destination, so they get journaled exactly like a completed source's.
 /// An interrupted operation is still a ledger of what it wrote.
 pub(super) struct CopyTaskFailure {
-    pub(super) failed_path: PathBuf,
+    pub(super) failed_path: AppPathBuf,
     /// What the user is told: the failing item, its side, and, for a finalize
     /// that deleted the original and then couldn't land the new bytes, where
     /// the user's only complete copy went (`new_data_at`).
     pub(super) failure: PathedVolumeError,
-    pub(super) source_path: PathBuf,
+    pub(super) source_path: AppPathBuf,
     pub(super) source_is_dir: bool,
     pub(super) overwrote: bool,
     pub(super) created_files: Vec<WrittenFile<AppPathBuf>>,
@@ -134,7 +134,7 @@ pub(super) struct CopyTask {
     /// dispatch.
     pub(super) config: VolumeCopyConfig,
     pub(super) apply_to_all: Arc<std::sync::Mutex<ApplyToAll>>,
-    pub(super) source_path: PathBuf,
+    pub(super) source_path: AppPathBuf,
     pub(super) source_is_dir: bool,
     /// What the preflight scan already learned about a FILE source. A top-level
     /// dispatch carries no mode here (the scan counts bytes), so a file landing
@@ -142,7 +142,7 @@ pub(super) struct CopyTask {
     pub(super) source_facts: SourceFileFacts,
     /// Where this task's file lands: the original's own name under
     /// [`Replaces::Swap`].
-    pub(super) dest_path: PathBuf,
+    pub(super) dest_path: AppPathBuf,
     /// What the write does to a file at the name: under `Swap`, its landing
     /// replaces the original after a successful write.
     pub(super) replaces: Replaces,
@@ -150,6 +150,10 @@ pub(super) struct CopyTask {
     /// disk, which is all the landing may clear there
     /// (`staged_write.rs::LandingName`).
     pub(super) dest_name_claimed: bool,
+    /// The destination folder can't hold the source's name (`listed_name.rs::
+    /// TopLevel::Refused`): `dest_path` is display text only, nothing is written,
+    /// and the task asks about the item, per item.
+    pub(super) dest_name_refused: bool,
     /// The operation's one file-copy window, shared with every merge walker.
     pub(super) window: FileWindow,
     /// The operation's ledger of cross-type asides, which a deep clash inside
@@ -194,6 +198,7 @@ pub(super) async fn run_copy_task(task: CopyTask) -> Result<CopyTaskEnd, Box<Cop
         dest_path,
         replaces,
         dest_name_claimed,
+        dest_name_refused,
         window,
         displaced,
         links,
@@ -216,7 +221,7 @@ pub(super) async fn run_copy_task(task: CopyTask) -> Result<CopyTaskEnd, Box<Cop
     let source_progress = leaf_ledger.for_source(&source_path, Arc::clone(&last_progress));
     // Deep merge children are never top-level sources, so the resolver never
     // keys into per-source hints for them — an empty map is correct.
-    let merge_hints: HashMap<PathBuf, SourceHint> = HashMap::new();
+    let merge_hints: HashMap<AppPathBuf, SourceHint> = HashMap::new();
     let merge_ctx = MergeCtx {
         events: &*events,
         operation_id: &operation_id,
@@ -248,25 +253,29 @@ pub(super) async fn run_copy_task(task: CopyTask) -> Result<CopyTaskEnd, Box<Cop
             LandingName::ExpectedFree
         },
     );
-    let copy_fut = copy_single_path(
-        &source_volume,
-        &source_path,
-        Some(source_is_dir),
-        source_facts,
-        &dest_volume,
-        &dest_path,
-        &state,
-        &created,
-        &source_progress,
-        Some(&merge_ctx),
-        staging,
-    );
-    // Bind this task's probe as a task-local for the whole copy, so
-    // `stream_pipe_file` and `CheckpointStream` can record their phases without
-    // threading a handle through every signature.
-    let result = match probe_handle {
-        Some(probe) => CURRENT_TASK_PROBE.scope(probe, copy_fut).await,
-        None => copy_fut.await,
+    let result = if dest_name_refused {
+        Err(name_refused_at(&dest_path))
+    } else {
+        let copy_fut = copy_single_path(
+            &source_volume,
+            &source_path,
+            Some(source_is_dir),
+            source_facts,
+            &dest_volume,
+            &dest_path,
+            &state,
+            &created,
+            &source_progress,
+            Some(&merge_ctx),
+            staging,
+        );
+        // Bind this task's probe as a task-local for the whole copy, so
+        // `stream_pipe_file` and `CheckpointStream` can record their phases without
+        // threading a handle through every signature.
+        match probe_handle {
+            Some(probe) => CURRENT_TASK_PROBE.scope(probe, copy_fut).await,
+            None => copy_fut.await,
+        }
     };
     // The write is over, so its slot goes back before anything below can
     // wait on a person.
@@ -291,8 +300,8 @@ pub(super) async fn run_copy_task(task: CopyTask) -> Result<CopyTaskEnd, Box<Cop
         }
         Err(e) if created_files.is_empty() => {
             let subject = RefusalSubject {
-                source: &source_path,
-                dest: &dest_path,
+                source: &std_of(&source_path),
+                dest: &std_of(&dest_path),
                 source_size: source_facts_size,
                 source_is_directory: source_is_dir,
             };

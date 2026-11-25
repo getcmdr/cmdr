@@ -15,7 +15,7 @@
 //! trash runs exactly as it always did. The binding is an input a caller may supply,
 //! ❌ never a policy the engine applies to some callers and not others.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -364,6 +364,31 @@ pub(crate) async fn retain_bound_sources_on(
     };
     let kept = expected.kept_positions_on(volume, events, operation_id, &sources).await;
     finish_or_keep(events, operation_id, operation_type, sources, kept)
+}
+
+/// [`retain_bound_sources_on`] for a start that holds its sources as app paths (the
+/// cross-volume copy and move): asked in the `std::path` spelling the bindings key
+/// (`wire_paths::engine_path`), and the typed sources kept by position.
+pub(crate) async fn retain_bound_app_sources_on(
+    volume: &dyn Volume,
+    events: &dyn OperationEventSink,
+    operation_id: &str,
+    operation_type: WriteOperationType,
+    state: &WriteOperationState,
+    expected: Option<&ExpectedSources>,
+    sources: Vec<AppPathBuf>,
+) -> Option<Vec<AppPathBuf>> {
+    let natives = crate::wire_paths::engine_paths(&sources);
+    let Some(expected) = expected else {
+        let kept = kept_after_queue_on(volume, events, operation_id, operation_type, state, &natives).await?;
+        return Some(select(&sources, &kept));
+    };
+    let kept = expected.kept_positions_on(volume, events, operation_id, &natives).await;
+    if kept.is_empty() {
+        announce_empty_batch(events, operation_id, operation_type, sources.len());
+        return None;
+    }
+    Some(select(&sources, &kept))
 }
 
 /// [`retain_bound_sources`] for a verb that carries a second list indexed against

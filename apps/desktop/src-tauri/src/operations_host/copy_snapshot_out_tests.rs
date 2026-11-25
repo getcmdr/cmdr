@@ -115,9 +115,9 @@ async fn a_copy_out_of_a_snapshot_carries_a_file_and_a_folder_byte_for_byte() {
         "snapshot-copy-out-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         Arc::clone(&source),
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &cmdr_operations::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -174,9 +174,9 @@ async fn the_executable_bit_survives_a_copy_out_of_a_snapshot() {
         "snapshot-exec-bit-op",
         &Arc::new(new_operation_state(&engine, Duration::from_millis(50))),
         Arc::clone(&source),
-        &sources,
+        &cmdr_operations::testing::app_paths_of(&sources),
         Arc::clone(&dest),
-        Path::new("/"),
+        &cmdr_operations::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             progress_interval_ms: 0,
             ..VolumeCopyConfig::default()

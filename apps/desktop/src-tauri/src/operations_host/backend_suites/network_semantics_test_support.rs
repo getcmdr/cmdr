@@ -154,9 +154,9 @@ pub(super) async fn transfer(
             label,
             &state,
             Arc::clone(source),
-            source_paths,
+            &cmdr_operations::testing::app_paths_of(source_paths),
             Arc::clone(dest),
-            dest_path,
+            &cmdr_operations::testing::app_path_of(dest_path),
             &config,
         )
         .await
@@ -166,9 +166,9 @@ pub(super) async fn transfer(
             label,
             &state,
             Arc::clone(source),
-            source_paths,
+            &cmdr_operations::testing::app_paths_of(source_paths),
             Arc::clone(dest),
-            dest_path,
+            &cmdr_operations::testing::app_path_of(dest_path),
             &config,
         )
         .await

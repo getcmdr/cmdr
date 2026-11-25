@@ -353,13 +353,31 @@ async fn volume_transfer_with(
     journal::open_volume_op(state.scope(), op_id, kind, Initiator::User, "share", Some("disk"), 0);
     let events = Arc::new(CollectorEventSink::new());
     if kind == OpKind::Move {
-        move_volumes_with_progress(events, op_id, &state, source, sources, dest, dest_path, config)
-            .await
-            .expect("volume move");
+        move_volumes_with_progress(
+            events,
+            op_id,
+            &state,
+            source,
+            &crate::testing::app_paths_of(sources),
+            dest,
+            &crate::testing::app_path_of(dest_path),
+            config,
+        )
+        .await
+        .expect("volume move");
     } else {
-        copy_volumes_with_progress(events, op_id, &state, source, sources, dest, dest_path, config)
-            .await
-            .expect("volume copy");
+        copy_volumes_with_progress(
+            events,
+            op_id,
+            &state,
+            source,
+            &crate::testing::app_paths_of(sources),
+            dest,
+            &crate::testing::app_path_of(dest_path),
+            config,
+        )
+        .await
+        .expect("volume copy");
     }
     journal::finalize_op(state.scope(), kind, ExecutionStatus::Done);
 }

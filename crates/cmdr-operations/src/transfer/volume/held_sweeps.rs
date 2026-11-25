@@ -12,7 +12,6 @@
 
 use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -25,9 +24,10 @@ use super::super::super::types::{SourceItemOutcome, TransferRole, WriteOperation
 use super::super::left_in_source::LeftInSource;
 use super::super::transfer_driver::emit_source_outcome;
 use super::displaced_destination::DisplacedLedger;
+use super::listed_name::std_of;
 use super::local_mounts::LocalMounts;
 use super::source_sweep::{CarriedSource, sweep_carried_source};
-use super::transfer_error::{PathRole, failed_native, map_volume_error, source_not_removed};
+use super::transfer_error::{PathRole, failed_native, failed_path_text, map_volume_error, source_not_removed};
 use crate::rt::Instant;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
@@ -37,7 +37,7 @@ use cmdr_fs::volume::Volume;
 /// One top-level source whose copy landed, with everything its sweep and the
 /// steps after it need.
 pub(super) struct HeldSource {
-    pub(super) source: PathBuf,
+    pub(super) source: AppPathBuf,
     pub(super) is_dir: bool,
     /// What the copy carried, which is all the sweep may remove.
     pub(super) carried: CarriedSource,
@@ -45,7 +45,7 @@ pub(super) struct HeldSource {
     pub(super) skipped: HashSet<AppPathBuf>,
     /// Where it landed: the original's own name after an overwrite, a folder's
     /// destination root otherwise.
-    pub(super) landed: PathBuf,
+    pub(super) landed: AppPathBuf,
     /// The verdict its first `write-source-item-done` already gave.
     pub(super) verdict: SourceItemOutcome,
     /// The files and folders the copy created, for the journal.
@@ -151,13 +151,13 @@ impl HeldSweeps {
                 target: "write_durability",
                 "move_between_volumes: {} sources stay, their copies aren't proven durable (first {}): {}",
                 batch.len(),
-                LogPrivate::path(&first.source),
+                LogPrivate::path(first.source.as_str()),
                 LogError(&e)
             );
             // The refusal is the DESTINATION's, so it's mapped as one.
-            let landed_at = first.landed.display().to_string();
+            let landed_at = failed_path_text(&first.landed);
             let error = WriteOperationError::SourceNotRemoved {
-                path: first.source.display().to_string(),
+                path: failed_path_text(&first.source),
                 cause: Box::new(map_volume_error(&landed_at, PathRole::Destination, e)),
                 landed_at,
             };
@@ -176,7 +176,7 @@ impl HeldSweeps {
                 target: "write_durability",
                 "move_between_volumes: {} sources stay, a drive left the mount table (first {})",
                 batch.len(),
-                LogPrivate::path(&first.source)
+                LogPrivate::path(first.source.as_str())
             );
             self.put_back(batch);
             return Err(error);
@@ -199,10 +199,12 @@ impl HeldSweeps {
     /// Removes one held source from what its copy carried, then runs the steps
     /// that follow a swept source.
     async fn sweep_one(&self, held: &HeldSource) -> Result<(), WriteOperationError> {
+        // The sweep, the sink, and the books still take `std::path` values.
+        let (source_std, landed_std) = (std_of(&held.source), std_of(&held.landed));
         let kept = sweep_carried_source(
             &self.state,
             &self.source_volume,
-            &held.source,
+            &source_std,
             &held.carried,
             &held.skipped,
             &self.locked,
@@ -216,11 +218,11 @@ impl HeldSweeps {
                 target: "move",
                 "move_between_volumes: source delete failed for {} (under {}) after successful copy: {}",
                 LogPrivate::path(&*failed_native(&e.path)),
-                LogPrivate::path(&held.source),
+                LogPrivate::path(held.source.as_str()),
                 LogError(&e.error)
             );
             // ❗ The copy LANDED, so the move didn't fail: say so.
-            source_not_removed(&failed_native(&e.path), &held.landed, e.error)
+            source_not_removed(&failed_native(&e.path), &landed_std, e.error)
         })?;
         // "Already gone" reads the same for a file this move carried and for a
         // drive that left, so it's checked before the source reads as removed.
@@ -231,18 +233,18 @@ impl HeldSweeps {
         }
         self.left_in_source
             .lock_ignore_poison()
-            .note(&held.source, held.is_dir, kept.appeared, kept.changed);
+            .note(&source_std, held.is_dir, kept.appeared, kept.changed);
         // What the sweep kept is what keeps the source standing: a Skip, a
         // newcomer, or a change. ❌ Never inferred from "it was a move", and ❌
         // never a fresh probe: on an object store that is a billed request per
         // source the estimate doesn't count.
         let source_removed = kept.appeared == 0 && kept.changed == 0 && held.skipped.is_empty();
         // Moved in full, so whatever it set aside is replaced.
-        self.displaced.landed_under(&held.landed);
+        self.displaced.landed_under(&landed_std);
         emit_source_outcome(
             &*self.events,
             &self.operation_id,
-            &held.source,
+            &source_std,
             held.verdict,
             source_removed,
         );

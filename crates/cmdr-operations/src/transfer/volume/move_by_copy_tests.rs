@@ -21,6 +21,7 @@ use crate::testing::TestOperations;
 use crate::types::WriteOperationError;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 fn store() -> Arc<InMemoryVolume> {
     Arc::new(

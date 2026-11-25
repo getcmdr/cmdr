@@ -101,9 +101,9 @@ async fn phase4_bench_baseline_smb_to_local_100_tiny_files() {
         "phase4-bench",
         &state,
         Arc::clone(&source_volume),
-        &source_paths,
+        &cmdr_operations::testing::app_paths_of(&source_paths),
         Arc::clone(&local_volume) as Arc<dyn Volume>,
-        Path::new("/"),
+        &cmdr_operations::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

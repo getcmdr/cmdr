@@ -19,7 +19,7 @@ use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPath;
 use cmdr_fs::testing::wait_until_async;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -70,7 +70,7 @@ async fn scan(
 ) -> Result<super::preflight::VolumePreflight, super::transfer_error::WriteFailure> {
     scan_volume_sources(
         volume,
-        &[PathBuf::from("/batch")],
+        &[cmdr_fs::app_path!("/batch").to_owned()],
         &VolumeCopyConfig::default(),
         "op-preflight-outage",
         WriteOperationType::Copy,

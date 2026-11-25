@@ -146,9 +146,9 @@ async fn copy(
         "op-metadata-loss",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         source,
-        paths,
+        &crate::testing::app_paths_of(paths),
         dest,
-        dest_dir,
+        &crate::testing::app_path_of(dest_dir),
         &VolumeCopyConfig::default(),
     )
     .await

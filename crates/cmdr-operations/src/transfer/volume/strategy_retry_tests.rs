@@ -54,11 +54,11 @@ async fn copy_one(
     // (they copy one known file), so drop the path the engine attaches.
     copy_single_path(
         source,
-        Path::new("/a.txt"),
+        &crate::testing::app_path_of(Path::new("/a.txt")),
         Some(false),
         SourceFileFacts::default(),
         dest,
-        Path::new(dest_path),
+        &crate::testing::app_path_of(Path::new(dest_path)),
         state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(state)),
@@ -369,11 +369,11 @@ async fn a_retried_child_is_recorded_in_the_rollback_ledger_exactly_once() {
     let created = CreatedPaths::default();
     copy_single_path(
         &source,
-        Path::new("/tree"),
+        &crate::testing::app_path_of(Path::new("/tree")),
         Some(true),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/tree"),
+        &crate::testing::app_path_of(Path::new("/tree")),
         guard.state(),
         &created,
         &LeafProgressLedger::silent_source(Arc::clone(guard.state())),

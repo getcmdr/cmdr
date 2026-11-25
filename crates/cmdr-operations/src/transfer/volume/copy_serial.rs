@@ -16,8 +16,8 @@
 //! is why nothing here borrows a caller reference: each closure clones an `Arc`
 //! or an owned value into its environment instead.
 
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
@@ -33,12 +33,12 @@ use super::super::transfer_driver::{
 };
 use super::super::transfer_probe::{DriverPhase, OperationProbe, TaskRole, TaskRow};
 use super::copy::CopyCells;
-use super::listed_name::on_volume;
+use super::listed_name::std_of;
 use super::preflight::SourceFileFacts;
 use super::preflight::SourceHint;
-use super::refused_item::{RefusalSubject, has_no_content, skip_if_refused};
+use super::refused_item::{RefusalSubject, has_no_content, name_refused_at, skip_if_refused};
 use super::strategy::copy_single_path;
-use super::transfer_error::{PathRole, WriteFailure, map_volume_error};
+use super::transfer_error::{PathRole, WriteFailure, failed_path_text, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
@@ -51,9 +51,9 @@ pub(super) struct SerialCopy<'a> {
     pub(super) operation_id: &'a str,
     pub(super) state: &'a Arc<WriteOperationState>,
     pub(super) source_volume: Arc<dyn Volume>,
-    pub(super) source_paths: &'a [PathBuf],
+    pub(super) source_paths: &'a [AppPathBuf],
     pub(super) dest_volume: Arc<dyn Volume>,
-    pub(super) dest_path: &'a Path,
+    pub(super) dest_path: &'a AppPath,
     pub(super) config: &'a VolumeCopyConfig,
     /// The operation's file-copy window. One source at a time up here, but a
     /// DIRECTORY source's subtree streams up to `transfer_concurrency` files at
@@ -66,10 +66,10 @@ pub(super) struct SerialCopy<'a> {
     /// emits one progress event rather than replaying them one by one.
     pub(super) bulk_skip_files: usize,
     pub(super) bulk_skip_bytes: u64,
-    pub(super) pre_skip_paths: &'a HashSet<PathBuf>,
+    pub(super) pre_skip_paths: &'a HashSet<AppPathBuf>,
     /// Taken by value: the driver hands it to its closures as an `Arc` and the
     /// caller never reads it again.
-    pub(super) source_hints: HashMap<PathBuf, SourceHint>,
+    pub(super) source_hints: HashMap<AppPathBuf, SourceHint>,
     pub(super) progress_interval: Duration,
     /// Real (source, dest) volume ids for the operation-log journal. `None` for
     /// the both-local shortcut and in tests that install no journal.
@@ -175,7 +175,7 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
     let apply_to_all_cell = Arc::clone(&apply_to_all_cell);
     let copied_paths_for_closure = Arc::clone(&copied_paths);
     let created_dirs_for_closure = Arc::clone(&created_dirs);
-    let source_hints_arc: Arc<HashMap<PathBuf, SourceHint>> = Arc::new(std::mem::take(&mut source_hints));
+    let source_hints_arc: Arc<HashMap<AppPathBuf, SourceHint>> = Arc::new(std::mem::take(&mut source_hints));
 
     let outcome = drive_transfer_serial_async(
         &*events,
@@ -228,7 +228,7 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
             let file_window = file_window.clone();
             let displaced = Arc::clone(&displaced);
             let links = Arc::clone(&links);
-            move |ctx: TransferContext<'_>| -> TransferFut<'_> {
+            move |ctx: TransferContext<'_, AppPath>| -> TransferFut<'_> {
                 let displaced = Arc::clone(&displaced);
                 let links = Arc::clone(&links);
                 let op_probe_serial = op_probe_serial.clone();
@@ -248,11 +248,14 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                 let deep_skipped_files = Arc::clone(&deep_skipped_files);
                 let deep_skipped_bytes = Arc::clone(&deep_skipped_bytes);
                 let journal_volumes = journal_volumes.clone();
-                let source_path = ctx.source_path.to_path_buf();
+                let source_path = ctx.source_path.to_owned();
                 let dest_item_path = ctx
                     .dest_path
                     .expect("async driver always supplies dest_path")
-                    .to_path_buf();
+                    .to_owned();
+                // The destination folder can't hold this source's name: nothing is
+                // written, and the refusal below asks about it, per item.
+                let dest_name_refused = ctx.dest_name_refused;
                 // `Swap` ⇒ `dest_item_path` is the user's original, which the
                 // write's landing replaces once its staged bytes are whole.
                 let replaces = ctx.replaces.clone();
@@ -268,9 +271,12 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                 Box::pin(async move {
                     log::debug!(
                         "copy_volumes_with_progress: copying {} -> {}",
-                        LogPrivate::path(&source_path),
-                        LogPrivate::path(&dest_item_path)
+                        LogPrivate::path(source_path.as_str()),
+                        LogPrivate::path(dest_item_path.as_str())
                     );
+                    // The seams still keyed by `std::path` (the tree, the probe, the
+                    // sink, the refusal question) read these, a borrow for UTF-8.
+                    let (source_std, dest_std) = (std_of(&source_path), std_of(&dest_item_path));
 
                     // No hint means UNKNOWN, not "file": a local scan preview
                     // completes with an empty `per_path`, so this map can be
@@ -289,11 +295,7 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                     {
                         Ok(is_dir) => is_dir,
                         Err(e) => {
-                            return Err(map_volume_error(
-                                &source_path.display().to_string(),
-                                PathRole::Source,
-                                e,
-                            ));
+                            return Err(map_volume_error(&failed_path_text(&source_path), PathRole::Source, e));
                         }
                     };
                     let source_facts = SourceFileFacts::from_hint(hint);
@@ -355,7 +357,7 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                     // them. It stays set through the whole of `copy_single_path`
                     // — which for a directory source is the entire subtree.
                     if let Some(probe) = op_probe_serial.as_ref() {
-                        probe.set_driver_phase_at(DriverPhase::TransferringSource, Some(source_row), &source_path);
+                        probe.set_driver_phase_at(DriverPhase::TransferringSource, Some(source_row), &source_std);
                     }
                     // Held for this source's whole transfer; dropping it
                     // clears the row. Mirrors the concurrent path.
@@ -369,37 +371,41 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                             } else {
                                 TaskRole::File
                             },
-                            &source_path,
-                            &dest_item_path,
+                            &*source_std,
+                            &*dest_std,
                         )
                     });
                     let probe_handle = task_probe
                         .as_ref()
                         .map(super::super::transfer_probe::TaskProbeHandle::probe);
 
-                    let copy_fut = copy_single_path(
-                        &source_volume,
-                        &source_path,
-                        Some(source_is_dir),
-                        source_facts,
-                        &dest_volume,
-                        &dest_item_path,
-                        &state,
-                        &created,
-                        &leaf_progress,
-                        Some(&merge_ctx),
-                        staging,
-                    );
-                    // Bind this source's probe as a task-local for the whole
-                    // copy, so `stream_pipe_file` and `CheckpointStream`
-                    // record their phases with no signature threading.
-                    let copy_result = match probe_handle {
-                        Some(probe) => {
-                            super::super::transfer_probe::CURRENT_TASK_PROBE
-                                .scope(probe, copy_fut)
-                                .await
+                    let copy_result = if dest_name_refused {
+                        Err(name_refused_at(&dest_item_path))
+                    } else {
+                        let copy_fut = copy_single_path(
+                            &source_volume,
+                            &source_path,
+                            Some(source_is_dir),
+                            source_facts,
+                            &dest_volume,
+                            &dest_item_path,
+                            &state,
+                            &created,
+                            &leaf_progress,
+                            Some(&merge_ctx),
+                            staging,
+                        );
+                        // Bind this source's probe as a task-local for the whole
+                        // copy, so `stream_pipe_file` and `CheckpointStream`
+                        // record their phases with no signature threading.
+                        match probe_handle {
+                            Some(probe) => {
+                                super::super::transfer_probe::CURRENT_TASK_PROBE
+                                    .scope(probe, copy_fut)
+                                    .await
+                            }
+                            None => copy_fut.await,
                         }
-                        None => copy_fut.await,
                     };
                     match copy_result {
                         Ok(bytes_copied) => {
@@ -419,11 +425,11 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                                 SourceItemOutcome::Done
                             };
                             // The original's own name after an overwrite.
-                            let landed_path = dest_item_path;
+                            let landed_path = dest_item_path.clone();
                             // A carried link joined the ledger like a walked leaf.
                             let by_leaves = source_is_dir || !created.files.lock_ignore_poison().is_empty();
                             // Whatever this source set aside is now fully replaced.
-                            displaced.landed_under(&landed_path);
+                            displaced.landed_under(&dest_std);
                             // For a DIRECTORY source, record the individual
                             // files and newly-created subdirs the op wrote —
                             // never the directory root — so rollback can't
@@ -483,10 +489,9 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                                         source_overwrote,
                                     );
                                 }
-                                copied_paths.lock_ignore_poison().push(WrittenFile::volume_at(
-                                    on_volume(&landed_path).into_owned(),
-                                    bytes_copied,
-                                ));
+                                copied_paths
+                                    .lock_ignore_poison()
+                                    .push(WrittenFile::volume_at(landed_path, bytes_copied));
                             }
                             // Fold this source's deep-merge skips into the op-wide
                             // tally; a source that landed with ZERO skips is fully
@@ -495,10 +500,10 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                             deep_skipped_files.fetch_add(source_skipped, Ordering::Relaxed);
                             deep_skipped_bytes.fetch_add(created.skipped_byte_count(), Ordering::Relaxed);
                             if source_skipped == 0 {
-                                events.note_source_landed_clean(&source_path);
+                                events.note_source_landed_clean(&source_std);
                             }
                             // A copy leaves its source exactly where it was.
-                            emit_source_outcome(&*events, &operation_id, &source_path, verdict, false);
+                            emit_source_outcome(&*events, &operation_id, &source_std, verdict, false);
                             Ok(TransferOutcome::Transferred { bytes: bytes_copied })
                         }
                         Err(e) => {
@@ -514,8 +519,8 @@ pub(super) async fn drive_transfer_serial(ctx: SerialCopy<'_>) -> SerialOutcome 
                             }
                             let e = if created.files.lock_ignore_poison().is_empty() {
                                 let subject = RefusalSubject {
-                                    source: &source_path,
-                                    dest: &dest_item_path,
+                                    source: &source_std,
+                                    dest: &dest_std,
                                     source_size,
                                     source_is_directory: source_is_dir,
                                 };

@@ -33,6 +33,7 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress};
 use cmdr_local::LocalVolume;
+use std::path::Path;
 
 /// `resolve_volume_conflict` in `Stop` mode must NOT call `scan_for_copy` on the
 /// source when a size hint is available. On MTP, `scan_for_copy(file_path)` lists
@@ -176,9 +177,9 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
         "test-op-no-rescan",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -230,9 +231,9 @@ async fn test_stop_conflict_does_not_rescan_source_when_hint_provided() {
         "test-op-stop-no-rescan",
         &stop_state,
         Arc::clone(&source),
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config,
     )
     .await;
@@ -319,15 +320,15 @@ async fn test_pre_known_conflicts_are_bulk_skipped_upfront() {
         "test-op-bulk-skip",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
             PathBuf::from("/d.txt"),
             PathBuf::from("/e.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -424,9 +425,9 @@ async fn test_stop_mode_does_not_bulk_skip_pre_known_conflicts() {
         "test-op-stop-with-prek",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -484,9 +485,9 @@ async fn test_pre_known_conflicts_with_stale_entries_is_safe() {
         "test-op-stale-prek",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -539,9 +540,9 @@ async fn test_pre_known_conflicts_ignored_outside_skip_mode() {
         "test-op-overwrite-with-prek",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -608,15 +609,15 @@ async fn test_pre_known_conflicts_bulk_skip_on_real_local_volumes() {
         "test-op-bulk-skip-real-fs",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("a.txt"),
             PathBuf::from("b.txt"),
             PathBuf::from("c.txt"),
             PathBuf::from("d.txt"),
             PathBuf::from("e.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new(""),
+        &crate::testing::app_path_of(Path::new("")),
         &config,
     )
     .await;

@@ -30,6 +30,7 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, UnwritableReason, WriteAccess};
+use std::path::Path;
 
 // ========================================
 // The destination can't tell
@@ -56,9 +57,9 @@ async fn a_destination_that_cant_report_free_space_is_still_copyable_into() {
         "test-op-space-unknown",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt"), PathBuf::from("/b.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -107,9 +108,9 @@ async fn a_destination_that_does_report_free_space_still_refuses_what_it_cant_ho
         "test-op-space-too-small",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -140,9 +141,9 @@ async fn copy_anyway_goes_past_a_destination_that_says_it_is_too_small() {
         "test-op-space-copy-anyway",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig {
             space_shortfall: SpaceShortfall::Proceed,
             ..VolumeCopyConfig::default()
@@ -188,9 +189,9 @@ async fn a_copy_is_judged_by_the_filesystem_its_destination_folder_is_on() {
         "test-op-space-per-folder",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         Arc::clone(&dest),
-        Path::new("/sdcard/Download"),
+        &crate::testing::app_path_of(Path::new("/sdcard/Download")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -223,9 +224,9 @@ async fn a_full_destination_folder_refuses_even_when_the_volume_has_room() {
         "test-op-space-full-folder",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/storage/card"),
+        &crate::testing::app_path_of(Path::new("/storage/card")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -266,9 +267,9 @@ async fn a_destination_with_no_ceiling_accepts_a_copy_bigger_than_anything_it_ho
         "test-op-space-unbounded",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/big.bin")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/big.bin")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -322,9 +323,9 @@ async fn a_copy_into_a_folder_that_takes_no_writes_is_refused_as_such_before_any
         "test-op-unwritable-dest",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         Arc::clone(&dest),
-        Path::new("/system/New"),
+        &crate::testing::app_path_of(Path::new("/system/New")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -364,9 +365,9 @@ async fn a_folder_that_takes_writes_beside_a_read_only_root_still_copies() {
         "test-op-writable-beside-read-only",
         &make_state(&engine),
         Arc::clone(&source),
-        &[PathBuf::from("/photo.jpg")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photo.jpg")]),
         Arc::clone(&dest),
-        Path::new("/sdcard/New"),
+        &crate::testing::app_path_of(Path::new("/sdcard/New")),
         &VolumeCopyConfig::default(),
     )
     .await;

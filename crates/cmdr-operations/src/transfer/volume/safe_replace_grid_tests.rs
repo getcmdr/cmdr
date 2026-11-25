@@ -297,9 +297,9 @@ async fn run(site: Site, arm: Arm) -> Ran {
                 &op_id,
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 dest_dyn,
-                Path::new("/dest"),
+                &crate::testing::app_path_of(Path::new("/dest")),
                 &config,
             )
             .await
@@ -310,9 +310,9 @@ async fn run(site: Site, arm: Arm) -> Ran {
                 &op_id,
                 &state,
                 Arc::clone(&source),
-                &sources,
+                &crate::testing::app_paths_of(&sources),
                 dest_dyn,
-                Path::new("/dest"),
+                &crate::testing::app_path_of(Path::new("/dest")),
                 &config,
             )
             .await
@@ -816,13 +816,13 @@ async fn a_concurrent_task_dropped_mid_swap_keeps_the_original_for_the_sweep_to_
             "op-safe-replace-dropped-mid-swap",
             &state,
             Arc::clone(&source) as Arc<dyn Volume>,
-            &[
+            &crate::testing::app_paths_of(&[
                 PathBuf::from("/a.txt"),
                 PathBuf::from("/notes.txt"),
                 PathBuf::from("/z.txt"),
-            ],
+            ]),
             Arc::clone(&dest) as Arc<dyn Volume>,
-            Path::new("/dest"),
+            &crate::testing::app_path_of(Path::new("/dest")),
             &VolumeCopyConfig {
                 conflict_resolution: ConflictResolution::Overwrite,
                 ..VolumeCopyConfig::default()

@@ -19,6 +19,7 @@ use crate::testing::TestOperations;
 use crate::types::CancelRollbackOutcome;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 /// Cancellation between sources stops further transfers and emits `write-cancelled`.
 /// This was a latent bug pre-M1-step-4: the cancel path returned `Err(Cancelled)`
@@ -45,13 +46,13 @@ async fn cross_volume_move_cancel_between_sources_emits_cancelled_event() {
         "op-move-cancel",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await;
@@ -118,15 +119,15 @@ async fn cross_volume_move_cancel_mid_batch_keeps_the_held_originals() {
         "op-move-cancel-mid",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/a.txt"),
             PathBuf::from("/b.txt"),
             PathBuf::from("/c.txt"),
             PathBuf::from("/d.txt"),
             PathBuf::from("/e.txt"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -233,9 +234,9 @@ async fn cross_volume_move_cancelled_at_a_conflict_prompt_emits_cancelled_event(
         op.id().as_str(),
         op.state(),
         Arc::clone(&source),
-        &[PathBuf::from("/a.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/a.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config_default(),
     )
     .await;

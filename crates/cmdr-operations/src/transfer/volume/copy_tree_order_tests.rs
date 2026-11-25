@@ -16,6 +16,7 @@ use crate::testing::TestOperations;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{InMemoryVolume, ListingProgress};
+use std::path::Path;
 
 /// A remote-shaped source whose listings come back reversed and which records
 /// every file it opens.
@@ -140,9 +141,9 @@ async fn a_merge_whose_listing_comes_back_shuffled_still_starts_files_in_tree_or
         "tree-order-merge",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/src/a")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/src/a")]),
         dest(),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -162,9 +163,9 @@ async fn the_serial_driver_starts_its_sources_in_tree_order() {
         "tree-order-serial",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &[PathBuf::from("/src/z.txt"), PathBuf::from("/src/a")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/src/z.txt"), PathBuf::from("/src/a")]),
         dest(),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -197,9 +198,9 @@ async fn the_concurrent_driver_starts_its_sources_in_tree_order() {
         "tree-order-concurrent",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &shuffled_selection(),
+        &crate::testing::app_paths_of(shuffled_selection()),
         dest(),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await
@@ -230,9 +231,9 @@ async fn a_cross_volume_move_starts_files_in_tree_order() {
         "tree-order-move",
         &make_state(&engine),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &shuffled_selection(),
+        &crate::testing::app_paths_of(shuffled_selection()),
         dest(),
-        Path::new("/out"),
+        &crate::testing::app_path_of(Path::new("/out")),
         &VolumeCopyConfig::default(),
     )
     .await

@@ -22,6 +22,7 @@ use cmdr_fs::app_path;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{CopyScanResult, InMemoryVolume, ListingProgress, SpaceInfo, VolumeReadStream};
+use std::path::Path;
 
 /// Seeds the scan-preview cache with a COMPLETED preview that carries no
 /// per-path data. `insert_scan_result`'s canary rejects this shape, but the
@@ -204,9 +205,9 @@ async fn directory_source_copies_when_preview_carries_no_per_path_serial() {
         "test-op-no-per-path-serial",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -253,13 +254,13 @@ async fn directory_source_copies_when_preview_carries_no_per_path_concurrent() {
         "test-op-no-per-path-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/album"),
             PathBuf::from("/loose_a.bin"),
             PathBuf::from("/loose_b.bin"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -316,9 +317,9 @@ async fn failed_directory_copy_spares_preexisting_dest_dir_serial() {
         "test-op-no-per-path-fail-serial",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -360,13 +361,13 @@ async fn failed_directory_copy_spares_preexisting_dest_dir_concurrent() {
         "test-op-no-per-path-fail-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/album"),
             PathBuf::from("/loose_a.bin"),
             PathBuf::from("/loose_b.bin"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

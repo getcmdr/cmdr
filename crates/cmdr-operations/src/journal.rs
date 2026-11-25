@@ -11,7 +11,7 @@ use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use cmdr_fs::app_path::{AppPathBuf, PathArithmetic};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::volume::{DEFAULT_VOLUME_ID, LandedModified, NodeIdentity};
 use cmdr_operation_log::capture::FinalizeInputs;
 use cmdr_operation_log::types::RowRole;
@@ -24,7 +24,7 @@ use super::journal_landed::LandedReadBack;
 use super::ledger::WrittenFile;
 use super::scope::OpScope;
 use super::types::{WriteOperationError, WriteOperationType};
-use super::wire_paths::{engine_path, seam_path};
+use super::wire_paths::engine_path;
 use cmdr_operation_log::types::{SearchCoverage, SearchCoverageReason};
 
 /// Record item rows for the scope's operation (buffered and batched by the journal).
@@ -278,28 +278,28 @@ pub(super) fn record_volume_leaf(
 pub(super) fn record_volume_transfer_source(
     scope: &OpScope,
     source_volume_id: &str,
-    source_root: &Path,
+    source_app: &AppPath,
     dest_volume_id: &str,
-    dest_root: &Path,
+    dest_app: &AppPath,
     source_is_dir: bool,
     created_files: &[WrittenFile<AppPathBuf>],
     file_size: Option<i64>,
     landed: &LandedReadBack,
     overwrote: bool,
 ) {
-    // The roots as the walk under them spelled them, so each leaf's tail under
-    // `dest_root` rebases onto `source_root` by whole app names: a POSIX
-    // server's `a\b` stays one name on Windows, where `std::path` split it.
-    let (source_app, dest_app) = (seam_path(source_root), seam_path(dest_root));
+    // The roots as the drivers hold them, the walk under them joined typed, so
+    // each leaf's tail under `dest_root` rebases onto `source_root` by whole app
+    // names: a POSIX server's `a\b` stays one name on Windows, where `std::path`
+    // split it.
     // Only between canonical roots: a volume-relative root (a share suite's
     // `cmdr-test-…/tree`) or another bridge value has no typed place, so its
     // leaves rebase by `std::path` as they always did.
     let typed_roots = source_app.is_canonical() && dest_app.is_canonical();
     if source_is_dir {
         for leaf in created_files {
-            let ends = match typed_roots.then(|| leaf.path.strip_prefix(&dest_app)).flatten() {
+            let ends = match typed_roots.then(|| leaf.path.strip_prefix(dest_app)).flatten() {
                 // A selected link is its own one leaf, with nothing to join.
-                Some(rel) if rel.is_empty() => Some(journal_split_app(&source_app)),
+                Some(rel) if rel.is_empty() => Some(journal_split_app(source_app)),
                 Some(rel) => source_app
                     .join_relative(&rel)
                     .ok()
@@ -315,8 +315,9 @@ pub(super) fn record_volume_transfer_source(
                     // the source rebases as it always did; the destination end is
                     // the leaf the walk joined, split as one (a `\` in it is a
                     // name character even on Windows).
+                    let (source_root, dest_root) = (engine_path(source_app), engine_path(dest_app));
                     let leaf_std = engine_path(&leaf.path);
-                    let rel = leaf_std.strip_prefix(dest_root).unwrap_or(&leaf_std);
+                    let rel = leaf_std.strip_prefix(&dest_root).unwrap_or(&leaf_std);
                     let source_leaf = if rel.as_os_str().is_empty() {
                         source_root.to_path_buf()
                     } else {
@@ -343,18 +344,20 @@ pub(super) fn record_volume_transfer_source(
             );
         }
     } else {
-        record_row(
+        // A file source's two ends, split by the app path (a top-level `a\b.txt` is
+        // one name on Windows too, #1457); every other row keeps its bytes.
+        record_split_row(
             scope,
             EntryType::File,
             RowRole::RollbackUnit,
             source_volume_id,
-            source_root,
-            Some((dest_volume_id, dest_root)),
+            journal_split_app(source_app),
+            Some((dest_volume_id, journal_split_app(dest_app))),
             file_size,
-            landed.modified(&dest_app),
+            landed.modified(dest_app),
             overwrote,
             ItemOutcome::Done,
-            landed.node(&dest_app),
+            landed.node(dest_app),
         );
     }
 }

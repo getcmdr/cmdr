@@ -249,9 +249,9 @@ async fn copy_to_memory(f: &Fixture) -> (Result<(), WriteOperationError>, Vec<(S
         "op-volume-copy",
         &state,
         BenchEngine::new().local_volume("/"),
-        std::slice::from_ref(&f.d),
+        &crate::testing::app_paths_of(std::slice::from_ref(&f.d)),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/dst"),
+        &crate::testing::app_path_of(Path::new("/dst")),
         &VolumeCopyConfig {
             conflict_resolution: ConflictResolution::Rename,
             ..VolumeCopyConfig::default()

@@ -50,9 +50,9 @@ async fn copy_up(
         label,
         &Arc::new(new_operation_state(app_engine(), Duration::from_millis(200))),
         local,
-        &sources.iter().map(PathBuf::from).collect::<Vec<_>>(),
+        &cmdr_operations::testing::app_paths_of(sources.iter().map(PathBuf::from).collect::<Vec<_>>()),
         Arc::clone(remote),
-        dir,
+        &cmdr_operations::testing::app_path_of(dir),
         &VolumeCopyConfig {
             conflict_resolution: policy,
             ..VolumeCopyConfig::default()

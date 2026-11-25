@@ -8,6 +8,7 @@
 #![cfg(unix)] // POSIX-only cells: `LocalPosixVolume`, POSIX modes, or errnos (windows-port plan, tasks 35 and 36).
 
 use cmdr_fs::app_path;
+use std::path::Path;
 use std::time::Duration;
 
 use super::super::faulty_volume::{FaultyOp, FaultyVolume};
@@ -52,9 +53,9 @@ async fn run_move(
         "op-held-sweeps",
         state,
         source,
-        sources,
+        &crate::testing::app_paths_of(sources),
         dest,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

@@ -114,7 +114,7 @@ pub(super) struct MergeCtx<'a> {
     /// top-level sources, so they never have a hint — the resolver falls back to
     /// trait calls for them (the size/mtime annotations come from `get_metadata`
     /// on the Stop path only, bounded by the user's click time).
-    pub source_hints: &'a HashMap<PathBuf, SourceHint>,
+    pub source_hints: &'a HashMap<AppPathBuf, SourceHint>,
     /// The operation-wide file-copy window, shared by every walker. See
     /// [`FileWindow`] for why there is exactly one of these per operation.
     pub window: FileWindow,

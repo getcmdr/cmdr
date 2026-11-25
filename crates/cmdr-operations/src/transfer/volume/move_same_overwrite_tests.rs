@@ -21,6 +21,7 @@ use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, VolumeError};
+use std::path::Path;
 
 const THE_USERS_BYTES: &[u8] = b"the user's own copy";
 

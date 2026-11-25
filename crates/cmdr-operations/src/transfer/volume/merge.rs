@@ -42,7 +42,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
 use super::landing::{DestFolder, NewName, where_it_lands};
-use super::listed_name::{ListedName, into_std, listed_path, on_volume, std_of};
+use super::listed_name::{ListedName, into_std, listed_path, on_volume, shown_under, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
 use super::preflight::SourceFileFacts;
@@ -636,9 +636,9 @@ async fn skip_if_folder_refused(
 )]
 pub(super) async fn copy_directory_streaming(
     source_volume: &Arc<dyn Volume>,
-    source_path: &Path,
+    source_path: &AppPath,
     dest_volume: &Arc<dyn Volume>,
-    dest_path: &Path,
+    dest_path: &AppPath,
     state: &Arc<WriteOperationState>,
     created: &CreatedPaths,
     progress: &Arc<SourceProgress>,
@@ -664,9 +664,9 @@ pub(super) async fn copy_directory_streaming(
     // child joined typed (`listed_name.rs::ListedName`).
     let walked = merge_level(
         source_volume,
-        &on_volume(source_path),
+        source_path,
         dest_volume,
-        &on_volume(dest_path),
+        dest_path,
         state,
         created,
         progress,
@@ -698,11 +698,7 @@ pub(super) async fn copy_directory_streaming(
     // failed or cancelled subtree returned above and dates nothing.
     let mut folders = std::mem::take(&mut pool.folders);
     if root == DirectoryCreation::Created {
-        folders.note_filled(
-            on_volume(dest_path).into_owned(),
-            source_path.to_path_buf(),
-            source_dates,
-        );
+        folders.note_filled(dest_path.to_owned(), std_of(source_path).into_owned(), source_dates);
     }
     match plan {
         // PLAN MODE wrote no file yet: the data pass dates the folders once its
@@ -960,11 +956,10 @@ async fn merge_level<'a>(
         // names is display text only: the folder's text and the name as listed.
         if name.under(&join_dir).is_err() {
             let child_row = tree_level.child(&entry.name, merges_as_a_directory(entry), entry.size.unwrap_or(0));
-            let shown_dest = format!("{}/{}", join_dir.as_str().trim_end_matches('/'), entry.name);
             let refused = RefusedChild {
                 entry,
                 source: child_source,
-                dest: on_volume(Path::new(&shown_dest)).into_owned(),
+                dest: shown_under(&join_dir, &entry.name),
                 node: child_row,
             };
             refuse_child(pool, merge, created, progress, source_volume, refused).await?;

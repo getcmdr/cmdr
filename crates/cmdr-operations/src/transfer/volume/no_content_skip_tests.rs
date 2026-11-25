@@ -71,9 +71,9 @@ async fn copy_skips_and_carries_on(sources: usize) {
         "op-no-content",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -118,9 +118,9 @@ async fn a_move_leaves_a_child_with_no_bytes_at_the_source() {
         "op-no-content-move",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(&dest) as Arc<dyn Volume>,
-        Path::new("/inbox"),
+        &crate::testing::app_path_of(Path::new("/inbox")),
         &VolumeCopyConfig::default(),
     )
     .await;

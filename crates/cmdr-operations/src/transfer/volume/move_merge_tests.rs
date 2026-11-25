@@ -24,6 +24,7 @@ use crate::testing::TestOperations;
 use crate::types::ConflictResolution;
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 /// A folder move that MERGES must keep the source of every child it skipped.
 ///
@@ -65,9 +66,9 @@ async fn cross_volume_move_folder_merge_keeps_the_source_of_a_skipped_deep_child
         "op-move-merge-deep-skip",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -261,9 +262,9 @@ async fn move_folder_merge_never_loses_a_byte_under_every_policy() {
             &format!("op-move-merge-{policy:?}-{scripted:?}"),
             &state,
             Arc::clone(&source),
-            &[PathBuf::from("/album")],
+            &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
             Arc::clone(&dest),
-            Path::new("/"),
+            &crate::testing::app_path_of(Path::new("/")),
             &config,
         )
         .await;

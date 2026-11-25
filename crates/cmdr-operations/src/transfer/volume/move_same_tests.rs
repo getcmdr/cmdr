@@ -21,6 +21,7 @@ use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteOperationError};
 use cmdr_fs::app_path;
 use cmdr_fs::volume::{InMemoryVolume, UnwritableReason, WriteAccess};
+use std::path::Path;
 
 /// Happy-path same-volume rename: files end up at their new paths via `Volume::rename`.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

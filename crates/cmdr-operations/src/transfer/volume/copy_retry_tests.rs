@@ -18,6 +18,7 @@ use cmdr_fs::volume::{
     DirectoryCreation, InMemoryVolume, ListingProgress, ScanConflict, SourceItemInfo, SpaceInfo, StreamLength,
     StreamWriteProgress, Volume, VolumeReadStream,
 };
+use std::path::Path;
 use std::pin::Pin as StdPin;
 
 use super::super::super::conflict_responder_test_support::{ConflictResponderSink, file_conflict_count};
@@ -282,9 +283,9 @@ async fn a_retried_merge_child_still_leaves_dest_only_files_alone() {
         op.id().as_str(),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -342,9 +343,9 @@ async fn a_finished_copy_removes_the_temp_a_retried_file_could_not_delete() {
         op.id().as_str(),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await
@@ -410,9 +411,9 @@ async fn a_retried_file_never_re_asks_the_conflict_the_user_already_answered() {
         op.id().as_str(),
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await

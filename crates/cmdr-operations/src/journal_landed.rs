@@ -11,7 +11,6 @@
 //! keeps the checks a row from before identities gets.
 
 use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
-use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::Metadata;
 use std::path::Path;
@@ -85,14 +84,13 @@ impl LandedReadBack {
     pub(crate) async fn read_back(
         scope: &OpScope,
         dest: &dyn Volume,
-        landed: &Path,
+        landed: &AppPath,
         source_is_dir: bool,
         files: &[WrittenFile<AppPathBuf>],
     ) -> Self {
-        let landed_app = on_dest(landed);
         Self {
-            modified: Self::modified_times(dest, &landed_app, source_is_dir, files).await,
-            nodes: Self::nodes(scope, dest, landed, &landed_app, source_is_dir, files).await,
+            modified: Self::modified_times(dest, landed, source_is_dir, files).await,
+            nodes: Self::nodes(scope, dest, landed, source_is_dir, files).await,
         }
     }
 
@@ -101,13 +99,12 @@ impl LandedReadBack {
     async fn nodes(
         scope: &OpScope,
         dest: &dyn Volume,
-        landed: &Path,
         landed_app: &AppPath,
         source_is_dir: bool,
         files: &[WrittenFile<AppPathBuf>],
     ) -> HashMap<AppPathBuf, NodeIdentity> {
         let mut nodes = HashMap::new();
-        if !scope.records_landed_nodes(|| volume_keeps_landed_nodes(dest, landed)) {
+        if !scope.records_landed_nodes(|| volume_keeps_landed_nodes(dest, landed_app)) {
             return nodes;
         }
         let paths: Vec<&AppPath> = if source_is_dir {
@@ -193,18 +190,15 @@ impl LandedReadBack {
     }
 }
 
-/// A landed path as the app path the destination volume takes. The transfer hands a
-/// source's landed root over as a `std::path` value, so it crosses here, losslessly:
-/// the module's one crossing.
-fn on_dest(path: &Path) -> Cow<'_, AppPath> {
-    AppPath::legacy_unchecked(path)
-}
-
 /// Whether `dest` is a local disk whose filesystem keeps a lasting node identity
 /// at `landed`, a path that exists on it. `mount_class` answers from what the
 /// volume's registration found, so a share, a server, or a phone is ruled out
-/// with no call to it; only a local disk pays the one `statfs`.
-fn volume_keeps_landed_nodes(dest: &dyn Volume, landed: &Path) -> bool {
+/// with no call to it; only a local disk pays the one `statfs`, on the path the
+/// OS spells (the module's crossing, through the bridge as the root's).
+fn volume_keeps_landed_nodes(dest: &dyn Volume, landed: &AppPath) -> bool {
     dest.mount_class() == Some(MountClass::LocalDisk)
-        && crate::local_disk::keeps_node_identity(&cmdr_fs::volume::root_anchored(&dest.root().as_std_legacy(), landed))
+        && crate::local_disk::keeps_node_identity(&cmdr_fs::volume::root_anchored(
+            &dest.root().as_std_legacy(),
+            &landed.as_std_legacy(),
+        ))
 }

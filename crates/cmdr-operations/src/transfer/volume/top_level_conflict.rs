@@ -6,8 +6,8 @@
 //! instead of each walling its own in front of the closure, where the two
 //! drifted on which captures the resolver got.
 
+use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use super::super::super::conflict::ApplyToAll;
@@ -18,6 +18,7 @@ use super::super::transfer_driver::{ConflictDecision, ConflictDecisionInput, Res
 use super::super::transfer_probe::{DriverPhase, OperationProbe};
 use super::conflict::resolve_volume_conflict;
 use super::displaced_destination::DisplacedLedger;
+use super::listed_name::{on_volume, std_of};
 use super::preflight::SourceHint;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::Volume;
@@ -33,7 +34,7 @@ pub(super) struct TopLevelConflicts {
     /// The OPERATION's "…all" latch, shared with the deep merge.
     pub apply_to_all: Arc<Mutex<ApplyToAll>>,
     /// The preflight's per-source hints, so a clash never re-probes the source.
-    pub source_hints: Arc<HashMap<PathBuf, SourceHint>>,
+    pub source_hints: Arc<HashMap<AppPathBuf, SourceHint>>,
     pub config: VolumeCopyConfig,
     pub operation_id: String,
     /// Where the driver says it's waiting on a person. `None` with no probe.
@@ -51,8 +52,8 @@ impl TopLevelConflicts {
     pub(super) fn resolver(self) -> impl for<'a> FnMut(ConflictDecisionInput<'a>) -> ResolveFut<'a> {
         move |input: ConflictDecisionInput<'_>| -> ResolveFut<'_> {
             let conflicts = self.clone();
-            let source_path = input.source_path.to_path_buf();
-            let initial_dest = input.initial_dest_path.to_path_buf();
+            let source_path = input.source_path.to_owned();
+            let initial_dest = input.initial_dest_path.to_owned();
             let dest_size_hint = input.dest_size_hint;
             Box::pin(async move { conflicts.resolve(source_path, initial_dest, dest_size_hint).await })
         }
@@ -60,8 +61,8 @@ impl TopLevelConflicts {
 
     async fn resolve(
         self,
-        source_path: PathBuf,
-        initial_dest: PathBuf,
+        source_path: AppPathBuf,
+        initial_dest: AppPathBuf,
         dest_size_hint: Option<u64>,
     ) -> Result<ConflictDecision, WriteOperationError> {
         // The cached scan hint, so a clash never re-probes the source (on MTP,
@@ -75,20 +76,22 @@ impl TopLevelConflicts {
             "{}: conflict detected at {} (source_is_directory_hint={:?})",
             // allowed-log-private: `log_label` is the driver's own fixed name, not a user value
             self.log_label,
-            LogPrivate::path(&initial_dest),
+            LogPrivate::path(initial_dest.as_str()),
             source_is_directory_hint,
         );
+        // The resolver and its namer still take `std::path` values.
+        let (source_std, initial_std) = (std_of(&source_path), std_of(&initial_dest));
         // Parked on a PERSON, unbounded by design and with nothing else
         // running. A dump that names it has explained the whole stall;
         // `paused=` covers the pause gate and nothing else covered this.
         if let Some(probe) = self.op_probe.as_ref() {
-            probe.set_driver_phase_at(DriverPhase::ResolvingConflict, None, &initial_dest);
+            probe.set_driver_phase_at(DriverPhase::ResolvingConflict, None, &initial_std);
         }
         let resolved = resolve_volume_conflict(
             &self.source_volume,
-            &source_path,
+            &source_std,
             &self.dest_volume,
-            &initial_dest,
+            &initial_std,
             &self.config,
             &*self.events,
             &self.operation_id,
@@ -106,7 +109,7 @@ impl TopLevelConflicts {
                     "{}: skipping {} due to conflict resolution",
                     // allowed-log-private: `log_label` is the driver's own fixed name, not a user value
                     self.log_label,
-                    LogPrivate::path(&source_path)
+                    LogPrivate::path(source_path.as_str())
                 );
                 // Credit the source's byte size so the size bar matches the
                 // file counter when every source is skipped. Dirs report 0 in
@@ -122,7 +125,9 @@ impl TopLevelConflicts {
                     self.displaced.hold(aside);
                 }
                 ConflictDecision::Proceed {
-                    dest_path: rc.write_path,
+                    // The resolver's pick, back in the drivers' app spelling (the
+                    // resolver goes typed in a later pass, #1225).
+                    dest_path: on_volume(&rc.write_path).into_owned(),
                     replaces: rc.replaces,
                     dest_name_claimed: rc.reserved_placeholder,
                 }

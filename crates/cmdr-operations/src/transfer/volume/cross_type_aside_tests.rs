@@ -19,6 +19,7 @@ use crate::types::{
 };
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 /// Answers every prompt with a plain `Overwrite`, and, when `rollback_after_first`
 /// is set, flips the operation to `RollingBack` the moment one source has fully
@@ -164,9 +165,9 @@ async fn a_folder_that_fails_halfway_over_a_file_keeps_the_file() {
         "op-folder-over-file-fails",
         &state,
         faulty.clone(),
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await;
@@ -203,9 +204,9 @@ async fn a_file_that_fails_over_a_folder_puts_the_folder_back() {
         "op-file-over-folder-fails",
         &state,
         faulty.clone(),
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await;
@@ -242,9 +243,9 @@ async fn a_deep_folder_that_fails_over_a_file_keeps_the_file() {
         "op-deep-folder-over-file-fails",
         &state,
         faulty.clone(),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await;
@@ -276,9 +277,9 @@ async fn a_rollback_puts_the_replaced_file_back() {
         "op-folder-over-file-rollback",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await;
@@ -317,9 +318,9 @@ async fn a_replacement_that_lands_leaves_no_aside_behind() {
         "op-cross-type-lands",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/folder_in"), PathBuf::from("/file_in")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/folder_in"), PathBuf::from("/file_in")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await;
@@ -365,9 +366,9 @@ async fn a_folder_replacing_a_dir_link_drops_the_link_and_never_its_target() {
         "op-folder-over-dir-link",
         &state,
         source,
-        &[PathBuf::from("/clash")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/clash")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &stop_config(),
     )
     .await

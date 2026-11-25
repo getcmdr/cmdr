@@ -13,7 +13,7 @@
 //! borrowed context already holds every input they need — the volumes, the
 //! policy, the destination index, the preflight hints, and the shared counters.
 
-use std::path::Path;
+use cmdr_fs::app_path::AppPath;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 
@@ -24,11 +24,11 @@ use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::copy_concurrent::ConcurrentCopy;
 use super::copy_concurrent_task::CopyTask;
 use super::landing::{DestFolder, Landing, NewName, landing_at};
-use super::listed_name::on_volume;
+use super::listed_name::{TopLevel, label_of, on_volume, std_of, top_level};
 use super::merge_ctx::MergeProbe;
 use super::preflight::SourceFileFacts;
 use super::strategy::{Replaces, resolve_source_is_directory};
-use super::transfer_error::{AtPath, PathRole, PathedVolumeError, WriteFailure, map_volume_error};
+use super::transfer_error::{AtPath, PathRole, PathedVolumeError, WriteFailure, failed_path_text, map_volume_error};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_private::LogPrivate;
 
@@ -49,7 +49,7 @@ impl ConcurrentCopy<'_> {
     pub(super) async fn prepare_source(
         &self,
         source_index: usize,
-        source_path: &Path,
+        source_path: &AppPath,
     ) -> Result<Option<CopyTask>, WriteFailure> {
         // Pre-known conflict already accounted upfront in the bulk skip; its
         // verdict goes out as the driver passes it, in order.
@@ -71,23 +71,25 @@ impl ConcurrentCopy<'_> {
             source_hint.map(|hint| hint.is_directory),
         )
         .await
-        .map_err(|e| {
-            WriteFailure::synthetic(map_volume_error(
-                &source_path.display().to_string(),
-                PathRole::Source,
-                e,
-            ))
-        })?;
+        .map_err(|e| WriteFailure::synthetic(map_volume_error(&failed_path_text(source_path), PathRole::Source, e)))?;
         // Sizes stay hint-only: a missing size just means no SMB compound
         // fast path, never a wrong branch, so it isn't worth a probe.
         let source_size_hint = source_hint.and_then(|hint| (!hint.is_directory).then_some(hint.size));
 
         // Resolve destination path + conflict synchronously. The name it lands
         // as is the caller's choice where there is one (`TransferLeaves`), so
-        // the pre-check and any clash below are at THAT name.
-        let mut dest_item_path = match self.config.leaves.leaf_of(source_path) {
-            Some(leaf) => self.dest_path.join(leaf),
-            None => self.dest_path.to_path_buf(),
+        // the pre-check and any clash below are at THAT name; otherwise its own,
+        // split by the app path (#1457).
+        let chosen = self
+            .config
+            .leaves
+            .chosen_for(&std_of(source_path))
+            .and_then(std::ffi::OsStr::to_str);
+        // A name the destination folder can't hold: no pre-check and no resolver;
+        // the task asks about it, per item, and writes nothing.
+        let (mut dest_item_path, dest_name_refused) = match top_level(self.dest_path, source_path, chosen) {
+            TopLevel::At(path) => (path, false),
+            TopLevel::Refused(shown) => (shown, true),
         };
         // For a file→file Overwrite, conflict resolution says how the
         // original is replaced (`Replaces`): a swap the write's landing makes
@@ -98,21 +100,26 @@ impl ConcurrentCopy<'_> {
         // Nothing has resolved anything yet, so the name this task writes to is
         // one we believe free (`staged_write.rs::LandingName`).
         let mut dest_name_claimed = false;
-        let (landing_path, existing_dest) = self
-            .existing_dest_entry(source_index, &dest_item_path)
-            .await
-            .map_err(WriteFailure::from)?
-            .into_std_parts();
-        // The entry that's THERE, in its own spelling, or the new name spelled
-        // for the destination.
-        dest_item_path = landing_path;
+        let existing_dest = if dest_name_refused {
+            None
+        } else {
+            let (landing_path, existing_dest) = self
+                .existing_dest_entry(source_index, &dest_item_path)
+                .await
+                .map_err(WriteFailure::from)?
+                .into_parts();
+            // The entry that's THERE, in its own spelling, or the new name spelled
+            // for the destination.
+            dest_item_path = landing_path;
+            existing_dest
+        };
         if let Some(dest_meta) = existing_dest {
             // The type and size come from the scan (or the one probe above),
             // never a re-stat: an MTP `scan_for_copy` lists the parent dir,
             // ~18 s for 1046 photos on a cold cache.
             log::debug!(
                 "copy_volumes_with_progress: conflict detected at {} (source_is_dir={}, dest_is_dir={})",
-                LogPrivate::path(&dest_item_path),
+                LogPrivate::path(dest_item_path.as_str()),
                 source_is_dir,
                 dest_meta.is_directory,
             );
@@ -129,13 +136,15 @@ impl ConcurrentCopy<'_> {
                 None => {
                     log::debug!(
                         "copy_volumes_with_progress: skipping {} due to conflict resolution",
-                        LogPrivate::path(source_path)
+                        LogPrivate::path(source_path.as_str())
                     );
                     self.account_skipped_file(source_path);
                     return Ok(None);
                 }
                 Some(rc) => {
-                    dest_item_path = rc.write_path;
+                    // The resolver's pick, back in the drivers' app spelling (the
+                    // resolver goes typed in a later pass, #1225).
+                    dest_item_path = on_volume(&rc.write_path).into_owned();
                     replaces = rc.replaces;
                     // ❗ Claimed only when the pick put a placeholder of ours
                     // there. A pick that reserved nothing (every remote
@@ -149,8 +158,8 @@ impl ConcurrentCopy<'_> {
 
         log::debug!(
             "copy_volumes_with_progress: spawning copy {} -> {}",
-            LogPrivate::path(source_path),
-            LogPrivate::path(&dest_item_path)
+            LogPrivate::path(source_path.as_str()),
+            LogPrivate::path(dest_item_path.as_str())
         );
 
         // Register before the task is pushed, so a task that never gets
@@ -166,8 +175,8 @@ impl ConcurrentCopy<'_> {
                 } else {
                     super::super::transfer_probe::TaskRole::File
                 },
-                &source_path,
-                &dest_item_path,
+                &*std_of(source_path),
+                &*std_of(&dest_item_path),
             )
         });
         Ok(Some(CopyTask {
@@ -178,12 +187,13 @@ impl ConcurrentCopy<'_> {
             dest_volume: Arc::clone(&self.dest_volume),
             config: self.config.clone(),
             apply_to_all: Arc::clone(&self.cells.apply_to_all_cell),
-            source_path: source_path.to_path_buf(),
+            source_path: source_path.to_owned(),
             source_is_dir,
             source_facts: SourceFileFacts::from_hint(source_hint),
             dest_path: dest_item_path,
             replaces,
             dest_name_claimed,
+            dest_name_refused,
             window: self.file_window.clone(),
             displaced: Arc::clone(&self.cells.displaced),
             links: Arc::clone(&self.cells.links),
@@ -239,7 +249,7 @@ impl ConcurrentCopy<'_> {
     async fn existing_dest_entry(
         &self,
         source_index: usize,
-        dest_item_path: &Path,
+        dest_item_path: &AppPath,
     ) -> Result<Landing, PathedVolumeError> {
         let folder = if self.dest_dir_is_ours {
             DestFolder::CreatedByUs
@@ -263,13 +273,13 @@ impl ConcurrentCopy<'_> {
                 // The same label the source's own row renders under, so a
                 // reader can match the driver's step against the table.
                 Some(super::super::transfer_probe::TaskRow::source(source_index)),
-                dest_item_path,
+                &std_of(dest_item_path),
             );
         }
         // A refused name skips the probe and the resolver (`landing.rs::
         // name_at_destination` says why); its copy refuses it before writing.
         if super::landing::destination_refuses(self.state, dest_item_path) {
-            return Ok(Landing::Free(on_volume(dest_item_path).into_owned()));
+            return Ok(Landing::Free(dest_item_path.to_owned()));
         }
         // A share that drops under the probe is waited for, and the probe asks
         // again: it only reads (`../volume_outage.rs`). Pathed, so a share that
@@ -296,8 +306,8 @@ impl ConcurrentCopy<'_> {
     /// data loss.
     async fn resolve_conflict_on_the_driver(
         &self,
-        source_path: &Path,
-        dest_item_path: &Path,
+        source_path: &AppPath,
+        dest_item_path: &AppPath,
         source_size_hint: Option<u64>,
         dest_size_hint: Option<u64>,
         source_is_dir: bool,
@@ -306,18 +316,20 @@ impl ConcurrentCopy<'_> {
         // window drains but fills no further until they answer, so a dump
         // taken now has to say so rather than leave the pre-check's phase
         // standing.
+        // The resolver and its namer still take `std::path` values.
+        let (source_std, dest_std) = (std_of(source_path), std_of(dest_item_path));
         if let Some(probe) = self.op_probe.as_ref() {
             probe.set_driver_phase_at(
                 super::super::transfer_probe::DriverPhase::ResolvingConflict,
                 None,
-                dest_item_path,
+                &dest_std,
             );
         }
         let resolved = resolve_volume_conflict(
             &self.source_volume,
-            source_path,
+            &source_std,
             &self.dest_volume,
-            dest_item_path,
+            &dest_std,
             self.config,
             &*self.events,
             self.operation_id,
@@ -343,13 +355,14 @@ impl ConcurrentCopy<'_> {
 
     /// A source skipped whole, before any task: its tree rows, and its
     /// `write-source-item-done`. A skipped copy touched no source.
-    fn skipped_whole(&self, source_path: &Path) {
+    fn skipped_whole(&self, source_path: &AppPath) {
+        let source_std = std_of(source_path);
         let tree = self.state.transfer_tree.reporter();
-        tree.skip_whole(tree.source(source_path));
+        tree.skip_whole(tree.source(&source_std));
         emit_source_outcome(
             &*self.events,
             self.operation_id,
-            source_path,
+            &source_std,
             SourceItemOutcome::Skipped,
             false,
         );
@@ -361,7 +374,7 @@ impl ConcurrentCopy<'_> {
     /// user expects the bar to reflect skipped files since the operation is in
     /// fact processing them. Also the account of a task whose own name the
     /// destination refused and the person skipped (`copy_concurrent.rs`).
-    pub(super) fn account_skipped_file(&self, source_path: &Path) {
+    pub(super) fn account_skipped_file(&self, source_path: &AppPath) {
         self.skipped_whole(source_path);
         let hint_size = self
             .source_hints
@@ -379,10 +392,7 @@ impl ConcurrentCopy<'_> {
         if crate::rt::since(*last) >= self.progress_interval {
             *last = crate::rt::now();
             drop(last);
-            self.leaf_ledger.emit(
-                source_path.file_name().map(|n| n.to_string_lossy().to_string()),
-                snapshot,
-            );
+            self.leaf_ledger.emit(label_of(source_path), snapshot);
         }
     }
 }

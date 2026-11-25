@@ -64,11 +64,11 @@ async fn copy_one(
 ) -> Result<u64, VolumeError> {
     copy_single_path(
         source,
-        Path::new(source_path),
+        &crate::testing::app_path_of(Path::new(source_path)),
         Some(false),
         SourceFileFacts::default(),
         dest,
-        Path::new("/a.txt"),
+        &crate::testing::app_path_of(Path::new("/a.txt")),
         state,
         &CreatedPaths::default(),
         progress,

@@ -14,6 +14,7 @@ use super::*;
 use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, VolumeCopyConfig, WriteOperationError};
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 const CAFE_NFC: &str = "caf\u{e9}.txt";
 const CAFE_NFD: &str = "cafe\u{301}.txt";
@@ -96,9 +97,9 @@ async fn copy(
         "op-look-alike",
         &state,
         Arc::clone(source) as Arc<dyn Volume>,
-        &paths,
+        &crate::testing::app_paths_of(&paths),
         Arc::clone(dest) as Arc<dyn Volume>,
-        Path::new(dest_dir),
+        &crate::testing::app_path_of(Path::new(dest_dir)),
         &config,
     )
     .await;

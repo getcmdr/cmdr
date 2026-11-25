@@ -233,9 +233,9 @@ async fn a_cross_volume_folder_move_journals_like_a_copy() {
         "op",
         &st,
         source as Arc<dyn Volume>,
-        &[PathBuf::from("/photos")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/photos")]),
         dest as Arc<dyn Volume>,
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &VolumeCopyConfig::default(),
     )
     .await

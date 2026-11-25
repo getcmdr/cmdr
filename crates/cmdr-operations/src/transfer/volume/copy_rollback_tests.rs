@@ -15,6 +15,7 @@ use crate::testing::TestOperations;
 use crate::types::{ConflictResolution, WriteConflictResolvedEvent, WriteErrorEvent, WriteSourceItemDoneEvent};
 use cmdr_fs::app_path;
 use cmdr_fs::volume::InMemoryVolume;
+use std::path::Path;
 
 /// Sink that flips the operation's intent to `RollingBack` once it sees a
 /// `Copying`-phase progress event reporting at least one fully-copied file.
@@ -107,9 +108,9 @@ async fn rollback_of_merged_directory_preserves_preexisting_dest_files() {
         "test-op-rollback-merge",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -170,9 +171,9 @@ async fn same_volume_copy_into_own_descendant_is_rejected() {
         "test-op-dest-inside-source",
         &state,
         Arc::clone(&vol),
-        &[PathBuf::from("/A")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/A")]),
         Arc::clone(&vol),
-        Path::new("/A/sub"),
+        &crate::testing::app_path_of(Path::new("/A/sub")),
         &config,
     )
     .await;
@@ -210,9 +211,9 @@ async fn same_volume_copy_into_sibling_dir_is_allowed() {
         "test-op-sibling-dest",
         &state,
         Arc::clone(&vol),
-        &[PathBuf::from("/A")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/A")]),
         Arc::clone(&vol),
-        Path::new("/dest"),
+        &crate::testing::app_path_of(Path::new("/dest")),
         &config,
     )
     .await;
@@ -324,9 +325,9 @@ async fn cancel_mid_merge_stream_preserves_preexisting_dest_file() {
         "test-op-cancel-mid-merge",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -365,9 +366,9 @@ async fn rollback_mid_merge_stream_preserves_preexisting_dest_file() {
         "test-op-rollback-mid-merge",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/album")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/album")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -435,13 +436,13 @@ async fn cancel_mid_merge_stream_concurrent_preserves_preexisting_dest_file() {
         "test-op-cancel-mid-merge-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/album"),
             PathBuf::from("/sib1.bin"),
             PathBuf::from("/sib2.bin"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -541,9 +542,9 @@ async fn rollback_after_rename_keeps_preexisting_dest_file() {
         "test-op-rollback-rename",
         &state,
         Arc::clone(&source),
-        &[PathBuf::from("/fresh.bin"), PathBuf::from("/doc.txt")],
+        &crate::testing::app_paths_of(&[PathBuf::from("/fresh.bin"), PathBuf::from("/doc.txt")]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;
@@ -635,13 +636,13 @@ async fn rollback_of_a_concurrently_merged_directory_preserves_preexisting_dest_
         "test-op-rollback-merge-concurrent",
         &state,
         Arc::clone(&source),
-        &[
+        &crate::testing::app_paths_of(&[
             PathBuf::from("/album"),
             PathBuf::from("/sib1.bin"),
             PathBuf::from("/sib2.bin"),
-        ],
+        ]),
         Arc::clone(&dest),
-        Path::new("/"),
+        &crate::testing::app_path_of(Path::new("/")),
         &config,
     )
     .await;

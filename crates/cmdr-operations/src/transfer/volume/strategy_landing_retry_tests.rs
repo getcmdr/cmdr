@@ -152,11 +152,11 @@ async fn copy_one(
     let dest: Arc<dyn Volume> = Arc::clone(dest) as Arc<dyn Volume>;
     copy_single_path(
         &source,
-        Path::new("/a.txt"),
+        &crate::testing::app_path_of(Path::new("/a.txt")),
         Some(false),
         SourceFileFacts::default(),
         &dest,
-        Path::new("/a.txt"),
+        &crate::testing::app_path_of(Path::new("/a.txt")),
         state,
         &CreatedPaths::default(),
         &LeafProgressLedger::silent_source(Arc::clone(state)),
