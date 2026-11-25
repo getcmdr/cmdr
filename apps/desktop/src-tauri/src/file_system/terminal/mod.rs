@@ -6,9 +6,9 @@
 //! this does. This module is the part both share:
 //!
 //! - The wire types the IPC commands in `commands/file_actions.rs` answer with
-//!   ([`OpenTerminalOutcome`], [`OpenTerminalError`], [`TerminalAppList`]).
-//! - The table vocabulary ([`KnownTerminal`], [`TerminalChoice`]) and the fallback
-//!   rule ([`resolve_choice`]), generic over each OS's launch recipe.
+//!   (`OpenTerminalOutcome`, `OpenTerminalError`, `TerminalAppList`).
+//! - The table vocabulary (`KnownTerminal`, `TerminalChoice`) and the fallback
+//!   rule (`resolve_choice`), generic over each OS's launch recipe.
 //! - The path-less refusal, which keys on the pane's volume.
 //!
 //! Each OS's table, its installed-ness probe, and its launch live behind the
