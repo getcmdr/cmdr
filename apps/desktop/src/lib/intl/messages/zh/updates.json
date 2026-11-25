@@ -116,7 +116,7 @@
   "@updates.status.updatedByStore": {
     "sourceHash": "1911f15"
   },
-  "updates.status.sideloadedPackage": "This copy of Cmdr doesn’t update itself. Install a newer package to update it.",
+  "updates.status.sideloadedPackage": "这份 Cmdr 不会自行更新。如需更新，请安装较新版本的软件包。",
   "@updates.status.sideloadedPackage": {
     "sourceHash": "1f5dc43"
   },
