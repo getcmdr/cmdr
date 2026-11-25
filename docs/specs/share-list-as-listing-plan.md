@@ -1,5 +1,7 @@
 # A server's share list becomes a real listing
 
+Tracking issue: getcmdr/cmdr#1511. Loose ends from the same work: getcmdr/cmdr#1512.
+
 **Problem.** A server's share list is its own hand-rolled list (`PlacesBrowser.svelte` + `PlacesHeader.svelte`), so it
 lacks what every file list has (column header, sort, quick filter, the real `..` row, the SelectionInfo footer, the
 standard MCP mirror), carries near-duplicates of the list's cursor, parent row, landing, and MCP code, and its header
@@ -462,6 +464,10 @@ that touches a flow keeps its pin green; M7 walks this list.
 - The hub footer matches SelectionInfo's height, from one source.
 
 ## Decisions (David)
+
+**Decided (David, 2026-11-25): every plan default below, as written.** The hub right-click's Keychain read (the password
+crossing into the frontend) is removed in M5b, not patched separately first; M5b also replaces `disconnectHost`'s
+`String(e)` toast with typed wording.
 
 1. **Restore**: a pane (or tab) left on a share list restores, after a restart, to (a) the Servers list with the cursor
    on that server (today's behavior, and nothing lists at launch, #324), or (b) the share list itself (lists that server
