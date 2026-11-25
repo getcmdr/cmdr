@@ -267,6 +267,20 @@ impl SmbVolume {
         ran_on: impl Into<RanOn>,
         result: Result<T, smb2::Error>,
     ) -> Result<T, VolumeError> {
+        self.handle_smb_result_logging_at(log::Level::Warn, op_name, smb_path, ran_on, result)
+    }
+
+    /// [`handle_smb_result`](Self::handle_smb_result), with the failure line
+    /// that isn't a lost session or an expected fall-through at `level`. A lost
+    /// session always warns.
+    pub(super) fn handle_smb_result_logging_at<T>(
+        &self,
+        level: log::Level,
+        op_name: &str,
+        smb_path: &str,
+        ran_on: impl Into<RanOn>,
+        result: Result<T, smb2::Error>,
+    ) -> Result<T, VolumeError> {
         let e = match result {
             Ok(val) => return Ok(val),
             Err(e) => e,
@@ -310,7 +324,8 @@ impl SmbVolume {
                 cmdr_fs::log_detail::LogDetail(&e.to_string()).marking(&[LogPrivate::path(smb_path)])
             );
         } else {
-            warn!(
+            log::log!(
+                level,
                 "SmbVolume::{}(share={:?}): backend=smb2, error_kind={:?}, nt_status={:?}, detail={:?}",
                 op_name, // allowed-log-private: the volume method's name, not a user value
                 LogPrivate::volume(&self.inner.share_name),

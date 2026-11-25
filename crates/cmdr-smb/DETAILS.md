@@ -189,12 +189,12 @@ on", not by watching a number.
   `resume` (how a held handle waits for the session after the one it lost), `scan`, `scan_pool`, `transfer_session` (the
   extra session byte-moving calls ride), `dfs_links` (any call through a DFS link inside the share), `link_watch` (a
   shown link's own watch), `watcher`, `foreground_yield`, `links` (what a stat reads as through a link), `slow_calls`
-  (the rolled-up `warn` for a metadata call the server held over a second), `attributes` (Hidden and Locked by path),
-  `xattrs` (`Volume`'s xattr methods, over named streams), `apple_double` (a deleted file's `._` sidecar), and the
-  stateless `mapping`. Splitting further needs a responsibility you can name the same way; a line count is not one.
-  `e5ea10d02` reverted four splits invented to satisfy the counter, and every one of them had widened a visibility or
-  torn a struct from its trait impl to do it. These carry the same `pub(super)` the crate already used and leave no
-  module reaching into another's internals.
+  (the rolled-up `warn` for a metadata call the server held over a second), `space_refusal` (§ "A share that refuses the
+  space query"), `attributes` (Hidden and Locked by path), `xattrs` (`Volume`'s xattr methods, over named streams),
+  `apple_double` (a deleted file's `._` sidecar), and the stateless `mapping`. Splitting further needs a responsibility
+  you can name the same way; a line count is not one. `e5ea10d02` reverted four splits invented to satisfy the counter,
+  and every one of them had widened a visibility or torn a struct from its trait impl to do it. These carry the same
+  `pub(super)` the crate already used and leave no module reaching into another's internals.
 - **`volume/foreground_yield.rs` answers "should a background transfer stand aside?" from the WORK, not the transport.**
   MTP has an explicit holder for its single scarce USB pipe; SMB frames just interleave over a connection, so there is
   nothing on the transport to count. It survives the transfer session because the copy and the pane still share the link
@@ -1854,6 +1854,23 @@ from the message.
 - **Which path, for the two-path operations.** A `rename` refusal names the DESTINATION on `AlreadyExists` and the
   SOURCE on everything else, the same split `local_posix.rs::rename_error` makes. `get_space_info` is about the share,
   so it names the share root.
+
+## A share that refuses the space query
+
+The space poller asks `get_space_info` every 5 s for as long as a pane shows the share, so a server that refuses the
+query refuses every poll, and the WARN `handle_smb_result` writes would land ~720 times an hour. `space_refusal.rs`
+makes it one WARN per share, then DEBUG, until the share answers again (which re-arms it). A refusal is the typed
+`smb2::Error::Protocol` (the server answered with an NTSTATUS), ❌ never the status's wording; a lost session or any
+other failure keeps its WARN every time, and a lost session still goes through `note_error` either way.
+
+- **What the person sees**: nothing breaks. The failed read maps to a `VolumeError`, the poller falls back to the mount
+  table (`space_poller::fetch_space_for_path`, `None` for a share with no OS mount) and skips the tick, so the pane
+  footer shows no free-space text and no usage bar. Listing, copying, and everything else on the share work as usual.
+- **The case that found it**: a QNAP "portal folder" share is a Samba `msdfs root = yes` share, and smb2 before 0.43.1
+  opened its root for the query with an empty name where a DFS share wants `host\share`. The server answered
+  `STATUS_INVALID_PARAMETER` during the CREATE on every poll while listings and stats worked (verified on QNAP TS-464,
+  QTS 5.2.9 build 20260514, smb2 CLI `df`, 2026-11-25). smb2 0.43.1 fixed the query; this keeps the next server that
+  refuses it for its own reasons from flooding the log.
 
 ## Gotchas
 

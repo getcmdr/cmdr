@@ -368,8 +368,10 @@ impl SmbVolume {
                 generation,
             } = self.clone_session().await?;
             let r = tree.fs_info(&mut conn).await;
+            // A share that refuses this refuses every 5 s poll: one WARN, then DEBUG.
+            let level = self.inner.space_refusals.level_for(&r);
             // The share root: the question is about the share, not any one file.
-            self.handle_smb_result("get_space_info", "", generation, r)?
+            self.handle_smb_result_logging_at(level, "get_space_info", "", generation, r)?
         };
 
         Ok(fs_info_to_space_info(&info))

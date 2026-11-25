@@ -48,6 +48,7 @@ mod scan_pool;
 mod session;
 mod session_build;
 mod slow_calls;
+mod space_refusal;
 mod spelling;
 mod stamping;
 mod state;
@@ -348,6 +349,9 @@ struct SmbVolumeInner {
     /// Whether this share keeps AppleDouble `._` files, and the ones a delete
     /// took (`apple_double.rs`).
     sidecars: apple_double::Sidecars,
+    /// Whether this share's refusal of the space query was already logged at
+    /// WARN, so the 5 s poll doesn't repeat it (`space_refusal.rs`).
+    space_refusals: space_refusal::SpaceRefusals,
     /// The checkpoints failed uploads left in their temps, each waiting for its
     /// continuation (`checkpointed_write.rs`).
     write_checkpoints: checkpointed_write::WriteCheckpoints,
@@ -433,6 +437,7 @@ impl SmbVolume {
                 link_watches: Arc::default(),
                 closing_reads: Arc::default(),
                 sidecars: apple_double::Sidecars::default(),
+                space_refusals: space_refusal::SpaceRefusals::new(),
                 write_checkpoints: checkpointed_write::WriteCheckpoints::default(),
                 live_connection,
                 transfer,
