@@ -30,6 +30,10 @@ Read this before adding, wiping, or reorganizing a spec.
   Move the viewer's core into a Tauri-free `crates/cmdr-viewer` behind one host seam, build it into the demo's WASM
   engine, and open the real viewer window in the demo, media through `blob:` URLs. Issue:
   [#302](https://github.com/getcmdr/cmdr/issues/302).
+- `share-list-as-listing-plan.md`: **A server's share list is a hand-rolled list beside the file list, with its own
+  cursor, `..`, footer, MCP push, and header buttons.** The backend lists shares as folders on the `network` volume at
+  `smb://<server>`, the standard views render them, and the account actions move to the row menu, the path bar, and the
+  palette. Issue: none yet.
 - `saved-smb-shares.md`: **A saved SMB server holds only a host, not the user and share the person wants.** A share row
   under its server, recorded at mount time, pinnable and openable like an SFTP place. Issue:
   [cmdr-reports#7](https://github.com/getcmdr/cmdr-reports/issues/7).
