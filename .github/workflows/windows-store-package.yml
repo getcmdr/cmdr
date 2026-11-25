@@ -9,11 +9,17 @@ name: Windows Store package
 # `windows-package store-identity`: Partner Center's once its values are committed (the package is
 # then the one the Store takes), the dev identity while they're placeholders (a package that runs
 # unpacked in Developer Mode). A release never takes this path: its `windows-build` job packs with
-# `-identity release`, which fails on a placeholder (`docs/guides/releasing.md` § Windows releases).
+# `-identity release` once the manifest plans an MSIX, which fails on a placeholder
+# (`docs/guides/releasing.md` § Windows releases).
 #
-# Runs when the packaging changes, weekly so the build can't rot unseen while Windows ships off,
-# and by hand: `gh workflow run windows-store-package.yml --ref <branch>`. The compile steps mirror
-# `release-pipeline.yml`'s `windows-build`; keep the two in step.
+# Runs on a PR that changes the packaging itself (the manifest, `identity.json`, the packager),
+# weekly so the build can't rot unseen while Windows ships off, and by hand:
+# `gh workflow run windows-store-package.yml --ref <branch>`. One run is a cold release compile with
+# no cache to reuse (the Windows tests cache is the test profile, not release): about 36 min on
+# `windows-2025` (33.5 of them compiling, run 45511404593, 2026-11-24), and free, since Windows
+# minutes cost nothing on a public repo. Its one cost is a job slot in the account's 20-job budget
+# while it runs. The compile steps mirror `release-pipeline.yml`'s `windows-build`; keep the two
+# in step.
 on:
   workflow_dispatch:
   pull_request:
@@ -21,7 +27,6 @@ on:
       - apps/desktop/packaging/msix/**
       - scripts/windows-package/**
       - scripts/windows-package.sh
-      - .github/workflows/windows-store-package.yml
   schedule:
     - cron: '43 3 * * 1' # Mondays 03:43 UTC, off-peak and off the hour
 
@@ -36,8 +41,8 @@ jobs:
   package:
     name: Build the Store package
     runs-on: windows-2025
-    # A cold release compile on a hosted runner; the release job allows 150 for the same work.
-    timeout-minutes: 150
+    # About 2x the measured cold run (36 min, 2026-11-24).
+    timeout-minutes: 75
     defaults:
       run:
         shell: bash

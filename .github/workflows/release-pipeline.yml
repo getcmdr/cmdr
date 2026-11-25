@@ -1037,8 +1037,10 @@ jobs:
 
       # Every file this job hands on, under its published name (`guard`'s `uploads-windows`). The
       # advisory list isn't one: `windows-publish` takes it from its own checkout, so the updater key
-      # never signs bytes this job chose. The MSIX takes Partner Center's identity from
-      # `apps/desktop/packaging/msix/identity.json`, and fails here while that's a placeholder.
+      # never signs bytes this job chose. The MSIX is packed only when the plan names it (the
+      # manifest's `StorePackageSince`), with Partner Center's identity from
+      # `apps/desktop/packaging/msix/identity.json` (`-identity release`), which fails here while
+      # that's a placeholder. Until then the leg ships the NSIS installer without the MSIX.
       - name: Make the Store package and the policy template
         env:
           TAG: ${{ github.ref_name }}
@@ -1049,8 +1051,14 @@ jobs:
           OUT="$RUNNER_TEMP/windows-x86_64"
           mkdir -p "$OUT"
           cp "target/x86_64-pc-windows-msvc/release/bundle/nsis/Cmdr_${VERSION}_x64-setup.exe" "$OUT/"
-          ./scripts/windows-package.sh msix -version "$VERSION" -exe "$RUNNER_TEMP/unbundled/Cmdr.exe" \
-            -out "$OUT/Cmdr_${VERSION}_x64.msix"
+          MSIX="Cmdr_${VERSION}_x64.msix"
+          # shellcheck disable=SC2086 # the plan's space-separated names
+          if printf '%s\n' $UPLOADS | grep -qxF "$MSIX"; then
+            ./scripts/windows-package.sh msix -identity release -version "$VERSION" \
+              -exe "$RUNNER_TEMP/unbundled/Cmdr.exe" -out "$OUT/$MSIX"
+          else
+            echo "::notice::This release plans no Store MSIX (the manifest's StorePackageSince), so the Windows leg ships without it."
+          fi
           ./scripts/windows-package.sh group-policy -version "$VERSION" -out "$OUT/cmdr-group-policy-${VERSION}.zip"
           ./scripts/release-nsis.sh -version "$VERSION" "$OUT/Cmdr_${VERSION}_x64-setup.exe"
           # Exactly the planned files, so a renamed bundler output fails here, early. This is only a

@@ -6,14 +6,53 @@ import (
 	"testing"
 )
 
-// The day Windows is switched on, as the turn-on step writes it.
-var windowsFrom080 = []Shipping{{OS: MacOS, Prereleases: true}, {OS: Windows, Since: "0.80.0"}}
+// The day Windows is switched on, as the turn-on step writes it with Partner Center's identity in.
+var windowsFrom080 = []Shipping{{OS: MacOS, Prereleases: true}, {OS: Windows, Since: "0.80.0", StorePackageSince: "0.80.0"}}
+
+// Windows on before the Store account clears: the NSIS installer from 0.80.0, the MSIX from 0.82.0.
+var windowsStoreLater = []Shipping{{OS: MacOS, Prereleases: true}, {OS: Windows, Since: "0.80.0", StorePackageSince: "0.82.0"}}
+
+func hasKind(r Release, kind Kind) bool {
+	return slices.ContainsFunc(r.Files, func(f File) bool { return f.Kind == kind })
+}
+
+// The NSIS installer ships without the Store's MSIX until `StorePackageSince`, so a placeholder
+// Store identity never holds the Windows leg back; from then on the leg carries both, and a
+// release before it still resolves as it was published.
+func TestTheStorePackageShipsOnItsOwnSwitch(t *testing.T) {
+	for _, c := range []struct {
+		version   string
+		shipping  []Shipping
+		nsis, msi bool
+	}{
+		{"0.81.0", windowsStoreLater, true, false},
+		{"0.82.0", windowsStoreLater, true, true},
+		{"0.80.0", windowsFrom080, true, true},
+		{"0.81.0", []Shipping{{OS: MacOS, Prereleases: true}, {OS: Windows, Since: "0.80.0"}}, true, false},
+		{"0.79.0", windowsStoreLater, false, false},
+	} {
+		r := ForShipping(c.version, c.shipping)
+		if hasKind(r, NSIS) != c.nsis || hasKind(r, MSIX) != c.msi {
+			t.Errorf("%s under %v ships %v", c.version, c.shipping, Names(r.Files))
+		}
+	}
+	_, skipped := shippedFor("0.81.0", windowsStoreLater)
+	if len(skipped) != 1 || !strings.Contains(skipped[0], "without the Microsoft Store's MSIX") {
+		t.Fatalf("the plan's log line = %q", skipped)
+	}
+	if _, skipped := shippedFor("0.82.0", windowsStoreLater); len(skipped) != 0 {
+		t.Fatalf("a version with the MSIX skips %q", skipped)
+	}
+}
 
 func TestTheShippingListIsConsistent(t *testing.T) {
 	if problems := ShippingProblems(ShippedOSes); len(problems) > 0 {
 		t.Fatal(problems)
 	}
 	if problems := ShippingProblems(windowsFrom080); len(problems) > 0 {
+		t.Fatal(problems)
+	}
+	if problems := ShippingProblems(windowsStoreLater); len(problems) > 0 {
 		t.Fatal(problems)
 	}
 }
@@ -66,6 +105,13 @@ func TestShippingProblems(t *testing.T) {
 	bad := []Shipping{{OS: MacOS}, {OS: Windows, Since: "0.80"}, {OS: Windows}}
 	got := strings.Join(ShippingProblems(bad), "\n")
 	for _, want := range []string{"windows ships twice", `"0.80", which isn't a plain X.Y.Z`, "prereleases included"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the problems don't say %q:\n%s", want, got)
+		}
+	}
+	store := []Shipping{{OS: MacOS, Prereleases: true, StorePackageSince: "0.80.0"}, {OS: Windows, Since: "0.80.0", StorePackageSince: "0.79.0"}}
+	got = strings.Join(ShippingProblems(store), "\n")
+	for _, want := range []string{"macos sets StorePackageSince", "before Windows does"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("the problems don't say %q:\n%s", want, got)
 		}

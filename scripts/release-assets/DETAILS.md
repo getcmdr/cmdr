@@ -68,12 +68,15 @@ it from `NOT_WRITTEN_YET` with a fixture that carries the member.
 
 `Assets` holds every platform's rows; `ShippedOSes` (`shipping.go`, macOS only today) picks which a release publishes,
 each OS from its `Since` version and, for Windows, final versions only (a prerelease gets a `::notice::` and no Windows
-leg: an MSIX version is `X.Y.Z.0`). `For(version)` resolves only those, so `latest.json`, the checksums, the mirror,
-`release-finish`, and `release-evidence` agree, and a version before an OS's `Since` resolves as it was published. `All`
-resolves every row for `plan`'s wiring checks: the `-vetted` OSes and `-attested` SBOMs must cover the unshipped Windows
-rows too, so the jobs that build, vet, and attest them stay in place while they're skipped. `plan`'s `ships-<os>` gates
-those jobs (`windows-build`, `windows-publish`, `windows-attest`, and the Windows steps of `vet-update-archives` and
-`attest`), and the dry run reports each skipped step, so a renamed output or a broken condition shows in the goldens.
+leg: an MSIX version is `X.Y.Z.0`). The Store's MSIX row has its own switch, Windows' `StorePackageSince`: before it the
+leg carries the NSIS installer and the rest without the MSIX, so a placeholder Store identity can't hold the installer
+back, and `windows-build` packs the MSIX only when the plan names it. `For(version)` resolves only those, so
+`latest.json`, the checksums, the mirror, `release-finish`, and `release-evidence` agree, and a version before an OS's
+`Since` resolves as it was published. `All` resolves every row for `plan`'s wiring checks: the `-vetted` OSes and
+`-attested` SBOMs must cover the unshipped Windows rows too, so the jobs that build, vet, and attest them stay in place
+while they're skipped. `plan`'s `ships-<os>` gates those jobs (`windows-build`, `windows-publish`, `windows-attest`, and
+the Windows steps of `vet-update-archives` and `attest`), and the dry run reports each skipped step, so a renamed output
+or a broken condition shows in the goldens.
 
 Decision/Why: a code constant, not a repository variable. Every tool, the laptop's `release-finish` included, must agree
 on what a release holds, and a constant is reviewed, versioned, and the same everywhere; a variable would be read by the

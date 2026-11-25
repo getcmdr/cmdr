@@ -23,6 +23,11 @@ How the GitHub workflows fit together, and the invariants that keep them honest.
 | `gradle-wrapper.yml`          | Push to main, wrapper PRs, weekly       | Checks the IntelliJ plugin's `gradle-wrapper.jar` against Gradle's published checksums. § Scorecard  |
 | `sensitive-path-approval.yml` | David approves a PR                     | Reruns `CI OK` where the sensitive-path gate waited for that approval. § Branch protection           |
 
+`deny.toml`'s `[graph] targets` includes `x86_64-pc-windows-msvc` (since the Store channel's prep, task 53a of the
+Windows port), so `cargo deny` in `advisories.yml`, the nightly `slow-checks.yml`, and a local `pnpm check cargo-deny`
+also vets crates only the Windows build links. A Windows-only advisory can therefore fail the nightly and block
+landings, like any other; answer it as a real finding (upgrade, or an `ignore` with a reason) and keep the triple.
+
 `slow-checks.yml` also runs the long fuzz job (20 minutes per target, findings uploaded as `fuzz-artifacts`;
 `fuzz/DETAILS.md` § "Running and reproducing"), Miri, property mutants, and the pre-release gates. Kani and Shuttle run
 on the landing path instead, as jobs of the Rust lane (§ Slow checks cadence). `ci.yml`'s `Full run (run_all)` job runs

@@ -217,7 +217,11 @@ func For(version string) Release {
 // ForShipping is `For` with another shipping list (tests, and the Windows-on dry run's).
 func ForShipping(version string, shipping []Shipping) Release {
 	oses, _ := shippedFor(version, shipping)
-	return ForOSes(version, oses...)
+	r := ForOSes(version, oses...)
+	if !storePackageShips(version, shipping) {
+		r.Files = slices.DeleteFunc(r.Files, func(f File) bool { return f.Kind == MSIX })
+	}
+	return r
 }
 
 // ForOSes resolves what a release would publish with oses shipped (`For` with `ShippedOSes`;

@@ -94,9 +94,12 @@ Every source below was read on 2026-11-24 unless it says otherwise; "updated" is
 - Policy 10.2.5 ("installed and updated only through the Store") is worded for games and Xbox products, but for an MSIX
   it's moot: the installed files are read-only, and running our NSIS installer from inside the package would install a
   second, separate Cmdr. So a Store install must never download or stage an update.
-- What the build does about it: the packaged process reports a `StorePackage` install, the update check answers
-  `updatedByStore` with no request to `api.getcmdr.com`, and Settings and the manual check say updates come from the
-  Microsoft Store (`apps/desktop/src-tauri/src/updater/DETAILS.md`). The exe-stamp check stays as a second guard.
+- What the build does about it: a packaged process asks where its package came from (`GetStagedPackageOrigin`, Win32, no
+  WinRT activation). A Store-signed one reports `StorePackage`, the check answers `updatedByStore` with no request to
+  `api.getcmdr.com`, and Settings and the manual check say the Microsoft Store keeps it up to date. Any other package (a
+  dev one in Developer Mode, a sideloaded or line-of-business one) reports `SideloadedPackage` and says this copy
+  doesn't update itself, never naming the Store (`apps/desktop/src-tauri/src/updater/DETAILS.md`). The exe-stamp check
+  stays as a second guard.
 - Managed policy: `DisableUpdates` and `MaxUpdateVersion` can't hold a Store install back; Cmdr answers "updates come
   from the Store" there too, and an admin uses Windows' own Store policies. Documented in the managed policy docs.
 - Lost by it: a Store install never hits `update-check`, so the dashboard's active-install count misses Store installs
@@ -105,11 +108,14 @@ Every source below was read on 2026-11-24 unless it says otherwise; "updated" is
 
 ### Commerce and Cmdr's licensing
 
-- "Non-game products made available on PC devices may either use a secure third-party purchase API or the Microsoft
-  Store in-product purchase API for in-app purchases of digital items or services" (policy 10.8.1); subscriptions
-  likewise (10.8.6). Using a third party means: identify the provider at the transaction, authenticate the user, and
-  confirm it; meet PCI DSS (Paddle does); purchases may happen in a browser after install; and **note the third-party
-  purchase API in Partner Center at submission** (10.8.2).
+- Policy 10.8.1, in full for non-game apps: "Non-game products made available on PC devices may either use a secure
+  third-party purchase API or the Microsoft Store in-product purchase API for in-app purchases of digital items or
+  services that are consumed or used within the product." A Commercial license key fits that clause: it's a digital
+  item, bought after install, that's used within the product (it turns Cmdr's commercial use on and removes the
+  "Personal use only" title), and nothing about it is consumed outside the app. Subscriptions likewise (10.8.6), which
+  covers the $39/year updates renewal. Using a third party means: identify the provider at the transaction, authenticate
+  the user, and confirm it; meet PCI DSS (Paddle does); purchases may happen in a browser after install; and **note the
+  third-party purchase API in Partner Center at submission** (10.8.2).
 - 10.8.4: the product and its listing must say what in-product purchases exist and their price range, and be clear about
   any trial's scope. Cmdr's "Personal use only" window title and monthly reminder fit, as long as the listing says
   commercial use needs a paid license.
@@ -137,10 +143,17 @@ Every source below was read on 2026-11-24 unless it says otherwise; "updated" is
   <https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/enter-app-properties>). Ours is
   `getcmdr.com/privacy-policy`; it must cover Windows (device id from `MachineGuid`, crash reports, update checks,
   analytics, the license check, AI requests to the user's own provider) before submission.
-- 10.5.2: publishing a customer's personal info to "an outside service or third party" needs opt-in consent with a way
-  to opt out later. Analytics is opt-out and on by default (`docs/business/product-facts.md`), and goes to our own
-  server. Whether Microsoft reads that as "an outside service" is a review risk, not a settled no; a clear first-run
-  disclosure plus the Settings switch is the defense. Flagged for David.
+- 10.5.2: publishing a customer's personal info to "an outside service or third party" needs opt-in consent, which the
+  policy defines as "the customer gives their express permission in the product user interface for the requested
+  activity", after a description of how the info is accessed, used, or shared and who gets it, plus "a mechanism in the
+  product user interface through which they can later rescind this permission and opt-out". Cmdr's analytics is opt-out
+  and on by default (`docs/business/product-facts.md`) and goes to our own server. So, plainly:
+  - (a) keeping it on by default, with a first-run disclosure and the Settings switch, is still opt-out and doesn't meet
+    that wording. It passes only if Microsoft decides analytics sent to our own server isn't "an outside service or
+    third party", which is a bet on the reviewer.
+  - (b) a real opt-in prompt on the Store build (analytics off until the person says yes, after the description, with
+    the Settings switch to withdraw) meets it.
+  - Which one ships is David's call; nothing is built for it yet.
 - 10.5.4: personal info in transit uses modern cryptography (every request is HTTPS).
 
 ### Age rating and listing
@@ -203,4 +216,5 @@ identity values are public and live in `identity.json`, not in secrets.
   an empty or missing folder.
 - Whether a Store install's process sees the NSIS install's existing settings, and what an NSIS-to-Store switch should
   do with the NSIS copy (two Cmdrs side by side otherwise).
-- That `GetCurrentPackageFullName` answers for the Store-signed package as it does for the dev one.
+- That `GetStagedPackageOrigin` answers `PackageOrigin_Store` for the Store-signed package and a Developer origin for
+  the dev one registered in Developer Mode.

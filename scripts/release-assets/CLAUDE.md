@@ -7,9 +7,9 @@ targets), and the CLI the release pipeline's shell steps call (`../release-asset
 ## Module map
 
 - `manifest/manifest.go`: the rows, `Validate`, and the derived lists (updates, signed files, downloads, binaries,
-  SBOMs, subjects); `shipping.go`: `ShippedOSes` (the platform switch, by `Since` version); `legs.go`: core vs. the
-  per-OS legs a release carries whole or not at all. `release-finish`, `release-mirror`, and `release-evidence` import
-  it (`replace` in their `go.mod`).
+  SBOMs, subjects); `shipping.go`: `ShippedOSes` (the platform switch, by `Since` version, plus Windows'
+  `StorePackageSince` for the MSIX); `legs.go`: core vs. the per-OS legs a release carries whole or not at all.
+  `release-finish`, `release-mirror`, and `release-evidence` import it (`replace` in their `go.mod`).
 - `plan.go` (the `guard` job's step outputs), `latest.go` + `jsonout.go` (`latest.json`), `validate.go` (the one
   `latest.json` validator), `stage.go` (`windows-publish`'s intake of the build artifact), `main.go` (the CLI).
 - **Stays stdlib-only** (`module_test.go`): `guard` and `publish` build it on every macOS release. The NSIS vet, which

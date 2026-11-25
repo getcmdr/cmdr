@@ -1312,7 +1312,8 @@ What a Windows release adds (rows in the manifest):
   updater's payload (`windows-x86_64`). Unsigned (no Authenticode) until D3 step 3; its minisign signature names the
   version (`--app-version`), which the updater requires.
 - `Cmdr_<version>_x64.msix`: the Store package, unsigned (the Store signs it). Its updater is off, the Store updates it
-  (`apps/desktop/packaging/msix/DETAILS.md`).
+  (`apps/desktop/packaging/msix/DETAILS.md`). Only from Windows' `StorePackageSince` in `ShippedOSes`
+  (`scripts/release-assets/manifest/shipping.go`): before it, the leg ships without the MSIX.
 - `cmdr-group-policy-<version>.zip`: the ADMX and en-US ADML files (`apps/desktop/packaging/group-policy/`), for admins.
 - `Cmdr_<version>_windows_x64.rust.cdx.json`: the Rust SBOM of the Windows build, attested against the installer and the
   MSIX.
@@ -1390,6 +1391,8 @@ environment already holds.
 6. **Turn it on**, in one commit:
    1. Add `{OS: Windows, Since: "<the next version>"}` to `ShippedOSes` (never an empty `Since`: older releases must
       resolve as they were published, so the mirror, `release-evidence`, and a pending draft keep reading them right).
+      Add `StorePackageSince: "<the same version>"` only once step 3's identity is committed; without it the leg ships
+      the NSIS installer and no MSIX, and setting it later (to a later version) adds the MSIX from then on.
    2. Update `TestWindowsShipsOnlyOnceTurnedOn`.
    3. Drop `securityAdvisories` from `NOT_WRITTEN_YET` in `crates/cmdr-update-manifest/src/tests.rs`, with a
       `latest.built.json` fixture that carries the member (`scripts/release-assets/DETAILS.md` § Update payloads off
@@ -1438,9 +1441,10 @@ What's ready:
   no secrets and publishes nothing. Its identity is `windows-package store-identity`'s answer: the dev identity while
   `identity.json` holds placeholders, Partner Center's once step 3 above commits it, so that day's next run is a package
   the Store takes.
-- **A Store install's updater stands down**: the process's package identity makes it `NotUpdatable::StorePackage`, and
-  Settings says the Microsoft Store keeps it up to date (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Who may
-  check). Cmdr's managed update keys don't reach a Store install.
+- **A package's updater stands down**: a Store-signed package is `NotUpdatable::StorePackage`, and Settings says the
+  Microsoft Store keeps it up to date; any other package (the CI artifact's dev identity, a sideload) is
+  `SideloadedPackage` and says it doesn't update itself (`apps/desktop/src-tauri/src/updater/DETAILS.md` § Who may
+  check). Cmdr's managed update keys don't reach a package.
 
 The first submission, by hand in Partner Center (the CLI can't create the first one):
 
@@ -1458,9 +1462,9 @@ Later submissions go through the Microsoft Store Developer CLI (`msstore`, Micro
 Partner Center, an app registration, and four repo secrets: `PARTNER_CENTER_TENANT_ID`, `PARTNER_CENTER_SELLER_ID`,
 `PARTNER_CENTER_CLIENT_ID`, and `PARTNER_CENTER_CLIENT_SECRET`. The CLI updates free products only.
 
-Gotcha: once `ShippedOSes` names Windows, `windows-build` packs the MSIX with `-identity release`, so a placeholder
-identity fails the whole Windows leg, NSIS installer included. Commit the identity before turning Windows on, or ship
-the NSIS installer alone by splitting the MSIX out of the leg first.
+The MSIX has its own switch so a missing Store identity can't hold the NSIS installer back: `windows-build` packs it
+(with `-identity release`) only when the plan names it, which it does from Windows' `StorePackageSince`. Set that before
+the identity is committed and the Windows leg fails at packing, NSIS included, so commit the identity first.
 
 ### Building the Windows packages locally
 
