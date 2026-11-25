@@ -4,9 +4,16 @@
  * state hands over, since an inert button is the one thing the view refuses.
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, tick } from 'svelte'
 import RemoteConnectView from './RemoteConnectView.svelte'
+import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+
+/** Lets a wait's quiet start run out, for a test about what the view shows after it. */
+async function pastTheGrace(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, LISTING_LOADING_DELAY_MS + 10))
+  await tick()
+}
 
 describe('a changed host key', () => {
   it('opens the sheet on the new key from "Check the key", and disconnects from Disconnect', async () => {
@@ -64,9 +71,68 @@ describe('the address under the name', () => {
       target,
       props: { name: 'Testnas', address: '100.64.0.7:22', state: { kind: 'connecting', cancel: vi.fn() } },
     })
-    await tick()
+    await pastTheGrace()
 
     expect(target.textContent).toContain('100.64.0.7:22')
+    target.remove()
+  })
+})
+
+/**
+ * A wait shows nothing for its first `LISTING_LOADING_DELAY_MS`, the grace a slow folder
+ * gets before its loading view: a connect that lands inside it never flashes a spinner.
+ * Every state that isn't a wait (a refusal, a sign-in) speaks at once.
+ */
+describe('the quiet start of a wait', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it.each([
+    { label: 'a dial', state: { kind: 'connecting' as const, cancel: vi.fn() } },
+    {
+      label: 'a phone’s prompt',
+      state: {
+        kind: 'waiting_for_device' as const,
+        reason: 'Allow it on the phone',
+        hint: 'Tap Allow.',
+        cancel: vi.fn(),
+      },
+    },
+  ])('keeps $label’s view empty until the loading grace is over, then offers Cancel', async ({ state }) => {
+    vi.useFakeTimers()
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(RemoteConnectView, { target, props: { name: 'Testnas', state } })
+    await tick()
+
+    expect(target.querySelector('button'), 'no spinner or Cancel inside the grace').toBeNull()
+    expect(target.querySelector('.remote-connect')?.textContent.trim()).toBe('')
+
+    vi.advanceTimersByTime(LISTING_LOADING_DELAY_MS - 1)
+    await tick()
+    expect(target.querySelector('button')).toBeNull()
+
+    vi.advanceTimersByTime(1)
+    await tick()
+    const cancel = [...target.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cancel')
+    expect(cancel, 'Cancel once the view shows').toBeDefined()
+    cancel?.click()
+    expect(state.cancel).toHaveBeenCalledTimes(1)
+    target.remove()
+  })
+
+  it('says a refusal at once', async () => {
+    vi.useFakeTimers()
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(RemoteConnectView, {
+      target,
+      props: { name: 'Testnas', state: { kind: 'refused', refusal: 'Testnas said no.' } },
+    })
+    await tick()
+
+    expect(target.textContent).toContain('Testnas said no.')
     target.remove()
   })
 })
@@ -82,7 +148,7 @@ describe('a single dial with its own hint', () => {
         state: { kind: 'connecting', cancel: vi.fn(), hint: 'Still waiting for macOS to connect.' },
       },
     })
-    await tick()
+    await pastTheGrace()
 
     expect(target.querySelector('.hint')?.textContent).toBe('Still waiting for macOS to connect.')
     expect(target.textContent).not.toContain('This can take a few seconds.')

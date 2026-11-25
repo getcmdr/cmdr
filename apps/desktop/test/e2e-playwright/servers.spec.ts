@@ -296,9 +296,12 @@ test.describe('A saved server in the switcher and the pane', () => {
     // succeed (nothing is saved under this id, and the host doesn't resolve), so
     // it settles on the refusal — which is the state this spec is really after:
     // a pane that says what happened instead of showing an empty folder.
-    await expect.poll(async () => tauriPage.isVisible('.remote-connect'), { timeout: waitBudget(15000) }).toBeTruthy()
-
-    const text = await tauriPage.evaluate<string>(`(document.querySelector('.remote-connect')?.textContent ?? '')`)
-    expect(text).toContain(SYNTHETIC_NAME)
+    // Polled on the words, ❌ not the view's presence: a wait's view mounts empty for its
+    // quiet start (`RemoteConnectView`), and only then says anything.
+    await expect
+      .poll(async () => tauriPage.evaluate<string>(`(document.querySelector('.remote-connect')?.textContent ?? '')`), {
+        timeout: waitBudget(15000),
+      })
+      .toContain(SYNTHETIC_NAME)
   })
 })

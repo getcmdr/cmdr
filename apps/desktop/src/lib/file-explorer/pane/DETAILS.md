@@ -2406,6 +2406,14 @@ The producers:
   past 10 s (`../network/DETAILS.md` § "A mount that waits"). Its failures stay its own error pane: they're
   `MountError`s with their own words and retry, ❌ not a `refused` state.
 
+**A wait starts quiet.** For its first `LISTING_LOADING_DELAY_MS` (`listing-presentation.svelte.ts`, the grace a slow
+folder gets before its loading view), a `connecting` or `waiting_for_device` state renders the view's live region and
+nothing in it, so a connect that lands inside that window never flashes a spinner and a Cancel nobody could reach. It
+lives in the view, so every producer gets it, and it counts from the view's mount (when the wait began): a dial that
+turns into a backoff loop keeps showing. Every other state speaks at once, since it has something to read and act on.
+The pane's list is already gone while it's quiet, so focus goes home to the explorer container through `list-focus`'s
+unmount (`isFocusAdrift` → `focusHome`), and keys keep reaching the pane.
+
 **A backoff loop wears the `connecting` state, with a `cycle` payload.** It says how long the loop keeps going and which
 attempt it is on, drains a bar toward the next attempt, and offers Try now beside Cancel and Disconnect. ❗ The
 countdown and Try now are not decoration: without the bar a person can't tell a slow handshake from a wedged one, and

@@ -18,6 +18,13 @@ import { mount, tick } from 'svelte'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import { withPlatform } from '#lib/platform/test-platform.js'
 import { RECONNECT_DELAYS_MS } from '../network/smb-reconnect-manager.svelte'
+import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+
+/** A wait's view stays empty for its quiet start (`RemoteConnectView`): audit what it shows after. */
+async function pastTheGrace(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, LISTING_LOADING_DELAY_MS + 10))
+  await tick()
+}
 
 // The union of what these four views reach for, over the real module: each
 // source file mocked a disjoint slice of it, so a bare union would hand a view
@@ -161,7 +168,7 @@ describe('RemoteConnectView a11y', () => {
       target,
       props: { name: 'Testnas', state: { kind: 'connecting' as const, cancel: vi.fn() } },
     })
-    await tick()
+    await pastTheGrace()
     await expectNoA11yViolations(target)
   })
 
@@ -214,7 +221,7 @@ describe('RemoteConnectView a11y', () => {
         },
       },
     })
-    await tick()
+    await pastTheGrace()
     await expectNoA11yViolations(target)
   })
 
@@ -236,7 +243,7 @@ describe('RemoteConnectView a11y', () => {
         },
       },
     })
-    await tick()
+    await pastTheGrace()
     await expectNoA11yViolations(target)
   })
 
@@ -276,7 +283,7 @@ describe('RemoteConnectView a11y', () => {
         },
       },
     })
-    await tick()
+    await pastTheGrace()
     await expectNoA11yViolations(target)
   })
 

@@ -8,6 +8,7 @@
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import type { RemoteConnectState } from './remote-connect-state'
+    import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
 
     /**
      * The pane, while a remote place is on its way in or has stopped short.
@@ -56,6 +57,26 @@
     /** The line above the heading: the place, and the server it's on when that's worth saying. */
     const identity = $derived(server ? tString('servers.paneState.placeOnServer', { name, server }) : name)
 
+    /**
+     * ❗ A wait shows nothing for its first `LISTING_LOADING_DELAY_MS`, the same grace a slow
+     * folder gets before its loading view, so a connect that lands inside it never flashes a
+     * spinner and a Cancel nobody could reach in time. Counted from when the view mounts,
+     * which is when the wait began: a wait that turns into another wait (a dial into a
+     * backoff loop) keeps showing. A state that isn't a wait (a refusal, a sign-in) speaks
+     * at once: there's something to read and act on.
+     */
+    let graceOver = $state(false)
+    $effect(() => {
+        const timer = setTimeout(() => {
+            graceOver = true
+        }, LISTING_LOADING_DELAY_MS)
+        return () => {
+            clearTimeout(timer)
+        }
+    })
+    const isWait = $derived(connectState.kind === 'connecting' || connectState.kind === 'waiting_for_device')
+    const showsContent = $derived(graceOver || !isWait)
+
     /** The backoff loop's face, when a loop is what's running. */
     const cycle = $derived(connectState.kind === 'connecting' ? connectState.cycle : undefined)
     const waiting = $derived(cycle?.waiting ?? null)
@@ -94,7 +115,9 @@
     })
 </script>
 
+<!-- The live region stays mounted through the quiet start, so the words that follow it are announced. -->
 <div class="remote-connect" role="status" aria-live="polite">
+    {#if showsContent}
     <div class="content">
         <div class="place-name">{identity}</div>
         {#if address}
@@ -240,6 +263,7 @@
             {/if}
         {/if}
     </div>
+    {/if}
 </div>
 
 <style>
