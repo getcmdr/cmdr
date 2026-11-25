@@ -164,6 +164,8 @@ const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
     '`openTerminalHere` (macOS and Windows): “Terminal” is the generic kind of app here, the word Windows Terminal uses too',
   'settings.navigationAndFileOps.card.terminal':
     '`openTerminalHere` (macOS and Windows): “Terminal” is the generic kind of app here, the word Windows Terminal uses too',
+  'commands.handler.openTerminalHere.commandPromptNetworkFolder':
+    'Windows only (the `command_prompt_cant_open_network_folder` outcome): “Terminal” is in the app name Windows Terminal',
   'commands.handler.getInfo.': '`getInfo`: Finder’s Get Info, macOS only',
   'downloads.fda.': '`fullDiskAccess`: the Full Disk Access prompt is macOS only',
   'onboarding.fdaBadge.': '`fullDiskAccess`: the badge needs the capability',
