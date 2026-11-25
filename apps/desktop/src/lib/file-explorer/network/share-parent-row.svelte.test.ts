@@ -26,6 +26,7 @@ vi.mock('#lib/settings/index.js', () => ({
 import {
   isSmbShareVolume,
   loadShareParent,
+  noteShareParent,
   setShareParentRow,
   shareParentOf,
   showsParentRow,
@@ -62,6 +63,26 @@ describe('loadShareParent', () => {
 
     await expect(loadShareParent('v-load')).resolves.toMatchObject({ shareName: 'media' })
     expect(shareParentOf('v-load')).toMatchObject({ serverLabel: 'Testnas' })
+  })
+
+  /**
+   * Regression anchor (#1238): a pane that landed on a saved share before its mount was up
+   * got `null`, and that `null` stuck, so the share's top folder never showed `..` until the
+   * pane left the share. A share's volume id names one share for good, so a later `null`
+   * (asked again too early) never wipes what's known, and any answer replaces a `null`.
+   */
+  it('lets a later answer replace a null, and never lets a null wipe an answer', async () => {
+    getSmbShareParent.mockResolvedValueOnce(null)
+    await loadShareParent('v-early')
+    expect(shareParentOf('v-early')).toBeNull()
+
+    noteShareParent('v-early', parent(null))
+    expect(showsParentRow('v-early')).toBe(true)
+
+    getSmbShareParent.mockResolvedValueOnce(null)
+    await loadShareParent('v-early')
+    noteShareParent('v-early', null)
+    expect(shareParentOf('v-early')).toMatchObject({ shareName: 'media' })
   })
 
   it('caches “no share behind it” too', async () => {

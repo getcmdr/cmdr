@@ -512,7 +512,7 @@ pub async fn set_smb_direct_connection_enabled(volume_id: String, enabled: bool)
 #[tauri::command]
 #[specta::specta]
 pub async fn get_smb_share_parent(volume_id: String) -> Option<ShareParent> {
-    smb_share_parent::share_parent_for(&volume_id).await
+    smb_share_parent::share_parent_of(&volume_id)
 }
 
 /// Saves the "Show “..”" choice for the SMB share behind `volume_id`, measured against
@@ -522,7 +522,7 @@ pub async fn get_smb_share_parent(volume_id: String) -> Option<ShareParent> {
 #[tauri::command]
 #[specta::specta]
 pub async fn set_smb_share_parent_row(volume_id: String, show: bool, default_show: bool) -> bool {
-    smb_share_parent::set_parent_row_for(&volume_id, show, default_show).await
+    smb_share_parent::set_parent_row_of(&volume_id, show, default_show)
 }
 
 // Per-drive indexing enable/disable/rescan lives in `commands/indexing.rs` as a

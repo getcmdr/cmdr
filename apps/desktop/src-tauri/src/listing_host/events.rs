@@ -28,6 +28,8 @@ use cmdr_listing::StalledOn;
 use cmdr_listing::host::{ListingEnd, ListingEvents};
 use cmdr_listing::{DirectoryDiffBatch, SortColumn};
 
+use crate::network::smb_share_parent::ShareParent;
+
 // ============================================================================
 // Wire payloads
 // ============================================================================
@@ -68,6 +70,12 @@ pub struct ListingCompleteEvent {
     /// it's a date this volume doesn't record. The pane keeps its requested
     /// column; this only says which date its rows follow.
     pub effective_sort_by: SortColumn,
+    /// Where `..` leads out of an SMB share, on a listing of the share's top folder
+    /// (#1238); `None` for every other listing. It rides the listing so the pane knows
+    /// whether its top folder has a `..` row in the frame its rows land, and so every
+    /// top-folder listing refreshes the answer: one asked before the share's mount was
+    /// up never sticks (`network/smb_share_parent.rs`).
+    pub share_parent: Option<ShareParent>,
 }
 
 /// Error event payload
@@ -275,6 +283,10 @@ pub(crate) trait ListingEndEffects: Send + Sync {
     fn clear_restricted(&self, path: &AppPath);
     /// Hands a listing's error to the volume's stale-mount check.
     fn note_root_failure(&self, volume_id: &str, error: &VolumeError);
+    /// Where `..` leads out of the SMB share behind `volume_id`, for a listing of its
+    /// top folder. ❗ Memory and the cached mount table only: it runs on the listing's
+    /// way out.
+    fn share_parent(&self, volume_id: &str) -> Option<ShareParent>;
 }
 
 /// The app's answers to [`ListingEndEffects`].
@@ -309,6 +321,10 @@ impl ListingEndEffects for AppListingEndEffects {
 
     fn note_root_failure(&self, volume_id: &str, error: &VolumeError) {
         crate::file_system::volume::note_root_failure(volume_id, error);
+    }
+
+    fn share_parent(&self, volume_id: &str) -> Option<ShareParent> {
+        crate::network::smb_share_parent::share_parent_of(volume_id)
     }
 }
 
@@ -354,6 +370,10 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             self.wire.emit_error(listing_id, message, Some(listing_error));
             return;
         }
+        // Asked only for the top folder: that's the one folder whose `..` it decides.
+        let share_parent = (end.listed_path == end.volume_root)
+            .then(|| self.effects.share_parent(end.volume_id))
+            .flatten();
         self.wire.emit_complete(ListingCompleteEvent {
             listing_id: listing_id.to_string(),
             total_count: end.total_count,
@@ -361,6 +381,7 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             volume_root: end.volume_root.as_str().to_owned(),
             stored_path: end.stored_path.map(AppPathBuf::into_string),
             effective_sort_by: end.effective_sort_by,
+            share_parent,
         });
     }
 
@@ -522,6 +543,8 @@ pub(crate) struct WireCollector {
     pub classified: std::sync::Mutex<Vec<(String, Option<ListingError>)>>,
     /// Per progress event, its loaded count and phase.
     pub progress: std::sync::Mutex<Vec<(usize, Option<ListingPhase>)>>,
+    /// Every `listing-complete`, whole.
+    pub completes: std::sync::Mutex<Vec<ListingCompleteEvent>>,
     /// Every event's kind (`"opening"`, `"error"`, …), in emit order.
     pub sequence: std::sync::Mutex<Vec<&'static str>>,
 }
@@ -556,8 +579,10 @@ impl ListingWire for std::sync::Arc<WireCollector> {
     fn emit_read_complete(&self, _listing_id: &str, _total_count: usize) {
         self.note("read_complete");
     }
-    fn emit_complete(&self, _event: ListingCompleteEvent) {
+    fn emit_complete(&self, event: ListingCompleteEvent) {
+        use cmdr_fs::ignore_poison::IgnorePoison;
         self.note("complete");
+        self.completes.lock_ignore_poison().push(event);
     }
     fn emit_error(&self, listing_id: &str, message: String, error: Option<ListingError>) {
         use cmdr_fs::ignore_poison::IgnorePoison;

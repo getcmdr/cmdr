@@ -149,28 +149,27 @@ impl Drop for Registered {
     }
 }
 
-fn share_on(server: &'static str, share: &'static str) -> impl FnOnce(&str) -> Option<SmbMountInfo> + Send + 'static {
+fn share_on(server: &'static str, share: &'static str) -> impl FnOnce(&str) -> Option<SmbMountInfo> {
     move |_| Some(mount(server, share))
 }
 
 /// The switch read back through the volume, the way the UI reaches it.
-#[tokio::test]
-async fn the_switch_reads_back_through_the_volume() {
+#[test]
+fn the_switch_reads_back_through_the_volume() {
     let dir = crate::test_support::TestDir::new("share_parent_roundtrip");
     let volume = Registered::at("roundtrip", &dir);
     let (server, share) = ("198.51.100.61", "roundtrip");
-    let limit = Duration::from_secs(3);
 
-    let before = share_parent_within(&volume.0, limit, share_on(server, share)).await;
+    let before = share_parent_with(&volume.0, share_on(server, share));
     assert_eq!(before.as_ref().map(|parent| parent.show_parent_row), Some(None));
     assert_eq!(before.map(|parent| parent.share_name), Some(share.to_string()));
 
-    assert!(set_parent_row_within(&volume.0, false, true, limit, share_on(server, share)).await);
-    let off = share_parent_within(&volume.0, limit, share_on(server, share)).await;
+    assert!(set_parent_row_with(&volume.0, false, true, share_on(server, share)));
+    let off = share_parent_with(&volume.0, share_on(server, share));
     assert_eq!(off.map(|parent| parent.show_parent_row), Some(Some(false)));
 
-    assert!(set_parent_row_within(&volume.0, true, true, limit, share_on(server, share)).await);
-    let back = share_parent_within(&volume.0, limit, share_on(server, share)).await;
+    assert!(set_parent_row_with(&volume.0, true, true, share_on(server, share)));
+    let back = share_parent_with(&volume.0, share_on(server, share));
     assert_eq!(
         back.map(|parent| parent.show_parent_row),
         Some(None),
@@ -178,13 +177,25 @@ async fn the_switch_reads_back_through_the_volume() {
     );
 }
 
-#[tokio::test]
-async fn a_volume_with_no_share_behind_it_has_no_parent() {
-    let limit = Duration::from_secs(3);
-    assert!(
-        share_parent_within("test-share-parent-missing", limit, |_| None)
-            .await
-            .is_none()
-    );
-    assert!(!set_parent_row_within("test-share-parent-missing", false, true, limit, |_| None).await);
+#[test]
+fn a_volume_with_no_share_behind_it_has_no_parent() {
+    assert!(share_parent_with("test-share-parent-missing", share_on("198.51.100.62", "gone")).is_none());
+    assert!(!set_parent_row_with("test-share-parent-missing", false, true, |_| None));
+}
+
+/// The share is read at the volume's OWN root: a saved share the pane landed on before
+/// its mount finished (#1238's missing `..`) has nothing there yet, so it answers `None`
+/// for now, and the top-folder listing that follows the mount answers again.
+#[test]
+fn a_volume_whose_mount_isnt_up_yet_has_no_parent_yet() {
+    let dir = crate::test_support::TestDir::new("share_parent_unmounted");
+    let volume = Registered::at("unmounted", &dir);
+    let asked = std::cell::RefCell::new(None);
+    let parent = share_parent_with(&volume.0, |at| {
+        asked.replace(Some(at.to_string()));
+        None
+    });
+    assert!(parent.is_none());
+    let asked = asked.into_inner().expect("the volume's root is read");
+    assert!(asked.contains("share_parent_unmounted"), "read at {asked}");
 }

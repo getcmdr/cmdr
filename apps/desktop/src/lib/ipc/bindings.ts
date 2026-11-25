@@ -13643,6 +13643,14 @@ export type ListingCompleteEvent = {
    *  column; this only says which date its rows follow.
    */
   effectiveSortBy: SortColumn
+  /**
+   *  Where `..` leads out of an SMB share, on a listing of the share's top folder
+   *  (#1238); `None` for every other listing. It rides the listing so the pane knows
+   *  whether its top folder has a `..` row in the frame its rows land, and so every
+   *  top-folder listing refreshes the answer: one asked before the share's mount was
+   *  up never sticks (`network/smb_share_parent.rs`).
+   */
+  shareParent: ShareParent | null
 }
 
 /**

@@ -1053,8 +1053,17 @@ fallback"), so ❗ a new route that switches a share off goes through `set_direc
 
 In an SMB share's top folder, `..` opens the server's share list (#1238; the frontend flow:
 `apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "`..` out of a share's top folder"). `smb_share_parent.rs`
-answers by volume id, reading the share off its mount (bounded, `smb_direct_switch::read_share_within`), so a share
-macOS mounted works like one Cmdr mounted.
+answers by volume id, reading the share mounted at the volume's root off the kernel's cached mount table
+(`volumes::smb_mount_info_at`), so a share macOS mounted works like one Cmdr mounted.
+
+- **Every top-folder listing carries the answer** (`ListingCompleteEvent::share_parent`, filled by
+  `listing_host::events` only when the listed path is the volume root). Two reasons: the pane knows whether its top
+  folder has a `..` row in the same frame as the rows (a late answer inserted the row and shifted every index by one),
+  and an answer asked too early never sticks. ❗ Regression anchor: a saved share the pane landed on before its mount was
+  up answered `None`, the frontend cached it per volume id, and the share's `..` stayed missing until the pane left it
+  (verified in a dev log, 2026-11-25: the listing ran 13:24:28, the share's mount came up 13:24:30).
+- ❗ **No `statfs` here, only memory and the cached table**: the listing asks on its way out, so a wait on the server
+  would hold every top-folder listing of a quiet share.
 
 - **One default plus per-share overrides, an override stored only while it differs.** The default is the frontend
   setting `network.showShareParentRow`, handed in on every write (`set_smb_share_parent_row`'s `default_show`), so a

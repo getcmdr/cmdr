@@ -28,12 +28,25 @@ export function isSmbShareVolume(volume: VolumeInfo | null | undefined): volume 
   return volume != null && volumeKindOf(volume.id, volume.fsType, volume.category) === 'smb'
 }
 
+/**
+ * Caches what Rust said about the share behind `volumeId`: from `getSmbShareParent`, or the
+ * `shareParent` a top-folder listing carries (`listing-complete`).
+ *
+ * ❗ A `null` never replaces an answer. A share's volume id names that one share for good, so
+ * a `null` after an answer only means it was asked too early again (a saved share whose mount
+ * wasn't up yet). The other way round is the fix for #1238's missing `..`: the `null` a pane
+ * got before the mount finished gives way to the next answer.
+ */
+export function noteShareParent(volumeId: string, parent: ShareParent | null): void {
+  if (parent === null && parents.get(volumeId)) return
+  parents.set(volumeId, parent)
+}
+
 /** Asks Rust about the share behind `volumeId` and caches the answer. Never throws. */
 export async function loadShareParent(volumeId: string): Promise<ShareParent | null> {
   try {
-    const parent = await getSmbShareParent(volumeId)
-    parents.set(volumeId, parent)
-    return parent
+    noteShareParent(volumeId, await getSmbShareParent(volumeId))
+    return parents.get(volumeId) ?? null
   } catch (e) {
     log.warn('Reading where “..” leads out of {volumeId} broke down: {error}', { volumeId, error: e })
     return parents.get(volumeId) ?? null

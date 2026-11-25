@@ -371,7 +371,11 @@ Every SMB share, Cmdr-mounted or OS-mounted; SMB only.
   checkbox never needs a "use default" state. `share-parent-rule.ts` is the frontend's read of the rule.
 - **`share-parent-row.svelte.ts` caches Rust's answer per volume id** (`getSmbShareParent`: the server's host, its name
   in words, the share's name as the mount spells it, and the override), so both panes, the switcher's row menu, and the
-  palette command read one value. Every write goes through Rust first.
+  palette command read one value. Every write goes through Rust first. Two ways in: the pane asks when it lands on a
+  share, and every top-folder listing hands over the answer it carries (`listing-loader.ts`, the `shareParent` of
+  `listing-complete`). ❗ `noteShareParent` never lets a `null` replace an answer (a share's volume id names that share
+  for good, so a later `null` only means it was asked too early again), and any answer replaces a `null`. Regression
+  anchor for #1238's missing `..` on a saved share the pane landed on before its mount was up.
 - **The pane side is `../pane/share-parent-pane.svelte.ts`**: it adds the `..` row through `has-parent.ts`'s
   `topFolderLeadsOut`, and leaves through `onVolumeChange` with a `networkHost` (the `{ selectVolume }` arm's own
   `networkHost`), so the history entry carries the host and Back returns to the share. ❗ That `..` row has no parent

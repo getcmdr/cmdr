@@ -52,6 +52,7 @@ import {
 } from '#lib/tauri-commands/index.js'
 import { sweepListingTags } from './tag-sweep'
 import { resolveValidPath } from '../navigation/path-resolution'
+import { noteShareParent } from '../network/share-parent-row.svelte'
 import { restoredCursorIndex } from '../navigation/history-cursor'
 import type { HistoryCursor } from '../navigation/navigation-history'
 import { renderListingError } from '#lib/error-messages/listing-error.js'
@@ -742,6 +743,10 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
       loadedPath = landedPath
       deps.adoptStoredPath(landedPath)
     }
+
+    // A share's top-folder listing says where its `..` leads (#1238), so an answer asked
+    // before the share's mount was up never sticks.
+    if (payload.shareParent) noteShareParent(load.volumeId, payload.shareParent)
 
     // NOW push to history (only on successful completion)
     lastShown = { volumeId: load.volumeId, path: landedPath }

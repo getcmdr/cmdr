@@ -70,6 +70,10 @@ pub(crate) struct ListingCompleteEvent<'a> {
     pub(crate) volume_root: String,
     pub(crate) stored_path: Option<String>,
     pub(crate) effective_sort_by: SortColumn,
+    /// Where `..` leads out of an SMB share's top folder: always `null` here, since the
+    /// page's one volume is no share. `()` stands for the desktop's `ShareParent`, which
+    /// is app-only, and serializes as the same `null`.
+    pub(crate) share_parent: Option<()>,
 }
 
 #[derive(Serialize)]
@@ -207,6 +211,7 @@ impl ListingEvents for DemoEvents {
                         volume_root: volume_root.into_string(),
                         stored_path: stored_path.map(AppPathBuf::into_string),
                         effective_sort_by,
+                        share_parent: None,
                     },
                 );
             }

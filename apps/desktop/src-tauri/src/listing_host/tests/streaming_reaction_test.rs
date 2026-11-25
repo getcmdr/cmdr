@@ -20,6 +20,8 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 use crate::listing_host::events::{ListingEndEffects, TauriListingEvents, WireCollector, error_analytics_category};
+use crate::network::smb_share_parent::ShareParent;
+use crate::network::{HostSource, NetworkHost};
 use crate::test_support::{TestDir, wait_until_async};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
@@ -43,6 +45,9 @@ enum Effect {
 #[derive(Default)]
 struct RecordingEffects {
     calls: std::sync::Mutex<Vec<Effect>>,
+    /// What `share_parent` answers, and the volume ids it was asked about.
+    share_parent: Option<ShareParent>,
+    share_parent_asks: std::sync::Mutex<Vec<String>>,
 }
 
 impl RecordingEffects {
@@ -82,6 +87,11 @@ impl ListingEndEffects for Arc<RecordingEffects> {
             .lock_ignore_poison()
             .push(Effect::NoteRootFailure(volume_id.to_string()));
     }
+
+    fn share_parent(&self, volume_id: &str) -> Option<ShareParent> {
+        self.share_parent_asks.lock_ignore_poison().push(volume_id.to_string());
+        self.share_parent.clone()
+    }
 }
 
 /// What one listing did, end to end.
@@ -107,6 +117,25 @@ impl App {
     /// An engine serving `volume`.
     fn serving(volume: &Registered) -> Self {
         Self::build(volume, None, |reaction| reaction)
+    }
+
+    /// An engine serving `volume`, whose share `..` leads out of as `parent` says.
+    fn serving_share(volume: &Registered, parent: ShareParent) -> Self {
+        let wire = Arc::new(WireCollector::default());
+        let effects = Arc::new(RecordingEffects {
+            share_parent: Some(parent),
+            ..RecordingEffects::default()
+        });
+        let reaction: Arc<dyn ListingEvents> =
+            Arc::new(TauriListingEvents::with(Arc::clone(&wire), Arc::clone(&effects)));
+        Self {
+            engine: TestEngine::builder()
+                .volume(&volume.0, Arc::clone(&volume.1))
+                .events(reaction)
+                .build(),
+            wire,
+            effects,
+        }
     }
 
     /// An engine serving `volume`, with `overlay` folded into its reads and
@@ -228,6 +257,70 @@ async fn a_listing_that_lands_completes_and_clears_its_path_from_the_restricted_
     assert_eq!(ended.effects, [Effect::ClearRestricted(app_path!("/").to_owned())]);
     assert!(ended.analytics.is_empty(), "no error, no analytics");
     assert!(ended.listing.is_cached());
+}
+
+fn testnas_media() -> ShareParent {
+    ShareParent {
+        host: NetworkHost {
+            id: "testnas".to_string(),
+            name: "Testnas".to_string(),
+            hostname: Some("testnas.local".to_string()),
+            ip_address: Some("198.51.100.7".to_string()),
+            port: 445,
+            source: HostSource::Discovered,
+        },
+        server_label: "Testnas".to_string(),
+        share_name: "media".to_string(),
+        show_parent_row: None,
+    }
+}
+
+fn share_with_a_folder(tag: &str) -> Registered {
+    let folder = FileEntry::new("photos".to_string(), "/photos".to_string(), true, false);
+    let inside = FileEntry::new("b.jpg".to_string(), "/photos/b.jpg".to_string(), false, false);
+    Registered::new(
+        tag,
+        Arc::new(InMemoryVolume::with_entries(
+            "Media",
+            vec![entry("a.txt"), folder, inside],
+        )),
+    )
+}
+
+/// Regression anchor (#1238): a share's top folder showed no `..` when the pane asked
+/// before the share's mount was up and that `null` stuck. Every listing of the top
+/// folder now carries the answer itself, so the next one after the mount brings it.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_listing_of_a_shares_top_folder_carries_where_dot_dot_leads() {
+    let volume = share_with_a_folder("reaction-share-top");
+    let app = App::serving_share(&volume, testnas_media());
+    let ended = app.run(&volume.0, app_path!("/"), app.state()).await;
+
+    assert_eq!(ended.events, ["opening", "read_complete", "complete"]);
+    let completes = app.wire.completes.lock_ignore_poison();
+    let carried = completes[0]
+        .share_parent
+        .as_ref()
+        .expect("the top folder carries its `..`");
+    assert_eq!(carried.share_name, "media");
+    assert_eq!(carried.host.id, "testnas");
+    assert_eq!(
+        *app.effects.share_parent_asks.lock_ignore_poison(),
+        std::slice::from_ref(&volume.0)
+    );
+}
+
+/// Below the top folder, `..` is an ordinary parent: nothing is asked, nothing carried.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_listing_below_a_shares_top_folder_carries_no_share_parent() {
+    let volume = share_with_a_folder("reaction-share-sub");
+    let app = App::serving_share(&volume, testnas_media());
+    app.run(&volume.0, app_path!("/photos"), app.state()).await;
+
+    let completes = app.wire.completes.lock_ignore_poison();
+    assert_eq!(completes.len(), 1);
+    assert!(completes[0].share_parent.is_none());
+    assert!(app.effects.share_parent_asks.lock_ignore_poison().is_empty());
 }
 
 // ============================================================================

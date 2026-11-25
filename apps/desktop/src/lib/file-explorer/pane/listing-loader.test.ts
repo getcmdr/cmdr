@@ -40,6 +40,7 @@ const h = vi.hoisted(() => ({
   untrackLiveListing: vi.fn(),
   resolveValidPath: vi.fn(),
   getSetting: vi.fn(),
+  noteShareParent: vi.fn(),
 }))
 
 function register(bucket: ((p: unknown) => void)[]) {
@@ -71,6 +72,7 @@ vi.mock('./listing-liveness', () => ({
 }))
 vi.mock('./tag-sweep', () => ({ sweepListingTags: vi.fn() }))
 vi.mock('../navigation/path-resolution', () => ({ resolveValidPath: h.resolveValidPath }))
+vi.mock('../network/share-parent-row.svelte', () => ({ noteShareParent: h.noteShareParent }))
 vi.mock('#lib/error-messages/listing-error.js', () => ({ renderListingError: (e: unknown) => ({ rendered: e }) }))
 vi.mock('#lib/icon-cache.js', () => ({ evictPerPathIconsForDir: vi.fn() }))
 vi.mock('../rename/rename-activation', () => ({ cancelClickToRename: vi.fn() }))
@@ -96,6 +98,7 @@ beforeEach(() => {
       Promise.resolve({ listingId, status: { kind: 'ok' } }),
   )
   h.findFileIndex.mockResolvedValue(0)
+  h.noteShareParent.mockReset()
   h.pathExistsChecked.mockResolvedValue({ data: true, timedOut: false })
   // Default: the fallback target's owner is unresolvable, so the loader keeps the
   // pane's own volume. Tests that cross a volume boundary override this.
@@ -116,6 +119,18 @@ describe('createListingLoader — generation / drop-foreign token model', () => 
     })
     expect(state.loading).toBe(false)
     expect(spies.onPathChange).toHaveBeenCalledWith('/a')
+  })
+
+  /** Regression anchor (#1238): each top-folder listing refreshes where a share's `..` leads. */
+  it('hands the share parent a complete event carries to the share cache', async () => {
+    const { loader, state } = makeHarness({ volumeId: 'smb-testnas-media', volumePath: '/Volumes/media' })
+    await loader.loadDirectory({ path: '/Volumes/media' })
+    const shareParent = { host: {}, serverLabel: 'Testnas', shareName: 'media', showParentRow: null }
+
+    completeCb(0)({ listingId: state.listingId, totalCount: 1, volumeRoot: '/Volumes/media', shareParent })
+    await vi.waitFor(() => {
+      expect(h.noteShareParent).toHaveBeenCalledWith('smb-testnas-media', shareParent)
+    })
   })
 
   it('takes the hidden count a complete event reports, and a new load clears it', async () => {
