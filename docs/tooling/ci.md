@@ -735,10 +735,9 @@ later PR happened to fix it.
   ratchet names it loudly (a `::warning` per test and a "Passed on a retry" section in the summary) so someone fixes it
   or lists it `flaky`; it never blocks a landing. A `fails` entry that failed any try still counts as failing. Retries
   cost little: the 238 known failures took 67 s of test time in all (run 44941795618), and the slowest passing cells
-  (7–8 s against the 8 s cap: the `cmdr-index` disconnect storms, `simultaneous_dispatches_spawn_exactly_one_reversal`)
-  are the ones a busy runner tips over.
+  (7–8 s against the 8 s cap: the `cmdr-index` disconnect storms) are the ones a busy runner tips over.
 - **Flushes are slow where the tests write**: every `TestDir` and `tempfile` lands under `TEMP`, on the runner's C:, a
-  network-attached disk whose flushes cost about 12x the local D:'s: a `sync_all` 4 ms against 0.33 ms, a fresh
+  network-attached disk whose flushes cost 12x or more the local D:'s: a `sync_all` 4 ms against 0.33 ms, a fresh
   operation-log database 70–190 ms against 6 ms (verified on `windows-latest`, timing cells in diagnostic runs
   45557993954 and 45562348139, 2026-11-25). Defender's real-time scan is off, so it isn't the cost. A cell that flushes
   per iteration (a fresh SQLite database, a durable copy, a safe-overwrite save) sits near the 8 s cap there and times

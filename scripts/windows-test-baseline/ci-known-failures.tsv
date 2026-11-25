@@ -19,7 +19,6 @@ cmdr-index	indexing::reconcile::reconciler::tests::directory_read::the_reconcile
 cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_with_a_new_mtime_is_written	fails	#1466: no nlink or file index from std on Windows (windows-test-failures.md)
 cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_deduped_hardlink_writes_nothing_on_a_repeat_pass	fails	#1466: no nlink or file index from std on Windows (windows-test-failures.md)
 cmdr-index	indexing::reconcile::reconciler::tests::hardlinks::reconcile_sized_hardlink_still_compares_on_size	fails	#1466: no nlink or file index from std on Windows (windows-test-failures.md)
-cmdr-index	indexing::store::tests::subtree_deletes::interrupting_a_subtree_delete_never_strands_a_row	flaky	mostly times out at the 8 s cap on the hosted runner (three of four runs on 2026-11-21) and sometimes finishes; cause unread (windows-test-failures.md)
 cmdr-listing-wasm	multi_rename_test::a_sheet_opens_previews_moves_renames_and_rolls_back	fails	#1424: times out on the hosted runner, cause unread (windows-test-failures.md)
 cmdr-listing-wasm	viewer_test::markdown_renders_follows_a_relative_link_and_serves_its_image	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)
 cmdr-operations	archive_edit::driver_tests::deleting_inside_a_remote_archive_reports_its_upload	fails	#1225: std::path arithmetic on an app path (cluster S) (windows-test-failures.md)

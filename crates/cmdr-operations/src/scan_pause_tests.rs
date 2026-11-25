@@ -50,8 +50,9 @@ const COPIED_TREE_FILES: usize = 80;
 
 /// How long the resumed copy may go without landing another file. Its length is
 /// throughput, so the wait fails on a copy that stopped moving, never on a slow one that
-/// keeps landing.
-const COPY_QUIET: Duration = Duration::from_secs(2);
+/// keeps landing. 4 s, so one slow flush on a busy hosted Windows runner's C: (stalls of
+/// several seconds, #1427) doesn't read as a stopped copy.
+const COPY_QUIET: Duration = Duration::from_secs(4);
 
 /// The resumed copy's overall ceiling: under the global 8 s nextest cap, so this wait's
 /// own message is what a hang prints (`docs/testing.md` § "Waiting for background work (Rust)").
