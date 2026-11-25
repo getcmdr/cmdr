@@ -159,6 +159,50 @@ async fn a_rename_that_copies_moves_the_folder_to_its_new_name() {
     assert!(!volume.exists(app_path!("/a/foo")).await, "the old name is gone");
 }
 
+/// A rename-as-move whose source arrives with a trailing `/` (`/a/foo/`, as a raw IPC
+/// caller can send it) still takes its new name: the start keys the name by the source the
+/// drivers carry (`/a/foo`). Keyed as sent, it missed, landed under its own name, counted as
+/// already in place, and reported done having renamed nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_rename_by_move_of_a_source_sent_with_a_trailing_slash_takes_its_new_name() {
+    use cmdr_fs::testing::wait_until_async;
+    use cmdr_operation_log::types::Initiator;
+    let one_call = Arc::new(InMemoryVolume::new("Disk").with_space_info(10_000_000, 10_000_000));
+    for (label, volume) in [("by copy", store()), ("one call", one_call)] {
+        let engine = TestOperations::new();
+        seed_tree(&volume, "/a/foo").await;
+        let id = format!("trailing-rename-{}-{label}", std::process::id());
+        engine.volumes().register(&id, Arc::clone(&volume) as Arc<dyn Volume>);
+        let events = Arc::new(CollectorEventSink::new());
+
+        engine
+            .start_rename_by_move(
+                events.clone(),
+                id,
+                vec![(
+                    crate::wire_paths::seam_path(Path::new("/a/foo/")).into_owned(),
+                    "bar".to_string(),
+                )],
+                "/a".to_string(),
+                VolumeCopyConfig::default(),
+                Initiator::User,
+                None,
+            )
+            .await
+            .expect("starts");
+        wait_until_async(std::time::Duration::from_secs(10), "the rename to settle", || {
+            !events.settled.lock_ignore_poison().is_empty()
+        })
+        .await;
+
+        assert_eq!(read(&volume, "/a/bar/a.txt").await, b"alpha", "{label}");
+        assert!(
+            !volume.exists(app_path!("/a/foo")).await,
+            "{label}: the old name is gone"
+        );
+    }
+}
+
 /// The same target names work on a volume whose renames are one call: the
 /// rename-merge path renames straight to the new name.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

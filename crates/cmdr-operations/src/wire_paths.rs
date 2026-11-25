@@ -82,6 +82,14 @@ pub(crate) fn seam_path(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }
 
+/// [`engine_path`]'s value as the typed path the drivers carry (a trailing `/` trimmed): the
+/// key a start files per-source data under, so a body that reads its source back through
+/// [`seam_path`] finds it (`x/` and `x` are one source). Goes with [`engine_path`] (#1225).
+#[must_use]
+pub(crate) fn engine_twin(path: &AppPath) -> AppPathBuf {
+    seam_path(&engine_path(path)).into_owned()
+}
+
 /// The NEW name `name` inside the folder `dir` a body holds as `std::path` (a create's
 /// parent, a rename target's folder), joined the app path's way (`ListedFolder`) and handed
 /// back as the body holds paths. ❌ Never `dir.join(name)`: on Windows that puts a `\`

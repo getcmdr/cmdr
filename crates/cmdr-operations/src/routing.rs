@@ -31,7 +31,7 @@ use super::source_binding::ExpectedSources;
 use super::target_names::{NotAName, TargetNames};
 use super::transfer::volume::{PathRole, failed_path_text, native_roots, on_local_root, unregistered_volume_error};
 use super::types::{HomeFolderAction, ReadOnlySide, VolumeCopyConfig, WriteOperationError, WriteOperationStartResult};
-use super::wire_paths::{engine_path, engine_paths, text_without_trailing_separators};
+use super::wire_paths::{engine_path, engine_paths, engine_twin, text_without_trailing_separators};
 use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use cmdr_fs::volume::RoutedKind;
 use cmdr_fs::volume::Volume;
@@ -640,19 +640,23 @@ impl crate::Operations {
         initiator: Initiator,
         expected_sources: Option<ExpectedSources>,
     ) -> Result<WriteOperationStartResult, WriteOperationError> {
-        // `x/link/` names the link, ❌ never its target (`wire_paths.rs`). Before the
-        // target names, which key on the source path.
         let (typed_sources, names): (Vec<AppPathBuf>, Vec<String>) = renames.into_iter().unzip();
         let dest_path = text_without_trailing_separators(dest_path);
-        // Keyed by the typed source the drivers carry, each name read as ONE name by
-        // the app path's rules (a POSIX server's `a\b` too, on every host).
-        let target_names =
-            TargetNames::new(typed_sources.iter().cloned().zip(names.iter().cloned())).map_err(|NotAName(name)| {
-                WriteOperationError::InvalidName {
-                    path: name,
-                    message: "a new name is one name, not a path".into(),
-                }
-            })?;
+        // Keyed by the source as the drivers carry it (`engine_twin`: `x/link/` names the
+        // link, so its trailing `/` goes, as `engine_path` trims it for the bodies), each
+        // name read as ONE name by the app path's rules (a POSIX server's `a\b` too). A raw
+        // `/a/x/` keyed as sent missed the driver's `/a/x`, landed under its own name, and
+        // reported done having renamed nothing.
+        let target_names = TargetNames::new(
+            typed_sources
+                .iter()
+                .map(|source| engine_twin(source))
+                .zip(names.iter().cloned()),
+        )
+        .map_err(|NotAName(name)| WriteOperationError::InvalidName {
+            path: name,
+            message: "a new name is one name, not a path".into(),
+        })?;
         let sources: Vec<PathBuf> = typed_sources.iter().map(|source| engine_path(source)).collect();
         // Never the person's own home folder, nor a folder holding it (`home_folder.rs`).
         if let Some(refusal) = self.home_folder_guard(&volume_id, &sources, HomeFolderAction::Rename) {
