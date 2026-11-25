@@ -23,6 +23,10 @@ import (
 //
 // ❗ `in_flight_sweep.rs` also has an unrelated private `async fn on_volume(ledger, ...)`; its
 // two calls count too, since no text scan can tell the two apart.
+//
+// Not wrappers: `label_of`, `native_text`, and `own_name` (`listed_name.rs`) read app text and
+// hand back text, no `std::path` (`own_name`'s root case crosses through `std_of`, counted at
+// its definition); `as_std_legacy` is the bridge itself, in the `files` budget.
 var appPathBridgeWrappers = []string{"std_of", "into_std", "on_volume", "seam_path", "engine_path"}
 
 // appPathBridgeWrapperCrates are the crates defining the wrappers. Every wrapper is
@@ -83,6 +87,28 @@ const stdJoinDirective = "// allowed-std-join:"
 // `Result`, and `Path::join` doesn't.
 var stdJoinTypedSuffixes = []string{"?", ".ok()", ".map_err(", ".expect(", ".unwrap", ".is_ok()", ".is_err()"}
 
+// stdJoinCallFormPattern is the path form of the join (`Path::join(&dir, name)`), which
+// `.join(` doesn't see.
+var stdJoinCallFormPattern = regexp.MustCompile(`\b(Path|PathBuf)::join\s*\(`)
+
+// stdJoinPushPattern is a `PathBuf::push` of a name onto a path-shaped binding (`dir.push(`,
+// `dest_path.push(`). A text scan can't tell a `Vec`'s `push` from a `PathBuf`'s, so it asks
+// for a path-shaped receiver name (`*_path`, `*_dir`, `dir`, `dest`, …) and an argument that
+// isn't a tuple: a heuristic, ❗ a `PathBuf` named otherwise (`path`, `p`) passes.
+var stdJoinPushPattern = regexp.MustCompile(`\b(\w*_(path|dir|root|folder)|dir|root|folder|dest|destination|parent|target)\.push\(\s*([^(\s])`)
+
+// pathPushCount counts [stdJoinPushPattern]'s pushes on a line, a plural receiver (`paths`,
+// `dirs`: a collection) excepted.
+func pathPushCount(line string) int {
+	n := 0
+	for _, m := range stdJoinPushPattern.FindAllStringSubmatch(line, -1) {
+		if !strings.HasSuffix(m[1], "s") {
+			n++
+		}
+	}
+	return n
+}
+
 // stdJoinMaxLookahead bounds how many following lines a wrapped join's argument may span.
 const stdJoinMaxLookahead = 30
 
@@ -95,22 +121,64 @@ func inStdJoinScope(relPath string) bool {
 	return false
 }
 
-// stdJoinTestCutoff matches the line a file's test code starts at: `#[cfg(test)]` or
-// `#[cfg(all(test, ...))]`.
-var stdJoinTestCutoff = regexp.MustCompile(`^#\[cfg\((all\(\s*)?test\b`)
+// stdJoinTestGate matches a test-only cfg: `#[cfg(test)]` or `#[cfg(all(test, ...))]`. It
+// gates only the ONE item after it (a `use`, a `fn`, a `mod tests { … }`), ❌ never the rest of
+// the file: a `#[cfg(test)]` on one helper used to hide every production join below it.
+var stdJoinTestGate = regexp.MustCompile(`^#\[cfg\((all\(\s*)?test\b`)
+
+// testItemEnd returns the index of the last line of the item a test cfg at lines[gate] gates:
+// past its other attributes, to the `;` that ends a one-line item or the `}` that closes its
+// body (braces outside string literals and comments).
+func testItemEnd(lines []string, gate int) int {
+	depth, opened := 0, false
+	for i := gate + 1; i < len(lines); i++ {
+		code := strings.TrimSpace(stripLineComment(lines[i]))
+		if !opened && (code == "" || strings.HasPrefix(code, "#[")) {
+			continue
+		}
+		inString := false
+		for j := 0; j < len(code); j++ {
+			c := code[j]
+			switch {
+			case inString:
+				if c == '\\' {
+					j++
+				} else if c == '"' {
+					inString = false
+				}
+			case c == '"':
+				inString = true
+			case c == '{':
+				depth++
+				opened = true
+			case c == '}':
+				depth--
+			}
+		}
+		if opened && depth <= 0 {
+			return i
+		}
+		if !opened && strings.HasSuffix(code, ";") {
+			return i
+		}
+	}
+	return len(lines) - 1
+}
 
 // scanStdJoins returns one site per untyped `std::path` join on a production line of a file
-// (everything before its first test cfg), and the file's unused opt-out directives.
+// (every line outside a test-gated item), and the file's unused opt-out directives.
 func scanStdJoins(relPath string, lines []string) ([]appPathStdBridgeSite, []orphanDirective) {
 	tracker := newDirectiveTracker(stdJoinDirective, "//")
 	var sites []appPathStdBridgeSite
-	for idx, line := range lines {
+	for idx := 0; idx < len(lines); idx++ {
+		line := lines[idx]
 		trimmed := strings.TrimSpace(line)
-		if stdJoinTestCutoff.MatchString(trimmed) {
-			break
+		if stdJoinTestGate.MatchString(trimmed) {
+			idx = testItemEnd(lines, idx)
+			continue
 		}
 		tracker.observe(idx+1, line)
-		if strings.HasPrefix(trimmed, "//") || strings.Contains(line, "ListedFolder") {
+		if strings.HasPrefix(trimmed, "//") {
 			continue
 		}
 		n := stdJoinCallCount(lines, idx)
@@ -138,7 +206,8 @@ func scanStdJoins(relPath string, lines []string) ([]appPathStdBridgeSite, []orp
 // the following lines, as rustfmt splits it.
 func stdJoinCallCount(lines []string, idx int) int {
 	line := stripLineComment(lines[idx])
-	n := strings.Count(line, "with_file_name(")
+	n := strings.Count(line, "with_file_name(") + strings.Count(line, "set_file_name(")
+	n += len(stdJoinCallFormPattern.FindAllStringIndex(line, -1)) + pathPushCount(line)
 	end := min(idx+1+stdJoinMaxLookahead, len(lines))
 	rest := "\n" + strings.Join(lines[idx+1:end], "\n")
 	for offset := 0; ; {

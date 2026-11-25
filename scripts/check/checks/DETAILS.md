@@ -2511,34 +2511,40 @@ Checks by app and tech:
   count, #1317) on a ratchet that only shrinks: the conversion's progress meter; `wrapperCalls` counts each call through
   a named wrapper over the bridge (`appPathBridgeWrappers`: `std_of`, `into_std`, `on_volume`, `seam_path`,
   `engine_path`; only in cmdr-operations and cmdr-fs, where they're defined crate-private; not a `.method(`, a `fn`
-  definition, or a `Type::` associated fn) so the OK line reads direct plus wrapper crossings (#1469); `stdJoin` counts,
-  in the production code (before a file's first `#[cfg(test)]` / `#[cfg(all(test, ...))]`) of cmdr-operations and
-  `operations_host/`, each `with_file_name(` and each `.join(x)` that no `Result` handler (`?`, `.ok()`, `.map_err(`,
-  `.expect(`, `.unwrap`, `.is_ok()`/`.is_err()`) follows, as a typed `AppPath` / `ListedFolder` join does, minus a
-  separator-literal string join and a `ListedFolder` line, since on Windows `/share` joined with a name reads as one
-  name in `/` on a POSIX volume; a native local join opts out with `// allowed-std-join: <reason>` (an unused one
-  fails); plus two text budgets, `appTextToPath` and `pathFromBareText`, counted per line, a tripwire that refuses a
-  production escape producer while either is above zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text
-  handed to an app-spelling door; `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs,
-  and OS cfgs outside a `platform/` seam, on a per-file ratchet; § "Platform cfg placement"), os-test-gate-reason (an
-  OS-gated test file or test module with no reason comment, on a shrink-only allowlist; § "OS-gated tests say why"),
-  log-private-values (an unmarked path, name, or identity in a log macro, strict with no allowlist, and a marked value
-  made into a `String`; § "The log-private-values check"), test-sleep (flags a fixed `thread::sleep` /
-  `tokio::time::sleep` in test code, where a condition-based `wait_until` belongs; opt out a genuine
-  sleep-is-the-subject site with `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a test fixture built on
-  `std::env::temp_dir()`, where every process on the machine shares the path and two suite runs delete each other's live
-  fixtures; the sanctioned fixture is `crate::test_support::TestDir`, and a site where the temp root is load bearing
-  opts out with `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct literal of
-  `CachedScanResult` / `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only be one of
-  the shapes a named constructor actually builds; it ships with ZERO findings on purpose and is a regression fence
-  rather than a finder — the shapes are already clean, and the point is that the next test author can't undo that by
-  copy-pasting an old literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`,
-  `cmdr-fs`, `cmdr-local`, `cmdr-operations`, and the IPC twins of `cmdr-fs` file types listed in `deriveDefaultTrees`
-  carries a `// DEFAULT-OK: <why>` line, because a zero value on a fact-carrying type isn't "no information", it's a
-  claim about the disk that nobody made; it and probe-unwrap fail when a governed member scans no file,
-  `minScannedPerGovernedRoot`, so a tree moving out from under them reads red), probe-unwrap-justified (flags
-  `\.is_directory(…).await.unwrap_or(…)` in production `file_system/`, `cmdr-local`, and `cmdr-operations` code, where a
-  probe that COULDN'T answer gets collapsed into a confident "no" and picks the branch that deletes; opt out with
+  definition, or a `Type::` associated fn) so the OK line reads direct plus wrapper crossings (#1469; `label_of`,
+  `native_text`, and `own_name` aren't wrappers: they read app text with no `std::path` in it, `own_name`'s root case
+  crossing through `std_of`, counted at its definition); `stdJoin` counts, in the production code of cmdr-operations and
+  `operations_host/` (every line outside the ONE item a `#[cfg(test)]` / `#[cfg(all(test, ...))]` gates: a gated `use`
+  or helper `fn` hides nothing below it), each `with_file_name(`, `set_file_name(`, `Path::join(` / `PathBuf::join(`
+  call form, `.push(x)` onto a path-shaped binding (`*_path`, `*_dir`, `*_root`, `*_folder`, `dir`, `root`, `dest`, …,
+  not a tuple argument), and each `.join(x)` that no `Result` handler (`?`, `.ok()`, `.map_err(`, `.expect(`, `.unwrap`,
+  `.is_ok()`/`.is_err()`) follows, as a typed `AppPath` / `ListedFolder` join does, minus a separator-literal string
+  join, since on Windows `/share` joined with a name reads as one name in `/` on a POSIX volume; a native local join
+  opts out with `// allowed-std-join: <reason>` (an unused one fails). ❗ It can't see: a path built as text
+  (`PathBuf::from(format!("{dir}/{name}"))`), a `components()` rebuild, a `.push(` onto a `PathBuf` with another name
+  (`path`, `p`), a join split from its `Result` handler by a `let`, or an `extend` of names; plus two text budgets,
+  `appTextToPath` and `pathFromBareText`, counted per line, a tripwire that refuses a production escape producer while
+  either is above zero, ❗ not a sound gate, and a zero-tolerance refusal of OS text handed to an app-spelling door;
+  `crates/cmdr-fs/DETAILS.md` § "App paths"), platform-cfg-placement (negated OS cfgs, and OS cfgs outside a `platform/`
+  seam, on a per-file ratchet; § "Platform cfg placement"), os-test-gate-reason (an OS-gated test file or test module
+  with no reason comment, on a shrink-only allowlist; § "OS-gated tests say why"), log-private-values (an unmarked path,
+  name, or identity in a log macro, strict with no allowlist, and a marked value made into a `String`; § "The
+  log-private-values check"), test-sleep (flags a fixed `thread::sleep` / `tokio::time::sleep` in test code, where a
+  condition-based `wait_until` belongs; opt out a genuine sleep-is-the-subject site with
+  `// allowed-test-sleep: <reason>`), fixed-temp-dir (flags a test fixture built on `std::env::temp_dir()`, where every
+  process on the machine shares the path and two suite runs delete each other's live fixtures; the sanctioned fixture is
+  `crate::test_support::TestDir`, and a site where the temp root is load bearing opts out with
+  `// allowed-fixed-temp-dir: <reason>`), no-hand-rolled-fixture (bans a struct literal of `CachedScanResult` /
+  `SourceHint` / `VolumePreflight` / `WrittenFile` in test code, so a fixture can only be one of the shapes a named
+  constructor actually builds; it ships with ZERO findings on purpose and is a regression fence rather than a finder —
+  the shapes are already clean, and the point is that the next test author can't undo that by copy-pasting an old
+  literal), derive-default-justified (every `#[derive(..., Default, ...)]` under `file_system/`, `cmdr-fs`,
+  `cmdr-local`, `cmdr-operations`, and the IPC twins of `cmdr-fs` file types listed in `deriveDefaultTrees` carries a
+  `// DEFAULT-OK: <why>` line, because a zero value on a fact-carrying type isn't "no information", it's a claim about
+  the disk that nobody made; it and probe-unwrap fail when a governed member scans no file, `minScannedPerGovernedRoot`,
+  so a tree moving out from under them reads red), probe-unwrap-justified (flags `\.is_directory(…).await.unwrap_or(…)`
+  in production `file_system/`, `cmdr-local`, and `cmdr-operations` code, where a probe that COULDN'T answer gets
+  collapsed into a confident "no" and picks the branch that deletes; opt out with
   `// allowed-probe-unwrap: <why the guess is truthful>`), discarded-outcome (a function that returns NOTHING while
   dropping a typed answer from the free function it delegates to; three of these shipped before it existed, and each
   ended as an IPC command or MCP tool inventing a success. `Result` and `Option` returns are deliberately out of scope:

@@ -749,6 +749,7 @@ async fn restore_remote_cycle(
 fn unique_temporary_path(source: &Path, row_id: &str) -> Option<PathBuf> {
     let parent = twin_path::folder_of(source)?;
     for _ in 0..16 {
+        // allowed-std-join: the LOCAL swap's hop temp, beside a native file it stats (remote rows hop typed).
         let candidate = parent.join(format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
         if std::fs::symlink_metadata(&candidate).is_err() {
             return Some(candidate);
