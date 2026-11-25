@@ -2043,12 +2043,15 @@ included; the hidden couplings it found are why waves B and C differ from round 
     back through `on_volume` in `top_level_conflict.rs`, `copy_concurrent_source.rs`, and `move_same.rs` (it used to
     cross inside `copy_single_path`); the same-volume engine and the archive move-out cross their `std::path` sources
     once into the typed driver (`on_volume`, replacing the closures' own bridge calls).
-- **Tenth pass** (2026-11-25, branch `app-path-pass-10`; the lead, plus helper `inmem-typed` on the in-memory store in
-  its own worktree, cherry-picked): the test double, the resolver, and the aside take app paths. Bridge calls 880 → 842
-  (`cmdr-operations` 423 → 416, `cmdr-fs` 205 → 174), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 267; no entry
-  grew. Wrapper lines in `cmdr-operations` production code (uncounted, #1469): `std_of(` 73 → 77, `on_volume(` 38 → 36,
-  `seam_path(` 17, `engine_path(` 16, `into_std(` 5. Hazards 62 → 62 (nothing on the list; the resolver's read-backs
-  were wrapper crossings). What it is:
+- **Tenth pass** (2026-11-25, branch `app-path-pass-10`, PR #1486; two leads in turn, plus helpers `inmem-typed` on the
+  in-memory store and three on the Windows joins below, each in its own worktree, cherry-picked): the test double, the
+  resolver, the aside, and a new name's join take app paths. Bridge calls 880 → 816 (`cmdr-operations` 423 → 391,
+  `cmdr-fs` 205 → 173), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 261; no entry grew. Wrapper lines in
+  `cmdr-operations` production code (uncounted, #1469; counted as non-comment lines holding the call text, in files
+  outside `*_test(s).rs`, `tests/`, `testing/`, and `test_support`, definitions included, so the base reads higher than
+  the ninth pass's figures): `std_of(` 74 → 78, `on_volume(` 46 → 44, `seam_path(` 19 → 20, `engine_path(` 17 → 18,
+  `into_std(` 6 → 6. Hazards 62 → 62 (nothing on the list; the resolver's read-backs were wrapper crossings, and the
+  joins below were `Path::join` on a body's folder, which the list's regex doesn't see). What it is:
   - **`InMemoryVolume` keys its store by `AppPathBuf`** (`cmdr-fs` `in_memory/keys.rs`, `scan.rs`), its arithmetic the
     app path's, so on Windows `/a\b.txt` is one file in `/` beside `/a/b.txt` and `foo\..` a name; listing text,
     `FileEntry.path`, and error text stay byte for byte (lossy decode of an escape, as `display()`); a drive path keys
@@ -2060,11 +2063,23 @@ included; the hidden couplings it found are why waves B and C differ from round 
     `ClaimedNames` ledger keys by the `std::path` spelling (a reservation only lands on a local disk).
   - **`DisplacedDestination` mints its aside typed** (`staged_paths.rs::typed_aside`), beside the original; a bridge
     value or an escape-range name keeps the `std::path` mint.
+  - **❗ The typed double exposed `Path::join` on a remote folder.** Once the store keyed by app path, 61 Windows cells
+    failed: on Windows `Path::new("/dest").join(name)` is `/dest\name`, ONE name in `/` on the double as on every POSIX
+    server (where the `PathBuf` store had split it). Three kinds: the double's own `&Path` test helpers, which now read
+    `\` as the `std::path` separator it is (`in_memory.rs::app_of`; a `\` name reaches the store only through a typed
+    `Volume` call); cells joining with `std::path` before a `Volume` call, now typed or formatted; and production joins,
+    real Windows bugs on SFTP, MTP, and the like. A NEW name joins typed through `wire_paths::seam_child`
+    (`ListedFolder`; a refusal stays that item's answer): `create.rs::new_entry_path`, `look_alike::spelled_new_path`,
+    `rename::rename_target`, and both ends of `rename/validity.rs`. A name already plain joins by text through
+    `unique_name::sibling_in`: the compress landing's look-alike, the bulk rename's hop temp, the respell compare.
 - **Left in 10a after the tenth pass**: the create, rename-validity, and preflight-sources entry points,
   `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's `std::path` body (`move_same.rs`,
-  `rename_merge.rs`, `top_level_move_hints`); the op's `ClaimedNames` ledger and the staged writes' placeholder release
-  (`std::path` keys); `scan_walker`'s cached walk (with 10f's lossless row); #1316 (a Rename or ` (recovered)` name of a
-  non-UTF-8 Linux name stays lossy, byte for byte as before).
+  `rename_merge.rs`, `top_level_move_hints`; `move_same.rs`' `dest_path.join(name)` sameness compare misreads a `\` leaf
+  on Windows); `create.rs::refuse_routed_create`'s `Path::new(parent).join(name)` before validation; any other
+  `Path::join` onto a body's folder (no check sees one: a sweep of `.join(` in production `cmdr-operations` would); the
+  op's `ClaimedNames` ledger and the staged writes' placeholder release (`std::path` keys); `scan_walker`'s cached walk
+  (with 10f's lossless row); #1316 (a Rename or ` (recovered)` name of a non-UTF-8 Linux name stays lossy, byte for byte
+  as before).
 
 ### 10b. `cmdr-index`
 
