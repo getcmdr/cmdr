@@ -168,6 +168,7 @@ mod tests {
             kind,
             label: None,
             share_root: None,
+            remote: None,
             is_alias: false,
             fs_type: None,
             read_only: false,
