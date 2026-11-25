@@ -80,11 +80,7 @@ impl ConcurrentCopy<'_> {
         // as is the caller's choice where there is one (`TransferLeaves`), so
         // the pre-check and any clash below are at THAT name; otherwise its own,
         // split by the app path (#1457).
-        let chosen = self
-            .config
-            .leaves
-            .chosen_for(&std_of(source_path))
-            .and_then(std::ffi::OsStr::to_str);
+        let chosen = self.config.leaves.chosen_for(&std_of(source_path));
         // A name the destination folder can't hold: no pre-check and no resolver;
         // the task asks about it, per item, and writes nothing.
         let (mut dest_item_path, dest_name_refused) = match top_level(self.dest_path, source_path, chosen) {

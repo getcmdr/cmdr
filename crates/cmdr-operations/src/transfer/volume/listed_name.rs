@@ -9,6 +9,7 @@ use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder, PathArithmet
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{NotAChildName, VolumeError};
 use std::borrow::Cow;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /// One listed name, checked as one plain name before anything joins it: the
@@ -63,7 +64,7 @@ impl<'a> ListedName<'a> {
 /// (nearly every name), its decoded bytes when those are UTF-8 (a literal
 /// escape-range code point the bridge escaped), else `None` (a Linux name that
 /// isn't UTF-8, a Windows unpaired surrogate).
-pub(super) fn native_text(app: &str) -> Option<Cow<'_, str>> {
+pub(crate) fn native_text(app: &str) -> Option<Cow<'_, str>> {
     if !app.chars().any(is_escape) {
         return Some(Cow::Borrowed(app));
     }
@@ -75,11 +76,31 @@ pub(super) fn native_text(app: &str) -> Option<Cow<'_, str>> {
 /// (a POSIX server's `a\b.txt` is one name), read as the lossy native text the
 /// `std::path` name showed, so a Linux name that isn't UTF-8 reads as it did.
 pub(crate) fn label_of(path: &AppPath) -> Option<String> {
-    let name = path.file_name()?;
-    Some(match unescape_bytes(name) {
+    let name = own_name(path)?;
+    Some(match unescape_bytes(&name) {
         Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
-        Err(_) => name.to_owned(),
+        Err(_) => name.into_owned(),
     })
+}
+
+/// A top-level source's own last name, in the app's spelling: the app path's split
+/// (a POSIX server's `a\b.txt` is one name), and at a ROOT, which has no last name to
+/// the app path, the one `std::path` read there, so a root keeps the name it always
+/// landed under: `sftp://u@h:22/` lands as `u@h:22`, `smb://nas/share/` as `share`, and
+/// on macOS and Linux `C:/` as `C:` and `//server/share` as `share`. `/`, a Windows drive
+/// or UNC root, and a bridge value ending in `..` have none.
+pub(crate) fn own_name(path: &AppPath) -> Option<Cow<'_, str>> {
+    if let Some(name) = path.file_name() {
+        return Some(Cow::Borrowed(name));
+    }
+    if !path.is_root() {
+        return None;
+    }
+    let native = std_of(path);
+    // A root is app text with no escape in it (a scheme authority, a drive letter, a share), so its
+    // `std::path` name is that text.
+    let name = native.file_name()?.to_str()?;
+    Some(Cow::Owned(name.to_owned()))
 }
 
 /// `name` in `dir`. The join refuses only on Windows: a drive or UNC folder
@@ -106,18 +127,29 @@ pub(crate) enum TopLevel {
 /// `TransferLeaves`, a rename's target name) or its own last name: the app path's
 /// split, so a POSIX server's `a\b.txt` is one name on every host, where
 /// `std::path`'s Windows split landed it as `b.txt` (#1457).
-pub(crate) fn top_level(dest_root: &AppPath, source: &AppPath, chosen: Option<&str>) -> TopLevel {
-    let name = match chosen {
-        Some(chosen) => AppName::from_listed_text(chosen).ok(),
-        None => match source.file_name() {
-            Some(own) => AppName::from_app_spelling(own).ok().map(Cow::Borrowed),
+///
+/// A chosen name that isn't UTF-8 text answers [`TopLevel::Refused`], ❌ never the
+/// source's own name: landing it under a name the person didn't pick is worse than
+/// asking.
+pub(crate) fn top_level(dest_root: &AppPath, source: &AppPath, chosen: Option<&OsStr>) -> TopLevel {
+    let (name, shown): (Option<Cow<'_, AppName>>, Cow<'_, str>) = match chosen {
+        Some(chosen) => match chosen.to_str() {
+            Some(text) => (AppName::from_listed_text(text).ok(), Cow::Borrowed(text)),
+            None => return TopLevel::Refused(shown_under(dest_root, &chosen.to_string_lossy())),
+        },
+        None => match own_name(source) {
+            Some(own) => (
+                AppName::from_app_spelling(&own)
+                    .ok()
+                    .map(|name| Cow::Owned(name.to_owned())),
+                own,
+            ),
             None => return TopLevel::At(dest_root.to_owned()),
         },
     };
-    let shown = chosen.or_else(|| source.file_name()).unwrap_or_default();
     match name.and_then(|name| ListedFolder::new(dest_root).join(&name).ok()) {
         Some(path) => TopLevel::At(path),
-        None => TopLevel::Refused(shown_under(dest_root, shown)),
+        None => TopLevel::Refused(shown_under(dest_root, &shown)),
     }
 }
 
@@ -164,3 +196,7 @@ pub(crate) fn into_std(path: AppPathBuf) -> PathBuf {
     };
     respelled.unwrap_or_else(|| PathBuf::from(path.into_string()))
 }
+
+#[cfg(test)]
+#[path = "listed_name_tests.rs"]
+mod tests;

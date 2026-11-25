@@ -220,7 +220,6 @@ where
                 .leaves
                 .chosen_for(&source_std)
                 .or_else(|| state.target_names.chosen_for(&source_std))
-                .and_then(std::ffi::OsStr::to_str)
         };
         let initial_dest_path = match top_level(dest_root, source_path, chosen) {
             TopLevel::At(path) => path,

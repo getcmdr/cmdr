@@ -2010,7 +2010,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
 
 - **Ninth pass, milestone 1** (2026-11-25, branch `worktree-agent-af05b2518a5689a0f`, PR #1465; one agent, no helpers):
   the drivers' sources and destination are app paths end to end, which fixes #1457. Bridge calls 893 → 880
-  (`cmdr-operations` 436 → 423), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 268; no entry grew. What it is:
+  (`cmdr-operations` 436 → 423), `appTextToPath` 33 → 33, `pathFromBareText` 268 → 268; no entry grew. ❗ The meter
+  counts direct bridge calls only, so it reads lower than the crossings: in `cmdr-operations`' production code the lines
+  calling a named wrapper went `std_of(` 31 → 73, `on_volume(` 34 → 39, `seam_path(` 18 → 17, `engine_path(` 14 → 16,
+  `into_std(` 8 → 5 (mostly a typed driver handing a value to a seam still keyed by `std::path`: the tree, the probe,
+  the sink, the resolver). Counting through wrappers is #1469. What it is:
   - **Typed from the start to the bodies**: `copy_between_volumes` / `move_between_volumes` take the routed start's
     `AppPathBuf`s and cross once (`wire_paths::engine_path`) only for the native shortcut, the same-volume engine, and
     the summary; the source binding keeps typed sources by position (`retain_bound_app_sources_on`).
@@ -2018,15 +2022,19 @@ included; the hidden couplings it found are why waves B and C differ from round 
     the path spelling, `NameAtDest`, `ConflictDecision`, `build_pre_skip_set`), `landing_at` (`ListedName::app`),
     `copy_single_path`, `copy_directory_streaming`, the sequential extract, the preflight's hints, the concurrent task,
     `HeldSource`, `LandedReadBack`, and `journal::record_volume_transfer_source` all take app paths.
-  - **One top-level split**: `transfer/volume/listed_name.rs::top_level` (the chosen name, else `AppPath::file_name`,
-    joined by `ListedFolder`) feeds the serial loop, the concurrent `prepare_source`, and the copy's pre-skip identity
-    check. A name the destination folder can't hold (`TopLevel::Refused`: a drive folder and a `\`) is asked about per
-    item (`TransferContext::dest_name_refused`, `CopyTask::dest_name_refused`), where it failed the transfer.
+  - **One top-level split**: `transfer/volume/listed_name.rs::top_level` (the chosen name, else `own_name`: the app
+    path's last name, and at a ROOT the name `std::path` read there, so `sftp://u@h:22/` still lands in `/dst/u@h:22`
+    and on macOS and Linux `C:/` in `/dst/C:`, byte for byte `main`'s; a review of #1465 caught the first draft merging
+    a scheme root into the destination) feeds the serial loop, the concurrent `prepare_source`, the copy's pre-skip
+    identity check, the pre-known-conflict match, and the progress labels. A name the destination folder can't hold
+    (`TopLevel::Refused`: a drive folder and a `\`, or a chosen name that isn't text) is asked about per item
+    (`TransferContext::dest_name_refused`, `CopyTask::dest_name_refused`), where it failed the transfer.
   - **The journal's ends**: the two `seam_path` crossings `record_volume_transfer_source` read the roots through are
     gone; a file source's row splits through `journal_split_app`, which now takes the typed split only for a CANONICAL
     path (a Windows suite's native-spelled bridge root keeps its `journal_split` row). Pinned for every root shape (`/`,
-    a drive, a scheme root, a volume-relative root, a top-level `a\b.txt`, a source that is its volume's root), source
-    AND destination, copy and move: `journal_root_shape_tests.rs`.
+    a drive, a scheme root, a volume-relative root, a top-level `a\b.txt`, a source that is its volume's root, a scheme,
+    drive, or UNC root as the source, `/` or a scheme root as the destination, a selected link), file AND directory
+    rows, source AND destination, copy and move: `journal_root_shape_tests.rs`.
   - **Byte-exact on macOS and Linux** by construction: a typed path's split and join equal `Path`'s there for every
     canonical path; progress labels and the name-rules check read the app name as the native text it spells (`label_of`,
     `native_text`), so a non-UTF-8 Linux name reads and checks as it did; the dest-inside-source guard still compares by
@@ -2037,9 +2045,9 @@ included; the hidden couplings it found are why waves B and C differ from round 
     once into the typed driver (`on_volume`, replacing the closures' own bridge calls).
 - **Left in 10a after the ninth pass's milestone 1**: `InMemoryVolume`'s `PathBuf` store (milestone 2, which re-enables
   the `\` cells on Windows); the resolver's `ResolvedConflict.write_path` and `naming.rs` (a `Rename` pick on a `\` name
-  still splits on Windows); `DisplacedDestination`'s aside mint; the create, rename-validity, and preflight-sources
-  entry points, `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's `std::path` body
-  (`move_same.rs`, `top_level_move_hints`); `scan_walker`'s cached walk (with 10f's lossless row).
+  still splits on Windows: #1470); `DisplacedDestination`'s aside mint; the create, rename-validity, and
+  preflight-sources entry points, `leaf_validation`, `target_names`, `transfer_leaves`; the same-volume engine's
+  `std::path` body (`move_same.rs`, `top_level_move_hints`); `scan_walker`'s cached walk (with 10f's lossless row).
 
 ### 10b. `cmdr-index`
 

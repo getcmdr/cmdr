@@ -853,16 +853,20 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   name holding `\` (the typed join refuses it), so `merge_level` refuses such a child per item BEFORE `where_it_lands`,
   ❌ never as the level's failure, which would blame and, on a Skip, drop the whole folder.
 - **A TOP-LEVEL source's name is the app path's own last name** (#1457): the drivers take their sources and destination
-  as app paths, and `listed_name.rs::top_level` (its chosen name, else `AppPath::file_name`, joined by `ListedFolder`)
-  is where every volume driver's top-level destination comes from: the serial driver's loop
-  (`transfer_driver/async_driver.rs`, so the cross-volume move and the same-volume rename too), the concurrent copy's
-  `prepare_source`, and the copy's pre-skip self-collision check. On Windows `std::path` split a POSIX server's
-  top-level `a\b.txt` and landed it as `b.txt`. A name the folder can't hold (`TopLevel::Refused`, a drive folder and a
-  `\`) gets no pre-check and no resolver: the closure (or the concurrent task) writes nothing and asks about it through
-  `refused_item.rs::skip_if_refused`, per item (`TransferContext::dest_name_refused`, `CopyTask::dest_name_refused`).
-  `landing.rs::landing_at` splits a top-level destination typed too (`ListedName::app`). Pinned on every host by
-  `top_level_name_tests.rs` (hostile names onto a remote destination, and `\` names onto a drive-spelled one) and, for
-  the journal's two ends, `journal_root_shape_tests.rs`.
+  as app paths, and `listed_name.rs::top_level` (its chosen name, else `own_name`, joined by `ListedFolder`) is where
+  every volume driver's top-level destination comes from: the serial driver's loop (`transfer_driver/async_driver.rs`,
+  so the cross-volume move and the same-volume rename too), the concurrent copy's `prepare_source`, and the copy's
+  pre-skip self-collision check. On Windows `std::path` split a POSIX server's top-level `a\b.txt` and landed it as
+  `b.txt`. A name the folder can't hold (`TopLevel::Refused`, a drive folder and a `\`) gets no pre-check and no
+  resolver: the closure (or the concurrent task) writes nothing and asks about it through
+  `refused_item.rs::skip_if_refused`, per item (`TransferContext::dest_name_refused`, `CopyTask::dest_name_refused`), as
+  is a chosen name that isn't text (❌ never swapped for the source's own). ❗ A ROOT has no last name to the app path,
+  so `own_name` keeps the one `std::path` read there: copying `sftp://u@h:22/` into `/dst` lands in `/dst/u@h:22` (and
+  on macOS and Linux `C:/` in `/dst/C:`), ❌ never mixed into `/dst`, which is also where the progress tree
+  (`TreeLanding::under`) says it goes. `/` and a Windows drive or UNC root have none and land in the folder itself, as
+  they did. `landing.rs::landing_at` splits a top-level destination typed too (`ListedName::app`). Pinned on every host
+  by `top_level_name_tests.rs` (hostile names onto a remote destination, `\` names onto a drive-spelled one, a scheme
+  root), `listed_name_tests.rs`, and, for the journal's two ends, `journal_root_shape_tests.rs`.
 - `InMemoryVolume::set_reported_name` models a source that lists a hostile name. Pinned by `hostile_names_tests.rs` (a
   bad filename, a folder listed as `..`, and the symlink-then-folder trick: a copy never merges a source folder through
   a link already at the destination, under every policy) and a drag-out cell in

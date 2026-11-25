@@ -116,7 +116,8 @@ use std::collections::HashSet;
 use std::future::Future;
 use std::path::Path;
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
+use super::volume::{native_text, own_name};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use super::staged_write::Replaces;
 use std::pin::Pin;
@@ -360,9 +361,9 @@ pub(super) fn build_pre_skip_set(
             if known_directory_paths.contains(*p) {
                 return false;
             }
-            // The app path's own last name: a POSIX server's `a\b.txt` is one name
-            // on Windows too, as the pre-flight's conflict list names it.
-            p.file_name().is_some_and(|n| names.contains(n))
+            // The source's own last name (`listed_name.rs::own_name`: a POSIX server's `a\b.txt` is
+            // one name on Windows too), as the native text the conflict list names it by.
+            own_name(p).is_some_and(|own| native_text(&own).is_some_and(|text| names.contains(&*text)))
         })
         .cloned()
         .collect()
