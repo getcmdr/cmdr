@@ -119,30 +119,32 @@ fn orphan_count(conn: &Connection) -> usize {
 /// still be completable by a plain re-run.
 #[test]
 fn interrupting_a_subtree_delete_never_strands_a_row() {
-    let seed = |conn: &Connection| {
-        let root = insert_entry(conn, ROOT_ID, "doomed", true, None);
-        let under = seed_subtree(conn, root, 3, 2);
-        let mine = insert_entry(conn, ROOT_ID, "photos", true, None);
-        let user_rows = seed_subtree(conn, mine, 2, 2);
-        assert_eq!(
-            (under, user_rows),
-            (28, 12),
-            "the fixture's shape is load-bearing below"
-        );
-        (root, under)
-    };
-
+    // One database for the whole sweep: each prefix gets a doomed subtree of its
+    // own beside the bystander `photos` tree, and every earlier prefix's subtree is
+    // already gone (each run finishes its own). A fresh database per prefix cost 28
+    // SQLite creations, which spent the 8 s cap on a hosted Windows runner's
+    // slow-flushing C: drive (#1427).
     let (_store, dir) = open_temp_store();
-    let db_path = dir.path().join("test-index.db");
-    let total = {
-        let conn = IndexStore::open_write_connection(&db_path).unwrap();
-        seed(&conn).1
+    let conn = IndexStore::open_write_connection(&dir.path().join("test-index.db")).unwrap();
+    let mine = insert_entry(&conn, ROOT_ID, "photos", true, None);
+    let user_rows = seed_subtree(&conn, mine, 2, 2);
+    let doomed = |conn: &Connection, n: u64| {
+        let root = insert_entry(conn, ROOT_ID, &format!("doomed-{n}"), true, None);
+        (root, seed_subtree(conn, root, 3, 2))
     };
+    let (first_root, total) = doomed(&conn, 0);
+    assert_eq!(
+        (total, user_rows),
+        (28, 12),
+        "the fixture's shape is load-bearing below"
+    );
+    assert_eq!(
+        IndexStore::delete_descendants_by_id(&conn, first_root).expect("clear the sizing subtree"),
+        total
+    );
 
     for stop_after in 1..=total {
-        let (_store, dir) = open_temp_store();
-        let conn = IndexStore::open_write_connection(&dir.path().join("test-index.db")).unwrap();
-        let (root, under) = seed(&conn);
+        let (root, under) = doomed(&conn, stop_after);
         let before = entry_count(&conn);
 
         let cut =

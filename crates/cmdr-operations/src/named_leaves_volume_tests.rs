@@ -85,11 +85,12 @@ fn in_memory(name: &str, lane: Option<&str>) -> InMemoryVolume {
     }
 }
 
-/// One route's two ends, registered on an engine journaling into its own log,
-/// with a source folder and a destination folder in each volume's own paths.
+/// One route's two ends, registered on an engine journaling into its own log
+/// (or none, for a start that must refuse), with a source folder and a
+/// destination folder in each volume's own paths.
 struct Rig {
     engine: TestOperations,
-    log: TestOperationLog,
+    log: Option<TestOperationLog>,
     route: Route,
     source: Arc<dyn Volume>,
     dest: Arc<dyn Volume>,
@@ -109,6 +110,23 @@ impl Rig {
     async fn on_lane(route: Route, lane: Option<&str>) -> Self {
         let log = TestOperationLog::new("named-leaves-volume");
         let engine = TestOperations::journaling_into(&log);
+        Self::around(engine, Some(log), route, lane).await
+    }
+
+    /// A rig whose engine journals nothing, for a start that refuses before it
+    /// writes or journals anything. A fresh journal is a fresh SQLite database,
+    /// and a sweep of 21 refusals building one each spent its whole 8 s cap on
+    /// them on a hosted Windows runner (#1427).
+    async fn refusing(route: Route) -> Self {
+        Self::around(TestOperations::new(), None, route, None).await
+    }
+
+    /// The journal this rig's engine writes; only a journaling rig has one.
+    fn log(&self) -> &TestOperationLog {
+        self.log.as_ref().expect("a journaling rig (`Rig::new`)")
+    }
+
+    async fn around(engine: TestOperations, log: Option<TestOperationLog>, route: Route, lane: Option<&str>) -> Self {
         let tmp = TestDir::new("named_leaves_volume");
         let across_local = matches!(route, Route::CopyAcrossLocal | Route::MoveAcrossLocal);
         let local: Arc<dyn Volume> = if across_local {
@@ -273,7 +291,7 @@ impl Rig {
 
     /// Undoes `op_id` the way the app does: the gate decides, then the engine runs.
     async fn undo(&self, op_id: &str) {
-        let writer = self.log.writer();
+        let writer = self.log().writer();
         let vm = self.engine.volumes();
         let plan = rollback_operation(vm.as_ref(), writer, op_id, |_plan| Ok(()))
             .unwrap_or_else(|refusal| panic!("{:?}: the named transfer reverses: {refusal:?}", self.route));
@@ -607,7 +625,8 @@ async fn a_source_pruned_after_admission_leaves_the_rest_landing_named() {
 // ============================================================================
 
 /// Runs `case` on each of `routes` and expects `want`, with nothing written.
-/// `case` gets a fresh rig and returns the sources and names.
+/// `case` gets a fresh rig (one that journals nothing: a refusal comes before
+/// any journal row) and returns the sources and names.
 async fn refuses_on<F, Fut>(
     routes: &[Route],
     want: impl Fn(&Result<WriteOperationStartResult, WriteOperationError>) -> bool,
@@ -617,7 +636,7 @@ async fn refuses_on<F, Fut>(
     Fut: Future<Output = (Vec<PathBuf>, TransferLeaves)>,
 {
     for &route in routes {
-        let rig = Arc::new(Rig::new(route).await);
+        let rig = Arc::new(Rig::refusing(route).await);
         let (sources, leaves) = case(Arc::clone(&rig)).await;
         let dest_before = rig.dest_names().await;
         let events = Arc::new(CollectorEventSink::new());
@@ -820,7 +839,7 @@ async fn a_transfer_onto_a_second_local_volume_journals_each_end_under_its_own_v
         let report = rig.file("report.pdf", b"report").await;
         let op_id = rig.run(vec![report.clone()], TransferLeaves::default()).await;
 
-        let conn = open_read_connection(rig.log.db()).expect("read conn");
+        let conn = open_read_connection(rig.log().db()).expect("read conn");
         let header = read_operation(&conn, &op_id).expect("read").expect("journaled");
         assert_eq!(header.source_volume_id.as_deref(), Some("root"), "{route:?}");
         assert_eq!(header.dest_volume_id.as_deref(), Some("usb"), "{route:?}");
@@ -860,7 +879,7 @@ async fn a_transfer_onto_a_volume_mounted_under_root_keeps_every_row_on_root() {
             .run(vec![report.clone(), photos.clone()], TransferLeaves::default())
             .await;
 
-        let conn = open_read_connection(rig.log.db()).expect("read conn");
+        let conn = open_read_connection(rig.log().db()).expect("read conn");
         let header = read_operation(&conn, &op_id).expect("read").expect("journaled");
         assert_eq!(header.source_volume_id.as_deref(), Some("root"), "{route:?}");
         assert_eq!(header.dest_volume_id.as_deref(), Some("usb"), "{route:?}");

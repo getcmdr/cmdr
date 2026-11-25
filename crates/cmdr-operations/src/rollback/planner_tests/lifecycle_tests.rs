@@ -140,9 +140,29 @@ async fn simultaneous_dispatches_spawn_exactly_one_reversal() {
     // through, and the whole-op run reversed the rows the person left out.
     const DISPATCHERS: usize = 8;
     const ROUNDS: usize = 20;
+    // One journal holds every round's op, each over a file of its own: a fresh
+    // journal per round is a fresh SQLite database, and 20 of them spent the 8 s
+    // cap on a hosted Windows runner's slow-flushing C: drive (#1427).
+    let rig = Rig::new();
+    let dst = Arc::new(InMemoryVolume::new("Dst"));
+    for round in 0..ROUNDS {
+        put(&dst, &format!("/f{round}.txt"), b"x").await;
+    }
+    rig.register("src", Arc::new(InMemoryVolume::new("Src")));
+    rig.register("dst", dst);
+    for round in 0..ROUNDS {
+        let file = format!("/f{round}.txt");
+        rig.seed(
+            &format!("op-{round}"),
+            OpKind::Copy,
+            "src",
+            Some("dst"),
+            RollbackState::Rollbackable,
+            vec![file_unit(0, "src", &file, "dst", &file, 1)],
+        );
+    }
     for round in 0..ROUNDS {
         let op_id = format!("op-{round}");
-        let rig = rig_with_rollbackable_op(&op_id).await;
         let spawned = std::sync::atomic::AtomicUsize::new(0);
         let start = std::sync::Barrier::new(DISPATCHERS);
         let refusals: Vec<_> = std::thread::scope(|scope| {

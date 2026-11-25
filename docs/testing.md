@@ -316,6 +316,14 @@ wait_until_async(Duration::from_secs(5), "recovery to reopen the device", || {
   `wait_until_async_while_moving`: it fails when the work's own progress stops changing for `quiet`, or at `ceiling`, so
   a slow healthy run passes and a stall still fails fast. Better still, shrink the work (`S3Volume::set_part_floor` cuts
   multipart parts at 5 MiB).
+- **A sweep pays its fixture's flushes once per iteration, so build only what the iteration reads.** A fresh SQLite
+  database (an operation log, an index store) or a durable file costs a disk flush or several, and a flush's price is
+  the disk's: 6 ms on a fast one, 70–190 ms on the hosted Windows runner's C: (`docs/tooling/ci.md` § Windows lane). A
+  sweep of 21 refusals that each built a journal it never wrote spent its whole 8 s cap there (#1427). The patterns: a
+  rig that only refuses journals nothing (`named_leaves_volume_tests.rs`, `Rig::refusing`); a sweep shares one database
+  and gives each case rows of its own (`subtree_deletes.rs`, `lifecycle_tests.rs`'s simultaneous dispatches); a cell
+  copies only as many durable files as its claim needs (`scan_pause_tests.rs`, `COPIED_TREE_FILES`). ❌ Don't answer
+  such a timeout with a longer cap.
 - **A `wait_until` longer than the test's nextest cap is dead code.** The global cap is 8 s (`.config/nextest.toml`),
   and nextest SIGKILLs at it, so a 30 s in-test wait under the default cap can never fail with its own message: the test
   just dies saying nothing. Writing a generous wait means also giving the test an override whose period exceeds that

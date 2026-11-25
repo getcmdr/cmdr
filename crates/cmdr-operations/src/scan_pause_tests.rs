@@ -29,7 +29,7 @@ use super::types::{
 };
 use super::{OperationEventSink, Operations};
 use cmdr_fs::ignore_poison::IgnorePoison;
-use cmdr_fs::testing::{TestDir, wait_until_async};
+use cmdr_fs::testing::{TestDir, wait_until_async, wait_until_async_while_moving};
 use cmdr_operation_log::types::{Initiator, OperationId};
 
 /// Deadline for every wait here. Generous on purpose: each wait has a real
@@ -41,10 +41,21 @@ const WAIT: Duration = Duration::from_secs(5);
 /// be confused for each other.
 const TREE_FILES: usize = 400;
 
-/// Deadline for a resumed copy of the whole tree to land: real I/O on [`TREE_FILES`] files,
-/// which a hosted Windows runner (its scanner opening every new file) took past [`WAIT`] on
-/// some runs and well under it on others. Still a condition, never a sleep.
-const COPY_WAIT: Duration = Duration::from_secs(30);
+/// The tree a cell COPIES whole after resuming, smaller than [`TREE_FILES`]: every copied
+/// file is durable, one flush each on Windows and Linux, and 400 flushes on a hosted
+/// Windows runner's network-attached C: drive (4 ms each idle, far more under load) took
+/// the cell past its 8 s cap (#1427). A walk paused at its first tick still has plenty left
+/// of 80, so "it parked" and "it finished" stay apart.
+const COPIED_TREE_FILES: usize = 80;
+
+/// How long the resumed copy may go without landing another file. Its length is
+/// throughput, so the wait fails on a copy that stopped moving, never on a slow one that
+/// keeps landing.
+const COPY_QUIET: Duration = Duration::from_secs(2);
+
+/// The resumed copy's overall ceiling: under the global 8 s nextest cap, so this wait's
+/// own message is what a hang prints (`docs/testing.md` § "Waiting for background work (Rust)").
+const COPY_CEILING: Duration = Duration::from_secs(7);
 
 fn unique(label: &str) -> String {
     static N: AtomicU64 = AtomicU64::new(0);
@@ -116,12 +127,12 @@ impl ScanPreviewEventSink for PauseOnFirstTick {
     }
 }
 
-/// A tree of [`TREE_FILES`] files across a handful of directories.
-fn build_tree(root: &std::path::Path) {
+/// A tree of `files` files (a multiple of eight) across a handful of directories.
+fn build_tree(root: &std::path::Path, files: usize) {
     for bucket in 0..8 {
         let dir = root.join(format!("d{bucket}"));
         std::fs::create_dir_all(&dir).expect("create bucket");
-        for n in 0..(TREE_FILES / 8) {
+        for n in 0..(files / 8) {
             std::fs::write(dir.join(format!("f{n}.bin")), b"xyz").expect("write file");
         }
     }
@@ -145,7 +156,7 @@ async fn start_copy_with_a_real_scan(engine: &TestOperations, label: &str) -> Ru
     let dir = TestDir::new(label);
     let src = dir.join("src");
     let dst = dir.join("dst");
-    build_tree(&src);
+    build_tree(&src, TREE_FILES);
     std::fs::create_dir_all(&dst).expect("create dst");
 
     let preview_id = unique("preview");
@@ -404,6 +415,9 @@ struct PauseOnFirstScanTick {
     engine: Operations,
     fired: AtomicBool,
     scanned: std::sync::Mutex<Vec<usize>>,
+    /// Every progress event of any phase: the copy's own movement, which the
+    /// resumed copy's wait reads (a progress event fires only on progress).
+    progress_events: AtomicU64,
     complete: AtomicBool,
     /// The failure the operation ended in, so a cell names it instead of timing out.
     failed: std::sync::Mutex<Option<String>>,
@@ -416,6 +430,7 @@ impl PauseOnFirstScanTick {
             failed: std::sync::Mutex::new(None),
             fired: AtomicBool::new(false),
             scanned: std::sync::Mutex::new(Vec::new()),
+            progress_events: AtomicU64::new(0),
             complete: AtomicBool::new(false),
         }
     }
@@ -427,6 +442,7 @@ impl PauseOnFirstScanTick {
 
 impl OperationEventSink for PauseOnFirstScanTick {
     fn emit_progress(&self, event: super::types::WriteProgressEvent) {
+        self.progress_events.fetch_add(1, Ordering::SeqCst);
         if event.phase != super::types::WriteOperationPhase::Scanning {
             return;
         }
@@ -466,7 +482,7 @@ async fn an_operations_own_scan_parks_too() {
     let dir = TestDir::new("scanpause-ownscan");
     let src = dir.join("src");
     let dst = dir.join("dst");
-    build_tree(&src);
+    build_tree(&src, COPIED_TREE_FILES);
     std::fs::create_dir_all(&dst).expect("create dst");
 
     let sink = Arc::new(PauseOnFirstScanTick::new(Operations::clone(&engine)));
@@ -492,7 +508,7 @@ async fn an_operations_own_scan_parks_too() {
     let op_id = OperationId::from(start.operation_id.clone());
 
     // The walk stops climbing: two reads of the same count with a beat between
-    // them, which a walk over 400 files would blow past in microseconds.
+    // them, which a walk over 80 files would blow past in microseconds.
     let mut parked_at = 0usize;
     for _ in 0..100 {
         let before = sink.files_scanned();
@@ -506,16 +522,20 @@ async fn an_operations_own_scan_parks_too() {
     }
     assert!(parked_at > 0, "the scan must have counted something before parking");
     assert!(
-        parked_at < TREE_FILES,
-        "the scan itself has to park mid-tree; walking the whole {TREE_FILES}-file tree and parking at the \
+        parked_at < COPIED_TREE_FILES,
+        "the scan itself has to park mid-tree; walking the whole {COPIED_TREE_FILES}-file tree and parking at the \
          driver's gate afterwards is the behavior this test exists to rule out (stopped at {parked_at})"
     );
     assert!(!sink.complete.load(Ordering::SeqCst));
 
     engine.resume_operation(&op_id);
-    wait_until_async(COPY_WAIT, "the resumed copy to finish", || {
-        sink.complete.load(Ordering::SeqCst) || sink.failed.lock().expect("the failure slot").is_some()
-    })
+    wait_until_async_while_moving(
+        COPY_QUIET,
+        COPY_CEILING,
+        "the resumed copy to finish",
+        || sink.progress_events.load(Ordering::SeqCst),
+        || sink.complete.load(Ordering::SeqCst) || sink.failed.lock().expect("the failure slot").is_some(),
+    )
     .await;
     assert_eq!(
         *sink.failed.lock().expect("the failure slot"),

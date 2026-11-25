@@ -737,6 +737,15 @@ later PR happened to fix it.
   cost little: the 238 known failures took 67 s of test time in all (run 44941795618), and the slowest passing cells
   (7–8 s against the 8 s cap: the `cmdr-index` disconnect storms, `simultaneous_dispatches_spawn_exactly_one_reversal`)
   are the ones a busy runner tips over.
+- **Flushes are slow where the tests write**: every `TestDir` and `tempfile` lands under `TEMP`, on the runner's C:, a
+  network-attached disk whose flushes cost about 12x the local D:'s: a `sync_all` 4 ms against 0.33 ms, a fresh
+  operation-log database 70–190 ms against 6 ms (verified on `windows-latest`, timing cells in diagnostic runs
+  45557993954 and 45562348139, 2026-11-25). Defender's real-time scan is off, so it isn't the cost. A cell that flushes
+  per iteration (a fresh SQLite database, a durable copy, a safe-overwrite save) sits near the 8 s cap there and times
+  out on a busy runner (#1427); the fix is a cheaper fixture (`docs/testing.md` § "Waiting for background work (Rust)"),
+  ❌ never a longer cap. Moving `TEMP` to D: nearly halves the run (the `cmdr-operations` and `cmdr-index` suites: 135 s
+  against 226 s) but fails nine app cells that assume the scratch folder sits on the system drive (`commands::volumes`
+  expecting `root`, `commands::rename`, the recycle-bin trash cells; run 45564041810).
 - **The run must be whole**: nextest exiting with anything but 0 or 100 (some tests failed) turns the step red before
   the ratchet reads anything, since a binary nextest couldn't list or a bad filterset leaves a partial report. A build
   failure stops the job at `cargo test --no-run`, a missing report fails the upload, and a report where nothing ran, a
