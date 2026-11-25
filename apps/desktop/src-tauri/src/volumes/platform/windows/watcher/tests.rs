@@ -539,6 +539,50 @@ fn a_query_and_a_lock_let_go_once_and_one_take_back_restores_it() {
     drop(watch);
 }
 
+/// Task 39b: Cmdr's own eject lets go of the drive before it asks Windows, and that let-go is the
+/// eject's. The removal query its request brings is a second let-go, and the refusal Windows
+/// sends when another app vetoes doesn't take the drive back under the eject (its lock attempt
+/// would meet the handle again); the eject's own take-back does, root handle and watch both.
+#[test]
+fn an_ejects_let_go_outlasts_windows_refusal_and_its_own_take_back_restores_it() {
+    let pinned = Pinned::new("eject-let-go");
+    let watch = DriveWatch::started(Recorder::default());
+    let listing = watch_listing(&pinned.drive, "eject-let-go");
+    let root = pinned.root();
+    let registration = watch.track("eject-let-go-volume", &root).expect("registers");
+    assert!(pinned.is_pinned(), "the handles pin the parent");
+
+    assert!(
+        watch.let_go_for_eject("eject-let-go-volume", &root),
+        "the worker answers"
+    );
+    assert!(!pinned.is_pinned(), "let go for the eject, nothing pins the parent");
+
+    // What the eject's request brings: the query, then the veto's refusal.
+    watch.query_remove(registration);
+    watch.refuse_removal(registration);
+    assert!(
+        !pinned.is_pinned(),
+        "Windows' refusal leaves the eject's let-go alone: ❌ no handle under the eject's lock"
+    );
+    assert_eq!(
+        coverage_for_listings(std::slice::from_ref(&listing)),
+        WatchCoverage::None,
+        "and the listing watch stays let go"
+    );
+
+    assert!(
+        watch.take_back_after_eject("eject-let-go-volume", &root),
+        "the worker answers"
+    );
+    wait_until(Duration::from_secs(10), "the listing watch to re-arm", || {
+        rearmed(&listing)
+    });
+    stop_watching(&listing);
+    assert!(pinned.is_pinned(), "the eject's take-back brought the root handle back");
+    drop(watch);
+}
+
 /// A refusal and a lock's end can both arrive: the second take-back does nothing, and the drive
 /// still lets go on the next query.
 #[test]

@@ -19,31 +19,32 @@ the next section.
   `DeviceReadiness`, `BackendKind`, `SignInShape`, and `DeviceUnavailableReason`); `ids` + `canonical_root` + `mtp_ids`
   (the ID funnel and double-mount collapse); `published_locations` (the switcher list's dedupe both platforms share,
   where a favorite never claims a volume's path); `smb_mount_source` (the `user:password@host:port` split both
-  platforms' SMB mount-source parsers share, bracketed IPv6 included); `windows_volume_ids` and `windows_device_change`
-  (Windows' drive ids, and what a `WM_DEVICECHANGE` says plus the drive table's diff, pure so every OS tests them);
-  `capabilities.rs`; `share_link.rs` (`ShareLink`, a URL that's a credential and so prints nothing in `Debug`, and
-  `ShareLinkExpiry`); `entry_kind.rs` (`File` / `Directory` / `Symlink`, the answer `Volume::entry_kind` gives, a link
-  reported as the link, where `is_directory` may follow it); `child_name.rs` (`ChildName`, a listed name proven to be
-  one plain path component, the only way a source listing's name may join a destination path; a refusal is
-  `VolumeError::InvalidName`. Why and who calls it: `crates/cmdr-operations/src/transfer/volume/DETAILS.md` § "Listed
-  names are untrusted"); `transport_fault.rs` (`VolumeError::transport_fault`: the ONE answer to "did the link fail, or
-  did the other end say no?", an exhaustive match plus `OsErrorClass::is_transport`, which the write engine's retry,
-  outage wait, and local error mapping all ask; `crates/cmdr-operations/src/transfer/DETAILS.md` § "Retrying one FILE");
-  `server_side.rs` (`RenameWork`, `SubtreeTally`, `ServerCopyProgress`: work a server does on its own, § "Server-side
-  work"); `routed.rs` (`ResolvedVolume`, `RoutedKind`: what the app's `VolumeManager::resolve` answers, here so the
-  listing engine reads it without the app); `password_locked.rs` (`PasswordLocked`, `UnlockOutcome`: the one unlock seam
-  for every locked container, reached through `Volume::as_password_locked`, cancel-safe by contract);
-  `locked_container.rs` (`LockedContainer`: which kind asked, a leaf both `error.rs` and `password_locked.rs` read, so
-  neither depends on the other and `module-cycles` stays at zero); `retirement.rs` (how background work learns it
-  stopped being the live volume); `connection_cell.rs` (a backend's connection state packed with its session generation,
-  § "Three questions a remote volume gets asked"); `channel_stream.rs` (a network backend's read path, consumer half);
-  `scan_boundary.rs` + `scan_stop.rs` + `scan_recorder.rs` (the one seam a copy scan touches per entry: counts, Cancel,
-  Pause, and the transfer tree's recorder); `scan_listing_clock.rs` (an index walk's per-listing wedge timer, which a
-  backend pauses while it parks the listing by its own choice); `scan_walk.rs`, `mkdir_all.rs`, `patching.rs`, and
-  `secret_store.rs` (the bodies a stat-and-listing backend gets for free); `listing_progress.rs` (`report_while`: a long
-  listing's running count sampled on a timer from the async side that owns `on_progress`, which can't ride into the
-  blocking reader); `http_session.rs` (the HTTP backends' shared connection lifecycle, § "The HTTP backends' connection
-  lifecycle"); `liveness.rs` (their silence watch, which tells a server gone silent from one that's only slow:
+  platforms' SMB mount-source parsers share, bracketed IPv6 included); `windows_volume_ids`, `windows_device_change`,
+  and `windows_eject` (Windows' drive ids, what a `WM_DEVICECHANGE` says plus the drive table's diff, and which drives
+  eject by which route, pure so every OS tests them); `capabilities.rs`; `share_link.rs` (`ShareLink`, a URL that's a
+  credential and so prints nothing in `Debug`, and `ShareLinkExpiry`); `entry_kind.rs` (`File` / `Directory` /
+  `Symlink`, the answer `Volume::entry_kind` gives, a link reported as the link, where `is_directory` may follow it);
+  `child_name.rs` (`ChildName`, a listed name proven to be one plain path component, the only way a source listing's
+  name may join a destination path; a refusal is `VolumeError::InvalidName`. Why and who calls it:
+  `crates/cmdr-operations/src/transfer/volume/DETAILS.md` § "Listed names are untrusted"); `transport_fault.rs`
+  (`VolumeError::transport_fault`: the ONE answer to "did the link fail, or did the other end say no?", an exhaustive
+  match plus `OsErrorClass::is_transport`, which the write engine's retry, outage wait, and local error mapping all ask;
+  `crates/cmdr-operations/src/transfer/DETAILS.md` § "Retrying one FILE"); `server_side.rs` (`RenameWork`,
+  `SubtreeTally`, `ServerCopyProgress`: work a server does on its own, § "Server-side work"); `routed.rs`
+  (`ResolvedVolume`, `RoutedKind`: what the app's `VolumeManager::resolve` answers, here so the listing engine reads it
+  without the app); `password_locked.rs` (`PasswordLocked`, `UnlockOutcome`: the one unlock seam for every locked
+  container, reached through `Volume::as_password_locked`, cancel-safe by contract); `locked_container.rs`
+  (`LockedContainer`: which kind asked, a leaf both `error.rs` and `password_locked.rs` read, so neither depends on the
+  other and `module-cycles` stays at zero); `retirement.rs` (how background work learns it stopped being the live
+  volume); `connection_cell.rs` (a backend's connection state packed with its session generation, § "Three questions a
+  remote volume gets asked"); `channel_stream.rs` (a network backend's read path, consumer half); `scan_boundary.rs` +
+  `scan_stop.rs` + `scan_recorder.rs` (the one seam a copy scan touches per entry: counts, Cancel, Pause, and the
+  transfer tree's recorder); `scan_listing_clock.rs` (an index walk's per-listing wedge timer, which a backend pauses
+  while it parks the listing by its own choice); `scan_walk.rs`, `mkdir_all.rs`, `patching.rs`, and `secret_store.rs`
+  (the bodies a stat-and-listing backend gets for free); `listing_progress.rs` (`report_while`: a long listing's running
+  count sampled on a timer from the async side that owns `on_progress`, which can't ride into the blocking reader);
+  `http_session.rs` (the HTTP backends' shared connection lifecycle, § "The HTTP backends' connection lifecycle");
+  `liveness.rs` (their silence watch, which tells a server gone silent from one that's only slow:
   `crates/cmdr-webdav/DETAILS.md` § "Silent or slow") and `tls.rs` (their connect probes' TLS-refusal test, by the typed
   `io::ErrorKind`); `app_paths.rs` (whether an app path sits under a volume root, segment-wise, and rebasing it onto a
   moved root); `remote_paths.rs` (a server tree's `<scheme>://user@host:port` app spelling, and the ONE translation);

@@ -267,10 +267,11 @@ owns its real body. Remove a line when its body lands.
   share carries no `SmbMountInfo`, so nothing upgrades it to a direct session (task 45). `live_volume_space`,
   `mount_identity_at`, and `network_mount_under` answer nothing (task 35; the mount table they'd read is
   `cmdr_local::mounts`, real since 2026-11-21).
-- The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39b: nothing reads as ejectable, so
-  a local drive's eject refuses as `NotEjectable`; a tool run (an SMB share's unmount, "Eject and save") answers that no
-  tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the direct
-  session, as on Linux. MTP, ADB, SFTP, and WebDAV ejects are every-OS code and work.
+- The app's eject on Windows (`file_system/volume/eject/platform/windows.rs`), task 39b: a stick, a hot-plug disk, a
+  disc, and a mounted VHD or ISO eject through `drive_flight` (`file_system/volume/DETAILS.md` § "Windows: the drive
+  flight"); a mapped drive offers no eject until task 45; a tool run (an SMB share's unmount, "Eject and save") answers
+  that no tool could start (`EjectError::Unexpected`); the holder scan is "couldn't tell"; an SMB Disconnect drops the
+  direct session, as on Linux. MTP, ADB, SFTP, and WebDAV ejects are every-OS code and work.
 - Code only the missing Windows arms will call is dead there, held by one crate-root
   `cfg_attr(target_os = "windows", expect(dead_code))` in the app's `lib.rs` (plus `unused_imports` in the test build,
   for imports only the macOS and Linux cells use): stored favorites in the switcher

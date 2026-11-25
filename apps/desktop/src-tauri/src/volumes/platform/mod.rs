@@ -160,6 +160,14 @@ pub(crate) use imp::{
     disk_units, get_attached_volumes, get_cloud_drives, mount_points_with_rows, unmount_approver, watcher,
 };
 
+// What only Windows has: what Cmdr's eject does to a drive, the volume-device reads it uses, and
+// the drive watcher's let-go and take-back around it (`file_system/volume/eject/drive_flight.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::{
+    eject_target, storage,
+    watcher::{let_go_for_eject, take_back_after_eject},
+};
+
 /// Whether a row's `fs_type` names an SMB share, and whether it names a network filesystem that
 /// can hang. macOS reads `statfs` type names; Windows tags every mapped share with
 /// [`NETWORK_FS_TYPE`]. ❗ Not on Linux yet (`tools/resources/DETAILS.md` § "`cmdr://state` lists

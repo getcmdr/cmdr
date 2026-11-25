@@ -12,6 +12,7 @@
 
 mod drive_icons;
 mod drives;
+pub(crate) mod storage;
 pub(crate) mod watcher;
 
 use std::path::Path;
@@ -179,6 +180,9 @@ fn drive_row(drive: &WindowsDrive) -> LocationInfo {
         // The drive's own answer, the one its volume's `has_trash` and the Recycle Bin's refusal
         // read too (`cmdr_local::recycle_bin`): a fixed disk with its bin on. Elsewhere a delete is
         // for good, so it asks. A share says no with no call to it.
+        // `cmdr_fs::volume::windows_eject` decides; the eject itself asks the same question again
+        // (`eject_target`), so a row can't offer an eject the eject then refuses.
+        is_ejectable: storage::route_of(drive).is_some(),
         supports_trash: !is_share
             && AppPath::from_normalized(&drive.root)
                 .ok()
@@ -195,7 +199,7 @@ fn row(id: &str, name: &str, path: &Path, category: LocationCategory) -> Locatio
         path: app_spelling(&path.to_string_lossy(), PathFlavor::Windows),
         category,
         icon: None,
-        // Eject is task 39's: nothing reads as ejectable yet.
+        // A favorite, home, or the system drive's fallback row: nothing to eject.
         is_ejectable: false,
         fs_type: None,
         supports_trash: true,
@@ -222,6 +226,25 @@ fn row(id: &str, name: &str, path: &Path, category: LocationCategory) -> Locatio
 /// the spelling the path uses, so a pane on `//server/share/x` stays consistent with its root.
 pub(crate) fn resolve_path_volume_fast(path: &str) -> Option<VolumeInfo> {
     drive_for(path).map(|drive| drive_row(&drive))
+}
+
+/// A drive Cmdr's eject can take away: its route, its volume id, and its app root.
+pub(crate) struct EjectTarget {
+    pub(crate) route: cmdr_fs::volume::windows_eject::EjectRoute,
+    pub(crate) volume_id: String,
+    pub(crate) root: String,
+}
+
+/// What an eject of the volume at `mount_path` does, or `None` when it can't be ejected. Reads
+/// the cached drive table and the cached storage facts, so it doesn't touch the media.
+pub(crate) fn eject_target(mount_path: &str) -> Option<EjectTarget> {
+    let drive = drive_for(mount_path)?;
+    let route = storage::route_of(&drive)?;
+    Some(EjectTarget {
+        route,
+        volume_id: drive.id,
+        root: drive.root,
+    })
 }
 
 pub(crate) fn network_mount_under(_path: &Path) -> Option<NetworkMount> {

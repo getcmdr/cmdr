@@ -2635,6 +2635,7 @@ mod transport_fault;
 mod types;
 mod usb_speed;
 pub mod windows_device_change;
+pub mod windows_eject;
 pub mod windows_volume_ids;
 mod write_progress;
 mod xattr_read_mode;

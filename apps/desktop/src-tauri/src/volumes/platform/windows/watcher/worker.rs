@@ -22,6 +22,12 @@
 //! nothing let go does nothing. A second release would move the drive's epoch and void the
 //! resume; a second hold would orphan the first's watches.
 //!
+//! **Cmdr's own eject** lets go the same way, minus the index stop (the eject's flight made it,
+//! `file_system/volume/eject/platform/drive_flight.rs`), and owns that let-go: a refusal or lock's end
+//! Windows sends meanwhile doesn't take it back, since the eject's own lock attempt would then
+//! meet the handle it just closed. Only the eject's take-back (`Job::EjectTakeBack`) or the
+//! drive leaving ends it.
+//!
 //! A refused removal (or an ended lock) takes it all back: the handle reopens, the watches re-arm
 //! and re-read, and an index the query stopped resumes through the gate, which still checks the
 //! drive's intent. After a lock it rescans instead: a format or `chkdsk /f` rewrote the drive
@@ -101,6 +107,17 @@ struct Sentinel {
 struct LetGo {
     /// Whether a volume lock came with it (or alone), so the take-back rescans.
     locked: bool,
+    /// Whether Cmdr's own eject holds it, so only the eject's take-back ends it.
+    by_eject: bool,
+}
+
+/// Who asks for a take-back.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Asker {
+    /// Windows: a refused removal, a failed lock, a lock's end.
+    Windows,
+    /// Cmdr's own eject, which didn't go through.
+    Eject,
 }
 
 impl Sentinel {
@@ -124,6 +141,9 @@ pub(super) struct Worker<A: Announce> {
     pending: HashSet<String>,
     /// When to read an unreadable table once more.
     retry_at: Option<Instant>,
+    /// Roots Cmdr's eject let go of with no handle of the worker's on them (its registration
+    /// was refused): their listing watches are held until the take-back or the drive leaving.
+    untracked_holds: HashSet<String>,
     announce: A,
     owner: Arc<QueryOwner>,
 }
@@ -136,6 +156,7 @@ impl<A: Announce> Worker<A> {
             sentinels: HashMap::new(),
             pending: HashSet::new(),
             retry_at: None,
+            untracked_holds: HashSet::new(),
             announce,
             owner: Arc::new(QueryOwner::default()),
         }
@@ -186,7 +207,16 @@ impl<A: Announce> Worker<A> {
                     // A window that stopped waiting answered already.
                     let _ = done.send(());
                 }
-                Job::TakeBack { registration } => self.take_back(registration),
+                Job::TakeBack { registration } => self.take_back(registration, Asker::Windows),
+                Job::EjectLetGo { volume_id, root, done } => {
+                    self.let_go_for_eject(&volume_id, &root);
+                    // An eject that stopped waiting goes ahead without the answer.
+                    let _ = done.send(());
+                }
+                Job::EjectTakeBack { volume_id, root, done } => {
+                    self.take_back_for_eject(&volume_id, &root);
+                    let _ = done.send(());
+                }
                 Job::Gone { registration } => {
                     self.forget(registration);
                     self.rescan();
@@ -244,6 +274,11 @@ impl<A: Announce> Worker<A> {
             info!(target: "volumes::windows", "Drive left: {}", LogPrivate::dir_path(&drive.root));
             if let Some(registration) = self.registration_at(&drive.root) {
                 self.forget(registration);
+            }
+            if self.untracked_holds.remove(&drive.root)
+                && let Some(root) = native_root(&drive.root)
+            {
+                forget_drive(&root);
             }
             self.announce.left(&drive.root);
             // Only now, with the root gone from the table and the registry: no index start can
@@ -307,7 +342,10 @@ impl<A: Announce> Worker<A> {
             return;
         }
         info!(target: "volumes::windows", "Letting go of {} for {cause:?}", LogPrivate::dir_path(&sentinel.root));
-        sentinel.let_go = Some(LetGo { locked });
+        sentinel.let_go = Some(LetGo {
+            locked,
+            by_eject: false,
+        });
         drop(sentinel.handle.take());
         let volume_id = sentinel.volume_id.clone();
         let root = sentinel.native_root();
@@ -333,12 +371,59 @@ impl<A: Announce> Worker<A> {
         }
     }
 
-    /// The removal was refused or the lock ended: take back what the let-go let go of. Nothing
-    /// when nothing is let go (a refusal and a lock's end can both arrive).
-    fn take_back(&mut self, registration: usize) {
+    /// Cmdr's own eject is about to ask Windows: let go of everything the worker holds on the
+    /// drive but the index (the eject stopped it), as the eject's. A let-go already in force (a
+    /// removal query that came first) becomes the eject's.
+    fn let_go_for_eject(&mut self, volume_id: &str, root: &str) {
+        info!(target: "volumes::windows", "Letting go of {} for Cmdr's own eject", LogPrivate::dir_path(root));
+        if let Some(registration) = self.registration_at(root)
+            && let Some(sentinel) = self.sentinels.get_mut(&registration)
+        {
+            if let Some(let_go) = sentinel.let_go.as_mut() {
+                let_go.by_eject = true;
+                return;
+            }
+            sentinel.let_go = Some(LetGo {
+                locked: false,
+                by_eject: true,
+            });
+            drop(sentinel.handle.take());
+        } else if !self.untracked_holds.insert(root.to_owned()) {
+            return;
+        }
+        let ids = [volume_id.to_owned()];
+        drive_release::gate().set_unmount_pending(&ids);
+        self.pending.insert(volume_id.to_owned());
+        if let Some(native) = native_root(root) {
+            let closed = hold_drive(&native);
+            debug!(target: "volumes::windows", "Let go of {closed} listing watch(es)");
+        }
+    }
+
+    /// Cmdr's own eject didn't go through: take the drive back.
+    fn take_back_for_eject(&mut self, volume_id: &str, root: &str) {
+        if let Some(registration) = self.registration_at(root) {
+            self.take_back(registration, Asker::Eject);
+        } else if self.untracked_holds.remove(root) {
+            info!(target: "volumes::windows", "Taking {} back: its eject didn't happen", LogPrivate::dir_path(root));
+            if let Some(native) = native_root(root) {
+                take_back_drive(&native);
+            }
+            self.lift_pending(volume_id);
+        }
+    }
+
+    /// The removal was refused, the lock ended, or Cmdr's eject didn't go through: take back what
+    /// the let-go let go of. Nothing when nothing is let go (a refusal and a lock's end can both
+    /// arrive), and nothing for Windows' signals while Cmdr's eject holds the let-go.
+    fn take_back(&mut self, registration: usize, asker: Asker) {
         let Some(sentinel) = self.sentinels.get_mut(&registration) else {
             return;
         };
+        if asker == Asker::Windows && sentinel.let_go.as_ref().is_some_and(|let_go| let_go.by_eject) {
+            debug!(target: "volumes::windows", "A take-back Windows asked for while Cmdr's own eject holds the drive");
+            return;
+        }
         let Some(let_go) = sentinel.let_go.take() else {
             debug!(target: "volumes::windows", "A take-back for a drive that wasn't let go");
             return;
@@ -507,9 +592,9 @@ impl ResumeOwner for QueryOwner {
         self.listed.lock_ignore_poison().contains(&candidate.volume_id)
     }
 
-    fn is_ejected_by_another_owner(&self, _candidate: &ResumeCandidate) -> bool {
-        // Cmdr has no eject of its own on Windows yet (task 39b).
-        false
+    fn is_ejected_by_another_owner(&self, candidate: &ResumeCandidate) -> bool {
+        // Cmdr's own eject stops and hands back its index itself (`eject::drive_flight`).
+        crate::file_system::volume::eject::is_ejecting(&candidate.volume_id)
     }
 
     fn consume(&self, candidate: &ResumeCandidate) {

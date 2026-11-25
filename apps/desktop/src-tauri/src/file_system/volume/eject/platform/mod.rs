@@ -26,6 +26,17 @@ pub(super) use imp::run_tool_blocking;
 /// backing store: the caller bounds it (`deadlines::EJECTABILITY_CHECK_DEADLINE`).
 pub(super) use imp::is_ejectable;
 
+/// The teardown of a volume [`is_ejectable`] said yes to, where no per-disk flight runs: Linux's
+/// tool against the volume alone, Windows' drive flight. macOS runs its per-disk flight instead
+/// (`disk_flight`).
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+pub(super) use imp::eject_ejectable;
+
+/// Windows' eject of a drive, the sequence every route shares: pure over its `DriveSide`, so its
+/// tests run on every OS (`volume/DETAILS.md` § "Windows: the drive flight").
+#[cfg(any(target_os = "windows", test))]
+mod drive_flight;
+
 /// Whether "Disconnect" on an SMB volume unmounts the OS mount under it (the unmount approver
 /// then removes the volume), or only drops the direct session, leaving any OS mount to the file
 /// manager that made it.

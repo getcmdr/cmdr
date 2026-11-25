@@ -35,16 +35,13 @@ use crate::ignore_poison::IgnorePoison;
 pub(crate) use release::VolumeRelease;
 pub(crate) use release::{LateRelease, Release};
 // Resuming is the unmount approver's and the per-disk eject flight's work on macOS, and the
-// drive watcher's on Windows (a refused removal query); the tests that drive it are macOS's,
-// so the gates carry no `test` arm.
+// drive watcher's and the drive eject flight's on Windows; the eject flights' tests run on
+// every OS.
 #[cfg(all(test, target_os = "macos"))]
 pub(crate) use resume::RESUME_SETTLE;
 #[cfg_attr(
-    not(target_os = "macos"),
-    expect(
-        unused_imports,
-        reason = "Linux resumes nothing, and Windows' drive watcher waits on no batch"
-    )
+    all(not(test), target_os = "linux"),
+    expect(unused_imports, reason = "Linux resumes nothing")
 )]
 pub(crate) use resume::{ResumeBatch, ResumeCandidate, ResumeOwner};
 

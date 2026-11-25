@@ -269,7 +269,7 @@ fn volume_information(native_root: &[u16]) -> Option<VolumeFacts> {
 }
 
 /// The volume GUID path of the drive at `native_root`, `None` for a `subst` or network drive.
-fn volume_guid_path(native_root: &[u16]) -> Option<String> {
+pub(super) fn volume_guid_path(native_root: &[u16]) -> Option<String> {
     let mut name = [0u16; GUID_PATH_LEN];
     // SAFETY: `native_root` is NUL-terminated; `name` holds `GUID_PATH_LEN` units.
     let ok =
@@ -318,7 +318,7 @@ fn mapped_share(letter: char) -> Option<String> {
 }
 
 /// `text` as a NUL-terminated wide string.
-fn wide(text: &str) -> Vec<u16> {
+pub(super) fn wide(text: &str) -> Vec<u16> {
     std::ffi::OsStr::new(text).encode_wide().chain(Some(0)).collect()
 }
 

@@ -49,6 +49,19 @@ enum Job {
     TakeBack { registration: usize },
     /// The drive is going or gone: drop its handle and registration.
     Gone { registration: usize },
+    /// Cmdr's own eject of the drive at `root` is about to ask Windows: let go of it, then
+    /// answer on `done`.
+    EjectLetGo {
+        volume_id: String,
+        root: String,
+        done: SyncSender<()>,
+    },
+    /// Cmdr's own eject didn't go through: take the drive back, then answer on `done`.
+    EjectTakeBack {
+        volume_id: String,
+        root: String,
+        done: SyncSender<()>,
+    },
     /// A test's own drive root to hold a handle on, answering its registration.
     #[cfg(test)]
     Track {
@@ -201,6 +214,91 @@ pub(crate) fn start_volume_watcher(app: &AppHandle) {
             "Not watching for drives arriving and leaving ({e}); a drive plugged in shows on the next volume list refresh"
         ),
     }
+}
+
+/// How long Cmdr's eject waits for the worker's let-go or take-back. The worker answers within
+/// milliseconds unless it's mid-read of a dead mapped drive or in a removal query's index stop;
+/// past this the eject goes on without it.
+const EJECT_WAIT: Duration = Duration::from_secs(8);
+
+/// The eject's let-go and take-back on one watch, for a test that runs its own.
+#[cfg(test)]
+impl DriveWatch {
+    fn let_go_for_eject(&self, volume_id: &str, root: &str) -> bool {
+        ask_on(&self.jobs, |done| Job::EjectLetGo {
+            volume_id: volume_id.to_owned(),
+            root: root.to_owned(),
+            done,
+        })
+    }
+
+    fn take_back_after_eject(&self, volume_id: &str, root: &str) -> bool {
+        ask_on(&self.jobs, |done| Job::EjectTakeBack {
+            volume_id: volume_id.to_owned(),
+            root: root.to_owned(),
+            done,
+        })
+    }
+}
+
+/// Hands the worker `job` (built around its `done` sender) and waits up to [`EJECT_WAIT`].
+fn ask_on(jobs: &Sender<Job>, job: impl FnOnce(SyncSender<()>) -> Job) -> bool {
+    let (done, answered) = mpsc::sync_channel(1);
+    if jobs.send(job(done)).is_err() {
+        return false;
+    }
+    answered.recv_timeout(EJECT_WAIT).is_ok()
+}
+
+/// The app's watch's job queue, cloned out of the lock so no wait holds it (quit takes it).
+fn app_jobs() -> Option<Sender<Job>> {
+    WATCH.lock_ignore_poison().as_ref().map(|watch| watch.jobs.clone())
+}
+
+/// Lets go of the drive at `root` (an app root) for Cmdr's own eject: the worker's handle on it,
+/// every listing watch there, and an unmount pending at the gate (`worker.rs`). Blocks until done,
+/// up to [`EJECT_WAIT`]. With no watch running, the listing watches let go alone.
+pub(crate) fn let_go_for_eject(volume_id: &str, root: &str) {
+    let Some(jobs) = app_jobs() else {
+        if let Some(native) = native_root(root) {
+            let closed = crate::file_system::watcher::release::hold_drive(&native);
+            info!(target: "volumes::windows", "No drive watcher; let go of {closed} listing watch(es) for the eject");
+        }
+        return;
+    };
+    let answered = ask_on(&jobs, |done| Job::EjectLetGo {
+        volume_id: volume_id.to_owned(),
+        root: root.to_owned(),
+        done,
+    });
+    if !answered {
+        warn!(target: "volumes::windows", "The drive watcher didn't let go in time; the eject goes ahead");
+    }
+}
+
+/// Takes back what [`let_go_for_eject`] let go of: Cmdr's eject didn't go through.
+pub(crate) fn take_back_after_eject(volume_id: &str, root: &str) {
+    let Some(jobs) = app_jobs() else {
+        if let Some(native) = native_root(root) {
+            crate::file_system::watcher::release::take_back_drive(&native);
+        }
+        return;
+    };
+    let answered = ask_on(&jobs, |done| Job::EjectTakeBack {
+        volume_id: volume_id.to_owned(),
+        root: root.to_owned(),
+        done,
+    });
+    if !answered {
+        warn!(target: "volumes::windows", "The drive watcher didn't take the drive back in time");
+    }
+}
+
+fn native_root(root: &str) -> Option<std::path::PathBuf> {
+    cmdr_fs::app_path::AppPath::from_normalized(root)
+        .ok()?
+        .to_native_plain()
+        .ok()
 }
 
 /// Stops what [`start_volume_watcher`] started. Idempotent.

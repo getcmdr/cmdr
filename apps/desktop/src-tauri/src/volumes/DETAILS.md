@@ -211,8 +211,20 @@ pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still
   promotes the share's root and a pane on `//server/share/…` stays. A share that doesn't answer leaves with its letter.
 - **A share dropping isn't a drive leaving**: `ERROR_DEV_NOT_EXIST` on a mapped drive or UNC path is the link going away
   (`OsErrorClass::of_io_at`, the transfer engine's retry and outage wait), and on a local drive the drive leaving.
-- **Eject from Cmdr is task 39b**: `is_ejectable` stays `false` and the eject refuses as `NotEjectable`; the real one is
-  `CM_Request_Device_EjectW` beside this watcher.
+- **Cmdr's own eject** (task 39b, `file_system/volume/DETAILS.md` § "Windows: the drive flight") lets go through this
+  worker too (`Job::EjectLetGo`): its handle, the listing watches, and an unmount pending, but not the index, which the
+  eject stopped itself. ❗ That let-go is the EJECT's (`LetGo::by_eject`): a refusal, a failed lock, or a lock's end
+  Windows sends meanwhile doesn't take it back, since the eject's own lock attempt would then meet the reopened handle;
+  only the eject's take-back (`Job::EjectTakeBack`) or the drive leaving ends it. A removal query its request brings is a
+  second let-go and only notes. The worker's `QueryOwner` skips a resume while Cmdr's eject is in flight
+  (`is_ejected_by_another_owner` reads `eject::is_ejecting`): the eject hands its index back itself. Proved on the
+  Windows lane by `an_ejects_let_go_outlasts_windows_refusal_and_its_own_take_back_restores_it`.
+- **Which rows offer Eject** (`platform/windows/storage.rs`): `cmdr_fs::volume::windows_eject::eject_route` over the
+  drive kind and the storage bus `IOCTL_STORAGE_QUERY_PROPERTY` reports (opened with no access rights: no media I/O,
+  cached per volume id). The row's `is_ejectable` and the eject's `eject_target` ask the same question, so a row never
+  offers an eject the eject refuses. A mapped drive offers none: its share isn't an `SmbVolume` here (no session, no
+  `connectionState`), and un-mapping a person's drive letter is a stronger act than macOS's unmount of a share; it waits
+  for the SMB mounts task.
 - **Real-Windows checklist** (a USB stick, not yet run): plug in, the stick's row appears with no refresh; open it in a
   pane, "Safely remove" from the tray succeeds and the pane falls back with the removal wording; plug in and turn on
   indexing, "Safely remove" still succeeds (log: "Letting go of … for its removal"); copy a big file onto it and
@@ -221,6 +233,21 @@ pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still
   Explorer; insert and remove an SD card in a reader; with Cmdr open and both panes elsewhere (no pane on the stick),
   "Safely remove" succeeds; format the stick from Explorer with it indexed: the index rescans afterwards (log:
   "Rescanning … after its lock").
+- **Real-Windows eject checklist** (task 39b, not yet run; a USB stick):
+  1. The stick's row in the volume picker shows the eject button; the system drive's doesn't.
+  2. Eject from the picker with both panes elsewhere: the row leaves, the stick vanishes from Explorer and the tray's
+     "Safely remove" list, and Device Manager shows it stopped (code 47) until it's replugged (log: "Windows ejected").
+  3. Replug, open the stick in a pane, eject from the breadcrumb's context menu, then the main menu's Eject item and its
+     shortcut: each ejects, and the pane falls back with the removal wording.
+  4. Replug, turn indexing on for the stick, eject: it goes (log: "Letting go of … for Cmdr's own eject").
+  5. Replug, `cd /d E:\` into the stick in Command Prompt (Notepad doesn't keep a file open; a video playing in the
+     Media Player app does), eject: the toast says something is
+     still in use there, the stick stays, its pane keeps working and refreshes on a change, and the index comes back
+     (log: "stayed, so it gets its index back"). Close Notepad and eject again: it goes.
+  6. While a copy onto the stick runs, the eject button is disabled; an MCP `eject` answers `busy`.
+  7. A DVD or an ISO mounted from Explorer, and a VHD mounted from Disk Management: Eject takes each away (a disc's tray
+     opens); with a file open on it, the same in-use refusal.
+  8. A USB stick with two partitions: Eject takes both letters away, as the tray does.
 
 ## Location categories
 

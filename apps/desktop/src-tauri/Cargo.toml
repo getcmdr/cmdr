@@ -367,10 +367,15 @@ arboard = { version = "3.7", default-features = false }
 # (`updater/platform/windows.rs`: `GetCurrentPackageFullName`), and the crash reporter's native-crash
 # capture (`crash_reporter/platform/exception_filter.rs`: the unhandled-exception filter, the stack walk,
 # `VirtualQuery`, `NtQueryVirtualMemory` for an image's name, `WriteFile` to the pre-opened record, and the
-# Toolhelp thread count). Already in the lockfile through the workspace crates.
+# Toolhelp thread count), and Cmdr's own drive eject (`volumes/platform/windows/storage.rs` and
+# `file_system/volume/eject/platform/windows.rs`: storage IOCTLs, cfgmgr32's device tree and
+# `CM_Request_Device_EjectW`, and virtdisk's detach). Already in the lockfile through the
+# workspace crates.
 windows-sys = { version = "0.61", features = [
     "Wdk_Storage_FileSystem",
     "Wdk_System_SystemServices",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Devices_Properties",
     "Win32_Foundation",
     "Win32_Globalization",
     "Win32_Graphics_Gdi",
@@ -378,11 +383,13 @@ windows-sys = { version = "0.61", features = [
     "Win32_Security",
     "Win32_Storage_FileSystem",
     "Win32_Storage_Packaging_Appx",
+    "Win32_Storage_Vhd",
     "Win32_System_LibraryLoader",
     "Win32_System_Com",
     "Win32_System_Diagnostics_Debug",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_IO",
+    "Win32_System_Ioctl",
     "Win32_System_Kernel",
     "Win32_System_Memory",
     "Win32_System_ProcessStatus",

@@ -17,10 +17,10 @@ use std::sync::Arc;
 use cmdr_fs::testing::disk_images::{DiskImage, DiskImageSession, FileHolder, HarnessError, ImageSpec};
 
 use super::disk_flight::DiskTeardown;
-use super::disk_flight::test_support::FakeIndex;
 use super::disk_flight::{FlightResume, Sibling, capture, captured_paths, hand_back, owed_ids};
 use super::disk_reach::{self, DiskReach};
 use super::disk_target::{self, DiskMounts, Resolution};
+use super::fake_index::FakeIndex;
 use super::holders::{self, HolderKind, HolderScan, VolumeHolder};
 use super::unmount_tool::{self, Target, ToolOutcome, UnmountVerb};
 use super::{EjectError, EjectScope, INDEX_STOP_DEADLINE, name_the_holders, pre_check};
@@ -647,7 +647,7 @@ async fn a_refused_disk_eject_hands_back_only_the_sibling_that_stayed_mounted() 
     assert!(!is_mounted(&a), "A really went, so it's owed nothing back");
 
     hand_back(&gate, &owner, owed_ids(&release), |id| gate.epoch(id));
-    index.wait_for_a_resume_to_settle();
+    wait_for_a_resume_to_settle(&index);
 
     assert_eq!(
         index.started(),
@@ -655,4 +655,14 @@ async fn a_refused_disk_eject_hands_back_only_the_sibling_that_stayed_mounted() 
         "only the volume still in the mount table gets its index back"
     );
     drop(holder);
+}
+
+/// Wait for a resume batch to settle, for a gate on the REAL clock (a fake one is moved by hand
+/// instead).
+fn wait_for_a_resume_to_settle(index: &FakeIndex) {
+    crate::test_support::wait_until(
+        crate::file_system::volume::drive_release::RESUME_SETTLE * 4,
+        "the resume batch to settle",
+        || !index.started().is_empty(),
+    );
 }

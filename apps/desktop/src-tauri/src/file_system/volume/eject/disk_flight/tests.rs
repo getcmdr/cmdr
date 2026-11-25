@@ -1,6 +1,6 @@
-use super::test_support::FakeIndex;
 use super::*;
 use crate::file_system::volume::drive_release::IndexDoor;
+use crate::file_system::volume::eject::fake_index::FakeIndex;
 use std::time::Instant;
 
 /// Well past `RESUME_SETTLE`, so a resume batch's quiet period is over.

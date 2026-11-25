@@ -22,6 +22,9 @@
 //!   detaches the image (`unmount` would leave it attached). While the disk keeps
 //!   other volumes mounted, one volume goes alone with `diskutil unmount`, Finder's
 //!   model (`disk_reach`), and [`eject_all`] takes them all.
+//! - **Windows drive** (a stick, a hot-plug disk, a disc, a mounted VHD or ISO): no tool,
+//!   so `drive_flight` lets go, asks Windows by the drive's route, and takes back on a
+//!   refusal (`volume/DETAILS.md` § "Windows: the drive flight").
 //!
 //! Volumes that can't be detached at all return an error.
 //!
@@ -43,6 +46,8 @@ mod disk_reach;
 #[cfg(target_os = "macos")]
 mod disk_target;
 mod escalate;
+#[cfg(test)]
+mod fake_index;
 pub mod holders;
 mod in_flight;
 mod platform;
@@ -120,7 +125,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
     // here means a race (or an MCP / automation caller); refuse rather than
     // disconnect mid-transfer and risk a truncated file. See the volume picker's
     // `volumes-busy-changed` wiring.
-    if crate::operations_host::operations().is_ok_and(|ops| ops.busy_volume_ids().iter().any(|id| id == volume_id)) {
+    if is_busy(volume_id) {
         return Err(EjectError::Busy);
     }
 
@@ -152,7 +157,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
     };
 
     // For physical volumes, ejectability comes from NSURL (macOS) /
-    // `/sys/block/*/removable` (Linux). Look it up via the fast statfs-based
+    // `/sys/block/*/removable` (Linux) / the drive's eject route (Windows). Look it up via the fast statfs-based
     // resolver instead of enumerating all volumes. Under a deadline: a disk image
     // backed by a file on a hung share can block this for good, and a stalled
     // check answers `NotResponding`, ❌ never a guessed "not ejectable".
@@ -241,14 +246,17 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
                 }),
             }
         }
-        // No per-disk flight here: the volume alone, as for a mount no disk backs. Windows never
-        // gets here (nothing reads as ejectable there yet).
+        // No per-disk flight: Linux takes the volume alone, as for a mount no disk backs, and
+        // Windows runs its drive flight (`platform/drive_flight.rs`).
         #[cfg(any(target_os = "linux", target_os = "windows"))]
-        EjectAction::DiskutilEject => {
-            eject_one_volume(volume_id, &mount_path, UnmountVerb::Eject).await?;
-            Ok(EjectOutcome::Unmounted)
-        }
+        EjectAction::DiskutilEject => platform::eject_ejectable(volume_id, &mount_path).await,
     }
+}
+
+/// Whether a write op is reading from or writing to `volume_id`, so tearing it down would cut a
+/// transfer off.
+fn is_busy(volume_id: &str) -> bool {
+    crate::operations_host::operations().is_ok_and(|ops| ops.busy_volume_ids().iter().any(|id| id == volume_id))
 }
 
 /// Why nothing is registered under `volume_id`: a saved server nobody is
@@ -543,10 +551,38 @@ async fn stop_index_blocking(volume_id: String, stop: fn(&str) -> cmdr_index::Re
 /// answer and a flight can hand a late release back to the gate.
 async fn stop_indexes_blocking(
     volume_ids: Vec<String>,
-    stop: fn(&str) -> cmdr_index::RemovableStop,
+    stop: impl Fn(&str) -> cmdr_index::RemovableStop + Send + Sync + 'static,
     record_late: impl Fn(super::drive_release::LateRelease) + Send + Sync + 'static,
 ) -> IndexStopped {
-    use super::drive_release::{self, VolumeRelease};
+    let asked = volume_ids.join(", ");
+    let released = tokio::task::spawn_blocking(move || {
+        release_for_unmount(super::drive_release::gate(), &volume_ids, stop, record_late)
+    })
+    .await;
+    match released {
+        Ok(stopped) => stopped,
+        Err(join_err) => {
+            log::warn!(target: "eject", "index-stop task for {asked} failed to join: {join_err}; leaving the drive mounted");
+            IndexStopped::Refused {
+                release: None,
+                error: EjectError::Unexpected {
+                    detail: format!("{}: {join_err}", EjectStep::IndexStop),
+                },
+            }
+        }
+    }
+}
+
+/// [`stop_indexes_blocking`]'s work on the caller's thread, through `gate`: every volume's stop
+/// under the one [`INDEX_STOP_DEADLINE`], and what that means for the unmount. Blocks for up to
+/// the deadline.
+fn release_for_unmount(
+    gate: &super::drive_release::DriveRelease,
+    volume_ids: &[String],
+    stop: impl Fn(&str) -> cmdr_index::RemovableStop + Send + Sync + 'static,
+    record_late: impl Fn(super::drive_release::LateRelease) + Send + Sync + 'static,
+) -> IndexStopped {
+    use super::drive_release::VolumeRelease;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     // The gate reads a stop that panicked as still releasing; this remembers the
@@ -555,31 +591,14 @@ async fn stop_indexes_blocking(
     let guarded_stop = {
         let panicked = Arc::clone(&panicked);
         move |id: &str| {
-            std::panic::catch_unwind(|| stop(id)).unwrap_or_else(|_| {
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| stop(id))).unwrap_or_else(|_| {
                 panicked.store(true, Ordering::SeqCst);
                 cmdr_index::RemovableStop::StillReleasing
             })
         }
     };
-    let asked = volume_ids.join(", ");
-    let released = tokio::task::spawn_blocking(move || {
-        let deadline = std::time::Instant::now() + INDEX_STOP_DEADLINE;
-        drive_release::gate().release(&volume_ids, deadline, guarded_stop, record_late)
-    })
-    .await;
-
-    let release = match released {
-        Ok(release) => release,
-        Err(join_err) => {
-            log::warn!(target: "eject", "index-stop task for {asked} failed to join: {join_err}; leaving the drive mounted");
-            return IndexStopped::Refused {
-                release: None,
-                error: EjectError::Unexpected {
-                    detail: format!("{}: {join_err}", EjectStep::IndexStop),
-                },
-            };
-        }
-    };
+    let deadline = std::time::Instant::now() + INDEX_STOP_DEADLINE;
+    let release = gate.release(volume_ids, deadline, guarded_stop, record_late);
     let stuck: Vec<&str> = release
         .volumes
         .iter()
