@@ -82,6 +82,34 @@ pub(crate) fn seam_path(path: &Path) -> Cow<'_, AppPath> {
     AppPath::legacy_unchecked(path)
 }
 
+/// The NEW name `name` inside the folder `dir` a body holds as `std::path` (a create's
+/// parent, a rename target's folder), joined the app path's way (`ListedFolder`) and handed
+/// back as the body holds paths. ❌ Never `dir.join(name)`: on Windows that puts a `\`
+/// between a POSIX volume's folder and the name (`/docs\photos`), which the volume reads as
+/// ONE name in `/`. On macOS and Linux it names what `dir.join(name)` named, byte for byte.
+///
+/// # Errors
+///
+/// The validation reason the name breaks when it's no plain name (empty, `.`, `..`, a `/`
+/// or NUL), or holds a `\` under a drive or UNC folder, where Windows would read a subfolder.
+pub(crate) fn seam_child(dir: &Path, name: &str) -> Result<PathBuf, cmdr_fs::validation::ValidationError> {
+    use cmdr_fs::app_path::{AppName, ListedFolder};
+    use cmdr_fs::validation::ValidationError;
+    let disallowed = |character: &str| ValidationError::DisallowedCharacter {
+        character: character.to_owned(),
+    };
+    let app_name = AppName::from_listed_text(name).map_err(|_| match name {
+        "" => ValidationError::Empty,
+        "." | ".." => ValidationError::DotName,
+        _ if name.contains('/') => disallowed("/"),
+        _ => disallowed("\0"),
+    })?;
+    let dir = seam_path(dir);
+    // A canonical folder's join refuses only a `\` under a drive or UNC root.
+    let child = ListedFolder::new(&dir).join(&app_name).map_err(|_| disallowed("\\"))?;
+    Ok(engine_path(&child))
+}
+
 /// [`engine_path`] over a start's sources.
 #[must_use]
 pub(crate) fn engine_paths(paths: &[AppPathBuf]) -> Vec<PathBuf> {

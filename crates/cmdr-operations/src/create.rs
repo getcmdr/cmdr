@@ -493,15 +493,11 @@ async fn new_entry_path(
     parent: &str,
     name: &str,
 ) -> Result<PathBuf, MutationError> {
-    match place_new_entry(
-        host.listings(),
-        volume,
-        volume_id,
-        &PathBuf::from(parent).join(name),
-        None,
-    )
-    .await
-    {
+    // Joined typed: on Windows `Path::join` would make `/docs` + `photos` the one name
+    // `docs\photos` in `/` of a POSIX volume.
+    let asked = crate::wire_paths::seam_child(Path::new(parent), name)
+        .map_err(|reason| MutationError::NameNotAllowed { reason })?;
+    match place_new_entry(host.listings(), volume, volume_id, &asked, None).await {
         Ok(NewEntry::Free(path)) => Ok(path),
         Ok(NewEntry::Taken(_) | NewEntry::Ambiguous) => Err(MutationError::AlreadyExists { name: name.to_string() }),
         Err(error) => Err(MutationError::Volume { error }),

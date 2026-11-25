@@ -9,7 +9,7 @@
 //! hears the answer.
 
 use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use super::super::ScanCostFacts;
 use super::super::host::EngineHost;
@@ -168,8 +168,26 @@ impl crate::Operations {
             });
         }
 
+        // Both ends joined typed (`seam_child`): on Windows `Path::join` would ask a POSIX
+        // volume about `/docs\new`, one name in `/`. A name the join refuses is no valid name.
+        let dir = Path::new(&dir);
+        let joined = crate::wire_paths::seam_child(dir, trimmed)
+            .and_then(|new| Ok((new, crate::wire_paths::seam_child(dir, &old_name)?)));
+        let (new_path, old_path) = match joined {
+            Ok(ends) => ends,
+            Err(error) => {
+                return RenameValidityCheck::unpriced(RenameValidityResult {
+                    valid: false,
+                    error: Some(error),
+                    has_conflict: false,
+                    is_case_only_rename: false,
+                    conflict: None,
+                    by_move: None,
+                });
+            }
+        };
+
         // Validate resulting path length
-        let new_path = PathBuf::from(&dir).join(trimmed);
         if let Err(error) = validate_path_length(&new_path, rules) {
             return RenameValidityCheck::unpriced(RenameValidityResult {
                 valid: false,
@@ -182,8 +200,6 @@ impl crate::Operations {
         }
 
         // Check for conflict: does a sibling with this name already exist?
-        let old_path = PathBuf::from(&dir).join(&old_name);
-
         if self.host().volumes().local_disk(&volume_id).is_none() {
             // Not the local disk: use Volume trait for conflict detection
             let conflict_info = check_sibling_conflict_via_volume(self.host(), &volume_id, &old_path, &new_path).await;

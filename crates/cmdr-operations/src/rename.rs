@@ -475,7 +475,11 @@ async fn rename_target(
 ) -> Result<PathBuf, MutationError> {
     match place_new_entry(host.listings(), volume, volume_id, &to, Some(from)).await {
         Ok(NewEntry::Free(target)) => Ok(target),
-        Ok(NewEntry::Taken(entry)) if force => Ok(to.with_file_name(&entry.name)),
+        // The look-alike's own name, joined typed; one with no typed join stays taken.
+        Ok(NewEntry::Taken(entry)) if force => to
+            .parent()
+            .and_then(|dir| crate::wire_paths::seam_child(dir, &entry.name).ok())
+            .ok_or_else(|| MutationError::AlreadyExists { name: name_of(&to) }),
         Ok(NewEntry::Taken(_) | NewEntry::Ambiguous) => Err(MutationError::AlreadyExists { name: name_of(&to) }),
         Err(error) => Err(MutationError::Volume { error }),
     }

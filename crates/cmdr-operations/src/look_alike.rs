@@ -140,10 +140,12 @@ pub(crate) async fn place_new_entry(
 
 /// `path` spelled the way `volume` wants a NEW name (`Volume::spell_new_name`).
 /// Only for a name being created; one that addresses an existing entry keeps its
-/// stored bytes.
+/// stored bytes. Joined typed (`seam_child`), so on Windows a POSIX volume's folder never
+/// gains a `\`; a spelling with no typed join keeps `path` as it was.
 pub(crate) fn spelled_new_path(volume: &dyn Volume, path: &Path) -> PathBuf {
     match (path.parent(), path.file_name().and_then(|n| n.to_str())) {
-        (Some(dir), Some(name)) => dir.join(volume.spell_new_name(name).as_ref()),
+        (Some(dir), Some(name)) => crate::wire_paths::seam_child(dir, volume.spell_new_name(name).as_ref())
+            .unwrap_or_else(|_| path.to_path_buf()),
         _ => path.to_path_buf(),
     }
 }

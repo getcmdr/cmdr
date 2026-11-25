@@ -395,7 +395,7 @@
     "crates/cmdr-operations/src/journal_capture_volume_tests.rs": 2,
     "crates/cmdr-operations/src/leaf_validation.rs": 1,
     "crates/cmdr-operations/src/locked_sources_tests.rs": 2,
-    "crates/cmdr-operations/src/rename/validity.rs": 3,
+    "crates/cmdr-operations/src/rename/validity.rs": 2,
     "crates/cmdr-operations/src/rollback/planner_tests/test_support.rs": 1,
     "crates/cmdr-operations/src/routed_writes_tests.rs": 1,
     "crates/cmdr-operations/src/scan_cache.rs": 2,
