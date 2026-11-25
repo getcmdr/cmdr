@@ -71,8 +71,10 @@ disagrees with a step here, follow the intent and say so in the report.
 - **SMB server row menu in the hub**: a NATIVE menu (`commands/menu.rs::show_network_host_context_menu` →
   `network-host-context-action` event → `servers-hub-actions.ts::runHostAction`), while SFTP/WebDAV/S3 place rows use
   the house `Menu` with `navigation/row-menu.ts`'s `volumeRowMenu`.
-- **Footers**: `ServersHubStatusBar` pads `--spacing-xs --spacing-sm` with a 1px top border; `SelectionInfo` pads
-  `--spacing-sm --spacing-md`, no border. Their heights differ.
+- **Footers**: `ServersHubStatusBar` (a `<button>` inside the hub's grid, rendered only when the hub has rows) pads
+  `--spacing-xs --spacing-sm` with a 1px top border; `SelectionInfo` (FilePane's footer slot, gated by `pane-footer.ts`)
+  pads `--spacing-sm --spacing-md`, no border, and on a normal pane sits under the 2px disk usage bar. Same font size
+  and `min-height`. Their heights differ, and so do their top edges (1px border vs 2px track).
 - **Precedents to reuse**: per-volume entry facts on `FileEntry` (`git_meta`, `restic_meta`, worded on the FE);
   `extCellText` as the one Ext-cell rule (restic puts its host there); `VolumeError::LinkNeedsConsent` as a typed
   listing refusal that `ErrorPane` turns into an action; `capabilitiesForPane` path routing (archive, git portal,
@@ -118,8 +120,32 @@ assume today that the `network` volume never lists (branches 10–15 below).
    Every OTHER verb that takes a folder row somewhere must refuse or route to the mount, never reach
    `smb://<server>/<share>` as a path: open in a new tab, open in the other pane, drag a share row out (to the other
    pane or Finder), drop onto a share row (a folder row is a drop target), Space's folder-size walk, Quick Look, About
-   (⌘I) / MCP `about_item` / `inspect_file`. `canBeSource`/`canWrite` cover some; M5a's audit lists the rest with a pin
-   each.
+   (⌘I) / MCP `about_item` / `inspect_file`, and the row context menu. M5a's audit lists them with a pin each. ❗
+   **`canBeSource: false` enforces nothing today.** It's a "structurally-true-no-guard cell" (the `network` row's own
+   comment): only `FunctionKeyBar` reads it, to grey the buttons. The F5/F6 key path, ⌘C/⌘X, F8, duplicate, drag-out,
+   and the MCP tools never ask it, and `command-dispatch.ts::blockedByCapabilities` toasts only for `search-results`
+   (every other kind falls through to the handler). The share list is the first kind where `canBeSource: false` meets a
+   real list with a cursor row and a listing id, so each verb needs its refusal at the seam that already refuses per
+   kind, worded per kind, typed to MCP through `refuseOpening`:
+   - Pane-side writes (F7, ⇧F4, F8/⌘⌫): a `share-list` arm in `file-operation-commands.ts::readOnlyRefusal`, beside the
+     archive/git-portal/restic arms.
+   - Anything landing IN a share list (F5/F6 from the other pane, paste, drop on the pane or on a share row, duplicate):
+     a `share-list` arm in `transfer-entry.ts::checkTransferDestinationGuard`. A drop on a share ROW targets
+     `smb://<server>/<share>`, which routes to the `network` kind, not `share-list`, so the guard must refuse the
+     `network` kind too (or the row-drop target must be off for the kind); either way, pin the row drop.
+   - Anything taking shares OUT (F5/F6 opener, ⌘C/⌘X, drag-out start, MCP copy/move): no source guard exists, so add ONE
+     (`!canBeSource` from `capabilitiesForPane`) in the shared transfer entry, called by `transfer-dialog-opener.ts`,
+     `clipboard-operations.ts`, and the drag start; ❌ not three ad-hoc checks.
+   - Rename: `file.rename` (F2, palette, and MCP `rename`) already routes `network` to Edit server, which is what F2
+     means on a share list; MCP `rename` with `{ initialName, expectedName }` would then open Edit server instead of
+     answering, so it refuses typed there. Mouse rename activation goes through `startRename` → `readOnlyRefusal`
+     (covered by the arm above).
+   - Quick Look (⇧Space) and its cursor-follow: the backend gate is `volume_supports_local_fs_access`, and an unknown
+     volume counts as local, so `SmbServerVolume` must answer `supports_local_fs_access() == false` (the trait default
+     is `true`); then ⇧Space behaves like it does on an MTP phone.
+   - The context menu: today a share row has none; after, `file.contextMenu` opens the standard file menu on it. §
+     "Decisions", 10.
+   - Backstop: `SmbServerVolume`'s write methods keep the trait's typed `NotSupported`; no refusal above relies on it.
 3. `..` on a share list navigates to `smb://`, which is the hub; the hub takes a `landOnServer` (the share list's path)
    and puts its cursor on that server's row. `navigate.ts` already special-cases `network`; this replaces
    `setNetworkHost` there, it doesn't add a branch. ❗ `..` and `⌘↑` don't go through `navigate.ts` but through
@@ -188,9 +214,15 @@ assume today that the `network` volume never lists (branches 10–15 below).
     listing runs the full ladder; every other caller gets the cache-only answer (the share cache, else a typed "not
     opened" refusal), § "Decisions", 7. M4a picks the seam (a listing-context flag, or the engine calling a separate
     method) and says which.
+16. The footer: `pane-footer.ts::paneFooterVisibility` gives the footer only to `paneViewKind` `'normal'` (with disk
+    space) and `'search-results'` (without). A share-list pane routes to `'normal'`, so it would get the disk usage bar,
+    and since the network volume never answers a space query, the bar would sit as the "not yet fetched" empty track
+    forever, which reads as "0% full". The share list gets `SelectionInfo` and ❌ no volume space: feed the routed kind
+    (or a capability) into `paneFooterVisibility`, ❌ not a `volumeId` check.
 
-Fifteen named branches, each at a seam that already branches per kind (or, for 13, a lookup that should have been
-pane-scoped); zero in the engine and the two views' row code.
+Sixteen named branches, each at a seam that already branches per kind (or, for 13, a lookup that should have been
+pane-scoped), with ONE new seam: branch 2's source guard, since nothing refuses a transfer source today. Zero in the
+engine and the two views' row code.
 
 **What does NOT fit, said plainly**: the mount flow. A share isn't a folder you enter; it's a mount that leaves the
 network volume for `/Volumes/<share>` (or a direct `SmbVolume`). That flow (wait view, Cancel, slow hint, sign-in retry,
@@ -262,7 +294,13 @@ that touches a flow keeps its pin green; M7 walks this list.
   the row tooltip (Brief), § "Decisions", 2.
 - Sorting: was fixed, case-insensitive name. AFTER: the pane's sort (name by default, `cmdr-collation`).
 - Quick filter, selection, Space, Insert, ⌘A: absent today. AFTER: quick filter works; selection is allowed but no
-  operation accepts a share-list source (`canBeSource: false`), so F5/F6/F8 refuse with the existing kind refusal.
+  operation accepts a share list as source or destination. ❗ No existing refusal covers this (`canBeSource` only greys
+  the F-bar): branch 2 names the new arms. Pin: F5, F6, F7, F8, ⌘C then paste in the other pane, a drop onto the pane
+  and onto a share row, and MCP `copy` / `mkdir` / `delete` each refuse with words (typed for MCP) and reach no backend
+  write.
+- Pinned tabs: today hub → share list happens inside `NetworkMountView`, so a pinned tab on Servers stays put. AFTER:
+  it's a same-volume navigation to a new path, so the pinned-tab fork opens the share list in a new unpinned tab, as any
+  folder does. Intended (pinned means pinned); pin it in M5c.
 - Type-to-jump: prefix match on shares, never `..`. AFTER: the folders' own type-to-jump (fuzzy), which never lands on
   `..` either. Pin: existing pane type-to-jump tests plus one share-list case.
 - Arrows, PageUp/PageDown, Home/End, ⌥-arrows: `list-cursor.ts` + `handleNavigationShortcut`. AFTER: the file list's own
@@ -275,7 +313,8 @@ that touches a flow keeps its pin green; M7 walks this list.
 - Cursor landing on a share by name (`landOnShare`, #1238) and the hint toast once the cursor is there → AFTER: the
   generic "select this name once the listing lands" of `navigate` (the same one going up a folder uses), and
   `share-parent-pane` raises the hint from that landing's completion.
-- Footer: share count in the header ("8 shares") → AFTER: `SelectionInfo` "8 shares" (branch 6).
+- Footer: share count in the header ("8 shares") → AFTER: `SelectionInfo` "8 shares" (branch 6), with no disk usage bar
+  or free-space text (branch 16); hidden while ErrorPane shows, like any pane's.
 - Path bar: was the header's host label + "as guest". AFTER: `Servers › <server> as <account>` (branch 7).
 - Back button in the header → AFTER: gone; `..` and the volume chip cover it.
 - The Back BUTTON in the sign-in, error, and empty states (the mouse way out when no `..` row is on screen) → AFTER:
@@ -448,6 +487,14 @@ that touches a flow keeps its pin green; M7 walks this list.
    mount refusal still needs Back. Plan default: keep the command for the controller's states only (Escape = Cancel,
    Backspace/`⌘↑` = Back), off the palette (`showInPalette: false`), with its display shortcuts and label updated so the
    keyboard settings don't promise "Escape = back to Servers".
+10. **The context menu on a share row** (today there is none; after, the standard file menu would open with Copy,
+    Delete, Rename, Reveal in Finder, Open with, tags, and so on, all wrong for a share): (a) a share-row menu built
+    like the host-row sibling builder in `row-menu.ts`: Open (mounts), Copy path, then the server's account items; (b)
+    the standard file menu with every item the kind refuses disabled (one menu, but mostly grey); (c) no menu on a
+    share-list row. **Plan default: (a)**, built in M5b with the other account doors and wired in M5c.
+11. **The footer band's top edge**: (a) one 2px edge everywhere: a normal pane's usage track, and a plain border-colored
+    rule on the hub and the share list; (b) drop the hub's border and let the share list and hub start flush, accepting
+    the 2px difference from a folder. **Plan default: (a)**.
 
 ## Milestones
 
@@ -489,12 +536,19 @@ added.
 ### M3: one footer height
 
 - **Scope**: `ServersHubStatusBar` and `SelectionInfo` take their height from one source (a shared class in
-  `app-file-list.css` or a `--pane-footer-*` token set: padding, font size, min height, and the border accounted for).
-- **Intentions**: switching between Servers and a share list or folder doesn't make the footer jump.
+  `app-file-list.css` or a `--pane-footer-*` token set: padding, font size, min height), and the band's top edge is one
+  height too (§ "Decisions", 11).
+- **Intentions**: switching between Servers, a share list, and a folder doesn't make the footer jump. "Height" means the
+  whole band from the list's bottom edge to the function-key bar, top edge included: a folder's band is the 2px usage
+  track plus `SelectionInfo`, the hub's is a 1px border plus its bar, and a share list's (from M5c) is `SelectionInfo`
+  with no track (branch 16), so equal body metrics alone still leave a 1–2px jump.
 - **Landmines**: the hub bar is a `<button>` with a top border; the SelectionInfo comment explains its horizontal inset;
-  keep both, unify the vertical metrics. Stylelint token rules.
+  keep both, unify the vertical metrics. Stylelint token rules. The usage track is a `role="meter"`: whatever fills the
+  top edge where no total exists is decoration (no role, no track color), so it can't read as "0% full".
 - **Test plan**: a unit test asserting both use the shared class/tokens; a visual check by screenshot (static state).
-- **DONE**: both bars measure the same height in light and dark (screenshot pair attached to the report).
+  The share-list band can't be seen until M5c, whose DONE re-checks it.
+- **DONE**: the hub band and a folder's band measure the same height in light and dark (screenshot pair attached to the
+  report).
 
 ### M4a: the share-list volume (listing only)
 
@@ -508,13 +562,17 @@ added.
   the drive index, and must not trip the observers (git arming, restic watch, index sizes) on an `smb://` path. Host
   resolution: case- and port-folding must match the TS writer exactly (`#lib/servers/DETAILS.md` § "The path grammar").
   The share cache is keyed by host id: resolve to the SAME id the hub's prefetch uses, or the hub and the pane cache
-  twice. Duplicate share names are already uniqued (`with_unique_share_names`). Registering the volume makes it
-  reachable by every `VolumeManager` caller from this milestone on (MCP `list_dir` on `smb://<server>` works the day
-  this lands): branch 15's gate lands HERE, with a test that a non-pane read neither dials nor reads the Keychain. ❗
-  The Rust app-path grammar reads a scheme root as `scheme://authority` (ONE token, `cmdr_fs::app_path::shape`), so
-  `smb://<server>` is itself a ROOT in Rust and `smb://` a root with an empty authority, while TS's
-  `isPathOnVolume('smb://x', 'smb://')` says "on the volume". Any engine or host code that checks a listing path against
-  the volume's `root()` (`ListingPath::on_volume`, `path_under`, `strip_prefix`, the oracle) may refuse or
+  twice. The trait's defaults aren't all "no": `supports_local_fs_access` defaults to `true` (Quick Look, and any
+  `std::fs` fast path, would then treat `smb://<server>/<share>` as a local path), so override it; check every other
+  default against a read-only, unwatched, unindexed, non-exporting volume and test the answers. If the volume's
+  capabilities ever reach `volumes-changed`, the frontend's `withBackendCapabilities` lets them WIN over the kind row,
+  so they must agree with `share-list`'s row. Duplicate share names are already uniqued (`with_unique_share_names`).
+  Registering the volume makes it reachable by every `VolumeManager` caller from this milestone on (MCP `list_dir` on
+  `smb://<server>` works the day this lands): branch 15's gate lands HERE, with a test that a non-pane read neither
+  dials nor reads the Keychain. ❗ The Rust app-path grammar reads a scheme root as `scheme://authority` (ONE token,
+  `cmdr_fs::app_path::shape`), so `smb://<server>` is itself a ROOT in Rust and `smb://` a root with an empty authority,
+  while TS's `isPathOnVolume('smb://x', 'smb://')` says "on the volume". Any engine or host code that checks a listing
+  path against the volume's `root()` (`ListingPath::on_volume`, `path_under`, `strip_prefix`, the oracle) may refuse or
   mis-relativize. Prove it with the engine test FIRST; if it fails, pick the smallest fix (the volume's `root()` answers
   per listed server, or the path check treats an empty-authority root as a prefix) and say so, ❌ not a special case in
   `cmdr-listing`.
@@ -548,20 +606,27 @@ added.
 
 - **Scope**: the `share-list` kind and its route (gated on `volumeId === 'network'`); branches 11–14 (the `share-list`
   parent arm in `FilePane.navigateToParent`, the MCP `..` path, the remembered-path rule, both halves of the capability
-  audit, the tab label) and branch 2's verb audit; branch 10's narrowed rule as a tested pure function, ❗ NOT yet wired
-  into `navigateToLocation` / `navigateInPlace` / MCP `nav_to_path`; `paneViewKind` routing `share-list` to the list and
-  `network` to `NetworkMountView`; `pane-mcp-sync` skipping only the `network` kind; restore normalization per §
-  "Decisions", 1. Nothing opens a share-list path yet, so `main` behaves as before. ❗ That holds only while both
-  refusals stand: lifting them here would let go-to-path, a link, or MCP `nav_to_path` open a share list whose Enter
-  navigates (refused) instead of mounting and whose sign-in refusal has no button, on `main`. M5c wires the rule in the
-  same commit as the entry-point switch.
+  audit, the tab label), branch 16 (the footer), and branch 2's verb audit with its refusal arms (pane-side writes,
+  destination guard, the one new source guard, MCP `rename`, `supports_local_fs_access`); branch 10's narrowed rule as a
+  tested pure function, ❗ NOT yet wired into `navigateToLocation` / `navigateInPlace` / MCP `nav_to_path`;
+  `paneViewKind` routing `share-list` to the list and `network` to `NetworkMountView`; `pane-mcp-sync` skipping only the
+  `network` kind; restore normalization per § "Decisions", 1. Nothing opens a share-list path yet, so `main` behaves as
+  before. ❗ That holds only while both refusals stand: lifting them here would let go-to-path, a link, or MCP
+  `nav_to_path` open a share list whose Enter navigates (refused) instead of mounting and whose sign-in refusal has no
+  button, on `main`. M5c wires the rule in the same commit as the entry-point switch.
 - **Intentions**: every generic seam knows the kind before any entry point sends a pane there, so M5c is a switch, not a
   hunt.
 - **Landmines**: the audit list in branch 13 is a starting point; `rg 'capabilitiesFor\('` is the real one, and each
   kept volume-only call says why in its report line. The navigation refusal for `smb://<server>/<share>` stays (and its
-  MCP wording).
+  MCP wording). Restore normalization has TWO arms in `app-status-store.ts` (the tab arm `resolveTabPath`, which runs
+  for background tabs too, and the pre-tabs scalar `leftPath`/`rightPath` arm), both of which pass a `network` path
+  through unprobed today; both normalize. A restored tab carries only `Location`, so name where `landOnServer` rides
+  until the tab is first shown (the restored hub entry's history cursor, or a one-shot on the tab), and pin a background
+  tab activated later. The new refusal words are new keys (no existing kind's words fit "a share list").
 - **Test plan**: unit tests per branch (kind table, navigate refusals, parent arm, `last-used-path` not recorded,
-  `has-parent`, `pane-mcp-sync` `..` path, tab label); `svelte-tests-related`.
+  `has-parent`, `pane-mcp-sync` `..` path, tab label, `paneFooterVisibility` for the kind, both restore arms); one
+  refusal test per verb in branch 2's list (pane-side, destination incl. a share-row drop, source, MCP typed);
+  `svelte-tests-related`.
 - **DONE**: a pane put on `network` + `smb://<fixture>` by a test renders the list, `..` lands on the hub, and Servers
   in the switcher still lands on the hub.
 
@@ -572,7 +637,8 @@ added.
   menu (delete `show_network_host_context_menu`, its event, the in-page twin, and `checkCredentialsForHost`); the path
   bar's "as <account>" as a button opening a small menu with Sign in as…, Browse as guest, Forget saved password (built
   and tested on a pane a test puts on a share list, visible in the app from M5c); two palette commands (`COMMAND_IDS`,
-  registry, handlers).
+  registry, handlers); the share-row menu builder (§ "Decisions", 10), built and tested here, wired to
+  `file.contextMenu` on a share-list pane in M5c.
 - **Intentions**: one action vocabulary, one runner per action (`share-list-sign-in.ts`), three doors, all live before
   M5c deletes the header's buttons. Until M5c the header keeps its buttons too; that brief overlap is the price of a
   `main` that never loses Sign in as… or Browse as guest.
@@ -598,8 +664,8 @@ added.
   `landOnServer`; the description cell (`extCellText` + header label); SelectionInfo noun; `ErrorPane` sign-in action
   (branch 5) + the user-intent auto-ask factory; empty state words; the standard MCP mirror for the kind (with the
   `comment="…"` token and the mount error); the `..` accessible name; the palette and Edit server reading the server
-  from the path; delete `PlacesBrowser.svelte`, `PlacesHeader.svelte`, their tests, `NetworkMountView`'s share-list
-  branch, and the frontend's `getSmbCredentials`.
+  from the path; the share-row context menu; delete `PlacesBrowser.svelte`, `PlacesHeader.svelte`, their tests,
+  `NetworkMountView`'s share-list branch, and the frontend's `getSmbCredentials`.
 - **Intentions**: every M1 pin green with the new rendering; the views untouched apart from the cell rule. ❗ The
   deletion and the entry-point switch land together: deleting `PlacesBrowser` while any caller still sets a
   `networkHost` would leave that door opening a blank pane on `main`.
@@ -607,20 +673,42 @@ added.
   paint-only (Enter must not mount the old listing's share); the drop-foreign-listings rule already accepts `smb://` on
   `network`; FilePane's size cap; the one-shot rule (cmdr-reports#7) across every entry.
 - **Test plan**: M1 E2E (macOS and Linux), axe on a share-list pane, ported `pane-mirror` / `share-parent-pane` /
-  `navigate` tests, `svelte-tests-related`, `clippy`.
+  `navigate` tests, the pinned-tab case (hub on a pinned tab → share list opens a new tab), an E2E that F5 and a drop
+  onto a share row refuse on a live share list, `svelte-tests-related`, `clippy`.
 - **DONE**: `PlacesBrowser` and `PlacesHeader` are gone; no code path calls `setNetworkHost` with a non-null host; the
-  coverage contract's "Opening", "The list itself", and "Signing in to list" sections all point at green pins.
+  coverage contract's "Opening", "The list itself", and "Signing in to list" sections all point at green pins; a
+  screenshot shows the share list's footer band at the hub's height with no usage bar.
 
 ### M6: retire the host plumbing
 
-- **Scope**: now-dead code only: `network-host-state.svelte.ts` (host and `shareLanding` go; `pendingMount` lives in
-  share-mount), `NavigationHistory.networkHost`, `setNetworkHost` / `onNetworkHostChange` / `initialNetworkHost`, the
-  `navigate*.ts` network host branches, and the docs.
+- **Scope**: now-dead code only. The full reader set (checked 2026-11-25; re-run the grep, it may have grown):
+  - `pane/network-host-state.svelte.ts` and its test (host and `shareLanding` go; `pendingMount` lives in share-mount).
+  - FilePane: `initialNetworkHost` / `onNetworkHostChange` props, `setNetworkHost`, `setNetworkAutoMount`,
+    `getNetworkHost`, the host arm of `navigateToParent`, and the quick-filter reset effect's
+    `dependOn(listingId, networkHost.host)` (the share list's own listing id now covers it; keep the reset).
+  - DualPaneExplorer: `handleNetworkHostChange`, the `onNetworkHostChange` wiring, `getFocusedPaneNetworkHost`, and the
+    `networkHost` passed through `onVolumeChange`; `pane/types.ts`'s `VolumeChangePayload.networkHost`;
+    `explorer-api.ts`'s `getFocusedPaneNetworkHost` and its entry in `command-dispatch.test-harness.ts`.
+  - History: `HistoryEntry.networkHost`, its equality arm in `navigation-history.ts`, `navigate.ts` (switch arm, Back/
+    Forward restore), `navigate-return.ts`, `navigate-commit.ts`'s `selectVolume.networkHost` and push-entry field,
+    `navigate.test-fixtures.ts`'s `setNetworkHost`, and `routes/debug/DebugHistoryPanel.svelte`'s host column.
+  - `pane-mirror.ts`'s `showNetworkState(host, autoMountShare)` and its read of `sourceHistoryEntry.networkHost` (M5c
+    moved the behavior to the path; this deletes the leftovers).
+  - Docs: `network/CLAUDE.md`'s `onNetworkHostChange` must-know, `navigation/DETAILS.md`'s `HistoryEntry` shape,
+    `servers/DETAILS.md`'s `getFocusedPaneNetworkHost` line, `pane/DETAILS.md`.
 - **Intentions**: the path is the only record of which server a pane shows.
 - **Landmines**: the stale-host bug the `onNetworkHostChange` must-know guarded (now impossible by construction: say so
-  in the docs and drop the must-know); history entries from before the change exist only in memory, so no migration.
-- **Test plan**: ported `network-host-state` / `navigate` tests; E2E.
-- **DONE**: `rg networkHost apps/desktop/src` finds only discovery types, and every M1 pin is green.
+  in the docs and drop the must-know). No migration: `HistoryEntry` is never persisted, and persisted tabs,
+  `leftPath`/`rightPath`, and `last-used-path` have only ever held `smb://` for `network`, which restores to the hub as
+  before. The reverse direction (state saved after this lands, read by an older build after a rollback) holds
+  `smb://<server>`; check that an older build's `NetworkMountView` ignores the path and shows the hub, and say so in the
+  report.
+- **Test plan**: ported `navigate` / `navigation-history` / `pane-mirror` tests (the `network-host-state` tests go with
+  their module); E2E.
+- **DONE**:
+  `rg -w 'networkHost|initialNetworkHost|onNetworkHostChange|setNetworkHost|getNetworkHost|getFocusedPaneNetworkHost|autoMountShare' apps/desktop/src`
+  finds nothing outside discovery types (the `networkHostFound`/`Lost`/`Resolved` events don't match `-w`), and every M1
+  pin is green.
 
 ### M7: close-out
 
@@ -638,18 +726,23 @@ added.
    sizes) never dials or reads the Keychain (branch 15).
 2. The sign-in sheet auto-opens only for a listing or mount the person started; nothing a tab switch, a repaint, or a
    background re-list does opens it.
-3. The Keychain is read at most once per server per session for a listing, never from a background path, and "is a
-   password stored?" is answered from the cache only.
+3. The Keychain is read at most once per server per session, shared by the listing and the mount (one memo), never from
+   a background path, and "is a password stored?" is answered from the cache only.
 4. The frontend never holds an SMB password after the sheet hands it over; mounts with no credentials use the server's
    session credential.
 5. One sign-in sheet; every share-list and mount credential question goes through `share-list-sign-in.ts` or the
    share-mount controller; no in-pane form.
-6. `capabilitiesForPane` is the only place that reads `smb://<server>` as a share list; views, `SelectionInfo`, and the
-   listing engine have no share-specific code beyond the cell rule.
+6. `capabilitiesForPane` is the only place that reads `smb://<server>` as a share list; the listing engine has no
+   share-specific code, and the views and `SelectionInfo` have none beyond the cell rule: the Ext header label, the
+   count noun, and the `..` name reach them as generic props FilePane fills from the kind, ❌ never a kind check inside
+   a view.
 7. A queued share mount fires at most once, only within the visit it was queued for.
 8. `..` from a share list lands the hub cursor on that server's row; `..` out of a share's top folder lands the share
    list cursor on that share.
 9. The share list's MCP mirror is the standard one: `..` at index 0, indices match the screen, the volume id is
    `network`.
 10. Every share-list and mount refusal is a typed value worded on the frontend; nothing string-matches a message.
-11. The Servers footer and SelectionInfo share one height source.
+11. The Servers footer and SelectionInfo share one height source, top edge included; a share list's footer shows no disk
+    space.
+12. No file operation takes a share list as source or destination: every verb in branch 2 refuses at its per-kind seam
+    with words (typed for MCP) before any dialog opens or any backend write starts.
