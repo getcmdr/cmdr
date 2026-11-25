@@ -25,7 +25,7 @@ use std::ptr::NonNull;
 use std::sync::OnceLock;
 use tauri::AppHandle;
 
-use super::lifecycle::{
+use super::super::lifecycle::{
     handle_volume_mounted, handle_volume_renamed, handle_volume_unmounted, handle_volume_will_unmount, set_app_handle,
 };
 

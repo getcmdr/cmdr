@@ -127,6 +127,9 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
     Message-Only Windows", read 2026-11-25). `CM_Register_Notification` was the plan's pick, but it reports device
     interfaces with no drive letter yet assigned, and still needs a handle for the removal query; the window covers
     both with documented, letter-bearing messages.
+  - **Decision/Why: the arm root never names `lifecycle`.** Only each arm's `watcher` does: `lifecycle` reaches the
+    arm root (`volume_id_for_mount`) and `volume_broadcast`, which lists through `volume_listing` back into the arm
+    root, so an arm-root `use` closes a module cycle (`module-cycles`).
   - **Decision/Why: every signal ends in a re-read of the table, ❌ never acting on a message's letters.** The sources
     overlap and none is complete (next list), a letter can be reused by another disk, and an unreadable table
     (`enumerate_listed` answers `None`) keeps the drives as they were, ❌ never "every drive gone".
@@ -142,8 +145,9 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
     `SHCNRF_NewDelivery`) is what Explorer's own mapping raises. ⚠️ Unverified whether `net use` from a console
     raises it; if not, such a drive shows on the next switcher refresh, as before.
   - **`subst` drive**: `DefineDosDevice` broadcasts `WM_SETTINGCHANGE` unless told not to
-    (`DDD_NO_BROADCAST_SYSTEM`, learn.microsoft.com `DefineDosDeviceW`), which the window re-reads on. Proved by
-    `watcher/tests.rs::a_subst_drive_arriving_and_leaving_reaches_the_watcher` on the Windows lane.
+    (`DDD_NO_BROADCAST_SYSTEM`, learn.microsoft.com `DefineDosDeviceW`), which the window re-reads on. The arrival and
+    removal both reach the watcher within about 0.6 s (`a_subst_drive_arriving_and_leaving_reaches_the_watcher`,
+    hosted Windows runner, PR #1463, 2026-11-25); which message carried them isn't recorded.
   - **Media inserted or removed** also arrives as `SHCNE_MEDIAINSERTED` / `SHCNE_MEDIAREMOVED`, a second source for the
     same re-read.
 - **Safe removal (#1363 part 2, #1340).** Windows asks a handle holder before removing a device only if it registered
