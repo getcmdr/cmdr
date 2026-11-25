@@ -2087,6 +2087,45 @@ included; the hidden couplings it found are why waves B and C differ from round 
   `ClaimedNames` ledger and the staged writes' placeholder release (`std::path` keys); `scan_walker`'s cached walk (with
   10f's lossless row); #1316 (a Rename or ` (recovered)` name of a non-UTF-8 Linux name stays lossy, byte for byte as
   before).
+- **Eleventh pass, milestone 1** (2026-11-25, branch `worktree-agent-a87892783e590c297`; helpers `join-check` (the
+  check) and `split-sweep` (the sweep below), each in its own worktree, cherry-picked): #1491 fixed, the sweep's joins
+  typed, and a check that keeps them so. Bridge calls 816 → 816 (`cmdr-operations` 391 → 391), `appTextToPath` 33 → 33,
+  `pathFromBareText` 261 → 256; wrapper calls (new budget, #1469) 173 → 168; `std::path` joins in the write engine (new
+  budget) 80 → 71. Hazards 62 → 56. No existing entry grew. What it is:
+  - **The sweep**: every production `.join(` / `with_file_name(` and `file_name()` / `parent()` split in
+    `cmdr-operations` and the app's `operations_host/`, read one by one (about 60 joins and 100 splits; the local
+    engine, tempdirs, and the in-flight ledger are native and stay). Real Windows bugs, each fixed with a cell that runs
+    on every host: a same-volume move to a chosen `a\b.txt` skipped as already in place (`item_identity` split
+    `/dst\a\b.txt` and `/dst/a/b.txt` alike, #1491; the copy's pre-skip identity too); a rename-as-move to an object
+    store refused a target name holding `\` (`TargetNames` split it by `std::path` components); a named transfer onto a
+    server misread a `\`-holding source (`leaf_validation`'s own-name, folder, and landing joins: false `SameName` /
+    `OntoASource`, a missed `AlreadyInDestination`); the conflict preflight's pane stats and self-collision filter split
+    sources by `std::path`; `refuse_routed_create` joined before reading the name as one; and a remote zip's duplicate
+    pre-check (`archive_inner_exists`) joined `/share/a.zip\dir/x.txt`, which no route serves.
+  - **Typed now**: `is_the_same_item` / `is_the_same_volume_path` (`&AppPath`), `TargetNames` (`AppPathBuf` keys, names
+    checked by `AppName::from_listed_text`), `TransferLeaves::chosen_name` (the volume engine's leaf as app text;
+    `chosen_for` stays for the local engines), `listed_name::top_level` (`Option<&str>`), the preflight-sources entry
+    point (`scan_volume_for_conflicts_within` takes `Option<Vec<AppPathBuf>>`, read at the app's and the demo's edge; a
+    refused set falls back to the name-only check), and `leaf_validation` on a name-only route (it reads the path's own
+    text as its canonical `AppPath`, no crossing).
+  - **The check** (`scripts/check/checks/desktop-rust-app-path-std-join.go`, inside `app-path-std-bridge`): two new
+    per-file ratchets. `wrapperCalls` counts each call through `std_of`, `into_std`, `on_volume`, `seam_path`, and
+    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (984: 816 direct + 168
+    through a wrapper). `stdJoin` counts a production `Path::join` / `with_file_name` in `cmdr-operations` and
+    `operations_host/` (a typed join is told apart by the `Result` it returns); a native one opts out with
+    `// allowed-std-join: <reason>`.
+  - **Behavior changes**: a rename-as-move's target name holding a NUL refuses at the start (no volume stores one); a
+    preflight whose sources the edge refuses runs name-only; on Windows, the preflight's local self-collision asks the
+    OS only for typed ends with a native spelling (else the conflict stays).
+  - **Byte-exact on macOS and Linux** by construction: the typed splits and joins equal `Path`'s for canonical UTF-8
+    text, and every typed reading falls back to the `std::path` one for text that isn't UTF-8, holds an escape-range
+    code point, or isn't canonical. Suites on macOS: `cmdr-operations` 2,684, `cmdr-listing-wasm` 146, green.
+- **Left in 10a after the eleventh pass**: the create and rename-validity entry points (`create_*_managed` and
+  `check_rename_validity_impl` still take the parent as text, so `create.rs` holds 8 tripwire sites and `validity.rs`
+  2); the same-volume engine's `std::path` body (`move_same.rs`, `rename_merge.rs`, `top_level_move_hints`);
+  `ClaimedNames` and the placeholder release (`std::path` keys: on Windows `a\b (1).txt` and `a/b (1).txt` hash as one
+  key, so a claim can shadow the other; a leftover placeholder at worst); `scan_walker`'s cached walk (10f's lossless
+  row); #1316.
 
 ### 10b. `cmdr-index`
 
@@ -2682,9 +2721,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
       Linux, but on Windows a POSIX volume's byte escape has no OS spelling, so `as_std_legacy` keeps its code point as
       text and `seam_path` re-escapes it as literal: a mangled name. 10 of the 11 are new here (`create.rs:55` is on the
       list).
-    - **Corrected hazard count: 62** after 10a's ninth pass, milestone 1 (26 on the list, 26 off it, 10 `seam_path`: the
-      two driver roots `journal.rs::record_volume_transfer_source` read are typed now); 64 after the eighth (26, 26, 12,
-      those two new there); 62 before it (26, 26, 10); 76 at the snapshot (37, 27, 12), 15 gone with 10a's seventh pass:
+    - **Corrected hazard count: 56** after 10a's eleventh pass (22 on the list, 25 off it, 9 `seam_path`: the
+      preflight's sources, `leaf_validation`'s leaf join, `target_names`, and `transfer_leaves`' two went typed). **62**
+      after 10a's ninth pass, milestone 1 (26 on the list, 26 off it, 10 `seam_path`: the two driver roots
+      `journal.rs::record_volume_transfer_source` read are typed now); 64 after the eighth (26, 26, 12, those two new
+      there); 62 before it (26, 26, 10); 76 at the snapshot (37, 27, 12), 15 gone with 10a's seventh pass:
       `resolve_dest_path` (off the list), the 11 walker and destination sites, and the `seam_path` crossings at
       `conflict_preflight.rs:142`, `routing.rs:686`, and `routing/destination.rs:41`, one new (the anchor's fallback).
       The demo's off-list sites (`cmdr-listing-wasm`'s `paths.rs:41`, `search.rs:263`, `tree.rs:129`) reach no OS, so no
@@ -2694,6 +2735,26 @@ included; the hidden couplings it found are why waves B and C differ from round 
     and in-flight log file paths, `hdiutil` output, the SMB fixture's mount point, `rustic_core`'s `OsStr` node names,
     and the local trash's native records. Each either moves behind a named native door the scanner doesn't match (as the
     app's `src/native_text.rs` did) or takes an `allowed-â¦` directive, which is a check change and David's call.
+  - **The exemptions to decide** (2026-11-25, after 10a's eleventh pass; "door" = a named native door in `cmdr-fs`, like
+    the app's `native_text::env_path`; "directive" = a new `allowed-native-text: <reason>` the scanner honors):
+    1. `cmdr-adb` `server.rs:244`, the adb binary from an env var (`OsString`): door.
+    2. `cmdr-adb` `server/binary_search.rs:101`, `ANDROID_HOME`-style env dirs: door.
+    3. `cmdr-adb` `server/binary_search.rs:130`, a hardcoded native search path: door.
+    4. `cmdr-fs` `sqlite_util.rs:543`, a DB's `-wal`/`-shm` file names: door.
+    5. `cmdr-operations` `in_flight_log_writer.rs:191`, the ledger log's own file: door.
+    6. `cmdr-index` `manager/start.rs:450`, `CMDR_E2E_START_PATH`: door.
+    7. `cmdr-index` seven benches and spikes read a root from an env var: door (one `env_path`).
+    8. `cmdr-sftp` `volume/testing.rs:197`, the fixture's key dir env var: door (`var_os`).
+    9. `cmdr-smb` `volume/test_support.rs:63`, a fixture's mount point: door.
+    10. `cmdr-fs` `testing/disk_images/facts.rs:609, 616`, `hdiutil` output: door.
+    11. `cmdr-archive` `apple_double.rs:206`, an xattr key, not a path: directive.
+    12. `cmdr-archive` `read/tar.rs:194`, a PAX record's xattr key: directive.
+    13. `cmdr-smb` `volume/copy_xattrs.rs:143`, a stream name as an xattr key: directive.
+    14. Three test xattr-key literals (`cmdr-archive` two, `cmdr-fs` `caps_tests.rs`): directive.
+    15. `cmdr-restic` `tree_tests.rs:22`, `rustic_core` takes node names as `OsStr`: directive.
+    16. `cmdr-operations` `delete/cloud_trash.rs:303, 323` and `trash_tests.rs:363`, local trash records: directive.
+    17. The write engine's native `Path::join`s (`stdJoin`, 71: the local engine, tempdirs, the in-flight ledger):
+        per-site `allowed-std-join` (works today), or exempt the local-engine folders by path in the check.
   - **The list** (line numbers at this branch's commit; the meter re-derives them, so re-run the check's regexes after
     any edit):
     - `apps/desktop/src-tauri/src/agent/store/migrations.rs`
