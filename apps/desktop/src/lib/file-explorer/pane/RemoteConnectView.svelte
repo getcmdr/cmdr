@@ -8,7 +8,7 @@
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import type { RemoteConnectState } from './remote-connect-state'
-    import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+    import { WAIT_REVEAL_AFTER_MS, waitRevealStyle } from '#lib/ui/wait-reveal.js'
 
     /**
      * The pane, while a remote place is on its way in or has stopped short.
@@ -58,18 +58,19 @@
     const identity = $derived(server ? tString('servers.paneState.placeOnServer', { name, server }) : name)
 
     /**
-     * ❗ A wait shows nothing for its first `LISTING_LOADING_DELAY_MS`, the same grace a slow
-     * folder gets before its loading view, so a connect that lands inside it never flashes a
-     * spinner and a Cancel nobody could reach in time. Counted from when the view mounts,
-     * which is when the wait began: a wait that turns into another wait (a dial into a
-     * backoff loop) keeps showing. A state that isn't a wait (a refusal, a sign-in) speaks
-     * at once: there's something to read and act on.
+     * ❗ A wait shows nothing until `WAIT_REVEAL_AFTER_MS`, then fades in: the one reveal rule
+     * the slow folder's loading view follows too (`#lib/ui/wait-reveal.ts`), so a connect that
+     * lands inside it never flashes a spinner. Its words and Cancel MOUNT only then, so nothing
+     * invisible can be clicked or announced. Counted from when the view mounts, which is when
+     * the wait began: a wait that turns into another wait (a dial into a backoff loop) keeps
+     * showing. A state that isn't a wait (a refusal, a sign-in) speaks at once: there's
+     * something to read and act on.
      */
     let graceOver = $state(false)
     $effect(() => {
         const timer = setTimeout(() => {
             graceOver = true
-        }, LISTING_LOADING_DELAY_MS)
+        }, WAIT_REVEAL_AFTER_MS)
         return () => {
             clearTimeout(timer)
         }
@@ -118,7 +119,12 @@
 <!-- The live region stays mounted through the quiet start, so the words that follow it are announced. -->
 <div class="remote-connect" role="status" aria-live="polite">
     {#if showsContent}
-    <div class="content">
+    <!-- A wait's face fades in like the loading view's; it mounts at the reveal point, so no delay is left. -->
+    <div
+        class="content"
+        class:wait-reveal={isWait}
+        style={isWait ? waitRevealStyle(WAIT_REVEAL_AFTER_MS) : undefined}
+    >
         <div class="place-name">{identity}</div>
         {#if address}
             <div class="place-address">{address}</div>

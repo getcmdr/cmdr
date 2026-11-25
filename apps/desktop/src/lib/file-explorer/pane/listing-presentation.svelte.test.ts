@@ -67,6 +67,18 @@ describe('createListingPresentation', () => {
     const { presentation } = create({ listingId: '', totalCount: 0, loading: true })
 
     expect(presentation.showLoading).toBe(true)
+    expect(presentation.loadingShownAfterMs, 'its face waits out the whole reveal').toBe(0)
+  })
+
+  it('says the loading screen came up a grace period into the load, so its face still shows at the reveal', () => {
+    const { presentation, set } = create({ listingId: 'old', totalCount: 12, loading: false })
+
+    set({ listingId: 'new', totalCount: 0, loading: true })
+    vi.advanceTimersByTime(LISTING_LOADING_DELAY_MS)
+    flushSync()
+
+    expect(presentation.showLoading).toBe(true)
+    expect(presentation.loadingShownAfterMs).toBe(LISTING_LOADING_DELAY_MS)
   })
 
   it('keeps the settled listing visible when the next load finishes inside the grace period', () => {

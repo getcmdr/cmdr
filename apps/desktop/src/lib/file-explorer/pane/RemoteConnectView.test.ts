@@ -7,11 +7,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, tick } from 'svelte'
 import RemoteConnectView from './RemoteConnectView.svelte'
-import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 
 /** Lets a wait's quiet start run out, for a test about what the view shows after it. */
 async function pastTheGrace(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, LISTING_LOADING_DELAY_MS + 10))
+  await new Promise((resolve) => setTimeout(resolve, WAIT_REVEAL_AFTER_MS + 10))
   await tick()
 }
 
@@ -79,8 +79,8 @@ describe('the address under the name', () => {
 })
 
 /**
- * A wait shows nothing for its first `LISTING_LOADING_DELAY_MS`, the grace a slow folder
- * gets before its loading view: a connect that lands inside it never flashes a spinner.
+ * A wait shows nothing for its first `WAIT_REVEAL_AFTER_MS`, the reveal a slow folder
+ * shares (`#lib/ui/wait-reveal.ts`): a connect that lands inside it never flashes a spinner.
  * Every state that isn't a wait (a refusal, a sign-in) speaks at once.
  */
 describe('the quiet start of a wait', () => {
@@ -99,7 +99,7 @@ describe('the quiet start of a wait', () => {
         cancel: vi.fn(),
       },
     },
-  ])('keeps $label’s view empty until the loading grace is over, then offers Cancel', async ({ state }) => {
+  ])('keeps $label’s view empty until the reveal, then offers Cancel', async ({ state }) => {
     vi.useFakeTimers()
     const target = document.createElement('div')
     document.body.appendChild(target)
@@ -109,7 +109,7 @@ describe('the quiet start of a wait', () => {
     expect(target.querySelector('button'), 'no spinner or Cancel inside the grace').toBeNull()
     expect(target.querySelector('.remote-connect')?.textContent.trim()).toBe('')
 
-    vi.advanceTimersByTime(LISTING_LOADING_DELAY_MS - 1)
+    vi.advanceTimersByTime(WAIT_REVEAL_AFTER_MS - 1)
     await tick()
     expect(target.querySelector('button')).toBeNull()
 

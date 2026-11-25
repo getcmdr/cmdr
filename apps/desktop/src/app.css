@@ -552,6 +552,11 @@
   --transition-fast: 100ms ease;
   --transition-base: 150ms ease;
   --transition-slow: 200ms ease;
+  /* The `.wait-reveal` class's delay and fade, set per element by
+     `lib/ui/wait-reveal.ts::waitRevealStyle` (where the 800 ms is named and argued). These
+     zero defaults only declare the tokens: no element reveals without that style. */
+  --transition-wait-reveal-delay: 0ms;
+  --transition-wait-reveal-ramp: 0ms;
 
   /* === Window chrome ===
      Height of the macOS overlay title bar. Single source of truth: the main

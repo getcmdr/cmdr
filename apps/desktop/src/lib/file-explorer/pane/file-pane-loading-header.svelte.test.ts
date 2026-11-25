@@ -10,6 +10,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { flushSync, mount, unmount } from 'svelte'
 import FilePane from './FilePane.svelte'
 import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 import { waitForUpdates, useMountTarget, type ListenRecorder } from './integration-test-utils'
 import type { FilePaneAPI } from './types'
 import { readFileSync } from 'node:fs'
@@ -182,7 +183,13 @@ describe('FilePane column header during a load', () => {
       await waitForUpdates(LISTING_LOADING_DELAY_MS + 50)
 
       expect(pane.isLoading()).toBe(true)
-      expect(getTarget().querySelector('.loading-container'), 'the loading view shows').toBeTruthy()
+      const face = getTarget().querySelector<HTMLElement>('.loading-container')
+      expect(face, 'the loading view covers the rows at the grace period').toBeTruthy()
+      // ...but its face waits for the shared reveal, 800 ms into the load (`wait-reveal.ts`).
+      expect(face?.classList.contains('wait-reveal')).toBe(true)
+      expect(face?.getAttribute('style')).toContain(
+        `--transition-wait-reveal-delay: ${String(WAIT_REVEAL_AFTER_MS - LISTING_LOADING_DELAY_MS)}ms`,
+      )
       expect(showsHeader(getTarget()), 'the header stays').toBe(true)
       await unmount(component)
     })

@@ -8,6 +8,7 @@
     import Trans from '#lib/intl/Trans.svelte'
     import type { ListingPhase } from '#lib/ipc/bindings.js'
     import type { Snippet } from 'svelte'
+    import { waitRevealStyle } from '#lib/ui/wait-reveal.js'
 
     interface Props {
         openingFolder?: boolean
@@ -16,6 +17,12 @@
         phase?: ListingPhase | null
         finalizingCount?: number
         showCancelHint?: boolean
+        /**
+         * How far into its wait this view mounts (the pane's cover mounts it at
+         * `LISTING_LOADING_DELAY_MS`), so it still appears `WAIT_REVEAL_AFTER_MS` after the wait
+         * began (`wait-reveal.ts`). `0`: it mounts as the wait starts (app startup).
+         */
+        mountedAfterMs?: number
     }
 
     const {
@@ -24,6 +31,7 @@
         phase = null,
         finalizingCount,
         showCancelHint = false,
+        mountedAfterMs = 0,
     }: Props = $props()
 
     const formatNumber = formatInteger
@@ -43,7 +51,7 @@
 
 {#snippet escKeyChip(children: Snippet)}<ShortcutChip key="Esc" />{@render children()}{/snippet}
 
-<div class="loading-container">
+<div class="loading-container wait-reveal" style={waitRevealStyle(mountedAfterMs)}>
     <Spinner size="lg" />
     {#if finalizingCount !== undefined}
         <div class="loading-text">
@@ -83,17 +91,6 @@
         gap: var(--spacing-lg);
         width: 100%;
         height: 100%;
-        animation: fadeIn 400ms ease-in;
-    }
-
-    @keyframes fadeIn {
-        0%,
-        50% {
-            opacity: 0;
-        }
-        100% {
-            opacity: 1;
-        }
     }
 
     .loading-text {

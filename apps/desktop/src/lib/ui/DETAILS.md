@@ -1737,8 +1737,9 @@ Progressive status text driven by props (mutually exclusive, evaluated top-down)
 5. Default → "Loading..."
 
 `showCancelHint` adds "Press [Esc] to cancel and go back" (the key rendered as a literal `ShortcutChip`) below the
-spinner. The container uses a 400ms `fadeIn` animation where the first 50% is invisible (effectively 200ms before fade
-begins), avoiding flash for fast loads.
+spinner. The container wears the shared `.wait-reveal` (`wait-reveal.ts`): invisible until 800 ms into the wait, then a
+200 ms fade (none under reduced motion), the same rule `RemoteConnectView` follows, so a fast load never flashes it.
+`mountedAfterMs` says how far into the wait it mounted (the pane's cover mounts it at 100 ms), so it still lands at 800.
 
 ## ProgressBar
 

@@ -19,7 +19,7 @@ import NetworkMountView from './NetworkMountView.svelte'
 import type { MountError, NetworkHost, ShareInfo } from '../types'
 import { MountFailure } from '../network/mount-error'
 import { renderMountError } from '../network/mount-error-messages'
-import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 
 const h = vi.hoisted(() => ({
   fetchShares: vi.fn(),
@@ -636,9 +636,12 @@ describe('NetworkMountView: a mount that waits', () => {
 
   it('offers Cancel while it waits, and Cancel calls off that mount and goes back to the share list', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     const cancel = must(
       [...target.querySelectorAll<HTMLButtonElement>('.remote-connect button')].find(
@@ -660,9 +663,12 @@ describe('NetworkMountView: a mount that waits', () => {
 
   it('names the share it mounts and the address it dials, in the shared connecting view', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     expect(must(target.querySelector('.remote-connect .title'), 'the heading').textContent).toContain(
       'Connecting to testshare',
@@ -676,9 +682,12 @@ describe('NetworkMountView: a mount that waits', () => {
 
   it('names the server by the name a person knows it by, beside the share', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     expect(must(target.querySelector('.remote-connect .place-name'), 'the identity line').textContent).toBe(
       'testshare on Testnas',
@@ -700,9 +709,12 @@ describe('NetworkMountView: a mount that waits', () => {
       expect(target.querySelector('.share-row')).toBeTruthy()
     })
     api.openCursorItem()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     expect(must(target.querySelector('.remote-connect .place-name'), 'the identity line').textContent).toBe('testshare')
     expect(must(target.querySelector('.remote-connect .place-address'), 'the address').textContent).toBe(
@@ -714,9 +726,12 @@ describe('NetworkMountView: a mount that waits', () => {
 
   it('cancels on the back key too, since the share list is not on screen to take it', async () => {
     const { target, component, api } = await mountViewAndActivateShare()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
     api.handleKeyDown(event)
@@ -748,7 +763,7 @@ describe('NetworkMountView: a mount that waits', () => {
       api.openCursorItem()
       await tick()
       // Past the wait's quiet start (`RemoteConnectView`), so the view says something.
-      vi.advanceTimersByTime(LISTING_LOADING_DELAY_MS)
+      vi.advanceTimersByTime(WAIT_REVEAL_AFTER_MS)
       await tick()
       const hint = () => must(target.querySelector('.remote-connect .hint'), 'the line under the spinner').textContent
       expect(hint(), 'a fresh mount says only that it takes a moment').not.toContain(slow)
@@ -764,9 +779,12 @@ describe('NetworkMountView: a mount that waits', () => {
 
   it('explains a stuck sign-in helper in the pane, with the command that restarts it', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(() => {
-      expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-    })
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
 
     answerMount({ type: 'sign_in_helper_stuck', server: ADDRESS })
     await vi.waitFor(() => {

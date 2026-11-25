@@ -137,6 +137,35 @@ html.show-borders .borderless-control {
 }
 
 /* =============================================================================
+   Wait reveal: when a wait's face (the loading view, a connect view) appears
+   ============================================================================= */
+
+/* Invisible for `--transition-wait-reveal-delay`, then fades in over `--transition-wait-reveal-ramp`. Both come
+   from `lib/ui/wait-reveal.ts::waitRevealStyle`, the one place the 800 ms is named and
+   argued, so the loading view and the connect view can't drift apart. */
+@keyframes wait-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.wait-reveal {
+  animation: wait-reveal var(--transition-wait-reveal-ramp) ease-in var(--transition-wait-reveal-delay) both;
+}
+
+/* Reduced motion: no fade. The zero-length animation keeps its delay and fill, so the face
+   still waits out the same delay, then appears at once. */
+@media (prefers-reduced-motion: reduce) {
+  .wait-reveal {
+    animation-duration: 0ms;
+  }
+}
+
+/* =============================================================================
    Spinner utility classes
    ============================================================================= */
 

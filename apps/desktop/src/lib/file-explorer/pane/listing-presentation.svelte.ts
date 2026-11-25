@@ -1,7 +1,8 @@
 /**
  * Keeps a pane's last settled listing on screen during a short navigation.
  * Fast directory loads never replace useful rows with a transient loading frame;
- * a load that lasts 100 ms earns the normal loading screen.
+ * a load that lasts 100 ms earns the normal loading screen, whose face then waits
+ * for the shared reveal (`#lib/ui/wait-reveal.ts`).
  */
 
 import type { SortColumn } from '../types'
@@ -47,6 +48,12 @@ export interface ListingPresentation {
   readonly effectiveSortBy: SortColumn | null
   /** Whether the loading screen has outlasted the grace period. */
   readonly showLoading: boolean
+  /**
+   * How far into the load the loading screen mounted: the grace period, or `0` at startup
+   * (no settled rows to keep). `LoadingIcon` counts it so its face still appears
+   * `WAIT_REVEAL_AFTER_MS` after the load began (`#lib/ui/wait-reveal.ts`).
+   */
+  readonly loadingShownAfterMs: number
 }
 
 export function createListingPresentation(deps: ListingPresentationDeps): ListingPresentation {
@@ -56,6 +63,7 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
   let settledParentRow = $state<ParentRow>({ hasParent: false, parentPath: '' })
   let settledEffectiveSortBy = $state<SortColumn | null>(null)
   let showLoading = $state(deps.getLoading())
+  let loadingShownAfterMs = $state(0)
 
   $effect(() => {
     const loading = deps.getLoading()
@@ -73,10 +81,12 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
       showLoading = false
     } else if (!settledListingId) {
       // Startup has no useful rows to preserve.
+      loadingShownAfterMs = 0
       showLoading = true
     } else {
       showLoading = false
       delayTimer = setTimeout(() => {
+        loadingShownAfterMs = LISTING_LOADING_DELAY_MS
         showLoading = true
       }, LISTING_LOADING_DELAY_MS)
     }
@@ -104,6 +114,9 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
     },
     get showLoading() {
       return showLoading
+    },
+    get loadingShownAfterMs() {
+      return loadingShownAfterMs
     },
   }
 }

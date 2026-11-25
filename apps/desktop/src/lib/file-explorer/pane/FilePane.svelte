@@ -2251,6 +2251,7 @@
                 phase={loadingPhase}
                 {finalizingCount}
                 showCancelHint={true}
+                mountedAfterMs={listingPresentation.loadingShownAfterMs}
             />
         {/snippet}
         <TypeToJumpIndicator

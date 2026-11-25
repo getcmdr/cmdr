@@ -18,11 +18,11 @@ import { mount, tick } from 'svelte'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 import { withPlatform } from '#lib/platform/test-platform.js'
 import { RECONNECT_DELAYS_MS } from '../network/smb-reconnect-manager.svelte'
-import { LISTING_LOADING_DELAY_MS } from './listing-presentation.svelte'
+import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 
 /** A wait's view stays empty for its quiet start (`RemoteConnectView`): audit what it shows after. */
 async function pastTheGrace(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, LISTING_LOADING_DELAY_MS + 10))
+  await new Promise((resolve) => setTimeout(resolve, WAIT_REVEAL_AFTER_MS + 10))
   await tick()
 }
 

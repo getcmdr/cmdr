@@ -1479,15 +1479,20 @@ loading pane re-list itself in a loop. Backend half: `crates/cmdr-listing/DETAIL
 listing it heads: the lists once got the new path's `..` over the old rows, and a jump from `/a` to `/a/b/c` made it
 `/a/b`, a row `/a` also lists, which threw Svelte's `each_key_duplicate`. ❌ Don't feed the lists the live `hasParent` /
 `parentPath`. If that load settles inside the grace period, the loading screen never mounts; if it outlasts the
-threshold, the cancellable `LoadingIcon` covers the ROW AREA through the list's `loadingOverlay` snippet. ❗ The list
-itself stays mounted through every load, so its column header never blinks out on a slow volume (a GCS bucket, a busy
-share); swapping the whole list for `LoadingIcon` is what made it vanish. The old rows and the header are presentation
-only: a transparent `.loading-shield` (rendered in the list branches so it never covers a connect view or an error)
-blocks pointer input for the whole load, while `FilePane.isLoading()` keeps keyboard and command paths blocked. Once the
-listing lands, Brief and Full fetch the new visible range and atomically replace the old rows rather than clearing
-first. Startup shows the loading view immediately because there is no settled listing to preserve, header included; the
-list hides its "empty folder" text while the overlay is up. An error or a stalled listing still takes the whole content
-area. Pinned in `file-pane-loading-header.svelte.test.ts`. The timer and snapshot contract are pinned in
+threshold, the cancellable `LoadingIcon` covers the ROW AREA through the list's `loadingOverlay` snippet. ❗ Two clocks:
+the COVER (rows hide, shield up, keys blocked) comes at 100 ms, but the cover's face (spinner, words) stays invisible
+until 800 ms into the load and then fades in over 200 ms (`#lib/ui/wait-reveal.ts`, the `.wait-reveal` class; under
+reduced motion it appears at 800 ms with no fade). `listingPresentation.loadingShownAfterMs` tells `LoadingIcon` how far
+into the load it mounted (100 ms, or 0 at startup), so the face lands at 800 ms either way. A remote wait's
+`RemoteConnectView` follows the same reveal (§ The connect views). ❗ The list itself stays mounted through every load,
+so its column header never blinks out on a slow volume (a GCS bucket, a busy share); swapping the whole list for
+`LoadingIcon` is what made it vanish. The old rows and the header are presentation only: a transparent `.loading-shield`
+(rendered in the list branches so it never covers a connect view or an error) blocks pointer input for the whole load,
+while `FilePane.isLoading()` keeps keyboard and command paths blocked. Once the listing lands, Brief and Full fetch the
+new visible range and atomically replace the old rows rather than clearing first. Startup shows the loading view
+immediately because there is no settled listing to preserve, header included; the list hides its "empty folder" text
+while the overlay is up. An error or a stalled listing still takes the whole content area. Pinned in
+`file-pane-loading-header.svelte.test.ts`. The timer and snapshot contract are pinned in
 `listing-presentation.svelte.test.ts`; the atomic swap and a late old-range response are pinned in
 `../views/full-list-cache.test.ts`.
 
@@ -2406,13 +2411,14 @@ The producers:
   past 10 s (`../network/DETAILS.md` § "A mount that waits"). Its failures stay its own error pane: they're
   `MountError`s with their own words and retry, ❌ not a `refused` state.
 
-**A wait starts quiet.** For its first `LISTING_LOADING_DELAY_MS` (`listing-presentation.svelte.ts`, the grace a slow
-folder gets before its loading view), a `connecting` or `waiting_for_device` state renders the view's live region and
-nothing in it, so a connect that lands inside that window never flashes a spinner and a Cancel nobody could reach. It
-lives in the view, so every producer gets it, and it counts from the view's mount (when the wait began): a dial that
-turns into a backoff loop keeps showing. Every other state speaks at once, since it has something to read and act on.
-The pane's list is already gone while it's quiet, so focus goes home to the explorer container through `list-focus`'s
-unmount (`isFocusAdrift` → `focusHome`), and keys keep reaching the pane.
+**A wait starts quiet.** Until `WAIT_REVEAL_AFTER_MS` (800 ms, `#lib/ui/wait-reveal.ts`, the one reveal a slow folder's
+loading view shares), a `connecting` or `waiting_for_device` state renders the view's live region and nothing in it, so
+a connect that lands inside that window never flashes a spinner. The words and Cancel MOUNT at the reveal and fade in
+with the shared `.wait-reveal` class, so nothing invisible can be clicked or announced. It lives in the view, so every
+producer gets it, and it counts from the view's mount (when the wait began): a dial that turns into a backoff loop keeps
+showing. Every other state speaks at once, since it has something to read and act on. The pane's list is already gone
+while it's quiet, so focus goes home to the explorer container through `list-focus`'s unmount (`isFocusAdrift` →
+`focusHome`), and keys keep reaching the pane.
 
 **A backoff loop wears the `connecting` state, with a `cycle` payload.** It says how long the loop keeps going and which
 attempt it is on, drains a bar toward the next attempt, and offers Try now beside Cancel and Disconnect. ❗ The
