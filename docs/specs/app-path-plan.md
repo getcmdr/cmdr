@@ -805,7 +805,10 @@ The listing hot path builds one path per entry. Today that's two allocations (`P
   a named constructor.
 - **`app-path-std-bridge`** (new check, milestone 3, Go check runner): counts `legacy_unchecked` and `as_std_legacy` per
   file in a shrink-wrapping allowlist. It's the progress meter during the conversion; at zero, milestone 11 deletes both
-  functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`.
+  functions, and the check stays as a ban on `Path::new(<x>.as_str())` and `OsStr::new(<x>.as_str())`. Its
+  `wrapperCalls` budget counts each call through a named wrapper over the bridge (`std_of`, `into_std`, `on_volume`,
+  `seam_path`, `engine_path`), so the meter reads direct plus wrapper crossings (#1469), and its `stdJoin` budget counts
+  the write engine's untyped `std::path` joins of a name onto a folder, the Windows `/share\name` trap.
 - **The escape gate** (added in the type's review, 2026-11-18; rebuilt after its second review, the lead's decision 2).
   The hazard: app TEXT holding a live escape turned into a `std::path` value carries the escape's own UTF-8 bytes, so
   `std::fs` opens a file literally named with it (`/d/caf\u{10FEE9}` becomes four byte escapes, a "not found", or a
