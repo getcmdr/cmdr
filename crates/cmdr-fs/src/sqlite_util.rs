@@ -622,6 +622,34 @@ pub fn run_incremental_vacuum(conn: &Connection, cap: Option<i64>) -> rusqlite::
     Ok(())
 }
 
+/// Reclaim up to `max_pages` freed pages, stopping early once `budget` is spent,
+/// and return how many pages it freed.
+///
+/// The bounded form of [`run_incremental_vacuum`], for a writer thread that must
+/// not hold everything queued behind it while a big freelist drains. Each step
+/// frees one page, so the clock is read between pages: the slice overshoots the
+/// budget by at most one page plus the commit of what it moved. Stopping early
+/// loses nothing, since resetting the pragma mid-run ends its autocommit
+/// transaction by committing the pages already moved (pinned by
+/// `a_bounded_slice_keeps_what_it_freed_when_it_stops_early`).
+pub fn run_incremental_vacuum_slice(
+    conn: &Connection,
+    max_pages: i64,
+    budget: std::time::Duration,
+) -> rusqlite::Result<u64> {
+    let started = crate::rt::now();
+    let mut stmt = conn.prepare(&format!("PRAGMA incremental_vacuum({max_pages});"))?;
+    let mut rows = stmt.query([])?;
+    let mut freed = 0u64;
+    while rows.next()?.is_some() {
+        freed += 1;
+        if crate::rt::since(started) >= budget {
+            break;
+        }
+    }
+    Ok(freed)
+}
+
 #[cfg(test)]
 mod page_cache_probe;
 #[cfg(test)]

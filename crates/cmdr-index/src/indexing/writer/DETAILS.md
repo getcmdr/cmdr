@@ -799,23 +799,40 @@ depends on: (1) a test must NEVER `INDEX_REGISTRY.clear()` (it wipes every concu
 `stress_test_helpers::TestInstanceGuard::register_identity_paths` uses an `mtp-` id so `get_dir_stats_on_volume` /
 `enrich_*_on_volume` map plain `/paths` identically (identity read-side routing) while staying private.
 
-## Maintenance: vacuum and WAL checkpoint (`maintenance.rs`)
+## Maintenance: vacuum (`vacuum.rs`) and WAL checkpoint (`maintenance.rs`)
 
 Free pages are reclaimed on a 30 s background timer that sends `IncrementalVacuum` plus `WalCheckpoint`.
 
 **Decision: `TruncateData` doesn't vacuum.** Every truncate is followed by a rebuild, and SQLite refills freelist pages
 before it grows the file, so an inline drain only handed back space the walk grew straight into again. Uncapped, it held
-the writer ~63 s after a 3.6 s DELETE on a 7.2M-row root index (dev log, 2026-11-19, #1296). What the rebuild doesn't
-reuse, the tick drains at its capped rate. Pinned by
-`maintenance.rs::tests::truncate_leaves_its_pages_for_the_rebuild_to_reuse`.
+the writer ~63 s after a 3.6 s DELETE on a 7.2M-row root index (dev log, 2026-11-19, #1296). Pinned by
+`vacuum.rs::tests::truncate_leaves_its_pages_for_the_rebuild_to_reuse`.
+
+**Decision: the tick waits out a rebuild, too.** `TruncateData` pauses `VacuumWork`; the next full aggregate
+(`ComputeAllAggregates`, or `PayLedgerIfUnpaid` for a walk that stopped) lifts the pause, since every walk after a
+truncate ends in one. Why: the walk reuses the freelist, so a mid-walk vacuum only moves tail pages into slots the walk
+was about to fill, then the walk grows the file straight back. Seen in the 2026-11-25 dev log (6.6M-entry rebuild): the
+freelist fell from 229K to 96K pages in 2.5 min with no vacuum running, and the five piled-up ticks that then ran shrank
+the file by ~80K pages that the whole-volume phase wrote back within two minutes. A rebuild that never reaches a full
+aggregate leaves the tick paused until the next launch, which costs file size, not correctness. Pinned by
+`vacuum.rs::tests::the_writer_holds_the_vacuum_from_a_truncate_to_the_next_full_aggregate`.
 
 `TruncateData` also drops `meta.last_event_id`; why is in `../watch/DETAILS.md` ("A rebuild watches from now").
 
-The vacuum handler uses a tiered cap (`pick_vacuum_cap`): skip when freelist < 1,000, a 2,000-page cap up to 20,000, a
-20,000-page cap above — tiny steady-state lock holds while draining real backlog in tens of minutes. The WAL checkpoint
-handler runs `PRAGMA wal_checkpoint(TRUNCATE)`; the scanner fires an explicit `WalCheckpoint` after
-`ComputeAllAggregates` so the GB-scale post-scan WAL spike trims immediately. The schema/pragma side (WAL mode, page
-cache, `wal_autocheckpoint`, `journal_size_limit`) lives in `../store/DETAILS.md`.
+The tick's quota is tiered (`pick_vacuum_cap`): none when the freelist is under 1,000 pages, 2,000 up to 20,000, and
+20,000 above, so real backlog drains in tens of minutes. A tick tops the debt up to its quota (ticks pile up behind a
+backlog; adding one quota each would multiply the work) and pays ONE slice; the writer pays the rest a slice at a time
+whenever its channel is empty (the `Empty` arm of `writer_loop`), so a message waits one slice at most, and a queue that
+never empties still gets a slice per tick. A slice stops at `VACUUM_SLICE_PAGES` (2,000) or `VACUUM_SLICE_BUDGET` (250
+ms), whichever comes first; stopping the pragma early commits what it moved
+(`cmdr_fs::sqlite_util::run_incremental_vacuum_slice`). Why time bounds it: one 20,000-page tick held the writer 10.3 s
+mid-rebuild (0.52 ms a page) where later ones took ~2 s, and on an idle APFS clone of the same index 1,000 pages took
+0.13–0.23 s and 20,000 took 3.1 s (sqlite3 3.54, M-series SSD, 2026-11-25): a 5× swing with load that a page count alone
+can't bound. The writer can't requeue a message to itself: a held sender keeps its channel from ever disconnecting, and
+a self-send into a full bounded channel deadlocks. The WAL checkpoint handler runs `PRAGMA wal_checkpoint(TRUNCATE)`;
+the scanner fires an explicit `WalCheckpoint` after `ComputeAllAggregates` so the GB-scale post-scan WAL spike trims
+immediately. The schema/pragma side (WAL mode, page cache, `wal_autocheckpoint`, `journal_size_limit`) lives in
+`../store/DETAILS.md`.
 
 **Gotcha — row-yielding pragmas need per-row stepping, not `execute_batch`.** `PRAGMA incremental_vacuum(N)` compiles to
 a loop that frees ONE page per `sqlite3_step()`, yielding a row after each; `execute_batch` steps a statement exactly
@@ -913,14 +930,27 @@ that case from the waiting side (`../lifecycle/DETAILS.md` § "Every detach wind
 aggregate over a very large drive can legitimately trip it.
 
 **The waiting side: a flush names what it's stuck behind (`flush_wait.rs`).** The writer marks the message it's inside
-(`BusyOn`, set and cleared around `process_message`). Both flushes wait in `STALL_REPORT_INTERVAL` (30 s) slices, and
-every slice without an answer logs a WARN like
-`Waited 60 s for 'root''s index writer to flush; it has been on one DeleteSubtreeById for 61 s`. So a wedge like GitHub
-issue #564 names its message and its volume in a plain INFO log, from a scan start's `flush_blocking` and from the
-verifier's `flush().await` alike. That's why `Flush` carries a `FlushReply`: the blocking waiter needs a std channel to
-wait with a timeout. ❌ The wait never gives up: one message can legitimately run for minutes (a full aggregate over
-millions of rows), and a scan start that walked away on a false alarm would be worse than the wedge it guards against
-(David's call, 2026-10-20). Pinned by `a_flush_behind_a_stuck_message_keeps_waiting_and_can_name_it`.
+(`BusyOn`, set and cleared around `process_message`, which also counts the messages taken off the queue), and a flush
+notes its place when it's sent (`FlushTicket`: the queue depth ahead of it and the count taken so far). Both flushes
+wait in `STALL_REPORT_INTERVAL` (30 s) slices, and every slice without an answer logs how far the flush still is from
+the front and what the writer is on. The level separates the two kinds of wait:
+
+- **A wedge is WARN**: one message held the writer a whole interval, or the writer took nothing off its queue in one
+  (`Waited 60 s for 'root''s index writer to flush: nothing else is ahead of it, but the writer has been on one DeleteSubtreeById for 61 s`).
+  So a wedge like GitHub issue #564 names its message and volume, from a scan start's `flush_blocking` and the
+  verifier's `flush().await` alike.
+- **A draining queue is INFO**: a walk feeding the writer thousands of short messages puts a flush minutes behind them,
+  which is expected
+  (`…: about 3,111 messages are still ahead of it, and the writer is working through them (now on one InsertSubtreeEntries)`).
+  Why: the 2026-11-25 dev log's rebuild printed "it has been on one InsertSubtreeEntries for 0 s" as a WARN every 30 s
+  for two minutes; the waiter was the phase machine's per-phase `drain` (`../lifecycle/phases/mod.rs`) on the
+  `index-phases` thread, queued behind ~3,400 walk writes the writer worked through at 50–80 a second.
+
+The count is "about": the depth is a gauge every sender shares. `Flush` carries a `FlushReply` because the blocking
+waiter needs a std channel to wait with a timeout. ❌ The wait never gives up: one message can legitimately run for
+minutes (a full aggregate over millions of rows), and a scan start that walked away on a false alarm would be worse than
+the wedge it guards against (David's call, 2026-10-20). Pinned by
+`a_flush_behind_a_stuck_message_keeps_waiting_and_can_name_it` and the `wait_report` tests.
 
 Cover walks report the same split, for the same reason. `walk_frontier` arms the probe at its start and its summary line
 carries both numbers (`Cover: … in 5.8s (5.8s of it waiting on the writer)`). Without them the line reads as a slow

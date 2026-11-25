@@ -23,7 +23,24 @@ use tauri::{Runtime, WebviewWindow};
 /// shortly after (first `FE:` line per launch in a production log, 12 launches on an Apple Silicon
 /// Mac, 2026-09-09 to 2026-09-12). Ten seconds leaves a slow cold start on an old Intel Mac plenty
 /// of room before the fallback could fire early and show the loading spinner.
-const FALLBACK_DELAY: Duration = Duration::from_secs(10);
+///
+/// A dev build (`debug_assertions`, the signal every other dev-only path in the backend
+/// uses) waits 30 s instead: there the frontend comes from Vite's dev server, whose cold
+/// compile after a dependency or config change takes far longer than any bundle load. In
+/// the plain-dev logs (34 launches, 2026-10-20 to 2026-11-25, backend logger to first `FE:`
+/// line), warm starts took 2.0–3.7 s and cold compiles 7.0–23.0 s; 10 s fired the fallback
+/// on 12 of the 30 launches whose frontend came up within a minute (the other four took
+/// 69 s or more, or never logged one, which no timeout tunes for). 30 s clears the slowest
+/// cold compile seen.
+const FALLBACK_DELAY: Duration = fallback_delay(cfg!(debug_assertions));
+
+const fn fallback_delay(dev_build: bool) -> Duration {
+    if dev_build {
+        Duration::from_secs(30)
+    } else {
+        Duration::from_secs(10)
+    }
+}
 
 /// Whether `show_main_window` has run in this process.
 static SHOWN: AtomicBool = AtomicBool::new(false);
@@ -70,6 +87,13 @@ mod tests {
     fn fires_only_when_nothing_showed_the_window() {
         assert!(fallback_needed(false, false));
         assert!(!fallback_needed(true, false));
+    }
+
+    /// A dev build waits for Vite's cold compile; a release build keeps its 10 s.
+    #[test]
+    fn a_dev_build_waits_longer_than_a_release_build() {
+        assert_eq!(fallback_delay(false), Duration::from_secs(10));
+        assert_eq!(fallback_delay(true), Duration::from_secs(30));
     }
 
     #[test]

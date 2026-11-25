@@ -794,8 +794,9 @@ pub(super) fn handle_delete_subtree_by_id(
 /// - **No vacuum here.** The rebuild that follows refills the database, and SQLite
 ///   reuses freelist pages before growing the file, so draining them first only gives
 ///   the space back to grow into it again; uncapped, it held the writer ~63 s on a
-///   7M-row index (#1296). The 30 s `IncrementalVacuum` tick reclaims what the rebuild
-///   doesn't reuse, at its capped rate.
+///   7M-row index (#1296). The 30 s `IncrementalVacuum` tick waits too, until the
+///   rebuild's full aggregate (`vacuum::VacuumWork`), then reclaims what the
+///   rebuild didn't reuse in bounded slices.
 pub(super) fn handle_truncate_data(
     conn: &rusqlite::Connection,
     accumulator: &mut AccumulatorMaps,

@@ -1,11 +1,10 @@
-//! Periodic DB housekeeping handlers run on the writer thread.
-//!
-//! Incremental vacuum reclaims free pages from deletes/rescans, and the WAL
-//! checkpoint truncates the WAL file once readers permit. Both are fired by a
-//! background timer (and the WAL checkpoint also right after a full scan); they
-//! mutate no `entries` rows, so they don't bump the writer generation. Their
-//! errors go through `IndexFailureSignal::note_maintenance`, never `note`: a
-//! failed housekeeping pass is retried next tick, not a reason to stop the index.
+//! Periodic DB housekeeping run on the writer thread: the WAL checkpoint, which
+//! truncates the WAL file once readers permit, and the busy handler's one-line
+//! contention episodes. (The freelist vacuum lives in `vacuum.rs`.) The checkpoint
+//! is fired by a background timer and also right after a full scan; it mutates no
+//! `entries` rows, so it doesn't bump the writer generation. Its errors go through
+//! `IndexFailureSignal::note_maintenance`, never `note`: a failed housekeeping pass
+//! is retried next tick, not a reason to stop the index.
 
 use std::cell::Cell;
 use std::time::{Duration, Instant};
@@ -136,59 +135,6 @@ pub(super) fn flush_busy_episode() {
     }
 }
 
-/// Cap thresholds for the tiered incremental-vacuum policy. Below `MIN`,
-/// holding the write lock isn't worth the work. Between `MIN` and `BACKLOG`,
-/// keep the original steady-state cap so concurrent operations barely notice.
-/// Above `BACKLOG`, ramp the cap to drain backlogs (post-truncate, post-replay,
-/// or DBs migrated from older versions that accumulated free pages) in tens of
-/// minutes instead of hours.
-const VACUUM_MIN_FREELIST: i64 = 1_000;
-const VACUUM_STEADY_CAP: i64 = 2_000;
-const VACUUM_BACKLOG_THRESHOLD: i64 = 20_000;
-const VACUUM_BACKLOG_CAP: i64 = 20_000;
-
-/// Pick the per-tick `incremental_vacuum` page cap given the current
-/// `freelist_count`. Pure so it can be tested in isolation; the handler
-/// just runs the SQL and logs.
-///
-/// Tiered cap: skip the no-op lock acquisition when the freelist is small;
-/// hold the lock only as long as needed to drain real backlog. The 20K cap
-/// (~80 MB at 4 KiB pages) is sized so a single tick fsyncs in ~100-300 ms
-/// on SSD — long enough to make real progress but short enough that the
-/// writer doesn't visibly stall behind it.
-fn pick_vacuum_cap(freelist: i64) -> Option<i64> {
-    if freelist < VACUUM_MIN_FREELIST {
-        None
-    } else if freelist < VACUUM_BACKLOG_THRESHOLD {
-        Some(VACUUM_STEADY_CAP)
-    } else {
-        Some(VACUUM_BACKLOG_CAP)
-    }
-}
-
-pub(super) fn handle_incremental_vacuum(conn: &rusqlite::Connection, signal: &IndexFailureSignal) {
-    let free = match conn.pragma_query_value(None, "freelist_count", |row| row.get::<_, i64>(0)) {
-        Ok(n) => n,
-        Err(e) => {
-            signal.note_maintenance(&IndexStoreError::from(e), "freelist_count query");
-            return;
-        }
-    };
-
-    let Some(cap) = pick_vacuum_cap(free) else {
-        return;
-    };
-
-    if let Err(e) = cmdr_fs::sqlite_util::run_incremental_vacuum(conn, Some(cap)) {
-        signal.note_maintenance(&IndexStoreError::from(e), "incremental_vacuum");
-    } else {
-        log::debug!(
-            "Writer: incremental_vacuum reclaimed up to {cap} of {}",
-            pluralize(free as u64, "free page")
-        );
-    }
-}
-
 /// Periodically TRUNCATE the WAL file so its high-water mark doesn't sit on
 /// disk indefinitely. SQLite's `wal_autocheckpoint` runs in PASSIVE mode and
 /// only moves pages from WAL to the main file; it never shrinks the file
@@ -288,7 +234,7 @@ fn handle_wal_checkpoint(conn: &rusqlite::Connection, signal: &IndexFailureSigna
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::indexing::store::{EntryRow, IndexStore, ROOT_ID};
+    use crate::indexing::store::{EntryRow, ROOT_ID};
     use crate::indexing::writer::tests::setup_db;
     use crate::indexing::writer::{IndexWriter, WriteMessage};
 
@@ -336,152 +282,6 @@ mod tests {
             msg,
             "writer gave up waiting for the write lock after 260 ms over 52 attempts"
         );
-    }
-
-    // ── DB hygiene tests ─────────────────────────────────────────────
-
-    /// The tier policy is the safety-critical part of the vacuum logic:
-    /// regressing it would either thrash the writer lock (cap too aggressive
-    /// in steady state) or let the freelist grow unbounded (cap missing on
-    /// backlog). Lock the thresholds with explicit cases either side of each
-    /// boundary plus the steady-state band's interior.
-    #[test]
-    fn pick_vacuum_cap_skips_below_min() {
-        assert_eq!(pick_vacuum_cap(0), None);
-        assert_eq!(pick_vacuum_cap(VACUUM_MIN_FREELIST - 1), None);
-    }
-
-    #[test]
-    fn pick_vacuum_cap_uses_steady_band_for_modest_backlog() {
-        assert_eq!(pick_vacuum_cap(VACUUM_MIN_FREELIST), Some(VACUUM_STEADY_CAP));
-        assert_eq!(pick_vacuum_cap(VACUUM_BACKLOG_THRESHOLD - 1), Some(VACUUM_STEADY_CAP));
-    }
-
-    #[test]
-    fn pick_vacuum_cap_ramps_to_backlog_cap_for_large_backlog() {
-        assert_eq!(pick_vacuum_cap(VACUUM_BACKLOG_THRESHOLD), Some(VACUUM_BACKLOG_CAP));
-        assert_eq!(pick_vacuum_cap(1_000_000), Some(VACUUM_BACKLOG_CAP));
-    }
-
-    /// The capped `incremental_vacuum` handler must reclaim the FULL per-tick
-    /// cap, not a single page. `PRAGMA incremental_vacuum(N)` frees one page per
-    /// `sqlite3_step()`, so a single `execute_batch` step drains one page
-    /// regardless of the cap — which stranded the freelist, draining it one page
-    /// per 30 s tick. Build a multi-thousand-page freelist with a subtree delete
-    /// (nothing drains it inline), then assert one
-    /// `IncrementalVacuum` reclaims far more than a single page.
-    #[test]
-    fn handle_incremental_vacuum_reclaims_capped_batch() {
-        let (db_path, _dir) = setup_db();
-        let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
-
-        // A directory to hang the children off, then a large batch of children.
-        // Deleting the subtree frees a few thousand pages onto the freelist with
-        // no auto-drain (rows pack ~20/page, so it takes tens of thousands to
-        // clear the vacuum's 1 000-page MIN and reach the 2 000-page steady cap).
-        let dir_id = 100;
-        let mut entries: Vec<EntryRow> = vec![EntryRow {
-            id: dir_id,
-            parent_id: ROOT_ID,
-            name: "subtree".to_string(),
-            is_directory: true,
-            is_symlink: false,
-            logical_size: None,
-            physical_size: None,
-            modified_at: None,
-            inode: None,
-        }];
-        entries.extend((0..60_000).map(|i| EntryRow {
-            id: 101 + i,
-            parent_id: dir_id,
-            name: format!("test-entry-with-a-reasonably-long-name-{i:08}"),
-            is_directory: false,
-            is_symlink: false,
-            logical_size: Some(4096),
-            physical_size: Some(4096),
-            modified_at: None,
-            inode: None,
-        }));
-        writer.send(WriteMessage::InsertEntriesV2(entries)).unwrap();
-        writer.send(WriteMessage::DeleteSubtreeById(dir_id)).unwrap();
-        writer.flush_blocking().unwrap();
-
-        let probe = IndexStore::open_read_connection(&db_path).unwrap();
-        let free_before: i64 = probe
-            .pragma_query_value(None, "freelist_count", |row| row.get(0))
-            .unwrap();
-        drop(probe);
-        // The freelist must comfortably exceed a single page for the reclaim
-        // assertion below to be unambiguous.
-        assert!(
-            free_before > 1_000,
-            "test setup: expected a multi-thousand-page freelist, got {free_before}"
-        );
-
-        writer.send(WriteMessage::IncrementalVacuum).unwrap();
-        writer.flush_blocking().unwrap();
-
-        let probe = IndexStore::open_read_connection(&db_path).unwrap();
-        let free_after: i64 = probe
-            .pragma_query_value(None, "freelist_count", |row| row.get(0))
-            .unwrap();
-
-        let reclaimed = free_before - free_after;
-        assert!(
-            reclaimed >= 1_000,
-            "one IncrementalVacuum must reclaim the per-tick cap, not a single page; \
-             before={free_before}, after={free_after}, reclaimed={reclaimed}"
-        );
-
-        writer.shutdown();
-    }
-
-    /// Regression (#1296): `TruncateData` leaves its freed pages on the freelist for
-    /// the rebuild to refill, ❌ never drains them inline (an uncapped drain held the
-    /// writer ~63 s on a 7M-row index, only to grow the file straight back). The
-    /// rebuild reuses them, so the file doesn't grow past its pre-truncate size.
-    #[test]
-    fn truncate_leaves_its_pages_for_the_rebuild_to_reuse() {
-        let (db_path, _dir) = setup_db();
-        let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
-
-        // Long names so 5000 rows span thousands of pages.
-        let entries = || -> Vec<EntryRow> {
-            (0..5000)
-                .map(|i| EntryRow {
-                    id: 100 + i,
-                    parent_id: ROOT_ID,
-                    name: format!("test-entry-with-a-reasonably-long-name-{i:08}"),
-                    is_directory: false,
-                    is_symlink: false,
-                    logical_size: Some(4096),
-                    physical_size: Some(4096),
-                    modified_at: None,
-                    inode: None,
-                })
-                .collect()
-        };
-        let probe = IndexStore::open_read_connection(&db_path).unwrap();
-        let pragma = |name: &str| -> i64 { probe.pragma_query_value(None, name, |row| row.get(0)).unwrap() };
-
-        writer.send(WriteMessage::InsertEntriesV2(entries())).unwrap();
-        writer.flush_blocking().unwrap();
-        let pages_before = pragma("page_count");
-
-        writer.send(WriteMessage::TruncateData).unwrap();
-        writer.flush_blocking().unwrap();
-        let freed = pragma("freelist_count");
-        assert!(freed >= 100, "the truncate must leave its pages free; freelist={freed}");
-
-        writer.send(WriteMessage::InsertEntriesV2(entries())).unwrap();
-        writer.flush_blocking().unwrap();
-        let pages_after = pragma("page_count");
-        assert!(
-            pages_after <= pages_before + 10,
-            "the rebuild must reuse the freed pages; before={pages_before}, after={pages_after}"
-        );
-
-        writer.shutdown();
     }
 
     /// A maintenance tick that lands mid-batch (the replay wraps its whole run in

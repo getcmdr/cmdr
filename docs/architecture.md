@@ -331,8 +331,8 @@ All under `apps/desktop/src-tauri/src/`.
 - `font_metrics/`: the font metrics store's on-disk cache, hosting `cmdr-brief-columns` (Brief column widths)
 - `window_state/`: Main-window size/position persistence across launches (`.window-state.json`). Replaces
   `tauri-plugin-window-state`. Placement only; the frontend shows the window
-- `main_window_show.rs`: The backend's fallback that shows the main window when the frontend hasn't within 10 s (a
-  WebKit that can't run the bundle, a startup that never finishes). Off in E2E
+- `main_window_show.rs`: The backend's fallback that shows the main window when the frontend hasn't within 10 s, or 30 s
+  in a dev build (a WebKit that can't run the bundle, a startup that never finishes). Off in E2E
 - `child_window_lifecycle/`: How every child window appears and goes away: the slide in and out (honoring Reduce
   motion), and the one WebKit-safe close every close path lands in. Frontend halves: `#lib/child-window-show`,
   `#lib/child-window-close`. See `apps/desktop/src-tauri/src/child_window_lifecycle/CLAUDE.md`
