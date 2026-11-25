@@ -133,6 +133,30 @@ describe('createListingLoader — generation / drop-foreign token model', () => 
     })
   })
 
+  /**
+   * The `..` row is part of the first frame: the share's answer lands BEFORE the count, the
+   * cursor, and the end of loading, so the rows never paint without the row and then shift
+   * by one, and a cursor landing on a folder by name counts the row (the parent offset).
+   */
+  it('takes the share parent before the rows, so `..` is in their first frame', async () => {
+    const { loader, state } = makeHarness({ volumeId: 'smb-testnas-media', volumePath: '/Volumes/media' })
+    let seenAtNote: { totalCount: number; loading: boolean } | undefined
+    h.noteShareParent.mockImplementation(() => {
+      seenAtNote = { totalCount: state.totalCount, loading: state.loading }
+      state.hasParent = true // what the pane derives from the cache
+    })
+    h.findFileIndex.mockResolvedValue(2)
+    await loader.loadDirectory({ path: '/Volumes/media', selectName: 'photos' })
+    const shareParent = { host: {}, serverLabel: 'Testnas', shareName: 'media', showParentRow: null }
+
+    completeCb(0)({ listingId: state.listingId, totalCount: 5, volumeRoot: '/Volumes/media', shareParent })
+    await vi.waitFor(() => {
+      expect(state.loading).toBe(false)
+    })
+    expect(seenAtNote).toEqual({ totalCount: 0, loading: true })
+    expect(state.cursorIndex).toBe(3) // `photos` is backend row 2, so row 3 under `..`
+  })
+
   it('takes the hidden count a complete event reports, and a new load clears it', async () => {
     const { loader, state } = makeHarness()
     await loader.loadDirectory({ path: '/a' })

@@ -4,8 +4,11 @@
  * the pane out of it: the server's share list, the cursor on the share it came from.
  *
  * The share's answer comes from `../network/share-parent-row.svelte.ts`, asked again
- * each time the pane lands on a share. With the switch off, the top folder is a root,
- * as any volume's is: no `..` row, and Go to parent does nothing.
+ * each time the pane lands on a share, and carried by every top-folder listing, which
+ * `listing-loader.ts` notes BEFORE it hands over the rows: so `topFolderLeadsOut` is
+ * already right in the rows' first frame, and no late `..` shifts every index by one.
+ * With the switch off, the top folder is a root, as any volume's is: no `..` row, and
+ * Go to parent does nothing.
  */
 
 import type { NetworkHost, VolumeInfo } from '../types'
