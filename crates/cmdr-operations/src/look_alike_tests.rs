@@ -165,3 +165,76 @@ async fn a_new_folder_beside_a_watched_pane_is_placed_without_a_listing() {
     assert!(created.is_ok(), "{created:?}");
     assert_eq!(volume.list_calls(), 0);
 }
+
+// ---- A POSIX volume's `\` is a name character on every host ----
+//
+// On Windows `Path` split `/dir/sub\x` into `x` inside `/dir/sub`, so a respelled new name
+// landed in that other folder and the look-alike check listed it. These hold on every host.
+
+#[test]
+fn a_new_name_holding_a_backslash_stays_one_name_in_its_folder() {
+    let volume = InMemoryVolume::new("v").with_composed_new_names();
+    // Names a POSIX volume holds as ONE name, `\` and all, plus the hostile spellings.
+    for path in [
+        Path::new("/dir/sub\\b.txt"),
+        Path::new("/dir/foo\\.."),
+        Path::new("/dir/..\\bar"),
+        Path::new("/dir/a:b"),
+        Path::new("/dir/trail."),
+        Path::new("/dir/trail "),
+        Path::new("/dir/C:\\x"),
+    ] {
+        assert_eq!(spelled_new_path(&volume, path), path, "{path:?} stays one name in /dir");
+    }
+    // And it's still respelled as the volume wants new names, in the same folder.
+    assert_eq!(
+        spelled_new_path(&volume, Path::new("/dir/sub\\cafe\u{301}.txt")),
+        Path::new("/dir/sub\\caf\u{e9}.txt"),
+    );
+}
+
+#[tokio::test]
+async fn a_backslash_name_is_placed_in_its_own_folder() {
+    let volume = InMemoryVolume::new("v").with_composed_new_names();
+    volume.create_directory(app_path!("/dir")).await.unwrap();
+    // A folder `Path`'s Windows split would have landed the name in.
+    volume.create_directory(app_path!("/dir/sub")).await.unwrap();
+    let path = Path::new("/dir/sub\\cafe\u{301}.txt");
+    match ListedFolders::new(&volume).place_new_entry(path, None).await {
+        Ok(NewEntry::Free(placed)) => assert_eq!(placed, Path::new("/dir/sub\\caf\u{e9}.txt")),
+        other => panic!("expected a free name in /dir, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn a_backslash_name_is_looked_for_in_its_own_folder() {
+    let volume = InMemoryVolume::new("v");
+    volume.create_directory(app_path!("/dir")).await.unwrap();
+    volume.create_directory(app_path!("/dir/sub")).await.unwrap();
+    // `/dir/sub` holds `café.txt` decomposed: no look-alike of `/dir/sub\café.txt`.
+    volume
+        .create_file(app_path!("/dir/sub/cafe\u{301}.txt"), b"x")
+        .await
+        .unwrap();
+    let asked = Path::new("/dir/sub\\caf\u{e9}.txt");
+    assert!(!held_in_another_spelling(&volume, asked).await.unwrap());
+    // `/dir` holding `sub\café.txt` decomposed is one.
+    volume
+        .create_file(app_path!("/dir/sub\\cafe\u{301}.txt"), b"x")
+        .await
+        .unwrap();
+    assert!(held_in_another_spelling(&volume, asked).await.unwrap());
+}
+
+#[test]
+fn a_look_alike_clash_compares_whole_backslash_names() {
+    // The names differ in form only before the `\`, which `Path`'s Windows split cut off.
+    assert!(is_look_alike_clash(
+        Path::new("/src/caf\u{e9}\\a.txt"),
+        Path::new("/dst/cafe\u{301}\\a.txt"),
+    ));
+    assert!(!is_look_alike_clash(
+        Path::new("/src/x\\a.txt"),
+        Path::new("/dst/y\\a.txt")
+    ));
+}
