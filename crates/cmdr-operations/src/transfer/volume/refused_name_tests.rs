@@ -10,8 +10,8 @@
 //! the skip counted.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic as _};
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -42,10 +42,10 @@ enum Driver {
 
 struct Seeded {
     source: Arc<InMemoryVolume>,
-    paths: Vec<PathBuf>,
+    paths: Vec<AppPathBuf>,
     /// Every source file, and whether it lands (its name, and every folder
     /// above it, fit the share).
-    files: Vec<(PathBuf, bool)>,
+    files: Vec<(AppPathBuf, bool)>,
     /// How many names the share refuses, each one prompt: every long filename
     /// outside a refused folder, plus the refused folder itself.
     refusals: usize,
@@ -59,50 +59,36 @@ async fn seeded(driver: Driver) -> Seeded {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let mut paths = Vec::new();
     let mut files = Vec::new();
-    let album = PathBuf::from("/album");
-    source
-        .create_directory(&AppPath::legacy_unchecked(&album))
-        .await
-        .unwrap();
+    let album = app_path!("/album");
+    source.create_directory(album).await.unwrap();
     for (name, fits) in [
         ("01 intro.flac".to_string(), true),
         (long_name("02"), false),
         ("03 outro.flac".to_string(), true),
         (long_name("04"), false),
     ] {
-        let path = album.join(&name);
-        source
-            .create_file(&AppPath::legacy_unchecked(&path), b"the user's bytes")
-            .await
-            .unwrap();
+        let path = child(album, &name);
+        source.create_file(&path, b"the user's bytes").await.unwrap();
         files.push((path, fits));
     }
-    let refused_folder = album.join(long_name("bonus disc").trim_end_matches(".flac"));
-    source
-        .create_directory(&AppPath::legacy_unchecked(&refused_folder))
-        .await
-        .unwrap();
-    source
-        .create_directory(&AppPath::legacy_unchecked(&refused_folder.join("live")))
-        .await
-        .unwrap();
-    for file in ["a.flac", "b.flac", "live/c.flac"] {
-        let path = refused_folder.join(file);
-        source
-            .create_file(&AppPath::legacy_unchecked(&path), b"inside a refused folder")
-            .await
-            .unwrap();
+    let refused_folder = child(album, long_name("bonus disc").trim_end_matches(".flac"));
+    let live = child(&refused_folder, "live");
+    source.create_directory(&refused_folder).await.unwrap();
+    source.create_directory(&live).await.unwrap();
+    for path in [
+        child(&refused_folder, "a.flac"),
+        child(&refused_folder, "b.flac"),
+        child(&live, "c.flac"),
+    ] {
+        source.create_file(&path, b"inside a refused folder").await.unwrap();
         files.push((path, false));
     }
     let mut refusals = 3;
-    paths.push(album);
+    paths.push(album.to_owned());
     if driver != Driver::SerialCopy {
         for (name, fits) in [(long_name("single"), false), ("short single.flac".to_string(), true)] {
-            let path = PathBuf::from("/").join(&name);
-            source
-                .create_file(&AppPath::legacy_unchecked(&path), b"a top-level file")
-                .await
-                .unwrap();
+            let path = child(app_path!("/"), &name);
+            source.create_file(&path, b"a top-level file").await.unwrap();
             files.push((path.clone(), fits));
             paths.push(path);
         }
@@ -141,9 +127,9 @@ async fn run(
                 "op-refused",
                 state,
                 source,
-                &crate::testing::app_paths_of(&seeded.paths),
+                &seeded.paths,
                 dest,
-                &crate::testing::app_path_of(Path::new("/inbox")),
+                app_path!("/inbox"),
                 &config,
             )
             .await
@@ -154,9 +140,9 @@ async fn run(
                 "op-refused",
                 state,
                 source,
-                &crate::testing::app_paths_of(&seeded.paths),
+                &seeded.paths,
                 dest,
-                &crate::testing::app_path_of(Path::new("/inbox")),
+                app_path!("/inbox"),
                 &config,
             )
             .await
@@ -165,8 +151,17 @@ async fn run(
     result.map(|_| ()).map_err(|failure| failure.error)
 }
 
-fn at_dest(source: &Path) -> PathBuf {
-    Path::new("/inbox").join(source.strip_prefix("/").unwrap())
+/// `name` in `dir`, by the app path's own join: a `std::path` join puts Windows' `\` into
+/// the app path, one name on the double.
+fn child(dir: &AppPath, name: &str) -> AppPathBuf {
+    dir.join(AppName::from_app_spelling(name).expect("one name"))
+        .expect("joins")
+}
+
+fn at_dest(source: &AppPath) -> AppPathBuf {
+    app_path!("/inbox")
+        .join_relative(&source.strip_prefix(app_path!("/")).expect("under the root"))
+        .expect("joins")
 }
 
 /// Every long name is asked about, skipped, and kept out of the destination;
@@ -211,13 +206,13 @@ async fn assert_skips_each_refused_name(driver: Driver) {
         "{driver:?}: each prompt says the name is too long: {prompts:?}"
     );
     for (source, fits) in &seeded.files {
-        let landed = dest.exists(&AppPath::legacy_unchecked(&at_dest(source))).await;
-        assert_eq!(landed, *fits, "{driver:?}: {} landed={landed}", source.display());
-        let kept = seeded.source.exists(&AppPath::legacy_unchecked(source)).await;
+        let landed = dest.exists(&at_dest(source)).await;
+        assert_eq!(landed, *fits, "{driver:?}: {} landed={landed}", source.as_str());
+        let kept = seeded.source.exists(source).await;
         let moved = driver == Driver::CrossVolumeMove;
         // ❗ The data-safety half: a move never deletes the source of an item
         // it skipped, whose only copy is still there.
-        assert_eq!(kept, !moved || !fits, "{driver:?}: {} kept={kept}", source.display());
+        assert_eq!(kept, !moved || !fits, "{driver:?}: {} kept={kept}", source.as_str());
     }
     // Nothing of a skipped item is left at the destination: no temp, no partial.
     let leftovers: Vec<_> = dest
@@ -268,12 +263,7 @@ async fn skip_all_asks_once() {
 
     assert_eq!(events.inner.conflicts.lock_ignore_poison().len(), 1);
     for (source, fits) in &seeded.files {
-        assert_eq!(
-            seeded.source.exists(&AppPath::legacy_unchecked(source)).await,
-            !fits,
-            "{}",
-            source.display()
-        );
+        assert_eq!(seeded.source.exists(source).await, !fits, "{}", source.as_str());
     }
 }
 
@@ -304,11 +294,7 @@ async fn any_other_answer_stops_with_the_refusal() {
     );
     for (source, fits) in &seeded.files {
         if !fits {
-            assert!(
-                seeded.source.exists(&AppPath::legacy_unchecked(source)).await,
-                "{} must stay",
-                source.display()
-            );
+            assert!(seeded.source.exists(source).await, "{} must stay", source.as_str());
         }
     }
 }

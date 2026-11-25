@@ -4,8 +4,8 @@
 //! so without this no folder of one would ever copy out.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -17,20 +17,16 @@ use crate::types::VolumeCopyConfig;
 use cmdr_fs::volume::{InMemoryVolume, Volume, VolumeError};
 
 /// `/tN/keep.txt` for each source, and `/t0/link`, the one with no bytes.
-async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<PathBuf>) {
+async fn seeded_source(count: usize) -> (Arc<InMemoryVolume>, Vec<AppPathBuf>) {
     let source = Arc::new(InMemoryVolume::new("Source").with_space_info(10_000_000, 10_000_000));
     let mut paths = Vec::new();
     for n in 0..count {
-        let root = PathBuf::from(format!("/t{n}"));
-        source
-            .create_directory(&AppPath::legacy_unchecked(&root))
-            .await
-            .unwrap();
-        source
-            .create_file(&AppPath::legacy_unchecked(&root.join("keep.txt")), b"kept")
-            .await
-            .unwrap();
-        paths.push(root);
+        // Spelled as app text: a `std::path` join puts Windows' `\` into it, one name on the double.
+        let top = AppPathBuf::from_wire(&format!("/t{n}")).expect("an app path");
+        let keep = AppPathBuf::from_wire(&format!("/t{n}/keep.txt")).expect("an app path");
+        source.create_directory(&top).await.unwrap();
+        source.create_file(&keep, b"kept").await.unwrap();
+        paths.push(top);
     }
     source
         .create_file(AppPath::from_normalized(LINK).expect("a canonical path"), b"")
@@ -71,9 +67,9 @@ async fn copy_skips_and_carries_on(sources: usize) {
         "op-no-content",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &crate::testing::app_paths_of(&paths),
+        &paths,
         Arc::clone(&dest) as Arc<dyn Volume>,
-        &crate::testing::app_path_of(Path::new("/inbox")),
+        app_path!("/inbox"),
         &VolumeCopyConfig::default(),
     )
     .await;
@@ -85,7 +81,7 @@ async fn copy_skips_and_carries_on(sources: usize) {
     assert!(result.is_ok(), "a link doesn't stop the copy: {result:?}");
     for n in 0..sources {
         assert!(
-            dest.exists(&AppPath::legacy_unchecked(Path::new(&format!("/inbox/t{n}/keep.txt"))))
+            dest.exists(&AppPathBuf::from_wire(&format!("/inbox/t{n}/keep.txt")).expect("an app path"))
                 .await
         );
     }
@@ -118,9 +114,9 @@ async fn a_move_leaves_a_child_with_no_bytes_at_the_source() {
         "op-no-content-move",
         &Arc::new(engine.new_operation_state(Duration::from_millis(50))),
         Arc::clone(&source) as Arc<dyn Volume>,
-        &crate::testing::app_paths_of(&paths),
+        &paths,
         Arc::clone(&dest) as Arc<dyn Volume>,
-        &crate::testing::app_path_of(Path::new("/inbox")),
+        app_path!("/inbox"),
         &VolumeCopyConfig::default(),
     )
     .await;

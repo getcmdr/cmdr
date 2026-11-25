@@ -178,7 +178,8 @@ async fn run_on(site: Site, cut: Cut, meanwhile: Meanwhile, replace: Replace) ->
     }
     dest_inner
         .create_file(
-            &AppPath::legacy_unchecked(&Path::new(site.folder()).join("keep.txt")),
+            // App text: a `std::path` join puts Windows' `\` into it, one name on the double.
+            AppPath::from_normalized(&format!("{}/keep.txt", site.folder())).expect("a canonical path"),
             KEEP,
         )
         .await

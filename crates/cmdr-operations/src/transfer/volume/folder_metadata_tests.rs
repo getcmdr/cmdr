@@ -34,27 +34,22 @@ fn make_state(engine: &TestOperations) -> Arc<WriteOperationState> {
 /// `/<name>` holding a file and `inner/` (with a file of its own), both folders
 /// dated after their contents landed, the way a real old folder lists.
 async fn seed_dated_folder(source: &InMemoryVolume, name: &str) -> PathBuf {
-    let root = PathBuf::from(format!("/{name}"));
-    let inner = root.join("inner");
+    // Spelled as app text: a `std::path` join puts Windows' `\` into it, one name on the double.
+    let at = |text: &str| AppPath::from_normalized(text).expect("a canonical path").to_owned();
+    let (top, inner) = (format!("/{name}"), format!("/{name}/inner"));
+    source.create_directory(&at(&top)).await.unwrap();
+    source.create_directory(&at(&inner)).await.unwrap();
     source
-        .create_directory(&AppPath::legacy_unchecked(&root))
+        .create_file(&at(&format!("{top}/photo.bin")), b"photo")
         .await
         .unwrap();
     source
-        .create_directory(&AppPath::legacy_unchecked(&inner))
+        .create_file(&at(&format!("{inner}/deep.bin")), b"deep")
         .await
         .unwrap();
-    source
-        .create_file(&AppPath::legacy_unchecked(&root.join("photo.bin")), b"photo")
-        .await
-        .unwrap();
-    source
-        .create_file(&AppPath::legacy_unchecked(&inner.join("deep.bin")), b"deep")
-        .await
-        .unwrap();
-    source.set_modified_at(&inner, Some(INNER_FOLDER_DATE));
-    source.set_modified_at(&root, Some(FOLDER_DATE));
-    root
+    source.set_modified_at(Path::new(&inner), Some(INNER_FOLDER_DATE));
+    source.set_modified_at(Path::new(&top), Some(FOLDER_DATE));
+    PathBuf::from(top)
 }
 
 fn volumes() -> (Arc<InMemoryVolume>, Arc<InMemoryVolume>) {

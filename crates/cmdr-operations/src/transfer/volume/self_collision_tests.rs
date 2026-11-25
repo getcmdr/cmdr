@@ -13,7 +13,7 @@
 //! regresses.
 
 use cmdr_fs::app_path;
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppName, AppPath, PathArithmetic as _};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -159,7 +159,12 @@ async fn duplicating_a_whole_series_at_once_gives_every_source_its_own_name() {
     volume.create_directory(app_path!("/photos")).await.unwrap();
     for (name, bytes) in [("photo.jpg", b"a"), ("photo (1).jpg", b"b"), ("photo (2).jpg", b"c")] {
         volume
-            .create_file(&AppPath::legacy_unchecked(&Path::new("/photos").join(name)), bytes)
+            .create_file(
+                &app_path!("/photos")
+                    .join(AppName::from_app_spelling(name).expect("one name"))
+                    .expect("joins"),
+                bytes,
+            )
             .await
             .unwrap();
     }

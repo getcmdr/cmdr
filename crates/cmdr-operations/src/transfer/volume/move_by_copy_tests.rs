@@ -45,29 +45,20 @@ async fn read(volume: &Arc<InMemoryVolume>, path: &str) -> Vec<u8> {
 }
 
 async fn seed_tree(volume: &Arc<InMemoryVolume>, root: &str) {
+    // Spelled as app text: a `std::path` join puts Windows' `\` into it, one name on the double.
+    let under = |tail: &str| {
+        AppPath::from_normalized(&format!("{root}/{tail}"))
+            .expect("a canonical path")
+            .to_owned()
+    };
     volume
         .create_directory(AppPath::from_normalized(root).expect("a canonical path"))
         .await
         .unwrap();
-    volume
-        .create_directory(&AppPath::legacy_unchecked(&Path::new(root).join("sub")))
-        .await
-        .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(&Path::new(root).join("a.txt")), b"alpha")
-        .await
-        .unwrap();
-    volume
-        .create_file(&AppPath::legacy_unchecked(&Path::new(root).join("b.txt")), b"bravo")
-        .await
-        .unwrap();
-    volume
-        .create_file(
-            &AppPath::legacy_unchecked(&Path::new(root).join("sub/c.txt")),
-            b"charlie",
-        )
-        .await
-        .unwrap();
+    volume.create_directory(&under("sub")).await.unwrap();
+    volume.create_file(&under("a.txt"), b"alpha").await.unwrap();
+    volume.create_file(&under("b.txt"), b"bravo").await.unwrap();
+    volume.create_file(&under("sub/c.txt"), b"charlie").await.unwrap();
 }
 
 fn state_with(engine: &TestOperations, target_names: TargetNames) -> Arc<WriteOperationState> {

@@ -19,6 +19,7 @@
 //! replaced. That file is ours and must count as landed once, never as a clash.
 
 use cmdr_fs::app_path;
+use cmdr_fs::app_path::{AppName, AppPathBuf, PathArithmetic as _};
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
@@ -145,13 +146,20 @@ async fn copy_with_a_name_taken_at_landing(
     (dest, failure.error)
 }
 
+/// `name` in the destination folder, by the app path's own join: a `std::path` join puts
+/// Windows' `\` into the app path, a different name on the double.
+fn in_dest(name: &str) -> AppPathBuf {
+    app_path!("/dest")
+        .join(AppName::from_app_spelling(name).expect("one name"))
+        .expect("joins")
+}
+
 async fn assert_theirs_survives(dest: &TakenAtLanding, error: &WriteOperationError, taken: &str) {
     assert!(
         matches!(error, WriteOperationError::DestinationExists { .. }),
         "the copy fails naming the clash, got {error:?}"
     );
-    let path = Path::new("/dest").join(taken);
-    let meta = dest.inner.get_metadata(&AppPath::legacy_unchecked(&path)).await;
+    let meta = dest.inner.get_metadata(&in_dest(taken)).await;
     assert!(
         meta.is_ok(),
         "❗ the other writer's {taken} must survive the failed copy; it was deleted"
@@ -268,10 +276,7 @@ async fn assert_each_landed_once(inner: &InMemoryVolume, nas: &OutageVolume, nam
     expected.sort();
     assert_eq!(listed, expected, "each file exactly once, no staging left behind");
     for name in names {
-        let entry = inner
-            .get_metadata(&AppPath::legacy_unchecked(&Path::new("/dest").join(name)))
-            .await
-            .expect("it landed");
+        let entry = inner.get_metadata(&in_dest(name)).await.expect("it landed");
         assert_eq!(entry.size, Some(format!("SRC-{name}").len() as u64), "{name} is whole");
     }
 }

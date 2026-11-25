@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::app_path;
+use crate::app_path::{AppName, PathArithmetic as _};
 use crate::entry::FileEntry;
 use std::path::Path;
 
@@ -227,7 +228,12 @@ async fn delete_files_honors_the_shared_batch_contract() {
     volume.create_directory(app_path!("/level")).await.unwrap();
     for name in ["a.txt", "b.txt", "kept.txt"] {
         volume
-            .create_file(&AppPath::legacy_unchecked(&Path::new("/level").join(name)), b"bytes")
+            .create_file(
+                &app_path!("/level")
+                    .join(AppName::from_app_spelling(name).expect("one name"))
+                    .expect("joins"),
+                b"bytes",
+            )
             .await
             .unwrap();
     }
