@@ -562,6 +562,10 @@
   "@fileExplorer.network.share.signInMessage": {
     "sourceHash": "a07c053"
   },
+  "fileExplorer.network.share.parentRowName": "Back to Servers",
+  "@fileExplorer.network.share.parentRowName": {
+    "sourceHash": "745bf49"
+  },
   "fileExplorer.network.share.noSharesTitle": "Aucun partage disponible",
   "@fileExplorer.network.share.noSharesTitle": {
     "sourceHash": "56890aa"
