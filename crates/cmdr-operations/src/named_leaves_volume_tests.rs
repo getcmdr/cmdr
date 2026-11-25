@@ -188,18 +188,18 @@ impl Rig {
 
     /// A source file at `rel` under the source folder.
     async fn file(&self, rel: &str, bytes: &[u8]) -> PathBuf {
-        put(&self.source, &self.src_dir.join(rel), bytes).await
+        put(&self.source, &under(&self.src_dir, rel), bytes).await
     }
 
     /// A file already at `rel` under the destination folder.
     async fn dest_file(&self, rel: &str, bytes: &[u8]) -> PathBuf {
-        put(&self.dest, &self.dest_dir.join(rel), bytes).await
+        put(&self.dest, &under(&self.dest_dir, rel), bytes).await
     }
 
     /// A source file at `rel` under the DESTINATION folder's path, on the source
     /// volume: within one volume, a source already in the destination.
     async fn file_at_dest_path(&self, rel: &str, bytes: &[u8]) -> PathBuf {
-        put(&self.source, &self.dest_dir.join(rel), bytes).await
+        put(&self.source, &under(&self.dest_dir, rel), bytes).await
     }
 
     async fn dest_names(&self) -> Vec<String> {
@@ -207,7 +207,7 @@ impl Rig {
     }
 
     async fn read_dest(&self, rel: &str) -> Vec<u8> {
-        read_all(&self.dest, &self.dest_dir.join(rel)).await
+        read_all(&self.dest, &under(&self.dest_dir, rel)).await
     }
 
     async fn start(
@@ -353,10 +353,10 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
             let rig = Rig::new(route).await;
             let invoice = rig.file("Invoice-X.pdf", b"invoice").await;
             let receipt = rig.file("receipt.pdf", b"receipt").await;
-            let folder = rig.src_dir.join("scans");
+            let folder = under(&rig.src_dir, "scans");
             rig.file("scans/page.png", b"page").await;
             rig.source
-                .create_directory_all(&app(&folder.join("empty")))
+                .create_directory_all(&app(&under(&folder, "empty")))
                 .await
                 .expect("an empty subfolder");
             let leaves = names(&[
@@ -383,7 +383,7 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
             );
             assert_eq!(rig.read_dest("2026-09 scans/page.png").await, b"page", "{ctx}");
             assert_eq!(
-                names_on(&rig.dest, &rig.dest_dir.join("2026-09 scans")).await,
+                names_on(&rig.dest, &under(&rig.dest_dir, "2026-09 scans")).await,
                 vec!["empty", "page.png"],
                 "{ctx}: the empty subfolder lands named too"
             );
@@ -403,9 +403,9 @@ async fn sources_renamed_and_kept_land_named_on_every_volume_route() {
 async fn a_name_taken_from_another_source_that_moves_on_lands_each_where_asked() {
     for route in ROUTES {
         let rig = Rig::new(route).await;
-        let a = rig.src_dir.join("one/a");
+        let a = under(&rig.src_dir, "one/a");
         rig.file("one/a/from-a.txt", b"a").await;
-        let b = rig.src_dir.join("two/b");
+        let b = under(&rig.src_dir, "two/b");
         rig.file("two/b/from-b.txt", b"b").await;
 
         rig.run(vec![a.clone(), b.clone()], names(&[(&a, "b"), (&b, "c")]))
@@ -485,7 +485,7 @@ async fn a_clash_at_a_renamed_leaf_meets_the_policy_at_the_renamed_path() {
                     let prompt = prompt.unwrap_or_else(|| panic!("{ctx}: the clash was never asked"));
                     assert_eq!(
                         Path::new(&prompt.destination_path),
-                        rig.dest_dir.join("named.txt"),
+                        under(&rig.dest_dir, "named.txt"),
                         "{ctx}: asked at the renamed path"
                     );
                     let outcome = rig.engine.resolve_write_conflict(
@@ -661,7 +661,7 @@ async fn a_name_equal_to_an_item_that_keeps_its_own_refuses() {
 async fn a_name_for_an_item_the_transfer_does_not_carry_refuses() {
     refuses_on(&ROUTES, refused(NamedLeavesRefusal::NotASource), |rig| async move {
         let a = rig.file("a.pdf", b"a").await;
-        let ghost = rig.src_dir.join("ghost.pdf");
+        let ghost = under(&rig.src_dir, "ghost.pdf");
         (vec![a.clone()], names(&[(&a, "alpha.pdf"), (&ghost, "ghost.pdf")]))
     })
     .await;
@@ -745,7 +745,7 @@ async fn undoing_a_transfer_naming_each_item_restores_every_original() {
             let ctx = format!("{route:?} sources={count}");
             let rig = Rig::new(route).await;
             let invoice = rig.file("Invoice-X.pdf", b"invoice").await;
-            let folder = rig.src_dir.join("scans");
+            let folder = under(&rig.src_dir, "scans");
             rig.file("scans/page.png", b"page").await;
             let mut sources = vec![invoice.clone(), folder.clone()];
             if count == 3 {
@@ -771,7 +771,7 @@ async fn undoing_a_transfer_naming_each_item_restores_every_original() {
                 "{ctx}: the original name"
             );
             assert_eq!(
-                read_all(&rig.source, &folder.join("page.png")).await,
+                read_all(&rig.source, &under(&folder, "page.png")).await,
                 b"page",
                 "{ctx}: the folder's original name"
             );
@@ -834,7 +834,7 @@ async fn a_transfer_onto_a_volume_mounted_under_root_keeps_every_row_on_root() {
         let rig = Rig::new(route).await;
         let report = rig.file("report.pdf", b"report").await;
         rig.file("photos/sub/a.jpg", b"a").await;
-        let photos = rig.src_dir.join("photos");
+        let photos = under(&rig.src_dir, "photos");
         let op_id = rig
             .run(vec![report.clone(), photos.clone()], TransferLeaves::default())
             .await;
@@ -855,10 +855,20 @@ async fn a_transfer_onto_a_volume_mounted_under_root_keeps_every_row_on_root() {
         assert!(rig.dest_names().await.is_empty(), "{route:?}: the landing is gone");
         assert_eq!(read_all(&rig.source, &report).await, b"report", "{route:?}");
         assert_eq!(
-            read_all(&rig.source, &photos.join("sub/a.jpg")).await,
+            read_all(&rig.source, &under(&photos, "sub/a.jpg")).await,
             b"a",
             "{route:?}"
         );
+    }
+}
+
+/// `rel` under a fixture folder: a remote volume's POSIX folder (`/dst`) joins with `/` on
+/// every host, where `Path::join` put a `\` into it on Windows (`/dst\b.txt`, one name to
+/// the typed drivers); a scratch dir joins as its OS spells it.
+fn under(dir: &Path, rel: &str) -> PathBuf {
+    match dir.to_str() {
+        Some(text) if text.starts_with('/') => PathBuf::from(format!("{text}/{rel}")),
+        _ => dir.join(rel),
     }
 }
 
