@@ -36,6 +36,7 @@ const h = vi.hoisted(() => ({
   listed: new Map<string, unknown>(),
   guestWorks: false,
   setSmbAccountPreference: vi.fn(() => Promise.resolve(true)),
+  updateLeftPaneState: vi.fn((_state: unknown) => Promise.resolve()),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
@@ -47,7 +48,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   setSmbAccountPreference: h.setSmbAccountPreference,
   getUsernameHint: vi.fn(() => Promise.resolve(null)),
   getKnownShareByName: vi.fn(() => Promise.resolve(null)),
-  updateLeftPaneState: vi.fn(() => Promise.resolve()),
+  updateLeftPaneState: h.updateLeftPaneState,
   updateRightPaneState: vi.fn(() => Promise.resolve()),
 }))
 
@@ -389,6 +390,104 @@ describe('PlacesBrowser back-navigation', () => {
     // The cursor-move path must NOT have fired (no share got activated).
     expect(onShareSelect).not.toHaveBeenCalled()
 
+    await unmount(component)
+  })
+})
+
+/**
+ * The `..` row on top of the share list: always there, whatever `network.showShareParentRow`
+ * says, and it does what Back, Escape, and Backspace do. Every other index counts it.
+ */
+describe('PlacesBrowser `..` row', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    document.body.innerHTML = ''
+    h.getSmbCredentials.mockRejectedValue(new Error('not found'))
+  })
+
+  const twoShares = [testshare, { ...testshare, name: 'Backup' }]
+
+  async function browserWithTwoShares() {
+    h.fetchShares.mockResolvedValue({ shares: twoShares, authMode: 'guest_allowed', fromCache: false })
+    const onShareSelect = vi.fn()
+    const onBack = vi.fn()
+    const mounted = mountBrowser(onShareSelect, onBack)
+    await waitForShareList(mounted.target)
+    await tick()
+    return { ...mounted, onShareSelect, onBack }
+  }
+
+  function rowNames(target: HTMLElement): string[] {
+    return [...target.querySelectorAll('.share-row .share-name')].map((el) => el.textContent.trim())
+  }
+
+  it('heads the list, with the cursor starting on the first share', async () => {
+    const { target, component, api } = await browserWithTwoShares()
+
+    expect(rowNames(target)).toEqual(['..', 'Backup', 'testshare'])
+    expect(api.getShareUnderCursor()?.name).toBe('Backup')
+    await unmount(component)
+  })
+
+  it('goes back to the Servers list on Enter, mounting nothing', async () => {
+    const { component, api, onBack, onShareSelect } = await browserWithTwoShares()
+
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowUp' }))
+    expect(api.getShareUnderCursor(), '`..` is no share').toBeNull()
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }))
+
+    expect(onBack).toHaveBeenCalledOnce()
+    expect(onShareSelect).not.toHaveBeenCalled()
+    await unmount(component)
+  })
+
+  it('goes back on a double-click too, and arrows reach every share under it', async () => {
+    const { target, component, api, onBack, onShareSelect } = await browserWithTwoShares()
+
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowRight' }))
+    expect(api.getShareUnderCursor()?.name).toBe('testshare')
+    api.openCursorItem()
+    await vi.waitFor(() => {
+      expect(onShareSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'testshare' }), null)
+    })
+
+    must(target.querySelector('[data-parent-row]'), 'the `..` row').dispatchEvent(
+      new MouseEvent('dblclick', { bubbles: true }),
+    )
+    expect(onBack).toHaveBeenCalledOnce()
+    await unmount(component)
+  })
+
+  it('is never what type-to-jump lands on', async () => {
+    const { component, api } = await browserWithTwoShares()
+
+    expect(api.jumpToPrefix('.')).toBeNull()
+    expect(api.jumpToPrefix('test')).toBe('testshare')
+    expect(api.getShareUnderCursor()?.name).toBe('testshare')
+    await unmount(component)
+  })
+
+  it('is row 0 for an agent too: `..` leads to the Servers list, and the shares follow it', async () => {
+    h.fetchShares.mockResolvedValue({ shares: twoShares, authMode: 'guest_allowed', fromCache: false })
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const component = mount(PlacesBrowser, { target, props: { account: { protocol: 'smb', host }, paneId: 'left' } })
+    await waitForShareList(target)
+    const rows = component as unknown as { findItemIndex: (n: string) => number; getItemCount: () => number }
+
+    await vi.waitFor(() => {
+      expect(h.updateLeftPaneState).toHaveBeenCalled()
+    })
+    const state = h.updateLeftPaneState.mock.calls.at(-1)?.[0] as {
+      files: { name: string; path: string }[]
+      cursorIndex: number
+    }
+    expect(state.files.map((f) => f.name)).toEqual(['..', 'Backup', 'testshare'])
+    expect(state.files[0].path).toBe('smb://')
+    expect(state.cursorIndex).toBe(1)
+    expect(rows.findItemIndex('..')).toBe(0)
+    expect(rows.findItemIndex('testshare')).toBe(2)
+    expect(rows.getItemCount()).toBe(3)
     await unmount(component)
   })
 })

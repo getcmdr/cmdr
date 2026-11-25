@@ -2675,6 +2675,7 @@ export type MessageKey =
   | 'fileExplorer.network.share.noSharesMessage'
   | 'fileExplorer.network.share.noSharesTitle'
   | 'fileExplorer.network.share.notFound'
+  | 'fileExplorer.network.share.parentRowName'
   | 'fileExplorer.network.share.shareCount'
   | 'fileExplorer.network.share.signInAs'
   | 'fileExplorer.network.share.signInMessage'

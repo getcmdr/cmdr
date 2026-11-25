@@ -580,7 +580,7 @@ describe('NetworkMountView mount-failure auth loop', () => {
     await unmount(component)
   })
 
-  it('counts the shares on offer while the share list is up', async () => {
+  it('counts the rows on offer while the share list is up: `..` and the share', async () => {
     const target = document.createElement('div')
     document.body.appendChild(target)
     const component = mount(NetworkMountView, {
@@ -592,7 +592,7 @@ describe('NetworkMountView mount-failure auth loop', () => {
     await vi.waitFor(() => {
       expect(target.querySelector('.share-row')).toBeTruthy()
     })
-    expect(api.getItemCount()).toBe(1)
+    expect(api.getItemCount()).toBe(2)
 
     await unmount(component)
   })

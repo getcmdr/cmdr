@@ -359,6 +359,23 @@ ever lists its shares. The bug this closes (cmdr-reports#7, "Cmdr tried to open 
 outlived its visit, every new `PlacesBrowser` instance fired it again, and a host row the person meant to browse mounted
 a share they never picked.
 
+## `..` on top of a server's share list
+
+`PlacesBrowser` heads its list with a `..` row, back to the Servers list, ALWAYS: `network.showShareParentRow` is about
+a share's top folder, and the share list has nowhere else to go up to. It's the file list's parent row in look (folder
+glyph, `..`) and in meaning: Enter, a double-click, or `openCursorItem` on it does what Back, Escape, Backspace, and
+`⌘↑` do (`onBack` → `NetworkMountView.handleNetworkBack`, which puts the Servers cursor back on that server's row).
+
+- **❗ Every index counts it** (`PARENT_ROWS`): share `i` is row `i + 1`, in the cursor, `setCursorIndex`,
+  `findItemIndex` (`..` is 0), `getItemCount`, the arrows, and the `..`-out-of-a-share landing (`landOnShare`). The same
+  parent offset as a file list.
+- **The cursor still opens on the first share** (row 1): a person opens a server to pick a share.
+- **Type-to-jump never lands on it**: `jumpToPrefix` matches shares only.
+- **The MCP mirror lists it as row 0**: name `..`, path `smb://` (the Servers list's own sentinel), so an agent's
+  indices match the person's. Only while the shares are on screen, like the row itself.
+- **A screen reader hears "Back to Servers"** (`fileExplorer.network.share.parentRowName`), the way a file list's `..`
+  says "Parent folder".
+
 ## `..` out of a share's top folder
 
 In an SMB share's top folder, `..` (and Go to parent, which follows the same switch) opens the server's share list with

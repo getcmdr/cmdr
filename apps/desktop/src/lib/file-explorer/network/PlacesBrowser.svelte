@@ -58,6 +58,24 @@
     /** Row height for share list (matches Full list) */
     const SHARE_ROW_HEIGHT = 20
 
+    /**
+     * ❗ Row 0 is `..`, back to the Servers list, whatever `network.showShareParentRow` says, so
+     * every cursor index here counts it: share `i` is row `i + PARENT_ROWS`, like a file
+     * list's parent offset. Type-to-jump and the landing match shares only.
+     */
+    const PARENT_ROWS = 1
+
+    /** What `..` reads as in `cmdr://state`: the file list's `..`, pointing at the Servers list. */
+    const PARENT_MCP_ENTRY: PaneFileEntry = {
+        name: '..',
+        path: 'smb://',
+        isDirectory: true,
+        size: null,
+        recursiveSize: null,
+        modified: null,
+        recursiveSizeUpdating: null,
+    }
+
     interface Props {
         /** Whose places these are. One SMB arm today; see `PlacesAccount`. */
         account: PlacesAccount
@@ -103,12 +121,30 @@
     let authMode = $state<AuthMode>('unknown')
     let loading = $state(true)
     let error = $state<ShareListError | null>(null)
-    let cursorIndex = $state(0)
+    // On the first share, as before `..` joined the list: a person opens a server to pick a share.
+    let cursorIndex = $state(PARENT_ROWS)
 
     // Sorted shares for display (case-insensitive alphabetical)
     const sortedShares = $derived(
         [...shares].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
     )
+    /** Every row the list shows: `..`, then the shares. */
+    const rowCount = $derived(sortedShares.length + PARENT_ROWS)
+
+    /** The share on row `row`, or `null` for `..` and anything out of range. */
+    function shareAt(row: number): ShareInfo | null {
+        return sortedShares[row - PARENT_ROWS] ?? null
+    }
+
+    /** Opens row `row`: `..` goes back to the Servers list, a share mounts. */
+    function activateRow(row: number) {
+        if (row === 0) {
+            onBack?.()
+            return
+        }
+        const share = shareAt(row)
+        if (share) void activateShare(share)
+    }
 
     /**
      * True while the sign-in sheet is up for this host. The pane behind it keeps
@@ -175,8 +211,8 @@
         lastLanding = shareName
         const index = indexOfName(sortedShares, shareName)
         if (index >= 0) {
-            cursorIndex = index
-            scrollToIndex(index)
+            cursorIndex = index + PARENT_ROWS
+            scrollToIndex(cursorIndex)
         }
         onLandedOnShare?.()
     })
@@ -228,7 +264,7 @@
         if (!paneId) return
 
         try {
-            const files: PaneFileEntry[] = sortedShares.map((share) => ({
+            const shareEntries: PaneFileEntry[] = sortedShares.map((share) => ({
                 name: share.comment ? `${share.name}  comment="${share.comment}"` : share.name,
                 path: `smb://${host.ipAddress ?? host.name}/${share.name}`,
                 isDirectory: true,
@@ -237,6 +273,8 @@
                 modified: null,
                 recursiveSizeUpdating: null,
             }))
+            // `..` is a row only while the shares are on screen, so the agent's indices match the person's.
+            const files = sortedShares.length > 0 ? [PARENT_MCP_ENTRY, ...shareEntries] : shareEntries
 
             const state: PaneState = {
                 path: `smb://${host.ipAddress ?? host.name}/`,
@@ -246,9 +284,9 @@
                 cursorIndex,
                 viewMode: 'full',
                 selectedIndices: [],
-                totalFiles: sortedShares.length,
+                totalFiles: files.length,
                 loadedStart: 0,
-                loadedEnd: sortedShares.length,
+                loadedEnd: files.length,
             }
 
             if (paneId === 'left') {
@@ -473,30 +511,35 @@
         }
     }
 
-    /** Move cursor to a specific index (used by MCP move_cursor tool). */
+    /** Move cursor to a specific row, `..` being row 0 (used by MCP move_cursor tool). */
     export function setCursorIndex(index: number) {
-        cursorIndex = Math.max(0, Math.min(index, sortedShares.length - 1))
+        cursorIndex = Math.max(0, Math.min(index, rowCount - 1))
         scrollToIndex(cursorIndex)
     }
 
-    /** Find a share by name, returns its index or -1. */
+    /** Find a row by name (`..` or a share), returns its index or -1. */
     export function findItemIndex(name: string): number {
-        return sortedShares.findIndex((s) => s.name.toLowerCase() === name.toLowerCase())
+        if (name === '..') return 0
+        const index = sortedShares.findIndex((s) => s.name.toLowerCase() === name.toLowerCase())
+        return index < 0 ? -1 : index + PARENT_ROWS
     }
 
-    /** Type-to-jump: the cursor goes to the first share whose name starts with `prefix`; answers that name, or `null`. */
+    /**
+     * Type-to-jump: the cursor goes to the first share whose name starts with `prefix`; answers
+     * that name, or `null`. ❌ Never `..`: it's no name anyone types.
+     */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by NetworkMountView
     export function jumpToPrefix(prefix: string): string | null {
         const index = sortedShares.findIndex((s) => nameStartsWith(s.name, prefix))
         if (index < 0) return null
-        setCursorIndex(index)
+        setCursorIndex(index + PARENT_ROWS)
         return sortedShares[index].name
     }
 
-    /** The shares on offer; `0` while the sign-in sheet is up or the host listed nothing. */
+    /** The rows on offer (`..` and the shares); `0` while the sign-in sheet is up or the host listed nothing. */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by MCP move_cursor's range check
     export function getItemCount(): number {
-        return signingIn ? 0 : sortedShares.length
+        return signingIn || sortedShares.length === 0 ? 0 : rowCount
     }
 
     /**
@@ -508,26 +551,13 @@
     // noinspection JSUnusedGlobalSymbols -- used dynamically by NetworkMountView
     export function getShareUnderCursor(): ShareInfo | null {
         if (signingIn) return null
-        if (cursorIndex < 0 || cursorIndex >= sortedShares.length) return null
-        return sortedShares[cursorIndex]
+        return shareAt(cursorIndex)
     }
 
-    /** Opens the share under the cursor — same action Enter triggers. */
+    /** Opens the row under the cursor — same action Enter triggers: `..` goes back, a share mounts. */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by NetworkMountView / MCP
     export function openCursorItem(): void {
-        if (cursorIndex >= 0 && cursorIndex < sortedShares.length) {
-            void activateShare(sortedShares[cursorIndex])
-        }
-    }
-
-    function handleShareClick(index: number) {
-        cursorIndex = index
-    }
-
-    function handleShareDoubleClick(index: number) {
-        if (index >= 0 && index < sortedShares.length) {
-            void activateShare(sortedShares[index])
-        }
+        activateRow(cursorIndex)
     }
 
     /** Scrolls to make the cursor visible */
@@ -570,7 +600,7 @@
         const visibleItems = Math.max(1, Math.floor(containerHeight / SHARE_ROW_HEIGHT))
         const navResult = handleNavigationShortcut(e, {
             currentIndex: cursorIndex,
-            totalCount: sortedShares.length,
+            totalCount: rowCount,
             visibleItems,
         })
         if (navResult?.handled) {
@@ -584,7 +614,7 @@
         // panes) and other modifier supersets belong to the document dispatcher.
         if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
 
-        const next = cursorAfterArrow(e.key, cursorIndex, sortedShares.length)
+        const next = cursorAfterArrow(e.key, cursorIndex, rowCount)
         if (next !== null) {
             e.preventDefault()
             cursorIndex = next
@@ -598,9 +628,7 @@
         // one Enter mounted the share twice.
         if (eventMatchesCommand(e, 'share.selectShare')) {
             claimKey(e)
-            if (cursorIndex >= 0 && cursorIndex < sortedShares.length) {
-                void activateShare(sortedShares[cursorIndex])
-            }
+            activateRow(cursorIndex)
         }
     }
 
@@ -695,18 +723,39 @@
             onForgetPassword={() => void handleForgetPassword()}
         />
         <div class="share-list" role="list" bind:this={listContainer} bind:clientHeight={containerHeight}>
+            <!-- `..`: back to the Servers list, the file list's parent row in look and meaning. -->
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <div
+                class="share-row"
+                data-parent-row
+                class:is-under-cursor={cursorIndex === 0}
+                class:is-focused-and-under-cursor={isFocused && cursorIndex === 0}
+                role="listitem"
+                aria-label={tString('fileExplorer.network.share.parentRowName')}
+                onclick={() => {
+                    cursorIndex = 0
+                }}
+                ondblclick={() => {
+                    activateRow(0)
+                }}
+                onkeydown={() => {}}
+            >
+                <span class="share-icon"><Icon name="folder" size={16} aria-hidden="true" /></span>
+                <span class="share-name">..</span>
+            </div>
             {#each sortedShares as share, index (share.name)}
+                {@const row = index + PARENT_ROWS}
                 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                 <div
                     class="share-row"
-                    class:is-under-cursor={index === cursorIndex}
-                    class:is-focused-and-under-cursor={isFocused && index === cursorIndex}
+                    class:is-under-cursor={row === cursorIndex}
+                    class:is-focused-and-under-cursor={isFocused && row === cursorIndex}
                     role="listitem"
                     onclick={() => {
-                        handleShareClick(index)
+                        cursorIndex = row
                     }}
                     ondblclick={() => {
-                        handleShareDoubleClick(index)
+                        activateRow(row)
                     }}
                     onkeydown={() => {}}
                 >
