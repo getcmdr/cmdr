@@ -29,28 +29,45 @@ enum Transfer {
 struct Shape {
     name: &'static str,
     files: &'static [&'static str],
+    /// Symlinks the source volume holds, (link, target).
+    links: &'static [(&'static str, &'static str)],
     sources: &'static [&'static str],
     dest: &'static str,
     rows: &'static [(&'static str, &'static str)],
+    /// The rows on Windows, where `main`'s `std::path` gave a root another last name.
+    windows_rows: Option<&'static [(&'static str, &'static str)]>,
+    /// Every directory row's (source, destination): a created folder names itself twice.
+    dirs: &'static [(&'static str, &'static str)],
+    /// The directory rows on Windows, where they differ as `windows_rows` do.
+    windows_dirs: Option<&'static [(&'static str, &'static str)]>,
 }
 
 const SHAPES: &[Shape] = &[
     Shape {
         name: "a volume rooted at /",
+        links: &[],
         files: &["/src/f.txt", "/src/d/g.txt"],
         sources: &["/src/f.txt", "/src/d"],
         dest: "/dst",
         rows: &[("/src/d/g.txt", "/dst/d/g.txt"), ("/src/f.txt", "/dst/f.txt")],
+        windows_rows: None,
+        dirs: &[("/dst/d", "/dst/d")],
+        windows_dirs: None,
     },
     Shape {
         name: "a drive",
+        links: &[],
         files: &["C:/src/f.txt", "C:/src/d/g.txt"],
         sources: &["C:/src/f.txt", "C:/src/d"],
         dest: "D:/dst",
         rows: &[("C:/src/d/g.txt", "D:/dst/d/g.txt"), ("C:/src/f.txt", "D:/dst/f.txt")],
+        windows_rows: None,
+        dirs: &[("D:/dst/d", "D:/dst/d")],
+        windows_dirs: None,
     },
     Shape {
         name: "a scheme root",
+        links: &[],
         files: &["sftp://host/src/f.txt", "sftp://host/src/d/g.txt"],
         sources: &["sftp://host/src/f.txt", "sftp://host/src/d"],
         dest: "sftp://other/dst",
@@ -58,28 +75,120 @@ const SHAPES: &[Shape] = &[
             ("sftp://host/src/d/g.txt", "sftp://other/dst/d/g.txt"),
             ("sftp://host/src/f.txt", "sftp://other/dst/f.txt"),
         ],
+        windows_rows: None,
+        dirs: &[("sftp://other/dst/d", "sftp://other/dst/d")],
+        windows_dirs: None,
     },
     Shape {
         name: "a volume-relative test root",
+        links: &[],
         files: &["/src/f.txt", "/src/d/g.txt"],
         sources: &["src/f.txt", "src/d"],
         dest: "dst",
         rows: &[("src/d/g.txt", "dst/d/g.txt"), ("src/f.txt", "dst/f.txt")],
+        windows_rows: None,
+        dirs: &[("dst/d", "dst/d")],
+        windows_dirs: None,
     },
     Shape {
         // #1457: one name on every host, both ends.
         name: "a top-level name holding a backslash",
+        links: &[],
         files: &["/src/a\\b.txt"],
         sources: &["/src/a\\b.txt"],
         dest: "/dst",
         rows: &[("/src/a\\b.txt", "/dst/a\\b.txt")],
+        windows_rows: None,
+        dirs: &[],
+        windows_dirs: None,
     },
     Shape {
         name: "a source that is its volume's root",
+        links: &[],
         files: &["/f.txt", "/d/g.txt"],
         sources: &["/"],
         dest: "/dst",
         rows: &[("/d/g.txt", "/dst/d/g.txt"), ("/f.txt", "/dst/f.txt")],
+        windows_rows: None,
+        dirs: &[("/dst/d", "/dst/d")],
+        windows_dirs: None,
+    },
+    Shape {
+        name: "a destination that is its volume's root",
+        links: &[],
+        files: &["/src/f.txt", "/src/d/g.txt"],
+        sources: &["/src/f.txt", "/src/d"],
+        dest: "/",
+        rows: &[("/src/d/g.txt", "/d/g.txt"), ("/src/f.txt", "/f.txt")],
+        windows_rows: None,
+        dirs: &[("/d", "/d")],
+        windows_dirs: None,
+    },
+    Shape {
+        name: "a destination that is a scheme root",
+        links: &[],
+        files: &["/src/f.txt", "/src/d/g.txt"],
+        sources: &["/src/f.txt", "/src/d"],
+        dest: "sftp://other/",
+        rows: &[
+            ("/src/d/g.txt", "sftp://other/d/g.txt"),
+            ("/src/f.txt", "sftp://other/f.txt"),
+        ],
+        windows_rows: None,
+        dirs: &[("sftp://other/d", "sftp://other/d")],
+        windows_dirs: None,
+    },
+    Shape {
+        // `main`'s `Path::file_name` read the server as the root's last name.
+        name: "a source that is a scheme root",
+        links: &[],
+        files: &["sftp://host/f.txt", "sftp://host/d/g.txt"],
+        sources: &["sftp://host/"],
+        dest: "/dst",
+        rows: &[
+            ("sftp://host/d/g.txt", "/dst/host/d/g.txt"),
+            ("sftp://host/f.txt", "/dst/host/f.txt"),
+        ],
+        windows_rows: None,
+        dirs: &[("/dst/host", "/dst/host"), ("/dst/host/d", "/dst/host/d")],
+        windows_dirs: None,
+    },
+    Shape {
+        // `C:` is a last name to a POSIX host's `Path`; a Windows one reads `C:/` as a root.
+        name: "a source that is a drive root",
+        links: &[],
+        files: &["C:/f.txt", "C:/d/g.txt"],
+        sources: &["C:/"],
+        dest: "/dst",
+        rows: &[("C:/d/g.txt", "/dst/C:/d/g.txt"), ("C:/f.txt", "/dst/C:/f.txt")],
+        windows_rows: Some(&[("C:/d/g.txt", "/dst/d/g.txt"), ("C:/f.txt", "/dst/f.txt")]),
+        dirs: &[("/dst/C:", "/dst/C:"), ("/dst/C:/d", "/dst/C:/d")],
+        windows_dirs: Some(&[("/dst/d", "/dst/d")]),
+    },
+    Shape {
+        // A selected link: a copy carries it as a link, a move follows it.
+        name: "a selected link",
+        links: &[("/src/l", "/src/f.txt")],
+        files: &["/src/f.txt"],
+        sources: &["/src/l"],
+        dest: "/dst",
+        rows: &[("/src/l", "/dst/l")],
+        windows_rows: None,
+        dirs: &[],
+        windows_dirs: None,
+    },
+    Shape {
+        // A POSIX host's `Path` reads `//server/share` as `/server/share`, so `share` is a last name.
+        name: "a source that is a UNC root",
+        links: &[],
+        files: &["//server/share/f.txt"],
+        sources: &["//server/share"],
+        dest: "/dst",
+        // A POSIX host's journal folds the leading `//` (`journal_split`'s native reading).
+        rows: &[("/server/share/f.txt", "/dst/share/f.txt")],
+        windows_rows: Some(&[("//server/share/f.txt", "/dst/f.txt")]),
+        dirs: &[("/dst/share", "/dst/share")],
+        windows_dirs: Some(&[]),
     },
 ];
 
@@ -92,11 +201,16 @@ fn typed(text: &str) -> AppPathBuf {
         .unwrap_or_else(|_| crate::testing::app_path_of(std::path::Path::new(text)))
 }
 
-async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, String)> {
+/// The (file rows, directory rows) a transfer of `shape` journaled, each sorted.
+async fn journaled_rows(shape: &Shape, transfer: Transfer) -> (Vec<(String, String)>, Vec<(String, String)>) {
     let log = TestOperationLog::new("journal-root-shape");
     let engine = TestOperations::journaling_into(&log);
     let source = Arc::new(InMemoryVolume::new("Src").with_space_info(1_000_000, 900_000));
-    let dest = Arc::new(InMemoryVolume::new("Dst").with_space_info(1_000_000, 900_000));
+    let dest = Arc::new(
+        InMemoryVolume::new("Dst")
+            .with_links()
+            .with_space_info(1_000_000, 900_000),
+    );
     for file in shape.files {
         let path = typed(file);
         // Its folders too, so a walk of the root lists them.
@@ -104,6 +218,9 @@ async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, Strin
             source.create_directory_all(parent).await.unwrap();
         }
         source.create_file(&path, file.as_bytes()).await.unwrap();
+    }
+    for &(link, target) in shape.links {
+        source.plant_symlink(std::path::Path::new(link), std::path::Path::new(target));
     }
     let state = Arc::new(
         engine
@@ -150,14 +267,17 @@ async fn journaled_rows(shape: &Shape, transfer: Transfer) -> Vec<(String, Strin
     let detail = cmdr_operation_log::query::get_operation(&conn, &op_id, 1_000, 0)
         .expect("read detail")
         .expect("the transfer is journaled");
-    let mut rows: Vec<(String, String)> = detail
-        .items
-        .iter()
-        .filter(|item| item.entry_type == EntryType::File)
-        .map(|item| (item.source_path.clone(), item.dest_path.clone().unwrap_or_default()))
-        .collect();
-    rows.sort();
-    rows
+    let rows_of = |entry_type: EntryType| {
+        let mut rows: Vec<(String, String)> = detail
+            .items
+            .iter()
+            .filter(|item| item.entry_type == entry_type)
+            .map(|item| (item.source_path.clone(), item.dest_path.clone().unwrap_or_default()))
+            .collect();
+        rows.sort();
+        rows
+    };
+    (rows_of(EntryType::File), rows_of(EntryType::Dir))
 }
 
 /// How the store reads back a row's text: it interns folders by `/`, so text with no root
@@ -175,14 +295,23 @@ async fn every_root_shape_journals_each_files_source_and_destination() {
     let mut wrong = Vec::new();
     for transfer in [Transfer::Copy, Transfer::Move] {
         for shape in SHAPES {
-            let rows = journaled_rows(shape, transfer).await;
-            let expected: Vec<(String, String)> = shape
-                .rows
-                .iter()
-                .map(|&(source, dest)| (as_stored(source), as_stored(dest)))
-                .collect();
+            let (rows, dirs) = journaled_rows(shape, transfer).await;
+            let stored = |pairs: &[(&str, &str)]| -> Vec<(String, String)> {
+                pairs
+                    .iter()
+                    .map(|&(source, dest)| (as_stored(source), as_stored(dest)))
+                    .collect()
+            };
+            let expected = stored(shape.windows_rows.filter(|_| cfg!(windows)).unwrap_or(shape.rows));
             if rows != expected {
                 wrong.push(format!("{transfer:?} {}: {rows:?}, expected {expected:?}", shape.name));
+            }
+            let expected_dirs = stored(shape.windows_dirs.filter(|_| cfg!(windows)).unwrap_or(shape.dirs));
+            if dirs != expected_dirs {
+                wrong.push(format!(
+                    "{transfer:?} {} dirs: {dirs:?}, expected {expected_dirs:?}",
+                    shape.name
+                ));
             }
         }
     }

@@ -206,3 +206,28 @@ async fn a_top_level_backslash_name_a_drive_folder_cant_hold_is_asked_about_per_
         }
     }
 }
+
+/// ❗ A source that is a server's ROOT lands in a folder named after it, as `main`'s
+/// `Path::file_name` named it (`u@h:22`), ❌ never mixed into the destination folder.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_scheme_root_lands_in_a_folder_named_after_its_server() {
+    for driver in [Driver::SerialCopy, Driver::CrossVolumeMove] {
+        let source = Arc::new(InMemoryVolume::new("Server").with_space_info(10_000_000, 10_000_000));
+        source.create_file(at("sftp://u@h:22/f.txt"), b"f").await.unwrap();
+        let dest = Arc::new(InMemoryVolume::new("Other server").with_space_info(10_000_000, 10_000_000));
+        dest.create_directory(at("/inbox")).await.unwrap();
+
+        let prompts = transfer(driver, &source, &["sftp://u@h:22/".to_string()], &dest, at("/inbox")).await;
+
+        assert!(prompts.is_empty(), "{driver:?}: {prompts:?}");
+        assert_eq!(
+            read(&dest, at("/inbox/u@h:22/f.txt")).await.as_deref(),
+            Some(&b"f"[..]),
+            "{driver:?}"
+        );
+        assert!(
+            !dest.exists(at("/inbox/f.txt")).await,
+            "{driver:?}: mixed into the destination"
+        );
+    }
+}
