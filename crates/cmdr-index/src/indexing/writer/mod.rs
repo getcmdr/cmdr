@@ -64,8 +64,8 @@ use entries::{
     handle_delete_entry_by_id, handle_delete_subtree_by_id, handle_insert_entries_v2, handle_move_entry_v2,
     handle_truncate_data, handle_upsert_entry_v2,
 };
-use flush_wait::BusyOn;
 pub use flush_wait::FlushReply;
+use flush_wait::{BusyOn, FlushTicket};
 use maintenance::{request_wal_checkpoint, run_deferred_wal_checkpoint};
 use pending_rollups::{PendingRollups, RollupGauges, emit_full_refresh, settle_the_ledger};
 use repair::DeferredRepairs;
@@ -890,12 +890,14 @@ impl IndexWriter {
 
     /// Send a `Flush` and await the response, confirming all prior messages have been committed.
     ///
-    /// Every `STALL_REPORT_INTERVAL` without an answer it logs a WARN naming the
-    /// message the writer is stuck on, and keeps waiting (`flush_wait.rs` says why).
+    /// Every `STALL_REPORT_INTERVAL` without an answer it logs how many messages are
+    /// still ahead of it and what the writer is on (WARN for a wedge, INFO for a
+    /// queue that keeps draining), and keeps waiting (`flush_wait.rs` says why).
     pub async fn flush(&self) -> Result<(), IndexStoreError> {
         let (tx, rx) = oneshot::channel();
         self.send(WriteMessage::Flush(FlushReply::Async(tx)))?;
-        flush_wait::wait_async(rx, &self.busy_on, &self.volume_id).await
+        let ticket = FlushTicket::now(&self.queue_depth, &self.busy_on);
+        flush_wait::wait_async(rx, &self.busy_on, &self.volume_id, ticket).await
     }
 
     /// Send a `Flush` and block until all prior messages have been committed.
@@ -913,8 +915,9 @@ impl IndexWriter {
     fn flush_blocking_reporting_every(&self, interval: Duration) -> Result<(), IndexStoreError> {
         let (tx, rx) = mpsc::sync_channel(1);
         self.send(WriteMessage::Flush(FlushReply::Blocking(tx)))?;
+        let ticket = FlushTicket::now(&self.queue_depth, &self.busy_on);
         let parked = Instant::now();
-        let result = flush_wait::wait_blocking(&rx, interval, &self.busy_on, &self.volume_id);
+        let result = flush_wait::wait_blocking(&rx, interval, &self.busy_on, &self.volume_id, ticket);
         wait_probe::note(parked.elapsed());
         result
     }
@@ -1372,7 +1375,7 @@ fn writer_loop(
         }
 
         let kind = msg.kind();
-        busy_on.start(kind);
+        busy_on.begin_message(kind);
         let proc_start = Instant::now();
         // macOS: drain autoreleased ObjC objects each iteration.
         #[cfg(target_os = "macos")]

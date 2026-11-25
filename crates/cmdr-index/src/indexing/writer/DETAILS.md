@@ -930,14 +930,27 @@ that case from the waiting side (`../lifecycle/DETAILS.md` § "Every detach wind
 aggregate over a very large drive can legitimately trip it.
 
 **The waiting side: a flush names what it's stuck behind (`flush_wait.rs`).** The writer marks the message it's inside
-(`BusyOn`, set and cleared around `process_message`). Both flushes wait in `STALL_REPORT_INTERVAL` (30 s) slices, and
-every slice without an answer logs a WARN like
-`Waited 60 s for 'root''s index writer to flush; it has been on one DeleteSubtreeById for 61 s`. So a wedge like GitHub
-issue #564 names its message and its volume in a plain INFO log, from a scan start's `flush_blocking` and from the
-verifier's `flush().await` alike. That's why `Flush` carries a `FlushReply`: the blocking waiter needs a std channel to
-wait with a timeout. ❌ The wait never gives up: one message can legitimately run for minutes (a full aggregate over
-millions of rows), and a scan start that walked away on a false alarm would be worse than the wedge it guards against
-(David's call, 2026-10-20). Pinned by `a_flush_behind_a_stuck_message_keeps_waiting_and_can_name_it`.
+(`BusyOn`, set and cleared around `process_message`, which also counts the messages taken off the queue), and a flush
+notes its place when it's sent (`FlushTicket`: the queue depth ahead of it and the count taken so far). Both flushes
+wait in `STALL_REPORT_INTERVAL` (30 s) slices, and every slice without an answer logs how far the flush still is from
+the front and what the writer is on. The level separates the two kinds of wait:
+
+- **A wedge is WARN**: one message held the writer a whole interval, or the writer took nothing off its queue in one
+  (`Waited 60 s for 'root''s index writer to flush: nothing else is ahead of it, but the writer has been on one DeleteSubtreeById for 61 s`).
+  So a wedge like GitHub issue #564 names its message and volume, from a scan start's `flush_blocking` and the
+  verifier's `flush().await` alike.
+- **A draining queue is INFO**: a walk feeding the writer thousands of short messages puts a flush minutes behind them,
+  which is expected
+  (`…: about 3,111 messages are still ahead of it, and the writer is working through them (now on one InsertSubtreeEntries)`).
+  Why: the 2026-11-25 dev log's rebuild printed "it has been on one InsertSubtreeEntries for 0 s" as a WARN every 30 s
+  for two minutes; the waiter was the phase machine's per-phase `drain` (`../lifecycle/phases/mod.rs`) on the
+  `index-phases` thread, queued behind ~3,400 walk writes the writer worked through at 50–80 a second.
+
+The count is "about": the depth is a gauge every sender shares. `Flush` carries a `FlushReply` because the blocking
+waiter needs a std channel to wait with a timeout. ❌ The wait never gives up: one message can legitimately run for
+minutes (a full aggregate over millions of rows), and a scan start that walked away on a false alarm would be worse than
+the wedge it guards against (David's call, 2026-10-20). Pinned by
+`a_flush_behind_a_stuck_message_keeps_waiting_and_can_name_it` and the `wait_report` tests.
 
 Cover walks report the same split, for the same reason. `walk_frontier` arms the probe at its start and its summary line
 carries both numbers (`Cover: … in 5.8s (5.8s of it waiting on the writer)`). Without them the line reads as a slow
