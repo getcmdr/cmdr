@@ -7,20 +7,23 @@
   "ui.alertDialog.copyPathAria": "Copy path to clipboard",
   "@ui.alertDialog.copyPathAria": {
     "description": "aria-label for the Copy button beside the path shown in an alert dialog (for example \"Path is too long\"). Screen-reader-only; the visible button label is the shared \"Copy\" / \"Copied!\" pair. \"Path\" here means a filesystem path such as /Users/test_user_10/photos/img.jpg. Keep it identical in wording to commands.fileCopyPath.label.",
-    "screenshot": "alert-long-unbroken-path.png"
+    "screenshot": "alert-long-unbroken-path.png",
+    "visibility": "screenReader"
   },
   "ui.modalDialog.close": "Close",
   "@ui.modalDialog.close": {
     "description": "aria-label for the small × close button in the top-right corner of any modal dialog. Screen-reader-only; the visible glyph is ×.",
-    "screenshot": "new-folder-dialog.png"
+    "screenshot": "whats-new.png"
   },
   "ui.menuBar.label": "Menu bar",
   "@ui.menuBar.label": {
-    "description": "Screen-reader name of the strip of menus (Cmdr, File, Edit, View, …) at the top of the browser demo on getcmdr.com, which stands in for the macOS menu bar a web page doesn't have. Use the term macOS uses for its own menu bar in this language."
+    "description": "Screen-reader name of the strip of menus (Cmdr, File, Edit, View, …) at the top of the browser demo on getcmdr.com, which stands in for the macOS menu bar a web page doesn't have. Use the term macOS uses for its own menu bar in this language.",
+    "visibility": "screenReader"
   },
   "ui.mainMenu.label": "Main menu",
   "@ui.mainMenu.label": {
-    "description": "Tooltip and screen-reader name of the button with three stacked lines at the end of the tab row on Windows and Linux. It opens one menu holding every menu of the menu bar (File, Edit, View, …) as submenus. On GNOME it’s the app’s only menu, which GNOME's guidelines call the \"Main Menu\"; on Windows and KDE it stands in for the menu bar once the user hides it. Use the term GNOME and KDE use for this button in this language."
+    "description": "Tooltip and screen-reader name of the button with three stacked lines at the end of the tab row on Windows and Linux. It opens one menu holding every menu of the menu bar (File, Edit, View, …) as submenus. On GNOME it’s the app’s only menu, which GNOME's guidelines call the \"Main Menu\"; on Windows and KDE it stands in for the menu bar once the user hides it. Use the term GNOME and KDE use for this button in this language.",
+    "visibility": "tooltip"
   },
   "ui.demoDrop.overBudget": "The demo holds up to {budgetText} of your files per visit, so it left out {countText} {count, plural, one {item} other {items}}.",
   "@ui.demoDrop.overBudget": {
@@ -65,7 +68,8 @@
   },
   "ui.popover.defaultAriaLabel": "Options",
   "@ui.popover.defaultAriaLabel": {
-    "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices."
+    "description": "Default aria-label naming a popover region when the caller passes none. Generic fallback meaning a small floating panel of choices.",
+    "visibility": "screenReader"
   },
   "ui.select.placeholder": "Choose…",
   "@ui.select.placeholder": {
@@ -77,16 +81,19 @@
   },
   "ui.combobox.loadingSuggestions": "Loading suggestions",
   "@ui.combobox.loadingSuggestions": {
-    "description": "aria-label for the in-field loading spinner while a combobox fetches its suggestion list."
+    "description": "aria-label for the in-field loading spinner while a combobox fetches its suggestion list.",
+    "visibility": "screenReader"
   },
   "ui.combobox.showSuggestions": "Show suggestions",
   "@ui.combobox.showSuggestions": {
-    "description": "aria-label for the chevron button that opens a combobox's suggestion dropdown."
+    "description": "aria-label for the chevron button that opens a combobox's suggestion dropdown.",
+    "visibility": "screenReader"
   },
   "ui.copyBox.copyAria": "Copy command to clipboard",
   "@ui.copyBox.copyAria": {
     "description": "aria-label for the Copy button in a CopyBox, the box that shows a string to copy verbatim. This is the DEFAULT, used where the string is a terminal command; a caller showing something else (a file path) passes its own label. Screen-reader-only.",
-    "screenshot": "mtp-permission-default.png"
+    "screenshot": "mtp-permission-default.png",
+    "visibility": "screenReader"
   },
   "ui.copyBox.copy": "Copy",
   "@ui.copyBox.copy": {
@@ -95,15 +102,18 @@
   },
   "ui.findBar.previous": "Previous match",
   "@ui.findBar.previous": {
-    "description": "Accessible label and tooltip of the up-arrow button in a find bar (the strip that finds text in the content below it), which moves to the previous match. Sentence case."
+    "description": "Accessible label and tooltip of the up-arrow button in a find bar (the strip that finds text in the content below it), which moves to the previous match. Sentence case.",
+    "visibility": "screenReader"
   },
   "ui.findBar.next": "Next match",
   "@ui.findBar.next": {
-    "description": "Accessible label and tooltip of the down-arrow button in a find bar, which moves to the next match. Sentence case."
+    "description": "Accessible label and tooltip of the down-arrow button in a find bar, which moves to the next match. Sentence case.",
+    "visibility": "screenReader"
   },
   "ui.findBar.close": "Close find",
   "@ui.findBar.close": {
-    "description": "Accessible label and tooltip of the close (X) button of a find bar. Sentence case."
+    "description": "Accessible label and tooltip of the close (X) button of a find bar. Sentence case.",
+    "visibility": "screenReader"
   },
   "ui.findBar.matchPosition": "{currentText} of {totalText}",
   "@ui.findBar.matchPosition": {
@@ -130,20 +140,24 @@
     "description": "Screen-reader text inside a clickable keyboard-shortcut pill that opens shortcut customization for one command. It's read right after the key the pill shows (\"⌘C Customize the Copy shortcut\"), so keep it a phrase that follows the key naturally.",
     "placeholders": {
       "commandName": "the name of the command whose shortcut this pill shows (for example Copy, Rename)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "ui.shortcutChip.customizeTooltip": "Customize this shortcut",
   "@ui.shortcutChip.customizeTooltip": {
-    "description": "Tooltip on hovering a clickable keyboard-shortcut pill, hinting that clicking it opens shortcut customization."
+    "description": "Tooltip on hovering a clickable keyboard-shortcut pill, hinting that clicking it opens shortcut customization.",
+    "visibility": "tooltip"
   },
   "ui.toast.dismissAria": "Dismiss notification",
   "@ui.toast.dismissAria": {
     "description": "aria-label for the × button that closes (dismisses) a toast notification.",
-    "screenshot": "toast-favorite.png"
+    "screenshot": "toast-favorite.png",
+    "visibility": "screenReader"
   },
   "ui.toast.noneToFocus": "No notifications",
   "@ui.toast.noneToFocus": {
-    "description": "Spoken by the screen reader (never shown) when the user runs the \"Move focus to the notifications\" command while no notification toast is on screen, so there's nothing for focus to move to."
+    "description": "Spoken by the screen reader (never shown) when the user runs the \"Move focus to the notifications\" command while no notification toast is on screen, so there's nothing for focus to move to.",
+    "visibility": "screenReader"
   },
   "ui.toast.age": "{durationText} ago",
   "@ui.toast.age": {
@@ -185,7 +199,8 @@
   },
   "ui.loadingIcon.backupIndexAria": "Backup index",
   "@ui.loadingIcon.backupIndexAria": {
-    "description": "Screen-reader name of the progress bar shown while a restic backup’s index loads (see ui.loadingIcon.loadingBackupIndex). Never shown. A short noun phrase naming what the bar measures."
+    "description": "Screen-reader name of the progress bar shown while a restic backup’s index loads (see ui.loadingIcon.loadingBackupIndex). Never shown. A short noun phrase naming what the bar measures.",
+    "visibility": "screenReader"
   },
   "ui.loadingIcon.openingFolder": "Opening folder…",
   "@ui.loadingIcon.openingFolder": {
@@ -195,7 +210,7 @@
   "@ui.loadingIcon.loading": {
     "description": "Generic loading message shown centered in a pane while content is being fetched.",
     "screenshot": "listing-stalled.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "ui.loadingIcon.cancelHint": "Press <key></key> to cancel and go back",
   "@ui.loadingIcon.cancelHint": {
@@ -204,7 +219,7 @@
       "key": "position of the inline Esc key pill (a styled chip the app fills in); keep the empty wrapper tag"
     },
     "screenshot": "listing-stalled.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "ui.numberInput.decrease": "Decrease {label}",
   "@ui.numberInput.decrease": {
@@ -212,7 +227,8 @@
     "placeholders": {
       "label": "the name of the field this button adjusts, e.g. \"Custom timeout\""
     },
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "visibility": "screenReader"
   },
   "ui.numberInput.increase": "Increase {label}",
   "@ui.numberInput.increase": {
@@ -220,7 +236,8 @@
     "placeholders": {
       "label": "the name of the field this button adjusts, e.g. \"Custom timeout\""
     },
-    "screenshot": "settings-appearance-listing.png"
+    "screenshot": "settings-appearance-listing.png",
+    "visibility": "screenReader"
   },
   "ui.confirmDialog.cancel": "Cancel",
   "@ui.confirmDialog.cancel": {

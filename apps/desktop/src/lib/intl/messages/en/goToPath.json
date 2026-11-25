@@ -7,7 +7,8 @@
   "goToPath.dialog.inputAriaLabel": "Path to go to",
   "@goToPath.dialog.inputAriaLabel": {
     "description": "Accessibility label (read by screen readers) for the path input in the \"Go to folder\" dialog.",
-    "screenshot": "go-to-path.png"
+    "screenshot": "go-to-path.png",
+    "visibility": "screenReader"
   },
   "goToPath.dialog.inputPlaceholder": "{platform, select, windows {Type or paste a path, for example C:\\Users} other {Type or paste a path, for example ~/Documents}}",
   "@goToPath.dialog.inputPlaceholder": {
@@ -18,13 +19,15 @@
   "@goToPath.dialog.recentsAriaLabel": {
     "description": "Accessibility label (read by screen readers) for the list of recently visited paths in the \"Go to folder\" dialog.",
     "screenshot": "go-to-path.png",
-    "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed."
+    "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed.",
+    "visibility": "screenReader"
   },
   "goToPath.dialog.removeFromList": "Remove from list",
   "@goToPath.dialog.removeFromList": {
     "description": "Tooltip and accessibility label for the button that removes one entry from the recent-paths list. A short label.",
     "screenshot": "go-to-path.png",
-    "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed."
+    "screenshotNote": "The Go to folder dialog, pictured here. Your string belongs to a state this screenshot doesn’t show: its list of recent paths, or a hint under the field about the path you typed.",
+    "visibility": "tooltip"
   },
   "goToPath.dialog.cancel": "Cancel",
   "@goToPath.dialog.cancel": {

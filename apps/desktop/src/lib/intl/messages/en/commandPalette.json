@@ -22,7 +22,8 @@
     "placeholders": {
       "countText": "how many commands match, already formatted for display",
       "count": "the same number (drives the singular/plural form)"
-    }
+    },
+    "visibility": "screenReader"
   },
 
   "commandPalette.resultsAriaLabel": "Commands",

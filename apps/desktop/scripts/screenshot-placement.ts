@@ -6,7 +6,8 @@
  */
 
 import { type OcrText } from './screenshot-ocr.ts'
-import { type OcrDoc, isNeverVisible, ocrDoc, showsText } from './screenshot-text-match.ts'
+import { isSearchKeywordsKey } from './i18n-catalog-lib.ts'
+import { type OcrDoc, ocrDoc, showsText } from './screenshot-text-match.ts'
 
 /** One captured surface in the capture report: its screenshot and the keys that rendered on it. */
 export interface CaptureSurface {
@@ -80,24 +81,42 @@ export function couplingsFromReport(
  * DRAFT (David reviews translator-facing copy).
  */
 export const NOT_SHOWN_NOTE =
-  'This screenshot shows the screen your string belongs to, but not the string itself: it appears in another ' +
-  'state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from ' +
-  'the description and the surroundings from this image.'
+  'Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu ' +
+  'or tooltip, a running step, or further down a list. Use the description for the meaning and this image for ' +
+  'the context.'
 
 /**
- * The OCR verdict for the coupler, from the tracked OCR text and the English catalog.
- * Never-visible keys (accessible names, tooltips) and images with no OCR text answer `null`.
+ * A `@key.visibility` value: how a string that never shows in a screenshot reaches the person.
+ * Absent means the string is drawn on screen, so OCR can check it.
+ *  - `tooltip`: shown on hover (or behind an ⓘ), which no capture opens.
+ *  - `screenReader`: an accessible name, a screen-reader-only line, or an announcement.
+ *  - `never`: not shown anywhere (an internal label for a hidden setting).
+ */
+export const VISIBILITIES = ['tooltip', 'screenReader', 'never'] as const
+export type Visibility = (typeof VISIBILITIES)[number]
+
+/** Whether a twin's raw `visibility` value is one of `VISIBILITIES`. */
+export function isVisibility(value: unknown): value is Visibility {
+  return typeof value === 'string' && (VISIBILITIES as readonly string[]).includes(value)
+}
+
+/**
+ * The OCR verdict for the coupler, from the tracked OCR text and the English catalog. A key
+ * whose `@key.visibility` says no picture shows it, a Settings search keyword list (never
+ * drawn), and an image with no OCR text answer `null`: the surface that looked the key up is
+ * the right context, and its words can't be checked.
+ * @param visibility each key's declared `@key.visibility`, for the keys that carry one.
  */
 export function ocrVerdict(
   ocrText: OcrText,
   english: Record<string, string>,
-  descriptions: Record<string, string>,
+  visibility: ReadonlyMap<string, Visibility>,
 ): ShowsVerdict {
   const docs = new Map<string, OcrDoc>()
   return (key, screenshot) => {
     const entry = ocrText[screenshot] as OcrText[string] | undefined
     const value = english[key] as string | undefined
-    if (entry === undefined || value === undefined || isNeverVisible(key, descriptions[key] ?? '')) return null
+    if (entry === undefined || value === undefined || visibility.has(key) || isSearchKeywordsKey(key)) return null
     let doc = docs.get(screenshot)
     if (doc === undefined) {
       doc = ocrDoc(entry.lines)

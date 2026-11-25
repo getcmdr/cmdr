@@ -486,7 +486,8 @@
   },
   "menu.help.accessibility": "Accessibility guide",
   "@menu.help.accessibility": {
-    "description": "NOUN phrase. Help-menu item that opens a web page in the browser describing Cmdr's accessibility features (VoiceOver, keyboard use, text size, motion) and how to get help. Use the same wording as commands.helpAccessibility.label, and the standard term for accessibility the one macOS uses in System Settings. No ellipsis; it collects no input."
+    "description": "NOUN phrase. Help-menu item that opens a web page in the browser describing Cmdr's accessibility features (VoiceOver, keyboard use, text size, motion) and how to get help. Use the same wording as commands.helpAccessibility.label, and the standard term for accessibility the one macOS uses in System Settings. No ellipsis; it collects no input.",
+    "visibility": "screenReader"
   },
   "menu.help.whatsNew": "What’s new",
   "@menu.help.whatsNew": {
@@ -723,7 +724,7 @@
   "@menu.volume.editFavoriteShortcut": {
     "description": "VERB phrase. An item in the right-click menu on a favorite, in the Favorites menu and the volume switcher's favorites section: capture one A–Z key for opening that favorite while the Favorites menu is open. The user may also press Delete to clear an existing key. “Shortcut key” is one key, never a key combination; fileExplorer.navigation.favoriteShortcutAriaLabel and .favoriteShortcutSaveFailed use the same words. The ellipsis means the key is chosen after this item is picked.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "menu.volume.removeFavorite": "Remove",
   "@menu.volume.removeFavorite": {

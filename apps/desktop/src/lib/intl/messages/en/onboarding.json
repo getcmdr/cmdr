@@ -5,21 +5,25 @@
   },
   "onboarding.fdaBadge.tooltip": "You don’t have to grant this, but Cmdr works much better with it: searching your whole drive, reading cloud folders, and changing files macOS keeps to itself. Click to look at the choice again.",
   "@onboarding.fdaBadge.tooltip": {
-    "description": "Hover tooltip on the \"No full disk access\" title-bar badge. Deliberately low-pressure: granting the permission is optional, so the tone offers rather than nags. Lists what improves, then says what clicking does. \"files macOS keeps to itself\" means files behind the operating system's own privacy protection; keep it plain and non-technical rather than naming a macOS feature."
+    "description": "Hover tooltip on the \"No full disk access\" title-bar badge. Deliberately low-pressure: granting the permission is optional, so the tone offers rather than nags. Lists what improves, then says what clicking does. \"files macOS keeps to itself\" means files behind the operating system's own privacy protection; keep it plain and non-technical rather than naming a macOS feature.",
+    "visibility": "tooltip"
   },
   "onboarding.fdaBadge.ariaLabel": "No full disk access. Open the full disk access step of onboarding.",
   "@onboarding.fdaBadge.ariaLabel": {
-    "description": "Screen-reader label for the title-bar badge button. States the condition, then what activating the button does."
+    "description": "Screen-reader label for the title-bar badge button. States the condition, then what activating the button does.",
+    "visibility": "screenReader"
   },
   "onboarding.wizard.title": "Cmdr onboarding",
   "@onboarding.wizard.title": {
     "description": "Screen-reader-only heading for the whole first-launch onboarding sheet. Not shown visually; announced to assistive tech as the dialog's name. \"Cmdr\" is the product name and stays untranslated.",
-    "screenshot": "onboarding-fda.png"
+    "screenshot": "onboarding-fda.png",
+    "visibility": "screenReader"
   },
   "onboarding.wizard.progressLabel": "Onboarding progress",
   "@onboarding.wizard.progressLabel": {
     "description": "Screen-reader label for the row of step dots at the top of the onboarding sheet. Names what the dots represent (which step the user is on).",
-    "screenshot": "onboarding-fda.png"
+    "screenshot": "onboarding-fda.png",
+    "visibility": "screenReader"
   },
   "onboarding.wizard.stepProgress": "Step {step} of {total}{isOptional, select, true { (optional)} other {}}",
   "@onboarding.wizard.stepProgress": {
@@ -29,7 +33,7 @@
       "total": "the total number of onboarding steps (for example 4)",
       "isOptional": "whether this step is the optional one: the string \"true\" adds the \" (optional)\" suffix, anything else adds nothing"
     },
-    "screenshot": "onboarding-fda.png"
+    "screenshot": "onboarding-beta.png"
   },
   "onboarding.moreAbout": "More about {topic}",
   "@onboarding.moreAbout": {
@@ -37,7 +41,8 @@
     "placeholders": {
       "topic": "the label the glyph sits beside, already translated (for example \"Drive indexing\")"
     },
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "visibility": "screenReader"
   },
   "onboarding.wizard.stepTooltip": "Step {step} of {mandatory}+1{note, select, remaining {, one optional step remains} last {, this is the last, optional step} other {}}",
   "@onboarding.wizard.stepTooltip": {
@@ -47,17 +52,19 @@
       "mandatory": "how many steps are required, the optional one excluded (for example 3)",
       "note": "which tail to add: \"remaining\" for the step before the optional one, \"last\" on the optional step itself, anything else for no tail"
     },
-    "screenshot": "onboarding-fda.png"
+    "screenshot": "onboarding-beta.png"
   },
   "onboarding.wizard.back": "Back",
   "@onboarding.wizard.back": {
     "description": "Tooltip on the back arrow button in the onboarding sheet footer. Goes to the previous step. Very short.",
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "visibility": "tooltip"
   },
   "onboarding.wizard.backAria": "Go to previous step",
   "@onboarding.wizard.backAria": {
     "description": "Accessible label (read by screen readers) for the back arrow button in the onboarding sheet footer.",
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "visibility": "screenReader"
   },
   "onboarding.wizard.next": "Next",
   "@onboarding.wizard.next": {
@@ -68,7 +75,7 @@
   "@onboarding.wizard.finish": {
     "description": "Primary button on the last onboarding step that completes onboarding. Short control label.",
     "screenshot": "onboarding-step-4-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.wizard.restart": "Restart Cmdr",
   "@onboarding.wizard.restart": {
@@ -367,7 +374,8 @@
   "onboarding.stepAi.choiceGroupAria": "AI choice",
   "@onboarding.stepAi.choiceGroupAria": {
     "description": "Accessible group label for the set of AI radio options (cloud / local / off).",
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "visibility": "screenReader"
   },
   "onboarding.stepAi.cloud.label": "Yes, I want AI",
   "@onboarding.stepAi.cloud.label": {
@@ -398,7 +406,8 @@
   "onboarding.stepAi.local.tooltip": "The local model is significantly dumber than cloud models, and it takes up about 2 GB of space and some RAM and CPU at every use.\nIn return, no data leaves your machine.\nCmdr tries to ship updates so you can use the best small model that’s available. But if you want privacy <em>and</em> a decent model, running your own ollama server and setting it up with option <strong>Yes, I want AI</strong> below is your best choice.",
   "@onboarding.stepAi.local.tooltip": {
     "description": "The local-AI option's full explanation, in the tooltip behind the info glyph beside it: a weaker on-device model that keeps everything local, and the better route for someone who wants both privacy and quality. Honest, plain tone (\"dumber\" is deliberate). <em> emphasizes \"and\"; <strong> wraps the name of the cloud option below, so keep that wording matching onboarding.stepAi.cloud.label. \"Cmdr\" is the product name; \"RAM\" and \"CPU\" are the memory and the processor; \"ollama\" is a product name; all stay untranslated. \"2 GB\" is a rough decimal disk-size figure: write the unit as your common.sizeUnit.gigabyte. Each sentence sits on its own line (the newlines are real line breaks in the tooltip); keep one line per sentence in your translation.",
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "visibility": "tooltip"
   },
   "onboarding.stepAi.local.note": "Started downloading the local model in the background. You can finish onboarding now; the toast in the corner will keep you posted.",
   "@onboarding.stepAi.local.note": {
@@ -410,7 +419,8 @@
   "@onboarding.stepAi.localTooltip": {
     "description": "Tooltip on the disabled local-AI option, explaining it needs a Mac with Apple silicon running macOS 14 or later, while cloud AI works on any Mac. \"LLM\" is the AI model type (large language model) and stays untranslated. \"Apple silicon\" is Apple’s name for its own M-series Mac chips: use the form your language’s termbase settles, since Apple frames it in its own words in some languages.",
     "screenshot": "onboarding-ai.png",
-    "screenshotNote": "The AI step of the onboarding wizard, pictured here."
+    "screenshotNote": "The AI step of the onboarding wizard, pictured here.",
+    "visibility": "tooltip"
   },
   "onboarding.stepAi.missingKeyWarning": "{platform, select, windows {You’ve turned on AI but haven’t entered an API key. AI won’t work and you’ll see a warning. Please fix this above.\n\n<strong>Select “{nextLabel}” again to ignore this and go on.</strong>} other {You’ve enabled AI but haven’t entered an API key. AI won’t work and you’ll see a warning. Please fix this above.\n\n<strong>Click “{nextLabel}” again to ignore this and go on.</strong>}}",
   "@onboarding.stepAi.missingKeyWarning": {
@@ -418,7 +428,8 @@
     "placeholders": {
       "nextLabel": "the forward button's label, already translated (for example \"Next\") (always that one button label, never anything else)"
     },
-    "screenshot": "onboarding-ai.png"
+    "screenshot": "onboarding-ai.png",
+    "screenshotNote": "The AI step of the onboarding wizard, pictured here."
   },
   "onboarding.stepAi.cloudConsentOffNote": "{platform, select, windows {Cloud AI stays off until you allow it. You can do that later in Settings > AI.} linuxGnome {Cloud AI stays off until you allow it. You can do that later in Preferences > AI.} linuxKde {Cloud AI stays off until you allow it. You can do that later in Configure Cmdr > AI.} other {Cloud AI stays off until you allow it. You can do that later in Settings > AI.}}",
   "@onboarding.stepAi.cloudConsentOffNote": {
@@ -523,13 +534,14 @@
   "onboarding.stepBeta.checklist.emailMark": "Email address saved",
   "@onboarding.stepBeta.checklist.emailMark": {
     "description": "Screen-reader name for the tick beside the email row of the checklist. It's a progress mark, not a control: it ticks itself once the mailing list has accepted the address. Not shown visually.",
-    "screenshot": "onboarding-beta.png"
+    "screenshot": "onboarding-beta.png",
+    "visibility": "screenReader"
   },
   "onboarding.stepBeta.analyticsLede": "To learn what’s working and what isn’t, during the open beta Cmdr sends usage stats: which features get used and how often, never anything from your files.\nThey’re tied to a random id, not to your name or email.\nIt’s on now, and you can turn it off anytime.",
   "@onboarding.stepBeta.analyticsLede": {
     "description": "Discloses that the app sends usage statistics during the beta, says what they're tied to, and promises it never reads file contents. Transparent, reassuring tone. \"random id\" = a randomly generated identifier stored on the user's computer, not linked to their identity; keep it plain rather than reaching for a technical term like \"pseudonymous\". \"Cmdr\" is the product name; \"open beta\" is the release stage.",
     "screenshot": "onboarding-beta.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepBeta.analyticsTitle": "Send usage stats",
   "@onboarding.stepBeta.analyticsTitle": {
@@ -543,13 +555,13 @@
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     },
     "screenshot": "onboarding-beta.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepBeta.crashReportsNote": "{platform, select, macos {Crash reports are on too: if Cmdr goes down, it sends the app version, your macOS version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Settings whenever you like.} windows {Crash reports are on too: if Cmdr goes down, it sends the app version, your Windows version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Settings whenever you like.} linuxGnome {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Preferences whenever you like.} linuxKde {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Configure Cmdr whenever you like.} other {Crash reports are on too: if Cmdr goes down, it sends the app version, your Linux distribution and version, and where the code stopped.\nNever your files.\nYou can turn both of these off in Settings whenever you like.}}",
   "@onboarding.stepBeta.crashReportsNote": {
     "description": "Caption on the open-beta onboarding step, right after the usage-stats disclosure, telling a new user that crash reports are also on by default and what one carries. Transparent and calm. \"Cmdr\" is the product name; \"macOS\" and \"Windows\" are OS names, and the Linux branch names the distribution and its version; \"Settings\" is the app's settings screen. The screenshot shows the macOS wording. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE.",
     "screenshot": "onboarding-beta.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepBeta.analyticsManaged": "Your organization turned off usage stats.",
   "@onboarding.stepBeta.analyticsManaged": {
@@ -562,7 +574,8 @@
   "onboarding.stepBeta.emailTitle": "Stay in touch (optional)",
   "@onboarding.stepBeta.emailTitle": {
     "description": "Heading above the optional email field, and also the field's accessible label. Makes clear giving an email is optional.",
-    "screenshot": "onboarding-beta.png"
+    "screenshot": "onboarding-beta.png",
+    "visibility": "screenReader"
   },
   "onboarding.stepBeta.emailPlaceholder": "you@example.com",
   "@onboarding.stepBeta.emailPlaceholder": {
@@ -589,7 +602,7 @@
   "@onboarding.stepBeta.emailNote": {
     "description": "Privacy note under the optional email field: David may reach out, and the email is stored locally and never linked to usage stats. First-person, reassuring. Each branch names the machine as its OS does: \"Mac\" (kept untranslated) on macOS, \"PC\" on Windows, \"computer\" on Linux. The screenshot shows the macOS wording.",
     "screenshot": "onboarding-beta.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepBeta.terms.title": "Oh, and this too please",
   "@onboarding.stepBeta.terms.title": {
@@ -609,7 +622,8 @@
   "onboarding.stepBeta.terms.blockedTooltip": "Accept the terms and conditions to continue.",
   "@onboarding.stepBeta.terms.blockedTooltip": {
     "description": "Tooltip on the two footer buttons while the terms checkbox is unticked, explaining why they don't move the user forward. Matter-of-fact, not scolding.",
-    "screenshot": "onboarding-beta.png"
+    "screenshot": "onboarding-beta.png",
+    "visibility": "tooltip"
   },
   "onboarding.stepOptional.footer.start": "Start using Cmdr",
   "@onboarding.stepOptional.footer.start": {
@@ -637,7 +651,8 @@
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     },
-    "screenshot": "onboarding-optional.png"
+    "screenshot": "onboarding-optional.png",
+    "visibility": "tooltip"
   },
   "onboarding.stepOptional.networking.title": "Networking",
   "@onboarding.stepOptional.networking.title": {
@@ -648,12 +663,13 @@
   "@onboarding.stepOptional.networking.summary": {
     "description": "Half-line summary under the networking toggle's title, naming its one cost. The full explanation sits behind the info glyph beside the title. In the macOS branch, “Local Network” is the name of the row in macOS's Privacy & Security settings, so use Apple's own label for your locale verbatim (the `LOCAL_NETWORK` key in SecurityPrivacyExtension.appex), not a paraphrase: it's what the user has to go find. The Windows branch names the Windows firewall prompt instead, and the Linux branch says no permission is needed. Keep it to one short line. The screenshot shows the macOS wording.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.networking.desc": "{platform, select, macos {Having this <em>on</em> means you can connect to SMB servers like company network shares, a home NAS, and the like.\nThe only cost is a macOS permission dialog that pops up and asks you to allow “Local Network”, and one for “Accepting incoming connections”.\nBoth dialogs are harmless, but if you don’t know what these are, they might be scary or annoying.} windows {Having this <em>on</em> means you can connect to SMB servers like company network shares, a home NAS, and the like.\nWindows may ask once whether to let Cmdr through its firewall.} other {Having this <em>on</em> means you can connect to SMB servers like company network shares, a home NAS, and the like.}}",
   "@onboarding.stepOptional.networking.desc": {
     "description": "Long explanation of the networking toggle, shown in the tooltip behind its info glyph: enables SMB shares at a cost that differs per OS (two permission prompts in the macOS branch, a possible firewall question in the Windows branch, and none in the Linux branch). <em> emphasizes \"on\". \"SMB\" is the file-sharing protocol; \"NAS\" is a network storage device; \"macOS\" is the operating system; all stay untranslated. In the macOS branch, “Local Network” is the name of the row in macOS's Privacy & Security settings, so use Apple's own label for your locale verbatim (the `LOCAL_NETWORK` key in SecurityPrivacyExtension.appex), not a paraphrase; it must match onboarding.stepOptional.networking.summary. “Accepting incoming connections” describes the firewall prompt rather than quoting a label, so translate it as prose. Each sentence sits on its own line (the newlines are real line breaks in the tooltip); keep one line per sentence in your translation. The screenshot shows the macOS wording.",
-    "screenshot": "onboarding-optional.png"
+    "screenshot": "onboarding-optional.png",
+    "visibility": "tooltip"
   },
   "onboarding.stepOptional.indexing.title": "Drive indexing",
   "@onboarding.stepOptional.indexing.title": {
@@ -664,25 +680,25 @@
   "@onboarding.stepOptional.indexing.summary": {
     "description": "Half-line summary under the drive-indexing toggle's title: one cost and two benefits. The full explanation sits behind the info glyph beside the title. \"1 GB\" is the approximate index size, a rough decimal figure: write the unit as your common.sizeUnit.gigabyte. Keep it to one short line.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.indexing.descIntro": "Drive indexing is totally cool! Gives you two main things:",
   "@onboarding.stepOptional.indexing.descIntro": {
     "description": "Enthusiastic lead-in to the two benefits of drive indexing, followed by a numbered list.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.indexing.benefit1": "{platform, select, macos {Instant search of your whole drive. Think Spotlight, but even faster.} windows {Instant search of your whole drive. Think Windows Search, but much faster.} other {Instant search of your whole drive.}}",
   "@onboarding.stepOptional.indexing.benefit1": {
     "description": "First benefit of drive indexing: instant full-drive search. In the macOS branch, \"Spotlight\" is the macOS built-in search feature, a brand name that stays untranslated. The Windows branch compares with Windows Search instead (use Microsoft's name for it in your language), and the Linux branch makes no comparison. The screenshot shows the macOS wording.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.indexing.benefit2": "Real-time folder sizes for your whole drive. You always know how much stuff you have in each folder.",
   "@onboarding.stepOptional.indexing.benefit2": {
     "description": "Second benefit of drive indexing: live folder-size totals across the whole drive.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.indexing.descCost": "If you turn this off, you only get <code>{dirPlaceholder}</code> for the sizes.\nThe cost is around 1 GB of index on your drive for a few million files, but no extra CPU or memory use after the first 2–3 minutes of you first starting the app, or starting it after a long time.\nIt’s a cheap feature considering the benefits.",
   "@onboarding.stepOptional.indexing.descCost": {
@@ -690,7 +706,8 @@
     "placeholders": {
       "dirPlaceholder": "the literal text the Size column shows for a folder whose size isn't computed yet, taken from fileExplorer.dirSize.dirPlaceholder (for example \"<dir>\")"
     },
-    "screenshot": "onboarding-optional.png"
+    "screenshot": "onboarding-optional.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.updates.title": "Automatic updates",
   "@onboarding.stepOptional.updates.title": {
@@ -705,7 +722,8 @@
   "onboarding.stepOptional.updates.desc": "{platform, select, windows {If you turn this on, Cmdr makes a tiny network request to a central license server at each app start plus once every 24 hours, and you always get the latest updates.\nIf you turn it off, you keep your current version, and Cmdr makes zero automated network requests (except for periodic license checks, if you have a commercial license).} other {If you enable this, Cmdr makes a tiny network request to a central license server at each app start plus once every 24 hours, and you always get the latest updates.\nIf you disable it, you keep your current version, and Cmdr makes zero automated network requests (except for periodic license checks, if you have a commercial license).}}",
   "@onboarding.stepOptional.updates.desc": {
     "description": "The long automatic-updates explanation, shown in the tooltip behind the info glyph: the network requests it makes and the trade-off of disabling it. \"Cmdr\" is the product name. \"24 hours\" and \"commercial license\" are factual details. Each sentence sits on its own line (the newlines are real line breaks in the tooltip); keep one line per sentence in your translation. The screenshot shows the macOS wording.",
-    "screenshot": "onboarding-optional.png"
+    "screenshot": "onboarding-optional.png",
+    "visibility": "tooltip"
   },
   "onboarding.stepOptional.mtp.title": "MTP (Android phones, Kindles, cameras)",
   "@onboarding.stepOptional.mtp.title": {
@@ -716,16 +734,18 @@
   "@onboarding.stepOptional.mtp.summary": {
     "description": "Half-line summary under the MTP toggle's title, naming what it enables and what it costs. The full explanation sits behind the info glyph beside the title. The macOS branch also names its cost, suppressing the macOS native handler; the other branch (Windows and Linux) has none to name. \"Android\" and \"macOS\" stay untranslated. \"and the such\" is a deliberately casual \"and similar devices\". Keep it to one short line. The screenshot shows the macOS wording.",
     "screenshot": "onboarding-optional.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "onboarding.stepOptional.mtp.desc": "{platform, select, macos {If you enable this, Cmdr can <strong>connect to Android phones, Kindles, cameras</strong>, some music players, and any other device that supports the protocols called MTP or PTP.\nThe cost is that macOS <em>also</em> wants to connect to these (and it usually fails, which is why you can’t just use Finder to copy photos from Android phones), so Cmdr has to suppress that macOS process while it’s running.\nWhen you quit Cmdr, this is politely restored.} windows {If you turn this on, Cmdr can <strong>connect to Android phones, Kindles, cameras</strong>, some music players, and any other device that supports the protocols called MTP or PTP.} other {If you enable this, Cmdr can <strong>connect to Android phones, Kindles, cameras</strong>, some music players, and any other device that supports the protocols called MTP or PTP.\nYour desktop may also try to open these devices; if a device seems busy, unmount it in your file manager first.}}",
   "@onboarding.stepOptional.mtp.desc": {
     "description": "The long MTP explanation, shown in the tooltip behind the info glyph: it lets the app talk to phones, e-readers, and cameras, at a cost that differs per OS. The macOS branch temporarily suppresses a conflicting macOS process, which is put back on quit; the Linux branch warns that the desktop may open the device first and says to unmount it in the file manager; the Windows branch names no cost. <strong> bolds the device list; <em> emphasizes \"also\". \"Cmdr\" is the product name; \"macOS\" is the operating system; \"Finder\" (macOS branch) is the macOS file manager; \"Android\", \"Kindles\", \"MTP\", and \"PTP\" are device/protocol names; all stay untranslated. Each sentence sits on its own line (the newlines are real line breaks in the tooltip); keep one line per sentence in your translation. The screenshot shows the macOS wording.",
-    "screenshot": "onboarding-optional.png"
+    "screenshot": "onboarding-optional.png",
+    "visibility": "tooltip"
   },
   "onboarding.cloudPicker.listAria": "Cloud AI providers",
   "@onboarding.cloudPicker.listAria": {
-    "description": "Accessible label for the scrollable list of cloud AI providers in the AI step. \"provider\" is a company offering AI models."
+    "description": "Accessible label for the scrollable list of cloud AI providers in the AI step. \"provider\" is a company offering AI models.",
+    "visibility": "screenReader"
   },
   "onboarding.cloudSetup.title": "Set up {provider}",
   "@onboarding.cloudSetup.title": {
@@ -806,7 +826,8 @@
   "@onboarding.cloudSetup.apiKeyAria": {
     "description": "Accessible label for the API-key password input on the provider setup. \"API key\" is a technical credential term.",
     "screenshot": "onboarding-ai.png",
-    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render."
+    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render.",
+    "visibility": "screenReader"
   },
   "onboarding.cloudSetup.removeKey": "Remove key",
   "@onboarding.cloudSetup.removeKey": {
@@ -905,7 +926,8 @@
   "@onboarding.cloudSetup.modelAria": {
     "description": "Accessible label for the model picker combo box. \"Model\" means an AI model.",
     "screenshot": "onboarding-ai.png",
-    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render."
+    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render.",
+    "visibility": "screenReader"
   },
   "onboarding.cloudSetup.modelPlaceholderExample": "Example: {model}",
   "@onboarding.cloudSetup.modelPlaceholderExample": {

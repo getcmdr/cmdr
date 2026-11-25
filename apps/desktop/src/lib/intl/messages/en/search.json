@@ -18,7 +18,8 @@
   "search.action.showAll.tooltip": "Open the search results in the active pane",
   "@search.action.showAll.tooltip": {
     "description": "Hover tooltip for the 'Show all in main window' button in the Search dialog.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "search.action.goToFile.label": "Go to file",
   "@search.action.goToFile.label": {
@@ -28,7 +29,8 @@
   "search.action.goToFile.tooltip": "Open the file in the active pane",
   "@search.action.goToFile.tooltip": {
     "description": "Hover tooltip for the 'Go to file' button in the Search dialog.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "search.recent.runAria": "Run recent {mode} search: {query}",
   "@search.recent.runAria": {
@@ -38,17 +40,20 @@
       "query": "the text the user searched for, shown verbatim and not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "screenReader"
   },
   "search.systemDirExclude.default": "Excludes common system and build folders",
   "@search.systemDirExclude.default": {
     "description": "Placeholder tooltip on the 'Hide boring folders' option in the Search dialog's scope popover, shown briefly before the full folder list loads. 'build folders' are folders like node_modules that hold generated or downloaded code.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "search.systemDirExclude.heading": "These folders are hidden:",
   "@search.systemDirExclude.heading": {
     "description": "Heading inside the 'Hide boring folders' tooltip in the Search dialog's scope popover. Introduces the list of folder names that the search skips. The folder names themselves are not translated.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "search.notAFolderToast": "Search results aren’t a folder. Paste into a real folder instead.",
   "@search.notAFolderToast": {
@@ -60,7 +65,8 @@
   "@search.searchableFolder.disabledTooltip": {
     "description": "Tooltip on the disabled 'Use current folder' button in the Search dialog's scope popover. Explains that the active pane is showing search results (a read-only view), so there's no real folder to search inside.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "tooltip"
   },
   "search.imageResults.title": "Text in images",
   "@search.imageResults.title": {
@@ -193,7 +199,8 @@
     "description": "Tooltip on the still-searching toast's close (X) button, making clear that dismissing the toast doesn't stop the search (the toast has its own Stop button for that).",
     "placeholders": {},
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "tooltip"
   },
   "search.walkHandoff.finished": "{count, plural, one {Found # match} other {Found # matches}} for {label}.",
   "@search.walkHandoff.finished": {
@@ -332,7 +339,8 @@
   "@search.coverage.list.show": {
     "description": "Screen-reader name of the small icon at the start of a coverage-note line (a warning triangle or an info circle). Focusing or hovering it shows a numbered list of the folders that line is about. Short; it's never shown as visible text.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "screenReader"
   },
   "search.coverage.list.more": "{count, plural, one {+{countText} more} other {+{countText} more}}",
   "@search.coverage.list.more": {
@@ -342,13 +350,15 @@
       "countText": "the same number, already formatted with thousands separators"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "tooltip"
   },
   "search.coverage.list.copy": "Copy the full list of folders",
   "@search.coverage.list.copy": {
     "description": "Hover hint and screen-reader name of the small copy button at the end of a coverage-note line. Pressing it copies every folder path that line is about, one per line, including the ones the tooltip leaves out.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear."
+    "screenshotNote": "Search results and the messages around them (image-text matches, index coverage, and the toasts search raises). This shows the search dialog where the query is typed and the results appear.",
+    "visibility": "tooltip"
   },
   "search.coverage.walk.cancelled": "You stopped this search, so it shows what Cmdr had found by then. Everything it read on the way is saved, so searching again picks up from there.",
   "@search.coverage.walk.cancelled": {
@@ -476,7 +486,8 @@
   "@search.runTitle": {
     "description": "Tooltip and accessibility label for the run button next to the search input, in filename and regex modes. It names what pressing it does that typing alone doesn't: the app searches beyond its index, reading folders it hasn't indexed, which can take a while and so only happens when the user asks for it.",
     "placeholders": {},
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "search.coverage.pressEnter": "Press Enter and Cmdr will look through it now.",
   "@search.coverage.pressEnter": {

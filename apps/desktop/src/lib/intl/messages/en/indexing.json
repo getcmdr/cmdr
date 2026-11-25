@@ -2,7 +2,8 @@
   "indexing.status.ariaLabel": "Drive indexing status",
   "@indexing.status.ariaLabel": {
     "description": "Accessibility label for the small hourglass icon in the top-right corner that shows while Cmdr is indexing a drive. Read aloud by screen readers; the live progress is in its tooltip.",
-    "screenshot": "indexing-status.png"
+    "screenshot": "indexing-status.png",
+    "visibility": "screenReader"
   },
   "indexing.drive.heading": "{name}",
   "@indexing.drive.heading": {
@@ -10,7 +11,8 @@
     "placeholders": {
       "name": "the drive’s display name (e.g. Macintosh HD, Backups)"
     },
-    "screenshot": "indexing-checklist.png"
+    "screenshot": "indexing-checklist.png",
+    "visibility": "tooltip"
   },
   "indexing.scan.label": "Indexing your drive…",
   "@indexing.scan.label": {
@@ -149,12 +151,14 @@
   "indexing.step.statusActive": "In progress",
   "@indexing.step.statusActive": {
     "description": "Visually-hidden status phrase a screen reader announces after the checklist step that’s currently running (e.g. “Compute folder sizes. In progress.”). It conveys the spinner to non-sighted users. Very short; sentence case; no period.",
-    "screenshot": "indexing-checklist.png"
+    "screenshot": "indexing-checklist.png",
+    "visibility": "screenReader"
   },
   "indexing.step.statusPending": "Not started",
   "@indexing.step.statusPending": {
     "description": "Visually-hidden status phrase a screen reader announces after a checklist step that hasn’t started yet (e.g. “Catch up on recent changes. Not started.”). It conveys the empty marker to non-sighted users. Very short; sentence case; no period.",
-    "screenshot": "indexing-checklist.png"
+    "screenshot": "indexing-checklist.png",
+    "visibility": "screenReader"
   },
   "indexing.aggregation.loading": "Loading folders…",
   "@indexing.aggregation.loading": {
@@ -192,7 +196,8 @@
       "percent": "whole-number percent complete, already formatted (e.g. 95)",
       "eta": "the formatted time-remaining phrase, e.g. 'roughly 8s left'"
     },
-    "screenshot": "indexing-checklist.png"
+    "screenshot": "indexing-checklist.png",
+    "visibility": "tooltip"
   },
   "indexing.overall.eta": "Overall: {eta}",
   "@indexing.overall.eta": {
@@ -357,7 +362,8 @@
   "@indexing.enrich.label": {
     "description": "Row title in the top-right indexing tooltip for image content-indexing (Cmdr reading images so they can be searched by what's in them), shown above the progress bar. Sits alongside the drive-indexing rows. Sentence case, terse.",
     "screenshot": "indexing-checklist.png",
-    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state."
+    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state.",
+    "visibility": "tooltip"
   },
   "indexing.enrich.progress": "{total, plural, one {{doneText} of {totalText} image} other {{doneText} of {totalText} images}}",
   "@indexing.enrich.progress": {
@@ -406,18 +412,21 @@
   "@indexing.enrich.queued": {
     "description": "Quiet one-liner at the bottom of the drive-indexing tooltip when image indexing is turned on but its pass is waiting for the drive scan above it to finish (it starts automatically right after). Gives the “Index image contents” toggle immediate visible feedback. Calm, sentence case, no trailing period.",
     "screenshot": "indexing-checklist.png",
-    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state."
+    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state.",
+    "visibility": "tooltip"
   },
   "indexing.enrich.imagesBarLabel": "Images indexed",
   "@indexing.enrich.imagesBarLabel": {
     "description": "Accessible label (screen-reader only) for the images progress bar in the Image-indexing row. Not shown visually.",
     "screenshot": "indexing-checklist.png",
-    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state."
+    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state.",
+    "visibility": "screenReader"
   },
   "indexing.enrich.bytesBarLabel": "Image data processed",
   "@indexing.enrich.bytesBarLabel": {
     "description": "Accessible label (screen-reader only) for the second progress bar, which tracks how much image DATA (bytes) has been processed. Not shown visually.",
     "screenshot": "indexing-checklist.png",
-    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state."
+    "screenshotNote": "The drive-indexing checklist, pictured here. Your string belongs to the image-indexing row that appears beside these drive rows while Cmdr reads image contents: its title, progress, speed, or a paused or waiting state.",
+    "visibility": "screenReader"
   }
 }

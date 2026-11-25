@@ -281,18 +281,3 @@ export function showsText(key: string, english: string, doc: OcrDoc): boolean | 
   const exact = judge(req, doc, 1)
   return exact.checked > 0 ? exact.shows : null
 }
-
-const NEVER_VISIBLE_KEY = /(aria|tooltip|a11y|screenreader|sronly|announce|accessib)/i
-const NEVER_VISIBLE_DESCRIPTION =
-  /(accessible name|accessible label|aria-label|aria label|screen reader|screen-reader|voiceover|tooltip|on hover|when hovered|hover text|announced|not shown on screen|never shown|invisible)/i
-
-/**
- * Whether a key's text never meets a screenshot by design: an accessible name, a tooltip, an
- * announcement. Read off the key's last segment and its `@key` description, the two places
- * the catalog says so. These keep the surface that looked them up, with no OCR verdict: the
- * picture of the control they label is the right context, and no picture shows their words.
- */
-export function isNeverVisible(key: string, description: string): boolean {
-  const last = key.slice(key.lastIndexOf('.') + 1)
-  return NEVER_VISIBLE_KEY.test(last) || NEVER_VISIBLE_DESCRIPTION.test(description)
-}

@@ -187,7 +187,8 @@
   "main.quit.countdownAria": "{platform, select, windows {Time until Cmdr closes on its own} other {Time until Cmdr quits on its own}}",
   "@main.quit.countdownAria": {
     "description": "Screen-reader label for the countdown region of the quit-while-running dialog. The visible text spells out the seconds; this names what the number measures. The Windows branch says “closes”, macOS and Linux “quits”, as in main.quit.countdown. Keep it short. The screenshot shows the macOS wording.",
-    "screenshot": "quit-confirmation-one-copy.png"
+    "screenshot": "quit-confirmation-one-copy.png",
+    "visibility": "screenReader"
   },
   "main.quit.keepWorking": "Keep working",
   "@main.quit.keepWorking": {

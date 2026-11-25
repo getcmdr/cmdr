@@ -16,6 +16,7 @@ import {
   CHECK_EXIT_ERROR,
   REPRESENTATIVE_SCREENSHOTS,
 } from './couple-screenshots.ts'
+import { VISIBILITIES, isVisibility } from './screenshot-placement.ts'
 
 // `JSON.parse` is untyped (`any`); the catalogs are `{ key: string | object }`,
 // so parse to a known shape for the assertions below.
@@ -330,18 +331,38 @@ describe('placeKeys (the OCR verdict decides)', () => {
 
 describe('ocrVerdict', () => {
   const english = { 'a.shown': 'Reset all to defaults', 'a.hidden': 'Drag threshold', 'a.closeAria': 'Close' }
-  const descriptions = { 'a.closeAria': 'Accessible name of the close button.' }
+  const visibility = new Map([['a.closeAria', 'screenReader' as const]])
   const ocr = { 'page.png': { sha256: 'x', lines: ['Advanced', 'Reset all to defaults'] } }
-  const shows = ocrVerdict(ocr, english, descriptions)
+  const shows = ocrVerdict(ocr, english, visibility)
 
   it('answers from the image text', () => {
     expect(shows('a.shown', 'page.png')).toBe(true)
     expect(shows('a.hidden', 'page.png')).toBe(false)
   })
 
-  it('answers null for an image never read, and for a never-visible key', () => {
+  it('answers null for an image never read, and for a key whose `visibility` says no picture shows it', () => {
     expect(shows('a.shown', 'unread.png')).toBeNull()
     expect(shows('a.closeAria', 'page.png')).toBeNull()
+  })
+
+  it('reads the declared field, never the key name or the description', () => {
+    // Regression: a word heuristic took `Aria` in a key or "tooltip" in a description as proof the
+    // string never shows, and so trusted visible labels whose descriptions merely mention a tooltip.
+    const undeclared = ocrVerdict(ocr, { 'a.openAria': 'Open' }, new Map())
+    expect(undeclared('a.openAria', 'page.png')).toBe(false)
+  })
+
+  it('answers null for a Settings search keyword list, which is never drawn', () => {
+    const keywords = ocrVerdict(ocr, { 'settings.x.keywords': 'drag, mouse' }, new Map())
+    expect(keywords('settings.x.keywords', 'page.png')).toBeNull()
+  })
+})
+
+describe('isVisibility', () => {
+  it('accepts exactly the declared values', () => {
+    for (const value of VISIBILITIES) expect(isVisibility(value)).toBe(true)
+    expect(isVisibility('aria')).toBe(false)
+    expect(isVisibility(true)).toBe(false)
   })
 })
 

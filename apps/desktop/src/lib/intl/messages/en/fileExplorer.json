@@ -1,19 +1,20 @@
 {
   "fileExplorer.archiveEnterMenu.ariaLabel": "Open archive or bundle",
   "@fileExplorer.archiveEnterMenu.ariaLabel": {
-    "description": "Accessible name for the popup menu that appears when the user presses Enter on an archive or app bundle set to \"Ask\". The menu offers browse, open, or configure."
+    "description": "Accessible name for the popup menu that appears when the user presses Enter on an archive or app bundle set to \"Ask\". The menu offers browse, open, or configure.",
+    "visibility": "screenReader"
   },
   "fileExplorer.archiveEnterMenu.browse": "Browse like a folder",
   "@fileExplorer.archiveEnterMenu.browse": {
     "description": "Menu item: step inside the archive or bundle and list its contents like a normal folder.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.archiveEnterMenu.open": "Open with default app",
   "@fileExplorer.archiveEnterMenu.open": {
     "description": "Menu item: hand the archive or bundle to its default app instead of browsing it (a .zip opens in the OS archive tool; a .app launches).",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.archiveEnterMenu.configure": "Configure…",
   "@fileExplorer.archiveEnterMenu.configure": {
@@ -26,7 +27,8 @@
     "placeholders": {
       "path": "the friendly path of the ancestor folder the click navigates to, e.g. ~/projects"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.doubleClickHint.title": "What just happened?",
   "@fileExplorer.doubleClickHint.title": {
@@ -54,12 +56,13 @@
     "placeholders": {
       "side": "which pane this is: the value is either left or right"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.locationBarAriaLabel": "Location",
   "@fileExplorer.pane.locationBarAriaLabel": {
     "description": "Spoken name of the row at the top of each file pane that holds the volume button, the folder path, and the eject button. Screen readers only (never shown); VoiceOver says it with the word “toolbar”, as in “Location toolbar”. A noun: where the pane is.",
-    "screenshot": "main-window.png"
+    "screenshot": "transfer-error-destination_exists.png"
   },
   "fileExplorer.pane.location": "{side, select, left {Left pane, {folder}} other {Right pane, {folder}}}",
   "@fileExplorer.pane.location": {
@@ -68,14 +71,16 @@
       "side": "which pane this is: the value is either left or right",
       "folder": "the name of the folder the pane shows, the drive’s name at a drive’s top level, or the words “Search results”"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.locationEmpty": "{location}, empty folder",
   "@fileExplorer.pane.locationEmpty": {
     "description": "For screen readers only (never shown): what the pane says when the keyboard arrives in a folder with nothing in it, as in “Left pane, Downloads, empty folder”. Same moment as fileExplorer.pane.location, which it wraps.",
     "placeholders": {
       "location": "the pane and folder, already worded by fileExplorer.pane.location (e.g. Left pane, Downloads)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.locationHiddenItems": "{location}. {emptyState}",
   "@fileExplorer.pane.locationHiddenItems": {
@@ -83,7 +88,8 @@
     "placeholders": {
       "location": "the pane and folder, already worded by fileExplorer.pane.location (e.g. Left pane, Downloads)",
       "emptyState": "the hidden-items sentences, already worded (fileExplorer.list.hiddenItems followed by fileExplorer.list.hiddenItemsHowToShortcut or fileExplorer.list.hiddenItemsHowToMenu)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.selectedCount": "{count, plural, =0 {Nothing selected} one {{countText} selected} other {{countText} selected}}",
   "@fileExplorer.pane.selectedCount": {
@@ -92,7 +98,8 @@
       "countText": "how many items are selected, already formatted for display (e.g. 1,204)",
       "count": "the same number (drives the wording, including the nothing-selected case)"
     },
-    "screenshot": "multi-rename-presets.png"
+    "screenshot": "multi-rename-presets.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.filterMatches": "{count, plural, =0 {No names contain “{pattern}”} one {{countText} name contains “{pattern}”} other {{countText} names contain “{pattern}”}}",
   "@fileExplorer.pane.filterMatches": {
@@ -101,7 +108,8 @@
       "countText": "how many names match, already formatted for display",
       "count": "the same number (drives the singular/plural form and the no-match wording)",
       "pattern": "the characters the user typed to filter the list"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.filterCleared": "{count, plural, =0 {Filter cleared} one {Filter cleared, {countText} name} other {Filter cleared, {countText} names}}",
   "@fileExplorer.pane.filterCleared": {
@@ -109,16 +117,19 @@
     "placeholders": {
       "countText": "how many files and folders the pane shows again, already formatted for display (e.g. 1,204)",
       "count": "the same number (drives the singular/plural form and the empty-folder wording)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.searchResultsLocation": "Search results",
   "@fileExplorer.pane.searchResultsLocation": {
-    "description": "Stands in for the folder name in fileExplorer.pane.location when search results fill the pane instead of a folder, so a screen reader says “Left pane, Search results”. Never shown on screen."
+    "description": "Stands in for the folder name in fileExplorer.pane.location when search results fill the pane instead of a folder, so a screen reader says “Left pane, Search results”. Never shown on screen.",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.diskUsageAriaLabel": "Disk usage",
   "@fileExplorer.pane.diskUsageAriaLabel": {
     "description": "Accessibility label for the small disk-usage bar shown under a pane, indicating how full the current volume is.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.restrictedFolder.tooltip": "Access to this folder is limited. Grant Cmdr {fullDiskAccess} in {systemSettings} → {privacyAndSecurity} → {fullDiskAccess} to remove all such limits. Or grant per-folder access in {systemSettings} → {privacyAndSecurity} → {filesAndFolders} → Cmdr.",
   "@fileExplorer.restrictedFolder.tooltip": {
@@ -128,19 +139,23 @@
       "privacyAndSecurity": "the localized OS name of the Privacy & Security pane (comes from the OS; do not translate)",
       "fullDiskAccess": "the localized OS name of the Full Disk Access permission (comes from the OS; do not translate)",
       "filesAndFolders": "the localized OS name of the Files & Folders permission (comes from the OS; do not translate)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.restrictedFolder.label": "Restricted folder",
   "@fileExplorer.restrictedFolder.label": {
-    "description": "Accessible name for the small info glyph marking a folder macOS won't let Cmdr read fully (a TCC-protected one like Desktop or Documents). A screen reader reads it on every restricted row in the file list and on the breadcrumb, so keep it to a couple of words; the full instruction is the separate tooltip on the same glyph. Reads as a noun phrase naming the condition, not a sentence."
+    "description": "Accessible name for the small info glyph marking a folder macOS won't let Cmdr read fully (a TCC-protected one like Desktop or Documents). A screen reader reads it on every restricted row in the file list and on the breadcrumb, so keep it to a couple of words; the full instruction is the separate tooltip on the same glyph. Reads as a noun phrase naming the condition, not a sentence.",
+    "visibility": "screenReader"
   },
   "fileExplorer.archivedFile.label": "In cold storage",
   "@fileExplorer.archivedFile.label": {
-    "description": "Accessible name for the small archive glyph beside a file whose bytes sit in a cloud provider's cold storage tier (for example S3 Glacier), so it can't be opened or copied until it's restored. A screen reader reads it on every such row in the file list, so keep it to one or two words; the explanation is the separate tooltip. NOT about zip or other archive files."
+    "description": "Accessible name for the small archive glyph beside a file whose bytes sit in a cloud provider's cold storage tier (for example S3 Glacier), so it can't be opened or copied until it's restored. A screen reader reads it on every such row in the file list, so keep it to one or two words; the explanation is the separate tooltip. NOT about zip or other archive files.",
+    "visibility": "screenReader"
   },
   "fileExplorer.archivedFile.tooltip": "Archived in cold storage. Restore it in your storage provider’s console before opening or copying it.",
   "@fileExplorer.archivedFile.tooltip": {
-    "description": "Hover tooltip on the archive glyph beside a file in cold storage (for example S3 Glacier). \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console), where a restore is started. NOT about zip or other archive files."
+    "description": "Hover tooltip on the archive glyph beside a file in cold storage (for example S3 Glacier). \"Storage provider’s console\" means the provider's website or admin tool (for example the AWS console), where a restore is started. NOT about zip or other archive files.",
+    "visibility": "tooltip"
   },
   "fileExplorer.diskSpace.free": "{freeText} of {totalText} free ({percentText}%)",
   "@fileExplorer.diskSpace.free": {
@@ -172,17 +187,19 @@
   },
   "fileExplorer.diskSpace.noLimitNote": "This storage has no size limit, so there’s no bar to fill.",
   "@fileExplorer.diskSpace.noLimitNote": {
-    "description": "Second sentence of the hover tooltip when the storage has no size limit. Explains why the usage bar the user expected isn't there. Keep it matter-of-fact; nothing is wrong. A full sentence with its own final punctuation."
+    "description": "Second sentence of the hover tooltip when the storage has no size limit. Explains why the usage bar the user expected isn't there. Keep it matter-of-fact; nothing is wrong. A full sentence with its own final punctuation.",
+    "visibility": "tooltip"
   },
   "fileExplorer.diskSpace.lowNote": "This bar is red to indicate that the volume is low on space.",
   "@fileExplorer.diskSpace.lowNote": {
-    "description": "Second sentence of the disk-usage bar's hover tooltip when the drive is 95% full or more. Explains why the bar the user is pointing at turned red. \"Volume\" is the drive or disk being shown. A full sentence with its own final punctuation."
+    "description": "Second sentence of the disk-usage bar's hover tooltip when the drive is 95% full or more. Explains why the bar the user is pointing at turned red. \"Volume\" is the drive or disk being shown. A full sentence with its own final punctuation.",
+    "visibility": "tooltip"
   },
   "fileExplorer.diskSpace.somewhatLowNote": "This bar is yellow to indicate that the volume is somewhat low on space.",
   "@fileExplorer.diskSpace.somewhatLowNote": {
     "description": "The milder twin of fileExplorer.diskSpace.lowNote, shown when the drive is between 80% and 95% full and the bar has turned yellow rather than red. Keep the two sentences parallel in wording, and keep this one's tone the calmer of the pair. A full sentence with its own final punctuation.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.diskSpace.barTooltip": "{hasNotes, select, yes {{sizes}. {notes}} other {{sizes}}}",
   "@fileExplorer.diskSpace.barTooltip": {
@@ -192,17 +209,20 @@
       "sizes": "the already-translated free-space figure (fileExplorer.diskSpace.free)",
       "notes": "one or two already-translated sentences, space-joined: the low-space note, the phone-storage note, or both"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.pane.resizePanesAriaLabel": "Resize panes",
   "@fileExplorer.pane.resizePanesAriaLabel": {
     "description": "Accessibility label for the draggable divider between the two file panes. Dragging it changes how the width is split.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.fileExplorerAriaLabel": "File explorer",
   "@fileExplorer.pane.fileExplorerAriaLabel": {
     "description": "Accessibility label for the whole two-pane file explorer region.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.pane.disconnectFailedToast": "Couldn’t disconnect: {message}",
   "@fileExplorer.pane.disconnectFailedToast": {
@@ -426,7 +446,8 @@
   "fileExplorer.functionKeyBar.toolbarAriaLabel": "Function keys",
   "@fileExplorer.functionKeyBar.toolbarAriaLabel": {
     "description": "Accessibility label for the bottom toolbar of function-key buttons (the F1-F8 style row of file actions).",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.functionKeyBar.noShiftAction": "{fnKey} (no shift action)",
   "@fileExplorer.functionKeyBar.noShiftAction": {
@@ -435,7 +456,7 @@
       "fnKey": "the function-key name, e.g. F2 (do not translate; it is a key label)"
     },
     "screenshot": "function-key-bar-shift.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.functionKeyBar.newFileLabel": "New file",
   "@fileExplorer.functionKeyBar.newFileLabel": {
@@ -618,7 +639,8 @@
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "description": "Hover tooltip on the X that closes that notification. Named separately from the retry button so it’s clear which control does what.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.searching": "Searching…",
   "@fileExplorer.network.browser.searching": {
@@ -714,42 +736,49 @@
   "fileExplorer.network.browser.tooltip.resolving": "Resolving hostname and IP address…",
   "@fileExplorer.network.browser.tooltip.resolving": {
     "description": "Hover tooltip on a host row explaining that its name and IP are still being resolved.",
-    "screenshot": "servers-hub.png"
+    "screenshot": "servers-hub.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.waitingForNetwork": "Waiting for network name resolution",
   "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
     "description": "Hover tooltip on a host row explaining the app is waiting for the network to resolve the host name.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.doubleClickToConnect": "Double-click to connect and view shares",
   "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
     "description": "Hover tooltip on a not-yet-contacted host row inviting the user to double-click to connect.",
-    "screenshot": "servers-hub.png"
+    "screenshot": "servers-hub.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.credsStored": "Credentials stored. Double-click to connect.",
   "@fileExplorer.network.browser.tooltip.credsStored": {
     "description": "Hover tooltip on a host row that needs login but already has stored credentials.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.credsRejected": "Stored credentials were rejected. Please log in with updated credentials.",
   "@fileExplorer.network.browser.tooltip.credsRejected": {
     "description": "Hover tooltip on a host row whose stored credentials the server rejected, asking the user to update them.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.requiresLogin": "This host requires login. Double-click to enter credentials.",
   "@fileExplorer.network.browser.tooltip.requiresLogin": {
     "description": "Hover tooltip on a host row that needs login and has no stored credentials.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.tooltip.authFailed": "Authentication failed. Check your credentials and try again.",
   "@fileExplorer.network.browser.tooltip.authFailed": {
     "description": "Hover tooltip on a host row whose authentication failed, asking the user to recheck credentials.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "Can’t remove discovered hosts",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {
@@ -895,7 +924,8 @@
   "@fileExplorer.network.share.forgetPasswordTooltip": {
     "description": "Hover tooltip for the button that deletes this host’s saved password. Each branch names that OS’s password store: the Keychain on macOS, Credential Manager on Windows, the keyring on Linux. Use the name each OS shows in your language. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.network.share.useGuest": "Browse as guest",
   "@fileExplorer.network.share.useGuest": {
@@ -1446,7 +1476,8 @@
     "description": "First line of the hover tooltip on a snapshot folder inside a restic backup, where Cmdr shows each backup run (a “snapshot”) as a read-only folder named by its date. Names the computer the backup ran on. Screen readers also hear it after the folder’s name, with “{host}” read from the row, so the phrase must read naturally right before the computer’s name.",
     "placeholders": {
       "host": "the computer’s network name as the backup recorded it, for example \"Davids-MacBook-Pro\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.restic.snapshot.tags": "{count, plural, one {Tag} other {Tags}}: {tags}",
   "@fileExplorer.restic.snapshot.tags": {
@@ -1454,7 +1485,8 @@
     "placeholders": {
       "count": "how many tags, only to pick the singular or plural noun",
       "tags": "the tags, already joined into a list, for example \"daily, laptop\" (user-chosen labels, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.restic.snapshot.paths": "{count, plural, one {Backed-up path} other {Backed-up paths}}: {paths}",
   "@fileExplorer.restic.snapshot.paths": {
@@ -1462,7 +1494,8 @@
     "placeholders": {
       "count": "how many paths, only to pick the singular or plural noun",
       "paths": "the paths, already joined into a list, for example \"/Users/test_user_3, /etc\" (never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.restic.forgetPassword.forgotten": "Cmdr forgot the password for {name}. You’ll be asked for it next time you open it.",
   "@fileExplorer.restic.forgetPassword.forgotten": {
@@ -1534,39 +1567,48 @@
   },
   "fileExplorer.git.status.modified": "Modified",
   "@fileExplorer.git.status.modified": {
-    "description": "A row’s git status, shown as the tooltip on the one-letter Git column cell (“M”) in the file list’s Full view, and spoken by screen readers at the end of the row as “Modified in git” (fileExplorer.list.rowGitStatus). Means the item changed since the last commit. The row is usually a file but can be a folder (a git submodule shows Modified, Added, or Type changed, and a nested repository can show Untracked), so use a form that fits both a file and a folder. An adjective describing the item’s state, sentence case, one or two words. Use your language’s usual git terminology (the word git’s own translated output or popular git tools use)."
+    "description": "A row’s git status, shown as the tooltip on the one-letter Git column cell (“M”) in the file list’s Full view, and spoken by screen readers at the end of the row as “Modified in git” (fileExplorer.list.rowGitStatus). Means the item changed since the last commit. The row is usually a file but can be a folder (a git submodule shows Modified, Added, or Type changed, and a nested repository can show Untracked), so use a form that fits both a file and a folder. An adjective describing the item’s state, sentence case, one or two words. Use your language’s usual git terminology (the word git’s own translated output or popular git tools use).",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.added": "Added",
   "@fileExplorer.git.status.added": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file staged to be committed (git add). An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file staged to be committed (git add). An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.deleted": "Deleted",
   "@fileExplorer.git.status.deleted": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file removed since the last commit. An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file removed since the last commit. An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.renamed": "Renamed",
   "@fileExplorer.git.status.renamed": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file git sees as moved or renamed since the last commit. An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file git sees as moved or renamed since the last commit. An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.copied": "Copied",
   "@fileExplorer.git.status.copied": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file git sees as a copy of another tracked file. An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file git sees as a copy of another tracked file. An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.typechange": "Type changed",
   "@fileExplorer.git.status.typechange": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file whose kind changed since the last commit (for example a regular file became a symbolic link). A short state phrase, sentence case, two or three words; use your language’s usual git terminology. The row can be a folder too (see fileExplorer.git.status.modified)."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file whose kind changed since the last commit (for example a regular file became a symbolic link). A short state phrase, sentence case, two or three words; use your language’s usual git terminology. The row can be a folder too (see fileExplorer.git.status.modified).",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.untracked": "Untracked",
   "@fileExplorer.git.status.untracked": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file git doesn’t track yet (never added). An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a new file git doesn’t track yet (never added). An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.ignored": "Ignored",
   "@fileExplorer.git.status.ignored": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file that git ignores because of a .gitignore rule. An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file that git ignores because of a .gitignore rule. An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.status.conflicted": "Conflicted",
   "@fileExplorer.git.status.conflicted": {
-    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file with an unresolved merge conflict. An adjective describing the item’s state, one or two words; use your language’s usual git terminology."
+    "description": "Same Git column tooltip as fileExplorer.git.status.modified, for a file with an unresolved merge conflict. An adjective describing the item’s state, one or two words; use your language’s usual git terminology.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.copyOutWithKeys": "To copy files out of a git snapshot, use {copyKey} to copy or {moveKey} to move.",
   "@fileExplorer.git.copyOutWithKeys": {
@@ -1763,11 +1805,13 @@
   "fileExplorer.columns.dateSortMenu": "Choose a date to sort by",
   "@fileExplorer.columns.dateSortMenu": {
     "description": "Hover tooltip and screen-reader name of the small down-arrow button beside the date column header in the file list’s full view. Pressing it opens a menu of Date modified, Date created, and Date added, so the list can be sorted by any of them. A full sentence-case phrase; it never shows as visible text, so length isn’t tight.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.columns.sortByRelevance": "Sort by relevance",
   "@fileExplorer.columns.sortByRelevance": {
-    "description": "Hover tooltip on the active column header of a search-results pane, where the next click puts the rows back in the search engine’s own best-match-first order. \"Relevance\" is how well a result matches the search."
+    "description": "Hover tooltip on the active column header of a search-results pane, where the next click puts the rows back in the search engine’s own best-match-first order. \"Relevance\" is how well a result matches the search.",
+    "visibility": "tooltip"
   },
   "fileExplorer.columns.sortState": "{column}, {order, select, ascending {sorted ascending} descending {sorted descending} other {not sorted}}",
   "@fileExplorer.columns.sortState": {
@@ -1776,7 +1820,8 @@
       "column": "the column header’s own text, for example Name, Size, or Modified",
       "order": "ascending or descending when the list is sorted by this column, anything else when it isn’t"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.columns.sortStateFallback": "{state} ({fallback})",
   "@fileExplorer.columns.sortStateFallback": {
@@ -1784,7 +1829,8 @@
     "placeholders": {
       "state": "the header's usual spoken text from fileExplorer.columns.sortState, for example “Added, sorted descending”",
       "fallback": "the full sentence from fileExplorer.sortFallback.created or fileExplorer.sortFallback.added"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.columns.git": "Git",
   "@fileExplorer.columns.git": {
@@ -1792,7 +1838,8 @@
   },
   "fileExplorer.columns.gitTitle": "Git status of each file",
   "@fileExplorer.columns.gitTitle": {
-    "description": "Hover tooltip on the Git column header explaining it shows each file’s git status. \"Git\" is the version-control tool name; keep it."
+    "description": "Hover tooltip on the Git column header explaining it shows each file’s git status. \"Git\" is the version-control tool name; keep it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.list.empty": "Empty folder",
   "@fileExplorer.list.empty": {
@@ -1825,17 +1872,19 @@
   },
   "fileExplorer.list.fileListAriaLabel": "File list",
   "@fileExplorer.list.fileListAriaLabel": {
-    "description": "Accessibility label for the scrollable list of files."
+    "description": "Accessibility label for the scrollable list of files.",
+    "visibility": "screenReader"
   },
   "fileExplorer.list.sortColumnsAriaLabel": "Sort columns",
   "@fileExplorer.list.sortColumnsAriaLabel": {
     "description": "Accessibility label for the row of sortable column headers above the file list, in both the Brief and the Full list view.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.list.parentRowName": "Parent folder",
   "@fileExplorer.list.parentRowName": {
     "description": "What a screen reader says for the “..” row at the top of the file list, which goes up one folder. Never shown on screen. A noun phrase naming the row, not a command. The reader adds the row’s position after it (for example “1 of 8”).",
-    "screenshot": "main-window.png"
+    "screenshot": "transfer-error-permission_denied.png"
   },
   "fileExplorer.list.parentRowSize": "this folder {size}",
   "@fileExplorer.list.parentRowSize": {
@@ -1843,7 +1892,7 @@
     "placeholders": {
       "size": "the current folder’s total size, already formatted the way the Size column shows it (or the “<dir>” placeholder while it isn’t known yet)"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "listing-stalled.png"
   },
   "fileExplorer.list.rowKind.folder": "folder",
   "@fileExplorer.list.rowKind.folder": {
@@ -1852,16 +1901,18 @@
   },
   "fileExplorer.list.rowKind.symlink": "symlink",
   "@fileExplorer.list.rowKind.symlink": {
-    "description": "Spoken after the name of a symbolic link (a pointer to another file or folder) when a screen reader reads a row of the file list, as in “notes-link, symlink”. Never shown on screen. Use your platform’s usual word for a symbolic link, lowercase where your language allows."
+    "description": "Spoken after the name of a symbolic link (a pointer to another file or folder) when a screen reader reads a row of the file list, as in “notes-link, symlink”. Never shown on screen. Use your platform’s usual word for a symbolic link, lowercase where your language allows.",
+    "visibility": "screenReader"
   },
   "fileExplorer.list.rowKind.package": "package",
   "@fileExplorer.list.rowKind.package": {
-    "description": "Spoken after the name of a macOS package when a screen reader reads a row of the file list, as in “Safari.app, package”. A package is a folder macOS shows as a single item, such as an app. Never shown on screen. Use the word Apple’s Finder uses for “Show Package Contents”, lowercase where your language allows."
+    "description": "Spoken after the name of a macOS package when a screen reader reads a row of the file list, as in “Safari.app, package”. A package is a folder macOS shows as a single item, such as an app. Never shown on screen. Use the word Apple’s Finder uses for “Show Package Contents”, lowercase where your language allows.",
+    "visibility": "screenReader"
   },
   "fileExplorer.list.rowKind.archive": "archive",
   "@fileExplorer.list.rowKind.archive": {
     "description": "Spoken after the name of a zip or similar archive file when a screen reader reads a row of the file list, as in “photos.zip, archive”. Cmdr can open these like folders. Never shown on screen. NOT about files in cloud cold storage. Lowercase where your language allows.",
-    "screenshot": "main-window.png"
+    "screenshot": "ask-cmdr-sessions-rename.png"
   },
   "fileExplorer.list.rowModified": "modified {date}",
   "@fileExplorer.list.rowModified": {
@@ -1876,39 +1927,44 @@
     "description": "Spoken near the end of a row in the file list’s Full view when a screen reader reads it while the list is sorted by date created, as in “a.txt, 1 KB, created 2026-10-14 10:30”. Never shown on screen. Lowercase where your language allows, because it follows other details after a comma. Keep it parallel with fileExplorer.list.rowModified.",
     "placeholders": {
       "date": "the file’s creation date and time, already formatted the way the date column shows it"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.list.rowAdded": "added {date}",
   "@fileExplorer.list.rowAdded": {
     "description": "Spoken near the end of a row in the file list’s Full view when a screen reader reads it while the list is sorted by date added (when the item was put in its folder, Finder's \"Date Added\"), as in “a.txt, 1 KB, added 2026-10-14 10:30”. Never shown on screen. Lowercase where your language allows, because it follows other details after a comma. Keep it parallel with fileExplorer.list.rowModified.",
     "placeholders": {
       "date": "the date and time the item was added to its folder, already formatted the way the date column shows it"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.list.rowGitStatus": "{status} in git",
   "@fileExplorer.list.rowGitStatus": {
     "description": "Spoken last in a row of the file list’s Full view when a screen reader reads it, as in “a.txt, 1 KB, modified 2026-10-14 10:30, Modified in git”. Never shown on screen. Says the file’s git status so it doesn’t sound like a second “modified” after the date. “git” is the version control tool’s name: keep it as is.",
     "placeholders": {
       "status": "the file’s git status word, already translated, as the Git column’s tooltip shows it (for example Modified, Untracked, or Ignored)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.dirSize.updatingIndexTooltip": "Updating index: size may change.",
   "@fileExplorer.dirSize.updatingIndexTooltip": {
-    "description": "Hover tooltip on a folder’s size while indexing is in progress, warning that the figure may still change. Note the colon."
+    "description": "Hover tooltip on a folder’s size while indexing is in progress, warning that the figure may still change. Note the colon.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.scanProgressTooltip": "Sizes appear as the scan progresses",
   "@fileExplorer.dirSize.scanProgressTooltip": {
-    "description": "Hover tooltip on a folder whose size is not computed yet, telling the user sizes fill in as the background scan runs."
+    "description": "Hover tooltip on a folder whose size is not computed yet, telling the user sizes fill in as the background scan runs.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.contentLabel": "Content",
   "@fileExplorer.dirSize.contentLabel": {
     "description": "Label in a size tooltip for the logical (content) size of a file or folder, as opposed to the on-disk size. Pairs with the \"On disk\" label.",
-    "screenshot": "main-window.png"
+    "screenshot": "search-dialog.png"
   },
   "fileExplorer.dirSize.onDiskLabel": "On disk",
   "@fileExplorer.dirSize.onDiskLabel": {
     "description": "Label in a size tooltip for the physical on-disk size, as opposed to the logical content size. Pairs with the \"Content\" label.",
-    "screenshot": "main-window.png"
+    "screenshot": "tell-me-about-this-standard-folder.png"
   },
   "fileExplorer.dirSize.noPerms": "'<'no perms>",
   "@fileExplorer.dirSize.noPerms": {
@@ -1916,17 +1972,18 @@
   },
   "fileExplorer.dirSize.noPermsTooltip": "Cmdr lacks permission to read this folder",
   "@fileExplorer.dirSize.noPermsTooltip": {
-    "description": "Hover tooltip on the no-permission size placeholder, explaining why the folder’s size is unavailable."
+    "description": "Hover tooltip on the no-permission size placeholder, explaining why the folder’s size is unavailable.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.noFiles": "No files",
   "@fileExplorer.dirSize.noFiles": {
     "description": "Phrase in a folder’s size tooltip for the file count when the folder contains zero files. Leads the count line, e.g. \"No files, no folders\". Capitalized as the start of the line.",
-    "screenshot": "main-window.png"
+    "screenshot": "mtp-browse.png"
   },
   "fileExplorer.dirSize.noFolders": "no folders",
   "@fileExplorer.dirSize.noFolders": {
     "description": "Phrase in a folder’s size tooltip for the folder count when there are zero subfolders. Follows the file count, e.g. \"3 files, no folders\". Lowercase since it follows a comma.",
-    "screenshot": "main-window.png"
+    "screenshot": "transfer-dialog.png"
   },
   "fileExplorer.dirSize.fileCount": "{count, plural, one {{countText} file} other {{countText} files}}",
   "@fileExplorer.dirSize.fileCount": {
@@ -1948,7 +2005,8 @@
   },
   "fileExplorer.dirSize.updatingIndexLine": "Updating index, so size may change.",
   "@fileExplorer.dirSize.updatingIndexLine": {
-    "description": "Last line of a folder’s size tooltip while indexing, warning the figure may change."
+    "description": "Last line of a folder’s size tooltip while indexing, warning the figure may change.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.dirPlaceholder": "'<'dir>",
   "@fileExplorer.dirSize.dirPlaceholder": {
@@ -1957,28 +2015,34 @@
   },
   "fileExplorer.dirSize.mismatchTooltipPrefix": "Content and on-disk sizes differ significantly.",
   "@fileExplorer.dirSize.mismatchTooltipPrefix": {
-    "description": "First line of the warning tooltip shown when a folder’s logical (content) and physical (on-disk) sizes differ a lot; the detailed size breakdown follows below it."
+    "description": "First line of the warning tooltip shown when a folder’s logical (content) and physical (on-disk) sizes differ a lot; the detailed size breakdown follows below it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.lowerBoundLine": "At least this much: some subfolders weren’t scanned yet, so the real total may be larger.",
   "@fileExplorer.dirSize.lowerBoundLine": {
     "description": "Line in a folder’s size tooltip when the shown size is a lower bound (displayed with a ≥ prefix) because part of the subtree hasn’t been scanned. Explains the number is a floor: the real total is at least this much and may be larger (not necessarily larger — the unscanned parts could be empty).",
-    "screenshot": "operation-chip.png"
+    "screenshot": "operation-chip.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.unknownTooltip": "Size unknown: this folder hasn’t been scanned yet.",
   "@fileExplorer.dirSize.unknownTooltip": {
-    "description": "Hover tooltip on a folder whose recursive size is unknown (shown as an em dash —) because nothing in its subtree has been scanned. Distinct from a genuinely-empty folder, which shows 0 bytes."
+    "description": "Hover tooltip on a folder whose recursive size is unknown (shown as an em dash —) because nothing in its subtree has been scanned. Distinct from a genuinely-empty folder, which shows 0 bytes.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.staleLine": "These sizes are from an earlier scan and may be out of date.",
   "@fileExplorer.dirSize.staleLine": {
-    "description": "Line in a folder’s size tooltip when the size is exact but was computed at an older point (the drive hasn’t been re-scanned since reconnecting), so it’s accurate-as-of-then but possibly stale now."
+    "description": "Line in a folder’s size tooltip when the size is exact but was computed at an older point (the drive hasn’t been re-scanned since reconnecting), so it’s accurate-as-of-then but possibly stale now.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.pausedForSpaceThisDrive": "This size may be out of date: indexing is paused because this drive is almost full.",
   "@fileExplorer.dirSize.pausedForSpaceThisDrive": {
-    "description": "Tooltip (and screen-reader label) on a small warning triangle next to a folder’s size. Cmdr’s drive index stopped updating because THIS drive, the one Cmdr keeps its index on (the startup disk), is almost out of free space. The size shown is the last one Cmdr knew. Indexing resumes by itself once there’s room. Calm, not alarming; never use the words “error” or “failed”."
+    "description": "Tooltip (and screen-reader label) on a small warning triangle next to a folder’s size. Cmdr’s drive index stopped updating because THIS drive, the one Cmdr keeps its index on (the startup disk), is almost out of free space. The size shown is the last one Cmdr knew. Indexing resumes by itself once there’s room. Calm, not alarming; never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dirSize.pausedForSpaceOtherDrive": "{platform, select, macos {This size may be out of date: indexing is paused because your startup disk, where Cmdr keeps its index, is almost full.} windows {This size may be out of date: indexing is paused because your system drive, where Cmdr keeps its index, is almost full.} other {This size may be out of date: indexing is paused because your system disk, where Cmdr keeps its index, is almost full.}}",
   "@fileExplorer.dirSize.pausedForSpaceOtherDrive": {
-    "description": "Tooltip (and screen-reader label) on a small warning triangle next to a folder’s size on a drive OTHER than the startup disk (an external drive, a network share, a phone). Cmdr keeps every drive’s index on the startup disk, which is almost full, so indexing paused for this drive too. Each branch names the drive the computer starts from the way that OS does: the startup disk on macOS, the system drive on Windows, the system disk on Linux. Calm; never use the words “error” or “failed”."
+    "description": "Tooltip (and screen-reader label) on a small warning triangle next to a folder’s size on a drive OTHER than the startup disk (an external drive, a network share, a phone). Cmdr keeps every drive’s index on the startup disk, which is almost full, so indexing paused for this drive too. Each branch names the drive the computer starts from the way that OS does: the startup disk on macOS, the system drive on Windows, the system disk on Linux. Calm; never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.size.branches": "{count, plural, one {{countText} branch} other {{countText} branches}}",
   "@fileExplorer.git.size.branches": {
@@ -2057,7 +2121,8 @@
     "placeholders": {
       "countText": "the number of branches, already formatted for display",
       "count": "the same number of branches (drives the singular/plural form)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.tags": "{count, plural, one {{countText} tag} other {{countText} tags}} on this repo",
   "@fileExplorer.git.tooltip.tags": {
@@ -2065,7 +2130,8 @@
     "placeholders": {
       "countText": "the number of tags, already formatted for display",
       "count": "the same number of tags (drives the singular/plural form)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.commits": "{count, plural, one {{countText} commit} other {{countText} commits}} reachable from HEAD",
   "@fileExplorer.git.tooltip.commits": {
@@ -2073,7 +2139,8 @@
     "placeholders": {
       "countText": "the number of commits, already formatted for display",
       "count": "the same number of commits (drives the singular/plural form)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.sizeSortTooManyCommits": "Sorting by size works for up to {limitText} commits, and this history has more.",
   "@fileExplorer.git.sizeSortTooManyCommits": {
@@ -2092,7 +2159,8 @@
   },
   "fileExplorer.git.tooltip.filesChangedPending": "Counting the files this commit changed…",
   "@fileExplorer.git.tooltip.filesChangedPending": {
-    "description": "Hover tooltip (and screen-reader label) for the Size cell of a commit row in the virtual `.git` portal while its count of changed files is still being worked out. The cell itself shows an ellipsis meanwhile; usually gone within a second or two."
+    "description": "Hover tooltip (and screen-reader label) for the Size cell of a commit row in the virtual `.git` portal while its count of changed files is still being worked out. The cell itself shows an ellipsis meanwhile; usually gone within a second or two.",
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.filesChanged": "{count, plural, one {{countText} file} other {{countText} files}} changed compared to the parent commit",
   "@fileExplorer.git.tooltip.filesChanged": {
@@ -2100,7 +2168,8 @@
     "placeholders": {
       "countText": "the number of files a commit changed, already formatted for display",
       "count": "the same number of files a commit changed (drives the singular/plural form)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.aheadBehind": "{ahead, plural, one {{aheadText} commit} other {{aheadText} commits}} ahead, {behind, plural, one {{behindText} commit} other {{behindText} commits}} behind “{vs}”",
   "@fileExplorer.git.tooltip.aheadBehind": {
@@ -2111,42 +2180,48 @@
       "behindText": "how many commits this branch is behind by, already formatted for display",
       "behind": "the same number (drives the singular/plural form)",
       "vs": "the branch being compared against, for example \"origin/main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.taggedCommit": "Tagged commit {id}",
   "@fileExplorer.git.tooltip.taggedCommit": {
     "description": "Hover tooltip (and screen-reader label) for the Size cell of a row in the virtual `.git` portal. Explains a tag row, whose cell shows a shortened commit identifier. Names the full identifier of the commit the tag points at.",
     "placeholders": {
       "id": "the commit’s full identifier, a 40-character hexadecimal string"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.pinnedCommit": "Pinned at commit {id}",
   "@fileExplorer.git.tooltip.pinnedCommit": {
     "description": "Hover tooltip (and screen-reader label) for the Size cell of a row in the virtual `.git` portal. Explains a submodule row, whose cell shows a shortened commit identifier. A submodule is held at one exact commit, which is what \"pinned\" says.",
     "placeholders": {
       "id": "the commit’s full identifier, a 40-character hexadecimal string"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.stashedOnBranch": "Created on branch “{branch}”",
   "@fileExplorer.git.tooltip.stashedOnBranch": {
     "description": "Hover tooltip (and screen-reader label) for the Size cell of a row in the virtual `.git` portal. Explains a stash entry’s row: which branch the user was on when they set those changes aside. The branch name is quoted to set it apart; use whatever quotation marks your language writes a quoted name with.",
     "placeholders": {
       "branch": "the branch name, for example \"main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.worktreeOnBranch": "Branch “{branch}” is checked out",
   "@fileExplorer.git.tooltip.worktreeOnBranch": {
     "description": "Hover tooltip (and screen-reader label) for the Size cell of a row in the virtual `.git` portal. Explains a linked worktree’s row: which branch that worktree currently has open. \"Checked out\" is the git term for the branch a folder is showing. The branch name is quoted to set it apart; use whatever quotation marks your language writes a quoted name with.",
     "placeholders": {
       "branch": "the branch name, for example \"main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.tooltip.worktreeDetached": "Detached at {id}",
   "@fileExplorer.git.tooltip.worktreeDetached": {
     "description": "Hover tooltip (and screen-reader label) for the Size cell of a row in the virtual `.git` portal. Explains a linked worktree’s row when no branch is open there, only one exact commit. \"Detached\" is git’s own word for that state (a detached HEAD), so carry the concept rather than the literal word if your language words it differently.",
     "placeholders": {
       "id": "the commit’s full identifier, a 40-character hexadecimal string"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.repoChip.unbornLabel": "{branch} (no commits yet)",
   "@fileExplorer.git.repoChip.unbornLabel": {
@@ -2175,21 +2250,24 @@
     "description": "First sentence of the hover tooltip (and screen-reader label) of the small branch pill in a pane’s path bar: names the branch the repository has open. Other sentences (fileExplorer.git.repoChip.tooltip.*) may follow it, joined by a space. The branch name is quoted to set it apart; use whatever quotation marks your language writes a quoted name with.",
     "placeholders": {
       "branch": "the branch name, for example \"main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.repoChip.tooltip.unborn": "On unborn branch “{branch}” (no commits yet).",
   "@fileExplorer.git.repoChip.tooltip.unborn": {
     "description": "First sentence of the hover tooltip (and screen-reader label) of the small branch pill in a pane’s path bar, for a repository that has no commits yet. “Unborn” is git’s own word for a branch that has no commits; carry the concept if your language words it differently. The branch name is quoted to set it apart; use whatever quotation marks your language writes a quoted name with.",
     "placeholders": {
       "branch": "the branch name, for example \"main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.repoChip.tooltip.detached": "Detached at {id}.",
   "@fileExplorer.git.repoChip.tooltip.detached": {
     "description": "First sentence of the hover tooltip (and screen-reader label) of the small branch pill in a pane’s path bar when no branch is open, only one exact commit. “Detached” is git’s own word for that state (a detached HEAD), so carry the concept rather than the literal word if your language words it differently.",
     "placeholders": {
       "id": "the commit’s shortened identifier, for example a1b2c3d"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.repoChip.tooltip.aheadBehind": "{ahead, plural, one {{aheadText} commit} other {{aheadText} commits}} ahead, {behind, plural, one {{behindText} commit} other {{behindText} commits}} behind “{upstream}”.",
   "@fileExplorer.git.repoChip.tooltip.aheadBehind": {
@@ -2200,11 +2278,13 @@
       "behindText": "how many commits the local branch is behind by, already formatted for display",
       "behind": "the same number (drives the singular/plural form)",
       "upstream": "the tracked remote branch, for example \"origin/main\" (a name, never translated)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.git.repoChip.tooltip.dirty": "Working tree has uncommitted changes.",
   "@fileExplorer.git.repoChip.tooltip.dirty": {
-    "description": "Last sentence of the hover tooltip (and screen-reader label) of the small branch pill in a pane’s path bar, when files in the repository changed since the last commit. “Working tree” is git’s term for the checked-out files on disk."
+    "description": "Last sentence of the hover tooltip (and screen-reader label) of the small branch pill in a pane’s path bar, when files in the repository changed since the last commit. “Working tree” is git’s term for the checked-out files on disk.",
+    "visibility": "tooltip"
   },
   "fileExplorer.selectionTooltip.selected": "Selected",
   "@fileExplorer.selectionTooltip.selected": {
@@ -2214,12 +2294,14 @@
   "fileExplorer.selectionTooltip.ofTotal": "Of total",
   "@fileExplorer.selectionTooltip.ofTotal": {
     "description": "Label in the selection-summary size tooltip for the size of all items, against which the selection is compared. Pairs with \"Selected\".",
-    "screenshot": "selection-summary.png"
+    "screenshot": "selection-summary.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.selectionTooltip.onDiskHeader": "On disk:",
   "@fileExplorer.selectionTooltip.onDiskHeader": {
     "description": "Section header in the selection-summary size tooltip introducing the physical on-disk sizes (as opposed to logical content sizes). Note the colon.",
-    "screenshot": "selection-summary.png"
+    "screenshot": "selection-summary.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.entry.brokenSymlink": "(broken symlink)",
   "@fileExplorer.entry.brokenSymlink": {
@@ -2227,30 +2309,36 @@
   },
   "fileExplorer.dateTooltip.created": "Created",
   "@fileExplorer.dateTooltip.created": {
-    "description": "Label in a file’s date tooltip for its creation time."
+    "description": "Label in a file’s date tooltip for its creation time.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dateTooltip.dateAdded": "Date added",
   "@fileExplorer.dateTooltip.dateAdded": {
-    "description": "Label in a file’s date tooltip for when it was put in its folder (moved, copied, or downloaded into it). Use the word macOS Finder uses for its \"Date Added\" column in your language, in sentence case."
+    "description": "Label in a file’s date tooltip for when it was put in its folder (moved, copied, or downloaded into it). Use the word macOS Finder uses for its \"Date Added\" column in your language, in sentence case.",
+    "visibility": "tooltip"
   },
   "fileExplorer.dateTooltip.displayedLabel": "{label} (displayed)",
   "@fileExplorer.dateTooltip.displayedLabel": {
     "description": "Wraps the one label in a file’s date tooltip whose date the file list’s date column is showing right now, as in “Last modified (displayed): 2026-10-14 10:30”. The tooltip lists every date a file has, one per line, so this marks which of them the column shows. Put the marker wherever your language reads naturally. Where “displayed” would be a participle agreeing with the label’s gender (the three labels can differ), rephrase freely so one wording fits all three, for example as “in the column”.",
     "placeholders": {
       "label": "one of the tooltip’s date labels, already translated: “Created”, “Date added”, or “Last modified”"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.dateTooltip.lastModified": "Last modified",
   "@fileExplorer.dateTooltip.lastModified": {
-    "description": "Label in a file’s date tooltip for when its contents were last changed."
+    "description": "Label in a file’s date tooltip for when its contents were last changed.",
+    "visibility": "tooltip"
   },
   "fileExplorer.fileIcon.symlinkBadge": "Symlink",
   "@fileExplorer.fileIcon.symlinkBadge": {
-    "description": "Spoken name of the small link-arrow badge on a file or folder icon in the file list, marking the entry as a symbolic link (a pointer to another file or folder). Screen readers read it together with the row, next to the name, so keep it to one or two words. Use your platform’s usual word for a symbolic link."
+    "description": "Spoken name of the small link-arrow badge on a file or folder icon in the file list, marking the entry as a symbolic link (a pointer to another file or folder). Screen readers read it together with the row, next to the name, so keep it to one or two words. Use your platform’s usual word for a symbolic link.",
+    "visibility": "screenReader"
   },
   "fileExplorer.fileIcon.sync.synced": "Synced",
   "@fileExplorer.fileIcon.sync.synced": {
-    "description": "Spoken name of the small cloud-status badge on a file icon in the file list, for a file in a cloud-storage folder (iCloud Drive, Dropbox, …) whose local copy matches the cloud. Screen readers read it with the row, next to the filename, so keep it to one or two words. An adjective describing the file’s state."
+    "description": "Spoken name of the small cloud-status badge on a file icon in the file list, for a file in a cloud-storage folder (iCloud Drive, Dropbox, …) whose local copy matches the cloud. Screen readers read it with the row, next to the filename, so keep it to one or two words. An adjective describing the file’s state.",
+    "visibility": "screenReader"
   },
   "fileExplorer.fileIcon.sync.onlineOnly": "Online-only",
   "@fileExplorer.fileIcon.sync.onlineOnly": {
@@ -2266,27 +2354,33 @@
   },
   "fileExplorer.imageIndex.file.indexed": "Indexed for image search",
   "@fileExplorer.imageIndex.file.indexed": {
-    "description": "Hover tooltip on a small badge over an image file’s icon in the file list. Means this image is fully indexed, so image search can find it by the text inside it."
+    "description": "Hover tooltip on a small badge over an image file’s icon in the file list. Means this image is fully indexed, so image search can find it by the text inside it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.file.pending": "Waiting to be indexed",
   "@fileExplorer.imageIndex.file.pending": {
-    "description": "Hover tooltip on the badge over an image file’s icon. Means the image is queued for image-search indexing but hasn’t been processed yet."
+    "description": "Hover tooltip on the badge over an image file’s icon. Means the image is queued for image-search indexing but hasn’t been processed yet.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.file.indexing": "Indexing now",
   "@fileExplorer.imageIndex.file.indexing": {
-    "description": "Hover tooltip on the badge over an image file’s icon. Means an indexing pass is running right now and this image is being processed (as opposed to \"pending\", which is queued with no active pass). Shown for example on a just-moved image whose new location is being re-indexed."
+    "description": "Hover tooltip on the badge over an image file’s icon. Means an indexing pass is running right now and this image is being processed (as opposed to \"pending\", which is queued with no active pass). Shown for example on a just-moved image whose new location is being re-indexed.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.file.stale": "Changed since indexing; will be re-indexed",
   "@fileExplorer.imageIndex.file.stale": {
-    "description": "Hover tooltip on the badge over an image file’s icon. Means the file changed after it was indexed, so it’s scheduled to be indexed again."
+    "description": "Hover tooltip on the badge over an image file’s icon. Means the file changed after it was indexed, so it’s scheduled to be indexed again.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.file.failed": "Couldn’t be indexed",
   "@fileExplorer.imageIndex.file.failed": {
-    "description": "Hover tooltip on the badge over an image file’s icon. Means indexing this image didn’t work. Keep it gentle; do not use the words \"error\" or \"failed\" in the visible copy."
+    "description": "Hover tooltip on the badge over an image file’s icon. Means indexing this image didn’t work. Keep it gentle; do not use the words \"error\" or \"failed\" in the visible copy.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.file.excluded": "Not included in image search",
   "@fileExplorer.imageIndex.file.excluded": {
-    "description": "Hover tooltip on the badge over an image file’s icon. Means this image is outside what image search covers (excluded folder, out of scope, unsupported type, or too big), so it won’t be indexed."
+    "description": "Hover tooltip on the badge over an image file’s icon. Means this image is outside what image search covers (excluded folder, out of scope, unsupported type, or too big), so it won’t be indexed.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.folder.allIndexed": "All {totalText} {total, plural, one {image} other {images}} indexed",
   "@fileExplorer.imageIndex.folder.allIndexed": {
@@ -2294,7 +2388,8 @@
     "placeholders": {
       "totalText": "preformatted count of images under the folder, e.g. \"50\"",
       "total": "the same count as a raw number, for singular/plural selection only"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.folder.someIndexed": "{doneText} of {totalText} {total, plural, one {image} other {images}} indexed",
   "@fileExplorer.imageIndex.folder.someIndexed": {
@@ -2304,15 +2399,18 @@
       "totalText": "preformatted count of images eligible under the folder, e.g. \"50\"",
       "done": "the indexed count as a raw number, for selection only",
       "total": "the eligible count as a raw number, for singular/plural selection"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.drive.ariaLabel": "Image search status for this drive",
   "@fileExplorer.imageIndex.drive.ariaLabel": {
-    "description": "Accessible label for the small colored dot next to a drive in the volume breadcrumb that shows the drive’s image-search indexing status."
+    "description": "Accessible label for the small colored dot next to a drive in the volume breadcrumb that shows the drive’s image-search indexing status.",
+    "visibility": "screenReader"
   },
   "fileExplorer.imageIndex.drive.off": "Image search is off for this drive.",
   "@fileExplorer.imageIndex.drive.off": {
-    "description": "Tooltip on the drive’s image-search dot when image search is turned off, so none of this drive’s images are indexed."
+    "description": "Tooltip on the drive’s image-search dot when image search is turned off, so none of this drive’s images are indexed.",
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.drive.indexing": "{doneText} of {totalText} {total, plural, one {image} other {images}} on this drive indexed; still working.",
   "@fileExplorer.imageIndex.drive.indexing": {
@@ -2322,7 +2420,8 @@
       "totalText": "preformatted count of images to be indexed on the drive",
       "done": "the indexed count as a raw number, for selection only",
       "total": "the to-be-indexed count as a raw number, for singular/plural selection"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.imageIndex.drive.done": "All {totalText} {total, plural, one {image} other {images}} on this drive are indexed.",
   "@fileExplorer.imageIndex.drive.done": {
@@ -2330,7 +2429,8 @@
     "placeholders": {
       "totalText": "preformatted count of images indexed on the drive",
       "total": "the same count as a raw number, for singular/plural selection"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.selectionInfo.dir": "DIR",
   "@fileExplorer.selectionInfo.dir": {
@@ -2338,19 +2438,23 @@
   },
   "fileExplorer.selectionInfo.sizeNotReadyAriaLabel": "Size not ready yet",
   "@fileExplorer.selectionInfo.sizeNotReadyAriaLabel": {
-    "description": "Accessibility label for the hourglass shown next to a folder size that is still being computed."
+    "description": "Accessibility label for the hourglass shown next to a folder size that is still being computed.",
+    "visibility": "screenReader"
   },
   "fileExplorer.selectionInfo.sizeUpdatingAriaLabel": "Size updating",
   "@fileExplorer.selectionInfo.sizeUpdatingAriaLabel": {
-    "description": "Accessibility label for the hourglass shown next to a folder size that may still change while indexing."
+    "description": "Accessibility label for the hourglass shown next to a folder size that may still change while indexing.",
+    "visibility": "screenReader"
   },
   "fileExplorer.selectionInfo.indexUpdatingTooltip": "Updating index, size may change.",
   "@fileExplorer.selectionInfo.indexUpdatingTooltip": {
-    "description": "Hover tooltip on the status-bar hourglass while indexing, warning the size figure may change. Note the comma."
+    "description": "Hover tooltip on the status-bar hourglass while indexing, warning the size figure may change. Note the comma.",
+    "visibility": "tooltip"
   },
   "fileExplorer.selectionInfo.symlinkHint": "This folder contains symlinks. Symlinked content is not counted in the total to avoid double counting.",
   "@fileExplorer.selectionInfo.symlinkHint": {
-    "description": "Hover tooltip on the info icon next to a folder’s size, explaining that symlinked content is excluded from the total. A symlink is a file-system shortcut/alias."
+    "description": "Hover tooltip on the info icon next to a folder’s size, explaining that symlinked content is excluded from the total. A symlink is a file-system shortcut/alias.",
+    "visibility": "tooltip"
   },
   "fileExplorer.selectionInfo.noSelectionFiles": "{count, plural, one {{countText} file} other {{countText} files}}",
   "@fileExplorer.selectionInfo.noSelectionFiles": {
@@ -2394,30 +2498,35 @@
     "placeholders": {
       "paneId": "which pane’s tabs these are: picks the left or the right phrase. Never shown itself"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.tabBar.unreachableAriaLabel": "Unreachable",
   "@fileExplorer.tabBar.unreachableAriaLabel": {
     "description": "Accessibility label and tooltip for a tab whose folder/volume can’t currently be reached.",
     "screenshot": "main-window.png",
-    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached."
+    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached.",
+    "visibility": "screenReader"
   },
   "fileExplorer.tabBar.pinnedAriaLabel": "Pinned",
   "@fileExplorer.tabBar.pinnedAriaLabel": {
     "description": "Accessibility label and tooltip for a pinned tab (one kept open deliberately).",
     "screenshot": "main-window.png",
-    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached."
+    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached.",
+    "visibility": "screenReader"
   },
   "fileExplorer.tabBar.closeTabTooltip": "Close tab",
   "@fileExplorer.tabBar.closeTabTooltip": {
     "description": "Hover tooltip for the small close button on a tab.",
     "screenshot": "main-window.png",
-    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached."
+    "screenshotNote": "The main window, pictured here. Your string belongs to the tab bar above a file pane: the tooltip or spoken name of a tab in a state this screenshot doesn’t show, such as a pinned tab or one pointing at a place that can’t be reached.",
+    "visibility": "tooltip"
   },
   "fileExplorer.tabBar.newTabAriaLabel": "New tab",
   "@fileExplorer.tabBar.newTabAriaLabel": {
     "description": "Accessibility label and tooltip for the button that opens a new tab.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.summary.fileNoun": "{count, plural, one {file} other {files}}",
   "@fileExplorer.summary.fileNoun": {
@@ -2703,12 +2812,14 @@
   "fileExplorer.navigation.favoritesAlreadyAdded": "This folder is already a favorite",
   "@fileExplorer.navigation.favoritesAlreadyAdded": {
     "description": "Hover tooltip on the greyed-out \"Add current folder to favorites\" row, explaining why it can't be picked: the pane's folder is already in the list. A statement, not an error.",
-    "screenshot": "toast-favorite.png"
+    "screenshot": "toast-favorite.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.favoritesCantAddHere": "{platform, select, windows {This folder can’t be a favorite: favorites point at folders on drives, shares, servers, and phones} other {This folder can’t be a favorite: favorites point at folders on disks, shares, servers, and phones}}",
   "@fileExplorer.navigation.favoritesCantAddHere": {
     "description": "Hover tooltip on the greyed-out \"Add current folder to favorites\" row when the pane is somewhere a favorite could never point back to: inside an archive, in the .git history browser, in a search results list, or on the list of servers itself. Says a fact about THIS folder first, then the reason after the colon (the places a favorite CAN point at); pair it with its sibling fileExplorer.navigation.favoritesAlreadyAdded, which opens the same way. \"Shares\" are network folders, \"servers\" are machines Cmdr connects to (SFTP, WebDAV, S3), \"phones\" are Android phones and cameras over USB; keep it plain and don't name protocols. No length limit: it's a tooltip, so read naturally rather than trimming. The screenshot shows the macOS wording.",
-    "screenshot": "servers-hub.png"
+    "screenshot": "servers-hub.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.switcherFavorites": "Favorites",
   "@fileExplorer.navigation.switcherFavorites": {
@@ -2722,7 +2833,8 @@
       "path": "the file-system path the favorite points to",
       "reorder": "the keyboard reorder shortcut, e.g. ⌥↑ / ⌥↓ on macOS (do not translate; these are key names)"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.favoriteTooltipWithStatus": "{path}\n{status}\nDrag to reorder, or {reorder}. Right-click to rename or remove.",
   "@fileExplorer.navigation.favoriteTooltipWithStatus": {
@@ -2732,11 +2844,13 @@
       "status": "one sentence saying why the row is dimmed, for example \"Not connected. Opening it connects to testshare.\" (already translated)",
       "reorder": "the keyboard reorder shortcut glyphs"
     },
-    "screenshot": "favorites-menu-unreachable.png"
+    "screenshot": "favorites-menu-unreachable.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.renameFavoriteAriaLabel": "Rename favorite",
   "@fileExplorer.navigation.renameFavoriteAriaLabel": {
-    "description": "Accessibility label for the inline text field that appears when renaming a favorite in the favorites menu."
+    "description": "Accessibility label for the inline text field that appears when renaming a favorite in the favorites menu.",
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.favoriteShortcutPrompt": "A–Z or Delete",
   "@fileExplorer.navigation.favoriteShortcutPrompt": {
@@ -2747,7 +2861,8 @@
     "description": "Accessibility label for the inline field that captures a favorite's shortcut key (opened by menu.volume.editFavoriteShortcut, “Set shortcut key…”). Use the same words for “shortcut key” as that menu item.",
     "placeholders": {
       "name": "the favorite's display name"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.favoriteShortcutSaveFailed": "Couldn’t save that shortcut key. Try again?",
   "@fileExplorer.navigation.favoriteShortcutSaveFailed": {
@@ -2773,12 +2888,14 @@
       "place": "the name of the share, server, or phone the favorite lives on, for example \"testshare on testnas.local\" or \"Pixel 7\""
     },
     "screenshot": "favorites-menu.png",
-    "screenshotNote": "The favorites menu, pictured here. Your string is the line under a favorite’s path in its tooltip, for a row that can’t open right away."
+    "screenshotNote": "The favorites menu, pictured here. Your string is the line under a favorite’s path in its tooltip, for a row that can’t open right away.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.favoriteStatus.notFound": "This folder isn’t there anymore.",
   "@fileExplorer.navigation.favoriteStatus.notFound": {
     "description": "Second line of the hover tooltip on a dimmed favorite in the favorites menu, under the folder's path: the folder was moved or deleted, or Cmdr can't tell which disk it was on. \"Anymore\" means \"no longer\".",
-    "screenshot": "favorites-menu-unreachable.png"
+    "screenshot": "favorites-menu-unreachable.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.favoriteUnreachable.phoneUnplugged": "“{device}” isn’t connected. Plug it in with a USB cable and unlock it, then try again.",
   "@fileExplorer.navigation.favoriteUnreachable.phoneUnplugged": {
@@ -2870,16 +2987,19 @@
   },
   "fileExplorer.navigation.connectionTooltipDirect": "Connected directly for fast file operations",
   "@fileExplorer.navigation.connectionTooltipDirect": {
-    "description": "Hover tooltip on the connection indicator of a network volume that is connected directly (the fast path)."
+    "description": "Hover tooltip on the connection indicator of a network volume that is connected directly (the fast path).",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipConnected": "Connected",
   "@fileExplorer.navigation.connectionTooltipConnected": {
-    "description": "Hover tooltip on the green connection indicator of a server or device that has only one way to connect (SFTP, WebDAV, S3 storage, an Android phone), saying its connection is live and working."
+    "description": "Hover tooltip on the green connection indicator of a server or device that has only one way to connect (SFTP, WebDAV, S3 storage, an Android phone), saying its connection is live and working.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipSystem": "Using system connection. Use the “Connect directly for faster access” menu item for faster access.",
   "@fileExplorer.navigation.connectionTooltipSystem": {
     "description": "Hover tooltip on the connection indicator of a network volume mounted via the OS (slower path), pointing the user at the menu item that upgrades to a direct connection. The quoted menu item label must match the menu item exactly.",
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "pane-volume-chooser.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectDirectly": "Connect directly for faster access",
   "@fileExplorer.navigation.connectDirectly": {
@@ -2889,13 +3009,13 @@
   "@fileExplorer.navigation.useDirectConnection": {
     "description": "Checkbox menu item in the submenu of a network share's row in the volume switcher. Checked (the default), Cmdr opens its own faster connection to this one share. Unchecked, the share stays on the slower connection the system made. Applies to this share only, not the whole server.",
     "screenshot": "pane-volume-chooser.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.showShareParentRow": "Show “..” in the top folder",
   "@fileExplorer.navigation.showShareParentRow": {
     "description": "Checkbox menu item in the submenu of a network share’s row in the volume switcher. Checked (the default, unless changed in Settings), the share’s top folder gets a “..” row that leads to the other shares on the same server. Applies to this share only. Keep “..” exactly as written: it’s the parent-folder row the file list shows.",
     "screenshot": "pane-volume-chooser.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.showShareParentRowTooltip": "In this share’s top folder, “..” takes you to {server}’s other shares.",
   "@fileExplorer.navigation.showShareParentRowTooltip": {
@@ -2903,7 +3023,8 @@
     "placeholders": {
       "server": { "description": "The server’s name, for example “Testnas” or “192.168.1.20”." }
     },
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "pane-volume-chooser.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.shareParentRow.hint": "“..” took you to {server}’s shares. If you’d rather the share’s top folder look like a top folder, turn it off here. You can change it any time in the share’s menu in the volume switcher.",
   "@fileExplorer.shareParentRow.hint": {
@@ -2928,12 +3049,13 @@
   "@fileExplorer.navigation.connectDirectlyNow": {
     "description": "Menu item in the submenu of a network share's row in the volume switcher, sitting just above the \"Use Cmdr's fast direct connection\" checkbox. It's a ONE-TIME ACTION, not a setting: clicking it makes Cmdr open its own faster connection to this share right now. It only appears when that checkbox is already on but the share is still on the slower connection the system made (for example, the server was asleep or no password was saved). Use an imperative VERB phrase and keep the \"now\" meaning (this moment, once), so it can't be read as a mode or a preference.",
     "screenshot": "pane-volume-chooser.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.connectDirectlyNowTooltip": "This share still uses the slower system connection. Connect directly for faster access.",
   "@fileExplorer.navigation.connectDirectlyNowTooltip": {
     "description": "Hover tooltip on the \"Connect directly now\" menu item in a network share's submenu in the volume switcher. Explains why the item is there: the share is still on the slower connection the system made, and clicking it switches this share to Cmdr's faster direct connection once. \"System connection\" means the connection the system made; keep it consistent with the connection indicator's tooltip.",
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "pane-volume-chooser.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectingDirectly": "Connecting directly…",
   "@fileExplorer.navigation.connectingDirectly": {
@@ -2965,7 +3087,8 @@
   "fileExplorer.navigation.readOnlyTooltip": "Read-only",
   "@fileExplorer.navigation.readOnlyTooltip": {
     "description": "Hover tooltip on the lock icon marking a read-only volume in the breadcrumb and volume switcher.",
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "pane-volume-chooser.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.volumeChooserButtonLabel": "{name}, choose a volume",
   "@fileExplorer.navigation.volumeChooserButtonLabel": {
@@ -2973,38 +3096,46 @@
     "placeholders": {
       "name": "the name of the volume the pane is on, e.g. Macintosh HD"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.volumeOptionsTooltip": "Volume options",
   "@fileExplorer.navigation.volumeOptionsTooltip": {
-    "description": "Hover tooltip on the breadcrumb options button (the chevron next to an OS-mounted network volume) that opens the connect-directly popup."
+    "description": "Hover tooltip on the breadcrumb options button (the chevron next to an OS-mounted network volume) that opens the connect-directly popup.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipDisconnected": "The connection dropped. Cmdr is working on getting it back.",
   "@fileExplorer.navigation.connectionTooltipDisconnected": {
-    "description": "Hover tooltip on the connection dot of a server row whose session dropped. Cmdr's reconnect loop is running, so this is a statement of what is happening, not something the user has to act on."
+    "description": "Hover tooltip on the connection dot of a server row whose session dropped. Cmdr's reconnect loop is running, so this is a statement of what is happening, not something the user has to act on.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipNeedsSignIn": "Signed out. Open this server to sign in again.",
   "@fileExplorer.navigation.connectionTooltipNeedsSignIn": {
-    "description": "Hover tooltip on the connection dot of a server row where Cmdr stopped reconnecting because a password or passphrase is what's missing. Opening the row is how the user gets back in."
+    "description": "Hover tooltip on the connection dot of a server row where Cmdr stopped reconnecting because a password or passphrase is what's missing. Opening the row is how the user gets back in.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipNeedsHostKey": "This server’s key changed. Open it to look at the key.",
   "@fileExplorer.navigation.connectionTooltipNeedsHostKey": {
-    "description": "Hover tooltip on the connection dot of an SFTP server row whose host key no longer matches the trusted one. \"Key\" is the server's SSH host key, the fingerprint a person checks before trusting the server again."
+    "description": "Hover tooltip on the connection dot of an SFTP server row whose host key no longer matches the trusted one. \"Key\" is the server's SSH host key, the fingerprint a person checks before trusting the server again.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.connectionTooltipSaved": "Saved. Open it to connect.",
   "@fileExplorer.navigation.connectionTooltipSaved": {
-    "description": "Hover tooltip on the connection dot of a saved server row that isn't connected and has nothing in flight. It's in the switcher because the user pinned it; opening the row dials it."
+    "description": "Hover tooltip on the connection dot of a saved server row that isn't connected and has nothing in flight. It's in the switcher because the user pinned it; opening the row dials it.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.disconnectPlaceAriaLabel": "Disconnect {name}",
   "@fileExplorer.navigation.disconnectPlaceAriaLabel": {
     "description": "Accessibility label and tooltip for the disconnect control on a server row in the volume switcher, in the slot where a removable drive shows Eject. A server has nothing to unplug, so it says Disconnect.",
     "placeholders": {
       "name": "the server's display name, like \"Testnas\""
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.disconnectBusyTooltip": "Cmdr is still working with files on this server. You can disconnect once that’s done.",
   "@fileExplorer.navigation.disconnectBusyTooltip": {
-    "description": "Accessibility label and tooltip on a disconnect control that is disabled because a file operation (a copy, move, or delete) is still running against the server. Says why and when the button comes back, as a statement (“You can disconnect…”), never an order, never blames the user. Keep it in step with fileExplorer.navigation.ejectBusyTooltip and adb.disconnectBusyTooltip."
+    "description": "Accessibility label and tooltip on a disconnect control that is disabled because a file operation (a copy, move, or delete) is still running against the server. Says why and when the button comes back, as a statement (“You can disconnect…”), never an order, never blames the user. Keep it in step with fileExplorer.navigation.ejectBusyTooltip and adb.disconnectBusyTooltip.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.serverPinnedToast": "{name} is in your volume switcher now.",
   "@fileExplorer.navigation.serverPinnedToast": {
@@ -3091,11 +3222,13 @@
   },
   "fileExplorer.navigation.ejectOneVolumeTooltip": "Ejects only this volume. Its drive stays connected until the other volumes are ejected too.",
   "@fileExplorer.navigation.ejectOneVolumeTooltip": {
-    "description": "Tooltip on the Eject item in a volume's menu, shown only when its physical drive has other volumes mounted. It explains that the drive can't be unplugged yet. A \"volume\" is one of the separately named parts of a drive; use the word your macOS Finder uses."
+    "description": "Tooltip on the Eject item in a volume's menu, shown only when its physical drive has other volumes mounted. It explains that the drive can't be unplugged yet. A \"volume\" is one of the separately named parts of a drive; use the word your macOS Finder uses.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.ejectAllTooltip": "Ejects every volume on this drive, so you can unplug it.",
   "@fileExplorer.navigation.ejectAllTooltip": {
-    "description": "Tooltip on the \"Eject all\" item in a volume's menu, shown only when its physical drive has several volumes mounted. A \"volume\" is one of the separately named parts of a drive; use the word your macOS Finder uses."
+    "description": "Tooltip on the \"Eject all\" item in a volume's menu, shown only when its physical drive has several volumes mounted. A \"volume\" is one of the separately named parts of a drive; use the word your macOS Finder uses.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.ejectVolumeAriaLabel": "Eject {name}",
   "@fileExplorer.navigation.ejectVolumeAriaLabel": {
@@ -3103,18 +3236,20 @@
     "placeholders": {
       "name": "the display name of the volume to eject"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "tool-ask-eject.png"
   },
   "fileExplorer.navigation.ejectBusyTooltip": "Cmdr is still working with files on this device. You can eject it once that’s done.",
   "@fileExplorer.navigation.ejectBusyTooltip": {
-    "description": "Accessibility label and tooltip on a disabled eject button, explaining the volume (a drive, a disk image, or a phone) can’t be ejected yet because a file operation is running on it. Says when the button comes back, as a statement (“You can eject it…”), never an order. Keep it in step with fileExplorer.navigation.disconnectBusyTooltip and adb.disconnectBusyTooltip."
+    "description": "Accessibility label and tooltip on a disabled eject button, explaining the volume (a drive, a disk image, or a phone) can’t be ejected yet because a file operation is running on it. Says when the button comes back, as a statement (“You can eject it…”), never an order. Keep it in step with fileExplorer.navigation.disconnectBusyTooltip and adb.disconnectBusyTooltip.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.ejectingVolumeAriaLabel": "Ejecting {name}…",
   "@fileExplorer.navigation.ejectingVolumeAriaLabel": {
     "description": "Accessibility label and tooltip on the eject button of a volume in the breadcrumb and switcher while its eject is still running: the button shows a spinner and can't be pressed until the eject finishes, which can take several seconds. Present progressive, describing work underway, not a command. Keep the trailing ellipsis character.",
     "placeholders": {
       "name": "the display name of the volume being ejected, for example Backup Drive"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.detachShareAriaLabel": "{platform, select, macos {Eject {name}} windows {Disconnect {name}} other {Unmount {name}}}",
   "@fileExplorer.navigation.detachShareAriaLabel": {
@@ -3122,18 +3257,20 @@
     "placeholders": {
       "name": "the display name of the share, for example media"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "tool-ask-eject.png"
   },
   "fileExplorer.navigation.detachingShareAriaLabel": "{platform, select, macos {Ejecting {name}…} windows {Disconnecting {name}…} other {Unmounting {name}…}}",
   "@fileExplorer.navigation.detachingShareAriaLabel": {
     "description": "Accessibility label and tooltip on the eject button of a mounted network share while ending the mount is still running: the button shows a spinner and can't be pressed until it finishes. The share's sibling of fileExplorer.navigation.ejectingVolumeAriaLabel. Present progressive, describing work underway, not a command, with each branch's verb matching the same branch of fileExplorer.navigation.detachShareAriaLabel. Keep the trailing ellipsis character.",
     "placeholders": {
       "name": "the display name of the share, for example media"
-    }
+    },
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.detachShareBusyTooltip": "{platform, select, macos {Cmdr is still working with files on this device. You can eject it once that’s done.} windows {Cmdr is still working with files on this device. You can disconnect it once that’s done.} other {Cmdr is still working with files on this device. You can unmount it once that’s done.}}",
   "@fileExplorer.navigation.detachShareBusyTooltip": {
-    "description": "Accessibility label and tooltip on a disabled eject button of a mounted network share, explaining it can't be ended yet because a file operation is running on it. The share's sibling of fileExplorer.navigation.ejectBusyTooltip: keep each branch worded like that key, with the verb matching the same branch of fileExplorer.navigation.detachShareAriaLabel. Says when the button comes back, as a statement (“You can … it”), never an order."
+    "description": "Accessibility label and tooltip on a disabled eject button of a mounted network share, explaining it can't be ended yet because a file operation is running on it. The share's sibling of fileExplorer.navigation.ejectBusyTooltip: keep each branch worded like that key, with the verb matching the same branch of fileExplorer.navigation.detachShareAriaLabel. Says when the button comes back, as a statement (“You can … it”), never an order.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.usbSpeed": "{label} (Max. {mbps} MB/s)",
   "@fileExplorer.navigation.usbSpeed": {
@@ -3141,19 +3278,23 @@
     "placeholders": {
       "label": "the negotiated USB standard name, e.g. USB 3.2 Gen 2 (do not translate; it is a spec name)",
       "mbps": "the peak throughput in megabytes per second, already formatted"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.usbSpeedNegotiated": "Negotiated for this cable, port, and device",
   "@fileExplorer.navigation.usbSpeedNegotiated": {
-    "description": "Second line of the USB-speed tooltip on a volume, clarifying that the shown speed reflects the specific cable, port, and device combination. Shown below the speed line on its own row."
+    "description": "Second line of the USB-speed tooltip on a volume, clarifying that the shown speed reflects the specific cable, port, and device combination. Shown below the speed line on its own row.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.spaceRetryingAuto": "Retrying automatically…",
   "@fileExplorer.navigation.spaceRetryingAuto": {
-    "description": "Hover tooltip on a volume’s disk-space bar while the app automatically retries fetching its free space. Ends with an ellipsis character (…)."
+    "description": "Hover tooltip on a volume’s disk-space bar while the app automatically retries fetching its free space. Ends with an ellipsis character (…).",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.spaceRetrying": "Retrying…",
   "@fileExplorer.navigation.spaceRetrying": {
-    "description": "Hover tooltip on a volume’s disk-space bar while a manual retry of fetching its free space is in progress. Ends with an ellipsis character (…)."
+    "description": "Hover tooltip on a volume’s disk-space bar while a manual retry of fetching its free space is in progress. Ends with an ellipsis character (…).",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.spaceRetryingText": "Retrying",
   "@fileExplorer.navigation.spaceRetryingText": {
@@ -3161,11 +3302,13 @@
   },
   "fileExplorer.navigation.spaceStillUnavailable": "Still unavailable. Click to retry",
   "@fileExplorer.navigation.spaceStillUnavailable": {
-    "description": "Hover tooltip on a volume’s disk-space bar after a retry to fetch free space also failed, inviting another click to retry."
+    "description": "Hover tooltip on a volume’s disk-space bar after a retry to fetch free space also failed, inviting another click to retry.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.spaceFetchFailed": "Couldn’t fetch disk space. Click to retry",
   "@fileExplorer.navigation.spaceFetchFailed": {
-    "description": "Hover tooltip on a volume’s disk-space bar when fetching free space failed (first time), inviting a click to retry."
+    "description": "Hover tooltip on a volume’s disk-space bar when fetching free space failed (first time), inviting a click to retry.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.spaceUnavailableText": "Unavailable",
   "@fileExplorer.navigation.spaceUnavailableText": {
@@ -3174,7 +3317,8 @@
   "fileExplorer.navigation.spaceMtpHint": "On a phone, this also counts apps and system files. Over USB, Cmdr can reach only your shared files, so the folders here add up to less than the used space.",
   "@fileExplorer.navigation.spaceMtpHint": {
     "description": "Hover tooltip on a connected phone’s disk-space readout (the free/total figure and its usage bar), shown only for phones reached over USB (MTP). Explains why the visible folders add up to far less than the space reported as used: a phone’s apps and system data count toward usage but can’t be browsed over USB. \"USB\" is the cable connection; \"Cmdr\" is the app name (do not translate).",
-    "screenshot": "mtp-browse.png"
+    "screenshot": "mtp-browse.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.volumesStillUnreachable": "Still unreachable. Try again later",
   "@fileExplorer.navigation.volumesStillUnreachable": {
@@ -3186,17 +3330,20 @@
   },
   "fileExplorer.navigation.refreshVolumeList": "Refresh volume list",
   "@fileExplorer.navigation.refreshVolumeList": {
-    "description": "Hover tooltip on the retry button in the volume switcher’s missing-volumes warning row, which reloads the volume list."
+    "description": "Hover tooltip on the retry button in the volume switcher’s missing-volumes warning row, which reloads the volume list.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.ariaLabel": "Drive index status",
   "@fileExplorer.navigation.driveIndex.ariaLabel": {
     "description": "Accessibility label, read aloud by screen readers, for the small colored dot next to a drive in the volume switcher that shows whether the drive is indexed and up to date. The color and the live detail are in its tooltip.",
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.navigation.driveIndex.tooltipDisabled": "Indexing is off for this drive. Turn it on to see folder sizes and search here.",
   "@fileExplorer.navigation.driveIndex.tooltipDisabled": {
     "description": "Hover tooltip on the gray drive-index dot, shown when a drive isn’t indexed. Invites the user to turn indexing on for folder sizes and search.",
-    "screenshot": "pane-volume-chooser.png"
+    "screenshot": "pane-volume-chooser.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipFresh": "Indexed and up to date. Last indexed {date}, took {duration}.",
   "@fileExplorer.navigation.driveIndex.tooltipFresh": {
@@ -3205,31 +3352,38 @@
       "date": "ISO date of the last completed scan, already formatted (e.g. 2026-06-19)",
       "duration": "how long the last scan took, already formatted (e.g. 2 min, 14 s)"
     },
-    "screenshot": "main-window.png"
+    "screenshot": "main-window.png",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipFreshNoScan": "Indexed and up to date.",
   "@fileExplorer.navigation.driveIndex.tooltipFreshNoScan": {
-    "description": "Hover tooltip on the green drive-index dot when the index is current but the last scan’s date and duration aren’t known (no completed scan recorded). Shorter variant of the fresh tooltip."
+    "description": "Hover tooltip on the green drive-index dot when the index is current but the last scan’s date and duration aren’t known (no completed scan recorded). Shorter variant of the fresh tooltip.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipStale": "This drive may have changed while it was disconnected. Sizes and search might be a bit off. Rescan to refresh.",
   "@fileExplorer.navigation.driveIndex.tooltipStale": {
-    "description": "Hover tooltip on the yellow drive-index dot, shown when the drive’s index may be out of date because the drive was disconnected. Active voice; never use the words “error” or “failed”."
+    "description": "Hover tooltip on the yellow drive-index dot, shown when the drive’s index may be out of date because the drive was disconnected. Active voice; never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipStalePhone": "Cmdr keeps this index current with the changes it makes. Changes made on the phone itself show up after a rescan.",
   "@fileExplorer.navigation.driveIndex.tooltipStalePhone": {
-    "description": "Hover tooltip on the yellow drive-index dot for an Android phone connected over USB debugging (ADB). The phone never reports its own file changes, so its index reads as possibly out of date even while it's plugged in: Cmdr updates the index for copies, moves, and deletes it does itself, and anything changed on the phone (new photos, another app) appears after the user rescans. The phone version of tooltipStale; it must not mention disconnecting. Never use the words 'error' or 'failed'."
+    "description": "Hover tooltip on the yellow drive-index dot for an Android phone connected over USB debugging (ADB). The phone never reports its own file changes, so its index reads as possibly out of date even while it's plugged in: Cmdr updates the index for copies, moves, and deletes it does itself, and anything changed on the phone (new photos, another app) appears after the user rescans. The phone version of tooltipStale; it must not mention disconnecting. Never use the words 'error' or 'failed'.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipFailed": "Indexing stopped because of a problem saving this drive’s index. Rescan to rebuild it.",
   "@fileExplorer.navigation.driveIndex.tooltipFailed": {
-    "description": "Hover tooltip on the RED drive-index dot, shown when the drive’s index database hit a fatal storage problem (a disk I/O failure, a read-only disk, corruption) and indexing stopped for this drive. The index is a rebuildable cache, so the fix is to rescan. Keep it calm and actionable; active voice; never use the words “error” or “failed”."
+    "description": "Hover tooltip on the RED drive-index dot, shown when the drive’s index database hit a fatal storage problem (a disk I/O failure, a read-only disk, corruption) and indexing stopped for this drive. The index is a rebuildable cache, so the fix is to rescan. Keep it calm and actionable; active voice; never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipPausedThisDrive": "Indexing is paused because this drive is almost full. Folder sizes may be out of date until it resumes, which it does by itself once there’s more free space.",
   "@fileExplorer.navigation.driveIndex.tooltipPausedThisDrive": {
-    "description": "Hover tooltip on the RED drive-index dot of the startup disk (the drive Cmdr keeps its index on), shown when that disk is almost out of free space and indexing paused. Cmdr keeps showing the last-known folder sizes, which may be out of date, and resumes indexing by itself once there’s room. Calm and reassuring; active voice; never use the words “error” or “failed”."
+    "description": "Hover tooltip on the RED drive-index dot of the startup disk (the drive Cmdr keeps its index on), shown when that disk is almost out of free space and indexing paused. Cmdr keeps showing the last-known folder sizes, which may be out of date, and resumes indexing by itself once there’s room. Calm and reassuring; active voice; never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipPausedOtherDrive": "{platform, select, macos {Indexing is paused because your startup disk, where Cmdr keeps its index, is almost full. Folder sizes on this drive may be out of date until it resumes, which it does by itself once there’s more free space there.} windows {Indexing is paused because your system drive, where Cmdr keeps its index, is almost full. Folder sizes on this drive may be out of date until it resumes, which it does by itself once there’s more free space there.} other {Indexing is paused because your system disk, where Cmdr keeps its index, is almost full. Folder sizes on this drive may be out of date until it resumes, which it does by itself once there’s more free space there.}}",
   "@fileExplorer.navigation.driveIndex.tooltipPausedOtherDrive": {
-    "description": "Hover tooltip on the RED drive-index dot of a drive OTHER than the startup disk (an external drive, a network share, a phone). Cmdr keeps every drive’s index on the startup disk, which is almost full, so indexing paused for this drive too. Folder sizes shown may be out of date; indexing resumes by itself once the startup disk has room. Each branch names the drive the computer starts from the way that OS does: the startup disk on macOS, the system drive on Windows, the system disk on Linux. Never use the words “error” or “failed”."
+    "description": "Hover tooltip on the RED drive-index dot of a drive OTHER than the startup disk (an external drive, a network share, a phone). Cmdr keeps every drive’s index on the startup disk, which is almost full, so indexing paused for this drive too. Folder sizes shown may be out of date; indexing resumes by itself once the startup disk has room. Each branch names the drive the computer starts from the way that OS does: the startup disk on macOS, the system drive on Windows, the system disk on Linux. Never use the words “error” or “failed”.",
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipCoalesced": "{platform, select, macos {macOS lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It’s usually caches full of small files, and Cmdr’s next full check in {remaining, plural, one {an hour} other {{remainingText} hours}} will fix it.} windows {Windows lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and Cmdr’s next full check in {remaining, plural, one {an hour} other {{remainingText} hours}} will fix it.} other {Your system lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and Cmdr’s next full check in {remaining, plural, one {an hour} other {{remainingText} hours}} will fix it.}}",
   "@fileExplorer.navigation.driveIndex.tooltipCoalesced": {
@@ -3241,7 +3395,8 @@
       "hoursText": "the same hour count, already formatted for the reader (e.g. 18)",
       "remaining": "whole hours until the next scheduled full check, as a raw number, used only to pick the plural branch (never below 1)",
       "remainingText": "the same remaining-hour count, already formatted for the reader (e.g. 6)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipCoalescedCheckRunning": "{platform, select, macos {macOS lost track of file system changes {count, plural, one {once} other {{countText} times}}, so a few folder sizes might be slightly off. It’s usually caches full of small files, and the check running right now will put them right.} windows {Windows lost track of file system changes {count, plural, one {once} other {{countText} times}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and the check running right now will put them right.} other {Your system lost track of file system changes {count, plural, one {once} other {{countText} times}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and the check running right now will put them right.}}",
   "@fileExplorer.navigation.driveIndex.tooltipCoalescedCheckRunning": {
@@ -3249,7 +3404,8 @@
     "placeholders": {
       "count": "how many times the operating system lost track since the last full check, as a raw number, used only to pick the plural branch",
       "countText": "the same count, already formatted for the reader (e.g. 12)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipCoalescedNoNextCheck": "{platform, select, macos {macOS lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It’s usually caches full of small files, so it’s no big deal.} windows {Windows lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and Cmdr’s next full check will fix it.} other {Your system lost track of file system changes {count, plural, one {once} other {{countText} times}} in the last {hours, plural, one {hour} other {{hoursText} hours}}, so a few folder sizes might be slightly off. It usually happens when lots of files change at once, and Cmdr’s next full check will fix it.}}",
   "@fileExplorer.navigation.driveIndex.tooltipCoalescedNoNextCheck": {
@@ -3259,7 +3415,8 @@
       "countText": "the same count, already formatted for the reader (e.g. 12)",
       "hours": "whole hours since the drive’s last completed full check, as a raw number, used only to pick the plural branch (never below 1)",
       "hoursText": "the same hour count, already formatted for the reader (e.g. 18)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipUnreadable": "Cmdr couldn’t read {count, plural, one {one spot} other {{countText} spots}} on this drive, so a search here may come back a little short.",
   "@fileExplorer.navigation.driveIndex.tooltipUnreadable": {
@@ -3267,7 +3424,8 @@
     "placeholders": {
       "count": "how many places couldn’t be read, as a raw number, used only to pick the plural branch",
       "countText": "the same count, already formatted for the reader (e.g. 1,497)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.tooltipUnreadableRetried": "Cmdr couldn’t read {count, plural, one {one spot} other {{countText} spots}} on this drive, so a search here may come back a little short. It comes back to them on its own.",
   "@fileExplorer.navigation.driveIndex.tooltipUnreadableRetried": {
@@ -3275,25 +3433,26 @@
     "placeholders": {
       "count": "how many places couldn’t be read, as a raw number, used only to pick the plural branch",
       "countText": "the same count, already formatted for the reader (e.g. 1,497)"
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.menuEnable": "Turn on indexing for this drive",
   "@fileExplorer.navigation.driveIndex.menuEnable": {
     "description": "Menu item to start indexing the drive (shown when indexing is off). Sentence case.",
     "screenshot": "pane-volume-chooser.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.driveIndex.menuRescan": "Rescan now",
   "@fileExplorer.navigation.driveIndex.menuRescan": {
     "description": "Menu item to rebuild the drive’s index from scratch (shown when the drive is already indexed). Sentence case.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.driveIndex.menuDisable": "Turn off indexing for this drive",
   "@fileExplorer.navigation.driveIndex.menuDisable": {
     "description": "Menu item to stop indexing the drive and drop its live index (shown when the drive is indexed). Sentence case.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.driveIndex.menuStop": "Stop indexing",
   "@fileExplorer.navigation.driveIndex.menuStop": {
@@ -3303,7 +3462,7 @@
   "@fileExplorer.navigation.driveIndex.menuForget": {
     "description": "Menu item that deletes the drive’s index entirely (removes its database from disk), so a fresh full scan starts next time the user turns indexing on. The recovery action when an index is stuck. More destructive than “Turn off indexing”, which keeps the index to resume. Sentence case.",
     "screenshot": "main-window.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileExplorer.navigation.driveIndex.footer": "Last indexed: {date} · took {duration}",
   "@fileExplorer.navigation.driveIndex.footer": {
@@ -3407,7 +3566,8 @@
     "description": "Hover tooltip on the gray drive-index dot when the master drive-indexing switch is off. Explains that the gray dot is about the global switch, not this one drive. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileExplorer.navigation.driveIndex.menuIndexingOffNote": "{platform, select, windows {Drive indexing is off in Settings. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxGnome {Drive indexing is off in Preferences. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} linuxKde {Drive indexing is off in Configure Cmdr. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.} other {Drive indexing is off in Settings. Turn it on under “Indexing > Drive indexing”, and this drive picks up where it left off.}}",
   "@fileExplorer.navigation.driveIndex.menuIndexingOffNote": {
@@ -3556,22 +3716,26 @@
   "fileExplorer.quickFilter.modeFilter": "Filter: only matching names show",
   "@fileExplorer.quickFilter.modeFilter": {
     "description": "For screen readers only (never shown): said when the Quick filter command opens the badge in a pane or switches it to filtering, so typed text now hides the files and folders whose names don't match. On screen only the badge's word changes, to fileExplorer.quickFilter.prefix; start with that same word.",
-    "screenshot": "quick-filter-mode.png"
+    "screenshot": "quick-filter-mode.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.typeToJump.modeJump": "Jump: all names show, and the cursor goes to the match",
   "@fileExplorer.typeToJump.modeJump": {
     "description": "For screen readers only (never shown): said when the Quick filter command switches the badge in a pane to jumping, so every file and folder shows and typed text moves the cursor to the matching name. On screen only the badge's word changes, to fileExplorer.typeToJump.prefix; start with that same word.",
-    "screenshot": "quick-filter-mode.png"
+    "screenshot": "quick-filter-mode.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.typeToJump.clear": "Clear typed text",
   "@fileExplorer.typeToJump.clear": {
     "description": "Accessible name of the small × button on the Jump badge in a file pane, which removes the typed text (the label names that text, not the Jump mode) so the pane goes back to how plain typing works. Sits next to fileExplorer.typeToJump.prefix; the Filter badge's own button says fileExplorer.quickFilter.clear.",
-    "screenshot": "quick-filter-mode.png"
+    "screenshot": "quick-filter-mode.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.quickFilter.clear": "Clear filter",
   "@fileExplorer.quickFilter.clear": {
     "description": "Accessible name and tooltip-less label of the small × on the \"Filter: …\" badge in a pane's corner. Clicking it shows every file again (same as Esc).",
-    "screenshot": "quick-filter-intro.png"
+    "screenshot": "quick-filter-intro.png",
+    "visibility": "screenReader"
   },
   "fileExplorer.quickFilter.typingHint.title": "What just happened?",
   "@fileExplorer.quickFilter.typingHint.title": {

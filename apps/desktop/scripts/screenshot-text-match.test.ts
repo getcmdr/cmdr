@@ -5,14 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import {
-  isNeverVisible,
-  normalizeOcrText,
-  ocrDoc,
-  requirementOf,
-  runShows,
-  showsText,
-} from './screenshot-text-match.ts'
+import { normalizeOcrText, ocrDoc, requirementOf, runShows, showsText } from './screenshot-text-match.ts'
 
 const doc = (...lines: string[]) => ocrDoc(lines)
 
@@ -110,17 +103,5 @@ describe('requirementOf', () => {
         },
       ],
     })
-  })
-})
-
-describe('isNeverVisible', () => {
-  it('knows an accessible name by its key or its description', () => {
-    expect(isNeverVisible('fileExplorer.tabs.closeAria', '')).toBe(true)
-    expect(isNeverVisible('adb.hint.dismiss', 'Accessible name of the × button. Screen readers only.')).toBe(true)
-    expect(isNeverVisible('multiRename.caseSensitive', 'Tooltip on the Aa toggle.')).toBe(true)
-  })
-
-  it('leaves visible copy alone', () => {
-    expect(isNeverVisible('settings.advanced.dragThreshold.label', 'Label of the drag threshold setting.')).toBe(false)
   })
 })

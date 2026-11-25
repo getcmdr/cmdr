@@ -21,7 +21,8 @@
   "multiRename.insertPlaceholder": "Insert placeholder",
   "@multiRename.insertPlaceholder": {
     "description": "Accessible name of the row of buttons that insert a placeholder such as [N] or [C] into the name mask at the caret.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "screenReader"
   },
   "multiRename.mediaButton": "media",
   "@multiRename.mediaButton": {
@@ -31,7 +32,8 @@
   "multiRename.mediaButtonName": "Media fields",
   "@multiRename.mediaButtonName": {
     "description": "Accessible name of the “media ▾” button (multiRename.mediaButton), read by screen readers and voice control: it opens the list of photo, video, and music fields. Must contain the button's visible word (multiRename.mediaButton) as a whole word, so a voice-control user can say it: a compound that only contains it as a substring (German “Medienfelder”) doesn't count.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "screenReader"
   },
   "multiRename.search": "Search for",
   "@multiRename.search": {
@@ -47,36 +49,37 @@
   "@multiRename.caseSensitive": {
     "description": "Search & replace option: only match the same uppercase/lowercase letters.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.firstOnly": "First match only",
   "@multiRename.firstOnly": {
     "description": "Search & replace option: replace only the first match in each name, not all of them.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.includeExtension": "Include extension",
   "@multiRename.includeExtension": {
     "description": "Search & replace option: also search and replace in the file extension.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.regex": "Regular expression",
   "@multiRename.regex": {
     "description": "Search & replace option: the search is a regular expression; $1, $2 in the replacement insert its groups.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.substitute": "Replace whole name",
   "@multiRename.substitute": {
     "description": "Search & replace option: when the search matches, the whole name becomes the replacement (Total Commander's \"Subst.\").",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.searchOptions": "Search options",
   "@multiRename.searchOptions": {
     "description": "In the Multi-rename sheet, the accessible name of the row of small toggle chips beside the search fields that turn the search options on and off (Match case, First match only, Include extension, Regular expression, Replace whole name).",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "screenReader"
   },
   "multiRename.searchOptionHelp.setup": "Replacing <code>{search}</code> with <code>{replace}</code> in <code>{name}</code>:",
   "@multiRename.searchOptionHelp.setup": {
@@ -86,17 +89,20 @@
       "replace": "the replacement text (e.g. pic)",
       "name": "a made-up filename (e.g. Photo photo.jpg)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.searchOptionHelp.on": "On",
   "@multiRename.searchOptionHelp.on": {
     "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up filename, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned on. Keep it as short as possible.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.searchOptionHelp.off": "Off",
   "@multiRename.searchOptionHelp.off": {
     "description": "In the Multi-rename sheet, each search option (Match case, First match only, Include extension, Regular expression, Replace whole name) is a small toggle chip beside the search fields. Its tooltip names the option, shows its keyboard shortcut, and gives a tiny worked example: a replace on a made-up filename, with the result when the option is on and when it's off. Labels the line showing the new name with the option turned off. Keep it as short as possible.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.case": "Letter case",
   "@multiRename.case": {
@@ -155,7 +161,8 @@
   "multiRename.presets.tooltip": "Load, save, and manage presets",
   "@multiRename.presets.tooltip": {
     "description": "Tooltip of the Presets button in the Multi-rename tool. The keyboard shortcut (F2) is shown beside it.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.presets.saved": "Your presets",
   "@multiRename.presets.saved": {
@@ -200,11 +207,13 @@
   "multiRename.presets.saveTitle": "Save preset",
   "@multiRename.presets.saveTitle": {
     "description": "Accessible name of the small popup that asks for a name to save the current fields as a preset (opened with Cmd+S or Save as preset…).",
-    "screenshot": "multi-rename-preset-name.png"
+    "screenshot": "multi-rename-preset-name.png",
+    "visibility": "screenReader"
   },
   "multiRename.presets.renameTitle": "Rename preset",
   "@multiRename.presets.renameTitle": {
-    "description": "Accessible name of the small popup that asks for a new name for a saved preset."
+    "description": "Accessible name of the small popup that asks for a new name for a saved preset.",
+    "visibility": "screenReader"
   },
   "multiRename.presets.save": "Save",
   "@multiRename.presets.save": {
@@ -231,7 +240,7 @@
   "@multiRename.preset.dateAndTime": {
     "description": "Name of a preset Cmdr starts the Presets list with, saved in this language the first time the list loads; the user can rename or delete it like their own. It names each file after its last-modified date and time, like 2026-07-14 09.05.30.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.preset.removeDiacritics": "Remove diacritics",
   "@multiRename.preset.removeDiacritics": {
@@ -279,13 +288,14 @@
   "multiRename.statusColumn": "Status",
   "@multiRename.statusColumn": {
     "description": "Header of the preview list's status column, read out by screen readers only: the column shows a small symbol on each row with a problem (invalid name, duplicate, name taken, gone), and nothing on rows that are ready or unchanged.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "screenReader"
   },
   "multiRename.status.unchanged": "No change",
   "@multiRename.status.unchanged": {
     "description": "Preview note: the new name is the same as the old one, so the file is left alone.",
     "screenshot": "multi-rename.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.status.duplicate": "Same name as another item",
   "@multiRename.status.duplicate": {
@@ -312,7 +322,8 @@
     "description": "Accessible name of the small warning symbol on a preview row whose new name the folder takes but Windows can’t read as typed (a \":\" in it, a name ending in a period, a name Windows keeps for devices like CON). The row still gets renamed. Keep \"Windows\" and \"Linux\" as is. Keep it short: it names a symbol.",
     "placeholders": {
       "alsoLinux": "\"yes\" when Linux can’t read it either (a Windows-formatted USB drive), anything else when only Windows"
-    }
+    },
+    "visibility": "screenReader"
   },
   "multiRename.notPortableSummary": "{count, plural, one {{alsoLinux, select, yes {{countText} new name won’t work on Windows or Linux. It still gets renamed.} other {{countText} new name won’t work on Windows. It still gets renamed.}}} other {{alsoLinux, select, yes {{countText} new names won’t work on Windows or Linux. They still get renamed.} other {{countText} new names won’t work on Windows. They still get renamed.}}}}",
   "@multiRename.notPortableSummary": {
@@ -386,7 +397,8 @@
   },
   "multiRename.undoTooltip": "{count, plural, one {Renames # file back to its old name} other {Renames # files back to their old names}}",
   "@multiRename.undoTooltip": {
-    "description": "Tooltip of the Undo button: what pressing it will do. Keep it worded differently from multiRename.undoStarted, the toast saying the undo is underway. {count} is how many files the last multi-rename renamed."
+    "description": "Tooltip of the Undo button: what pressing it will do. Keep it worded differently from multiRename.undoStarted, the toast saying the undo is underway. {count} is how many files the last multi-rename renamed.",
+    "visibility": "tooltip"
   },
   "multiRename.undoStarted": "{count, plural, one {Renaming # file back} other {Renaming # files back}}.",
   "@multiRename.undoStarted": {
@@ -407,7 +419,8 @@
     "placeholders": {
       "positionText": "the file's new position in the list, counting from 1, ready to drop into the sentence (for example 3)",
       "totalText": "how many files the list holds, ready to drop into the sentence (for example 1,234)"
-    }
+    },
+    "visibility": "screenReader"
   },
   "multiRename.results.edited": "{count, plural, one {# name comes from your edited list} other {# names come from your edited list}}.",
   "@multiRename.results.edited": {
@@ -432,20 +445,24 @@
   "multiRename.resultsTooltip": "Edit the new names in your text editor, then come back here to use them.",
   "@multiRename.resultsTooltip": {
     "description": "Tooltip of the Results… footer button (multiRename.results): it opens the list of old and new names in the user’s text editor, one file per line, to change any new name by hand; the sheet reads the list back when the user returns to the window. The tooltip shows the button’s keyboard shortcut after this text.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.resultsUnavailable": "Results needs the Cmdr desktop app: it opens the names in your text editor.",
   "@multiRename.resultsUnavailable": {
-    "description": "Tooltip of the Results… footer button (multiRename.results) when it’s unavailable: in the browser demo of Cmdr on the website, which can’t open a text editor on the visitor’s computer. Results there opens the list of old and new names in the user’s text editor to change them by hand. \"Cmdr\" is the brand name; keep it as is."
+    "description": "Tooltip of the Results… footer button (multiRename.results) when it’s unavailable: in the browser demo of Cmdr on the website, which can’t open a text editor on the visitor’s computer. Results there opens the list of old and new names in the user’s text editor to change them by hand. \"Cmdr\" is the brand name; keep it as is.",
+    "visibility": "tooltip"
   },
   "multiRename.editedName": "You typed this name in Results",
   "@multiRename.editedName": {
-    "description": "Tooltip and screen-reader text of a small pencil mark beside a row of the preview whose new name the user typed by hand in the list the Results… button opens (multiRename.results). “Results” here names that button: write it the way your multiRename.results label reads (without the “…”), quoted if your language quotes UI labels in running text rather than one the settings made."
+    "description": "Tooltip and screen-reader text of a small pencil mark beside a row of the preview whose new name the user typed by hand in the list the Results… button opens (multiRename.results). “Results” here names that button: write it the way your multiRename.results label reads (without the “…”), quoted if your language quotes UI labels in running text rather than one the settings made.",
+    "visibility": "tooltip"
   },
   "multiRename.history": "History",
   "@multiRename.history": {
     "description": "A text field’s history: what it held when earlier renames ran. The accessible name of the chevron at the end of the name mask, extension mask, search, and replace fields (it opens the list), and of that list.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.rename": "{count, plural, =0 {Rename} one {Rename # file} other {Rename # files}}",
   "@multiRename.rename": {
@@ -458,19 +475,23 @@
   },
   "multiRename.renameWaitsTooltip": "Some files’ tags are still being read. Rename waits for them, then starts.",
   "@multiRename.renameWaitsTooltip": {
-    "description": "Tooltip on the Rename button while the name uses a photo, video, or music field (like the date taken) and Cmdr is still reading those from the files."
+    "description": "Tooltip on the Rename button while the name uses a photo, video, or music field (like the date taken) and Cmdr is still reading those from the files.",
+    "visibility": "tooltip"
   },
   "multiRename.startingTooltip": "The rename starts once every file’s tags are read. Click again to cancel.",
   "@multiRename.startingTooltip": {
-    "description": "Tooltip on the Rename button while it reads “Starting…” (multiRename.starting): the rename waits for the files' tags, and a second click cancels it."
+    "description": "Tooltip on the Rename button while it reads “Starting…” (multiRename.starting): the rename waits for the files' tags, and a second click cancels it.",
+    "visibility": "tooltip"
   },
   "multiRename.queuedAnnounce": "Rename starts once the tags are read",
   "@multiRename.queuedAnnounce": {
-    "description": "Spoken by screen readers when Rename was pressed while the files' tags are still being read: the rename waits and starts on its own."
+    "description": "Spoken by screen readers when Rename was pressed while the files' tags are still being read: the rename waits and starts on its own.",
+    "visibility": "screenReader"
   },
   "multiRename.queueCanceled": "Rename canceled",
   "@multiRename.queueCanceled": {
-    "description": "Spoken by screen readers when a rename that was waiting for the files' tags was canceled (Rename pressed again, or a field changed)."
+    "description": "Spoken by screen readers when a rename that was waiting for the files' tags was canceled (Rename pressed again, or a field changed).",
+    "visibility": "screenReader"
   },
   "multiRename.started": "{count, plural, one {Renaming # file} other {Renaming # files}}. You can roll it back from the operation log.",
   "@multiRename.started": {
@@ -490,19 +511,23 @@
   },
   "multiRename.status.ready": "Ready to rename",
   "@multiRename.status.ready": {
-    "description": "Screen-reader text in the preview's status column for an item (file or folder) that will be renamed. Restructure freely to avoid agreeing with a gendered noun (for example \"Will be renamed\"). Sighted users see no mark on these rows; only the problem rows get a symbol."
+    "description": "Screen-reader text in the preview's status column for an item (file or folder) that will be renamed. Restructure freely to avoid agreeing with a gendered noun (for example \"Will be renamed\"). Sighted users see no mark on these rows; only the problem rows get a symbol.",
+    "visibility": "screenReader"
   },
   "multiRename.reason.duplicate": "Another item in this batch gets the same new name, so neither is renamed.",
   "@multiRename.reason.duplicate": {
-    "description": "Tooltip on the preview's duplicate symbol: the full reason behind multiRename.status.duplicate. The row can be a file or a folder, hence “item”."
+    "description": "Tooltip on the preview's duplicate symbol: the full reason behind multiRename.status.duplicate. The row can be a file or a folder, hence “item”.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.targetExists": "An item that stays in this folder already has this name, so this one keeps its name.",
   "@multiRename.reason.targetExists": {
-    "description": "Tooltip on the preview's \"name is taken\" symbol: the full reason behind multiRename.status.targetExists. The item that holds the name isn't part of the rename (or can't be renamed itself). The row can be a file or a folder, hence “item”."
+    "description": "Tooltip on the preview's \"name is taken\" symbol: the full reason behind multiRename.status.targetExists. The item that holds the name isn't part of the rename (or can't be renamed itself). The row can be a file or a folder, hence “item”.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.missing": "This item was moved or deleted after Multi-rename opened, so it’s left out.",
   "@multiRename.reason.missing": {
-    "description": "Tooltip on the preview's \"gone\" symbol: the full reason behind multiRename.status.missing. \"Multi-rename\" is the tool's name; match multiRename.title. The row can be a file or a folder, hence “item”."
+    "description": "Tooltip on the preview's \"gone\" symbol: the full reason behind multiRename.status.missing. \"Multi-rename\" is the tool's name; match multiRename.title. The row can be a file or a folder, hence “item”.",
+    "visibility": "tooltip"
   },
   "multiRename.status.reading": "Reading…",
   "@multiRename.status.reading": {
@@ -520,14 +545,16 @@
     "description": "Tooltip on the preview's \"field missing\" symbol: the full reason behind multiRename.status.noValue. A field is a piece of the file's own information, like the date a photo was taken or a song's artist. The row can be a file or a folder, hence “item”.",
     "placeholders": {
       "field": "the field's name, like Artist or Camera"
-    }
+    },
+    "visibility": "tooltip"
   },
   "multiRename.reason.noDate": "This item has no “{field}” value, so it keeps its name. The placeholder’s editor can use the date the item was last changed instead.",
   "@multiRename.reason.noDate": {
     "description": "Tooltip on the preview's \"field missing\" symbol for a date field (like the date a photo was taken). The placeholder's editor opens from the placeholder in the name mask; it has a choice to fall back to the file's last-changed date. The row can be a file or a folder, hence “item”.",
     "placeholders": {
       "field": "the date field's name, like Date taken"
-    }
+    },
+    "visibility": "tooltip"
   },
   "multiRename.status.unreadable": "Can’t read tags",
   "@multiRename.status.unreadable": {
@@ -538,7 +565,8 @@
     "description": "Tooltip on the preview's \"can't read tags\" symbol: the full reason behind multiRename.status.unreadable. \"Multi-rename\" is the tool's name; match multiRename.title. Tags are a music or video file's artist, title, and so on; photo information is a photo's date taken, camera, and so on. The row can be a file or a folder: where your language’s word for “file” excludes folders, use a neutral word for the item, or restructure.",
     "placeholders": {
       "field": "the field's name, like Date taken or Artist"
-    }
+    },
+    "visibility": "tooltip"
   },
   "multiRename.mediaField.exifTaken": "Date taken",
   "@multiRename.mediaField.exifTaken": {
@@ -618,11 +646,13 @@
   },
   "multiRename.mediaPicker.title": "Insert a field",
   "@multiRename.mediaPicker.title": {
-    "description": "Accessible name of the Multi-rename field picker, a small popup listing the photo, video, and music fields (date taken, camera, artist, title, …) that can go into the new name. Also the accessible name of the button that opens it."
+    "description": "Accessible name of the Multi-rename field picker, a small popup listing the photo, video, and music fields (date taken, camera, artist, title, …) that can go into the new name. Also the accessible name of the button that opens it.",
+    "visibility": "screenReader"
   },
   "multiRename.mediaPicker.filter": "Filter fields",
   "@multiRename.mediaPicker.filter": {
-    "description": "Placeholder and accessible name of the field picker's filter box: typing narrows the list of fields."
+    "description": "Placeholder and accessible name of the field picker's filter box: typing narrows the list of fields.",
+    "visibility": "screenReader"
   },
   "multiRename.mediaPicker.photos": "Photos and videos (EXIF)",
   "@multiRename.mediaPicker.photos": {
@@ -652,19 +682,23 @@
     "description": "Spoken by screen readers after the field picker put a field into the name mask. The picker stays open for more.",
     "placeholders": {
       "field": "the field's name, like Date taken"
-    }
+    },
+    "visibility": "screenReader"
   },
   "multiRename.mediaPicker.insertedMark": "inserted",
   "@multiRename.mediaPicker.insertedMark": {
-    "description": "Screen-reader text after a field's name in the field picker, for a field already put into the name mask while the picker was open (shown as a check mark). Lowercase: read right after the name. The field names vary in grammatical gender, so if “inserted” would have to agree with one, a neutral form like “already in the mask” is fine."
+    "description": "Screen-reader text after a field's name in the field picker, for a field already put into the name mask while the picker was open (shown as a check mark). Lowercase: read right after the name. The field names vary in grammatical gender, so if “inserted” would have to agree with one, a neutral form like “already in the mask” is fine.",
+    "visibility": "screenReader"
   },
   "multiRename.mediaEditor.marker": "Edit field",
   "@multiRename.mediaEditor.marker": {
-    "description": "Accessible name of the small ▾ marker under a photo, video, or music field placeholder (like [=exif.taken:d]) in the Multi-rename name mask: it opens the field's editor."
+    "description": "Accessible name of the small ▾ marker under a photo, video, or music field placeholder (like [=exif.taken:d]) in the Multi-rename name mask: it opens the field's editor.",
+    "visibility": "screenReader"
   },
   "multiRename.mediaEditor.title": "Field",
   "@multiRename.mediaEditor.title": {
-    "description": "Accessible name of the small popup that edits a photo, video, or music field placeholder (like [=exif.taken:d]) in the Multi-rename name mask: its format, and for a date, what to use when a file has none."
+    "description": "Accessible name of the small popup that edits a photo, video, or music field placeholder (like [=exif.taken:d]) in the Multi-rename name mask: its format, and for a date, what to use when a file has none.",
+    "visibility": "screenReader"
   },
   "multiRename.mediaEditor.format": "Format",
   "@multiRename.mediaEditor.format": {
@@ -676,7 +710,8 @@
   },
   "multiRename.mediaEditor.presets": "Common formats",
   "@multiRename.mediaEditor.presets": {
-    "description": "Accessible name of the row of format buttons in a date field's editor (Date and time, Date, Time, Compact)."
+    "description": "Accessible name of the row of format buttons in a date field's editor (Date and time, Date, Time, Compact).",
+    "visibility": "screenReader"
   },
   "multiRename.mediaEditor.preset.dateTime": "Date and time",
   "@multiRename.mediaEditor.preset.dateTime": {
@@ -752,30 +787,36 @@
   },
   "multiRename.reason.empty": "The new name is empty.",
   "@multiRename.reason.empty": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the masks produce an empty name."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the masks produce an empty name.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.tooLong": "The new name is too long for a filename.",
   "@multiRename.reason.tooLong": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is longer than a filename may be."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is longer than a filename may be.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.reserved": "“.” and “..” can’t be filenames.",
   "@multiRename.reason.reserved": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is \".\" or \"..\", which name a folder itself and its parent. Keep both dot names exactly as they are."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is \".\" or \"..\", which name a folder itself and its parent. Keep both dot names exactly as they are.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.disallowedCharacter": "Filenames can’t contain {character}.",
   "@multiRename.reason.disallowedCharacter": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character filenames can't have, such as a slash. {character} is that character."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name holds a character filenames can't have, such as a slash. {character} is that character.",
+    "visibility": "tooltip"
   },
   "multiRename.reason.reservedDeviceName": "“{name}” is reserved by Windows, so this drive can’t use it as a name.",
   "@multiRename.reason.reservedDeviceName": {
     "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name is one Windows keeps for devices, on a network share or a Windows-formatted drive. {name} is the reserved part as typed, like \"CON\". Keep \"Windows\" as is.",
     "placeholders": {
       "name": "the reserved part of the new name, like \"CON\" or \"nul\""
-    }
+    },
+    "visibility": "tooltip"
   },
   "multiRename.reason.endsWithSpaceOrPeriod": "This drive can’t store a name that ends with a space or a period.",
   "@multiRename.reason.endsWithSpaceOrPeriod": {
-    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name ends with a space or a period and the folder is on a Windows-formatted drive (FAT32, exFAT, NTFS)."
+    "description": "Tooltip on the preview's \"not a valid name\" symbol when the new name ends with a space or a period and the folder is on a Windows-formatted drive (FAT32, exFAT, NTFS).",
+    "visibility": "tooltip"
   },
   "multiRename.selectionChanged": "The folder changed while Multi-rename was opening. Check your selection, then try again.",
   "@multiRename.selectionChanged": {
@@ -795,11 +836,13 @@
   },
   "multiRename.counterEditor.marker": "Edit counter",
   "@multiRename.counterEditor.marker": {
-    "description": "Accessible name (read by screen readers) of the small ▾ button drawn right after each counter placeholder [C] in the Multi-rename mask field. Clicking it opens a popover that edits one counter placeholder ([C], or [C10+5:3] with its own start, step, and digits) in the Multi-rename name or extension mask. It opens from a small ▾ after the placeholder, or with the down arrow key while the text cursor is in it. A VERB phrase."
+    "description": "Accessible name (read by screen readers) of the small ▾ button drawn right after each counter placeholder [C] in the Multi-rename mask field. Clicking it opens a popover that edits one counter placeholder ([C], or [C10+5:3] with its own start, step, and digits) in the Multi-rename name or extension mask. It opens from a small ▾ after the placeholder, or with the down arrow key while the text cursor is in it. A VERB phrase.",
+    "visibility": "screenReader"
   },
   "multiRename.counterEditor.title": "Counter",
   "@multiRename.counterEditor.title": {
-    "description": "Accessible name of the small popover that edits one counter placeholder ([C], or [C10+5:3] with its own start, step, and digits) in the Multi-rename name or extension mask. It opens from a small ▾ after the placeholder, or with the down arrow key while the text cursor is in it. A NOUN: the counter that numbers the renamed files."
+    "description": "Accessible name of the small popover that edits one counter placeholder ([C], or [C10+5:3] with its own start, step, and digits) in the Multi-rename name or extension mask. It opens from a small ▾ after the placeholder, or with the down arrow key while the text cursor is in it. A NOUN: the counter that numbers the renamed files.",
+    "visibility": "screenReader"
   },
   "multiRename.counterEditor.start": "Start",
   "@multiRename.counterEditor.start": {
@@ -825,62 +868,74 @@
   "multiRename.placeholderHelp.name": "The file’s name, without its extension",
   "@multiRename.placeholderHelp.name": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [N] placeholder stands for. A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.extension": "The file’s current extension",
   "@multiRename.placeholderHelp.extension": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [E] placeholder stands for, for example “pdf”. A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.parent": "The name of the folder the file is in",
   "@multiRename.placeholderHelp.parent": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [P] placeholder stands for. A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counter": "A number that goes up by one step per file, in the list’s order",
   "@multiRename.placeholderHelp.counter": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [C] counter placeholder stands for. A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.date": "The date the file was last changed: year, month, and day",
   "@multiRename.placeholderHelp.date": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [YMD] placeholder stands for (the modification date, as 20261009). A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.time": "The time the file was last changed: hours, minutes, and seconds",
   "@multiRename.placeholderHelp.time": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). What the [hms] placeholder stands for (the modification time, as 143207). A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.media": "A photo’s, video’s, or song’s own information: EXIF, ID3, MP4, FLAC, Ogg, and more",
   "@multiRename.placeholderHelp.media": {
     "description": "Head line of the tooltip on the Multi-rename “media ▾” button (multiRename.mediaButton), after the placeholder form [=…]: these placeholders put information stored inside the file (a photo's date taken and camera, a song's artist and title) into the new name. Keep the format names EXIF, ID3, MP4, FLAC, and Ogg as is: people search for them.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.mediaTaken": "The date a photo or video was taken",
   "@multiRename.placeholderHelp.mediaTaken": {
     "description": "In the “media ▾” button's tooltip, beside the form [=exif.taken:d]: what it puts in the name. An example follows.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.mediaFallback": "With the date the file was last changed for one without it",
   "@multiRename.placeholderHelp.mediaFallback": {
     "description": "In the “media ▾” button's tooltip, beside the form [=exif.taken|modified:YMD_hms]: the date taken, and for a file that has none, the date it was last changed instead. An example follows.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.mediaCamera": "The camera’s maker and model",
   "@multiRename.placeholderHelp.mediaCamera": {
     "description": "In the “media ▾” button's tooltip, beside the form [=exif.camera]: what it puts in the name, like “Apple iPhone 15 Pro”. An example follows.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.mediaSong": "A song’s track number, artist, and title",
   "@multiRename.placeholderHelp.mediaSong": {
     "description": "In the “media ▾” button's tooltip, beside the mask [=tag.track:2] [=tag.artist] - [=tag.title]: what it puts in the name, like “03 Daft Punk - Digital Love”. An example follows.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.mediaHint": "Click to pick from every field, each with its value on your files.",
   "@multiRename.placeholderHelp.mediaHint": {
     "description": "Last line of the “media ▾” button's tooltip: clicking the button opens a list of every photo, video, and music field, each showing what it holds in the files being renamed.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.oneChar": "Character {at} alone",
   "@multiRename.placeholderHelp.oneChar": {
@@ -888,7 +943,8 @@
     "placeholders": {
       "at": "the character’s position, counted from 1 (e.g. 3)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.charRange": "Characters {from} to {to}",
   "@multiRename.placeholderHelp.charRange": {
@@ -897,7 +953,8 @@
       "from": "the first position taken (e.g. 2)",
       "to": "the last position taken (e.g. 5)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.allButLast": "{count, plural, one {All but the last character} other {All but the last # characters}}",
   "@multiRename.placeholderHelp.allButLast": {
@@ -905,7 +962,8 @@
     "placeholders": {
       "count": "how many characters at the end are left out (e.g. 1)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.charsFrom": "{count, plural, one {# character} other {# characters}}, starting at character {from}",
   "@multiRename.placeholderHelp.charsFrom": {
@@ -914,7 +972,8 @@
       "count": "how many characters are taken (e.g. 3)",
       "from": "the position of the first one, counted from 1 (e.g. 7)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.lastChars": "{count, plural, one {The last character} other {The last # characters}}",
   "@multiRename.placeholderHelp.lastChars": {
@@ -922,12 +981,14 @@
     "placeholders": {
       "count": "how many characters from the end (e.g. 3)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.firstChar": "The first character alone",
   "@multiRename.placeholderHelp.firstChar": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of a form like [E1]: only the first character.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.firstChars": "{count, plural, one {The first character} other {The first # characters}}",
   "@multiRename.placeholderHelp.firstChars": {
@@ -935,12 +996,14 @@
     "placeholders": {
       "count": "how many characters from the start (e.g. 3)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.grandparent": "The name of the folder above the file’s folder",
   "@multiRename.placeholderHelp.grandparent": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of [G]: the folder that holds the file’s folder (the grandparent folder). A noun phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counterStart": "Starts at {start}",
   "@multiRename.placeholderHelp.counterStart": {
@@ -948,7 +1011,8 @@
     "placeholders": {
       "start": "the first number (e.g. 10)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counterStep": "Goes up by {step} each time",
   "@multiRename.placeholderHelp.counterStep": {
@@ -956,7 +1020,8 @@
     "placeholders": {
       "step": "how much the number grows per file (e.g. 5)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counterDigits": "{digits, plural, one {At least # digit} other {At least # digits}}, with leading zeros",
   "@multiRename.placeholderHelp.counterDigits": {
@@ -964,42 +1029,50 @@
     "placeholders": {
       "digits": "the minimum number of digits (e.g. 3)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counterAll": "All three at once; a minus step counts down",
   "@multiRename.placeholderHelp.counterAll": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of a counter form like [C10-1:2] that sets the start, the step, and the digits together; a step with a minus sign makes the numbers go down.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.isoDate": "The whole date, with dashes",
   "@multiRename.placeholderHelp.isoDate": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of the [d] form: year-month-day separated by dashes, like 2026-10-09.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.dateSeparators": "Any parts, with dashes, dots, underscores, or spaces between them",
   "@multiRename.placeholderHelp.dateSeparators": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of a form like [Y-M-D h.m.s]: the date and time letters (Y, M, D, h, m, s) can be combined in any order inside one placeholder, with dashes (-), dots (.), underscores (_), or spaces between them, each kept as typed (2026-07-14 09.05.30). Colons and slashes aren’t allowed.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.shortYear": "With a two-digit year",
   "@multiRename.placeholderHelp.shortYear": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of the [yMD] form: like [YMD] but the year has two digits (26 for 2026).",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.datePart": "The day alone; [Y] and [M] work the same way",
   "@multiRename.placeholderHelp.datePart": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of the [D] form: only the day of the month. [Y] and [M] are the placeholders for the year and the month alone; keep them as they are.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.dottedTime": "The whole time, with dots",
   "@multiRename.placeholderHelp.dottedTime": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of the [t] form: hours.minutes.seconds separated by dots, like 14.32.07.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.hoursMinutes": "Hours and minutes only",
   "@multiRename.placeholderHelp.hoursMinutes": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Meaning of the [hm] form: the time without seconds.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.forFile": "For “{file}”:",
   "@multiRename.placeholderHelp.forFile": {
@@ -1015,22 +1088,26 @@
     "placeholders": {
       "date": "the made-up file’s date and time (2026-07-14 09:05:30)"
     },
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.forFirstFiles": "For the first three files:",
   "@multiRename.placeholderHelp.forFirstFiles": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Leads the example line of the counter placeholder: the numbers the first three files get.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.placeholderHelp.counterEditHint": "Put the caret in a counter or point at it to change its numbers.",
   "@multiRename.placeholderHelp.counterEditHint": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Last line of the counter placeholder’s tooltip: a counter in the mask opens a small editor for its start, step, and digits when the text cursor is inside it or the mouse rests on it.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   },
   "multiRename.rangeEditor.marker": "Choose characters",
   "@multiRename.rangeEditor.marker": {
     "description": "In the Multi-rename sheet, the range editor is a small popover under a range placeholder such as [N], [N2-5], or [E] in the name or extension mask (it opens with the down arrow key while the text cursor is in the placeholder, or when the text cursor or the mouse rests on it). It shows one file’s name (or extension, or folder name) in a read-only text box, where the user selects the characters that go into the new name, with options for how the placeholder counts them and a few files showing what it takes from each. Accessible name (read by screen readers) of the small ▾ button drawn under each range placeholder; it opens the range editor. A VERB phrase.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "multiRename.rangeEditor.title": "Characters to take",
   "@multiRename.rangeEditor.title": {
@@ -1181,6 +1258,7 @@
   "multiRename.placeholderHelp.rangeEditHint": "Put the caret in a placeholder like [N] and press ↓ to choose its characters.",
   "@multiRename.placeholderHelp.rangeEditHint": {
     "description": "In the Multi-rename sheet, a tooltip on a placeholder button (such as [N], [E], or [C]) explains what that placeholder puts in the new name, lists a few of its other forms, and shows each with an example on a made-up file (Beach day.jpg, in the folder Trips/Lisbon 2026, last changed 2026-07-14 09:05:30). Last line of the [N], [E], and [P] tooltips: with the text cursor in such a placeholder in the mask, the down arrow key opens a small editor to pick which characters it takes. Keep [N] and ↓ as they are.",
-    "screenshot": "multi-rename.png"
+    "screenshot": "multi-rename.png",
+    "visibility": "tooltip"
   }
 }

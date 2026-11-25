@@ -19,8 +19,8 @@ Per catalog area, each renderable key is one of these:
 
 Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 
-**Total: 4279 / 6207 keys have a screenshot (69%):** 2151 direct (35%), 1934 representative (31%), and 194 not shown
-(3%). 1732 remain uncoupled, and 196 are native surfaces a webview capture cannot reach.
+**Total: 4282 / 6220 keys have a screenshot (69%):** 2124 direct (34%), 1940 representative (31%), and 218 not shown
+(4%). 1741 remain uncoupled, and 197 are native surfaces a webview capture cannot reach.
 
 | Area            | Direct | Representative | Not shown | Uncoupled | Native | Total | Any % |
 | --------------- | -----: | -------------: | --------: | --------: | -----: | ----: | ----: |
@@ -29,40 +29,40 @@ Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 | ai              |      1 |            159 |         0 |         0 |      0 |   160 |  100% |
 | askCmdr         |    176 |            319 |         3 |        47 |      0 |   545 |   91% |
 | commandPalette  |      3 |              2 |         0 |         2 |      0 |     7 |   71% |
-| commands        |    248 |              5 |         1 |        86 |      0 |   340 |   75% |
+| commands        |    248 |              5 |         1 |        87 |      0 |   341 |   74% |
 | common          |      8 |              1 |         1 |         9 |      0 |    19 |   53% |
 | crashReporter   |     12 |             11 |         0 |         0 |      0 |    23 |  100% |
 | downloads       |      9 |              6 |         0 |        21 |      0 |    36 |   42% |
 | errorReporter   |     12 |              0 |         4 |        43 |      0 |    59 |   27% |
-| errors          |    189 |            503 |         0 |         0 |      0 |   692 |  100% |
+| errors          |    189 |            504 |         0 |         0 |      0 |   693 |  100% |
 | feedback        |      8 |              6 |         0 |         2 |      0 |    16 |   88% |
-| fileExplorer    |    150 |             85 |        11 |       363 |      0 |   609 |   40% |
-| fileOperations  |    130 |            101 |         6 |       128 |      0 |   365 |   65% |
+| fileExplorer    |    150 |             85 |        11 |       370 |      0 |   616 |   40% |
+| fileOperations  |    129 |            101 |         7 |       128 |      0 |   365 |   65% |
 | goToPath        |      5 |              7 |         0 |         2 |      0 |    14 |   86% |
 | indexing        |     34 |             18 |         0 |        18 |      0 |    70 |   74% |
 | licensing       |     53 |             36 |         1 |        26 |      0 |   116 |   78% |
 | lowDiskSpace    |      0 |              0 |         0 |         5 |      0 |     5 |    0% |
 | main            |      7 |              0 |         0 |        57 |      2 |    66 |   11% |
-| menu            |      4 |              0 |         1 |         0 |    194 |   199 |    3% |
+| menu            |      4 |              0 |         1 |         0 |    195 |   200 |    3% |
 | mtp             |     18 |              3 |         0 |         0 |      0 |    21 |  100% |
-| multiRename     |     83 |              0 |         7 |       146 |      0 |   236 |   38% |
+| multiRename     |     78 |              0 |        12 |       146 |      0 |   236 |   38% |
 | notifications   |      0 |              0 |         0 |         1 |      0 |     1 |    0% |
-| onboarding      |     83 |             45 |        11 |        25 |      0 |   164 |   85% |
+| onboarding      |     81 |             46 |        12 |        25 |      0 |   164 |   85% |
 | operationLog    |     30 |             83 |         0 |         0 |      0 |   113 |  100% |
 | queryUi         |     36 |            130 |         0 |         0 |      0 |   166 |  100% |
-| queue           |     23 |             21 |         0 |         5 |      0 |    49 |   90% |
+| queue           |     22 |             21 |         1 |         5 |      0 |    49 |   90% |
 | search          |      8 |             54 |         0 |         0 |      0 |    62 |  100% |
 | securityNotices |      0 |              0 |         0 |        16 |      0 |    16 |    0% |
 | selection       |     12 |              0 |         2 |         1 |      0 |    15 |   93% |
 | servers         |     73 |             90 |        15 |        59 |      0 |   237 |   75% |
-| settings        |    379 |             51 |       102 |       410 |      0 |   942 |   56% |
+| settings        |    364 |             51 |       117 |       411 |      0 |   943 |   56% |
 | shortcuts       |     37 |             45 |         0 |         0 |      0 |    82 |  100% |
 | stateRecovery   |      0 |              0 |         0 |        33 |      0 |    33 |    0% |
-| suggestedOps    |     70 |              0 |        16 |        27 |      0 |   113 |   76% |
+| suggestedOps    |     69 |              0 |        17 |        27 |      0 |   113 |   76% |
 | transfer        |      2 |             22 |         0 |         0 |      0 |    24 |  100% |
 | ui              |     38 |              0 |         2 |        35 |      0 |    75 |   53% |
-| updates         |      6 |             27 |         0 |         0 |      0 |    33 |  100% |
-| viewer          |     27 |            103 |         0 |         0 |      0 |   130 |  100% |
+| updates         |      6 |             29 |         0 |         0 |      0 |    35 |  100% |
+| viewer          |     25 |            105 |         0 |         0 |      0 |   130 |  100% |
 | whatsNew        |      7 |              1 |         1 |         2 |      0 |    11 |   82% |
 
 ## Surfaces to review

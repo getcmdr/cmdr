@@ -44,7 +44,8 @@
   },
   "adb.readiness.waitingForAuthorization": "Waiting for you to tap Allow on your phone",
   "@adb.readiness.waitingForAuthorization": {
-    "description": "Hover tooltip on a phone's row in the volume switcher (the dropdown listing disks and devices) while the phone is showing its \"Allow USB debugging?\" prompt. The row still opens; this says what has to happen first, naming WHERE the user acts (their phone) and WHAT they press. \"Allow\" is the button on ANDROID's own prompt: render it exactly as Android's own translation of that button reads in your language, so the user can match the word on their screen."
+    "description": "Hover tooltip on a phone's row in the volume switcher (the dropdown listing disks and devices) while the phone is showing its \"Allow USB debugging?\" prompt. The row still opens; this says what has to happen first, naming WHERE the user acts (their phone) and WHAT they press. \"Allow\" is the button on ANDROID's own prompt: render it exactly as Android's own translation of that button reads in your language, so the user can match the word on their screen.",
+    "visibility": "tooltip"
   },
   "adb.readiness.tapAllow": "Tap Allow on your phone",
   "@adb.readiness.tapAllow": {
@@ -56,11 +57,13 @@
   },
   "adb.readiness.offline": "Your phone isn’t responding. Wake its screen, or reseat the cable.",
   "@adb.readiness.offline": {
-    "description": "Hover tooltip on a phone's row in the volume switcher while the row is greyed out and cannot be opened, because the phone is listed but silent. Says the two things that usually fix it. Address the user directly."
+    "description": "Hover tooltip on a phone's row in the volume switcher while the row is greyed out and cannot be opened, because the phone is listed but silent. Says the two things that usually fix it. Address the user directly.",
+    "visibility": "tooltip"
   },
   "adb.readiness.noPermissions": "{platform, select, macos {This Mac can’t reach your phone over USB. Try another cable or port.} windows {This PC can’t reach your phone over USB. Try another cable or port.} other {This computer can’t reach your phone over USB. Try another cable or port.}}",
   "@adb.readiness.noPermissions": {
-    "description": "Hover tooltip on a phone's row in the volume switcher while the row is greyed out, because this computer isn't allowed to claim the phone's USB connection. About this computer, never about the phone's own settings."
+    "description": "Hover tooltip on a phone's row in the volume switcher while the row is greyed out, because this computer isn't allowed to claim the phone's USB connection. About this computer, never about the phone's own settings.",
+    "visibility": "tooltip"
   },
   "adb.hint.text": "Want the whole filesystem? Turn on USB debugging.",
   "@adb.hint.text": {
@@ -75,25 +78,29 @@
   "adb.hint.dismiss": "Dismiss",
   "@adb.hint.dismiss": {
     "description": "Accessible name of the small × button that hides that line for good. Screen readers only; not visible. VERB, imperative.",
-    "screenshot": "mtp-browse.png"
+    "screenshot": "mtp-browse.png",
+    "visibility": "screenReader"
   },
   "adb.disconnectDeviceAriaLabel": "Disconnect {name}",
   "@adb.disconnectDeviceAriaLabel": {
     "description": "Accessible name and hover tooltip of the button on a phone's row in the volume switcher that closes the phone. VERB phrase, imperative. It says Disconnect rather than Eject because nothing is made safe to unplug: the phone stays on the cable.",
     "placeholders": {
       "name": "the device's name, for example Pixel 7"
-    }
+    },
+    "visibility": "screenReader"
   },
   "adb.disconnectBusyTooltip": "Cmdr is still working with files on this device. You can disconnect it once that’s done.",
   "@adb.disconnectBusyTooltip": {
-    "description": "Accessible name and hover tooltip on that Disconnect button while it is greyed out, because a file operation is still copying to or from the phone. States the reason and when the button comes back, never blames the user. “Disconnect” means the person disconnects the device with this button (Cmdr ends its connection to the phone), so use the transitive verb with the device as its object. Keep it in step with fileExplorer.navigation.disconnectBusyTooltip and fileExplorer.navigation.ejectBusyTooltip."
+    "description": "Accessible name and hover tooltip on that Disconnect button while it is greyed out, because a file operation is still copying to or from the phone. States the reason and when the button comes back, never blames the user. “Disconnect” means the person disconnects the device with this button (Cmdr ends its connection to the phone), so use the transitive verb with the device as its object. Keep it in step with fileExplorer.navigation.disconnectBusyTooltip and fileExplorer.navigation.ejectBusyTooltip.",
+    "visibility": "tooltip"
   },
   "adb.disconnectingDeviceAriaLabel": "Disconnecting {name}…",
   "@adb.disconnectingDeviceAriaLabel": {
     "description": "Accessible name and hover tooltip on that Disconnect button while the disconnect is still running: the button shows a spinner and can't be pressed until it finishes. Present progressive, describing work underway, not a command. It says Disconnecting rather than Ejecting for the same reason the button says Disconnect. Keep the trailing ellipsis character.",
     "placeholders": {
       "name": "the device's name, for example Pixel 7"
-    }
+    },
+    "visibility": "screenReader"
   },
   "adb.volumeLabelWithSuffix": "{deviceName} (ADB)",
   "@adb.volumeLabelWithSuffix": {

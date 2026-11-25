@@ -111,7 +111,8 @@
   "@mtp.readiness.connectingTooltip": {
     "description": "Hover tooltip on that same greyed-out row. Says why the row can't be opened yet and that nothing else is needed: retrying is automatic and goes on until the phone is unplugged. \"Cmdr\" is the product name; \"it\" is the phone.",
     "screenshot": "mtp-browse.png",
-    "screenshotNote": "MTP (phone/camera) device messaging: a connect/permission dialog or toast tied to an MTP device. This shows the MTP browse surface for context. Keep device/protocol names (MTP, PTP) as-is."
+    "screenshotNote": "MTP (phone/camera) device messaging: a connect/permission dialog or toast tied to an MTP device. This shows the MTP browse surface for context. Keep device/protocol names (MTP, PTP) as-is.",
+    "visibility": "tooltip"
   },
   "mtp.deviceFallbackName": "MTP device",
   "@mtp.deviceFallbackName": {

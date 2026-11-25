@@ -100,7 +100,7 @@
   "commands.helpAccessibility.label": "Accessibility guide",
   "@commands.helpAccessibility.label": {
     "description": "Command name that opens the web page describing Cmdr's accessibility features (VoiceOver, keyboard use, text size, motion) and how to get help. Appears in the command palette and the Help menu. Use the standard term for accessibility in this language, the one macOS uses in System Settings.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-2.png"
   },
   "commands.helpAccessibility.description": "Opens the guide to Cmdr’s accessibility features on getcmdr.com",
   "@commands.helpAccessibility.description": {
@@ -370,7 +370,7 @@
   "commands.paneFocusControls.label": "Move focus to the pane controls",
   "@commands.paneFocusControls.label": {
     "description": "Command name that moves keyboard focus from the file list to the focused pane's controls: its tabs, its location bar (the volume button and the folder path), and its column sort buttons. Mostly for keyboard-only and screen-reader users. \"Pane\" is one of the two side-by-side file lists. Appears in the command palette and the keyboard shortcuts settings. Mirrors macOS's \"Move focus to the window toolbar\" wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.paneFocusControls.description": "Moves keyboard focus to the focused pane’s tabs, location bar, and sort buttons. Arrow keys move between them, and Escape takes you back to the files.",
   "@commands.paneFocusControls.description": {
@@ -379,7 +379,7 @@
   "commands.appFocusNotifications.label": "Move focus to the notifications",
   "@commands.appFocusNotifications.label": {
     "description": "Command name that moves keyboard focus to the newest notification (the small message boxes that pop up at the top right of the window, like \"Moved 3 files to the trash\" with its Undo button). Mostly for keyboard-only and screen-reader users. Appears in the command palette and the keyboard shortcuts settings. Mirrors macOS's \"Move focus to the floating window\" wording.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts-page-5.png"
   },
   "commands.appFocusNotifications.description": "Moves keyboard focus to the notifications and their buttons, like Undo. Arrow keys move between them, and Escape takes you back.",
   "@commands.appFocusNotifications.description": {
@@ -1322,7 +1322,7 @@
       "extension": "the extension with no leading dot, lowercased, e.g. \"pdf\" or \"gz\""
     },
     "screenshot": "command-palette.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "commands.selectionSelectSameKind.noExtension": "Select all files with no extension",
   "@commands.selectionSelectSameKind.noExtension": {

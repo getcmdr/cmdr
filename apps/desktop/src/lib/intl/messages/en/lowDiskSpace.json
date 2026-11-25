@@ -15,7 +15,8 @@
 
   "lowDiskSpace.toast.closeTooltip": "Dismiss",
   "@lowDiskSpace.toast.closeTooltip": {
-    "description": "Tooltip on the small close (x) button of the low-disk-space warning toast. A short verb."
+    "description": "Tooltip on the small close (x) button of the low-disk-space warning toast. A short verb.",
+    "visibility": "tooltip"
   },
 
   "lowDiskSpace.notification.title": "Low disk space",

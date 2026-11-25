@@ -67,12 +67,13 @@
   "@licensing.acknowledgements.loading": {
     "description": "Shown with a spinner for the moment it takes to load the dependency list after the Acknowledgements dialog opens.",
     "screenshot": "acknowledgements.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "licensing.about.srTitle": "About Cmdr",
   "@licensing.about.srTitle": {
     "description": "Visually-hidden accessible title of the About dialog, read by screen readers. The dialog has no visible title; the app name below serves as the visual heading. 'Cmdr' is the product name and must NOT be translated. Deliberately the same words as menu.app.about, the menu item that opens this window: keep the two identical.",
-    "screenshot": "about.png"
+    "screenshot": "about.png",
+    "visibility": "screenReader"
   },
   "licensing.about.appName": "Cmdr",
   "@licensing.about.appName": {

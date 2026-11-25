@@ -82,7 +82,8 @@
   "@ai.toast.downloadCloseTooltip": {
     "description": "Tooltip on the × of the AI download toast, clarifying that hiding the toast does not stop the download.",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "tooltip"
   },
   "ai.translateError.off.title": "AI is turned off",
   "@ai.translateError.off.title": {
@@ -529,7 +530,8 @@
   "@ai.cloud.serviceAria": {
     "description": "aria-label for the dropdown that picks which cloud AI service (provider) to use, in Settings > AI.",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "screenReader"
   },
   "ai.cloud.apiKeyPlaceholderAnthropic": "Example: sk-ant-abc123…",
   "@ai.cloud.apiKeyPlaceholderAnthropic": {
@@ -715,19 +717,22 @@
   "@ai.local.memoryWarningAria": {
     "description": "aria-label for the warning icon shown next to the local AI context-size Apply button when the projected memory use is high.",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "screenReader"
   },
   "ai.local.warningDanger": "This exceeds your available memory. Your system may slow down significantly.",
   "@ai.local.warningDanger": {
     "description": "Tooltip on the local AI memory warning icon at the danger level (projected use exceeds available RAM).",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "tooltip"
   },
   "ai.local.warningCaution": "This uses most of your available memory. Other apps may slow down.",
   "@ai.local.warningCaution": {
     "description": "Tooltip on the local AI memory warning icon at the caution level (projected use is most of available RAM).",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "tooltip"
   },
   "ai.local.statusRestarting": "Restarting…",
   "@ai.local.statusRestarting": {
@@ -854,7 +859,8 @@
   "@ai.local.ramGaugeAria": {
     "description": "aria-label for the horizontal bar visualizing how local AI memory use fits within total system RAM.",
     "screenshot": "settings-ai-provider.png",
-    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context.",
+    "visibility": "screenReader"
   },
   "ai.local.ramLegendSystem": "System {size}",
   "@ai.local.ramLegendSystem": {

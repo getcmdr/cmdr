@@ -70,6 +70,9 @@ import {
   type ShowsVerdict,
   NOT_SHOWN_NOTE,
   TRUST_EVERY_SURFACE,
+  VISIBILITIES,
+  type Visibility,
+  isVisibility,
   couplingsFromReport,
   ocrVerdict,
   placeKeys,
@@ -190,6 +193,8 @@ export type StructuralFinding =
   | { kind: 'unknownScreenshot'; key: string; screenshot: string }
   /** A representative rule every key of which has its own capture, so it stands in for nothing. */
   | { kind: 'redundantRule'; prefix: string; keys: number }
+  /** A `@key.visibility` that isn't one of `VISIBILITIES`. */
+  | { kind: 'invalidVisibility'; key: string; value: string }
 
 /** `--check` exit code when the worst finding only warns (stale couplings, a redundant rule). */
 export const CHECK_EXIT_WARN = 20
@@ -451,12 +456,14 @@ function readCatalogs(messagesDir: string): {
   keysByArea: Map<string, string[]>
   screenshotByKey: Map<string, string>
   english: Record<string, string>
-  descriptions: Record<string, string>
+  visibility: Map<string, Visibility>
+  invalidVisibility: StructuralFinding[]
 } {
   const keysByArea = new Map<string, string[]>()
   const screenshotByKey = new Map<string, string>()
   const english: Record<string, string> = {}
-  const descriptions: Record<string, string> = {}
+  const visibility = new Map<string, Visibility>()
+  const invalidVisibility: StructuralFinding[] = []
   for (const name of readdirSync(messagesDir)) {
     if (!name.endsWith('.json')) continue
     const json = JSON.parse(readFileSync(join(messagesDir, name), 'utf8')) as Record<string, unknown>
@@ -469,12 +476,15 @@ function readCatalogs(messagesDir: string): {
     }
     for (const [metaKey, meta] of Object.entries(json)) {
       if (!metaKey.startsWith('@') || typeof meta !== 'object' || meta === null) continue
-      const { screenshot, description } = meta as { screenshot?: unknown; description?: unknown }
+      const { screenshot, visibility: declared } = meta as { screenshot?: unknown; visibility?: unknown }
       if (typeof screenshot === 'string') screenshotByKey.set(metaKey.slice(1), screenshot)
-      if (typeof description === 'string') descriptions[metaKey.slice(1)] = description
+      if (isVisibility(declared)) visibility.set(metaKey.slice(1), declared)
+      else if (declared !== undefined) {
+        invalidVisibility.push({ kind: 'invalidVisibility', key: metaKey.slice(1), value: JSON.stringify(declared) })
+      }
     }
   }
-  return { keysByArea, screenshotByKey, english, descriptions }
+  return { keysByArea, screenshotByKey, english, visibility, invalidVisibility }
 }
 
 /** Groups key→coupling pairs by their catalog file, so each file is read/written once. */
@@ -573,6 +583,8 @@ function describeFinding(finding: StructuralFinding): string {
       return `representative rule \`${finding.prefix}\` points at ${finding.screenshot}, which \`capture-report.json\` doesn't have, so it couples nothing; aim it at a captured surface`
     case 'unknownScreenshot':
       return `${finding.key} names ${finding.screenshot}, which \`capture-report.json\` doesn't have; run \`pnpm i18n:couple\``
+    case 'invalidVisibility':
+      return `${finding.key} has \`visibility\` ${finding.value}, which isn't one of ${VISIBILITIES.map((v) => `"${v}"`).join(', ')}; fix it in its \`@key\` twin`
     case 'redundantRule':
       return `representative rule \`${finding.prefix}\` stands in for nothing: all ${String(finding.keys)} key(s) it reaches have their own capture; consider deleting it`
   }
@@ -616,7 +628,7 @@ function main() {
   const report = JSON.parse(readFileSync(reportPath, 'utf8')) as CaptureReport
 
   // Every renderable catalog key (for the representative pass + coverage).
-  const { keysByArea, screenshotByKey, english, descriptions } = readCatalogs(messagesDir)
+  const { keysByArea, screenshotByKey, english, visibility, invalidVisibility } = readCatalogs(messagesDir)
   const allKeys = [...keysByArea.values()].flat()
   // Screenshots the capture run actually produced (a representative may only
   // point at one of these, never at a missing image).
@@ -634,7 +646,7 @@ function main() {
     : refreshOcrText(screenshotsDir, [...capturedScreenshots], trackedOcr, (line) => {
         console.log(`[ocr] ${line}`)
       })
-  const shows = ocrVerdict(ocrText, english, descriptions)
+  const shows = ocrVerdict(ocrText, english, visibility)
   const placed = placeKeys(report, shows)
   const { byKey, directKeys, representativeKeys, notShownKeys } = buildCouplings(
     placed.shown,
@@ -659,7 +671,10 @@ function main() {
   if (checkOnly) {
     // Read against the catalogs as committed: a screenshot the report lacks is a
     // break for as long as a twin still names it.
-    const findings = findStructuralProblems(report, allKeys, screenshotByKey, REPRESENTATIVE_SCREENSHOTS, shows)
+    const findings = [
+      ...findStructuralProblems(report, allKeys, screenshotByKey, REPRESENTATIVE_SCREENSHOTS, shows),
+      ...invalidVisibility,
+    ]
     // Removed keys ride along in the summary but never raise the exit code on
     // their own: only a fresh capture clears them, and that's an E2E run.
     const exitCode = checkExitCode(findings, staleForCheck.length)
@@ -684,7 +699,11 @@ function main() {
 
   // This run just rewrote every twin from the report, so only the rules can still
   // be broken; a finding here doesn't stop the write, it tells the person running it.
-  printFindings(findStructuralProblems(report, allKeys, new Map(), REPRESENTATIVE_SCREENSHOTS, shows), [], removedKeys)
+  printFindings(
+    [...findStructuralProblems(report, allKeys, new Map(), REPRESENTATIVE_SCREENSHOTS, shows), ...invalidVisibility],
+    [],
+    removedKeys,
+  )
   writeFileSync(ocrPath, JSON.stringify(ocrText, null, 2) + '\n')
 
   console.log(

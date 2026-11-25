@@ -33,15 +33,15 @@ JSON message catalogs, one file per feature area, under `en/` plus one dir per t
 - **A `<tag>` name must never equal a param name in the same message.** `Trans.svelte` merges the tag snippets into the
   interpolation params, so a shared name resolves to the tag handler and the sentence renders a stringified function
   instead of the value. Name the tag for its role, the param for its content: `<processName>{process}</processName>`.
-  Enforced by `i18n-tag-param-collision` (ERROR): nothing else catches it, since the message is valid ICU and renders
-  without throwing.
+  Enforced by `i18n-tag-param-collision` (ERROR): the message is valid ICU and renders without throwing.
 - **Embed counts as preformatted `*Text` STRING params, not ICU `{n, number}`** (formatting is single-sourced in
   `#lib/intl`). Pass the raw integer alongside ONLY to drive `plural` selection. See `transfer.json`.
 - **`@key` metadata is ARB-style sibling entries** (`@transfer.trash`), holding `description` + a `placeholders` map +
-  optional `screenshot`. Codegen and runtime strip every `@` entry, so it never reaches `format()`; keep the twin in
-  sync on a rename. **Write the `description` to set a translator up for excellence** (surface + trigger + constraints +
-  do-not-translate tokens; plain-language placeholder meanings; NO ICU plumbing, NO tone, which lives in the
-  per-language style guide). Every key SHOULD carry one. Litmus test: `DETAILS.md` § `@key` metadata schema.
+  optional `screenshot`, and `visibility` on an off-screen key. Codegen and runtime strip every `@` entry, so it never
+  reaches `format()`; keep the twin in sync on a rename. **Write the `description` to set a translator up for
+  excellence** (surface + trigger + constraints + do-not-translate tokens; plain-language placeholder meanings; NO ICU
+  plumbing, NO tone, which lives in the per-language style guide). Every key SHOULD carry one. Litmus test and fields:
+  `DETAILS.md` § `@key` metadata schema.
 - **Never hand-edit `../keys.gen.ts`.** It's generated from these files by `pnpm intl:keys`; run that after any key
   add/remove/rename. The `desktop-message-keys-fresh` check fails if it's stale.
 - **A new key needs a real call site, or it fails `desktop-message-keys-unused`** (ERROR): a key referenced in neither

@@ -187,13 +187,13 @@
   "@servers.hub.emptyTitle": {
     "description": "Heading of the empty state in the servers hub, when the user has saved none and Cmdr found none nearby. Short and neutral.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.hub.emptyMessage": "{platform, select, macos {Add one below, or turn on a Mac or NAS on your network and Cmdr will find it.} windows {Add one below, or turn on a PC or NAS on your network and Cmdr will find it.} other {Add one below, or turn on a computer or NAS on your network and Cmdr will find it.}}",
   "@servers.hub.emptyMessage": {
     "description": "One line under the empty-state heading in the servers hub. \"NAS\" is a network storage box; keep the abbreviation if your language uses it, otherwise say the equivalent. \"below\" points at the \"Add server…\" row at the bottom of the list. The screenshot shows the macOS wording.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.hub.rowCount": "{count, plural, one {{countText} server} other {{countText} servers}}",
   "@servers.hub.rowCount": {
@@ -669,12 +669,13 @@
   "@servers.sheet.connecting": {
     "description": "Replaces the main button's label while the sheet is waiting for the server. The ellipsis is the single character … (U+2026).",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.protocolLegend": "Protocol",
   "@servers.sheet.protocolLegend": {
     "description": "Accessible name of the SMB / SFTP / WebDAV picker in the add form. Screen readers only; not visible. One word, NOUN.",
-    "screenshot": "server-sign-in-refused-local-network.png"
+    "screenshot": "server-sign-in-refused-local-network.png",
+    "visibility": "screenReader"
   },
   "servers.sheet.protocolSmb": "SMB",
   "@servers.sheet.protocolSmb": {
@@ -705,7 +706,7 @@
   "@servers.sheet.addressHelpSftp": {
     "description": "One line under the address field while SFTP is the selected protocol, telling the user they can paste whatever they have. “ssh” is a command name, keep it lowercase and untranslated.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.addressHelpSmb": "A hostname, an IP address, or an smb:// address you copied.",
   "@servers.sheet.addressHelpSmb": {
@@ -880,7 +881,8 @@
   "servers.sheet.connectionModeLegend": "How to connect",
   "@servers.sheet.connectionModeLegend": {
     "description": "Accessible name of the guest-or-account choice for a share that allows both. Screen readers only; not visible.",
-    "screenshot": "server-sign-in-sign-in-guest.png"
+    "screenshot": "server-sign-in-sign-in-guest.png",
+    "visibility": "screenReader"
   },
   "servers.sheet.connectAsGuest": "Connect as guest",
   "@servers.sheet.connectAsGuest": {
@@ -1052,7 +1054,7 @@
       "example": "a sample value kept as-is, like a region code \"eu-west-1\", an access key ID, or a web address"
     },
     "screenshot": "server-sign-in-refused-s3.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.identityLockedS3": "The provider, the access key ID, and the bucket are what name this place. Forget it and add it again to change them.",
   "@servers.sheet.identityLockedS3": {
@@ -1079,59 +1081,61 @@
   "@servers.sheet.rootFolderHelp": {
     "description": "One line under the Root folder field, explaining that the folder is a ceiling: Cmdr never navigates above it on the server. \"Cmdr\" is the product name.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.startFolder": "Start folder",
   "@servers.sheet.startFolder": {
     "description": "Label of the field for the folder a pane opens at when the user opens this server. It must be the root folder or a folder inside it. Two words, NOUN phrase.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.startFolderHelp": "Where the server opens. Leave it empty to open the root folder.",
   "@servers.sheet.startFolderHelp": {
     "description": "One line under the Start folder field: it is where the server opens, and leaving it empty opens the root folder. \"root folder\" must use the same words as the servers.sheet.rootFolder label.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.keyFile": "Key file",
   "@servers.sheet.keyFile": {
     "description": "Label of the field for the SSH private key file to sign in with. “Key” is an SSH key. Two words.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.browse": "Browse…",
   "@servers.sheet.browse": {
     "description": "Button beside the key-file field; it opens the system file picker. VERB, imperative. The ellipsis is the single character … (U+2026) and means “this opens something”; keep it.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.useAgent": "Use ssh-agent",
   "@servers.sheet.useAgent": {
     "description": "Checkbox letting Cmdr ask the running ssh-agent for a key. “ssh-agent” is a program name; keep it as-is.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.autoReconnect": "Reconnect automatically",
   "@servers.sheet.autoReconnect": {
     "description": "Checkbox letting Cmdr redial this server on its own when the connection drops. Shown in the server sheet and as a checkbox row in a saved SFTP or WebDAV server's row menu (the volume switcher and the servers list). VERB phrase, imperative.",
     "screenshot": "server-sign-in-refused-local-network.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.autoReconnectHelp": "If the connection drops, Cmdr reconnects to this server on its own. This doesn’t make Cmdr connect at startup: it connects when you open the server in a pane.",
   "@servers.sheet.autoReconnectHelp": {
     "description": "Tooltip explaining the “Reconnect automatically” checkbox, shown from an info glyph beside it in the server sheet, and as the hover tooltip of the same checkbox row in a saved server's row menu. Its job is to correct a likely misreading: the switch only reconnects after a dropped connection, and does NOT make Cmdr connect to the server when the app starts. “pane” is one of the app's two side-by-side file lists.",
-    "screenshot": "server-sign-in-refused-local-network.png"
+    "screenshot": "server-sign-in-refused-local-network.png",
+    "visibility": "tooltip"
   },
   "servers.sheet.autoReconnectInfoLabel": "More about “Reconnect automatically”",
   "@servers.sheet.autoReconnectInfoLabel": {
     "description": "Screen-reader name of the info glyph beside the “Reconnect automatically” checkbox; activating it shows the explanation. Never visible on screen. Quote the checkbox label exactly as servers.sheet.autoReconnect translates it, so voice-control users can name it.",
-    "screenshot": "server-sign-in-refused-local-network.png"
+    "screenshot": "server-sign-in-refused-local-network.png",
+    "visibility": "screenReader"
   },
   "servers.sheet.needsStoredSecret": "{platform, select, macos {Reconnecting on its own needs a remembered password. Turn on “Remember in Keychain” and sign in once.} windows {Reconnecting on its own needs a saved password. Turn on “Remember password” and sign in once.} linuxKde {Reconnecting on its own needs a remembered password. Turn on “Remember in KDE Wallet” and sign in once.} other {Reconnecting on its own needs a remembered password. Turn on “Remember in keyring” and sign in once.}}",
   "@servers.sheet.needsStoredSecret": {
     "description": "Shown in the edit sheet when “Reconnect automatically” is on but nothing is stored, so it can never actually run. Says what to do about it. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
     "screenshot": "server-sign-in-edit.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.sheet.tryNextcloudAddress": "Try the Nextcloud address",
   "@servers.sheet.tryNextcloudAddress": {
@@ -1182,7 +1186,7 @@
   "@servers.hostKey.trustNewKey": {
     "description": "Button that records a CHANGED key, behind the disclosure. VERB phrase, imperative.",
     "screenshot": "server-sign-in-host-key-first-contact.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.certificate.firstContactTitle": "{platform, select, macos {macOS doesn’t know the certificate for {host}} windows {Windows doesn’t know the certificate for {host}} other {The certificate for {host} is new to this computer}}",
   "@servers.certificate.firstContactTitle": {
@@ -1229,7 +1233,7 @@
   "@servers.certificate.trustNewCertificate": {
     "description": "Button that trusts a CHANGED certificate, behind the disclosure. VERB phrase, imperative.",
     "screenshot": "server-sign-in-certificate-first-contact.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "servers.paneState.signedOut": "Signed out of {name}",
   "@servers.paneState.signedOut": {
@@ -1349,7 +1353,8 @@
   "@servers.paneState.retryProgressAriaLabel": {
     "description": "Accessibility label for the countdown progress bar showing how long until the next reconnect attempt.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context."
+    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context.",
+    "visibility": "screenReader"
   },
   "servers.paneState.retryNow": "Retry now",
   "@servers.paneState.retryNow": {
@@ -1361,19 +1366,22 @@
   "@servers.paneState.retryNowTooltip": {
     "description": "Hover tooltip for the button that triggers a reconnect attempt right away instead of waiting.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context."
+    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context.",
+    "visibility": "tooltip"
   },
   "servers.paneState.cancelCycleTooltip": "Stop trying for now. The connection stays available; open the server again to retry.",
   "@servers.paneState.cancelCycleTooltip": {
     "description": "Hover tooltip for the Cancel button that stops auto-reconnect while keeping the connection available: opening the server again (from the volume switcher or the servers list) starts trying again.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context."
+    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context.",
+    "visibility": "tooltip"
   },
   "servers.paneState.disconnectCycleTooltip": "Stop trying and disconnect from the server.",
   "@servers.paneState.disconnectCycleTooltip": {
     "description": "Hover tooltip for the button that stops reconnecting and drops the server connection.",
     "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context."
+    "screenshotNote": "Shown inside a file pane while it connects to a server: \"Connecting…\", \"Signed out\", a changed host key, or a \"Reconnecting…\" state with a countdown and Retry/Cancel controls. This shows the servers list those connections start from; your string appears in the pane, in the same network context.",
+    "visibility": "tooltip"
   },
   "servers.paneState.retryKeepsTrying": "Will keep trying for a total of {duration}.",
   "@servers.paneState.retryKeepsTrying": {

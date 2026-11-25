@@ -12,7 +12,8 @@
   "suggestedOps.approvalNoticeDismiss": "Don’t show again",
   "@suggestedOps.approvalNoticeDismiss": {
     "description": "Tooltip and screen-reader name of the × that closes the note at the top of the AI suggestions dialog (suggestedOps.description) for good. It can be turned back on in Settings > Advanced. Same words as the app's other “Don’t show again” controls (fileExplorer.quickLookHint.dontShowAgain).",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.sweepWhen.justNow": "Suggested just now",
   "@suggestedOps.sweepWhen.justNow": {
@@ -54,12 +55,14 @@
   "suggestedOps.agentReasonTooltip": "The AI’s own words. Cmdr didn’t check them.",
   "@suggestedOps.agentReasonTooltip": {
     "description": "Tooltip on the \"Why:\" label (suggestedOps.agentReason) before the AI's explanation of a suggestion. Load-bearing: it marks the text as the AI's claim rather than something Cmdr verified.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.agentReasonSpoken": "Why, according to the AI:",
   "@suggestedOps.agentReasonSpoken": {
     "description": "What a screen reader says in place of the visible \"Why:\" label (suggestedOps.agentReason), before the AI's explanation of a suggestion. It must start with the same words as the visible label (WCAG 2.5.3, label in name), then name the AI as the source, which the short visible label leaves to its tooltip.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.fileCount": "{countText} {count, plural, one {file} other {files}}",
   "@suggestedOps.fileCount": {
@@ -80,7 +83,7 @@
   "@suggestedOps.action.trash": {
     "description": "The action a suggestion takes, leading its title in the AI suggestions dialog, before the name the AI gave it (for example \"Move to Trash Old installers\"). This one moves files to the Trash. The windows branch says \"Delete\", the action’s name in File Explorer; the other branch names the Trash the way macOS and Linux do. A short VERB phrase in the imperative, like a menu command; it must read as what happens when the person approves. The screenshot shows the macOS wording.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.action.delete": "{platform, select, windows {Delete permanently} other {Delete}}",
   "@suggestedOps.action.delete": {
@@ -91,7 +94,7 @@
   "@suggestedOps.action.rename": {
     "description": "The action a suggestion takes, leading its title in the AI suggestions dialog, before the name the AI gave it (for example \"Rename Old installers\"). This one renames files in place. A short VERB phrase in the imperative, like a menu command; it must read as what happens when the person approves.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.action.compress": "Compress",
   "@suggestedOps.action.compress": {
@@ -125,7 +128,7 @@
   "@suggestedOps.approve.trash": {
     "description": "Primary button on a suggestion that moves files to the Trash. The windows branch says \"Delete\", the action’s name in File Explorer; the other branch names the Trash the way macOS and Linux do. {countText} is how many files would run, already formatted. The screenshot shows the macOS wording.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.approve.delete": "{platform, select, windows {Delete {countText} {count, plural, one {file} other {files}} permanently} other {Delete {countText} {count, plural, one {file} other {files}}}}",
   "@suggestedOps.approve.delete": {
@@ -136,7 +139,7 @@
   "@suggestedOps.approve.rename": {
     "description": "Primary button on a suggestion that renames files in place. {countText} is how many files would run, already formatted.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.approve.compress": "Compress {countText} {count, plural, one {file} other {files}}",
   "@suggestedOps.approve.compress": {
@@ -186,19 +189,19 @@
   "@suggestedOps.facts.trash": {
     "description": "Shown after the \"To\" label (suggestedOps.facts.to) when the suggestion moves files to the Trash. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows. The screenshot shows the macOS wording.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.facts.severalFolders": "Several folders",
   "@suggestedOps.facts.severalFolders": {
     "description": "Shown after the \"From\" label (suggestedOps.facts.from) when the suggested files sit in different folders, so there's no one folder to name. Each file's folder then shows in the list.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.reversible.trash": "{platform, select, windows {You can undo this: {count, plural, one {it goes} other {they go}} to the Recycle Bin} other {You can undo this: {count, plural, one {it goes} other {they go}} to the Trash}}",
   "@suggestedOps.reversible.trash": {
     "description": "Note under a suggestion’s file list, beside its buttons on a suggestion that moves files to the Trash, saying the user can take it back and why. {count} is the number of files, only used to pick \"it\" or \"they\". In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows. \"It\" and \"they\" are the suggested files; a language that needs a noun can say \"the file\" / \"the files\". The items can be files or folders. The screenshot shows the macOS wording.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.reversible.moveBack": "You can undo this: Cmdr can move {count, plural, one {it} other {them}} back",
   "@suggestedOps.reversible.moveBack": {
@@ -214,7 +217,7 @@
   "@suggestedOps.reversible.removeCopies": {
     "description": "Note under a suggestion’s file list, beside its buttons on a copy suggestion, saying the user can take it back: undoing deletes the copies it made, and the originals were never touched.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.reversible.removeArchive": "You can undo this: Cmdr deletes the new archive",
   "@suggestedOps.reversible.removeArchive": {
@@ -232,12 +235,14 @@
   "suggestedOps.noTrash": "{platform, select, windows {This drive has no Recycle Bin} other {This drive has no Trash}}",
   "@suggestedOps.noTrash": {
     "description": "Pill beside the title of a suggestion to move files to the Trash when the files are on a drive or server that keeps no Trash. The suggestion then deletes the files permanently instead, and its title and button say \"Delete\" (\"Delete permanently\" on Windows). In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows. The tooltip is suggestedOps.noTrashTooltip. The screenshot shows the macOS wording.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.noTrashTooltip": "{platform, select, windows {The drive these files are on keeps no Recycle Bin, so approving this deletes them for good.} other {The drive these files are on keeps no Trash, so approving this deletes them for good.}}",
   "@suggestedOps.noTrashTooltip": {
     "description": "Tooltip on the suggestedOps.noTrash pill. In each branch, name that OS’s trash the way it does: the Trash on macOS and Linux, the Recycle Bin on Windows. The screenshot shows the macOS wording.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.irreversible.overwrite": "This can’t be undone: it replaces an existing archive",
   "@suggestedOps.irreversible.overwrite": {
@@ -266,7 +271,8 @@
   "suggestedOps.folderWillBeCreatedTooltip": "The target folder is not there yet. Approving creates it, exactly as it would if you started the move yourself.",
   "@suggestedOps.folderWillBeCreatedTooltip": {
     "description": "Tooltip explaining the folder-creation pill.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.destinationLandsOn": "A link sends the files to another drive: {path}",
   "@suggestedOps.destinationLandsOn": {
@@ -279,7 +285,7 @@
   "@suggestedOps.destinationUnknown": {
     "description": "Shown beside the target folder’s path when the destination drive or server didn’t answer in time, so whether the folder exists is genuinely unknown rather than assumed.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.destinationNotConnected": "The target isn’t connected",
   "@suggestedOps.destinationNotConnected": {
@@ -287,13 +293,14 @@
   },
   "suggestedOps.destinationNotConnectedTooltip": "Cmdr hasn’t connected to this drive or server yet. Approving won’t start until it’s connected, the same as when you move files there yourself.",
   "@suggestedOps.destinationNotConnectedTooltip": {
-    "description": "Tooltip on the pill saying a suggestion’s target drive or server isn’t connected (suggestedOps.destinationNotConnected)."
+    "description": "Tooltip on the pill saying a suggestion’s target drive or server isn’t connected (suggestedOps.destinationNotConnected).",
+    "visibility": "tooltip"
   },
   "suggestedOps.fromPattern": "Matched by a pattern",
   "@suggestedOps.fromPattern": {
     "description": "Pill on a suggestion whose file list a pattern produced, so the user knows the list was matched rather than named one by one.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.changedUnderReview": "The AI changed this suggestion while you were reading it.",
   "@suggestedOps.changedUnderReview": {
@@ -308,17 +315,20 @@
   "suggestedOps.filesLabel": "Files in “{name}”",
   "@suggestedOps.filesLabel": {
     "description": "Accessible name of one suggestion's file list, read by screen readers. {name} is the suggestion's title. Use your language's quotation marks.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.columnInclude": "Include",
   "@suggestedOps.columnInclude": {
     "description": "Screen-reader-only heading of the tick-box column in a suggestion's file list. A ticked file is part of the approval.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.includeAll": "Include all files",
   "@suggestedOps.includeAll": {
     "description": "Screen-reader name of the tick box in the header of a suggestion's file list. Ticking it includes every file in the approval, unticking it includes none; it shows a dash when only some are ticked.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.columnName": "Name",
   "@suggestedOps.columnName": {
@@ -333,7 +343,8 @@
   "suggestedOps.columnNewName": "New name",
   "@suggestedOps.columnNewName": {
     "description": "Screen-reader text between a file's current name and the name a suggestion would give it, read as \"invoice.pdf, New name, Invoice 2026-07.pdf\". Visually an arrow stands in for it. A short noun phrase.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.columnSize": "Size",
   "@suggestedOps.columnSize": {
@@ -356,12 +367,14 @@
   "suggestedOps.factChanged": "Changed since the suggestion",
   "@suggestedOps.factChanged": {
     "description": "Screen-reader name of a small warning glyph beside a file's size or date when the value on disk now differs from what it was when the AI made the suggestion. The tooltip (suggestedOps.factChangedTooltip) shows both values.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.factChangedTooltip": "When suggested: {then} / Now: {now}",
   "@suggestedOps.factChangedTooltip": {
     "description": "Tooltip on the warning glyph beside a file's size or date that changed since the AI made the suggestion. {then} and {now} are both sizes (like \"1.2 MB\") or both dates, already formatted.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.fileMissing": "Moved or deleted",
   "@suggestedOps.fileMissing": {
@@ -371,12 +384,14 @@
   "suggestedOps.snapshotOnly": "From when the AI suggested this",
   "@suggestedOps.snapshotOnly": {
     "description": "Screen-reader name of a small clock glyph beside a file's size or date when Cmdr couldn't look at the file just now, so the value is what it was when the AI made the suggestion. The tooltip is suggestedOps.snapshotOnlyTooltip.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.snapshotOnlyTooltip": "Cmdr couldn’t check this file just now, so this is what it was when the AI suggested it.",
   "@suggestedOps.snapshotOnlyTooltip": {
     "description": "Tooltip on the clock glyph beside a file's size or date that Cmdr couldn't check live, explaining the value is from suggestion time.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.sourceNotConnected": "Cmdr isn’t connected to the drive these files are on, so their sizes and dates are from when the AI suggested this.",
   "@suggestedOps.sourceNotConnected": {
@@ -389,19 +404,20 @@
   "suggestedOps.includeFile": "Include {name}",
   "@suggestedOps.includeFile": {
     "description": "Screen-reader name of the tick box on each file row. Ticked means the file is part of the approval. {name} is the file's name.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.showMore": "Show {countText} more",
   "@suggestedOps.showMore": {
     "description": "Button under a suggestion's file list that shows the next few files. {countText} is how many it adds, already formatted.",
     "screenshot": "suggested-ops-downloads-cleanup.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.showAll": "Show all {countText}",
   "@suggestedOps.showAll": {
     "description": "Button under a suggestion's file list that shows every file. {countText} is the total number of files, already formatted (it can be tens of thousands).",
     "screenshot": "suggested-ops-hard-cases.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.loadingFiles": "Loading the files…",
   "@suggestedOps.loadingFiles": {
@@ -428,19 +444,19 @@
   "@suggestedOps.refusal.label": {
     "description": "Small label above the reason shown under a suggestion whose approval didn't start. The suggestion is back on the list as waiting, nothing ran, and the person can approve or reject it again. The reason itself sits below this label.",
     "screenshot": "suggested-ops-changed-and-refused.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.refusal.nothingToRun.message": "Cmdr couldn’t read any of these files when you approved, so nothing ran.",
   "@suggestedOps.refusal.nothingToRun.message": {
     "description": "Reason shown under a suggestion whose approval didn't start because every file it names was gone or unreadable at that moment. The suggestion is back on the list, waiting for an answer. Followed by suggestedOps.refusal.nothingToRun.suggestion.",
     "screenshot": "suggested-ops-changed-and-refused.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.refusal.nothingToRun.suggestion": "Check that they’re still there, then approve it again, or reject it.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "description": "What to do next, under suggestedOps.refusal.nothingToRun.message. \"It\" is the suggestion; the approve button and Reject are on it.",
     "screenshot": "suggested-ops-changed-and-refused.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.refusal.nothingSelected.message": "None of the files you ticked are in this suggestion any more, so nothing ran.",
   "@suggestedOps.refusal.nothingSelected.message": {
@@ -467,7 +483,7 @@
   "@suggestedOps.refusal.serverChanged.message": {
     "description": "Reason shown under a suggestion to change a saved server's settings, when the saved server itself was changed (by the person, or by another approved suggestion) after the AI suggested this. Saving would overwrite a change the suggestion doesn't show, so nothing was saved. Followed by suggestedOps.refusal.serverChanged.suggestion.",
     "screenshot": "suggested-ops-server-refused.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "suggestedOps.refusal.serverChanged.suggestion": "Ask Cmdr to suggest it again, or edit the server in Servers.",
   "@suggestedOps.refusal.serverChanged.suggestion": {
@@ -531,7 +547,8 @@
   "suggestedOps.server.changesTo": "changes to",
   "@suggestedOps.server.changesTo": {
     "description": "Read by screen readers only, between a server setting's old value and its new one on a suggestion to change a server (\"/srv, changes to, /srv/backups\"). Sighted people see an arrow instead. Lowercase, VERB phrase.",
-    "screenshot": "suggested-ops-servers.png"
+    "screenshot": "suggested-ops-servers.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.server.newAddress": "A new address",
   "@suggestedOps.server.newAddress": {
@@ -541,7 +558,8 @@
   "suggestedOps.server.newAddressTooltip": "None of your saved servers is at this address. Check that it’s the one you mean.",
   "@suggestedOps.server.newAddressTooltip": {
     "description": "Tooltip on the \"A new address\" tag (suggestedOps.server.newAddress) beside a suggested server's address.",
-    "screenshot": "suggested-ops-servers.png"
+    "screenshot": "suggested-ops-servers.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.server.sharesAffected": "This changes {countText} saved {count, plural, one {share} other {shares}} on this server.",
   "@suggestedOps.server.sharesAffected": {
@@ -554,16 +572,19 @@
   "suggestedOps.indicatorTooltip": "{platform, select, windows {AI suggestions are waiting. Select to review them.} other {AI suggestions are waiting. Click to review them.}}",
   "@suggestedOps.indicatorTooltip": {
     "description": "Tooltip and screen-reader text for the status-corner indicator that opens the AI suggestions dialog. The number itself is in the badge beside it, so the sentence doesn't repeat it. A screen reader reads this sentence, then the number (\"AI suggestions are waiting. Click to review them. 3\"). The screenshot shows the macOS wording.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "tooltip"
   },
   "suggestedOps.newNameTaken": "Name already taken",
   "@suggestedOps.newNameTaken": {
     "description": "Screen-reader name of a small warning glyph beside the new name a suggestion gives a file, when a file or folder with that name is already where the file would land. The tooltip is suggestedOps.newNameTakenTooltip. Same words as multiRename.status.targetExists.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "screenReader"
   },
   "suggestedOps.newNameTakenTooltip": "Something called “{name}” is already there.",
   "@suggestedOps.newNameTakenTooltip": {
     "description": "Tooltip on the warning glyph beside a suggested new name that is already taken where the file would land (the target folder, or the file’s own folder for a rename). {name} is that new name, never translated. Use your language’s quotation marks.",
-    "screenshot": "suggested-ops-downloads-cleanup.png"
+    "screenshot": "suggested-ops-downloads-cleanup.png",
+    "visibility": "tooltip"
   }
 }

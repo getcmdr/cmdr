@@ -73,13 +73,15 @@
   "@downloads.toast.expandTip": {
     "description": "Accessibility label and tooltip for the chevron button that expands the collapsed download toast back to its full shortcut tip. A short action phrase.",
     "screenshot": "toast-download.png",
-    "screenshotNote": "The toast Cmdr shows when a download lands, pictured here. Your string is another form of it: the summary when several downloads land at once, the note that one landed in a subfolder, or the tooltip on its expand button."
+    "screenshotNote": "The toast Cmdr shows when a download lands, pictured here. Your string is another form of it: the summary when several downloads land at once, the note that one landed in a subfolder, or the tooltip on its expand button.",
+    "visibility": "screenReader"
   },
 
   "downloads.toast.collapseTip": "Make this notification more compact",
   "@downloads.toast.collapseTip": {
     "description": "Accessibility label and tooltip for the chevron button that collapses the expanded download toast to a compact one-liner. A short action phrase.",
-    "screenshot": "toast-download.png"
+    "screenshot": "toast-download.png",
+    "visibility": "screenReader"
   },
 
   "downloads.toast.stopShowing": "Stop showing these",
@@ -181,12 +183,14 @@
 
   "downloads.shortcutRow.modifiedTooltip": "Modified from default",
   "@downloads.shortcutRow.modifiedTooltip": {
-    "description": "Tooltip on the small dot next to a shortcut that has been changed from its default binding. A short status phrase."
+    "description": "Tooltip on the small dot next to a shortcut that has been changed from its default binding. A short status phrase.",
+    "visibility": "tooltip"
   },
 
   "downloads.shortcutRow.resetTooltip": "Reset to default",
   "@downloads.shortcutRow.resetTooltip": {
-    "description": "Accessibility label and tooltip for the button that resets a changed shortcut to its default binding. A short action phrase."
+    "description": "Accessibility label and tooltip for the button that resets a changed shortcut to its default binding. A short action phrase.",
+    "visibility": "tooltip"
   },
 
   "downloads.shortcutRow.pressKeys": "Press keys…",

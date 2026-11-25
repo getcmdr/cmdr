@@ -244,7 +244,8 @@
   "fileOperations.mkfile.nameAria": "Filename",
   "@fileOperations.mkfile.nameAria": {
     "description": "Accessibility label for the new file's name text field (screen-reader only).",
-    "screenshot": "new-file-dialog.png"
+    "screenshot": "new-file-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.mkfile.placeholder": "Example: notes.txt",
   "@fileOperations.mkfile.placeholder": {
@@ -267,7 +268,7 @@
   "fileOperations.mkdir.nameAria": "Folder name",
   "@fileOperations.mkdir.nameAria": {
     "description": "Accessibility label for the new folder's name text field (screen-reader only).",
-    "screenshot": "new-folder-dialog.png"
+    "screenshot": "mkdir-confirmation-too-long.png"
   },
   "fileOperations.mkdir.placeholder": "Example: my-project",
   "@fileOperations.mkdir.placeholder": {
@@ -285,13 +286,14 @@
   "fileOperations.mkdir.aiSuggestionsAria": "AI suggestions",
   "@fileOperations.mkdir.aiSuggestionsAria": {
     "description": "Accessibility label for the region listing AI-generated folder-name suggestions (screen-reader only). 'AI' is the common abbreviation.",
-    "screenshot": "mkdir-confirmation-empty.png"
+    "screenshot": "mkdir-confirmation-empty.png",
+    "visibility": "screenReader"
   },
   "fileOperations.mkdir.aiSuggestionsHeader": "AI suggestions:",
   "@fileOperations.mkdir.aiSuggestionsHeader": {
     "description": "Heading shown above the AI-generated folder-name suggestion chips in the new-folder dialog. 'AI' is the common abbreviation.",
     "screenshot": "mkdir-confirmation-empty.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.shared.conflictExistsFolder": "There is already a folder by this name in this folder.",
   "@fileOperations.shared.conflictExistsFolder": {
@@ -307,7 +309,7 @@
   "@fileOperations.shared.byteRate": {
     "description": "Data-transfer speed shown next to a scan or copy/move bar, e.g. '1.2 MB/s'. <size> renders the formatted size (a widget, no inner text); '/s' means per second. Keep the per-second marker adjacent to the size. Its sibling fileOperations.shared.fileRate does the same job for the files-per-second rate; keep the two reading alike.",
     "screenshot": "toast-transfer-complete.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.shared.fileRate": "{count, plural, one {{rateText} file/s} other {{rateText} files/s}}",
   "@fileOperations.shared.fileRate": {
@@ -330,7 +332,8 @@
   "fileOperations.shared.scanningTooltip": "Scanning…",
   "@fileOperations.shared.scanningTooltip": {
     "description": "Tooltip and screen-reader label for the spinner shown while the dialog counts the selected items (files, folders, total size).",
-    "screenshot": "delete-confirm.png"
+    "screenshot": "delete-confirm.png",
+    "visibility": "tooltip"
   },
   "fileOperations.transferDialog.toggleCopy": "Copy",
   "@fileOperations.transferDialog.toggleCopy": {
@@ -360,17 +363,20 @@
   "fileOperations.transferDialog.operationAria": "Action",
   "@fileOperations.transferDialog.operationAria": {
     "description": "Accessibility label for the Copy / Move / Compress segmented control at the top of the transfer dialog (screen-reader only). Names what the group chooses, not any one option.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferDialog.destVolumeAria": "Destination volume",
   "@fileOperations.transferDialog.destVolumeAria": {
     "description": "Accessibility label for the dropdown that picks which volume (disk/device) the files go to (screen-reader only).",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferDialog.destPathAria": "Destination path",
   "@fileOperations.transferDialog.destPathAria": {
     "description": "Accessibility label for the text field holding the destination folder path (screen-reader only).",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferDialog.spaceInfo": "{free} free of {total}",
   "@fileOperations.transferDialog.spaceInfo": {
@@ -465,7 +471,8 @@
   },
   "fileOperations.transferDialog.estimatedSizeTooltip": "A rough guess at the packed zip. The real size may differ.",
   "@fileOperations.transferDialog.estimatedSizeTooltip": {
-    "description": "Tooltip on the \"Estimated size\" label in the Compress dialog, clarifying the number is a quick approximation and the real packed size may differ. \"zip\" is a file format; do not translate it."
+    "description": "Tooltip on the \"Estimated size\" label in the Compress dialog, clarifying the number is a quick approximation and the real packed size may differ. \"zip\" is a file format; do not translate it.",
+    "visibility": "tooltip"
   },
   "fileOperations.s3Cost.line": "About {amount} at {provider} list prices",
   "@fileOperations.s3Cost.line": {
@@ -479,12 +486,14 @@
   "fileOperations.s3Cost.infoLabel": "About this estimate",
   "@fileOperations.s3Cost.infoLabel": {
     "description": "Accessible name (read by screen readers) of the ⓘ button after the cloud storage cost estimate in the Copy, Move, and Delete dialogs. Hovering or focusing it shows the explanation in fileOperations.s3Cost.infoText. Here \"About\" means \"regarding\", not \"approximately\".",
-    "screenshot": "transfer-s3-cost.png"
+    "screenshot": "transfer-s3-cost.png",
+    "visibility": "screenReader"
   },
   "fileOperations.s3Cost.infoText": "This uses the provider’s public list prices. Free tiers, discounts, included allowances, and minimum charges can make your bill lower or higher.",
   "@fileOperations.s3Cost.infoText": {
     "description": "Tooltip behind the ⓘ after the cloud storage cost estimate in the Copy, Move, and Delete dialogs. Explains that the estimate uses the provider's published prices, so the real bill can differ. \"Free tiers\" are a provider's no-cost usage allowances; \"minimum charges\" are fees a provider bills even for tiny usage.",
-    "screenshot": "transfer-s3-cost.png"
+    "screenshot": "transfer-s3-cost.png",
+    "visibility": "tooltip"
   },
   "fileOperations.transferDialog.scanUnresponsive": "The source isn’t responding, so this size is all we could count.",
   "@fileOperations.transferDialog.scanUnresponsive": {
@@ -548,7 +557,7 @@
       "count": "the same number (drives the singular/plural verb phrase)"
     },
     "screenshot": "conflict-dialog.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.transferDialog.policySkip": "{count, plural, one {Skip} other {Skip all}}",
   "@fileOperations.transferDialog.policySkip": {
@@ -589,7 +598,7 @@
       "count": "number of clashing files (selects the single vs. 'each' wording)"
     },
     "screenshot": "conflict-dialog.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.transferDialog.policyAskEach": "Ask for each",
   "@fileOperations.transferDialog.policyAskEach": {
@@ -632,14 +641,16 @@
   },
   "fileOperations.transferDialog.rememberChoiceInfoLabel": "More about “Remember this choice”",
   "@fileOperations.transferDialog.rememberChoiceInfoLabel": {
-    "description": "Accessible name (read by screen readers) of the ⓘ button beside the 'Remember this choice' checkbox (fileOperations.transferDialog.rememberChoice) in the copy/move dialog. Hovering or focusing it shows fileOperations.transferDialog.rememberChoiceHelp. Quote the checkbox label exactly as translated."
+    "description": "Accessible name (read by screen readers) of the ⓘ button beside the 'Remember this choice' checkbox (fileOperations.transferDialog.rememberChoice) in the copy/move dialog. Hovering or focusing it shows fileOperations.transferDialog.rememberChoiceHelp. Quote the checkbox label exactly as translated.",
+    "visibility": "screenReader"
   },
   "fileOperations.transferDialog.rememberChoiceHelp": "{platform, select, windows {Cmdr starts on this choice next time, and you can change it in Settings. If it overwrites files, you’ll see a warning first.} linuxGnome {Cmdr starts on this choice next time, and you can change it in Preferences. If it overwrites files, you’ll see a warning first.} linuxKde {Cmdr starts on this choice next time, and you can change it in Configure Cmdr. If it overwrites files, you’ll see a warning first.} other {Cmdr starts on this choice next time, and you can change it in Settings. If it overwrites files, you’ll see a warning first.}}",
   "@fileOperations.transferDialog.rememberChoiceHelp": {
     "description": "Tooltip behind the ⓘ beside the 'Remember this choice' checkbox in the copy/move dialog. 'this choice' = the selected 'files already exist' option (Skip, Overwrite, and so on); 'starts on' = it comes preselected the next time the copy or move dialog opens. 'Settings' is the app's Settings window. 'a warning' = a note under the options saying which files the saved option overwrites. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
-    }
+    },
+    "visibility": "tooltip"
   },
   "fileOperations.transferDialog.typeMismatchWarning": "Some clashes mix a file and a folder by the same name. Overwriting will replace items of a different type, including the entire contents of a folder.",
   "@fileOperations.transferDialog.typeMismatchWarning": {
@@ -716,7 +727,7 @@
   "@fileOperations.scanPhase.fromLabel": {
     "description": "Label before the source path shown during the scan phase of a transfer, e.g. 'From: /Users/...'. Keep the trailing colon.",
     "screenshot": "conflict-dialog.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.scanPhase.scanFile": "{count, plural, one {file} other {files}}",
   "@fileOperations.scanPhase.scanFile": {
@@ -768,31 +779,36 @@
   "@fileOperations.transferProgress.rollbackUnavailableCrossVolumeTooltip": {
     "description": "Tooltip on the switched-off Rollback button while moving files from one volume to another (for example from the Mac's disk to a network drive or a phone). 'Rollback' means undoing the operation so far. Three jobs, in this order: (a) Rollback is off for this kind of move, (b) why: Cmdr deletes each original right after its copy has safely arrived, so the originals of the files already moved no longer exist, (c) the Cancel button beside it still works, and stopping never leaves a file half-moved: each file is complete either at its old place or its new one. 'Cancel' is that button's own label (fileOperations.button.cancel), so use the same word you translated it with. 'Cmdr' is the app name and stays as it is. A 'volume' is a disk, drive, network share, or device, the same word the app uses elsewhere.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackUnavailableSameVolumeTooltip": "Rollback isn’t available when moving within one volume. The volume moves each item itself, and Cmdr can’t move them back partway. Cancel stops the move: what’s moved stays moved, and the rest stays where it was.",
   "@fileOperations.transferProgress.rollbackUnavailableSameVolumeTooltip": {
     "description": "Tooltip on the switched-off Rollback button while moving files from one folder to another on the SAME network drive or device (for example within one NAS share, or within a phone). 'Rollback' means undoing the operation so far. Three jobs, in this order: (a) Rollback is off for this kind of move, (b) why: the drive or device does each move itself, and Cmdr can't send items back while the move is part done, (c) the Cancel button beside it still works: items already moved stay in their new place, the others stay where they were. 'Cancel' is that button's own label (fileOperations.button.cancel), so use the same word you translated it with. 'Cmdr' is the app name and stays as it is. A 'volume' is a disk, drive, network share, or device.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackUnavailableArchiveRewriteTooltip": "Rollback has nothing to undo here. Cmdr rewrites the archive in one go at the end, so Cancel leaves it exactly as it was.",
   "@fileOperations.transferProgress.rollbackUnavailableArchiveRewriteTooltip": {
     "description": "Tooltip on the switched-off Rollback button while copying or moving files INTO a ZIP archive. 'Rollback' means undoing the operation so far. Two jobs: (a) there's nothing for Rollback to undo, (b) why, and what Cancel does instead: Cmdr only writes the changed archive once, at the very end, so pressing Cancel before then leaves the archive untouched. 'Cancel' is that button's own label (fileOperations.button.cancel), so use the same word you translated it with. 'Cmdr' is the app name and stays as it is.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackUnavailableArchiveMoveOutTooltip": "Rollback has nothing to undo here. Cmdr removes these from the archive only after they’re all out, so Cancel leaves the archive as it was. Anything already extracted stays at the destination as a copy.",
   "@fileOperations.transferProgress.rollbackUnavailableArchiveMoveOutTooltip": {
     "description": "Tooltip on the switched-off Rollback button while moving files OUT of a ZIP archive into a normal folder. 'Rollback' means undoing the operation so far. Three jobs: (a) there's nothing for Rollback to undo, (b) why: Cmdr only deletes the files from the archive once every one of them has been extracted, so pressing Cancel leaves the archive complete, (c) files already extracted stay in the destination folder, as extra copies. 'Cancel' is that button's own label (fileOperations.button.cancel), so use the same word you translated it with. 'Cmdr' is the app name and stays as it is.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackUnavailableOtherTooltip": "Rollback isn’t available for this operation.",
   "@fileOperations.transferProgress.rollbackUnavailableOtherTooltip": {
     "description": "Fallback tooltip on a switched-off Rollback button, for an operation that can't be undone and has no more specific explanation. 'Rollback' means undoing the operation so far.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.titleRollingBack": "Rolling back…",
   "@fileOperations.transferProgress.titleRollingBack": {
@@ -1071,13 +1087,15 @@
   "@fileOperations.transferProgress.undoWaitingTooltip": {
     "description": "Tooltip on the Undo button of a finished operation's progress dialog during the second or so before it works, while Cmdr finishes writing down what the operation did (it needs that record to undo it).",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.undoUnavailableTooltip": "This one can’t be undone.",
   "@fileOperations.transferProgress.undoUnavailableTooltip": {
     "description": "Tooltip on the switched-off Undo button of a finished operation's progress dialog, when Cmdr can't reverse this operation and has no more specific reason to give.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.titleFlushing": "Writing the last piece…",
   "@fileOperations.transferProgress.titleFlushing": {
@@ -1242,7 +1260,8 @@
   "@fileOperations.transferProgress.smallerDisabledTooltip": {
     "description": "Tooltip on the disabled 'Overwrite all smaller' button when the destination is a folder whose size is unknown, so a size comparison isn't possible.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.conflictSkip": "Skip",
   "@fileOperations.transferProgress.conflictSkip": {
@@ -1444,12 +1463,14 @@
   "fileOperations.transferProgress.sizeProgressAria": "Size progress",
   "@fileOperations.transferProgress.sizeProgressAria": {
     "description": "Accessibility label for the byte-progress bar (screen-reader only).",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferProgress.fileProgressAria": "File progress",
   "@fileOperations.transferProgress.fileProgressAria": {
     "description": "Accessibility label for the count-progress bar (screen-reader only).",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferProgress.sizeProgressValueText": "{doneText} of {totalText}",
   "@fileOperations.transferProgress.sizeProgressValueText": {
@@ -1479,7 +1500,8 @@
       "count": "the same total as a raw number (drives the singular/plural form)"
     },
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "screenReader"
   },
   "fileOperations.transferProgress.etaRemaining": "{duration} left",
   "@fileOperations.transferProgress.etaRemaining": {
@@ -1516,19 +1538,22 @@
   "fileOperations.transferProgress.rollbackTooltip": "Stop, and delete every file written so far",
   "@fileOperations.transferProgress.rollbackTooltip": {
     "description": "Tooltip on the Rollback button of a running COPY (or a compress). It must not read like plain Cancel, which stops the operation and KEEPS the completed files, dropping only the one half-written file: Rollback deletes all of them. The user is asked to confirm before anything is deleted. The sibling fileOperations.transferProgress.rollbackTooltipStopAndMoveBack covers a running move, where nothing is deleted.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackTooltipStopAndMoveBack": "Stop, and move back every file moved so far",
   "@fileOperations.transferProgress.rollbackTooltipStopAndMoveBack": {
     "description": "Tooltip on the Rollback button of a running MOVE (or a move to the trash). The sibling of fileOperations.transferProgress.rollbackTooltip, which covers a running copy, and the difference is the whole point: rolling back a move deletes nothing, it carries the files back where they came from. So keep the tone calm rather than a warning and never word it as a delete. It must still not read like the plain Cancel beside it, which stops the move and LEAVES the files it has already moved at the destination. Use the same verb as fileOperations.rollbackConfirm.bodyStopAndMoveBack, which is the confirmation this button opens. No final full stop, like its sibling.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string is the tooltip on its Rollback button."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string is the tooltip on its Rollback button.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.rollbackAlreadyLandedTooltip": "Every file is already at the destination, so Cmdr can’t undo the move now. Cancel still stops it from removing the rest of the originals.",
   "@fileOperations.transferProgress.rollbackAlreadyLandedTooltip": {
     "description": "Tooltip on the Rollback button of a move between two drives once Cmdr has reached its last step: every file has arrived at the destination and Cmdr is removing the originals one by one. The button is switched off there, and this says why plus what still works. Two jobs, in this order: (a) the move has landed, so there is no undoing it any more, (b) the Cancel button beside it still works and stops Cmdr before it removes the originals it hasn't reached yet. Never suggest the undo might partly work. 'Cancel' is that button's own label (fileOperations.button.cancel), so use the same word you translated it with. 'Cmdr' is the app name and stays as it is. The toast the user reads afterwards, fileOperations.cancelRollback.moveAlreadyLanded, tells the same story, so keep the two consistent. Sentence case.",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string is the tooltip on its Rollback button while the dialog's title reads \"Removing the originals…\"."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string is the tooltip on its Rollback button while the dialog's title reads \"Removing the originals…\".",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.titlePaused": "Paused",
   "@fileOperations.transferProgress.titlePaused": {
@@ -1551,13 +1576,15 @@
   "fileOperations.transferProgress.pauseAria": "Pause this transfer",
   "@fileOperations.transferProgress.pauseAria": {
     "description": "Screen-reader label for the Pause button on the progress dialog (the visible button shows only \"Pause\").",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferProgress.resumeAria": "Resume this transfer",
   "@fileOperations.transferProgress.resumeAria": {
     "description": "Screen-reader label for the Resume button on the progress dialog (the visible button shows only \"Resume\").",
     "screenshot": "transfer-dialog.png",
-    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
+    "visibility": "screenReader"
   },
   "fileOperations.transferProgress.background": "Background",
   "@fileOperations.transferProgress.background": {
@@ -1574,7 +1601,8 @@
   "fileOperations.transferProgress.queueTooltip": "Keep this running in the background and manage it in the operation queue (F2)",
   "@fileOperations.transferProgress.queueTooltip": {
     "description": "Tooltip on the Queue button explaining that the transfer keeps running in the background and is managed in the operation queue window. \"Operation queue\" is that window’s name; keep it identical to queue.windowTitle, though you may inflect it (a case ending) to fit the sentence. F2 is the keyboard shortcut for the same action while this dialog is open.",
-    "screenshot": "conflict-dialog.png"
+    "screenshot": "conflict-dialog.png",
+    "visibility": "tooltip"
   },
   "fileOperations.transferProgress.queuedToast": "{countText} ahead of this one, so it’s waiting its turn.",
   "@fileOperations.transferProgress.queuedToast": {
@@ -1612,7 +1640,8 @@
   "fileOperations.backgroundStart.tooltip": "Start this without a progress window and follow it in the operation queue (F2)",
   "@fileOperations.backgroundStart.tooltip": {
     "description": "Tooltip on the Background / Queue button of the copy, move, compress, and move-to-trash confirmation dialogs. The operation starts right away but out of sight, and the user follows it in the operation queue window. \"Operation queue\" is that window’s name; keep it identical to queue.windowTitle. F2 is the keyboard shortcut for the same button while the dialog is open; keep it as is.",
-    "screenshot": "delete-confirm.png"
+    "screenshot": "delete-confirm.png",
+    "visibility": "tooltip"
   },
   "fileOperations.backgroundStart.startedToast": "Sent to the background.",
   "@fileOperations.backgroundStart.startedToast": {
@@ -1975,7 +2004,8 @@
   },
   "fileOperations.errorDialog.technicalDetailsAria": "Technical error details",
   "@fileOperations.errorDialog.technicalDetailsAria": {
-    "description": "Accessibility label for the read-only text box holding the raw technical error details (screen-reader only)."
+    "description": "Accessibility label for the read-only text box holding the raw technical error details (screen-reader only).",
+    "visibility": "screenReader"
   },
   "fileOperations.errorDialog.retry": "Retry",
   "@fileOperations.errorDialog.retry": {
@@ -2029,7 +2059,8 @@
   "fileOperations.archivePassword.inputAria": "Archive password",
   "@fileOperations.archivePassword.inputAria": {
     "description": "Accessible label for the masked password input in the archive-password dialog (there is no visible label next to the field). Short.",
-    "screenshot": "archive-password-first-attempt.png"
+    "screenshot": "archive-password-first-attempt.png",
+    "visibility": "screenReader"
   },
   "fileOperations.archivePassword.placeholder": "Password",
   "@fileOperations.archivePassword.placeholder": {
@@ -2070,7 +2101,8 @@
   "fileOperations.resticPassword.inputAria": "Backup password",
   "@fileOperations.resticPassword.inputAria": {
     "description": "Accessible label for the masked password input in the backup-password dialog (there is no visible label next to the field). Short.",
-    "screenshot": "archive-password-repo-first-attempt.png"
+    "screenshot": "archive-password-repo-first-attempt.png",
+    "visibility": "screenReader"
   },
   "fileOperations.resticPassword.remember": "{platform, select, macos {Remember in Keychain} windows {Remember password} linuxKde {Remember in KDE Wallet} other {Remember in keyring}}",
   "@fileOperations.resticPassword.remember": {
@@ -2080,7 +2112,8 @@
   "fileOperations.resticPassword.checking": "Checking the password…",
   "@fileOperations.resticPassword.checking": {
     "description": "Screen-reader label for the small spinner in the backup-password dialog while Cmdr tries the password on the backup (this takes a second or more, longer over a network). Not visible as text.",
-    "screenshot": "archive-password-repo-checking.png"
+    "screenshot": "archive-password-repo-checking.png",
+    "visibility": "screenReader"
   },
   "fileOperations.resticPassword.unreachable": "Cmdr couldn’t check the password just now. Make sure the backup’s drive or server is reachable, then try again.",
   "@fileOperations.resticPassword.unreachable": {
@@ -2239,13 +2272,14 @@
   "fileOperations.transferTree.treeLabel": "Files in this transfer",
   "@fileOperations.transferTree.treeLabel": {
     "description": "Screen-reader name of the live file tree in the copy/move/compress progress dialog and under a running row in the operation queue window. The tree lists every selected file and folder with its own progress. Not shown on screen. The tree also serves a compress (into a new zip), so a word wider than your “transfer” term, like “operation”, is fine.",
-    "screenshot": "toast-transfer-complete.png"
+    "screenshot": "toast-transfer-complete.png",
+    "visibility": "screenReader"
   },
   "fileOperations.transferTree.preparing": "Listing the files…",
   "@fileOperations.transferTree.preparing": {
     "description": "Quiet placeholder where the live file tree of a copy/move/compress will appear, shown while Cmdr is still scanning the selection and has no list to show yet. Ends in an ellipsis (U+2026) because it’s still in progress.",
     "screenshot": "conflict-dialog.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.transferTree.empty": "No files to show",
   "@fileOperations.transferTree.empty": {
@@ -2257,7 +2291,8 @@
   },
   "fileOperations.transferTree.followTooltip": "Scroll back to the files in progress, and keep following them",
   "@fileOperations.transferTree.followTooltip": {
-    "description": "Hover text of the Follow button above the live file tree of a running copy/move/compress (see fileOperations.transferTree.follow). Explains what the button does."
+    "description": "Hover text of the Follow button above the live file tree of a running copy/move/compress (see fileOperations.transferTree.follow). Explains what the button does.",
+    "visibility": "tooltip"
   },
   "fileOperations.transferTree.filesTotal": "{countText} {count, plural, one {file} other {files}}",
   "@fileOperations.transferTree.filesTotal": {
@@ -2314,7 +2349,8 @@
   "fileOperations.transferTree.state.done": "Done",
   "@fileOperations.transferTree.state.done": {
     "description": "State of a file or folder that has finished transferring, in the live file tree of a copy/move/compress. The accessible name of the small checkmark at the end of its row, and one item of the row’s comma-separated screen-reader description. A row can be a file or a folder, so use a form that needs no agreement, or your language’s usual status form (masculine where that’s the convention).",
-    "screenshot": "toast-transfer-complete.png"
+    "screenshot": "toast-transfer-complete.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "fileOperations.transferTree.state.skipped": "Skipped",
   "@fileOperations.transferTree.state.skipped": {

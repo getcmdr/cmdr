@@ -2,7 +2,8 @@
   "queue.windowTitle": "Operation queue",
   "@queue.windowTitle": {
     "description": "Title of the standalone window that lists every running and queued copy, move, delete, trash, rename, and folder- or file-creation operation, with controls to pause, resume, and cancel them. It’s the operating-system window title (shown in the window list and app switcher) and the screen-reader heading for the page. It matches the View menu item and the command palette entry that open the window, so keep those three identical. \"Operation\" is the category word covering all of them; the window is not limited to transfers.",
-    "screenshot": "queue-empty.png"
+    "screenshot": "queue-empty.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "queue.heading": "Operations",
   "@queue.heading": {
@@ -110,7 +111,8 @@
       "count": "the same number (for any agreement your language needs)"
     },
     "screenshot": "queue.png",
-    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button."
+    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button.",
+    "visibility": "tooltip"
   },
   "queue.row.itemsInFolder": "in {folder}",
   "@queue.row.itemsInFolder": {
@@ -142,7 +144,8 @@
   "@queue.row.awaitingAnswerTooltip": {
     "description": "Tooltip on the \"Needs your answer\" status of an operation row, saying where the question is. The main window is the two-pane file manager window; the operation queue is a separate window, so the prompt can be hidden behind it.",
     "screenshot": "queue.png",
-    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button."
+    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button.",
+    "visibility": "tooltip"
   },
   "queue.row.pause": "Pause",
   "@queue.row.pause": {
@@ -163,7 +166,8 @@
   "queue.row.foregroundTooltip": "Show this operation’s progress dialog in the main window, and bring that window forward. The operation keeps running either way.",
   "@queue.row.foregroundTooltip": {
     "description": "Tooltip on the per-row Show button, explaining what the bare word \"Show\" does: the main window comes to the front and shows this operation's full progress dialog (bars, ETA, the same Pause / Cancel / Rollback). Pressing it doesn't pause, cancel, or restart anything; the operation runs on whichever window shows it.",
-    "screenshot": "queue.png"
+    "screenshot": "queue.png",
+    "visibility": "tooltip"
   },
   "queue.row.cancel": "Cancel",
   "@queue.row.cancel": {
@@ -178,13 +182,15 @@
   "queue.row.dismissAria": "Dismiss this operation",
   "@queue.row.dismissAria": {
     "description": "Screen-reader label for the per-row Dismiss button on an operation that couldn’t finish (the visible button shows only \"Dismiss\").",
-    "screenshot": "queue-failed.png"
+    "screenshot": "queue-failed.png",
+    "visibility": "screenReader"
   },
   "queue.row.treeToggleAria": "Files in this operation",
   "@queue.row.treeToggleAria": {
     "description": "Screen-reader name of an icon-only chevron button on a running copy, move, or compress row in the operation queue. It shows or hides the live list of the files and folders that operation is working through, which sits under the row. The screen reader adds \"expanded\" or \"collapsed\" itself, so this stays the same in both states. Only shown while two or more operations run at once.",
     "screenshot": "queue.png",
-    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button."
+    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button.",
+    "visibility": "screenReader"
   },
   "queue.row.treeToggleTooltip": "{open, select, yes {Hide the files} other {Show the files}}",
   "@queue.row.treeToggleTooltip": {
@@ -193,7 +199,8 @@
       "open": "yes while the list is showing, no while it's hidden"
     },
     "screenshot": "queue.png",
-    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button."
+    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button.",
+    "visibility": "tooltip"
   },
   "queue.row.retry": "Retry",
   "@queue.row.retry": {
@@ -205,17 +212,19 @@
   "@queue.row.retryAria": {
     "description": "Screen-reader label for the per-row Retry button on an operation that couldn’t finish (the visible button shows only \"Retry\"). It starts the same operation again.",
     "screenshot": "queue.png",
-    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button."
+    "screenshotNote": "The operations queue window, pictured here. Your string belongs to a row state this screenshot doesn’t show: an undo in progress, an operation waiting for your answer, or a paused one with its Resume button.",
+    "visibility": "screenReader"
   },
   "queue.row.selectAria": "Select this operation",
   "@queue.row.selectAria": {
     "description": "Screen-reader label for the checkbox that selects an operation row so it can be canceled together with others via \"Cancel selected\".",
-    "screenshot": "queue.png"
+    "screenshot": "queue.png",
+    "visibility": "screenReader"
   },
   "queue.list.aria": "Operations",
   "@queue.list.aria": {
     "description": "Screen-reader label for the list of operations in the queue window. It names the category, matching the visible heading above the list.",
-    "screenshot": "quit-confirmation-one-copy.png"
+    "screenshot": "queue.png"
   },
   "queue.reorder.moved": "{direction, select, earlier {Moved up.} other {Moved down.}} Now {position} of {waiting} in line.",
   "@queue.reorder.moved": {
@@ -224,18 +233,21 @@
       "direction": "\"earlier\" when the operation moved up (toward the front of the line), anything else when it moved down",
       "position": "the operation’s place in line after the move, counting from 1 at the front",
       "waiting": "how many operations are waiting in line"
-    }
+    },
+    "visibility": "screenReader"
   },
   "queue.reorder.atEdge": "{direction, select, earlier {Already first in line.} other {Already last in line.}}",
   "@queue.reorder.atEdge": {
     "description": "Spoken by a screen reader (never shown) when the user tries to move a waiting operation in the operation queue further than it can go: up when it already starts next, or down when it already starts last. Nothing moved.",
     "placeholders": {
       "direction": "\"earlier\" when the user tried to move it up (toward the front of the line), anything else when down"
-    }
+    },
+    "visibility": "screenReader"
   },
   "queue.reorder.notQueued": "Only waiting operations can move.",
   "@queue.reorder.notQueued": {
-    "description": "Spoken by a screen reader (never shown) when the user presses Option-Up or Option-Down on an operation queue row that isn’t waiting: it’s already running, paused, or stopped, and those keep their place. \"Waiting\" matches the status word on waiting rows (queue.row.status)."
+    "description": "Spoken by a screen reader (never shown) when the user presses Option-Up or Option-Down on an operation queue row that isn’t waiting: it’s already running, paused, or stopped, and those keep their place. \"Waiting\" matches the status word on waiting rows (queue.row.status).",
+    "visibility": "screenReader"
   },
   "queue.toolbar.pauseAll": "Pause all",
   "@queue.toolbar.pauseAll": {
@@ -299,7 +311,8 @@
       "count": "how many operations couldn’t finish",
       "countText": "the same count, already formatted with the locale’s digit grouping (for example 1,024)"
     },
-    "screenshot": "operation-failure.png"
+    "screenshot": "operation-failure.png",
+    "visibility": "screenReader"
   },
   "queue.chip.ariaLabel": "{label}, {percentText} percent. Open the operation queue.",
   "@queue.chip.ariaLabel": {
@@ -308,7 +321,8 @@
       "label": "what the chip shows: the action word from queue.row.label (\"Copying\"), or the status word \"Paused\" when the operation is paused",
       "percentText": "how far along the operation is, a whole number already formatted (for example 42)"
     },
-    "screenshot": "operation-chip.png"
+    "screenshot": "operation-chip.png",
+    "visibility": "screenReader"
   },
   "queue.chip.scanningAriaLabel": "{label}, scanning. Open the operation queue.",
   "@queue.chip.scanningAriaLabel": {
@@ -317,7 +331,8 @@
       "label": "what the chip shows: the action word from queue.row.label (\"Copying\"), or the status word \"Paused\" when the operation is paused"
     },
     "screenshot": "operation-chip.png",
-    "screenshotNote": "The operation chip in the corner of the main window, pictured here. Your string is never shown: a screen reader speaks it for the chip while an operation is still scanning."
+    "screenshotNote": "The operation chip in the corner of the main window, pictured here. Your string is never shown: a screen reader speaks it for the chip while an operation is still scanning.",
+    "visibility": "screenReader"
   },
   "queue.chip.indeterminateAriaLabel": "{label}. Open the operation queue.",
   "@queue.chip.indeterminateAriaLabel": {
@@ -326,7 +341,8 @@
       "label": "the exact visible phase label, such as Finishing compression… or Finishing transfer…"
     },
     "screenshot": "operation-chip.png",
-    "screenshotNote": "The operation chip in the corner of the main window, pictured here. Your string is never shown: a screen reader speaks it for the chip while an operation is still scanning."
+    "screenshotNote": "The operation chip in the corner of the main window, pictured here. Your string is never shown: a screen reader speaks it for the chip while an operation is still scanning.",
+    "visibility": "screenReader"
   },
   "queue.chip.tooltip": "{label}{count, plural, =0 {} one { · {countText} item} other { · {countText} items}}{hasDestination, select, yes { · to {destination}} other {}} · {percentText}%{hasDetail, select, yes { · {detail}} other {}}",
   "@queue.chip.tooltip": {
@@ -341,6 +357,7 @@
       "hasDetail": "\"yes\" when there’s a trailing detail to show, anything else when there isn’t",
       "detail": "the trailing detail: the time left, already formatted (for example \"1m 20s left\")"
     },
-    "screenshot": "operation-chip.png"
+    "screenshot": "operation-chip.png",
+    "visibility": "tooltip"
   }
 }

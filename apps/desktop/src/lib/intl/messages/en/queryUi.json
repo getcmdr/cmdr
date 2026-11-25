@@ -20,29 +20,34 @@
   "@queryUi.bar.aria.ai": {
     "description": "Accessibility label for the search input in AI mode, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.bar.aria.regex": "Regex search pattern",
   "@queryUi.bar.aria.regex": {
     "description": "Accessibility label for the search input in Regex mode, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.bar.aria.filename": "Filename search pattern",
   "@queryUi.bar.aria.filename": {
     "description": "Accessibility label for the search input in Filename mode, read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.bar.runTitle.ai": "Run AI search",
   "@queryUi.bar.runTitle.ai": {
     "description": "Tooltip and accessibility label for the run button next to the search input in AI mode. AI searches run only on an explicit click or Enter.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.bar.runTitle.default": "Run search",
   "@queryUi.bar.runTitle.default": {
     "description": "Tooltip and accessibility label for the run button next to the search input in filename and regex modes.",
-    "screenshot": "select-dialog.png"
+    "screenshot": "select-dialog.png",
+    "visibility": "tooltip"
   },
   "queryUi.bar.runHint": "Press Enter to search",
   "@queryUi.bar.runHint": {
@@ -74,12 +79,14 @@
   "queryUi.mode.content.tooltip": "Coming soon: full-text search inside files",
   "@queryUi.mode.content.tooltip": {
     "description": "Tooltip on the disabled Content mode chip, explaining it will later search the text inside files.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "queryUi.mode.content.aria": "Content mode (coming soon)",
   "@queryUi.mode.content.aria": {
     "description": "Accessibility label for the disabled Content mode chip, noting it is not yet available. Must contain the chip's visible label (queryUi.mode.content.label) word for word, so a speech-control user can say what they see (WCAG 2.5.3, label in name).",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.mode.regex.label": "Regex",
   "@queryUi.mode.regex.label": {
@@ -89,7 +96,8 @@
   "queryUi.mode.groupAria": "Search mode",
   "@queryUi.mode.groupAria": {
     "description": "Accessibility label for the whole mode-chip row (the group of mode chips), read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.empty.tryLine": "Try…",
   "@queryUi.empty.tryLine": {
@@ -153,19 +161,22 @@
   "@queryUi.ai.refineAria": {
     "description": "Accessibility label for the disabled 'Refine' button in the AI transparency strip, noting it is not yet available.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.ai.refineTooltip": "Coming soon: chat back to the agent",
   "@queryUi.ai.refineTooltip": {
     "description": "Tooltip on the disabled 'Refine' button in the AI transparency strip. First-person 'agent' voice is intentional (see queryUi.ai.lead).",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.ai.stripAria": "What the agent did with your last AI search",
   "@queryUi.ai.stripAria": {
     "description": "Accessibility label for the whole AI transparency strip region, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.ai.patternLabel.glob": "Glob",
   "@queryUi.ai.patternLabel.glob": {
@@ -243,7 +254,8 @@
   "@queryUi.results.listboxAria": {
     "description": "Accessibility label for the search results list, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.results.scanningWithCount": "Scan in progress ({countText} {count, plural, one {entry} other {entries}})…",
   "@queryUi.results.scanningWithCount": {
@@ -398,7 +410,8 @@
       "path": "the folder path the other scan holds"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.results.live.readingIndex": "Reading what’s already indexed…",
   "@queryUi.results.live.readingIndex": {
@@ -471,7 +484,8 @@
   "@queryUi.results.live.stopTooltip": {
     "description": "Tooltip on the button that stops a running search, reassuring the user that stopping doesn't throw away the results already found.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.results.live.scanningAria": "Currently looking in {path}",
   "@queryUi.results.live.scanningAria": {
@@ -480,7 +494,8 @@
       "path": "the folder path the search is currently reading, shown verbatim and not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.results.countOnly.soFar": "{count, plural, one {This search has found <total>{countText}</total> result so far} other {This search has found <total>{countText}</total> results so far}}",
   "@queryUi.results.countOnly.soFar": {
@@ -495,12 +510,14 @@
   "queryUi.recent.trailingTooltip": "Show all recent searches",
   "@queryUi.recent.trailingTooltip": {
     "description": "Tooltip on the small chevron button inside the search dialog's query field, which opens the recent-searches dropdown. A keyboard-shortcut glyph appears next to it.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "queryUi.recent.allButtonAria": "All recent searches",
   "@queryUi.recent.allButtonAria": {
     "description": "Accessibility label for the chevron button inside the search dialog's query field that opens the recent-searches dropdown, read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.recent.filterPlaceholder": "Filter recent searches",
   "@queryUi.recent.filterPlaceholder": {
@@ -517,12 +534,14 @@
   "queryUi.recent.popoverAria": "All recent searches",
   "@queryUi.recent.popoverAria": {
     "description": "Accessibility label for the recent-searches popover wrapper, read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.recent.listboxAria": "Recent searches",
   "@queryUi.recent.listboxAria": {
     "description": "Accessibility label for the list of entries inside the recent-searches popover, read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.recent.popoverHint": "<moveKey>↑↓</moveKey> to move · <selectKey>Enter</selectKey> to fill the field · right-click to remove",
   "@queryUi.recent.popoverHint": {
@@ -534,25 +553,29 @@
   "@queryUi.recent.mode.ai": {
     "description": "Friendly name of the AI search mode, used in recent-search chip tooltips and accessibility labels. 'AI' is a brand-like term; keep it as-is in most languages.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.mode.regex": "Regex",
   "@queryUi.recent.mode.regex": {
     "description": "Friendly name of the Regex search mode, used in recent-search chip tooltips. 'Regex' is short for regular expression.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.mode.filename": "Filename",
   "@queryUi.recent.mode.filename": {
     "description": "Friendly name of the Filename search mode, used in recent-search chip tooltips.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.justNow": "just now",
   "@queryUi.age.justNow": {
     "description": "Relative-time label in a recent-search chip tooltip for an action that happened less than a minute ago.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.minutes": "{count}m ago",
   "@queryUi.age.minutes": {
@@ -561,7 +584,8 @@
       "count": "the number of minutes ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.hours": "{count}h ago",
   "@queryUi.age.hours": {
@@ -570,7 +594,8 @@
       "count": "the number of hours ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.days": "{count}d ago",
   "@queryUi.age.days": {
@@ -579,7 +604,8 @@
       "count": "the number of days ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.weeks": "{count}w ago",
   "@queryUi.age.weeks": {
@@ -588,7 +614,8 @@
       "count": "the number of weeks ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.months": "{count}mo ago",
   "@queryUi.age.months": {
@@ -597,7 +624,8 @@
       "count": "the number of months ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.age.years": "{count}y ago",
   "@queryUi.age.years": {
@@ -606,7 +634,8 @@
       "count": "the number of years ago, a whole number. Where the abbreviation changes with the number (Russian “г.” / “л.” for years), give each plural form its own abbreviation."
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.scopeSummary": "scope: {scope}",
   "@queryUi.recent.scopeSummary": {
@@ -615,19 +644,22 @@
       "scope": "the folder scope expression of the past search, shown verbatim and not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.caseSensitive": "case-sensitive",
   "@queryUi.recent.caseSensitive": {
     "description": "Part of a recent-search chip's hover tooltip. Notes that the past search matched letter case exactly. Lowercase because it joins a comma-separated list of filter facts.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.systemDirsIncluded": "system folders included",
   "@queryUi.recent.systemDirsIncluded": {
     "description": "Part of a recent-search chip's hover tooltip. Notes that the past search did NOT hide the usual system and build folders. Lowercase because it joins a comma-separated list of filter facts.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.resultCount": "{countText} {count, plural, one {result} other {results}} last time",
   "@queryUi.recent.resultCount": {
@@ -637,7 +669,8 @@
       "countText": "the number of results, shown as a plain integer (no grouping)"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.rowResultCount": "{countText} {count, plural, one {result} other {results}}",
   "@queryUi.recent.rowResultCount": {
@@ -657,7 +690,8 @@
       "maxText": "the upper size bound, already formatted with its unit (for example 200.0 MB)"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.sizeMin": "size > {minText}",
   "@queryUi.recent.sizeMin": {
@@ -666,7 +700,8 @@
       "minText": "the lower size bound, already formatted with its unit (for example 1.5 GB)"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.sizeMax": "size < {maxText}",
   "@queryUi.recent.sizeMax": {
@@ -675,7 +710,8 @@
       "maxText": "the upper size bound, already formatted with its unit (for example 200.0 MB)"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.modifiedRange": "modified {after}…{before}",
   "@queryUi.recent.modifiedRange": {
@@ -685,7 +721,8 @@
       "before": "the end date in ISO format (YYYY-MM-DD), not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.modifiedAfter": "after {after}",
   "@queryUi.recent.modifiedAfter": {
@@ -694,7 +731,8 @@
       "after": "the date in ISO format (YYYY-MM-DD), not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.modifiedBefore": "before {before}",
   "@queryUi.recent.modifiedBefore": {
@@ -703,7 +741,8 @@
       "before": "the date in ISO format (YYYY-MM-DD), not translated"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.recent.chipTooltipHeader": "{mode} · {age}",
   "@queryUi.recent.chipTooltipHeader": {
@@ -713,12 +752,14 @@
       "age": "the relative time, already translated (for example '3d ago')"
     },
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "tooltip"
   },
   "queryUi.dialog.actionsAria": "Dialog actions",
   "@queryUi.dialog.actionsAria": {
     "description": "Accessibility label for the group of primary/secondary buttons in the search dialog footer, read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.dialog.aiTranslateFailedToast": "Couldn’t run the AI search just now. Try again?",
   "@queryUi.dialog.aiTranslateFailedToast": {
@@ -744,7 +785,8 @@
   "queryUi.filters.toolbarAria": "Search filters",
   "@queryUi.filters.toolbarAria": {
     "description": "Accessibility label for the filter-chip strip (type toggle plus Pattern, Size, Modified, and Search-in chips), read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.filters.type.both": "Both",
   "@queryUi.filters.type.both": {
@@ -764,7 +806,8 @@
   "queryUi.filters.type.aria": "Filter by type",
   "@queryUi.filters.type.aria": {
     "description": "Accessibility label for the file-type toggle (Both / Files / Folders), read by screen readers.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "screenReader"
   },
   "queryUi.filters.chip.pattern": "Pattern",
   "@queryUi.filters.chip.pattern": {
@@ -794,7 +837,8 @@
   "queryUi.filters.countOnly.tooltip": "Show just how many files match, not the list",
   "@queryUi.filters.countOnly.tooltip": {
     "description": "Tooltip on the 'Count only' toggle in the search filter strip, explaining what turning it on does.",
-    "screenshot": "search-dialog.png"
+    "screenshot": "search-dialog.png",
+    "visibility": "tooltip"
   },
   "queryUi.filters.scope.includesSystemFolders": "includes system folders",
   "@queryUi.filters.scope.includesSystemFolders": {
@@ -882,7 +926,8 @@
   "queryUi.size.popover.aria": "Size filter options",
   "@queryUi.size.popover.aria": {
     "description": "Accessibility label for the Size filter popover and its option grid, read by screen readers.",
-    "screenshot": "filter-popover.png"
+    "screenshot": "filter-popover.png",
+    "visibility": "screenReader"
   },
   "queryUi.size.aria.comparator": "Comparator",
   "@queryUi.size.aria.comparator": {
@@ -966,7 +1011,8 @@
   "@queryUi.date.popover.aria": {
     "description": "Accessibility label for the Modified filter popover and its option grid, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.date.aria.comparator": "Comparator",
   "@queryUi.date.aria.comparator": {
@@ -1076,7 +1122,8 @@
   "@queryUi.scope.popover.aria": {
     "description": "Accessibility label for the scope filter popover, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.scope.hint": "Comma-separated paths. Prefix with <bang>!</bang> to exclude. Wildcards <star>*</star> and <question>?</question> work.",
   "@queryUi.scope.hint": {
@@ -1088,7 +1135,8 @@
   "@queryUi.scope.textareaAria": {
     "description": "Accessibility label for the folder-list textarea in the scope popover, read by screen readers.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.scope.toggle.hideBoring": "Hide boring folders",
   "@queryUi.scope.toggle.hideBoring": {
@@ -1106,7 +1154,8 @@
   "@queryUi.scope.toggle.caseSensitiveAria": {
     "description": "Accessibility label for the case-sensitive checkbox in the scope popover.",
     "screenshot": "search-dialog.png",
-    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area."
+    "screenshotNote": "Cmdr’s search, select, and filter surfaces are one shared dialog: a mode row at the top, the query bar, the scope and filter controls under it, and results below. This shows that dialog; your string is one of those controls, one of the filter or date options, or a line in the results area.",
+    "visibility": "screenReader"
   },
   "queryUi.scope.useCurrentFolder": "Use current folder",
   "@queryUi.scope.useCurrentFolder": {

@@ -130,6 +130,15 @@ The shape:
 - `screenshot`: a filename in `screenshots/` showing the string in context. One screenshot may serve many keys; many
   keys can name the same file. A screenshot REPLACES the need to describe layout in prose. It's populated by the capture
   harness, not by hand (see Screenshots below); it's an optional aid, so a key without one is fine.
+- `visibility` (optional): how a string that never shows in a screenshot reaches the person: `"tooltip"` (on hover or
+  behind an ⓘ), `"screenReader"` (an accessible name, a screen-reader-only line, an announcement), or `"never"` (an
+  internal label nothing displays). Absent means drawn on screen, which the coupler's OCR check then verifies (§
+  OCR-verified coupling). Hand-authored with the key, typed (`VISIBILITIES` in
+  `apps/desktop/scripts/screenshot-placement.ts`), and validated by `message-screenshots-fresh`, which fails on any
+  other value. **Why a field and not the words:** a word heuristic over key names and descriptions flagged 928 keys,
+  about 180 of them visible labels whose descriptions merely mention a tooltip or a screen reader (2026-11-25 migration,
+  checked against the OCR text). Set it on a new aria, tooltip, or announcement key; leave it off anything drawn on
+  screen.
 - `screenshotNote`: a translator-facing note, present ONLY on a REPRESENTATIVE coupling (see Screenshots below), that
   explains how a stand-in screenshot maps to this key ("this shows a different error, but your string is the
   title/explanation in this same pane"). Absent on direct (captured) couplings. Like `screenshot`, it's harness-written,
@@ -352,13 +361,13 @@ lookup, 567 of 1,743 keys (32.5 %) pointed at an image without their English (OC
   85 % of its words show. It agreed with the one-off Go prototype on all 1,743 keys and with eyeballing on about 90–95
   %; the misses are short common words matching another element and lines a frame cuts off.
 - **The policy** (`placeKeys` in `apps/desktop/scripts/screenshot-placement.ts`): a key takes the first surface whose
-  image shows it. An image with no OCR text, and a never-visible key (an accessible name, tooltip, or announcement, by
-  its key segment or its description: `isNeverVisible`), is trusted as before, since no picture shows those words and
-  the control's surface is the right context. A key no image shows goes to a representative rule if one reaches it, else
-  to the first surface that looked it up with `NOT_SHOWN_NOTE`, so a translator knows the picture shows the
-  surroundings, not the string. The coverage report counts those as **Not shown**. After the paged recapture
-  (2026-11-23), 1,789 keys couple to an image that shows them and 194 carry the note; the Go prototype re-run over the
-  result finds no direct mismatch, so what's left is the matcher's own 5–10 % error.
+  image shows it. An image with no OCR text, a key whose `@key.visibility` says no picture shows it, and a Settings
+  search keyword list (`isSearchKeywordsKey`) are trusted as before, since their words can't be checked and the
+  control's surface is the right context. A key no image shows goes to a representative rule if one reaches it, else to
+  the first surface that looked it up with `NOT_SHOWN_NOTE`, so a translator knows the picture shows the surroundings,
+  not the string. The coverage report counts those as **Not shown**. After the paged recapture (2026-11-23), 1,789 keys
+  couple to an image that shows them and 194 carry the note; the Go prototype re-run over the result finds no direct
+  mismatch, so what's left is the matcher's own 5–10 % error.
 - **Paged surfaces lean on it**: every page of a paged surface (§ How a surface is framed) carries all the surface's
   keys, and the OCR is what puts each key on the page that shows it.
 

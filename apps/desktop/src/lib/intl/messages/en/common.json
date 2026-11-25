@@ -6,7 +6,8 @@
       "first": "the sentence (or sentences) that come first, already ending in its full stop",
       "second": "the next sentence"
     },
-    "screenshot": "mtp-browse.png"
+    "screenshot": "mtp-browse.png",
+    "visibility": "tooltip"
   },
 
   "common.attachEmail": "Attach my email address ({emailAddress} – <change>change</change>) so you can follow up",
@@ -19,7 +20,8 @@
 
   "common.attachEmailInputLabel": "Your email address",
   "@common.attachEmailInputLabel": {
-    "description": "Accessible name of the email field that appears under the attach-email checkbox in the crash-report, error-report, and feedback dialogs once the user ticks it with no address on file. It has no visible label (the checkbox above it carries the wording), so this is what a screen reader announces. Keep it short."
+    "description": "Accessible name of the email field that appears under the attach-email checkbox in the crash-report, error-report, and feedback dialogs once the user ticks it with no address on file. It has no visible label (the checkbox above it carries the wording), so this is what a screen reader announces. Keep it short.",
+    "visibility": "screenReader"
   },
 
   "common.attachEmailInvalid": "That doesn’t look like an email address",
@@ -63,7 +65,7 @@
   "@common.sizeUnit.mebibyte": {
     "description": "Unit symbol for a mebibyte, the BINARY (base 1024, IEC 80000-13) unit: 1 MiB = 1,024 KiB. Shown after a number in every size, free-space readout, and transfer speed when the user picked the binary size format (Settings > Appearance > File and folder sizes, the default), like '83.59 MiB'; the app adds the number and the space. Write your language's IEC binary symbol (for example French 'Mio', Russian 'МиБ'), never the decimal one: it must stay distinct from common.sizeUnit.megabyte, which means base 1000. Symbol only, never the full word. Keep it in step with the other binary common.sizeUnit symbols and with the symbols named in settings.appearance.fileSizeFormat.*.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
 
   "common.sizeUnit.gibibyte": "GiB",

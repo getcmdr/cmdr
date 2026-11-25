@@ -9,14 +9,16 @@
   "@shortcuts.list.addedTooltip": {
     "description": "Tooltip on a shortcut chip in the Keyboard shortcuts help window, marking a shortcut the user added or changed from the default. A short label.",
     "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated.",
+    "visibility": "tooltip"
   },
 
   "shortcuts.list.disabledTooltip": "Disabled",
   "@shortcuts.list.disabledTooltip": {
     "description": "Tooltip on a struck-through shortcut chip in the Keyboard shortcuts help window, marking a built-in shortcut the user turned off. A short label.",
     "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated.",
+    "visibility": "tooltip"
   },
 
   "shortcuts.scope.app": "App",
@@ -444,14 +446,16 @@
   "@shortcuts.section.modifiedTooltip": {
     "description": "Tooltip on the dot marking a command whose shortcuts differ from the shipped defaults.",
     "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated.",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.hasConflictsTooltip": "Has conflicting shortcuts",
   "@shortcuts.section.hasConflictsTooltip": {
     "description": "Tooltip on the warning icon marking a command that shares a shortcut with another command.",
     "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated.",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.noneShortcut": "(none)",
@@ -463,13 +467,15 @@
   "shortcuts.section.macOsTooltip": "macOS handles this shortcut. Cmdr can’t change it.",
   "@shortcuts.section.macOsTooltip": {
     "description": "Tooltip on the \"macOS\" badge of a read-only shortcut row, explaining why it can't be changed. Shown on macOS only. \"macOS\" and \"Cmdr\" are names; do not translate them.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.fixedTooltip": "This key is built into Cmdr and can’t be changed.",
   "@shortcuts.section.fixedTooltip": {
     "description": "Tooltip on the \"Fixed\" badge of a read-only shortcut row, explaining why it can't be changed. \"Cmdr\" is the brand name; do not translate it.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.macOsBadge": "macOS",
@@ -494,20 +500,23 @@
   "shortcuts.section.removeShortcutTooltip": "Remove shortcut",
   "@shortcuts.section.removeShortcutTooltip": {
     "description": "Tooltip on the × button that removes a single shortcut from a command. A short label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.addShortcutTooltip": "Add shortcut",
   "@shortcuts.section.addShortcutTooltip": {
     "description": "Tooltip and accessibility label on the + button that adds another shortcut to a command. A short label.",
-    "screenshot": "settings-keyboard-shortcuts.png"
+    "screenshot": "settings-keyboard-shortcuts.png",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.resetToDefaultTooltip": "Reset to default",
   "@shortcuts.section.resetToDefaultTooltip": {
     "description": "Tooltip and accessibility label on the button that restores a single command's shortcuts to the shipped defaults. A short label.",
     "screenshot": "settings-keyboard-shortcuts.png",
-    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated."
+    "screenshotNote": "Keyboard-shortcut UI. This shows the Settings > Keyboard shortcuts list, which uses the same row/scope/conflict layout as the standalone Shortcuts window. macOS modifier glyphs (⌘ ⌥ ⌃ ⇧) and key names are not translated.",
+    "visibility": "tooltip"
   },
 
   "shortcuts.section.resetAll": "Reset all to defaults",

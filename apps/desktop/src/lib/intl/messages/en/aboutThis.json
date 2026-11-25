@@ -19,7 +19,8 @@
   "@aboutThis.action.openTooltip": {
     "description": "Tooltip on the \"Open\" button of the \"Tell me about this\" card: which app opens the item, and that it's the same as pressing Enter on it in the file list.",
     "placeholders": { "app": { "description": "The app's name, for example \"Preview\"." } },
-    "screenshot": "tell-me-about-this-downloaded.png"
+    "screenshot": "tell-me-about-this-downloaded.png",
+    "visibility": "tooltip"
   },
   "aboutThis.action.showInFileManager": "{platform, select, macos {Show in Finder} windows {Show in File Explorer} linuxGnome {Show in Files} linuxKde {Show in Dolphin} other {Show in file manager}}",
   "@aboutThis.action.showInFileManager": {
@@ -37,7 +38,8 @@
     "placeholders": {
       "host": { "description": "The website's host name, for example \"github.com\". Never translated." }
     },
-    "screenshot": "tell-me-about-this-downloaded.png"
+    "screenshot": "tell-me-about-this-downloaded.png",
+    "visibility": "tooltip"
   },
   "aboutThis.action.revealOwner": "Show {app}",
   "@aboutThis.action.revealOwner": {
@@ -62,7 +64,7 @@
   "@aboutThis.action.delete": {
     "description": "Button in the footer of the \"Tell me about this\" card, on a drive with no trash (a phone, a server). Closes the card and opens Cmdr's usual delete dialog for this one item, which asks before anything is deleted. The ellipsis says a question follows. Short control label.",
     "screenshot": "tell-me-about-this-remote.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.action.more": "More",
   "@aboutThis.action.more": {
@@ -71,12 +73,14 @@
   },
   "aboutThis.action.moreMenu": "More actions",
   "@aboutThis.action.moreMenu": {
-    "description": "Screen-reader name of the menu the \"More\" button opens on the \"Tell me about this\" card: the card's remaining actions."
+    "description": "Screen-reader name of the menu the \"More\" button opens on the \"Tell me about this\" card: the card's remaining actions.",
+    "visibility": "screenReader"
   },
   "aboutThis.dialog.lookingUp": "Looking this up",
   "@aboutThis.dialog.lookingUp": {
     "description": "Screen-reader text on a row of the \"Tell me about this\" card whose answer hasn't arrived yet (it shows a gray placeholder bar). Short, no closing period.",
-    "screenshot": "tell-me-about-this-still-filling.png"
+    "screenshot": "tell-me-about-this-still-filling.png",
+    "visibility": "screenReader"
   },
   "aboutThis.section.origin": "Where it came from",
   "@aboutThis.section.origin": {
@@ -269,7 +273,7 @@
   "@aboutThis.unknown.notInStatus": {
     "description": "Muted one-line answer on the Git row of the \"Tell me about this\" card when git's list of changes doesn't name the item: it may be committed with no changes, or ignored. Ordinary, not a warning. No closing period.",
     "screenshot": "tell-me-about-this-node-modules.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.unknown.noInstalledAppMatches": "No app Cmdr knows of",
   "@aboutThis.unknown.noInstalledAppMatches": {
@@ -348,7 +352,7 @@
   "@aboutThis.download.noRecord": {
     "description": "Muted one-line answer on the \"Downloaded\" row of the \"Tell me about this\" card when the system recorded no download for the item (most files a person made themselves). Ordinary, not a warning. No closing period.",
     "screenshot": "tell-me-about-this-still-filling.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.download.fromSite": "{platform, select, macos {macOS recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.} other {Your browser recorded this as downloaded from {host}{hasApp, select, yes { with {app}} other {}}{hasDate, select, yes { on <date></date>} other {}}.}}",
   "@aboutThis.download.fromSite": {
@@ -375,12 +379,14 @@
   "aboutThis.download.copyLink": "Copy the download link",
   "@aboutThis.download.copyLink": {
     "description": "Accessible name and hover hint of the copy button beside the download source on the \"Tell me about this\" card. It copies the whole recorded web address, of which the card shows only the website name.",
-    "screenshot": "tell-me-about-this-downloaded.png"
+    "screenshot": "tell-me-about-this-downloaded.png",
+    "visibility": "screenReader"
   },
   "aboutThis.download.copyPageLink": "Copy the page’s link",
   "@aboutThis.download.copyPageLink": {
     "description": "Accessible name and hover hint of the copy button beside the line naming the page the download link was on, on the \"Tell me about this\" card. It copies that page's whole recorded web address.",
-    "screenshot": "tell-me-about-this-downloaded.png"
+    "screenshot": "tell-me-about-this-downloaded.png",
+    "visibility": "screenReader"
   },
   "aboutThis.download.mail": "macOS recorded this as a Mail attachment{hasSender, select, yes {, from {sender}} other {}}.",
   "@aboutThis.download.mail": {
@@ -456,7 +462,8 @@
   "aboutThis.cmdrOperation.copySource": "Copy where it came from",
   "@aboutThis.cmdrOperation.copySource": {
     "description": "Accessible name and hover hint of the copy button beside the original path on the \"Cmdr's history\" row. It copies the full path.",
-    "screenshot": "tell-me-about-this-mismatch.png"
+    "screenshot": "tell-me-about-this-mismatch.png",
+    "visibility": "screenReader"
   },
   "aboutThis.identity.onDisk": "<size></size> on disk",
   "@aboutThis.identity.onDisk": {
@@ -473,7 +480,8 @@
   },
   "aboutThis.identity.copyLinkTarget": "Copy where it points",
   "@aboutThis.identity.copyLinkTarget": {
-    "description": "Accessible name and hover hint of the copy button beside the \"Points to\" row of a symbolic link on the \"Tell me about this\" card. It copies the full target path."
+    "description": "Accessible name and hover hint of the copy button beside the \"Points to\" row of a symbolic link on the \"Tell me about this\" card. It copies the full target path.",
+    "visibility": "screenReader"
   },
   "aboutThis.realType.matches": "{kind}, checked against its contents",
   "@aboutThis.realType.matches": {
@@ -813,7 +821,7 @@
     "description": "Answer on the \"Importance\" row of the \"Tell me about this\" card: how important Cmdr's drive index scores the folder. \"Not ranked\" is for folders the ranking leaves out on purpose (caches, build output, hidden, system, and temporary folders, app data in the Library); it never says the contents don't matter.",
     "placeholders": { "band": { "description": "high, medium, low, or floored (left out of the ranking)." } },
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.because": "Because of {reasons}",
   "@aboutThis.importance.because": {
@@ -824,25 +832,25 @@
       }
     },
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.reason.projectMarker": "a project file in it",
   "@aboutThis.importance.reason.projectMarker": {
     "description": "One reason in the \"Because of …\" list on the Importance row: the folder holds a project file (a package.json, a Cargo.toml). Lowercase, joins a list.",
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.reason.mtimeRecency": "recent changes",
   "@aboutThis.importance.reason.mtimeRecency": {
     "description": "One reason in the \"Because of …\" list on the Importance row: files in it changed recently. Lowercase, joins a list.",
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.reason.visitActivity": "your visits in Cmdr",
   "@aboutThis.importance.reason.visitActivity": {
     "description": "One reason in the \"Because of …\" list on the Importance row: the user often opens this folder in Cmdr. Lowercase, joins a list.",
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.reason.lastUsed": "recent use",
   "@aboutThis.importance.reason.lastUsed": {
@@ -864,7 +872,7 @@
   "@aboutThis.importance.floor.nameDenylisted": {
     "description": "Muted line on the \"Importance\" row of the \"Tell me about this\" card, under \"Not ranked\": Cmdr's folder ranking leaves this folder out because its name (like \"node_modules\" or \"cache\") marks files a tool generates. It describes Cmdr's ranking, never whether the folder's contents matter. No closing period.",
     "screenshot": "tell-me-about-this-node-modules.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.floor.hiddenOrSystem": "Cmdr doesn’t rank hidden, system, or temporary folders",
   "@aboutThis.importance.floor.hiddenOrSystem": {
@@ -890,7 +898,7 @@
       "countText": { "description": "The same number, already formatted." }
     },
     "screenshot": "tell-me-about-this-folder.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "aboutThis.importance.stale": "Scored before the latest changes",
   "@aboutThis.importance.stale": {
@@ -1032,12 +1040,13 @@
       "branch": { "description": "The branch's name, for example \"main\"." },
       "hasBranch": { "description": "\"yes\" when a branch is checked out." }
     },
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-notable-a.png"
   },
   "aboutThis.git.copyRepo": "Copy the repository’s path",
   "@aboutThis.git.copyRepo": {
     "description": "Accessible name and hover hint of the copy button beside the repository's folder on the Git row. It copies the full path.",
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "visibility": "screenReader"
   },
   "aboutThis.git.clean": "Committed, with no changes",
   "@aboutThis.git.clean": {
@@ -1211,7 +1220,8 @@
     "placeholders": {
       "name": { "description": "The file or folder name." }
     },
-    "screenshot": "tell-me-about-this-folder.png"
+    "screenshot": "tell-me-about-this-folder.png",
+    "visibility": "tooltip"
   },
   "aboutThis.contents.notLoaded": "Cmdr lists these once Search has loaded this drive",
   "@aboutThis.contents.notLoaded": {
@@ -1493,7 +1503,8 @@
   "aboutThis.gitSnapshot.copyCommit": "Copy the commit’s id",
   "@aboutThis.gitSnapshot.copyCommit": {
     "description": "Tooltip and screen-reader label of the copy button beside a commit on the \"Tell me about this\" card. Copies the commit's full id.",
-    "screenshot": "tell-me-about-this-git-snapshot.png"
+    "screenshot": "tell-me-about-this-git-snapshot.png",
+    "visibility": "tooltip"
   },
   "aboutThis.headline.insideArchive": "{what}{sizeShown, select, exact {, <size></size>} atLeast {, at least <size></size>} other {}}, inside {archive}",
   "@aboutThis.headline.insideArchive": {
@@ -1558,7 +1569,8 @@
   "aboutThis.verdict.stopTooltip": "Stops the AI take. The facts and what it wrote so far stay.",
   "@aboutThis.verdict.stopTooltip": {
     "description": "Tooltip on the Stop button of the AI take on the \"Tell me about this\" card.",
-    "screenshot": "tell-me-about-this-verdict-waiting.png"
+    "screenshot": "tell-me-about-this-verdict-waiting.png",
+    "visibility": "tooltip"
   },
   "aboutThis.verdict.stopped": "Stopped",
   "@aboutThis.verdict.stopped": {
@@ -1665,12 +1677,13 @@
   "aboutThis.verdict.column": "AI take",
   "@aboutThis.verdict.column": {
     "description": "Screen-reader name of the right-hand column of the \"Tell me about this\" card, which holds the short take an AI wrote about the file or folder (or one line saying why there's none this time). Not shown on screen. A noun phrase.",
-    "screenshot": "tell-me-about-this-verdict-waiting.png"
+    "screenshot": "tell-me-about-this-verdict-not-ready.png"
   },
   "aboutThis.verdict.hint.dismiss": "Hide this hint",
   "@aboutThis.verdict.hint.dismiss": {
     "description": "Screen-reader label of the small × button at the end of the AI hint line on the \"Tell me about this\" card (aboutThis.verdict.aiOffHint and its siblings). Pressing it hides the line for good on every card.",
-    "screenshot": "tell-me-about-this-verdict-no-consent.png"
+    "screenshot": "tell-me-about-this-verdict-no-consent.png",
+    "visibility": "screenReader"
   },
   "aboutThis.verdict.hint.dismissTooltip": "{platform, select, windows {Hide this hint. You can bring it back in Settings > Advanced.} linuxGnome {Hide this hint. You can bring it back in Preferences > Advanced.} linuxKde {Hide this hint. You can bring it back in Configure Cmdr > Advanced.} other {Hide this hint. You can bring it back in Settings > Advanced.}}",
   "@aboutThis.verdict.hint.dismissTooltip": {
@@ -1678,7 +1691,8 @@
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
     },
-    "screenshot": "tell-me-about-this-verdict-no-consent.png"
+    "screenshot": "tell-me-about-this-verdict-no-consent.png",
+    "visibility": "tooltip"
   },
   "aboutThis.action.continueInAskCmdr": "Continue in Ask Cmdr",
   "@aboutThis.action.continueInAskCmdr": {
@@ -1688,7 +1702,8 @@
   "aboutThis.action.continueInAskCmdrTooltip": "Opens a new Ask Cmdr chat about this item. Nothing is sent until you send it.",
   "@aboutThis.action.continueInAskCmdrTooltip": {
     "description": "Tooltip on the \"Continue in Ask Cmdr\" button of the \"Tell me about this\" card. \"Ask Cmdr\" is the feature's name and stays verbatim.",
-    "screenshot": "tell-me-about-this-verdict-waiting.png"
+    "screenshot": "tell-me-about-this-verdict-waiting.png",
+    "visibility": "tooltip"
   },
   "aboutThis.continueInAskCmdr.draft": "Tell me more about this.",
   "@aboutThis.continueInAskCmdr.draft": {
@@ -1706,7 +1721,8 @@
   },
   "aboutThis.identity.nameHidInvisible": "Its name holds characters you can’t see, so it can look like another name or carry hidden text. Cmdr shows it without them.",
   "@aboutThis.identity.nameHidInvisible": {
-    "description": "The \"Name\" row on the \"Tell me about this\" card, shown only when the item's real name holds characters that display as nothing (zero-width marks, invisible tag characters, a soft hyphen). Such characters can make two names look identical, or hide text in a name that software reads but people don't see. Cmdr dropped them everywhere it shows the name, and never sends them to the AI. Plain words, no jargon like \"Unicode\" or \"zero-width\"."
+    "description": "The \"Name\" row on the \"Tell me about this\" card, shown only when the item's real name holds characters that display as nothing (zero-width marks, invisible tag characters, a soft hyphen). Such characters can make two names look identical, or hide text in a name that software reads but people don't see. Cmdr dropped them everywhere it shows the name, and never sends them to the AI. Plain words, no jargon like \"Unicode\" or \"zero-width\".",
+    "visibility": "never"
   },
   "aboutThis.label.imageContents": "What it shows",
   "@aboutThis.label.imageContents": {

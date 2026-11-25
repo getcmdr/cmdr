@@ -7,13 +7,14 @@
   "askCmdr.close": "Close Ask Cmdr",
   "@askCmdr.close": {
     "description": "Accessible label for the button that closes the Ask Cmdr chat rail. Sentence case.",
-    "screenshot": "ask-cmdr-gate-off.png"
+    "screenshot": "ask-cmdr-gate-off.png",
+    "visibility": "screenReader"
   },
   "askCmdr.newChat": "New chat",
   "@askCmdr.newChat": {
     "description": "Label for the button that starts a fresh Ask Cmdr conversation. Sentence case.",
     "screenshot": "ask-cmdr-empty.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "askCmdr.empty.title": "Ask about your files",
   "@askCmdr.empty.title": {
@@ -33,13 +34,14 @@
   "askCmdr.composer.send": "Send message",
   "@askCmdr.composer.send": {
     "description": "Accessible label for the button that sends the typed Ask Cmdr message. Sentence case.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "visibility": "screenReader"
   },
   "askCmdr.composer.stop": "Stop",
   "@askCmdr.composer.stop": {
     "description": "Label for the button that stops the assistant while it is answering. Sentence case.",
     "screenshot": "ask-cmdr-chat.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "askCmdr.thinking": "Thinking…",
   "@askCmdr.thinking": {
@@ -79,7 +81,8 @@
   "askCmdr.softCap.dismiss": "Dismiss",
   "@askCmdr.softCap.dismiss": {
     "description": "Accessible label (read by screen readers, shown nowhere) for the round × button that hides the 'This chat is getting long' nudge for this chat. A verb; sentence case.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.appState.doing": "Checking what you’re looking at",
   "@askCmdr.tool.appState.doing": {
@@ -640,7 +643,8 @@
     "placeholders": {
       "path": "The full path, for example /Users/sam/Downloads."
     },
-    "screenshot": "ask-cmdr-every-tool-running.png"
+    "screenshot": "ask-cmdr-every-tool-running.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.repeat": "Same as above",
   "@askCmdr.tool.repeat": {
@@ -650,7 +654,8 @@
   "askCmdr.tool.outcomeSeparator": ", ",
   "@askCmdr.tool.outcomeSeparator": {
     "description": "Read by screen readers only, never shown: the pause between an Ask Cmdr tool line’s label and the short note on what came back, so “Listed Desktop” and “showed 5 of 6” read as two parts of one line. On screen a middle dot separates them. Use your language’s comma and its usual spacing.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.outcome.items": "{count, plural, one {{countText} item} other {{countText} items}}",
   "@askCmdr.tool.outcome.items": {
@@ -941,12 +946,14 @@
   "askCmdr.tool.details": "What came back",
   "@askCmdr.tool.details": {
     "description": "Accessible name of the small arrow button at the end of an Ask Cmdr tool line that opens a peek at what the request returned to the assistant. Screen readers announce it together with whether it’s open; it isn’t shown.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.preview.loading": "Getting what came back",
   "@askCmdr.tool.preview.loading": {
     "description": "Screen-reader text for the small spinner shown while an opened Ask Cmdr tool line fetches what its request returned. Usually takes a moment.",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.preview.given": "Showed the model {givenText} of {totalText}",
   "@askCmdr.tool.preview.given": {
@@ -1067,7 +1074,8 @@
   "askCmdr.tool.preview.copyLabel": "Copy the whole result as JSON",
   "@askCmdr.tool.preview.copyLabel": {
     "description": "Accessible name of the Copy button in an opened Ask Cmdr tool line. Screen readers announce it; it isn’t shown. Keep “JSON” as is (a text format).",
-    "screenshot": "ask-cmdr-tools.png"
+    "screenshot": "ask-cmdr-tools.png",
+    "visibility": "screenReader"
   },
   "askCmdr.tool.preview.copied": "Copied",
   "@askCmdr.tool.preview.copied": {
@@ -1449,11 +1457,13 @@
   },
   "askCmdr.find.region": "Find in chat",
   "@askCmdr.find.region": {
-    "description": "Accessible name of the find bar that opens at the top of the Ask Cmdr chat (Cmd+F while the chat has focus). Screen readers announce it as a search landmark. Sentence case."
+    "description": "Accessible name of the find bar that opens at the top of the Ask Cmdr chat (Cmd+F while the chat has focus). Screen readers announce it as a search landmark. Sentence case.",
+    "visibility": "screenReader"
   },
   "askCmdr.find.ariaLabel": "Find in this chat",
   "@askCmdr.find.ariaLabel": {
-    "description": "Accessible name of the text field in the Ask Cmdr find bar, where the user types words to find in the open conversation. Sentence case."
+    "description": "Accessible name of the text field in the Ask Cmdr find bar, where the user types words to find in the open conversation. Sentence case.",
+    "visibility": "screenReader"
   },
   "askCmdr.find.placeholder": "Find in chat…",
   "@askCmdr.find.placeholder": {
@@ -1466,7 +1476,7 @@
   "askCmdr.threads.open": "Chats",
   "@askCmdr.threads.open": {
     "description": "Accessible label and tooltip for the rail header button that opens the list of past Ask Cmdr chats. Sentence case.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-sessions.png"
   },
   "askCmdr.sessions.title": "Chats",
   "@askCmdr.sessions.title": {
@@ -1476,7 +1486,8 @@
   "askCmdr.sessions.back": "Back to chat",
   "@askCmdr.sessions.back": {
     "description": "Accessible label for the button that closes the chats list and returns to the active conversation. Sentence case.",
-    "screenshot": "ask-cmdr-sessions.png"
+    "screenshot": "ask-cmdr-sessions.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.searchPlaceholder": "Search your chats…",
   "@askCmdr.sessions.searchPlaceholder": {
@@ -1486,7 +1497,8 @@
   "askCmdr.sessions.searchLabel": "Search chats",
   "@askCmdr.sessions.searchLabel": {
     "description": "Accessible label for the Ask Cmdr chats search input. Sentence case.",
-    "screenshot": "ask-cmdr-sessions.png"
+    "screenshot": "ask-cmdr-sessions.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.empty": "No chats yet",
   "@askCmdr.sessions.empty": {
@@ -1535,17 +1547,20 @@
   "askCmdr.sessions.renameLabel": "Chat title",
   "@askCmdr.sessions.renameLabel": {
     "description": "Accessible label for the inline text box that edits a chat's title. Sentence case.",
-    "screenshot": "ask-cmdr-sessions-rename.png"
+    "screenshot": "ask-cmdr-sessions-rename.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.archive": "Archive chat",
   "@askCmdr.sessions.archive": {
     "description": "Accessible label for the button that archives a chat (hides it from the active list, no delete). VERB phrase naming its object, so it never reads as the noun “archive” (a zip file). Sentence case.",
-    "screenshot": "ask-cmdr-sessions.png"
+    "screenshot": "ask-cmdr-sessions.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.unarchive": "Unarchive",
   "@askCmdr.sessions.unarchive": {
     "description": "Accessible label for the button that restores an archived chat to the active list. Sentence case.",
-    "screenshot": "ask-cmdr-sessions-archived.png"
+    "screenshot": "ask-cmdr-sessions-archived.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.archivedBadge": "Archived",
   "@askCmdr.sessions.archivedBadge": {
@@ -1555,13 +1570,15 @@
   "askCmdr.sessions.clearSearch": "Clear search",
   "@askCmdr.sessions.clearSearch": {
     "description": "Accessible label and tooltip for the small × button at the end of the chats search box, which empties the box and brings back the full list of chats. Sentence case.",
-    "screenshot": "ask-cmdr-sessions-no-results.png"
+    "screenshot": "ask-cmdr-sessions-no-results.png",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.resultsLabel": "Matching chats",
   "@askCmdr.sessions.resultsLabel": {
     "description": "Accessible name a screen reader gives the list of chats that match what the user typed in the chats search box. Not shown on screen. Sentence case.",
     "screenshot": "ask-cmdr-sessions.png",
-    "screenshotNote": "The Ask Cmdr chats panel, pictured here. Your string belongs to another state of it: nothing to list, an archived chat, or a row being renamed."
+    "screenshotNote": "The Ask Cmdr chats panel, pictured here. Your string belongs to another state of it: nothing to list, an archived chat, or a row being renamed.",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.resultCount": "{count, plural, one {{countText} chat} other {{countText} chats}}",
   "@askCmdr.sessions.resultCount": {
@@ -1571,7 +1588,8 @@
       "count": "the same number as a raw integer, only for choosing the plural form"
     },
     "screenshot": "ask-cmdr-sessions.png",
-    "screenshotNote": "The Ask Cmdr chats panel, pictured here. Your string belongs to another state of it: nothing to list, an archived chat, or a row being renamed."
+    "screenshotNote": "The Ask Cmdr chats panel, pictured here. Your string belongs to another state of it: nothing to list, an archived chat, or a row being renamed.",
+    "visibility": "screenReader"
   },
   "askCmdr.sessions.wakeTitle": "{otherCount, plural, =0 {Activity in {folder}} one {Activity in {folder} and {otherCountText} other folder} other {Activity in {folder} and {otherCountText} other folders}}",
   "@askCmdr.sessions.wakeTitle": {
@@ -1587,7 +1605,7 @@
   "@askCmdr.composer.attach": {
     "description": "Button in the composer that attaches the file or folder selected in the active pane, so the user can ask about it. Sentence case.",
     "screenshot": "ask-cmdr-empty.png",
-    "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "askCmdr.composer.selectionCapped": "Attached the first {attachedText} of {totalText} selected {total, plural, one {item} other {items}}.",
   "@askCmdr.composer.selectionCapped": {
@@ -1605,7 +1623,8 @@
   "askCmdr.composer.sendNeedsProvider": "Set up an AI provider to send",
   "@askCmdr.composer.sendNeedsProvider": {
     "description": "Tooltip on the Ask Cmdr Send button while it's disabled because no AI provider is ready (none picked, a missing API key, or local AI not set up). A yellow notice at the top of the panel says which and links to settings. Sentence case, no period.",
-    "screenshot": "ask-cmdr-provider-off.png"
+    "screenshot": "ask-cmdr-provider-off.png",
+    "visibility": "tooltip"
   },
   "askCmdr.providerNotice.off": "{platform, select, windows {Ask Cmdr needs an AI provider to chat. Pick one in Settings.} linuxGnome {Ask Cmdr needs an AI provider to chat. Pick one in Preferences.} linuxKde {Ask Cmdr needs an AI provider to chat. Pick one in Configure Cmdr.} other {Ask Cmdr needs an AI provider to chat. Pick one in Settings.}}",
   "@askCmdr.providerNotice.off": {
@@ -1658,7 +1677,8 @@
   },
   "askCmdr.attachment.remove": "Remove attachment",
   "@askCmdr.attachment.remove": {
-    "description": "Accessible label for the small button that removes a staged file or folder attachment from the composer. Sentence case."
+    "description": "Accessible label for the small button that removes a staged file or folder attachment from the composer. Sentence case.",
+    "visibility": "screenReader"
   },
   "askCmdr.gate.off.title": "Ask Cmdr is off",
   "@askCmdr.gate.off.title": {
@@ -1747,7 +1767,8 @@
   },
   "askCmdr.cost.estimateTooltip": "An estimate in USD at your provider’s list prices, with cached tokens counted at their lower rate.",
   "@askCmdr.cost.estimateTooltip": {
-    "description": "Tooltip on the estimated cost in the Ask Cmdr chat's footer. It explains the amount is in US dollars, worked out from the provider's published prices, and that tokens the provider served from its prompt cache (the repeated parts of a conversation, which it bills more cheaply) are already priced at that cheaper rate. “USD” is the currency code; keep it. “Provider” is the AI service the person set up."
+    "description": "Tooltip on the estimated cost in the Ask Cmdr chat's footer. It explains the amount is in US dollars, worked out from the provider's published prices, and that tokens the provider served from its prompt cache (the repeated parts of a conversation, which it bills more cheaply) are already priced at that cheaper rate. “USD” is the currency code; keep it. “Provider” is the AI service the person set up.",
+    "visibility": "tooltip"
   },
   "askCmdr.cost.unknown": "cost unknown",
   "@askCmdr.cost.unknown": {
@@ -1756,7 +1777,8 @@
   "askCmdr.cost.label": "This chat’s usage",
   "@askCmdr.cost.label": {
     "description": "Accessible label for the chat's cost footer region (token count and estimated cost). The apostrophe is U+2019.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "visibility": "screenReader"
   },
   "askCmdr.renameReview.title": "Review file renames",
   "@askCmdr.renameReview.title": {
@@ -1794,12 +1816,14 @@
     "placeholders": {
       "name": "The file's current name."
     },
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "screenReader"
   },
   "askCmdr.renameReview.openPreviewTooltip": "Open the file to check the name (Space)",
   "@askCmdr.renameReview.openPreviewTooltip": {
     "description": "Tooltip on the per-row thumbnail button in the bulk rename review. Names the keyboard shortcut that opens the focused row's file.",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.editName": "New name for {name}",
   "@askCmdr.renameReview.editName": {
@@ -1807,7 +1831,8 @@
     "placeholders": {
       "name": "The file's current name."
     },
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "screenReader"
   },
   "askCmdr.renameReview.nameRejected": "Cmdr can’t use that name. Try a different one.",
   "@askCmdr.renameReview.nameRejected": {
@@ -1858,7 +1883,8 @@
   "askCmdr.renameReview.coverageThin": "That’s a small part of the text Cmdr read here. Open the file to check the name.",
   "@askCmdr.renameReview.coverageThin": {
     "description": "Tooltip and accessible label on the warning marker beside a thin coverage figure in the bulk rename review. Tells the user the quote covers only a sliver of the recognized text, so the name deserves a look at the file itself. Never says the name is wrong: Cmdr cannot know that. The apostrophe is a curly typographic apostrophe (U+2019).",
-    "screenshot": "bulk-rename-review-why-this-name.png"
+    "screenshot": "bulk-rename-review-why-this-name.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.allow": "Allow",
   "@askCmdr.renameReview.allow": {
@@ -1906,7 +1932,8 @@
   "askCmdr.renameReview.overwriteTooltip": "Another file already uses this name and isn’t part of this rename plan. This rename is blocked to protect it.",
   "@askCmdr.renameReview.overwriteTooltip": {
     "description": "Accessible tooltip for the overwrite warning badge. Explains that the existing file is outside the rename plan and will not be replaced.",
-    "screenshot": "bulk-rename-review-some-blocked.png"
+    "screenshot": "bulk-rename-review-some-blocked.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.sourceMissingBadge": "(doesn’t exist)",
   "@askCmdr.renameReview.sourceMissingBadge": {
@@ -1916,7 +1943,8 @@
   "askCmdr.renameReview.sourceMissingTooltip": "This source file no longer exists. It may have been deleted or renamed outside Cmdr.",
   "@askCmdr.renameReview.sourceMissingTooltip": {
     "description": "Accessible tooltip for the missing-source warning badge. Explains that the row is blocked because its original file is gone.",
-    "screenshot": "bulk-rename-review-some-blocked.png"
+    "screenshot": "bulk-rename-review-some-blocked.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.nameNotAllowedBadge": "(not allowed here)",
   "@askCmdr.renameReview.nameNotAllowedBadge": {
@@ -1928,7 +1956,8 @@
   "@askCmdr.renameReview.nameNotAllowedTooltip": {
     "description": "Accessible tooltip for the not-allowed badge in the bulk rename review. Explains that the folder’s drive refuses the proposed name (too long, or a character it can’t store), and that editing the name in the row unblocks it.",
     "screenshot": "bulk-rename-review-all-allowed.png",
-    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep.",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.notPortableBadge": "(Windows)",
   "@askCmdr.renameReview.notPortableBadge": {
@@ -1940,7 +1969,8 @@
   "@askCmdr.renameReview.notPortableTooltip": {
     "description": "Accessible tooltip for the Windows warning badge in the bulk rename review. Explains that the drive takes the name but Windows can’t read it as typed, and that the rename still goes ahead. Keep \"Windows\" as is.",
     "screenshot": "bulk-rename-review-all-allowed.png",
-    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep."
+    "screenshotNote": "The rename review, pictured here. Your string is one of its states: checking the names, a check that didn’t finish, or a note about a name it couldn’t keep.",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.extensionBadge": "(extension)",
   "@askCmdr.renameReview.extensionBadge": {
@@ -1950,7 +1980,8 @@
   "askCmdr.renameReview.extensionTooltip": "Extension changed. The file contents will not be converted.",
   "@askCmdr.renameReview.extensionTooltip": {
     "description": "Accessible tooltip for the extension-change warning badge in the bulk rename review. Explains that renaming an extension does not convert the file format.",
-    "screenshot": "bulk-rename-review-some-blocked.png"
+    "screenshot": "bulk-rename-review-some-blocked.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.cycleBadge": "(cycle)",
   "@askCmdr.renameReview.cycleBadge": {
@@ -1960,7 +1991,8 @@
   "askCmdr.renameReview.cycleTooltip": "Rename cycle. Cmdr will use one temporary name while rotating these files.",
   "@askCmdr.renameReview.cycleTooltip": {
     "description": "Accessible tooltip for the rename-cycle warning badge. Explains that Cmdr needs one temporary filename to rotate the files safely.",
-    "screenshot": "bulk-rename-review-some-blocked.png"
+    "screenshot": "bulk-rename-review-some-blocked.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.nothingReadBadge": "(nothing read)",
   "@askCmdr.renameReview.nothingReadBadge": {
@@ -1970,7 +2002,8 @@
   "askCmdr.renameReview.nothingReadTooltip": "Cmdr read nothing inside this file. This name comes from the old name, the file’s details, or what you asked for.",
   "@askCmdr.renameReview.nothingReadTooltip": {
     "description": "Accessible tooltip for the nothing-read badge in the bulk rename review. It must stay an honest limit: nothing inside the file was read. Never soften it into something reassuring. The apostrophe is a curly typographic apostrophe (U+2019).",
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "tooltip"
   },
   "askCmdr.renameReview.nameKeptBadge": "(name kept)",
   "@askCmdr.renameReview.nameKeptBadge": {
@@ -2000,7 +2033,8 @@
   "askCmdr.renameReview.checkingLabel": "Checking the files",
   "@askCmdr.renameReview.checkingLabel": {
     "description": "Screen-reader name of the progress bar in the bulk rename review, while Cmdr checks that the files are still there and the new names are free.",
-    "screenshot": "bulk-rename-review-checking.png"
+    "screenshot": "bulk-rename-review-checking.png",
+    "visibility": "screenReader"
   },
   "askCmdr.renameReview.stopChecking": "Stop checking",
   "@askCmdr.renameReview.stopChecking": {
@@ -2049,7 +2083,7 @@
       "allowed": "The number of currently allowed rows.",
       "blocked": "The number of rows blocked by preflight."
     },
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "bulk-rename-review-all-allowed.png"
   },
   "askCmdr.renameUndo.applied": "Renamed {countText} {count, plural, one {file} other {files}}.",
   "@askCmdr.renameUndo.applied": {
@@ -2088,7 +2122,8 @@
       "countText": "How many files this button would rename back, ready to drop into the sentence (e.g. 1,234).",
       "count": "The same number of files (decides whether the noun is singular or plural)."
     },
-    "screenshot": "ask-cmdr-rename-undo.png"
+    "screenshot": "ask-cmdr-rename-undo.png",
+    "visibility": "screenReader"
   },
   "askCmdr.renameUndo.undoJob": "Undo all {countText} {count, plural, one {batch} other {batches}}",
   "@askCmdr.renameUndo.undoJob": {
@@ -2109,7 +2144,8 @@
       "batches": "How many batches would be undone."
     },
     "screenshot": "ask-cmdr-chat.png",
-    "screenshotNote": "A line in the Ask Cmdr thread, under a reply like the one pictured here, saying how a rename went and offering to undo it. This screenshot doesn’t show that line."
+    "screenshotNote": "A line in the Ask Cmdr thread, under a reply like the one pictured here, saying how a rename went and offering to undo it. This screenshot doesn’t show that line.",
+    "visibility": "screenReader"
   },
   "askCmdr.renameUndo.undoing": "Putting the old names back…",
   "@askCmdr.renameUndo.undoing": {
@@ -2278,7 +2314,8 @@
   "askCmdr.context.label": "How full this chat is",
   "@askCmdr.context.label": {
     "description": "Accessible label for the chat's context-usage gauge in the rail footer.",
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "visibility": "screenReader"
   },
   "askCmdr.context.tooltip": "{usedText} of {budgetText} {budget, plural, one {token} other {tokens}} used (estimated)",
   "@askCmdr.context.tooltip": {
@@ -2288,7 +2325,8 @@
       "budgetText": "the context budget in tokens, preformatted (for example 200,000)",
       "budget": "the same budget number (drives the singular/plural form of the noun)"
     },
-    "screenshot": "ask-cmdr-chat.png"
+    "screenshot": "ask-cmdr-chat.png",
+    "visibility": "tooltip"
   },
   "askCmdr.context.baselineTooltip": "Every message starts with {usedText} of {budgetText} {budget, plural, one {token} other {tokens}} (estimated) for Cmdr’s instructions and tools",
   "@askCmdr.context.baselineTooltip": {
@@ -2298,28 +2336,33 @@
       "budgetText": "the room one message has, in tokens, preformatted (for example 16,000)",
       "budget": "the same budget number (drives the singular/plural form of the noun)"
     },
-    "screenshot": "ask-cmdr-empty.png"
+    "screenshot": "ask-cmdr-empty.png",
+    "visibility": "tooltip"
   },
   "askCmdr.wake.thinking": "Cmdr is having a look at what changed. Open the chat.",
   "@askCmdr.wake.thinking": {
     "description": "Tooltip and spoken label on the status-corner indicator shown while Ask Cmdr is running a conversation it started on its own. Pressing it opens that chat in the rail, which is what the second sentence promises. Sentence case; two short sentences, because the label has to say both what is happening and what pressing it does.",
-    "screenshot": "ask-cmdr-wake-digest.png"
+    "screenshot": "ask-cmdr-wake-digest.png",
+    "visibility": "tooltip"
   },
   "askCmdr.wake.stop": "Stop what Cmdr is doing",
   "@askCmdr.wake.stop": {
     "description": "Spoken label and tooltip on the small stop button beside that indicator, which ends the conversation Ask Cmdr started on its own. Longer than the rail's bare \"Stop\" on purpose: this button carries no visible text and sits in the window corner, so the label is the only thing naming what it stops. Sentence case, no full stop.",
-    "screenshot": "ask-cmdr-wake-digest.png"
+    "screenshot": "ask-cmdr-wake-digest.png",
+    "visibility": "screenReader"
   },
   "askCmdr.wake.needsFullDiskAccess": "AI features can’t see your folders yet. Click to set up full disk access.",
   "@askCmdr.wake.needsFullDiskAccess": {
-    "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but macOS Full Disk Access is still outstanding, so the agent can only see part of the disk. Pressing it opens the system privacy settings, which is what the second sentence promises. Only ever shown to somebody who opted in, so it reads as a step left to finish, never as a warning. The second sentence names Apple's own setting: use the same wording as `search.coverage.setUpFullDiskAccess` so the two surfaces agree. Sentence case."
+    "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but macOS Full Disk Access is still outstanding, so the agent can only see part of the disk. Pressing it opens the system privacy settings, which is what the second sentence promises. Only ever shown to somebody who opted in, so it reads as a step left to finish, never as a warning. The second sentence names Apple's own setting: use the same wording as `search.coverage.setUpFullDiskAccess` so the two surfaces agree. Sentence case.",
+    "visibility": "tooltip"
   },
   "askCmdr.wake.needsApiKey": "{platform, select, windows {AI features are on, but they need a provider to work. Click to set one up in settings.} linuxGnome {AI features are on, but they need a provider to work. Click to set one up in preferences.} linuxKde {AI features are on, but they need a provider to work. Click to set one up in Configure Cmdr.} other {AI features are on, but they need a provider to work. Click to set one up in settings.}}",
   "@askCmdr.wake.needsApiKey": {
     "description": "Tooltip and spoken label on the status-corner indicator shown when the user turned AI features on but no AI provider is configured, so nothing can be sent anywhere. Pressing it opens Cmdr's AI settings, where the provider is picked, which is what the second sentence promises. \"provider\" means the LLM service the user brings their own key for. Sentence case. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses. The `linuxKde` branch names the window “Configure Cmdr”, capitalized as a name, where the other branches write a lowercase generic word.",
     "identicalBranches": {
       "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
-    }
+    },
+    "visibility": "tooltip"
   },
   "askCmdr.wakeDigest.summary": "What changed in {foldersText} {folders, plural, one {folder} other {folders}}",
   "@askCmdr.wakeDigest.summary": {
@@ -2391,7 +2434,8 @@
   "askCmdr.sessions.wakeThread": "Cmdr started this chat",
   "@askCmdr.sessions.wakeThread": {
     "description": "Tooltip and spoken label on the small robot glyph beside a chat title in the chat list and in chat search results. It marks the chats nobody typed the first message in: the app noticed something and opened one by itself. The whole job of the label is telling those apart from chats the user started and forgot, so keep the emphasis on WHO started it. \"Cmdr\" is the product name and stays verbatim with its capital C. Sentence case, no full stop.",
-    "screenshot": "ask-cmdr-wake-digest.png"
+    "screenshot": "ask-cmdr-wake-digest.png",
+    "visibility": "tooltip"
   },
   "askCmdr.wakeToast.title": "Cmdr has {countText} {count, plural, one {suggestion} other {suggestions}} for you",
   "@askCmdr.wakeToast.title": {

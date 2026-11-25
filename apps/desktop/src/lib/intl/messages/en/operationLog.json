@@ -106,7 +106,8 @@
   "@operationLog.tree.selectAll": {
     "description": "Accessible name of the checkbox in the item tree’s header that checks or unchecks every item that can be rolled back. Read by screen readers only; the checkbox has no visible label.",
     "screenshot": "operation-log-more-pages.png",
-    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it."
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it.",
+    "visibility": "screenReader"
   },
   "operationLog.tree.include": "Roll back {name}",
   "@operationLog.tree.include": {
@@ -115,7 +116,8 @@
       "name": {}
     },
     "screenshot": "operation-log-more-pages.png",
-    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it."
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it.",
+    "visibility": "screenReader"
   },
   "operationLog.tree.comesBackWithFolder": "Comes back with its folder.",
   "@operationLog.tree.comesBackWithFolder": {
@@ -203,13 +205,15 @@
   "@operationLog.tree.operationSkipped": {
     "description": "Explanation of an item the original operation skipped (it never copied, moved, or changed it), shown under the item tree when the row is under the cursor and read by screen readers. The apostrophe is a curly typographic apostrophe (U+2019).",
     "screenshot": "operation-log-more-pages.png",
-    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it."
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it.",
+    "visibility": "screenReader"
   },
   "operationLog.tree.operationUnfinished": "The operation didn’t finish this one, so there’s nothing to roll back.",
   "@operationLog.tree.operationUnfinished": {
     "description": "Explanation of an item the original operation never finished, shown under the item tree when the row is under the cursor and read by screen readers. Avoid the words error and failed. The apostrophe is a curly typographic apostrophe (U+2019).",
     "screenshot": "operation-log-more-pages.png",
-    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it."
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string belongs to the item tree on the right: a column header, a row’s status, or the line under the tree that explains the row under the cursor, so this screenshot may not show it.",
+    "visibility": "screenReader"
   },
   "operationLog.tree.unexpandableEmpty": "This folder was empty.",
   "@operationLog.tree.unexpandableEmpty": {
@@ -349,7 +353,8 @@
   "@operationLog.skipReason.unverifiablePrecondition": {
     "description": "Why a rollback skipped one item, shown under the Operation log’s item tree when the row is under the cursor and read by screen readers: Cmdr had no way to confirm it was still the same file, and it never touches a file it can’t vouch for. Avoid the words error and failed. The apostrophe is a curly typographic apostrophe (U+2019).",
     "screenshot": "operation-log-more-pages.png",
-    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string is the line under the item tree that explains why a rollback skipped the row under the cursor, so this screenshot may not show it."
+    "screenshotNote": "The operation log dialog, pictured here with entries in it. Your string is the line under the item tree that explains why a rollback skipped the row under the cursor, so this screenshot may not show it.",
+    "visibility": "screenReader"
   },
   "operationLog.skipReason.drift": "This changed since the operation, so Cmdr left it alone.",
   "@operationLog.skipReason.drift": {

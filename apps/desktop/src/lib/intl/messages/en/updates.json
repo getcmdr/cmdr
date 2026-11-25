@@ -83,7 +83,8 @@
       "next": "the version that has been downloaded and will run after a restart (for example 0.29.0)"
     },
     "screenshot": "settings-updates.png",
-    "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
+    "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated.",
+    "visibility": "screenReader"
   },
   "updates.toast.later": "Later",
   "@updates.toast.later": {
