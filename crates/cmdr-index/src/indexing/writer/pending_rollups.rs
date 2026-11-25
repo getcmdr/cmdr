@@ -37,13 +37,18 @@
 //! **❌ The drain never walks each queued chain to the root on its own.** Chains
 //! share ancestors, and a shared wide one recomputed once per chain is
 //! `O(width²)` one level up (GitHub issue #1480). [`PendingRollups::drain`]
-//! recomputes each owed directory once, deepest first.
+//! recomputes each owed directory once, deepest first, and keeps its heap across
+//! a yield, so a resumed drain re-reads nothing it already knew.
+//!
+//! **❌ A queued id is never dropped because its chain can't be read.** It stays
+//! owed (recomputed last), and a parent whose read fails is retried at the next
+//! drain: a dropped id is a wrong size for good.
 //!
 //! Writer-thread only, like the queue next door: created in `writer_loop`,
 //! threaded through the handlers, drained on the same thread, so interior
 //! mutability needs no locking.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeSet, BinaryHeap, HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -51,206 +56,397 @@ use std::time::{Duration, Instant};
 
 use cmdr_fs::pluralize::pluralize;
 
+use crate::indexing::IndexFailureSignal;
 use crate::indexing::events::{EventSink, emit_dir_updated};
-use crate::indexing::store::{IndexStore, ROOT_ID};
+use crate::indexing::store::{IndexStore, IndexStoreError, ROOT_ID};
 
 use super::delta::ChainSteps;
 use super::repair::{DeferredRepairs, LevelRepair, repair_one_level};
 
+/// How long a roll-up drain recomputes before it checks whether a message is
+/// waiting. Matches the implicit batch's cap (`batch.rs`): a live change waits
+/// about this long, at most, behind a drain. The clock starts AFTER the drain has
+/// read the chains of newly queued ids, so every slice buys a slice of recomputes.
+pub(super) const DRAIN_SLICE: Duration = Duration::from_millis(250);
+
+/// How long roll-ups may stay owed before the writer says so at `warn`: past
+/// this, live work is taking the writer often enough that sizes aren't settling.
+const OWED_TOO_LONG: Duration = Duration::from_secs(60);
+
+/// The roll-up queue's numbers, shared with `IndexWriter` (tests, the heartbeat)
+/// because those read them from another thread.
+#[derive(Default)]
+pub(crate) struct RollupGauges {
+    /// Single-directory recomputes run so far. Against the frontier roots covered,
+    /// the scaling guards' number: one per directory that needed one is linear.
+    pub(crate) recomputes: AtomicU64,
+    /// `get_parent_id` reads the drains made. Linear in the directories owed, or a
+    /// yield is re-reading what it already knew.
+    pub(crate) parent_reads: AtomicU64,
+    /// Drains that gave the writer back with roll-ups still owed.
+    pub(crate) yields: AtomicU64,
+    /// Directories owed right now (queued, in the heap, or waiting on a parent
+    /// read), for the heartbeat.
+    pub(crate) owed: AtomicU64,
+    /// The drain slice in nanoseconds; `0` means [`DRAIN_SLICE`]. Only a test sets it.
+    slice_nanos: AtomicU64,
+    /// A test's "a message is always waiting", so every drain yields after its slice.
+    #[cfg(test)]
+    pub(crate) yield_always: std::sync::atomic::AtomicBool,
+    /// How many drain commits a test wants to fail (as `SQLITE_BUSY`, which the
+    /// failure signal counts but doesn't stop the writer for).
+    #[cfg(test)]
+    pub(crate) fail_commits: AtomicU64,
+}
+
+impl RollupGauges {
+    fn slice(&self) -> Duration {
+        match self.slice_nanos.load(Ordering::Relaxed) {
+            0 => DRAIN_SLICE,
+            nanos => Duration::from_nanos(nanos),
+        }
+    }
+
+    /// Shrink the drain slice, so a test can make every drain yield.
+    #[cfg(test)]
+    pub(crate) fn set_slice_for_test(&self, slice: Duration) {
+        self.slice_nanos
+            .store(slice.as_nanos().max(1) as u64, Ordering::Relaxed);
+    }
+
+    fn yields_always(&self) -> bool {
+        #[cfg(test)]
+        return self.yield_always.load(Ordering::Relaxed);
+        #[cfg(not(test))]
+        false
+    }
+
+    /// A commit failure a test injected, if one is still due.
+    fn injected_commit_failure(&self) -> Option<IndexStoreError> {
+        #[cfg(test)]
+        if self
+            .fail_commits
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_sub(1))
+            .is_ok()
+        {
+            return Some(IndexStoreError::from(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_BUSY),
+                Some("injected roll-up commit failure".to_string()),
+            )));
+        }
+        None
+    }
+}
+
 /// Ancestors a finished subtree aggregate owes a roll-up, waiting for the
 /// writer's caught-up point.
 ///
-/// Deduped and UNBOUNDED: one entry per distinct parent, which is what makes the
-/// wide-directory burst collapse to a single walk, and 8 bytes an id even when a
-/// whole phase's parents pile up. ❌ Don't cap it — an id dropped here is a
-/// directory whose size stays wrong until a full aggregate rebuilds the volume.
+/// Deduped and UNBOUNDED: one entry per distinct directory, which is what makes
+/// the wide-directory burst collapse to a single recompute, and a few bytes an id
+/// even when a whole phase's parents pile up. ❌ Don't cap it — an id dropped here
+/// is a directory whose size stays wrong until a full aggregate rebuilds the volume.
 pub(super) struct PendingRollups {
-    pending: RefCell<BTreeSet<i64>>,
-    /// How many single-directory recomputes this writer's drains have run. Against
-    /// the number of frontier roots covered, this is the scaling guards' number:
-    /// one per directory that needed one means linear. Shared with `IndexWriter`
-    /// because the guards run on another thread.
-    recomputes: Arc<AtomicU64>,
+    volume_id: String,
+    /// Newly queued ids whose depth the next drain reads.
+    queued: RefCell<BTreeSet<i64>>,
+    /// What a yield left owed, kept across drains so a resumed drain re-reads nothing.
+    work: RefCell<Work>,
+    gauges: Arc<RollupGauges>,
+    /// When the current stretch of owed work started, and when it last warned.
+    owed_since: Cell<Option<Instant>>,
+    last_owed_warning: Cell<Option<Instant>>,
+    drains_this_stretch: Cell<u64>,
+    /// A test's injected `get_parent_id` failure for one id.
+    #[cfg(test)]
+    fail_parent_read_of: Cell<Option<i64>>,
+}
+
+/// The owed directories, deepest first, plus what's known about their depths.
+#[derive(Default)]
+struct Work {
+    /// `(depth, id)`, a max-heap so the deepest directory pops first.
+    heap: BinaryHeap<(usize, i64)>,
+    in_heap: HashSet<i64>,
+    /// Rewritten directories whose parent read failed: the parent is owed, but
+    /// which one isn't known yet. Retried at the next drain.
+    owes_parent: BTreeSet<i64>,
+    /// Depth of every directory a chain read reached. Only an ORDER: a stale depth
+    /// after a move costs a second recompute, never a wrong size, because every
+    /// rewrite owes the parent read fresh.
+    depths: HashMap<i64, usize>,
+    /// Every id this drain recomputed, so a drain whose transaction doesn't commit
+    /// can owe them all again.
+    this_drain: Vec<i64>,
+}
+
+impl Work {
+    fn owe(&mut self, id: i64, depth: usize) {
+        if self.in_heap.insert(id) {
+            self.heap.push((depth, id));
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.heap.is_empty() && self.owes_parent.is_empty()
+    }
 }
 
 impl PendingRollups {
-    pub(super) fn new(recomputes: Arc<AtomicU64>) -> Self {
+    pub(super) fn new(volume_id: &str, gauges: Arc<RollupGauges>) -> Self {
         Self {
-            pending: RefCell::new(BTreeSet::new()),
-            recomputes,
+            volume_id: volume_id.to_string(),
+            queued: RefCell::new(BTreeSet::new()),
+            work: RefCell::new(Work::default()),
+            gauges,
+            owed_since: Cell::new(None),
+            last_owed_warning: Cell::new(None),
+            drains_this_stretch: Cell::new(0),
+            #[cfg(test)]
+            fail_parent_read_of: Cell::new(None),
         }
     }
 
     /// Remember that `id`'s chain owes a roll-up. Cheap and silent: this fires
     /// once per frontier root a first index covers.
     pub(super) fn queue(&self, id: i64) {
-        self.pending.borrow_mut().insert(id);
+        self.queued.borrow_mut().insert(id);
+        self.publish_owed();
     }
 
-    /// Forget everything queued, because the rows it names are gone. ONLY
+    /// Forget everything owed, because the rows it names are gone. ONLY
     /// `TruncateData`: an id dropped for any other reason is a permanently wrong
-    /// size.
+    /// size. The depths go too, since a truncate resets the id counter.
     pub(super) fn clear(&self) {
-        self.pending.borrow_mut().clear();
+        self.queued.borrow_mut().clear();
+        *self.work.borrow_mut() = Work::default();
+        self.publish_owed();
     }
 
-    /// Whether a roll-up is still owed.
+    /// Whether any roll-up is still owed.
     pub(super) fn is_empty(&self) -> bool {
-        self.pending.borrow().is_empty()
+        self.queued.borrow().is_empty() && self.work.borrow().is_empty()
     }
 
-    /// Roll the queued ancestors up, deepest first, each directory ONCE.
+    fn owed_count(&self) -> usize {
+        let work = self.work.borrow();
+        self.queued.borrow().len() + work.heap.len() + work.owes_parent.len()
+    }
+
+    fn publish_owed(&self) {
+        self.gauges.owed.store(self.owed_count() as u64, Ordering::Relaxed);
+    }
+
+    /// One `get_parent_id`, counted. A test can make it fail for one id.
+    fn read_parent(&self, conn: &rusqlite::Connection, id: i64) -> Result<Option<i64>, IndexStoreError> {
+        self.gauges.parent_reads.fetch_add(1, Ordering::Relaxed);
+        #[cfg(test)]
+        if self.fail_parent_read_of.get() == Some(id) {
+            return Err(IndexStoreError::Io(std::io::Error::other(
+                "injected parent read failure",
+            )));
+        }
+        IndexStore::get_parent_id(conn, id)
+    }
+
+    /// `id`'s depth: walk up until a directory whose depth is known, or the top.
+    /// A chain that can't be read (a failed read, a missing ancestor, a loop,
+    /// which `ChainSteps` also marks for a rebuild) still leaves `id` owed: it
+    /// gets depth 0, so it's recomputed last, and its rewrite reads the parent
+    /// fresh like any other.
+    fn depth_of(&self, conn: &rusqlite::Connection, work: &mut Work, id: i64) -> usize {
+        let mut climbed = Vec::new();
+        let mut steps = ChainSteps::new("ancestor roll-up", id);
+        let mut current = id;
+        let base = loop {
+            if let Some(&depth) = work.depths.get(&current) {
+                break depth;
+            }
+            if current == ROOT_ID {
+                work.depths.insert(ROOT_ID, 0);
+                break 0;
+            }
+            if !steps.another(conn) {
+                return 0;
+            }
+            match self.read_parent(conn, current) {
+                Ok(Some(parent)) if parent != 0 => {
+                    climbed.push(current);
+                    current = parent;
+                }
+                // A directory directly under nothing is a top of its own.
+                Ok(Some(_)) => {
+                    work.depths.insert(current, 0);
+                    break 0;
+                }
+                Ok(None) => return 0,
+                Err(e) => {
+                    log::debug!(target: "indexing::writer", "ancestor roll-up: parent read failed for id={current} (on the chain of id={id}): {e}");
+                    return 0;
+                }
+            }
+        };
+        let mut depth = base;
+        for &dir in climbed.iter().rev() {
+            depth += 1;
+            work.depths.insert(dir, depth);
+        }
+        depth
+    }
+
+    /// Owe `id`'s parent, read fresh: a cached parent goes stale when something
+    /// moves the directory, and a stale one would skip the new parent.
+    fn owe_parent_of(&self, conn: &rusqlite::Connection, work: &mut Work, id: i64, depth: usize) {
+        if id == ROOT_ID {
+            return;
+        }
+        match self.read_parent(conn, id) {
+            Ok(Some(parent)) if parent != 0 => {
+                let parent_depth = work.depths.get(&parent).copied().unwrap_or(depth.saturating_sub(1));
+                work.owe(parent, parent_depth);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                log::debug!(target: "indexing::writer", "ancestor roll-up: parent read failed for id={id}: {e}; retried at the next drain");
+                work.owes_parent.insert(id);
+            }
+        }
+    }
+
+    /// Roll the owed ancestors up, deepest first, each directory ONCE.
     ///
     /// Walking each queued id's chain to the root on its own recomputed every
     /// ancestor the chains SHARE once per chain: `W` queued parents under one
     /// `W`-child grandparent recomputed that grandparent `W` times, each a `SUM`
     /// over `W` children (GitHub issue #1480, over an hour on a Windows `C:`). So
-    /// the drain orders the owed directories by depth and recomputes one only
-    /// after every owed directory below it: a rewrite owes the parent, an
-    /// agreeing row owes nothing (the per-chain short-circuit, kept), and a
-    /// parent several chains owe is still recomputed once. The cost is one
-    /// recompute per directory that actually needs one.
+    /// the owed directories sit in a max-heap by depth: a rewrite owes the parent
+    /// (read fresh), an agreeing row owes nothing (the per-chain short-circuit,
+    /// kept), and a directory several children owe is in the heap once.
     ///
     /// Gives the writer back when `wants_the_writer` says a message is waiting
-    /// and the drain has run for `slice` ([`DRAIN_SLICE`] in the writer): what's
-    /// still owed goes back in the set for the next caught-up point, so a live
-    /// change never waits behind a long drain. Safe for the same reason deferring
-    /// is (each recompute is absolute). Exit paths pass a closure that never yields.
+    /// and the drain has recomputed for a whole slice ([`DRAIN_SLICE`]). The heap
+    /// and the depths survive the yield, so the next drain reads only the chains
+    /// of ids queued since: a yield costs nothing it has already paid for. Safe
+    /// for the same reason deferring is (each recompute is absolute). Exit paths
+    /// pass a closure that never yields.
     pub(super) fn drain(
         &self,
         conn: &rusqlite::Connection,
         repairs: &DeferredRepairs,
-        slice: Duration,
         wants_the_writer: &dyn Fn() -> bool,
     ) -> Drained {
-        let ids = std::mem::take(&mut *self.pending.borrow_mut());
-        if ids.is_empty() {
+        if self.is_empty() {
             return Drained::default();
         }
-        let t = Instant::now();
-        let queued = ids.len();
+        let started = Instant::now();
+        let mut work = self.work.borrow_mut();
+        work.this_drain.clear();
 
-        // Every queued id's chain up to the root, shared prefixes walked once.
-        let mut chains = Chains::default();
-        let mut owed = BinaryHeap::new();
-        for &id in &ids {
-            if let Some(depth) = chains.depth_of(conn, id, repairs) {
-                owed.push((depth, id));
-            }
+        // Newly queued ids, each chain read once, shared prefixes once. Then the
+        // parents an earlier drain couldn't read.
+        let queued = std::mem::take(&mut *self.queued.borrow_mut());
+        let newly = queued.len();
+        for id in queued {
+            let depth = self.depth_of(conn, &mut work, id);
+            work.owe(id, depth);
         }
-        // A directory can be owed by several children; it's in `owed` once.
-        let mut in_owed: HashSet<i64> = owed.iter().map(|&(_, id)| id).collect();
+        for id in std::mem::take(&mut work.owes_parent) {
+            let depth = work.depths.get(&id).copied().unwrap_or(0);
+            self.owe_parent_of(conn, &mut work, id, depth);
+        }
+        let chain_read = started.elapsed();
 
+        let slice_started = Instant::now();
+        let slice = self.gauges.slice();
         let mut result = Drained::default();
         let mut recomputes = 0u64;
-        while let Some((depth, id)) = owed.pop() {
-            in_owed.remove(&id);
+        while let Some((depth, id)) = work.heap.pop() {
+            work.in_heap.remove(&id);
+            work.this_drain.push(id);
             recomputes += 1;
             if repair_one_level(conn, id, repairs) == LevelRepair::Rewrote {
                 result.moved = true;
-                if let Some(parent) = chains.parent_of(id)
-                    && in_owed.insert(parent)
-                {
-                    owed.push((depth - 1, parent));
-                }
+                self.owe_parent_of(conn, &mut work, id, depth);
             }
-            if !owed.is_empty() && t.elapsed() >= slice && wants_the_writer() {
-                let mut pending = self.pending.borrow_mut();
-                pending.extend(owed.drain().map(|(_, id)| id));
+            if !work.heap.is_empty()
+                && slice_started.elapsed() >= slice
+                && (wants_the_writer() || self.gauges.yields_always())
+            {
                 result.owes_more = true;
                 break;
             }
         }
-        self.recomputes.fetch_add(recomputes, Ordering::Relaxed);
+        if work.is_empty() {
+            // Nothing owed: the depths would only go stale.
+            work.depths.clear();
+        }
+        let left = work.heap.len() + work.owes_parent.len();
+        drop(work);
+        self.gauges.recomputes.fetch_add(recomputes, Ordering::Relaxed);
+        if result.owes_more {
+            self.gauges.yields.fetch_add(1, Ordering::Relaxed);
+        }
+        self.publish_owed();
         log::debug!(
             target: "indexing::writer",
-            "Ancestor roll-up: {} queued, {} in {}ms{}{}",
-            pluralize(queued as u64, "ancestor"),
+            "Ancestor roll-up: {} newly queued, chains read in {}ms, {} in {}ms{}, {} left",
+            pluralize(newly as u64, "directory"),
+            chain_read.as_millis(),
             pluralize(recomputes, "recompute"),
-            t.elapsed().as_millis(),
+            slice_started.elapsed().as_millis(),
             if result.moved { "" } else { " (nothing moved)" },
-            if result.owes_more {
-                format!(", {} left for the next quiet moment", pluralize(self.pending.borrow().len() as u64, "directory"))
-            } else {
-                String::new()
-            },
+            pluralize(left as u64, "directory"),
         );
         result
     }
-}
 
-/// How long a roll-up drain runs before it checks whether a message is waiting.
-/// Matches the implicit batch's cap (`batch.rs`): a live change waits about this
-/// long, at most, behind a drain.
-const DRAIN_SLICE: Duration = Duration::from_millis(250);
+    /// The drain's transaction didn't commit, so nothing it recomputed landed:
+    /// owe all of it again.
+    fn owe_last_drain_again(&self) {
+        let mut work = self.work.borrow_mut();
+        for id in std::mem::take(&mut work.this_drain) {
+            let depth = work.depths.get(&id).copied().unwrap_or(0);
+            work.owe(id, depth);
+        }
+        drop(work);
+        self.publish_owed();
+    }
+
+    /// Track how long roll-ups have stayed owed, and say so at `warn` once a
+    /// minute while they outlive [`OWED_TOO_LONG`]: live work taking the writer
+    /// before sizes settle is otherwise visible only at `debug`.
+    fn note_stretch(&self) {
+        if self.is_empty() {
+            self.owed_since.set(None);
+            self.last_owed_warning.set(None);
+            self.drains_this_stretch.set(0);
+            return;
+        }
+        let now = Instant::now();
+        let since = *self.owed_since.get().get_or_insert(now);
+        self.owed_since.set(Some(since));
+        self.drains_this_stretch.set(self.drains_this_stretch.get() + 1);
+        let owed_for = now - since;
+        let due = self.last_owed_warning.get().is_none_or(|at| now - at >= OWED_TOO_LONG);
+        if owed_for >= OWED_TOO_LONG && due {
+            self.last_owed_warning.set(Some(now));
+            log::warn!(
+                "Writer: '{}' still owes {} an ancestor roll-up after {} s and {}; live work keeps taking the writer, so some folder sizes are short until it settles",
+                self.volume_id,
+                pluralize(self.owed_count() as u64, "directory"),
+                owed_for.as_secs(),
+                pluralize(self.drains_this_stretch.get(), "drain"),
+            );
+        }
+    }
+}
 
 /// What one [`PendingRollups::drain`] did.
 #[derive(Debug, Default, Clone, Copy)]
 pub(super) struct Drained {
     /// A `dir_stats` row changed, so the panes owe a refresh.
     pub(super) moved: bool,
-    /// The drain gave the writer back with roll-ups still owed.
+    /// The drain gave the writer back, or didn't commit, with roll-ups still owed.
     pub(super) owes_more: bool,
-}
-
-/// The parent and depth of every directory on the drained chains, read once per
-/// directory however many chains share it.
-#[derive(Default)]
-struct Chains {
-    /// `id` → (parent id, or 0 above the root; depth, the root at 0).
-    known: HashMap<i64, (i64, usize)>,
-}
-
-impl Chains {
-    fn parent_of(&self, id: i64) -> Option<i64> {
-        self.known.get(&id).map(|&(parent, _)| parent).filter(|&p| p != 0)
-    }
-
-    /// `id`'s depth, walking up until a directory already known (or the top).
-    /// `None` when the chain can't be read: a gone entry (nothing owed; its
-    /// delete paid the chain), a failed read (handed to `repairs`, like every
-    /// repair read), or a loop (`ChainSteps` marks the index for a rebuild).
-    fn depth_of(&mut self, conn: &rusqlite::Connection, id: i64, repairs: &DeferredRepairs) -> Option<usize> {
-        let mut climbed = Vec::new();
-        let mut steps = ChainSteps::new("ancestor roll-up", id);
-        let mut current = id;
-        let base = loop {
-            if let Some(&(_, depth)) = self.known.get(&current) {
-                break depth;
-            }
-            if !steps.another(conn) {
-                return None;
-            }
-            let parent = if current == ROOT_ID {
-                0
-            } else {
-                match IndexStore::get_parent_id(conn, current) {
-                    Ok(Some(parent)) => parent,
-                    Ok(None) => return None,
-                    Err(e) => {
-                        log::debug!(target: "indexing::writer", "ancestor roll-up: parent lookup failed for id={current}: {e}");
-                        repairs.queue(current, "ancestor roll-up parent lookup");
-                        return None;
-                    }
-                }
-            };
-            climbed.push((current, parent));
-            if parent == 0 {
-                // The top: `current` sits at depth 0 and everything climbed below it.
-                let (top, _) = climbed.pop().expect("just pushed");
-                self.known.insert(top, (0, 0));
-                break 0;
-            }
-            current = parent;
-        };
-        // Number what we climbed from the known directory back down to `id`.
-        let mut depth = base;
-        for &(dir, parent) in climbed.iter().rev() {
-            depth += 1;
-            self.known.insert(dir, (parent, depth));
-        }
-        self.known.get(&id).map(|&(_, depth)| depth)
-    }
 }
 
 /// Settle the `dir_stats` ledger: roll up the ancestors a burst of subtree
@@ -265,7 +461,9 @@ impl Chains {
 /// The roll-ups run inside ONE `BEGIN IMMEDIATE`, so a drain of thousands of
 /// directories pays one commit instead of one per rewritten row (the 31 µs vs
 /// 7 µs per row `batch.rs` measured). If that transaction doesn't commit, the
-/// rows roll back, so everything the drain was asked for is queued again.
+/// rows roll back, so everything the drain recomputed is owed again, and the
+/// commit's error goes through `signal` like every other writer error: a full
+/// disk pauses the index, a dead one fails it.
 ///
 /// `wants_the_writer` lets the roll-up give the writer back to a waiting message
 /// (see [`PendingRollups::drain`]); the deferred repairs, which want FINAL rows,
@@ -278,6 +476,7 @@ pub(super) fn settle_the_ledger(
     conn: &rusqlite::Connection,
     rollups: &PendingRollups,
     repairs: &DeferredRepairs,
+    signal: &IndexFailureSignal,
     wants_the_writer: &dyn Fn() -> bool,
 ) -> Drained {
     if !conn.is_autocommit() {
@@ -285,36 +484,43 @@ pub(super) fn settle_the_ledger(
     }
     let mut drained = Drained::default();
     if !rollups.is_empty() {
-        let asked: Vec<i64> = rollups.pending.borrow().iter().copied().collect();
         let in_transaction = conn.execute_batch("BEGIN IMMEDIATE").is_ok();
-        drained = rollups.drain(conn, repairs, DRAIN_SLICE, wants_the_writer);
-        if in_transaction {
-            // A fatal error mid-drain can roll the transaction back on its own; a
-            // failed COMMIT leaves it open. Either way none of it landed.
-            let committed = !conn.is_autocommit() && conn.execute_batch("COMMIT").is_ok();
-            if !committed {
-                if !conn.is_autocommit() {
-                    let _ = conn.execute_batch("ROLLBACK");
-                }
-                log::debug!(
-                    target: "indexing::writer",
-                    "Ancestor roll-up: the drain's transaction didn't commit; {} queued again",
-                    pluralize(asked.len() as u64, "directory"),
-                );
-                for id in asked {
-                    rollups.queue(id);
-                }
-                return Drained {
-                    moved: false,
-                    owes_more: true,
-                };
-            }
+        drained = rollups.drain(conn, repairs, wants_the_writer);
+        if in_transaction && let Err(e) = commit_the_drain(conn, &rollups.gauges) {
+            signal.note(&e, "ancestor roll-up commit");
+            rollups.owe_last_drain_again();
+            drained = Drained {
+                moved: false,
+                owes_more: true,
+            };
         }
+        rollups.note_stretch();
     }
     if !drained.owes_more && !repairs.is_empty() {
         repairs.drain(conn);
     }
     drained
+}
+
+/// Commit the drain's transaction. A fatal error mid-drain can roll it back on
+/// its own, and a failed `COMMIT` leaves it open: either way none of it landed.
+fn commit_the_drain(conn: &rusqlite::Connection, gauges: &RollupGauges) -> Result<(), IndexStoreError> {
+    if let Some(e) = gauges.injected_commit_failure() {
+        let _ = conn.execute_batch("ROLLBACK");
+        return Err(e);
+    }
+    if conn.is_autocommit() {
+        return Err(IndexStoreError::Io(std::io::Error::other(
+            "the roll-up's transaction rolled back before its commit",
+        )));
+    }
+    if let Err(e) = conn.execute_batch("COMMIT") {
+        if !conn.is_autocommit() {
+            let _ = conn.execute_batch("ROLLBACK");
+        }
+        return Err(e.into());
+    }
+    Ok(())
 }
 
 /// Tell both panes to re-read their sizes, from BETWEEN messages rather than from
@@ -329,95 +535,4 @@ pub(super) fn emit_full_refresh(events: &dyn EventSink) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// The whole point of the set: a burst of roots sharing one parent owes ONE
-    /// walk, not one per root.
-    #[test]
-    fn a_burst_sharing_one_parent_queues_one_id() {
-        let rollups = PendingRollups::new(Arc::new(AtomicU64::new(0)));
-        for _ in 0..10_000 {
-            rollups.queue(42);
-        }
-        assert_eq!(rollups.pending.borrow().len(), 1, "one parent, one queued roll-up");
-    }
-
-    /// Distinct parents each keep their own entry: coalescing must never lose a
-    /// chain that nothing else is going to repair.
-    #[test]
-    fn distinct_parents_all_survive() {
-        let rollups = PendingRollups::new(Arc::new(AtomicU64::new(0)));
-        for id in 1..=50 {
-            rollups.queue(id);
-        }
-        assert_eq!(rollups.pending.borrow().len(), 50);
-    }
-
-    /// A drain with a message waiting gives the writer back after its slice, keeps
-    /// what it still owes, and the drains that pick it up later land the same
-    /// answer one uninterrupted drain would. GitHub issue #1480: live changes must
-    /// never wait out a whole drain.
-    #[test]
-    fn a_waiting_message_takes_the_writer_back_and_nothing_owed_is_lost() {
-        use crate::indexing::stress_test_helpers::check_db_consistency;
-        use crate::indexing::writer::entry_fixtures::{dir_entry, file_entry};
-        use crate::indexing::writer::tests::{settle_the_writer, setup_db};
-        use crate::indexing::writer::{AggSource, IndexWriter, WriteMessage};
-
-        const WIDTH: i64 = 20;
-        let (db_path, _dir) = setup_db();
-        let writer = IndexWriter::spawn(&db_path, crate::NoopEventSink::shared()).unwrap();
-        let mut entries = vec![dir_entry(10, ROOT_ID, "big")];
-        let mids: Vec<i64> = (0..WIDTH).map(|index| 100 + index * 2).collect();
-        for &mid in &mids {
-            entries.push(dir_entry(mid, 10, &format!("mid-{mid}")));
-            entries.push(file_entry(mid + 1, mid, "leaf", 1000));
-        }
-        writer.send(WriteMessage::InsertEntriesV2(entries)).unwrap();
-        writer
-            .send(WriteMessage::ComputeAllAggregates {
-                source: AggSource::Maps,
-            })
-            .unwrap();
-        settle_the_writer(&writer);
-        writer.shutdown();
-
-        // Every mid, `big`, and the root drift low, so each needs a recompute.
-        let conn = IndexStore::open_write_connection(&db_path).unwrap();
-        conn.execute("UPDATE dir_stats SET recursive_logical_size = 0", [])
-            .unwrap();
-        let rollups = PendingRollups::new(Arc::new(AtomicU64::new(0)));
-        for &mid in &mids {
-            rollups.queue(mid);
-        }
-        let repairs = DeferredRepairs::new();
-
-        // A zero slice and a message always waiting: one recompute per drain.
-        let first = rollups.drain(&conn, &repairs, Duration::ZERO, &|| true);
-        assert!(first.owes_more, "a waiting message takes the writer back");
-        assert_eq!(rollups.recomputes.load(Ordering::Relaxed), 1);
-        assert_eq!(
-            rollups.pending.borrow().len(),
-            WIDTH as usize,
-            "what's owed stays queued: the other mids, plus `big`, which the first rewrite owes"
-        );
-
-        let mut drains = 1;
-        while !rollups.is_empty() {
-            rollups.drain(&conn, &repairs, Duration::ZERO, &|| true);
-            drains += 1;
-            assert!(drains <= WIDTH + 2, "every drain makes progress");
-        }
-        assert_eq!(
-            rollups.recomputes.load(Ordering::Relaxed),
-            WIDTH as u64 + 2,
-            "sliced, each directory is still recomputed once: the mids, `big`, the root"
-        );
-        let big = IndexStore::get_dir_stats_by_id(&conn, 10).unwrap().unwrap();
-        assert_eq!(big.recursive_logical_size, WIDTH as u64 * 1000);
-        let root = IndexStore::get_dir_stats_by_id(&conn, ROOT_ID).unwrap().unwrap();
-        assert_eq!(root.recursive_logical_size, WIDTH as u64 * 1000);
-        check_db_consistency(&conn);
-    }
-}
+mod tests;

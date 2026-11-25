@@ -863,7 +863,7 @@ fn a_fatal_storage_error_stops_the_writer_and_trips_the_signal() {
             Arc::new(MutationTracker::new(true)),
             queue_depth_for_loop,
             Arc::new(AtomicU64::new(0)),
-            Arc::new(AtomicU64::new(0)),
+            Arc::new(RollupGauges::default()),
             signal_for_loop,
             Arc::new(BusyOn::default()),
         );
@@ -941,12 +941,14 @@ fn the_heartbeat_line_carries_the_fields_the_churn_harness_scrapes() {
     probe.time_in_recv = Duration::from_millis(4_312);
     probe.time_in_processing = Duration::from_millis(603);
     probe.time_in_commit = Duration::from_millis(88);
+    probe.time_in_settle = Duration::from_millis(41);
+    probe.rollups_owed = 1_480;
     assert_eq!(
         probe.heartbeat_line(3, Duration::from_millis(5_004), 41_231),
         "heartbeat volume_id=root queue_depth=3 since_last_heartbeat_ms=5004 \
          messages_processed_since_last_heartbeat=271 transaction_commits_since_last_heartbeat=12 \
-         time_in_recv_ms=4312 time_in_processing_ms=603 time_in_commit_ms=88 \
-         writer_cpu_ms_total=41231"
+         time_in_recv_ms=4312 time_in_processing_ms=603 time_in_commit_ms=88 time_in_settle_ms=41 \
+         rollups_owed=1480 writer_cpu_ms_total=41231"
     );
 }
 

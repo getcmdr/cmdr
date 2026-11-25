@@ -303,7 +303,8 @@ func TestWriterCPU(t *testing.T) {
 	w := newWriterCPU()
 	if !w.addLine(prefix + `heartbeat volume_id=root queue_depth=3 since_last_heartbeat_ms=5004 ` +
 		`messages_processed_since_last_heartbeat=271 transaction_commits_since_last_heartbeat=12 ` +
-		`time_in_recv_ms=4312 time_in_processing_ms=603 time_in_commit_ms=88 writer_cpu_ms_total=41231`) {
+		`time_in_recv_ms=4312 time_in_processing_ms=603 time_in_commit_ms=88 time_in_settle_ms=41 ` +
+		`rollups_owed=1480 writer_cpu_ms_total=41231`) {
 		t.Fatal("the root heartbeat did not match")
 	}
 	// A second volume's writer has its own thread and its own counter; folding

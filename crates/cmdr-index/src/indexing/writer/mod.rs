@@ -66,7 +66,7 @@ use entries::{
 use flush_wait::BusyOn;
 pub use flush_wait::FlushReply;
 use maintenance::{handle_incremental_vacuum, request_wal_checkpoint, run_deferred_wal_checkpoint};
-use pending_rollups::{PendingRollups, emit_full_refresh, settle_the_ledger};
+use pending_rollups::{PendingRollups, RollupGauges, emit_full_refresh, settle_the_ledger};
 use repair::DeferredRepairs;
 
 // ── Writer generation (for search index staleness detection) ─────────
@@ -612,13 +612,12 @@ pub struct IndexWriter {
     /// its own `Arc` clone and always ticks it; only the reader here is test-gated.
     #[cfg_attr(not(test), allow(dead_code, reason = "test-only observable"))]
     idle_epoch: Arc<AtomicU64>,
-    /// How many single-directory roll-up recomputes the writer has run out of `pending_rollups`.
-    /// One per drained id, so a test that covers `N` frontier roots under one parent
-    /// reads the coalescing straight off it: `N` before the queue existed, a handful
-    /// after. The writer thread holds its own `Arc` clone and always counts; only the
-    /// reader here is test-gated.
+    /// The roll-up queue's numbers (`pending_rollups::RollupGauges`): recomputes,
+    /// parent reads, yields, and what's owed. A test that covers `N` frontier roots
+    /// reads the scaling straight off them. The writer thread holds its own `Arc`
+    /// clone and always counts; only the reader here is test-gated.
     #[cfg_attr(not(test), allow(dead_code, reason = "test-only observable"))]
-    rollup_recomputes: Arc<AtomicU64>,
+    rollup_gauges: Arc<RollupGauges>,
     /// The per-volume fatal-storage-failure signal. The writer thread trips this on
     /// the first fatal DB error (`SQLITE_IOERR` / corruption / full / read-only) and
     /// then exits, rather than logging and retrying forever. Shared with the live
@@ -700,8 +699,8 @@ impl IndexWriter {
         let queue_depth_clone = Arc::clone(&queue_depth);
         let idle_epoch = Arc::new(AtomicU64::new(0));
         let idle_epoch_clone = Arc::clone(&idle_epoch);
-        let rollup_recomputes = Arc::new(AtomicU64::new(0));
-        let rollup_recomputes_clone = Arc::clone(&rollup_recomputes);
+        let rollup_gauges = Arc::new(RollupGauges::default());
+        let rollup_gauges_clone = Arc::clone(&rollup_gauges);
         let failure_signal = Arc::new(IndexFailureSignal::new(Arc::clone(&events)));
         let failure_signal_clone = Arc::clone(&failure_signal);
         let busy_on = Arc::new(BusyOn::default());
@@ -726,7 +725,7 @@ impl IndexWriter {
                         mutation_tracker_clone,
                         queue_depth_clone,
                         idle_epoch_clone,
-                        rollup_recomputes_clone,
+                        rollup_gauges_clone,
                         failure_signal_clone,
                         busy_on_clone,
                     )
@@ -745,7 +744,7 @@ impl IndexWriter {
             mutation_tracker,
             queue_depth,
             idle_epoch,
-            rollup_recomputes,
+            rollup_gauges,
             failure_signal,
             busy_on,
             volume_id: volume_id_shared,
@@ -859,12 +858,18 @@ impl IndexWriter {
         self.idle_epoch.load(Ordering::SeqCst)
     }
 
-    /// How many single-directory roll-up recomputes the writer has run (see the `rollup_recomputes`
-    /// field). Against the number of frontier roots covered, this is the coalescing
-    /// factor — the scaling guard in `aggregation/tests.rs` reads exactly that.
+    /// How many single-directory roll-up recomputes the writer has run. Against the
+    /// number of frontier roots covered, this is the scaling guards' number
+    /// (`aggregation/rollup_tests.rs`).
     #[cfg(test)]
     pub(crate) fn rollup_recomputes(&self) -> u64 {
-        self.rollup_recomputes.load(Ordering::SeqCst)
+        self.rollup_gauges.recomputes.load(Ordering::SeqCst)
+    }
+
+    /// The roll-up queue's numbers, for a test.
+    #[cfg(test)]
+    pub(crate) fn rollup_gauges(&self) -> &RollupGauges {
+        &self.rollup_gauges
     }
 
     /// Non-blocking send. Unlike `send`, never parks the caller when the channel
@@ -1232,7 +1237,7 @@ fn writer_loop(
     mutation_tracker: Arc<MutationTracker>,
     queue_depth: Arc<AtomicUsize>,
     idle_epoch: Arc<AtomicU64>,
-    rollup_recomputes: Arc<AtomicU64>,
+    rollup_gauges: Arc<RollupGauges>,
     failure_signal: Arc<IndexFailureSignal>,
     busy_on: Arc<BusyOn>,
 ) {
@@ -1257,7 +1262,7 @@ fn writer_loop(
     let repairs = DeferredRepairs::new();
     // Ancestors a finished subtree aggregate owes a roll-up, coalesced per burst and
     // drained at the same caught-up point. See `pending_rollups.rs`.
-    let rollups = PendingRollups::new(rollup_recomputes);
+    let rollups = PendingRollups::new(&volume_id, Arc::clone(&rollup_gauges));
     // Coalesces mutations that are ALREADY QUEUED into one transaction, so the live
     // path stops paying a COMMIT + WAL frame write per message. See `batch.rs`.
     let mut batch = ImplicitBatch::new();
@@ -1273,6 +1278,16 @@ fn writer_loop(
     let mut probe = ProbeStats::new(&volume_id);
     // Heartbeat cadence
     const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
+    let between = Between {
+        conn: &conn,
+        rollups: &rollups,
+        repairs: &repairs,
+        signal: &failure_signal,
+        events: events.as_ref(),
+        busy_on: &busy_on,
+        volume_id: &volume_id,
+        queue_depth: &queue_depth,
+    };
 
     loop {
         // Take whatever is already queued without parking. An open batch must never
@@ -1299,7 +1314,13 @@ fn writer_loop(
                         Some(m)
                     }
                     Err(mpsc::RecvTimeoutError::Timeout) => {
-                        // No message in this window. Emit heartbeat and loop.
+                        // No message in this window. A roll-up still owed (a drain
+                        // whose transaction didn't commit) gets another go: an idle
+                        // writer is the caught-up point. Then the heartbeat.
+                        if !rollups.is_empty() && conn.is_autocommit() && !between.settle(&mut probe).owes_more {
+                            idle_epoch.fetch_add(1, Ordering::SeqCst);
+                        }
+                        probe.rollups_owed = rollup_gauges.owed.load(Ordering::Relaxed);
                         probe.maybe_emit_heartbeat(queue_depth.load(Ordering::Relaxed));
                         long_transaction.observe(&volume_id, explicit_transaction_open(&conn, &batch), false);
                         continue;
@@ -1313,7 +1334,7 @@ fn writer_loop(
         // quit's last writes back, then exit.
         let Some(msg) = msg else {
             batch.close(&conn, &mut probe, &failure_signal, &mut deferred_checkpoint);
-            settle_the_ledger(&conn, &rollups, &repairs, &|| false);
+            settle_the_ledger(&conn, &rollups, &repairs, &failure_signal, &|| false);
             break;
         };
 
@@ -1398,7 +1419,7 @@ fn writer_loop(
             // `Shutdown` is a batch barrier, so the last batch already committed above.
             // Settle before going, or a quit inside a burst leaves the ancestors that
             // burst coalesced permanently short of it.
-            settle_the_ledger(&conn, &rollups, &repairs, &|| false);
+            settle_the_ledger(&conn, &rollups, &repairs, &failure_signal, &|| false);
             log::debug!("Writer: shutdown after processing {} messages", stats.current.total);
             return;
         }
@@ -1430,6 +1451,7 @@ fn writer_loop(
             return;
         }
         stats.maybe_log_summary();
+        probe.rollups_owed = rollup_gauges.owed.load(Ordering::Relaxed);
         probe.maybe_emit_heartbeat(queue_depth.load(Ordering::Relaxed));
         long_transaction.observe(&volume_id, explicit_transaction_open(&conn, &batch), true);
 
@@ -1481,28 +1503,7 @@ fn writer_loop(
         // one: a flush stuck behind it names it, and a long one says so when it ends.
         // It gives the writer back to a waiting message after a slice
         // (`pending_rollups.rs`), so a live change never queues behind it for long.
-        let mut owes_more = false;
-        if settled {
-            busy_on.start(LEDGER_SETTLE);
-            let settle_start = Instant::now();
-            let drained = settle_the_ledger(&conn, &rollups, &repairs, &|| queue_depth.load(Ordering::Relaxed) > 0);
-            let took = settle_start.elapsed();
-            busy_on.end();
-            probe.time_in_processing += took;
-            if took >= SLOW_MESSAGE {
-                log::warn!(
-                    "Writer: the {LEDGER_SETTLE} held '{volume_id}' for {:.1} s; everything queued behind it waited",
-                    took.as_secs_f64()
-                );
-            }
-            if drained.moved {
-                // A roll-up moved ancestor sizes no message handler emitted for, so the
-                // panes would otherwise keep showing the pre-burst number until
-                // something else refreshed them.
-                emit_full_refresh(events.as_ref());
-            }
-            owes_more = drained.owes_more;
-        }
+        let owes_more = settled && between.settle(&mut probe).owes_more;
 
         // The writer is now genuinely caught up for this iteration, so publish it. This
         // is the moment `flush_blocking` does NOT give a caller: the flush reply goes
@@ -1520,6 +1521,51 @@ fn writer_loop(
         "Writer: channel closed, thread exiting after processing {} messages",
         stats.current.total,
     );
+}
+
+/// What the ledger settle between messages needs from the writer loop.
+struct Between<'a> {
+    conn: &'a rusqlite::Connection,
+    rollups: &'a PendingRollups,
+    repairs: &'a DeferredRepairs,
+    signal: &'a IndexFailureSignal,
+    events: &'a dyn EventSink,
+    busy_on: &'a BusyOn,
+    volume_id: &'a str,
+    queue_depth: &'a AtomicUsize,
+}
+
+impl Between<'_> {
+    /// Settle the ledger, bracketed like a message: `BusyOn` names it, so a flush
+    /// stuck behind it says so, a long one warns when it ends, and its time counts
+    /// apart from message processing. It gives the writer back to a waiting message
+    /// after a slice (`pending_rollups.rs`), so a live change never queues behind it
+    /// for long.
+    fn settle(&self, probe: &mut ProbeStats) -> pending_rollups::Drained {
+        self.busy_on.start(LEDGER_SETTLE);
+        let started = Instant::now();
+        let queue_depth = self.queue_depth;
+        let drained = settle_the_ledger(self.conn, self.rollups, self.repairs, self.signal, &|| {
+            queue_depth.load(Ordering::Relaxed) > 0
+        });
+        let took = started.elapsed();
+        self.busy_on.end();
+        probe.time_in_settle += took;
+        if took >= SLOW_MESSAGE {
+            log::warn!(
+                "Writer: the {LEDGER_SETTLE} held '{}' for {:.1} s; everything queued behind it waited",
+                self.volume_id,
+                took.as_secs_f64()
+            );
+        }
+        if drained.moved {
+            // A roll-up moved ancestor sizes no message handler emitted for, so the
+            // panes would otherwise keep showing the pre-burst number until
+            // something else refreshed them.
+            emit_full_refresh(self.events);
+        }
+        drained
+    }
 }
 
 /// Whether a sender's explicit transaction is open on the connection: a

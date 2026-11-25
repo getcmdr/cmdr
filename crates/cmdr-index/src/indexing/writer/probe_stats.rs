@@ -22,6 +22,12 @@ pub(super) struct ProbeStats {
     pub(super) time_in_recv: Duration,
     pub(super) time_in_processing: Duration,
     pub(super) time_in_commit: Duration,
+    /// Time in the ledger settle between messages (`pending_rollups.rs`), kept apart
+    /// so `time_in_processing` stays message handling only.
+    pub(super) time_in_settle: Duration,
+    /// Directories that owe an ancestor roll-up right now, set by the loop before
+    /// each beat. Not reset: a gauge, not a per-window count.
+    pub(super) rollups_owed: u64,
     pub(super) messages_processed: u64,
     pub(super) transaction_commits: u64,
 }
@@ -34,6 +40,8 @@ impl ProbeStats {
             time_in_recv: Duration::ZERO,
             time_in_processing: Duration::ZERO,
             time_in_commit: Duration::ZERO,
+            time_in_settle: Duration::ZERO,
+            rollups_owed: 0,
             messages_processed: 0,
             transaction_commits: 0,
         }
@@ -66,7 +74,8 @@ impl ProbeStats {
     /// A stall always logs: `queue_depth > 0` with no progress is exactly the
     /// case this keeps at full 5 s resolution.
     pub(super) fn heartbeat_is_worth_logging(&self, queue_depth: usize, since_last: Duration) -> bool {
-        let idle = queue_depth == 0 && self.messages_processed == 0 && self.transaction_commits == 0;
+        let idle =
+            queue_depth == 0 && self.messages_processed == 0 && self.transaction_commits == 0 && self.rollups_owed == 0;
         !idle || since_last >= IDLE_HEARTBEAT
     }
 
@@ -89,7 +98,8 @@ impl ProbeStats {
         format!(
             "heartbeat volume_id={} queue_depth={queue_depth} since_last_heartbeat_ms={} \
              messages_processed_since_last_heartbeat={} transaction_commits_since_last_heartbeat={} \
-             time_in_recv_ms={} time_in_processing_ms={} time_in_commit_ms={} \
+             time_in_recv_ms={} time_in_processing_ms={} time_in_commit_ms={} time_in_settle_ms={} \
+             rollups_owed={} \
              writer_cpu_ms_total={writer_cpu_ms_total}",
             self.volume_id,
             since_last.as_millis(),
@@ -98,6 +108,8 @@ impl ProbeStats {
             self.time_in_recv.as_millis(),
             self.time_in_processing.as_millis(),
             self.time_in_commit.as_millis(),
+            self.time_in_settle.as_millis(),
+            self.rollups_owed,
         )
     }
 
@@ -118,6 +130,7 @@ impl ProbeStats {
         self.time_in_recv = Duration::ZERO;
         self.time_in_processing = Duration::ZERO;
         self.time_in_commit = Duration::ZERO;
+        self.time_in_settle = Duration::ZERO;
         self.messages_processed = 0;
         self.transaction_commits = 0;
     }

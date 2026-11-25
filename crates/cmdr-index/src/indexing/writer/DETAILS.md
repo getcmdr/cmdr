@@ -472,26 +472,64 @@ from 400 (`aggregation/tests.rs::a_burst_of_roots_under_one_parent_costs_a_handf
 roots that share a PARENT. Roots one level lower each queue a different parent, and every one of those chains runs
 through the same wide grandparent, so walking each chain to the root on its own recomputed that grandparent once per
 chain: `O(W²)` one level up. That held a Windows `C:` writer in one drain for over an hour (GitHub issue #1480: a phase
-stopped with 38,135 folders to walk, and WinSxS's ~15,000 component folders each hold `f` and `r`). The drain therefore
-reads every queued id's chain once (shared prefixes once), orders the owed directories by depth in a max-heap, and pops
-deepest first: a rewrite owes the parent, an agreeing row owes nothing (the per-chain short-circuit, kept), and a parent
-several children owe is in the heap once. The cost is one recompute per directory that needs one: 300 roots under a
-300-child grandparent measure 302 recomputes, down from 601, and the old shape took 2.4 s at 1,000 and over 8 s at 4,000
-on an M-series debug build (`aggregation/rollup_tests.rs::roots_under_a_wide_grandparent_recompute_it_once`).
-`rollup_recomputes` counts single-directory recomputes, so both scaling guards read the same mechanism.
+stopped with 38,135 folders to walk; on that machine WinSxS has 18,384 component folders, 5,864 of them holding `f` and
+`r`). The drain therefore keeps the owed directories in a max-heap by depth and pops deepest first: a rewrite owes the
+parent, an agreeing row owes nothing (the per-chain short-circuit, kept), and a directory several children owe is in the
+heap once. The cost is one recompute per directory that needs one: 300 roots under a 300-child grandparent cost exactly
+302 recomputes, down from 601, and the old shape took 2.4 s at 1,000 and over 8 s at 4,000 on an M-series debug build
+(`aggregation/rollup_tests.rs::roots_under_a_wide_grandparent_recompute_it_once`, which sends the burst inside one
+explicit transaction so the writer can't settle partway and the count is exact). `rollup_recomputes` counts
+single-directory recomputes, so both scaling guards read the same mechanism.
 
-**A drain gives the writer back.** It checks, after each recompute past a 250 ms slice (`DRAIN_SLICE`, the implicit
-batch's cap), whether a message is waiting (`queue_depth > 0`); if one is, what's still owed goes back in the set for
-the next caught-up point, the deferred repairs wait too (they want final rows), and the iteration doesn't tick
-`idle_epoch` (it hasn't settled). So a live change waits about one slice behind a drain, never the whole drain. Exit
-paths never yield. Safe for the same reason deferring is: every recompute is absolute
-(`pending_rollups.rs::tests::a_waiting_message_takes_the_writer_back_and_nothing_owed_is_lost`). Each drain runs in one
-`BEGIN IMMEDIATE` (one commit, not one per rewritten row); if it doesn't commit, everything it was asked for is queued
-again.
+**Depth is only an ORDER; the parent is always read fresh.** Each newly queued id's chain is read once (shared prefixes
+once, cached in `Work::depths`); a rewrite then reads its parent with ONE fresh `get_parent_id`, since a cached parent
+goes stale when something moves the directory and a stale one would skip the new parent. A stale depth after a move
+costs at most a second recompute, never a wrong size, because every rewrite owes its fresh parent. ❌ A queued id is
+never dropped because its chain can't be read (a failed read, a missing ancestor, a loop): it stays owed at depth 0, and
+a rewritten directory whose parent read fails waits in `owes_parent` for the next drain. The old per-chain walk always
+recomputed the queued id first; dropping it would leave that folder and every level above wrong for good
+(`pending_rollups/tests.rs::an_unreadable_chain_still_rolls_the_queued_folder_and_its_ancestors_up`).
 
-**The settle is bracketed like a message.** `BusyOn` names it (`ledger settle`), so a flush stuck behind it says so
-instead of "between messages", and one that holds the writer past `SLOW_MESSAGE` warns when it ends. Before this, work
-between messages was invisible to both the flush-wait line and the heartbeat, which only beats between iterations.
+**A drain gives the writer back, and resumes where it stopped.** After each recompute past a 250 ms slice
+(`DRAIN_SLICE`, the implicit batch's cap) it checks whether a message is waiting (`queue_depth > 0`). If one is, the
+heap and the depths stay as they are, the deferred repairs wait too (they want final rows), and the iteration doesn't
+tick `idle_epoch` (it hasn't settled). The slice clock starts AFTER the drain has read the chains of ids queued since
+the last one, so every slice buys a slice of recomputes, and a resumed drain re-reads nothing: re-reading every owed
+chain per yield made a sliced drain `O(owed²)` in parent reads, which on a slow machine meant one folder per slice
+(`pending_rollups/tests.rs::a_drain_that_yields_every_folder_reads_each_parent_about_once` pins reads ≤ 3 × owed). So a
+live change waits about one slice behind a drain, never the whole drain. Exit paths never yield. Safe for the same
+reason deferring is: every recompute is absolute. An idle writer (the 5 s receive timeout) settles too, so a drain whose
+transaction failed retries without waiting for traffic.
+
+**One transaction per drain, and its failure is a writer failure.** Each drain runs in one `BEGIN IMMEDIATE` (one
+commit, not one per rewritten row). If it doesn't commit, everything that drain recomputed is owed again and the error
+goes through `IndexFailureSignal::note` like every other writer write, so a full disk pauses the index and a dead one
+fails it instead of retrying silently. `a_sliced_drain_with_live_changes_between_the_slices_ends_exact` drives the whole
+path through the real loop: one-folder slices, two failed commits, and a delete, two adds, a move, and a file delete
+between the slices, then `check_db_consistency` against a from-scratch computation.
+
+**The settle is bracketed like a message, and counted apart.** `BusyOn` names it (`ledger settle`), so a flush stuck
+behind it says so instead of "between messages", and one that holds the writer past `SLOW_MESSAGE` warns when it ends.
+Its time goes to the heartbeat's `time_in_settle_ms`, not `time_in_processing_ms`, and the heartbeat carries
+`rollups_owed`, so an idle-looking writer with work owed still beats. Roll-ups owed for over 60 s (live work keeps
+taking the writer) warn once a minute with how much is left and how many drains it took.
+
+### Measuring a first index on the real machine
+
+What to capture when checking a stopped first index on slow hardware (Windows, a two-core debug build), with
+`RUST_LOG=stall_probe::writer=debug,indexing::writer=debug` (`docs/tooling/logging.md`):
+
+- **Heartbeats**: a `stall_probe::writer` line for `root` about every 5 s throughout. A gap is a stall; `rollups_owed`
+  and `time_in_settle_ms` on the beats around it say whether the settle is where the time went.
+- **Each drain**: the `Ancestor roll-up:` line gives the newly queued count, the chain-read time on its own, the
+  recomputes and their time, and how many folders are left. Count the lines that end with folders left (the drains that
+  yielded) and check their chain-read time stays small: a chain read near the slice length means the yield is paying for
+  reads again.
+- **Time to settled**: from the `Phases: '…' stops with … still to walk` line until the first beat with
+  `rollups_owed=0`.
+- **Exactness**: after quitting Cmdr, copy `index-root.db` (and any `-wal`) and run
+  `aggregation/rollup_tests.rs::drift_audit_against_a_copied_index` with `CMDR_DRIFT_DB` pointing at the copy. It
+  recomputes every folder from `entries` and fails listing each one whose stored sizes differ; a pass is exact.
 
 **Why it self-limits rather than trading one stall for another.** The drain runs only when the queue is empty, so while
 the writer is inside a roll-up the walker keeps queueing roots, and every one of them joins the NEXT drain. A burst
