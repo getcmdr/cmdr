@@ -373,8 +373,11 @@ row is decided here or in the frontend.
   target, decided as the menu opened, ❌ never re-read from focus later: from a text field, an Edit row answers
   `TextEdit` in every window, main included (the page edits that field, only while it still holds focus, ❌ never the
   file clipboard), and a key's plain command takes the `BarKeyInTextField` road, which the gate refuses for a
-  file-moving row whatever has focus on arrival. Regression anchor (#1464): an explorer effect pulled focus from the
-  field into the file list while the menu was open, so Edit > Cut cut the file and File > Delete trashed it.
+  `FILE_MOVING_COMMAND_IDS` row whatever has focus on arrival. Every other row still runs on the cursor file (a key's
+  Duplicate, Compress, Make offline, Rename, New folder, Open; a click on File > Delete, by design): the gate's set
+  is `apps/desktop/src/routes/(main)/DETAILS.md`'s to state. Regression anchor (#1464): an explorer effect pulled
+  focus from the field into the file list while the menu was open, so Edit > Cut cut the file and File > Delete
+  trashed it.
   The calling window stands in for focus everywhere a row is window-bound (`menu_handlers::PickWindow`): a file-scoped
   row runs only from the main window's page, an Edit row asks `edit_road` about the page that sent it (so a Ctrl+V in
   the queue edits the queue's field, never the main window's files), Close closes the window that fired it, and the

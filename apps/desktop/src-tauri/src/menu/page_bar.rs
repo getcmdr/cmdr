@@ -84,7 +84,8 @@ pub enum BarPickVia {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum BarPickOrigin {
-    /// A text field: an Edit row edits that field, and a key never moves files.
+    /// A text field: an Edit row edits that field, and a key's plain command takes the
+    /// `BarKeyInTextField` road, where the main window refuses its `FILE_MOVING_COMMAND_IDS`.
     TextField,
     /// Anywhere else (the file list, a button, nothing): the row acts where focus is, as before.
     Elsewhere,

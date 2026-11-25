@@ -52,11 +52,15 @@
 
     const menu = createContextMenu({
         onPick: (menuId, via) => {
-            onPick(menuId, via, openedOver)
+            const textField = openedOver
+            openedOver = null
+            onPick(menuId, via, textField)
         },
         accessKeys: () => convention('accessKeys') !== 'none',
-        onClose: () => {
+        // `onClose` runs BEFORE `onPick` when a pick closed the menu, so a pick keeps the field for it.
+        onClose: ({ picked }) => {
             expanded = false
+            if (!picked) openedOver = null
         },
     })
 

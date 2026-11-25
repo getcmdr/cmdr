@@ -34,8 +34,9 @@ const log = getAppLogger('inPageMenus')
  *
  * `textField` is the field the menu was opened over (it kept focus the whole time), or null. It's
  * the pick's target, decided as the menu opened: an Edit row comes back as `textEdit` and runs on
- * that field alone, and only while it still holds focus, and a key's pick never moves files, in
- * the main window too, whatever has focus by the time the command lands (#1464). Without one, a
+ * that field alone, and only while it still holds focus, and a key's pick never runs one of
+ * `FILE_MOVING_COMMAND_IDS` in the main window, whatever has focus by the time the command lands
+ * (#1464; the text-field gate, `routes/(main)/text-field-gate.ts`, has the set). Without one, a
  * `textEdit` runs on whatever field holds focus (the viewer's search box), as before.
  */
 export async function pickMenuBarItem(

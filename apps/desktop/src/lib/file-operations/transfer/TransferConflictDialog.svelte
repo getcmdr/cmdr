@@ -199,8 +199,9 @@
     $effect(() => {
         const conflictId = conflictEvent.conflictId
         const active = document.activeElement
-        // Untracked: the section binding landing must not restart the arming.
-        if (active === null || active === document.body) untrack(() => section)?.focus()
+        // Untracked: the section binding landing must not restart the arming, and the focus handlers
+        // the `.focus()` runs must not hand their `$state` reads to this effect (#1464).
+        if (active === null || active === document.body) untrack(() => section?.focus())
         const timer = setTimeout(() => {
             armedConflictId = conflictId
         }, DECISION_KEYS_ARM_MS)
