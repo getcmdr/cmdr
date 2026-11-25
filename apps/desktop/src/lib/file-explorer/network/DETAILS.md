@@ -369,7 +369,8 @@ glyph, `..`) and in meaning: Enter, a double-click, or `openCursorItem` on it do
 - **❗ Every index counts it** (`PARENT_ROWS`): share `i` is row `i + 1`, in the cursor, `setCursorIndex`,
   `findItemIndex` (`..` is 0), `getItemCount`, the arrows, and the `..`-out-of-a-share landing (`landOnShare`). The same
   parent offset as a file list.
-- **The cursor still opens on the first share** (row 1): a person opens a server to pick a share.
+- **The list opens with the cursor on `..`**, the way a file list opens on its parent row. Landing by name wins: coming
+  up out of a share's top folder lands on that share (`landOnShare`).
 - **Type-to-jump never lands on it**: `jumpToPrefix` matches shares only.
 - **The MCP mirror lists it as row 0**: name `..`, path `smb://` (the Servers list's own sentinel), so an agent's
   indices match the person's. Only while the shares are on screen, like the row itself.

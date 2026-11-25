@@ -121,8 +121,8 @@
     let authMode = $state<AuthMode>('unknown')
     let loading = $state(true)
     let error = $state<ShareListError | null>(null)
-    // On the first share, as before `..` joined the list: a person opens a server to pick a share.
-    let cursorIndex = $state(PARENT_ROWS)
+    // On `..`, the way a file list opens on its parent row. Landing by name (`landOnShare`) wins.
+    let cursorIndex = $state(0)
 
     // Sorted shares for display (case-insensitive alphabetical)
     const sortedShares = $derived(

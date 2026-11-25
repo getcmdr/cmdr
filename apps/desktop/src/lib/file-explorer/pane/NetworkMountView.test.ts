@@ -170,6 +170,8 @@ async function mountViewAndActivateShare() {
   await vi.waitFor(() => {
     expect(target.querySelector('.share-row')).toBeTruthy()
   })
+  // Down from `..`, where the share list opens, to the share.
+  api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
   api.openCursorItem()
   await tick()
   return { target, component, api }
@@ -708,6 +710,8 @@ describe('NetworkMountView: a mount that waits', () => {
     await vi.waitFor(() => {
       expect(target.querySelector('.share-row')).toBeTruthy()
     })
+    // Down from `..`, where the share list opens, to the share.
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
     api.openCursorItem()
     await vi.waitFor(
       () => {
@@ -760,6 +764,7 @@ describe('NetworkMountView: a mount that waits', () => {
 
     vi.useFakeTimers()
     try {
+      api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
       api.openCursorItem()
       await tick()
       // Past the wait's quiet start (`RemoteConnectView`), so the view says something.

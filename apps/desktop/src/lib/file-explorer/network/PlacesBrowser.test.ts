@@ -195,6 +195,7 @@ describe('PlacesBrowser credential gate', () => {
     const { target, component, api } = mountBrowser(onShareSelect)
     await waitForShareList(target)
 
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' })) // off `..`, onto the share
     api.openCursorItem()
     await vi.waitFor(() => {
       expect(onShareSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'testshare' }), null)
@@ -213,6 +214,7 @@ describe('PlacesBrowser credential gate', () => {
     const { target, component, api } = mountBrowser(onShareSelect)
     await waitForShareList(target)
 
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' })) // off `..`, onto the share
     api.openCursorItem()
     await vi.waitFor(() => {
       expect(onShareSelect).toHaveBeenCalledWith(expect.objectContaining({ name: 'testshare' }), {
@@ -262,6 +264,7 @@ describe('PlacesBrowser credential gate', () => {
     const { target, component, api } = mountBrowser(onShareSelect)
     await waitForShareList(target)
 
+    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' })) // off `..`, onto the share
     api.openCursorItem()
     await tick()
 
@@ -356,6 +359,7 @@ describe('PlacesBrowser Enter', () => {
     document.addEventListener('keydown', documentDispatcher)
     initShortcutDispatch()
     try {
+      api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' })) // off `..`, onto the share
       target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
       await tick()
 
@@ -421,19 +425,18 @@ describe('PlacesBrowser `..` row', () => {
     return [...target.querySelectorAll('.share-row .share-name')].map((el) => el.textContent.trim())
   }
 
-  it('heads the list, with the cursor starting on the first share', async () => {
+  it('heads the list, with the cursor starting on it, the way a file list opens', async () => {
     const { target, component, api } = await browserWithTwoShares()
 
     expect(rowNames(target)).toEqual(['..', 'Backup', 'testshare'])
-    expect(api.getShareUnderCursor()?.name).toBe('Backup')
+    expect(api.getShareUnderCursor(), 'the cursor is on `..`, no share').toBeNull()
+    expect(target.querySelector('[data-parent-row]')?.classList.contains('is-under-cursor')).toBe(true)
     await unmount(component)
   })
 
   it('goes back to the Servers list on Enter, mounting nothing', async () => {
     const { component, api, onBack, onShareSelect } = await browserWithTwoShares()
 
-    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowUp' }))
-    expect(api.getShareUnderCursor(), '`..` is no share').toBeNull()
     api.handleKeyDown(new KeyboardEvent('keydown', { key: 'Enter' }))
 
     expect(onBack).toHaveBeenCalledOnce()
@@ -484,7 +487,7 @@ describe('PlacesBrowser `..` row', () => {
     }
     expect(state.files.map((f) => f.name)).toEqual(['..', 'Backup', 'testshare'])
     expect(state.files[0].path).toBe('smb://')
-    expect(state.cursorIndex).toBe(1)
+    expect(state.cursorIndex, 'on `..`, where the list opens').toBe(0)
     expect(rows.findItemIndex('..')).toBe(0)
     expect(rows.findItemIndex('testshare')).toBe(2)
     expect(rows.getItemCount()).toBe(3)
