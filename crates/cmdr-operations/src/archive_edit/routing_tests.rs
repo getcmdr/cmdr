@@ -128,6 +128,10 @@ async fn a_remote_archive_finds_its_inner_path() {
     );
 
     assert!(archive_inner_exists(engine.host(), &id, archive, "dir/x.txt").await);
+    // The index's spellings of the same entry answer alike.
+    for same in ["dir/x.txt/", "dir//x.txt", "./dir/x.txt"] {
+        assert!(archive_inner_exists(engine.host(), &id, archive, same).await, "{same}");
+    }
     assert!(!archive_inner_exists(engine.host(), &id, archive, "dir/y.txt").await);
     assert!(!archive_inner_exists(engine.host(), &id, archive, "../a.zip").await);
 }

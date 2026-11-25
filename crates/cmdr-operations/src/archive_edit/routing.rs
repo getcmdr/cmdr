@@ -90,10 +90,17 @@ pub async fn archive_inner_exists(
         // duplicate went unseen until the edit itself failed. An inner path no typed
         // join takes (a `..`) isn't a known duplicate.
         let archive = AppPath::legacy_unchecked(archive_path);
+        // The index's normalization: a trailing `/`, a `//`, or a `.` name the same entry,
+        // so the friendly "already exists" still answers for them.
+        let inner: Vec<&str> = inner_path
+            .split('/')
+            .filter(|name| !name.is_empty() && *name != ".")
+            .collect();
+        let inner_path = inner.join("/");
         let full_path = if inner_path.is_empty() {
             archive.into_owned()
         } else {
-            let Some(joined) = cmdr_fs::app_path::RelativeAppPath::new(inner_path)
+            let Some(joined) = cmdr_fs::app_path::RelativeAppPath::new(&inner_path)
                 .ok()
                 .and_then(|inner| archive.join_relative(inner).ok())
             else {
