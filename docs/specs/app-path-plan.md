@@ -2090,9 +2090,10 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **Eleventh pass, milestone 1** (2026-11-25, branch `worktree-agent-a87892783e590c297`; helpers `join-check` (the
   check) and `split-sweep` (the sweep below), each in its own worktree, cherry-picked): #1491 fixed, the sweep's joins
   typed, and a check that keeps them so. Bridge calls 816 → 813 (`cmdr-operations` 391 → 388), `appTextToPath` 33 → 32,
-  `pathFromBareText` 261 → 255; wrapper calls (new budget, #1469) 173 → 188, so every crossing 989 → 1,001 (the sweep's
+  `pathFromBareText` 261 → 255; wrapper calls (new budget, #1469) 173 → 195, so every crossing 989 → 1,008 (the sweep's
   typed splits hand their answers to `std::path` bodies through a wrapper: more crossings, each now named and counted);
-  `std::path` joins in the write engine (new budget) 80 → 71. Hazards 62 → 56. No pre-existing entry grew. What it is:
+  `std::path` joins in the write engine (new budget, seeded on `main` at 80 by a scan that stopped at a file's first
+  test cfg) 76. Hazards 62 → 56. No pre-existing entry grew. What it is:
   - **The sweep**: every production `.join(` / `with_file_name(` and `file_name()` / `parent()` split in
     `cmdr-operations` and the app's `operations_host/`, read one by one (about 300 sites; about 150 native: the local
     engine, tempdirs, the in-flight ledger, fixtures, thread joins). 14 real Windows bugs, each fixed with a cell that
@@ -2126,7 +2127,7 @@ included; the hidden couplings it found are why waves B and C differ from round 
     text as its canonical `AppPath`, no crossing).
   - **The check** (`scripts/check/checks/desktop-rust-app-path-std-join.go`, inside `app-path-std-bridge`): two new
     per-file ratchets. `wrapperCalls` counts each call through `std_of`, `into_std`, `on_volume`, `seam_path`, and
-    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (1,001: 813 direct + 188
+    `engine_path` in `cmdr-operations` and `cmdr-fs` (#1469), so the meter reads every crossing (1,008: 813 direct + 195
     through a wrapper; seeded at this branch's true count). `stdJoin` counts a production `Path::join` /
     `with_file_name` in `cmdr-operations` and `operations_host/` (a typed join is told apart by the `Result` it
     returns); a native one opts out with `// allowed-std-join: <reason>`.
@@ -2137,14 +2138,22 @@ included; the hidden couplings it found are why waves B and C differ from round 
     text, and every typed reading falls back to the `std::path` one (the lenient reader splits by the host's rules) for
     text that isn't UTF-8, holds an escape-range code point, or isn't canonical, so a native Windows `C:\x\a.txt` still
     splits at `\`. Suites on macOS: `cmdr-operations` 2,699, `cmdr-listing-wasm` 146, green.
-  - **Found, not fixed** (each a refusal, a label, or a design call): `in_flight_sweep.rs::keep_beside` names a volume's
-    rescue with the `std::path` `recovered_sibling` (the `recovered_name.rs` bug, on the startup sweep); a remote
-    `x\a.txt` copied into a zip lands as entry `a.txt` (`archive_edit/copy_into.rs:282`, `fresh_plan.rs:333`: how a zip
-    names a `\` entry is David's call); `validation::first_shared_name` refuses remote `x\a.txt` and `y\a.txt` as
-    sharing a name, and `name_rules::ends_in_dot_name` reads `foo\..` as `..` (refusals); progress labels and summary
-    names in `rename/bulk.rs`, `delete/volume_walker.rs`, `delete/already_gone.rs`, `summary.rs`, `types/leftovers.rs`,
-    `left_in_source.rs`; `transfer_tree/model.rs`' `components()` attribution; `rollback.rs:275` and
-    `fresh_compress.rs:252` refresh a pane by the `std::path` parent.
+  - **After review** (same PR): `stdJoin` read only up to a file's first `#[cfg(test)]`, so a gated helper hid
+    production joins below it; it now skips just the gated item, sees `Path::join(`, `set_file_name`, and a `.push` onto
+    a path-shaped binding, and was re-seeded at its true count, **76**; wrapper calls end at **195** (1,008 crossings).
+    `start_rename_by_move` keys its target names by `wire_paths::engine_twin` (the source the drivers carry; the
+    reported `/a/x/` miss didn't reproduce through the public start, pinned anyway). `keep_beside` names a volume's
+    startup rescue typed. A remote zip's duplicate pre-check normalizes `dir/x/`, `dir//x`, `./x` as the index does.
+    **The zip question**: a move of a remote `x\a.txt` into a zip on Windows DID replace and lose data (the pull's
+    scratch split it into `a.txt`, an Overwrite replaced the zip's `a.txt`, and `x\a.txt` plus `y\a.txt` pulled onto one
+    scratch file before the move deleted both originals), and a remote name that isn't UTF-8 was skipped by the pull yet
+    deleted by the move on every host; both are refused per item now, counted, and kept. macOS and Linux still land
+    `x\a.txt` as its own entry, as fresh compress pins; how a zip on Windows should name it is David's call.
+  - **Found, not fixed** (each a refusal, a label, or a design call): `validation::first_shared_name` refuses remote
+    `x\a.txt` and `y\a.txt` as sharing a name, and `name_rules::ends_in_dot_name` reads `foo\..` as `..` (refusals);
+    progress labels and summary names in `rename/bulk.rs`, `delete/volume_walker.rs`, `delete/already_gone.rs`,
+    `summary.rs`, `types/leftovers.rs`, `left_in_source.rs`; `transfer_tree/model.rs`' `components()` attribution;
+    `rollback.rs:275` and `fresh_compress.rs:252` refresh a pane by the `std::path` parent.
 - **Left in 10a after the eleventh pass**: the create and rename-validity entry points (`create_*_managed` and
   `check_rename_validity_impl` still take the parent as text, so `create.rs` holds 8 tripwire sites and `validity.rs`
   2); the same-volume engine's `std::path` body (`move_same.rs`, `rename_merge.rs`); `ClaimedNames` and the placeholder
@@ -2761,24 +2770,27 @@ included; the hidden couplings it found are why waves B and C differ from round 
     app's `src/native_text.rs` did) or takes an `allowed-â¦` directive, which is a check change and David's call.
   - **The exemptions to decide** (2026-11-25, after 10a's eleventh pass; "door" = a named native door in `cmdr-fs`, like
     the app's `native_text::env_path`; "directive" = a new `allowed-native-text: <reason>` the scanner honors):
-    1. `cmdr-adb` `server.rs:244`, the adb binary from an env var (`OsString`): door.
-    2. `cmdr-adb` `server/binary_search.rs:101`, `ANDROID_HOME`-style env dirs: door.
-    3. `cmdr-adb` `server/binary_search.rs:130`, a hardcoded native search path: door.
-    4. `cmdr-fs` `sqlite_util.rs:543`, a DB's `-wal`/`-shm` file names: door.
-    5. `cmdr-operations` `in_flight_log_writer.rs:191`, the ledger log's own file: door.
-    6. `cmdr-index` `manager/start.rs:450`, `CMDR_E2E_START_PATH`: door.
-    7. `cmdr-index` seven benches and spikes read a root from an env var: door (one `env_path`).
-    8. `cmdr-sftp` `volume/testing.rs:197`, the fixture's key dir env var: door (`var_os`).
-    9. `cmdr-smb` `volume/test_support.rs:63`, a fixture's mount point: door.
-    10. `cmdr-fs` `testing/disk_images/facts.rs:609, 616`, `hdiutil` output: door.
-    11. `cmdr-archive` `apple_double.rs:206`, an xattr key, not a path: directive.
-    12. `cmdr-archive` `read/tar.rs:194`, a PAX record's xattr key: directive.
-    13. `cmdr-smb` `volume/copy_xattrs.rs:143`, a stream name as an xattr key: directive.
-    14. Three test xattr-key literals (`cmdr-archive` two, `cmdr-fs` `caps_tests.rs`): directive.
-    15. `cmdr-restic` `tree_tests.rs:22`, `rustic_core` takes node names as `OsStr`: directive.
-    16. `cmdr-operations` `delete/cloud_trash.rs:303, 323` and `trash_tests.rs:363`, local trash records: directive.
-    17. The write engine's native `Path::join`s (`stdJoin`, 71: the local engine, tempdirs, the in-flight ledger):
-        per-site `allowed-std-join` (works today), or exempt the local-engine folders by path in the check.
+    1. `cmdr-adb` `server.rs::locate_adb_binary`: the adb path from an env var is OS text: door.
+    2. `cmdr-adb` `server/binary_search.rs::env_dir`: `ANDROID_HOME`-style env dirs are OS text: door.
+    3. `cmdr-adb` `server/binary_search.rs::resolve`: a hardcoded native search path: door.
+    4. `cmdr-fs` `sqlite_util.rs::database_files`: a DB's `-wal`/`-shm` siblings are the app's own files: door.
+    5. `cmdr-operations` `in_flight_log_writer.rs::swap_in`: the ledger log's own file on local disk: door.
+    6. `cmdr-index` `manager/start.rs::start_scan`: `CMDR_E2E_START_PATH` is OS text: door.
+    7. `cmdr-index` seven benches and spikes: a root from an env var is OS text: door (one `env_path`).
+    8. `cmdr-sftp` `volume/testing.rs::fixture_key_path`: the fixture's key dir env var: door (`var_os`).
+    9. `cmdr-smb` `volume/test_support.rs::make_test_volume_full`: a fixture's local mount point: door.
+    10. `cmdr-fs` `testing/disk_images/facts.rs::image_named`: `hdiutil` output is OS text: door.
+    11. `cmdr-archive` `apple_double.rs::push_unique`: an xattr key, not a path: directive.
+    12. `cmdr-archive` `read/tar.rs::pax_xattrs`: a PAX record's xattr key, not a path: directive.
+    13. `cmdr-smb` `volume/copy_xattrs.rs::source_xattrs`: a stream name used as an xattr key: directive.
+    14. Three test xattr-key literals (`cmdr-archive` two, `cmdr-fs` `caps_tests.rs`), not paths: directive.
+    15. `cmdr-restic` `tree_tests.rs::file`: `rustic_core` takes node names as `OsStr`, upstream API: directive.
+    16. `cmdr-operations` `delete/cloud_trash.rs::facts_from` and `trash_tests.rs:363`: trash records are local only
+        (`trash_files_start` runs only on the local `root` disk, else `TrashNotSupported`, verified 2026-11-25 from the
+        code): directive.
+    17. The write engine's native joins (`stdJoin`, 76: the local engine, tempdirs, the in-flight ledger): per-site
+        `allowed-std-join`, ❌ not a path-wide exemption, which would silence remote-reaching code that lands there
+        later.
   - **The list** (line numbers at this branch's commit; the meter re-derives them, so re-run the check's regexes after
     any edit):
     - `apps/desktop/src-tauri/src/agent/store/migrations.rs`

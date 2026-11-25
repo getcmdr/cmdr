@@ -136,25 +136,9 @@ func testItemEnd(lines []string, gate int) int {
 		if !opened && (code == "" || strings.HasPrefix(code, "#[")) {
 			continue
 		}
-		inString := false
-		for j := 0; j < len(code); j++ {
-			c := code[j]
-			switch {
-			case inString:
-				if c == '\\' {
-					j++
-				} else if c == '"' {
-					inString = false
-				}
-			case c == '"':
-				inString = true
-			case c == '{':
-				depth++
-				opened = true
-			case c == '}':
-				depth--
-			}
-		}
+		delta, opens := braceDelta(code)
+		depth += delta
+		opened = opened || opens
 		if opened && depth <= 0 {
 			return i
 		}
@@ -163,6 +147,31 @@ func testItemEnd(lines []string, gate int) int {
 		}
 	}
 	return len(lines) - 1
+}
+
+// braceDelta returns how a line of code moves the brace depth (braces inside string
+// literals skipped), and whether it opens one.
+func braceDelta(code string) (int, bool) {
+	delta, opens, inString := 0, false, false
+	for j := 0; j < len(code); j++ {
+		c := code[j]
+		switch {
+		case inString:
+			if c == '\\' {
+				j++
+			} else if c == '"' {
+				inString = false
+			}
+		case c == '"':
+			inString = true
+		case c == '{':
+			delta++
+			opens = true
+		case c == '}':
+			delta--
+		}
+	}
+	return delta, opens
 }
 
 // scanStdJoins returns one site per untyped `std::path` join on a production line of a file
