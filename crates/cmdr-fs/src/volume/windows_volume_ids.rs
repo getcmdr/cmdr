@@ -6,9 +6,11 @@
 //!
 //! 1. The system drive is `root` ([`DEFAULT_VOLUME_ID`]), whatever its GUID.
 //! 2. A mapped network drive (`Z:`) and the share's own UNC root (`//server/share/`) key on
-//!    `(server, port, share)` through [`smb_volume_id`], so they and Cmdr's direct SMB
+//!    `(server, port, share)` through [`smb_volume_id`](super::smb_volume_id), so they and Cmdr's direct SMB
 //!    connection to the share are ONE volume, as an OS mount and the direct backend are on
-//!    macOS. Windows' redirector speaks SMB on 445; a mapped drive names no other port.
+//!    macOS. Windows' redirector speaks SMB on 445; a mapped drive names no other port. A
+//!    drive mapped to a folder BELOW the share (`net use W: \\server\share\sub`) is rooted at
+//!    that folder, so it keys on the folder too ([`smb_folder_volume_id`], #1481).
 //! 3. A local drive or folder mount keys on its volume GUID through [`local_volume_id`]. The
 //!    mount manager keeps one GUID per partition per machine (`HKLM\SYSTEM\MountedDevices`),
 //!    so a stick on another letter keeps its id, and two cloned disks don't collide.
@@ -16,7 +18,7 @@
 //!    `ERROR_INVALID_PARAMETER`) keys on its root path through [`path_volume_id`].
 
 use super::DEFAULT_VOLUME_ID;
-use super::ids::{local_volume_id, path_volume_id, smb_volume_id};
+use super::ids::{local_volume_id, path_volume_id, smb_folder_volume_id};
 
 /// The port Windows' SMB redirector reaches every mapped drive and UNC share on.
 pub const WINDOWS_SMB_PORT: u16 = 445;
@@ -48,8 +50,8 @@ pub fn windows_volume_id(root: &str, identity: &WindowsVolumeIdentity, system_ro
         return DEFAULT_VOLUME_ID.to_string();
     }
     match identity {
-        WindowsVolumeIdentity::Share { unc } => match unc_server_share(unc) {
-            Some((server, share)) => smb_volume_id(&server, WINDOWS_SMB_PORT, &share),
+        WindowsVolumeIdentity::Share { unc } => match unc_target(unc) {
+            Some((server, share, folder)) => smb_folder_volume_id(&server, WINDOWS_SMB_PORT, &share, &folder),
             None => path_volume_id(root),
         },
         WindowsVolumeIdentity::Local { guid_path } => match volume_guid(guid_path) {
@@ -87,6 +89,61 @@ pub fn unc_server_share(unc: &str) -> Option<(String, String)> {
 /// The app root (`//server/share/`) of a UNC spelling ([`unc_server_share`]'s input).
 pub fn unc_app_root(unc: &str) -> Option<String> {
     unc_server_share(unc).map(|(server, share)| format!("//{server}/{share}/"))
+}
+
+/// The server, share, and folder below it (`a/b`, empty for the share itself) a UNC spelling
+/// names, as [`unc_server_share`] reads it.
+fn unc_target(unc: &str) -> Option<(String, String, String)> {
+    let (server, share) = unc_server_share(unc)?;
+    let slashed = unc.replace('\\', "/");
+    let rest = slashed.strip_prefix("//")?;
+    let rest = rest.strip_prefix("?/UNC/").unwrap_or(rest);
+    let folder = rest
+        .split('/')
+        .skip(2)
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>()
+        .join("/");
+    Some((server, share, folder))
+}
+
+/// The app spelling of what a mapped drive maps: `//server/share/` for a whole share,
+/// `//server/share/sub/dir` for a folder below it.
+fn unc_app_spelling(unc: &str) -> Option<String> {
+    let (server, share, folder) = unc_target(unc)?;
+    Some(if folder.is_empty() {
+        format!("//{server}/{share}/")
+    } else {
+        format!("//{server}/{share}/{folder}")
+    })
+}
+
+/// A mapped network drive at `root` (`Z:/`), mapped to `unc` (`WNetGetConnectionW`'s
+/// `\\server\share` or `\\server\share\sub\dir`; `None` when Windows wouldn't say). Pure, so
+/// what a mapping means is tested on every OS.
+///
+/// Only a mapping of the share's root records the share's root as its alias
+/// ([`WindowsDrive::share_root`]): below a folder mapping, `W:/x` is the folder's `x`, so the
+/// share's root is no second address of it, and a UNC path there stays the share's own volume.
+pub fn mapped_drive(root: &str, unc: Option<&str>, system_root: &str) -> WindowsDrive {
+    let remote = unc.and_then(unc_app_spelling);
+    let identity = unc.map_or(WindowsVolumeIdentity::Unnamed, |unc| WindowsVolumeIdentity::Share {
+        unc: unc.to_string(),
+    });
+    WindowsDrive {
+        id: windows_volume_id(root, &identity, system_root),
+        root: root.to_string(),
+        kind: WindowsDriveKind::Network,
+        label: remote
+            .as_deref()
+            .and_then(|remote| remote.rsplit('/').find(|name| !name.is_empty()))
+            .map(str::to_string),
+        share_root: remote.clone().filter(|remote| remote.ends_with('/')),
+        remote,
+        is_alias: false,
+        fs_type: None,
+        read_only: false,
+    }
 }
 
 /// The folder a `subst` drive points at, from its `QueryDosDeviceW` target (`\??\C:\Windows`),
@@ -138,9 +195,13 @@ pub struct WindowsDrive {
     pub kind: WindowsDriveKind,
     /// The volume label (`build`), or for a share its name; `None` when it has none.
     pub label: Option<String>,
-    /// For a mapped drive, its share's app root (`//server/share/`), which registers as an
-    /// alias root of the same volume.
+    /// For a drive mapped to a whole share, the share's app root (`//server/share/`), which
+    /// registers as an alias root of the same volume. `None` for a drive mapped to a folder
+    /// below the share ([`mapped_drive`]).
     pub share_root: Option<String>,
+    /// For a mapped drive, what it maps, as an app path: `//server/share/` for a whole share,
+    /// `//server/share/sub` for a folder below it. `None` when Windows wouldn't say.
+    pub remote: Option<String>,
     /// Whether this root is only an alias (a mapped share's UNC spelling), a second address
     /// of a volume whose switcher row is the mapped drive.
     pub is_alias: bool,
@@ -159,21 +220,20 @@ impl WindowsDrive {
 
     /// The name the switcher shows, the way Explorer's This PC reads (the words around it are
     /// the frontend's): `build (D:)` for a labeled drive, `D:` for one with no label, `media
-    /// (\\server) (Z:)` for a mapped share, `\\server\share` for a bare share, and the label or
-    /// last folder name for a folder mount.
+    /// (\\server) (Z:)` for a mapped share and `sub (\\server\share) (W:)` for a mapped folder
+    /// (the mapped place's name, then where it sits), `\\server\share` for a bare share, and
+    /// the label or last folder name for a folder mount.
     pub fn display_name(&self) -> String {
         let label = self.label.as_deref().filter(|l| !l.trim().is_empty());
         match (self.letter(), self.kind) {
             (Some(letter), WindowsDriveKind::Network) => {
-                let server = self
-                    .share_root
-                    .as_deref()
-                    .and_then(unc_server_share)
-                    .map(|(server, _)| format!(r" (\\{server})"))
-                    .unwrap_or_default();
-                match label {
-                    Some(label) => format!("{label}{server} ({letter}:)"),
-                    None => format!("{letter}:"),
+                let remote = self.remote.as_deref().map(|r| r.trim_end_matches('/'));
+                match remote.and_then(|remote| remote.rsplit_once('/')) {
+                    Some((parent, name)) if !name.is_empty() && parent.len() > 2 => {
+                        let parent = parent.replace('/', r"\");
+                        format!("{name} ({parent}) ({letter}:)")
+                    }
+                    _ => format!("{letter}:"),
                 }
             }
             (Some(letter), _) => match label {

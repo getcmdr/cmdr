@@ -276,6 +276,7 @@ mod tests {
             kind,
             label: None,
             share_root: None,
+            remote: None,
             is_alias: false,
             fs_type: None,
             read_only: false,
@@ -341,6 +342,26 @@ mod tests {
         };
         let changes = diff_drives(&[alias.clone(), mapped.clone()], &[]);
         assert_eq!(changes.left, [alias, mapped]);
+    }
+
+    /// #1481: a drive mapped to a folder below a share arrives as its own volume at its letter,
+    /// and a pane on the share's root (the share's own volume) is no change.
+    #[test]
+    fn a_mapped_folder_arrives_beside_its_share_without_touching_it() {
+        let share = crate::volume::windows_volume_ids::mapped_drive("Z:/", Some(r"\\testnas.local\media"), "C:/");
+        let folder =
+            crate::volume::windows_volume_ids::mapped_drive("W:/", Some(r"\\testnas.local\media\photos"), "C:/");
+        assert_ne!(folder.id, share.id);
+        let changes = diff_drives(std::slice::from_ref(&share), &[share.clone(), folder.clone()]);
+        assert_eq!(
+            changes.arrived,
+            std::slice::from_ref(&folder),
+            "the folder alone arrives, at W:/"
+        );
+        assert!(changes.left.is_empty());
+        let changes = diff_drives(&[share.clone(), folder], std::slice::from_ref(&share));
+        assert_eq!(changes.left.len(), 1);
+        assert_eq!(changes.left[0].root, "W:/");
     }
 
     #[test]

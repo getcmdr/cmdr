@@ -369,15 +369,22 @@ static INDEX_STATUS_READS: BlockingBudget = BlockingBudget::new(8);
 /// saved share's path is its LAST mount point, which with nothing mounted there
 /// routes to `root` and would read `root`'s `fresh`.
 ///
+/// ❗ On Windows every row is a volume of its own (a drive, a mapped share, a device;
+/// favorites are filtered out before this), so each row's status is its id's. By path, a
+/// letter the registry hadn't adopted yet routed to `root` and a mapped share read the
+/// system drive's `scanning` (#1481).
+///
 /// ❗ The path route asks `statfs` whether the path is an SMB mount, and that
 /// blocks for minutes on a dead NFS, AFP, or SMB mount. So every read runs off
 /// the async runtime, all rows at once under ONE deadline: a dead mount costs
 /// its own row's status, ❌ never the whole resource or its healthy rows.
 #[cfg(not(target_os = "linux"))]
 async fn index_statuses(rows: &[&crate::volume_listing::LocationInfo]) -> Vec<Option<cmdr_index::VolumeIndexStatus>> {
+    // A boot volume rooted at a drive (`C:/`, not `/`) is Windows' layout, a volume per drive.
+    let a_volume_per_drive = cmdr_fs::mount_layout::boot_volume_root() != "/";
     let reads = rows.iter().map(|loc| {
         let (path, id) = (loc.path.clone(), loc.id.clone());
-        let by_path = on_a_real_path(&path) && loc.connection_state.is_none();
+        let by_path = !a_volume_per_drive && on_a_real_path(&path) && loc.connection_state.is_none();
         move || {
             if by_path {
                 index().volume_status_for_path(&path)

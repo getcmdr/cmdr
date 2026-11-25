@@ -173,3 +173,30 @@ desktop, plus what the 2026-11-23 pass owed. Refs #942.
   `%TEMP%\cmdr-icon-samples`, and the four Recent shortcuts it left removed; nothing of this run in the Recycle Bin; the
   clipboard empty.
 - `cmdr-m6` on `origin/main` (`ecafa5824c`), clean. David's Task Manager left open.
+
+## Recheck of #1481 after PR #1463 (2026-11-25, later)
+
+- **How it ran**: as above, on `main` at `63cea1bd89` (PR #1463 in), then the same plus #1481's fix applied, each a
+  `pnpm tauri build --debug --no-bundle` in `cmdr-m6` (17m 47s, then 13m 09s). Fresh `CMDR_DATA_DIR` (`D:\w1481\data`),
+  MCP as above. `net use W: \\localhost\C$\Users\Admin\w1481 /persistent:no` ran in Admin's desktop session, as Cmdr
+  did; a mapping made over SSH lives in another logon session and is no drive of Cmdr's. No USB stick plugged in.
+- **Before the fix**: the drive watcher never started (`platform/startup/windows.rs` didn't call it, and the app's
+  Windows `expect(dead_code)` hid that), so nothing heard the mapping. The row showed on the next volume-list read (5 s
+  in, `list_volumes` reads the table fresh) as `C$ (\\localhost) (W:)`, id `smb-localhost-445-c-…`, root
+  `//localhost/C$/`, `indexStatus: scanning`. That status was `root`'s: only `root` was indexed (`cmdr://indexing`), and
+  the unregistered `W:/` routed to it by path. Navigating to `W:/open` from the share pane and from a `C:` pane listed
+  the folder but kept the share's volume id (`volume: unknown`, the tab label left on the share). After
+  `net use W: /delete` the row went on the next read, and both panes stayed on the gone `W:/open`.
+- **After the fix**: `net use` raised `DBT_DEVICEARRIVAL` with `DBTF_NET` within 0.3 s (the Shell's `SHCNE_DRIVEADD` 5 s
+  later); the row was `w1481 (\\localhost\C$\Users\Admin) (W:)`, Explorer's own name for it, id
+  `smb-localhost-c-users-admin-w-…`, root `W:/`, `indexStatus: off`, registered on arrival. Both panes landed on
+  `W:/open` on that volume. `net use W: /delete` raised `DBT_DEVICEREMOVECOMPLETE` (`DBTF_NET`), the volume
+  unregistered, and both panes fell back to `~`. Nothing indexed the drive. Whole-share mapping
+  (`net use W: \\localhost\C$`) still reads `C$ (\\localhost) (W:)` on the share's id.
+- **Seen, filed**: with a pane on `//localhost/C$/…` and `W:` mapped to the whole share, unmapping `W:` unregistered the
+  share's volume and sent the UNC pane to `~` too, though the share stays reachable (#1492). On quit Cmdr again rewrote
+  `%APPDATA%\com.veszelovszki.cmdr\license.json` despite `CMDR_DATA_DIR`.
+- **Mami after**: Cmdr quit, no `cmdr`, `cargo`, `node`, or `cmd` process of this run left, `net use` in Admin's session
+  lists nothing, no firewall rule or prompt for `cmdr.exe`, no Recent shortcuts, `D:\w1481`, `C:\Users\Admin\w1481`, and
+  this run's job folders removed, `cmdr-m6` back on `origin/main` (`63cea1bd89`) clean (`D:\targets\m6` holds the fix's
+  build), David's Task Manager left open.

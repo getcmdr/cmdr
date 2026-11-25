@@ -294,7 +294,7 @@ fn fs_type_of(drive: &WindowsDrive) -> String {
 }
 
 fn source_of(drive: &WindowsDrive) -> String {
-    drive.share_root.clone().unwrap_or_else(|| drive.root.clone())
+    drive.remote.clone().unwrap_or_else(|| drive.root.clone())
 }
 
 /// The id of the volume at `mount_path`: its drive table row's, else for a root the table

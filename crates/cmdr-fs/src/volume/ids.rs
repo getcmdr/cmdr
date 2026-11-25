@@ -198,6 +198,33 @@ pub fn smb_volume_id(server: &str, port: u16, share: &str) -> String {
     )
 }
 
+/// Build the ID for a mount of a FOLDER below an SMB share, where the mount's root is that
+/// folder rather than the share's root: Windows' `net use W: \\server\share\sub\dir`.
+///
+/// Its own id, not the share's, because one id names one volume at one root: `W:/x` is
+/// `\\server\share\sub\dir\x`, while the share's own root (a UNC pane on `//server/share/`)
+/// is another place. Folded like [`smb_volume_id`] (SMB paths are case-insensitive), and the
+/// `/` around `folder` doesn't count. An empty `folder` is the share itself.
+///
+/// macOS keys a sub-mount on its share instead (`SmbMountInfo::subpath`), and mounts sharing
+/// an id collapse to one root there (`canonical_root`).
+pub fn smb_folder_volume_id(server: &str, port: u16, share: &str, folder: &str) -> String {
+    use crate::name_fold::fold_name;
+
+    let folder = fold_name(folder.trim_matches('/'));
+    if folder.is_empty() {
+        return smb_volume_id(server, port, share);
+    }
+    let server = fold_name(server);
+    let share = fold_name(share);
+    let port = port.to_string();
+    derived_id(
+        VolumeScheme::Smb,
+        &format!("{server}-{share}-{folder}"),
+        &[&server, &port, &share, &folder],
+    )
+}
+
 /// Build the ID for an SFTP volume, keyed by the ACCOUNT on the server rather
 /// than by the directory it's rooted at.
 ///

@@ -220,6 +220,30 @@ fn distinct_smb_shares_never_share_an_id() {
 }
 
 #[test]
+fn a_folder_below_a_share_is_its_own_smb_id() {
+    let share = smb_volume_id("testnas", 445, "media");
+    let folder = smb_folder_volume_id("testnas", 445, "media", "photos/2026");
+    assert_ne!(folder, share);
+    assert_eq!(VolumeScheme::of(&folder), VolumeScheme::Smb);
+    assert_ne!(folder, smb_folder_volume_id("testnas", 445, "media", "photos"));
+    assert_ne!(
+        folder,
+        smb_volume_id("testnas", 445, "media/photos/2026"),
+        "no share name spells a folder below a share"
+    );
+    assert_eq!(
+        folder,
+        smb_folder_volume_id("TestNAS", 445, "Media", "/Photos/2026/"),
+        "folds case the way the share does, and the separators around it don't count"
+    );
+    assert_eq!(
+        smb_folder_volume_id("testnas", 445, "media", "/"),
+        share,
+        "no folder is the share itself"
+    );
+}
+
+#[test]
 fn a_corpus_of_confusable_identities_maps_one_to_one() {
     // Every pair here collides under a strip-and-lowercase scheme. Held as a
     // corpus rather than N assert_ne!s so a new scheme has one place to prove

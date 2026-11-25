@@ -75,6 +75,64 @@ async fn every_drive_the_switcher_lists_is_a_volume_the_agent_sees() {
     assert_eq!(root.mount_path, Some(cmdr_fs::mount_layout::boot_volume_root()));
 }
 
+/// ❗ #1481: **a mapped drive is a share, and nothing indexes it uninvited**, as on macOS, where
+/// a freshly mounted share waits for its owner's enable. Its row read `root`'s `scanning`: by
+/// path, a letter the registry hadn't adopted yet routes to `root`, so the agent was told the
+/// whole share was being indexed. Each Windows row is its own volume, so its status is its id's.
+#[cfg(target_os = "windows")]
+#[tokio::test]
+async fn a_mapped_drive_reads_its_own_index_status_and_not_the_system_drives() {
+    use cmdr_index::IndexVolumeKind;
+    use cmdr_index::testing::reserve_initializing_index_for_test;
+
+    let _root = reserve_initializing_index_for_test(cmdr_index::ROOT_VOLUME_ID, IndexVolumeKind::Local);
+    assert_eq!(
+        index_status_token(&index().volume_status(cmdr_index::ROOT_VOLUME_ID)),
+        "fresh",
+        "precondition: root reads fresh"
+    );
+
+    let mapped = cmdr_fs::volume::windows_volume_ids::mapped_drive(
+        "Q:/",
+        Some(r"\\testnas.local\media\test_folder_1"),
+        &cmdr_fs::mount_layout::boot_volume_root(),
+    );
+    let row = crate::volume_listing::LocationInfo {
+        id: mapped.id.clone(),
+        name: mapped.display_name(),
+        path: mapped.root.clone(),
+        category: crate::volumes::LocationCategory::Network,
+        icon: None,
+        is_ejectable: false,
+        fs_type: Some(crate::volumes::NETWORK_FS_TYPE.to_string()),
+        supports_trash: false,
+        mount_is_read_only: false,
+        is_disk_image: false,
+        shares_disk_with_others: false,
+        is_cloud_mount: false,
+        case_sensitive: crate::volumes::LOCAL_DISK_CASE_SENSITIVE,
+        connection_state: None,
+        pinned: None,
+        landing_path: None,
+        device_readiness: None,
+        usb_speed: None,
+        capabilities: None,
+        favorite_shortcut: None,
+        favorite_target: None,
+        root_label: None,
+        mount_account: None,
+    };
+    let volumes = snapshot_volumes_from(std::slice::from_ref(&row)).await;
+    let _ = index().forget_volume(cmdr_index::ROOT_VOLUME_ID);
+
+    let summary = volumes
+        .iter()
+        .find(|v| v.id == mapped.id)
+        .expect("the mapped drive's row");
+    assert_eq!(summary.kind, VolumeKind::Smb);
+    assert_eq!(summary.index_status, Some("off"), "nothing indexes a mapped share");
+}
+
 /// ❗ **A saved share's last mount path is not where its status lives.** With
 /// nothing mounted there, the path routes to `root`, and the row read `root`'s
 /// `fresh`: the model trusted it and went listing a share that wasn't there.

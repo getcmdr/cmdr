@@ -1,7 +1,7 @@
 //! The drive watcher on a real Windows desktop session: the broadcast layouts, the seam a
-//! change reaches, a real `subst` drive arriving and leaving, and a removal query letting go
-//! of a drive's handles. A real USB stick's checks are in `volumes/DETAILS.md` § "Windows:
-//! drive arrival and removal".
+//! change reaches, a real `subst` drive and a real `net use` mapping arriving and leaving, and
+//! a removal query letting go of a drive's handles. A real USB stick's checks are in
+//! `volumes/DETAILS.md` § "Windows: drive arrival and removal".
 
 use std::process::Command;
 use std::sync::mpsc;
@@ -269,6 +269,91 @@ fn a_subst_drive_arriving_and_leaving_reaches_the_watcher() {
 
     drop(subst);
     wait_until(Duration::from_secs(15), "the subst drive's removal", || {
+        recorder.saw_leave(&root)
+    });
+    drop(watch);
+}
+
+/// Takes a `net use` letter down however the cell ends.
+struct NetUse(char);
+
+impl Drop for NetUse {
+    fn drop(&mut self) {
+        // the cell already took it down, or never put it up
+        let _ = Command::new("net")
+            .args([
+                "use".to_owned(),
+                format!("{}:", self.0),
+                "/delete".to_owned(),
+                "/y".to_owned(),
+            ])
+            .status();
+    }
+}
+
+/// `\\localhost\X$\rest` for the local folder `dir`, through the drive's admin share.
+fn admin_share_path(dir: &std::path::Path) -> String {
+    let native = dir.to_string_lossy();
+    let (drive, rest) = native.split_once(":\\").expect("a drive-letter path");
+    format!(r"\\localhost\{drive}$\{rest}")
+}
+
+/// #1481: a drive mapped from a console (`net use`, `WNetAddConnection2`) to a folder below a
+/// share reaches the watcher with no refresh, as a share of its own rooted at the folder, and
+/// nothing indexes it. A runner whose admin share can't be mapped skips, saying so.
+#[test]
+fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
+    let dir = TestDir::new("mapped-folder");
+    let letter = free_letter('P'..='R');
+    let root = format!("{letter}:/");
+    let unc = admin_share_path(dir.as_ref());
+    let recorder = Recorder::default();
+    let watch = DriveWatch::started(recorder.clone());
+
+    let mapping = NetUse(letter);
+    let mapped = Command::new("net")
+        .args([
+            "use".to_owned(),
+            format!("{letter}:"),
+            unc.clone(),
+            "/persistent:no".to_owned(),
+        ])
+        .status()
+        .expect("run net use");
+    if !mapped.success() {
+        log::warn!(target: "volumes::windows", "Skipping: this machine wouldn't map {unc} ({mapped})");
+        return;
+    }
+    wait_until(Duration::from_secs(15), "the mapped drive's arrival", || {
+        recorder.saw_arrive(&root)
+    });
+
+    let expected = cmdr_fs::volume::windows_volume_ids::mapped_drive(
+        &root,
+        Some(&unc),
+        &cmdr_fs::mount_layout::boot_volume_root(),
+    );
+    let id = crate::volumes::volume_id_for_mount(&root);
+    assert_eq!(id, expected.id, "the drive keys on the folder it maps");
+    assert_ne!(
+        id,
+        crate::volumes::volume_id_for_mount(&format!("//localhost/{letter}$/")),
+        "a folder below the share isn't the share"
+    );
+    Lifecycle.arrived(&root);
+    let registered = get_volume_manager().get(&id).expect("the arrival registers it");
+    assert_eq!(
+        registered.root().as_str(),
+        root,
+        "rooted at its letter, the folder it maps"
+    );
+    let status = crate::index_host::index().volume_status_for_path(&format!("{root}x"));
+    assert_eq!(status.volume_id, id, "its paths are its own volume's");
+    assert!(!status.enabled, "nothing indexes a mapped share uninvited");
+    Lifecycle.left(&root);
+
+    drop(mapping);
+    wait_until(Duration::from_secs(15), "the mapped drive's removal", || {
         recorder.saw_leave(&root)
     });
     drop(watch);

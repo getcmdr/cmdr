@@ -1,5 +1,5 @@
 use super::*;
-use crate::volume::VolumeScheme;
+use crate::volume::{VolumeScheme, smb_volume_id};
 
 /// The GUID paths, `subst` target, and share Windows 10 22H2 reported on the builder
 /// (`GetVolumeNameForVolumeMountPointW`, `QueryDosDeviceW`, `WNetGetConnectionW`, 2026-11-18).
@@ -64,6 +64,59 @@ fn a_mapped_drive_its_unc_root_and_the_direct_share_are_one_volume() {
     assert_eq!(VolumeScheme::of(&mapped), VolumeScheme::Smb);
 }
 
+/// #1481: `net use W: \\localhost\C$\Users\Admin\w1481` maps a folder below the share, so `W:/`
+/// is `//localhost/C$/Users/Admin/w1481/`, not the share's root. One id names one root, so the
+/// folder is a volume of its own: keyed on the share's id it registered at the share's root and
+/// read as the whole share.
+#[test]
+fn a_mapped_folder_below_a_share_is_a_volume_of_its_own() {
+    let whole = windows_volume_id("Z:/", &share(r"\\testnas.local\Media"), "C:/");
+    let folder = windows_volume_id("W:/", &share(r"\\testnas.local\Media\photos\2026"), "C:/");
+    assert_ne!(folder, whole, "a folder below the share isn't the share");
+    assert_eq!(VolumeScheme::of(&folder), VolumeScheme::Smb);
+    assert_eq!(
+        folder,
+        smb_folder_volume_id("testnas.local", 445, "media", "photos/2026")
+    );
+    for same in [
+        r"\\TestNAS.local\media\Photos\2026\",
+        "//testnas.local/media/photos/2026/",
+        r"\\?\UNC\testnas.local\media\photos\2026",
+    ] {
+        assert_eq!(
+            windows_volume_id("V:/", &share(same), "C:/"),
+            folder,
+            "{same}: case, separators, and a trailing one don't split it"
+        );
+    }
+    assert_ne!(
+        folder,
+        windows_volume_id("W:/", &share(r"\\testnas.local\media\photos"), "C:/"),
+        "another folder is another volume"
+    );
+}
+
+#[test]
+fn a_mapped_drive_records_what_it_maps_and_only_a_share_root_has_an_alias() {
+    let whole = mapped_drive("Z:/", Some(r"\\testnas.local\media"), "C:/");
+    assert_eq!(whole.remote.as_deref(), Some("//testnas.local/media/"));
+    assert_eq!(whole.share_root.as_deref(), Some("//testnas.local/media/"));
+    assert_eq!(whole.id, smb_volume_id("testnas.local", 445, "media"));
+    assert_eq!(whole.kind, WindowsDriveKind::Network);
+
+    let folder = mapped_drive("W:/", Some(r"\\localhost\C$\Users\Admin\w1481"), "C:/");
+    assert_eq!(folder.remote.as_deref(), Some("//localhost/C$/Users/Admin/w1481"));
+    assert_eq!(
+        folder.share_root, None,
+        "W:/x is //localhost/C$/Users/Admin/w1481/x, so the share's root is no second address of it"
+    );
+    assert_eq!(folder.root, "W:/");
+
+    let unknown = mapped_drive("Y:/", None, "C:/");
+    assert_eq!((unknown.remote, unknown.share_root), (None, None));
+    assert_eq!(unknown.id, path_volume_id("Y:/"));
+}
+
 #[test]
 fn a_subst_drive_or_an_unreadable_guid_keys_on_its_path() {
     assert_eq!(
@@ -126,6 +179,7 @@ fn drive(root: &str, kind: WindowsDriveKind, label: Option<&str>) -> WindowsDriv
         kind,
         label: label.map(str::to_string),
         share_root: None,
+        remote: None,
         is_alias: false,
         fs_type: None,
         read_only: false,
@@ -140,11 +194,17 @@ fn a_drive_reads_like_explorers_this_pc() {
     );
     assert_eq!(drive("C:/", WindowsDriveKind::Fixed, None).display_name(), "C:");
     assert_eq!(drive("E:/", WindowsDriveKind::Optical, Some("  ")).display_name(), "E:");
-    let mapped = WindowsDrive {
-        share_root: Some("//testnas.local/media/".to_string()),
-        ..drive("Z:/", WindowsDriveKind::Network, Some("media"))
-    };
-    assert_eq!(mapped.display_name(), r"media (\\testnas.local) (Z:)");
+    assert_eq!(
+        mapped_drive("Z:/", Some(r"\\testnas.local\media"), "C:/").display_name(),
+        r"media (\\testnas.local) (Z:)"
+    );
+    // Explorer's This PC on Windows 10 22H2 for `net use W: \\localhost\C$\Users\Admin\w1481`
+    // (Mami, `Shell.Application` `NameSpace(17)`, 2026-11-25).
+    assert_eq!(
+        mapped_drive("W:/", Some(r"\\localhost\C$\Users\Admin\w1481"), "C:/").display_name(),
+        r"w1481 (\\localhost\C$\Users\Admin) (W:)"
+    );
+    assert_eq!(mapped_drive("Y:/", None, "C:/").display_name(), "Y:");
     assert_eq!(
         drive("//testnas.local/media/", WindowsDriveKind::Network, Some("media")).display_name(),
         r"\\testnas.local\media"

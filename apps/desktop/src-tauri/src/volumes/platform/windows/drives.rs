@@ -14,7 +14,10 @@
 //!   with that drive.
 //! - A mapped drive (`net use N: \\localhost\C$`): `DRIVE_REMOTE`, no GUID (87),
 //!   `WNetGetConnectionW` gives `\\localhost\C$`, and `GetVolumeInformationW` reports the
-//!   SERVER's filesystem and serial. A bare UNC root answers the same, minus the letter.
+//!   SERVER's filesystem and serial. A bare UNC root answers the same, minus the letter. A
+//!   drive mapped to a folder below a share (`net use W: \\localhost\C$\Users\Admin\w1481`)
+//!   names that folder (`net use`'s Remote column, Mami, 2026-11-25), so its root is the
+//!   folder's (`mapped_drive`, #1481).
 //! - An empty optical drive: `DRIVE_CDROM` with a GUID, and `GetVolumeInformationW` fails
 //!   with `ERROR_NOT_READY` (21); it lists no row until media is in.
 //! - `FindFirstVolumeW` also lists the EFI and recovery partitions, with no path names.
@@ -29,8 +32,8 @@
 use std::os::windows::ffi::OsStrExt;
 
 use cmdr_fs::volume::windows_volume_ids::{
-    VolumeMountPath, WindowsDrive, WindowsDriveKind, WindowsVolumeIdentity, is_volume_root, subst_target, unc_app_root,
-    unc_server_share, windows_volume_id,
+    VolumeMountPath, WindowsDrive, WindowsDriveKind, WindowsVolumeIdentity, is_volume_root, mapped_drive, subst_target,
+    unc_app_root, unc_server_share, windows_volume_id,
 };
 use windows_sys::Win32::Foundation::{ERROR_MORE_DATA, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::WNet::WNetGetConnectionW;
@@ -96,6 +99,7 @@ pub(super) fn unc_drive(root: &str, system_root: &str) -> Option<WindowsDrive> {
         kind: WindowsDriveKind::Network,
         label: Some(share),
         share_root: None,
+        remote: None,
         is_alias: false,
         fs_type: None,
         read_only: false,
@@ -133,22 +137,7 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
     // SAFETY: `native_root` is NUL-terminated.
     let drive_type = unsafe { GetDriveTypeW(native_root.as_ptr()) };
     if drive_type == DRIVE_REMOTE {
-        let unc = mapped_share(letter);
-        let share_root = unc.as_deref().and_then(unc_app_root);
-        let label = unc.as_deref().and_then(unc_server_share).map(|(_, share)| share);
-        let identity = unc.map_or(WindowsVolumeIdentity::Unnamed, |unc| WindowsVolumeIdentity::Share {
-            unc,
-        });
-        return Some(WindowsDrive {
-            id: windows_volume_id(&root, &identity, system_root),
-            root,
-            kind: WindowsDriveKind::Network,
-            label,
-            share_root,
-            is_alias: false,
-            fs_type: None,
-            read_only: false,
-        });
+        return Some(mapped_drive(&root, mapped_share(letter).as_deref(), system_root));
     }
     let kind = match drive_type {
         DRIVE_FIXED => WindowsDriveKind::Fixed,
@@ -170,6 +159,7 @@ fn letter_drive(letter: char, system_root: &str) -> Option<WindowsDrive> {
         kind,
         label: info.label,
         share_root: None,
+        remote: None,
         is_alias: false,
         fs_type: info.fs_type,
         read_only: info.read_only,
@@ -222,6 +212,7 @@ fn folder_mounts(points: &[String], system_root: &str) -> Vec<WindowsDrive> {
             kind,
             label: info.label,
             share_root: None,
+            remote: None,
             is_alias: false,
             fs_type: info.fs_type,
             read_only: info.read_only,

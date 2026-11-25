@@ -88,8 +88,17 @@ tested on every OS.
   `resolve_path_volume_fast` answers a UNC path with the alias row: the same id, rooted at the spelling the path uses,
   so a pane on `//server/share/x` stays consistent with its root. A share nobody mapped answers as an `smb-` volume of
   its own.
+- **A drive mapped to a folder below a share** (`net use W: \\server\share\sub`) is a volume of its own, keyed on the
+  folder too (`cmdr_fs::volume::smb_folder_volume_id`), with no alias root, and named the way Explorer's This PC names
+  it: `sub (\\server\share) (W:)` (`cmdr_fs::volume::windows_volume_ids::mapped_drive`). **Decision/Why (#1481):** keyed
+  on the share, `W:/` and a pane's `//server/share/` were two roots of one id, so `W:/x` (the folder's `x`) and the
+  share's `x` crossed: the row published the share's root, a navigation to `W:/…` kept the share's volume, and the
+  switcher named the whole share. A UNC path into that folder stays the share's own volume.
 - **What a mapped share doesn't get yet**: no `SmbMountInfo` (the SMB-mount readers answer nothing), so nothing
-  upgrades it to a direct session; its index and mount class come from the generic local paths. Its row's `fs_type` is
+  upgrades it to a direct session; its index and mount class come from the generic local paths. Nothing indexes it
+  uninvited, as on macOS, where a share waits for its owner's enable; `list_volumes` and `cmdr://state` read each
+  Windows row's index status by its id, ❌ never by path, which routed a letter the registry hadn't adopted to `root`
+  (#1481, `tools/resources/volumes.rs::index_statuses`). Its row's `fs_type` is
   `NETWORK_FS_TYPE` (`smbfs`), which is exactly what the Windows `is_smb_fs_type` / `is_network_fs_type` answer for,
   so `cmdr://state` and `list_volumes` read it as `kind: smb` and a drive as `kind: local`.
 - **`supports_trash`** is `cmdr_local::recycle_bin`'s answer for the row's root (a fixed disk with a volume GUID and its
@@ -114,7 +123,8 @@ tested on every OS.
 ## Windows: drive arrival and removal
 
 `platform/windows/watcher/` (task 39a): a drive arriving or leaving reaches the volume list, the panes, and the index by
-subscription, and Windows' "Safely remove" goes through while Cmdr shows the drive.
+subscription, and Windows' "Safely remove" goes through while Cmdr shows the drive. `platform/startup/windows.rs`
+starts it; ❗ the app's Windows `expect(dead_code)` hid that nothing did until #1481.
 
 - **Shape.** A `drive-events` thread owns a hidden top-level window (`window.rs`); a `drive-events-worker` thread does
   every read (`worker.rs`). The window reads nothing from a drive (a dead network drive would hang the procedure, and
@@ -136,17 +146,20 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
   - **Decision/Why: every signal ends in a re-read of the table, ❌ never acting on a message's letters.** The sources
     overlap and none is complete (next list), a letter can be reused by another disk, and an unreadable table
     (`enumerate_listed` answers `None`) keeps the drives as they were, ❌ never "every drive gone".
-- **Which source covers which case** (docs read 2026-11-25; the `subst` case is also a Windows CI cell, the rest are
-  on the real-Windows checklist below):
+- **Which source covers which case** (docs read 2026-11-25; the `subst` and `net use` cases are also Windows CI cells,
+  `a_subst_drive_arriving_and_leaving_reaches_the_watcher` and `a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share`,
+  the rest are on the real-Windows checklist below):
   - **USB stick, external disk, mounted VHD or ISO, card reader's card, optical media**: `WM_DEVICECHANGE`
     `DBT_DEVICEARRIVAL` / `DBT_DEVICEREMOVECOMPLETE` with `DBT_DEVTYP_VOLUME`, broadcast with the letters in
     `dbcv_unitmask`; a card or disc in a drive that stays carries `DBTF_MEDIA` (learn.microsoft.com
     `DEV_BROADCAST_VOLUME`, `DBT_DEVICEARRIVAL`). Media messages come only for drives with a soft eject.
-  - **Mapped network drive** (`net use`, Explorer's "Map network drive"): NOT the volume broadcast, which is sent "when
-    network connections will disappear as the result of a hardware event", not for network commands
-    (`DEV_BROADCAST_VOLUME` remarks). The Shell's `SHCNE_DRIVEADD` / `SHCNE_DRIVEREMOVED` (`SHChangeNotifyRegister`,
-    `SHCNRF_NewDelivery`) is what Explorer's own mapping raises. ⚠️ Unverified whether `net use` from a console
-    raises it; if not, such a drive shows on the next switcher refresh, as before.
+  - **Mapped network drive** (`net use`, Explorer's "Map network drive"): `net use W: …` and `net use W: /delete` in a
+    console of the same sign-in DO raise the volume broadcast, `DBT_DEVICEARRIVAL` / `DBT_DEVICEREMOVECOMPLETE` with
+    `DBTF_NET`, under 0.3 s after the command, so the row comes and goes and a pane on it falls back with no refresh;
+    the Shell's `SHCNE_DRIVEADD` (`0x100`) follows about 5 s later and `SHCNE_DRIVEREMOVED` (`0x80`) right after
+    (verified on Windows 10 22H2, Mami, debug build of `63cea1bd89` plus #1481's fix, the watcher's own log, 2026-11-25).
+    The `DEV_BROADCAST_VOLUME` remarks read as if network commands didn't broadcast; they do. A mapping lives in its
+    sign-in's logon session, so one made from another session (an SSH shell, an elevated token) is no drive of Cmdr's.
   - **`subst` drive**: `DefineDosDevice` broadcasts `WM_SETTINGCHANGE` unless told not to
     (`DDD_NO_BROADCAST_SYSTEM`, learn.microsoft.com `DefineDosDeviceW`), which the window re-reads on. The arrival and
     removal both reach the watcher within about 0.6 s (`a_subst_drive_arriving_and_leaving_reaches_the_watcher`,
@@ -194,8 +207,7 @@ subscription, and Windows' "Safely remove" goes through while Cmdr shows the dri
   pane, "Safely remove" from the tray succeeds and the pane falls back with the removal wording; plug in and turn on
   indexing, "Safely remove" still succeeds (log: "Letting go of … for its removal"); copy a big file onto it and
   "Safely remove" mid-copy: Windows says it's in use, and the pane and index come back (log: "Taking … back"); pull it
-  mid-copy: the copy ends with "the drive went away" wording, no hang; `net use Z: \\localhost\C$` and `net use Z:
-  /delete` in a console: the row comes and goes (or not: the `net use` line above); mount and eject an ISO from
+  mid-copy: the copy ends with "the drive went away" wording, no hang; mount and eject an ISO from
   Explorer; insert and remove an SD card in a reader; with Cmdr open and both panes elsewhere (no pane on the stick),
   "Safely remove" succeeds; format the stick from Explorer with it indexed: the index rescans afterwards (log:
   "Rescanning … after its lock").
