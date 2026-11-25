@@ -1,16 +1,16 @@
 {
   "$comment": "Baseline for the desktop-bundle-size check (a pre-release gate: growth past 10% fails). Measures the SvelteKit output the Tauri app embeds, built fresh into a private dir so it never touches apps/desktop/build/. Asset names are content-hash-normalized (chunks/AbC12345.js → chunks/*.js) so rebuilds compare stably. A local run ratchets totalBytes down when the bundle shrinks. Raising it is FINE without asking, unlike most allowlists here: delete this file and run `pnpm check desktop-bundle-size` to regenerate. The failure at the moment of growth is the signal; the number is only a record of where the bundle stands.",
-  "totalBytes": 14555214,
+  "totalBytes": 16053747,
   "topAssets": {
-    "_app/immutable/assets/0.*.css": 43799,
-    "_app/immutable/assets/10.*.css": 40538,
-    "_app/immutable/assets/5.*.css": 154724,
-    "_app/immutable/assets/ToolAskDialog.*.css": 49842,
-    "_app/immutable/chunks/*.js": 12559041,
-    "_app/immutable/nodes/10.*.js": 194354,
-    "_app/immutable/nodes/12.*.js": 94198,
-    "_app/immutable/nodes/2.*.js": 107461,
-    "_app/immutable/nodes/5.*.js": 978390,
-    "_app/immutable/nodes/6.*.js": 109501
+    "_app/immutable/assets/0.*.css": 87096,
+    "_app/immutable/assets/10.*.css": 41435,
+    "_app/immutable/assets/5.*.css": 155975,
+    "_app/immutable/assets/ToolAskDialog.*.css": 49960,
+    "_app/immutable/chunks/*.js": 13863919,
+    "_app/immutable/nodes/10.*.js": 196950,
+    "_app/immutable/nodes/12.*.js": 96369,
+    "_app/immutable/nodes/2.*.js": 192517,
+    "_app/immutable/nodes/5.*.js": 999420,
+    "_app/immutable/nodes/6.*.js": 112958
   }
 }
