@@ -23,6 +23,8 @@ use cmdr_fs::volume::{Volume, VolumeError};
 
 use cmdr_fs::volume::host::listings::ListingHost;
 
+use crate::unique_name::sibling_in;
+
 /// What a folder holds under another spelling of one name.
 #[derive(Debug)]
 pub(crate) enum LookAlike {
@@ -259,7 +261,7 @@ impl<'v> ListedFolders<'v> {
         };
         match self.look_alike_in(dir, spelled).await? {
             LookAlike::None => Ok(NewEntry::Free(spelled_path)),
-            LookAlike::One(entry) if renaming == Some(dir.join(&entry.name).as_path()) => {
+            LookAlike::One(entry) if renaming == Some(sibling_in(dir, &entry.name).as_path()) => {
                 Ok(NewEntry::Free(spelled_path))
             }
             LookAlike::One(entry) => Ok(NewEntry::Taken(entry)),

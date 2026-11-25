@@ -370,8 +370,15 @@ pub(super) fn recovered_sibling(orig: &Path) -> PathBuf {
 /// remote or in-memory volume's `/dest` is `/`-separated on every host, and on
 /// Windows `Path::join` put a `\` into it (`/dest\notes (recovered).txt`, one name
 /// no such volume holds, so the rescue landed beside the folder's view of it); a
-/// native `C:\x` keeps its `\`. On macOS and Linux this is `Path::join` exactly.
-fn sibling_in(parent: &Path, name: &str) -> PathBuf {
+/// native `C:\x` keeps its `\`. On macOS and Linux this is `Path::join` exactly,
+/// for the one plain name every caller passes (a `/`-led name would replace the
+/// folder under `Path::join`).
+///
+/// The infallible join for a name the engine already holds as plain (a listed
+/// look-alike, a compress landing, a bulk rename's hop temp); a NEW name the user
+/// typed joins through `wire_paths::seam_child`, which refuses what isn't one name.
+/// ❌ Never `Path::join` for either.
+pub(crate) fn sibling_in(parent: &Path, name: &str) -> PathBuf {
     match parent.to_str() {
         Some(text) if !text.is_empty() && !text.contains('\\') => {
             let mut joined = String::with_capacity(text.len() + 1 + name.len());

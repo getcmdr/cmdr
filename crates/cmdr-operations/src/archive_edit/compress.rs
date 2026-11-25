@@ -28,7 +28,7 @@ async fn archive_landing(
     };
     match look_alike_in(parent, dir, name).await {
         Ok(LookAlike::None) => Ok((spelled_new_path(parent, &target), false)),
-        Ok(LookAlike::One(entry)) => Ok((dir.join(entry.name), true)),
+        Ok(LookAlike::One(entry)) => Ok((crate::unique_name::sibling_in(dir, &entry.name), true)),
         Ok(LookAlike::Several) => Err(WriteOperationError::DestinationExists {
             path: target.display().to_string(),
         }),

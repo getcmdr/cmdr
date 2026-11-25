@@ -376,7 +376,6 @@
     "crates/cmdr-operation-log/src/query/landed/tests.rs": 2,
     "crates/cmdr-operations/src/archive_edit/fresh_compress_tests.rs": 1,
     "crates/cmdr-operations/src/archive_edit/fresh_plan_tests.rs": 1,
-    "crates/cmdr-operations/src/archive_edit/remote_tests.rs": 1,
     "crates/cmdr-operations/src/archive_edit/routing_tests.rs": 2,
     "crates/cmdr-operations/src/conflict_preflight.rs": 1,
     "crates/cmdr-operations/src/conflict_preflight_tests.rs": 2,

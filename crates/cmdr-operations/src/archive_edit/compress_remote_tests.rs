@@ -515,6 +515,12 @@ async fn register_share(engine: &TestOperations, existing: Option<&str>) -> (Str
     (id, vol)
 }
 
+/// `/share/<name>`, formatted as app text: `Path::join` puts a `\` between them
+/// on Windows, naming ONE file `share\<name>` in `/` on the share.
+fn in_share(name: &str) -> PathBuf {
+    PathBuf::from(format!("/share/{name}"))
+}
+
 /// Starts a compress of one local `new.txt` into `/share/<name>` and, when it
 /// starts, waits for it to complete.
 async fn compress_to_share(engine: &TestOperations, parent_id: &str, name: &str) -> Result<(), WriteOperationError> {
@@ -525,7 +531,7 @@ async fn compress_to_share(engine: &TestOperations, parent_id: &str, name: &str)
             Arc::clone(&events) as Arc<dyn OperationEventSink>,
             source_volume,
             vec![PathBuf::from("new.txt")],
-            Path::new("/share").join(name),
+            in_share(name),
             parent_id.to_string(),
             ConflictResolution::Overwrite,
             0,
@@ -562,7 +568,7 @@ async fn a_new_archive_on_a_share_is_named_composed() {
         .expect("start compress");
 
     assert_eq!(names_in_share(parent.as_ref()).await, vec![CAFE_ZIP_NFC.to_string()]);
-    let archive = Path::new("/share").join(CAFE_ZIP_NFC);
+    let archive = in_share(CAFE_ZIP_NFC);
     assert_eq!(
         read_remote_entry(parent.as_ref(), &archive, "new.txt").await.as_deref(),
         Some(b"brand new".as_slice())
@@ -582,7 +588,7 @@ async fn a_compress_onto_a_look_alike_of_an_existing_archive_replaces_it_in_plac
         .expect("start compress");
 
     assert_eq!(names_in_share(parent.as_ref()).await, vec![CAFE_ZIP_NFD.to_string()]);
-    let archive = Path::new("/share").join(CAFE_ZIP_NFD);
+    let archive = in_share(CAFE_ZIP_NFD);
     assert_eq!(
         read_remote_entry(parent.as_ref(), &archive, "new.txt").await.as_deref(),
         Some(b"brand new".as_slice())
@@ -606,7 +612,7 @@ async fn a_compress_whose_composed_name_the_share_holds_replaces_that_archive() 
         .expect("start compress");
 
     assert_eq!(names_in_share(parent.as_ref()).await, vec![CAFE_ZIP_NFC.to_string()]);
-    let archive = Path::new("/share").join(CAFE_ZIP_NFC);
+    let archive = in_share(CAFE_ZIP_NFC);
     assert_eq!(
         read_remote_entry(parent.as_ref(), &archive, "new.txt").await.as_deref(),
         Some(b"brand new".as_slice())
@@ -642,7 +648,7 @@ async fn a_compress_two_stored_archives_fit_is_refused_and_leaves_both_alone() {
     assert_eq!(names_in_share(parent.as_ref()).await, expected);
     for name in [composed, decomposed] {
         assert_eq!(
-            read_remote_entry(parent.as_ref(), &Path::new("/share").join(name), "stale.txt")
+            read_remote_entry(parent.as_ref(), &in_share(name), "stale.txt")
                 .await
                 .as_deref(),
             Some(b"old".as_slice()),
@@ -663,7 +669,7 @@ async fn a_compress_onto_the_exact_stored_spelling_still_replaces_it_in_place() 
         .expect("start compress");
 
     assert_eq!(names_in_share(parent.as_ref()).await, vec![CAFE_ZIP_NFD.to_string()]);
-    let archive = Path::new("/share").join(CAFE_ZIP_NFD);
+    let archive = in_share(CAFE_ZIP_NFD);
     assert_eq!(
         read_remote_entry(parent.as_ref(), &archive, "new.txt").await.as_deref(),
         Some(b"brand new".as_slice())

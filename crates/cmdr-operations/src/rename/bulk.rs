@@ -759,7 +759,7 @@ fn unique_temporary_path(source: &Path, row_id: &str) -> Option<PathBuf> {
 async fn unique_remote_temporary_path(volume: &dyn Volume, source: &Path, row_id: &str) -> Option<Temporary> {
     let parent = twin_path::folder_of(source)?;
     for _ in 0..16 {
-        let path = parent.join(format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
+        let path = crate::unique_name::sibling_in(parent, &format!(".cmdr-bulk-rename-{row_id}-{}", Uuid::new_v4()));
         let app = AppPath::legacy_unchecked(&path).into_owned();
         if volume.get_metadata(&app).await.is_err() {
             return Some(Temporary { path, app });

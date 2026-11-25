@@ -617,14 +617,16 @@ async fn add_edit(parent: Arc<dyn Volume>, archive_path: PathBuf) -> Result<(), 
 
 /// Every name in `dir`.
 async fn names_in(parent: &dyn Volume, dir: &str) -> Vec<String> {
-    sibling_names(parent, &Path::new(dir).join("x")).await
+    sibling_names(parent, &PathBuf::from(format!("{dir}/x"))).await
 }
 
-/// The paths in `/device` whose archive holds `entry`.
+/// The paths in `/device` whose archive holds `entry`. Each is formatted as app
+/// text: `Path::join` puts a `\` between them on Windows, naming ONE file
+/// `device\<name>` in `/` on a store keyed by app paths.
 async fn archives_holding(parent: &dyn Volume, entry: &str) -> Vec<PathBuf> {
     let mut found = Vec::new();
     for name in names_in(parent, "/device").await {
-        let at = Path::new("/device").join(&name);
+        let at = PathBuf::from(format!("/device/{name}"));
         if read_remote_zip(parent, &at).await.contains_key(entry) {
             found.push(at);
         }
@@ -655,7 +657,7 @@ async fn aside_in_device(parent: &dyn Volume) -> Option<PathBuf> {
         .await
         .into_iter()
         .find(|name| name.contains(".cmdr-temp-"))
-        .map(|name| Path::new("/device").join(name))
+        .map(|name| PathBuf::from(format!("/device/{name}")))
 }
 
 /// Neither the edit nor the original can take the archive's name: the edit
