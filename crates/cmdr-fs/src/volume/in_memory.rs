@@ -900,8 +900,17 @@ impl InMemoryVolume {
 /// The ONE crossing from a `std::path` argument (the public test helpers, the
 /// builders) to the store's app path: the bridge's lossless read, so a name that
 /// isn't UTF-8 keys as its escapes, exactly as a `Volume` call's bridged path does.
+///
+/// ❗ The argument is a `std::path` value, so its separators are `std::path`'s: on Windows a
+/// test's `Path::new("/dest").join("a.jpg")` is `/dest\a.jpg`, and that `\` separates, so it
+/// keys as `/dest/a.jpg`. A name holding `\` (one name on every host) reaches the store only
+/// through a typed `Volume` call. No-op on macOS and Linux, where `\` is never a separator.
 fn app_of(path: &Path) -> Cow<'_, AppPath> {
-    AppPath::legacy_unchecked(path)
+    let slashed = path
+        .to_str()
+        .filter(|text| std::path::MAIN_SEPARATOR == '\\' && text.contains('\\'))
+        .map(|text| PathBuf::from(text.replace('\\', "/")));
+    Cow::Owned(AppPath::legacy_unchecked(slashed.as_deref().unwrap_or(path)).into_owned())
 }
 
 /// The ONE crossing back, for what still answers `std::path` (`canonicalize`, the
