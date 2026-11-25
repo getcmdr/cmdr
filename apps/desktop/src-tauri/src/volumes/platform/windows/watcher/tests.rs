@@ -347,9 +347,12 @@ fn a_drive_mapped_to_a_folder_arrives_and_leaves_as_its_own_share() {
         root,
         "rooted at its letter, the folder it maps"
     );
-    let status = crate::index_host::index().volume_status_for_path(&format!("{root}x"));
-    assert_eq!(status.volume_id, id, "its paths are its own volume's");
-    assert!(!status.enabled, "nothing indexes a mapped share uninvited");
+    // By id, as `list_volumes` reads a Windows row (`tools/resources/volumes.rs::index_statuses`).
+    let status = crate::index_host::index().volume_status(&id);
+    assert!(
+        !status.enabled && status.freshness.is_none(),
+        "nothing indexes a mapped share uninvited"
+    );
     Lifecycle.left(&root);
 
     drop(mapping);
