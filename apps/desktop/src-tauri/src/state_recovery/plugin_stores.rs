@@ -48,8 +48,9 @@ pub fn recover_plugin_stores<R: Runtime>(app: &AppHandle<R>) {
             recover(&path, file);
         }
     }
-    // Rust loads this one by bare name, so it always sits in the plugin's own app data dir.
-    match tauri_plugin_store::resolve_store_path(app, "license.json") {
+    // Rust opens this one itself, at the same path licensing does (`licensing::key_storage::license_store`).
+    let license = crate::config::plugin_store_path(app, "license.json");
+    match tauri_plugin_store::resolve_store_path(app, license) {
         Ok(path) => {
             if recover(&path, StateFile::License) {
                 LICENSE_RECOVERED.store(true, Ordering::Relaxed);
@@ -110,11 +111,8 @@ fn consents_off() -> serde_json::Map<String, serde_json::Value> {
 
 /// Where the frontend's store for `name` lives: `resolveStorePath` (`lib/settings/store-path.ts`)
 /// puts it in `CMDR_DATA_DIR` when that's set, and the plugin resolves a bare name otherwise.
-fn frontend_store_path<R: Runtime>(app: &AppHandle<R>, name: &str) -> Option<PathBuf> {
-    if std::env::var("CMDR_DATA_DIR").is_ok_and(|dir| !dir.is_empty()) {
-        return crate::config::resolved_app_data_dir(app).ok().map(|dir| dir.join(name));
-    }
-    tauri_plugin_store::resolve_store_path(app, name).ok()
+fn frontend_store_path<R: Runtime>(app: &AppHandle<R>, name: &'static str) -> Option<PathBuf> {
+    tauri_plugin_store::resolve_store_path(app, crate::config::plugin_store_path(app, name)).ok()
 }
 
 /// Checks one store file: sweeps temp files a killed save left, and sets the file aside when it

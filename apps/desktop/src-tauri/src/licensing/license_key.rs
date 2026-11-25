@@ -10,7 +10,6 @@ use crate::licensing::verification::{LicenseActivationError, validate_license_ke
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri_plugin_store::StoreExt;
 
 /// In-memory cache for verified license info. Avoids re-parsing and re-verifying
 /// the Ed25519 signature on every call to `get_license_info`.
@@ -92,11 +91,9 @@ pub(super) fn store_license(
     // Prefer the explicit short code (user typed it), fall back to the one embedded in the payload
     let resolved_short_code = short_code.map(|s| s.to_string()).or(data.short_code.clone());
 
-    let store = app
-        .store(LICENSE_FILE)
-        .map_err(|e| LicenseActivationError::StorageError {
-            detail: format!("Couldn't open {LICENSE_FILE}: {e}"),
-        })?;
+    let store = key_storage::license_store(app).map_err(|e| LicenseActivationError::StorageError {
+        detail: format!("Couldn't open {LICENSE_FILE}: {e}"),
+    })?;
 
     // The key goes to the secret store (the Keychain on macOS); license.json only gets the marker.
     let stored = StoredLicense {
@@ -144,7 +141,7 @@ pub fn get_license_info(app: &tauri::AppHandle) -> Option<LicenseInfo> {
 
     // Slow path: read the key (secret store, or a not-yet-migrated license.json) and verify its
     // Ed25519 signature
-    let store = app.store(LICENSE_FILE).ok()?;
+    let store = key_storage::license_store(app).ok()?;
     let StoredLicense {
         license_key,
         short_code,

@@ -59,6 +59,16 @@ impl<R: tauri::Runtime> LicenseFile for tauri_plugin_store::Store<R> {
     }
 }
 
+/// `license.json` as the store plugin holds it, in the data dir every other file uses
+/// (`config::plugin_store_path`). ❌ Never `app.store(LICENSE_FILE)`: the plugin resolves a bare
+/// name to the identifier's folder even when `CMDR_DATA_DIR` names another, so a test instance
+/// rewrote the real install's file on quit (#1484).
+pub(crate) fn license_store<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> tauri_plugin_store::Result<std::sync::Arc<tauri_plugin_store::Store<R>>> {
+    app.store(crate::config::plugin_store_path(app, LICENSE_FILE))
+}
+
 /// Writes `license.json` now, and says so when it can't. The store plugin's debounced auto-save
 /// drops a failed write without a word, so every change here saves explicitly: the patched plugin
 /// leaves the old file whole on a failure (`vendor/tauri-plugin-store/CMDR-PATCH.md`), and the log
@@ -73,7 +83,7 @@ pub(super) fn save_license_file<R: tauri::Runtime>(store: &tauri_plugin_store::S
 /// store. Runs once per launch, before the first status check; a no-op once moved. A failure
 /// keeps the key in the file (the license keeps working from there) and retries next launch.
 pub fn move_license_key_into_secret_store(app: &tauri::AppHandle) {
-    let store = match app.store(LICENSE_FILE) {
+    let store = match license_store(app) {
         Ok(store) => store,
         Err(e) => {
             log::warn!("Couldn't open {LICENSE_FILE} to check for a license key to move: {e}");
@@ -111,7 +121,7 @@ pub fn move_license_key_into_secret_store(app: &tauri::AppHandle) {
 
 /// Removes the stored key from the secret store and `license.json`. Called by `reset_license`.
 pub(super) fn clear_stored_license(app: &tauri::AppHandle) {
-    if let Ok(store) = app.store(LICENSE_FILE) {
+    if let Ok(store) = license_store(app) {
         clear(&*store, crate::secrets::store());
         save_license_file(&store);
     }
@@ -273,6 +283,30 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::Mutex;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// With `CMDR_DATA_DIR` set, `license.json` lives there, and nothing under the plugin's
+    /// default location (the identifier's folder) is created or changed (#1484).
+    #[test]
+    fn license_json_follows_the_data_dir_override() {
+        let data = crate::test_support::isolate_secrets();
+        let app = tauri::test::mock_app();
+        app.handle()
+            .plugin(tauri_plugin_store::Builder::default().build())
+            .expect("the store plugin registers on a mock app");
+        let default = tauri_plugin_store::resolve_store_path(app.handle(), LICENSE_FILE).expect("a default path");
+        assert!(!default.starts_with(data.as_ref()), "the override names another folder");
+        let before = std::fs::read(&default).ok();
+
+        let store = license_store(app.handle()).expect("the license store");
+        store.set("probe_1484", true);
+        store.save().expect("a save");
+
+        assert!(
+            data.join(LICENSE_FILE).exists(),
+            "license.json in the override, not at {default:?}"
+        );
+        assert_eq!(std::fs::read(&default).ok(), before, "the default location untouched");
+    }
 
     #[derive(Default)]
     struct MapFile(Mutex<HashMap<String, Value>>);
