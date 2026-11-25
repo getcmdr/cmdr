@@ -39,6 +39,10 @@ User presses ⌘⇧P
   name and the shortcut chips. The registry derives the field from `getBadgeStatus()` in `#lib/feature-status`
   (repo-root `feature-status.json` is the single source of truth), so graduating a feature removes the badge with a JSON
   edit.
+- **Focus goes back a microtask after close** (`onDestroy` queues `restoreFocus`). Gotcha/Why: Svelte hands a teardown
+  the values state had before the change being flushed, so a restore run inside `onDestroy` after "Switch pane" made the
+  focus handlers it triggers read the OLD focused pane, and focus landed on the pane just left (Linux E2E,
+  `keyboard-focus.spec.ts` § "Switch pane"). An explorer effect that re-ran on every focus move used to hide it (#1464).
 
 ## Decisions and rationale
 
