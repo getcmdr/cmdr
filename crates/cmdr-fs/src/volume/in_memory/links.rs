@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use super::{InMemoryEntry, InMemoryVolume, app_of, name_of, shown, slash, std_of};
+use super::{InMemoryEntry, InMemoryVolume, app_of, app_verbatim, name_of, shown, slash, std_of};
 use crate::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use crate::entry::FileEntry;
 use crate::ignore_poison::RwLockIgnorePoison;
@@ -101,7 +101,7 @@ impl InMemoryVolume {
                     if hops > MAX_LINK_HOPS {
                         return None;
                     }
-                    let target = app_of(target);
+                    let target = app_verbatim(target);
                     if target.as_str().starts_with('/') {
                         resolved = slash().to_owned();
                     }

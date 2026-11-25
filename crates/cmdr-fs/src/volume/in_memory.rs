@@ -897,8 +897,8 @@ impl InMemoryVolume {
     }
 }
 
-/// The ONE crossing from a `std::path` argument (the public test helpers, the
-/// builders) to the store's app path: the bridge's lossless read, so a name that
+/// The crossing from a `std::path` argument (the public test helpers, the
+/// builders) to the store's app path: the bridge's lossless read ([`app_verbatim`]), so a name that
 /// isn't UTF-8 keys as its escapes, exactly as a `Volume` call's bridged path does.
 ///
 /// ❗ The argument is a `std::path` value, so its separators are `std::path`'s: on Windows a
@@ -910,7 +910,13 @@ fn app_of(path: &Path) -> Cow<'_, AppPath> {
         .to_str()
         .filter(|text| std::path::MAIN_SEPARATOR == '\\' && text.contains('\\'))
         .map(|text| PathBuf::from(text.replace('\\', "/")));
-    Cow::Owned(AppPath::legacy_unchecked(slashed.as_deref().unwrap_or(path)).into_owned())
+    Cow::Owned(app_verbatim(slashed.as_deref().unwrap_or(path)).into_owned())
+}
+
+/// [`app_of`] with every `\` kept as text: a symlink's TARGET, which a POSIX server stores as
+/// the link's bytes, so `a\b` in it is one name on every host.
+pub(super) fn app_verbatim(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
 }
 
 /// The ONE crossing back, for what still answers `std::path` (`canonicalize`, the

@@ -86,7 +86,10 @@ pub(crate) fn seam_path(path: &Path) -> Cow<'_, AppPath> {
 /// parent, a rename target's folder), joined the app path's way (`ListedFolder`) and handed
 /// back as the body holds paths. ❌ Never `dir.join(name)`: on Windows that puts a `\`
 /// between a POSIX volume's folder and the name (`/docs\photos`), which the volume reads as
-/// ONE name in `/`. On macOS and Linux it names what `dir.join(name)` named, byte for byte.
+/// ONE name in `/`. On macOS and Linux it names what `dir.join(name)` named, byte for byte
+/// for a canonical folder (a pane's path always is). ❗ It canonicalizes the folder, so
+/// `/a/./b` gives `/a/b/x` where `Path::join` gave `/a/./b/x`: the same file, the listing's
+/// spelling, and on Windows `C:/Users/x/new`, the row a local listing shows.
 ///
 /// # Errors
 ///

@@ -105,6 +105,9 @@ pub(super) async fn find_unique_volume_name(
         // pick: the clash's own path goes back, and the write that follows refuses
         // to land on the occupied name. The walk and the drivers refuse such a name
         // before it ever reaches a resolver, so this is the fail-closed answer.
+        // Why it can't clobber: `probed` reserves nothing (`reserved_placeholder` false), so
+        // the landing expects the name free (`ExpectedFree`): a `CreateNew` write, which
+        // refuses the occupied name and leaves its file alone.
         let Some(candidate) = candidates.current() else {
             return ClaimedName::probed(path.to_owned());
         };

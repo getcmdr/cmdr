@@ -145,10 +145,12 @@ The full top-level inventory is here:
   same-`root` move, delete, and trash starts, routing to the local disk or the volume engine), `wire_paths.rs` (where a
   typed start's `AppPathBuf`s cross into the `std::path` bodies behind it, `engine_path`, and the way back for a value a
   body made itself, `seam_path`, both through the bridge; `seam_child`, a new name under a body's folder joined typed,
-  since `Path::join` on Windows made `/docs` + `photos` the one name `docs\photos` in a POSIX volume's `/`; plus the
-  guard a trailing `/` or `/.` goes through, because POSIX resolves `x/link/` through the link, so a raw IPC delete of
-  one emptied the link's target and a move or rename took the target. The public starts take app paths their caller read
-  with `from_wire` (which drops it), and `engine_path` trims a bridge value too; pinned per op by
+  since `Path::join` on Windows made `/docs` + `photos` the one name `docs\photos` in a POSIX volume's `/`, and which
+  canonicalizes the folder (`/a/./b` + `x` is `/a/b/x`, the listing's spelling; on Windows `C:/Users/x/new`, the row a
+  local listing shows, pinned by `create/tests.rs::a_create_under_a_drive_folder_answers_the_path_the_listing_spells`);
+  plus the guard a trailing `/` or `/.` goes through, because POSIX resolves `x/link/` through the link, so a raw IPC
+  delete of one emptied the link's target and a move or rename took the target. The public starts take app paths their
+  caller read with `from_wire` (which drops it), and `engine_path` trims a bridge value too; pinned per op by
   `trailing_separator_tests.rs`), `local_start.rs` (the local copy, move, delete, and trash starters and the
   `start_write_operation` lifecycle they share), `local_disk/` (the host's own disk as the shared code needs it: errnos,
   a file's device and mode, the no-replace rename, mount and filesystem questions, a volume over a local folder;

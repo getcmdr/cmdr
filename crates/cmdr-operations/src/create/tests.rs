@@ -381,6 +381,42 @@ async fn create_directory_managed_creates_folder_and_cleans_up_record() {
     );
 }
 
+/// Windows: a create under a drive folder answers the new row's path spelled exactly as the
+/// listing spells it (`C:/Users/x/new`), since the frontend puts the cursor on that row by
+/// it, `host.announce` keys the listing patch by it, and Rename's target is built the same
+/// way (`wire_paths::seam_child`). `Path::join` answered `C:/Users/x\new`, which matched no
+/// row.
+#[cfg(windows)]
+#[tokio::test]
+async fn a_create_under_a_drive_folder_answers_the_path_the_listing_spells() {
+    use cmdr_fs::app_path::AppPathBuf;
+    let engine = TestOperations::new();
+    let root = crate::local_disk::folder_volume("Test root", "/", crate::host::testing::pane_order_host());
+    engine.volumes().register("root", root.clone());
+    let tmp = create_test_dir("listed_spelling");
+    let parent = AppPathBuf::from_native(tmp.path()).expect("a drive folder's app path");
+    let user = cmdr_operation_log::types::Initiator::User;
+    let folder = engine
+        .create_directory_managed(None, parent.as_str().to_owned(), "new".to_owned(), user)
+        .await
+        .expect("the folder lands");
+    let file = engine
+        .create_file_managed(None, parent.as_str().to_owned(), "new.txt".to_owned(), user)
+        .await
+        .expect("the file lands");
+
+    let rows = root.list_directory(&parent, None).await.expect("the parent lists");
+    let listed: Vec<&str> = rows.iter().map(|row| row.path.as_str()).collect();
+    assert!(
+        listed.contains(&folder.as_str()),
+        "the folder answered {folder:?}; the listing spells {listed:?}"
+    );
+    assert!(
+        listed.contains(&file.as_str()),
+        "the file answered {file:?}; the listing spells {listed:?}"
+    );
+}
+
 // ============================================================================
 // Error mapping: a volume's PermissionDenied surfaces as the friendly message
 // ============================================================================
