@@ -1284,13 +1284,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "Програму {app} більше не інстальовано, тому папку відкрито в Терміналі.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {Програму {app} більше не інстальовано, тому Cmdr вибрав для цієї папки іншу програму-термінал.} other {Програму {app} більше не інстальовано, тому папку відкрито в Терміналі.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Вашу програму-термінал більше не інстальовано, тому папку відкрито в Терміналі.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Вашу програму-термінал більше не інстальовано, тому Cmdr вибрав для цієї папки іншу.} other {Вашу програму-термінал більше не інстальовано, тому папку відкрито в Терміналі.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "У цієї папки немає шляху, який міг би відкрити термінал.",
   "@commands.handler.openTerminalHere.noPath": {

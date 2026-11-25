@@ -2249,9 +2249,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr показує текстові редактори, які macOS знає на цьому Mac. Щоб використати іншу програму, виберіть «Вибрати програму…».",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr показує текстові редактори, які macOS знає на цьому Mac. Щоб використати іншу програму, виберіть «Вибрати програму…».} windows {Cmdr показує програми, які Windows пропонує для текстових файлів на цьому ПК. Щоб використати іншу програму, виберіть «Вибрати програму…».} other {Cmdr показує текстові редактори, які знає ваша система. Щоб використати іншу програму, виберіть «Вибрати програму…».}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Типова програма ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2260,6 +2260,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Типова програма",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Програми",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Вибрати програму…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2297,9 +2301,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr показує програми-термінали, які знаходить на цьому Mac. Щоб використати іншу, виберіть «Вибрати програму…».",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr показує програми-термінали, які знаходить на цьому Mac. Щоб використати іншу, виберіть «Вибрати програму…».} windows {Cmdr показує програми-термінали, які знаходить на цьому ПК. Щоб використати іншу, виберіть «Вибрати програму…».} other {Cmdr показує програми-термінали, які знаходить на цьому компʼютері. Щоб використати іншу, виберіть «Вибрати програму…».}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Вибрати програму…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

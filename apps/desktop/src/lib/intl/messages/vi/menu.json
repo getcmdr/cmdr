@@ -585,6 +585,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Chọn ứng dụng khác",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Khác…",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

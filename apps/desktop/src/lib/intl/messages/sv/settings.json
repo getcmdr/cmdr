@@ -2259,9 +2259,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr listar de textredigerare som macOS känner till på den här Macen. För en annan app, välj ”Välj app…”.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr listar de textredigerare som macOS känner till på den här Macen. För en annan app, välj ”Välj app…”.} windows {Cmdr listar de appar som Windows erbjuder för textfiler på den här datorn. För en annan app, välj ”Välj app…”.} other {Cmdr listar de textredigerare som ditt system känner till. För en annan app, välj ”Välj app…”.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Systemets standard ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2270,6 +2270,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Systemets standard",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Appar",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Välj app…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2307,9 +2311,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr listar de terminalappar den hittar på den här Macen. För en som den inte känner till, välj ”Välj app…”.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr listar de terminalappar den hittar på den här Macen. För en som den inte känner till, välj ”Välj app…”.} windows {Cmdr listar de terminalappar den hittar på den här datorn. För en som den inte känner till, välj ”Välj app…”.} other {Cmdr listar de terminalappar den hittar på den här datorn. För en som den inte känner till, välj ”Välj app…”.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Välj app…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

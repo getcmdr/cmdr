@@ -580,6 +580,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Вибрати іншу програму",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Іншою…",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

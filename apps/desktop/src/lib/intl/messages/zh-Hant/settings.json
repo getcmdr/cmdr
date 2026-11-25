@@ -2251,9 +2251,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr 會列出 macOS 在這部 Mac 上認得的文字編輯器。想用別的 App，請選擇「選擇 App⋯」。",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr 會列出 macOS 在這部 Mac 上認得的文字編輯器。想用別的 App，請選擇「選擇 App⋯」。} windows {Cmdr 會列出 Windows 在這台電腦上為文字檔提供的 App。想用別的 App，請選擇「選擇 App⋯」。} other {Cmdr 會列出你的系統認得的文字編輯器。想用別的 App，請選擇「選擇 App⋯」。}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "跟隨系統（{app}）",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2262,6 +2262,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "跟隨系統",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "App",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "選擇 App⋯",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2299,9 +2303,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr 會列出在這部 Mac 上找到的終端機 App。想用它不認得的 App，請選擇「選擇 App⋯」。",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr 會列出在這部 Mac 上找到的終端機 App。想用它不認得的 App，請選擇「選擇 App⋯」。} windows {Cmdr 會列出在這台電腦上找到的終端機 App。想用它不認得的 App，請選擇「選擇 App⋯」。} other {Cmdr 會列出在這台電腦上找到的終端機 App。想用它不認得的 App，請選擇「選擇 App⋯」。}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "選擇 App⋯",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

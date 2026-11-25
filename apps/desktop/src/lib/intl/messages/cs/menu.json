@@ -580,6 +580,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Zvolit jinou aplikaci",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Jiné…",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

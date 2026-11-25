@@ -247,6 +247,10 @@
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "c8aa231"
   },
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr muestra las apps de terminal que encuentra en este Mac. Para usar una que no conoce, elige “Seleccionar app…”.} windows {Cmdr muestra las apps de terminal que encuentra en este PC. Para usar una que no conoce, elige “Seleccionar app…”.} other {Cmdr muestra las apps de terminal que encuentra en esta computadora. Para usar una que no conoce, elige “Seleccionar app…”.}}",
+  "@settings.behavior.openTerminalHereApp.description": {
+    "sourceHash": "07f0299"
+  },
   "settings.behavior.openTerminalHereToastSeen.description": "La primera vez que abres una carpeta en un terminal, Cmdr te dice qué app usó y dónde elegir otra. Desactiva esto para volver a ver el aviso.",
   "@settings.behavior.openTerminalHereToastSeen.description": {
     "sourceHash": "9e1f1a8"

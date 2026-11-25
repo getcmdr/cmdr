@@ -581,6 +581,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Välj en annan app",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Annan…",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

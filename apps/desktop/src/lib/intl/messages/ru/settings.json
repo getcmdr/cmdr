@@ -2249,9 +2249,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr показывает в списке текстовые редакторы, которые macOS знает на этом Mac. Чтобы использовать другое приложение, выберите «Выбрать приложение…».",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr показывает в списке текстовые редакторы, которые macOS знает на этом Mac. Чтобы использовать другое приложение, выберите «Выбрать приложение…».} windows {Cmdr показывает в списке приложения, которые Windows предлагает для текстовых файлов на этом компьютере. Чтобы использовать другое приложение, выберите «Выбрать приложение…».} other {Cmdr показывает в списке текстовые редакторы, которые знает ваша система. Чтобы использовать другое приложение, выберите «Выбрать приложение…».}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Как в системе ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2260,6 +2260,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Как в системе",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Приложения",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Выбрать приложение…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2297,9 +2301,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr показывает в списке приложения терминала, найденные на этом Mac. Если нужного нет, выберите «Выбрать приложение…».",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr показывает в списке приложения терминала, найденные на этом Mac. Если нужного нет, выберите «Выбрать приложение…».} windows {Cmdr показывает в списке приложения терминала, найденные на этом компьютере. Если нужного нет, выберите «Выбрать приложение…».} other {Cmdr показывает в списке приложения терминала, найденные на этом компьютере. Если нужного нет, выберите «Выбрать приложение…».}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Выбрать приложение…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

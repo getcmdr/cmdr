@@ -2253,9 +2253,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr muestra los editores de texto que macOS conoce en este Mac. Para usar otra app, elige “Seleccionar app…”.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr muestra los editores de texto que macOS conoce en este Mac. Para usar otra app, elige “Seleccionar app…”.} windows {Cmdr muestra las apps que Windows ofrece para archivos de texto en este PC. Para usar otra app, elige “Seleccionar app…”.} other {Cmdr muestra los editores de texto que conoce tu sistema. Para usar otra app, elige “Seleccionar app…”.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Por omisión del sistema ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2264,6 +2264,11 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Por omisión del sistema",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Apps",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748",
+    "sameAsSourceJustification": "Spanish says apps, per the termbase app ruling and macOS es (Finder: Apps); the plural is identical to English."
   },
   "settings.behavior.textEditorApp.chooseApp": "Seleccionar app…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2301,9 +2306,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr muestra las apps de terminal que encuentra en este Mac. Para usar una que no conoce, elige “Seleccionar app…”.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr muestra las apps de terminal que encuentra en este Mac. Para usar una que no conoce, elige “Seleccionar app…”.} windows {Cmdr muestra las apps de terminal que encuentra en este PC. Para usar una que no conoce, elige “Seleccionar app…”.} other {Cmdr muestra las apps de terminal que encuentra en este ordenador. Para usar una que no conoce, elige “Seleccionar app…”.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Seleccionar app…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

@@ -1284,13 +1284,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} är inte installerad längre, så det här öppnades i Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} är inte installerad längre, så Cmdr valde en annan terminalapp för den här mappen.} other {{app} är inte installerad längre, så det här öppnades i Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Din terminalapp är inte installerad längre, så det här öppnades i Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Din terminalapp är inte installerad längre, så Cmdr valde en annan för den här mappen.} other {Din terminalapp är inte installerad längre, så det här öppnades i Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "Den här mappen har ingen sökväg som en terminal kan öppna.",
   "@commands.handler.openTerminalHere.noPath": {

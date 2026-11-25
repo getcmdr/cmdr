@@ -67,13 +67,13 @@
   "@commands.favoritesOpenByNumber.label": {
     "sourceHash": "e74b98f"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} isn’t installed any more, so this opened in Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} isn’t installed any more, so Cmdr picked another terminal app for this folder.} other {{app} isn’t installed any more, so this opened in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Your terminal app isn’t installed any more, so this opened in Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Your terminal app isn’t installed any more, so Cmdr picked another one for this folder.} other {Your terminal app isn’t installed any more, so this opened in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.multiRenameNormalizeUnicode.label": "Turn Normalise Unicode on or off",
   "@commands.multiRenameNormalizeUnicode.label": {

@@ -1284,13 +1284,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} n’est plus installée, donc l’ouverture s’est faite dans Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} n’est plus installée, donc Cmdr a choisi une autre app de terminal pour ce dossier.} other {{app} n’est plus installée, donc l’ouverture s’est faite dans Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Votre app de terminal n’est plus installée, donc l’ouverture s’est faite dans Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Votre app de terminal n’est plus installée, donc Cmdr en a choisi une autre pour ce dossier.} other {Votre app de terminal n’est plus installée, donc l’ouverture s’est faite dans Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "Ce dossier n’a pas de chemin qu’un terminal puisse ouvrir.",
   "@commands.handler.openTerminalHere.noPath": {

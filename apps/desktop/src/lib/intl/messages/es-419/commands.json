@@ -151,13 +151,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "0ee74e6"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} ya no está instalada, así que esto se abrió en Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} ya no está instalada, así que Cmdr eligió otra app de terminal para esta carpeta.} other {{app} ya no está instalada, así que esto se abrió en Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "425f4ad"
+    "sourceHash": "b08974c"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Tu app de terminal ya no está instalada, así que esto se abrió en Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Tu app de terminal ya no está instalada, así que Cmdr eligió otra para esta carpeta.} other {Tu app de terminal ya no está instalada, así que esto se abrió en Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "fe814a7"
+    "sourceHash": "2721253"
   },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr no pudo iniciar tu app de terminal. Ábrela tú una vez y vuelve a intentarlo.",
   "@commands.handler.openTerminalHere.launchRefused": {

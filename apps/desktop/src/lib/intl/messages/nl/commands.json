@@ -1287,13 +1287,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} is niet meer geïnstalleerd, dus dit is geopend in Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} is niet meer geïnstalleerd, dus Cmdr heeft voor deze map een andere terminal-app gekozen.} other {{app} is niet meer geïnstalleerd, dus dit is geopend in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Je terminal-app is niet meer geïnstalleerd, dus dit is geopend in Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Je terminal-app is niet meer geïnstalleerd, dus Cmdr heeft voor deze map een andere gekozen.} other {Je terminal-app is niet meer geïnstalleerd, dus dit is geopend in Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "Deze map heeft geen pad dat een terminal kan openen.",
   "@commands.handler.openTerminalHere.noPath": {

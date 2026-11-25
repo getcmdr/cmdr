@@ -2250,9 +2250,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr v seznamu nabízí textové editory, o kterých macOS na tomto Macu ví. Pokud chcete použít jinou aplikaci, zvolte „Vybrat aplikaci…“.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr v seznamu nabízí textové editory, o kterých macOS na tomto Macu ví. Pokud chcete použít jinou aplikaci, zvolte „Vybrat aplikaci…“.} windows {Cmdr v seznamu nabízí aplikace, které Windows na tomto počítači používá pro textové soubory. Pokud chcete použít jinou aplikaci, zvolte „Vybrat aplikaci…“.} other {Cmdr v seznamu nabízí textové editory, o kterých váš systém ví. Pokud chcete použít jinou aplikaci, zvolte „Vybrat aplikaci…“.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Podle systému ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2261,6 +2261,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Podle systému",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Aplikace",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Vybrat aplikaci…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2298,9 +2302,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr v seznamu nabízí terminálové aplikace, které na tomto Macu najde. Pokud chcete použít jinou, kterou nezná, zvolte „Vybrat aplikaci…“.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr v seznamu nabízí terminálové aplikace, které na tomto Macu najde. Pokud chcete použít jinou, kterou nezná, zvolte „Vybrat aplikaci…“.} windows {Cmdr v seznamu nabízí terminálové aplikace, které na tomto počítači najde. Pokud chcete použít jinou, kterou nezná, zvolte „Vybrat aplikaci…“.} other {Cmdr v seznamu nabízí terminálové aplikace, které na tomto počítači najde. Pokud chcete použít jinou, kterou nezná, zvolte „Vybrat aplikaci…“.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Vybrat aplikaci…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

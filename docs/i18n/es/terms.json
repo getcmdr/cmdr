@@ -3874,7 +3874,10 @@
       }
     ],
     "confidence": "high",
-    "sources": "macOS Finder (Apps, otras apps, App que admite documentos); catalog (la app ×34)"
+    "sources": "macOS Finder (Apps, otras apps, App que admite documentos); catalog (la app ×34)",
+    "exceptions": {
+      "menu.context.openWithChooseAnother": "Quotes File Explorer's own Open with row on Spanish Windows (Elegir otra aplicación), which says aplicación."
+    }
   },
   "button": {
     "chosen": "botón",

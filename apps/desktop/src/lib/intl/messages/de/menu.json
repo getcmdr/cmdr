@@ -583,6 +583,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Andere App auswählen",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Andere …",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

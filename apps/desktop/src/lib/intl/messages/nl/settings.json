@@ -2260,9 +2260,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr toont de teksteditors die macOS op deze Mac kent. Voor een andere app kies je ‘Kies app…’.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr toont de teksteditors die macOS op deze Mac kent. Voor een andere app kies je ‘Kies app…’.} windows {Cmdr toont de apps die Windows op deze pc voor tekstbestanden aanbiedt. Voor een andere app kies je ‘Kies app…’.} other {Cmdr toont de teksteditors die je systeem kent. Voor een andere app kies je ‘Kies app…’.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Systeemstandaard ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2271,6 +2271,11 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Systeemstandaard",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Apps",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748",
+    "sameAsSourceJustification": "Dutch says apps, per the termbase app ruling and macOS nl (Finder: Apps); the plural is identical to English."
   },
   "settings.behavior.textEditorApp.chooseApp": "Kies app…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2308,9 +2313,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr toont de terminal-apps die het op deze Mac vindt. Voor een app die het niet kent, kies je ‘Kies app…’.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr toont de terminal-apps die het op deze Mac vindt. Voor een app die het niet kent, kies je ‘Kies app…’.} windows {Cmdr toont de terminal-apps die het op deze pc vindt. Voor een app die het niet kent, kies je ‘Kies app…’.} other {Cmdr toont de terminal-apps die het op deze computer vindt. Voor een app die het niet kent, kies je ‘Kies app…’.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Kies app…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

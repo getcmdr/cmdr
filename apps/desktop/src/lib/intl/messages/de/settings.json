@@ -2259,9 +2259,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr listet die Text-Editoren auf, die macOS auf diesem Mac kennt. Für eine andere App wähle „App auswählen …“.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr listet die Text-Editoren auf, die macOS auf diesem Mac kennt. Für eine andere App wähle „App auswählen …“.} windows {Cmdr listet die Apps auf, die Windows auf diesem PC für Textdateien anbietet. Für eine andere App wähle „App auswählen …“.} other {Cmdr listet die Text-Editoren auf, die dein System kennt. Für eine andere App wähle „App auswählen …“.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Systemstandard ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2270,6 +2270,11 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Systemstandard",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Apps",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748",
+    "sameAsSourceJustification": "German says Apps, as the termbase app ruling and macOS de (Finder: Apps) do; the plural is identical to English."
   },
   "settings.behavior.textEditorApp.chooseApp": "App auswählen …",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2307,9 +2312,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr listet die Terminal-Apps auf, die es auf diesem Mac findet. Für eine, die es nicht kennt, wähle „App auswählen …“.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr listet die Terminal-Apps auf, die es auf diesem Mac findet. Für eine, die es nicht kennt, wähle „App auswählen …“.} windows {Cmdr listet die Terminal-Apps auf, die es auf diesem PC findet. Für eine, die es nicht kennt, wähle „App auswählen …“.} other {Cmdr listet die Terminal-Apps auf, die es auf diesem Computer findet. Für eine, die es nicht kennt, wähle „App auswählen …“.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "App auswählen …",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

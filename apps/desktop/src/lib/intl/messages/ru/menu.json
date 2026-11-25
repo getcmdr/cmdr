@@ -584,6 +584,10 @@
   "@menu.context.openWithDefault": {
     "sourceHash": "32a7cca"
   },
+  "menu.context.openWithChooseAnother": "Выбрать другое приложение",
+  "@menu.context.openWithChooseAnother": {
+    "sourceHash": "2d57ca6"
+  },
   "menu.context.openWithOther": "Другое…",
   "@menu.context.openWithOther": {
     "sourceHash": "1e37529"

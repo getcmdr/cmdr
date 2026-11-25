@@ -1284,13 +1284,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} không còn được cài đặt, nên mục này đã mở trong Terminal.",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} không còn được cài đặt, nên Cmdr đã chọn một ứng dụng terminal khác cho thư mục này.} other {{app} không còn được cài đặt, nên mục này đã mở trong Terminal.}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "Ứng dụng terminal của bạn không còn được cài đặt, nên mục này đã mở trong Terminal.",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {Ứng dụng terminal của bạn không còn được cài đặt, nên Cmdr đã chọn một ứng dụng khác cho thư mục này.} other {Ứng dụng terminal của bạn không còn được cài đặt, nên mục này đã mở trong Terminal.}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "Thư mục này không có đường dẫn nào mà terminal mở được.",
   "@commands.handler.openTerminalHere.noPath": {

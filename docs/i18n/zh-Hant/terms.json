@@ -263,7 +263,8 @@
     "confidence": "high",
     "decision": "Eject refused",
     "exceptions": {
-      "shortcuts.system.appWindows": "Names the macOS reserved shortcut by Apple's own label: 應用程式視窗."
+      "shortcuts.system.appWindows": "Names the macOS reserved shortcut by Apple's own label: 應用程式視窗.",
+      "menu.context.openWithChooseAnother": "Quotes File Explorer's own Open with row on Traditional Chinese Windows (選擇其他應用程式), which says 應用程式, as Apple's own labels keep it too."
     },
     "forms": "other apps → 其他 App; terminal app → 終端機 App; Choose an app… → 選擇 App⋯; spaced against Han",
     "sources": "catalog (ai.local.warningCaution, errors.eject.unmountRefused); AP-TW = AP-HK application → 應用程式 for Apple labels"

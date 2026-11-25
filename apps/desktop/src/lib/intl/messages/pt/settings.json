@@ -2253,9 +2253,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "O Cmdr lista os editores de texto que o macOS conhece neste Mac. Para usar outro app, escolha “Escolher app…”.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {O Cmdr lista os editores de texto que o macOS conhece neste Mac. Para usar outro app, escolha “Escolher app…”.} windows {O Cmdr lista os apps que o Windows oferece para arquivos de texto neste PC. Para usar outro app, escolha “Escolher app…”.} other {O Cmdr lista os editores de texto que o seu sistema conhece. Para usar outro app, escolha “Escolher app…”.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Padrão do sistema ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2264,6 +2264,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Padrão do sistema",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Aplicativos",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Escolher app…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2301,9 +2305,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "O Cmdr lista os apps de terminal que encontra neste Mac. Para usar um que ele não conhece, escolha “Escolher app…”.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {O Cmdr lista os apps de terminal que encontra neste Mac. Para usar um que ele não conhece, escolha “Escolher app…”.} windows {O Cmdr lista os apps de terminal que encontra neste PC. Para usar um que ele não conhece, escolha “Escolher app…”.} other {O Cmdr lista os apps de terminal que encontra neste computador. Para usar um que ele não conhece, escolha “Escolher app…”.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Escolher app…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

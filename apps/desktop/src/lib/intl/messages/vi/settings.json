@@ -2250,9 +2250,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "Cmdr liệt kê các trình soạn thảo văn bản mà macOS biết trên máy Mac này. Để dùng một ứng dụng khác, hãy chọn “Chọn ứng dụng…”.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {Cmdr liệt kê các trình soạn thảo văn bản mà macOS biết trên máy Mac này. Để dùng một ứng dụng khác, hãy chọn “Chọn ứng dụng…”.} windows {Cmdr liệt kê các ứng dụng mà Windows đề xuất cho tệp văn bản trên PC này. Để dùng một ứng dụng khác, hãy chọn “Chọn ứng dụng…”.} other {Cmdr liệt kê các trình soạn thảo văn bản mà hệ thống của bạn biết. Để dùng một ứng dụng khác, hãy chọn “Chọn ứng dụng…”.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Mặc định hệ thống ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2261,6 +2261,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Mặc định hệ thống",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Ứng dụng",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "Chọn ứng dụng…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2298,9 +2302,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "Cmdr liệt kê các ứng dụng terminal mà nó tìm thấy trên máy Mac này. Để dùng một ứng dụng nó chưa biết, hãy chọn “Chọn ứng dụng…”.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {Cmdr liệt kê các ứng dụng terminal mà nó tìm thấy trên máy Mac này. Để dùng một ứng dụng nó chưa biết, hãy chọn “Chọn ứng dụng…”.} windows {Cmdr liệt kê các ứng dụng terminal mà nó tìm thấy trên PC này. Để dùng một ứng dụng nó chưa biết, hãy chọn “Chọn ứng dụng…”.} other {Cmdr liệt kê các ứng dụng terminal mà nó tìm thấy trên máy tính này. Để dùng một ứng dụng nó chưa biết, hãy chọn “Chọn ứng dụng…”.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "Chọn ứng dụng…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

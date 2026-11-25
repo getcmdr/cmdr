@@ -2252,9 +2252,9 @@
   "@settings.behavior.textEditorApp.label": {
     "sourceHash": "807338f"
   },
-  "settings.behavior.textEditorApp.description": "A Cmdr felsorolja a szövegszerkesztőket, amelyeket a macOS ismer ezen a Macen. Ha másik appot használnál, válaszd az „App kiválasztása…” lehetőséget.",
+  "settings.behavior.textEditorApp.description": "{platform, select, macos {A Cmdr felsorolja a szövegszerkesztőket, amelyeket a macOS ismer ezen a Macen. Ha másik appot használnál, válaszd az „App kiválasztása…” lehetőséget.} windows {A Cmdr felsorolja azokat az appokat, amelyeket a Windows szövegfájlokhoz kínál ezen a gépen. Ha másik appot használnál, válaszd az „App kiválasztása…” lehetőséget.} other {A Cmdr felsorolja a szövegszerkesztőket, amelyeket a rendszered ismer. Ha másik appot használnál, válaszd az „App kiválasztása…” lehetőséget.}}",
   "@settings.behavior.textEditorApp.description": {
-    "sourceHash": "4641320"
+    "sourceHash": "e105305"
   },
   "settings.behavior.textEditorApp.systemDefault": "Rendszer szerinti ({app})",
   "@settings.behavior.textEditorApp.systemDefault": {
@@ -2263,6 +2263,10 @@
   "settings.behavior.textEditorApp.systemDefaultUnnamed": "Rendszer szerinti",
   "@settings.behavior.textEditorApp.systemDefaultUnnamed": {
     "sourceHash": "b045921"
+  },
+  "settings.appChoice.pickerFilterName": "Alkalmazások",
+  "@settings.appChoice.pickerFilterName": {
+    "sourceHash": "89dd748"
   },
   "settings.behavior.textEditorApp.chooseApp": "App kiválasztása…",
   "@settings.behavior.textEditorApp.chooseApp": {
@@ -2300,9 +2304,9 @@
   "@settings.behavior.openTerminalHereApp.label": {
     "sourceHash": "d665817"
   },
-  "settings.behavior.openTerminalHereApp.description": "A Cmdr felsorolja az ezen a Macen megtalált terminálappokat. Ha olyat használnál, amit nem ismer, válaszd az „App kiválasztása…” lehetőséget.",
+  "settings.behavior.openTerminalHereApp.description": "{platform, select, macos {A Cmdr felsorolja az ezen a Macen megtalált terminálappokat. Ha olyat használnál, amit nem ismer, válaszd az „App kiválasztása…” lehetőséget.} windows {A Cmdr felsorolja az ezen a gépen megtalált terminálappokat. Ha olyat használnál, amit nem ismer, válaszd az „App kiválasztása…” lehetőséget.} other {A Cmdr felsorolja az ezen a számítógépen megtalált terminálappokat. Ha olyat használnál, amit nem ismer, válaszd az „App kiválasztása…” lehetőséget.}}",
   "@settings.behavior.openTerminalHereApp.description": {
-    "sourceHash": "a921be1"
+    "sourceHash": "d35a321"
   },
   "settings.behavior.openTerminalHereApp.chooseApp": "App kiválasztása…",
   "@settings.behavior.openTerminalHereApp.chooseApp": {

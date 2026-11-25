@@ -1284,13 +1284,13 @@
   "@commands.handler.openTerminalHere.openSettings": {
     "sourceHash": "a28ffff"
   },
-  "commands.handler.openTerminalHere.appMissing": "{app} 已經解除安裝了，所以這次在「終端機」裡開啟。",
+  "commands.handler.openTerminalHere.appMissing": "{platform, select, windows {{app} 已經解除安裝了，所以 Cmdr 為這個資料夾換了一個終端機 App。} other {{app} 已經解除安裝了，所以這次在「終端機」裡開啟。}}",
   "@commands.handler.openTerminalHere.appMissing": {
-    "sourceHash": "770ded9"
+    "sourceHash": "d0acc66"
   },
-  "commands.handler.openTerminalHere.appMissingUnnamed": "你的終端機 App 已經解除安裝了，所以這次在「終端機」裡開啟。",
+  "commands.handler.openTerminalHere.appMissingUnnamed": "{platform, select, windows {你的終端機 App 已經解除安裝了，所以 Cmdr 為這個資料夾換了一個。} other {你的終端機 App 已經解除安裝了，所以這次在「終端機」裡開啟。}}",
   "@commands.handler.openTerminalHere.appMissingUnnamed": {
-    "sourceHash": "8e40ade"
+    "sourceHash": "e836a9d"
   },
   "commands.handler.openTerminalHere.noPath": "這個資料夾沒有終端機能開啟的路徑。",
   "@commands.handler.openTerminalHere.noPath": {
