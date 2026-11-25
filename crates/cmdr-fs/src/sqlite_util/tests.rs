@@ -626,3 +626,43 @@ fn cap_larger_than_freelist_drains_all_without_error() {
     run_incremental_vacuum(&conn, Some(before + 1_000)).expect("vacuum");
     assert_eq!(freelist(&conn), 0, "a cap above the freelist size drains all pages");
 }
+
+/// A bounded slice frees exactly the pages it reports, and keeps them: stopping
+/// the pragma early still commits what it moved, so a writer can come back for
+/// the rest later without redoing or losing anything.
+#[test]
+fn a_bounded_slice_keeps_what_it_freed_when_it_stops_early() {
+    let conn = db_with_freelist(50);
+    let before = freelist(&conn);
+    let freed = run_incremental_vacuum_slice(&conn, 10, std::time::Duration::from_secs(60)).expect("vacuum");
+    assert_eq!(freed, 10, "the page cap stops the slice");
+    assert_eq!(
+        before - freelist(&conn),
+        10,
+        "the freelist drops by what the slice reports"
+    );
+    assert!(conn.is_autocommit(), "a slice leaves no transaction open");
+}
+
+/// The time budget stops the slice too: a spent budget still frees one page (the
+/// first step runs before the clock is read), then stops.
+#[test]
+fn a_spent_time_budget_stops_the_slice_after_one_page() {
+    let conn = db_with_freelist(50);
+    let before = freelist(&conn);
+    let freed = run_incremental_vacuum_slice(&conn, 1_000, std::time::Duration::ZERO).expect("vacuum");
+    assert_eq!(freed, 1);
+    assert_eq!(before - freelist(&conn), 1);
+    assert!(conn.is_autocommit());
+}
+
+/// A slice larger than the freelist drains it and reports what it really freed.
+#[test]
+fn a_slice_reports_only_the_pages_that_were_there() {
+    let conn = db_with_freelist(50);
+    let before = freelist(&conn);
+    let freed =
+        run_incremental_vacuum_slice(&conn, before + 1_000, std::time::Duration::from_secs(60)).expect("vacuum");
+    assert_eq!(freed, before as u64);
+    assert_eq!(freelist(&conn), 0);
+}

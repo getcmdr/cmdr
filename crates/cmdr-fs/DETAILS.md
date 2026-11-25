@@ -66,9 +66,11 @@ the next section.
   bridge), `shape.rs` (root shapes and the compared components), `platform/` (the `OsStr` and `PathBuf` crossing per
   OS). § "App paths".
 - `entry.rs` + `icons/`: `FileEntry` and the classifiers behind `get_icon_id`.
-- `sqlite_util.rs`: the ONE process-wide page-cache slab, the connection factories every store opens through, and the
-  one way a database file is deleted. `src/sqlite_util/thread_conn_cache.rs` is the per-thread read-connection cache and
-  its retirement, re-exported from it.
+- `sqlite_util.rs`: the ONE process-wide page-cache slab, the connection factories every store opens through, the one
+  way a database file is deleted, and freelist reclamation (`run_incremental_vacuum` drains to a cap;
+  `run_incremental_vacuum_slice` also stops at a time budget, for a writer that must not hold its queue).
+  `src/sqlite_util/thread_conn_cache.rs` is the per-thread read-connection cache and its retirement, re-exported from
+  it.
 - `metadata/`: what a copy puts on the item it wrote beyond the bytes, and clearing what makes Cmdr's own items refuse a
   rename or an unlink. § "`metadata`: what a copy keeps, and when it goes on".
 - `private_file/`: files only the current user can open, private from the call that creates them (`create_new`,

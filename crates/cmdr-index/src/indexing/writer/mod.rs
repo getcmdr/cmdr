@@ -43,6 +43,7 @@ mod probe_stats;
 mod repair;
 mod space_guard;
 mod transaction;
+mod vacuum;
 use transaction::LongTransactionWatch;
 pub(crate) use transaction::{TransactionToken, WriterTransaction};
 pub(crate) mod wait_probe;
@@ -65,9 +66,10 @@ use entries::{
 };
 use flush_wait::BusyOn;
 pub use flush_wait::FlushReply;
-use maintenance::{handle_incremental_vacuum, request_wal_checkpoint, run_deferred_wal_checkpoint};
+use maintenance::{request_wal_checkpoint, run_deferred_wal_checkpoint};
 use pending_rollups::{PendingRollups, RollupGauges, emit_full_refresh, settle_the_ledger};
 use repair::DeferredRepairs;
+use vacuum::VacuumWork;
 
 // ── Writer generation (for search index staleness detection) ─────────
 
@@ -1257,6 +1259,9 @@ fn writer_loop(
     // A maintenance tick that landed inside an open batch transaction, waiting for
     // the commit to run its checkpoint. See `maintenance::request_wal_checkpoint`.
     let mut deferred_checkpoint = false;
+    // What the 30 s vacuum tick still owes, paid in bounded slices at the idle
+    // point below. See `vacuum::VacuumWork`.
+    let mut vacuum = VacuumWork::new();
     // Chains a failed `dir_stats` read/write left drifted, drained below once the
     // writer is idle again. See `repair/deferred.rs`.
     let repairs = DeferredRepairs::new();
@@ -1303,6 +1308,18 @@ fn writer_loop(
             }
             Err(mpsc::TryRecvError::Empty) => {
                 batch.close(&conn, &mut probe, &failure_signal, &mut deferred_checkpoint);
+                // Nothing queued: pay one bounded slice of the vacuum debt, then look
+                // at the channel again, so housekeeping yields to real work and a
+                // message that arrives meanwhile waits one slice at most. Outside an
+                // explicit transaction only: inside one, `incremental_vacuum` frees nothing.
+                if vacuum.owes_more() && conn.is_autocommit() {
+                    busy_on.start(WriteMessage::IncrementalVacuum.kind());
+                    let slice_start = Instant::now();
+                    vacuum.run_slice(&conn, &failure_signal);
+                    probe.time_in_processing += slice_start.elapsed();
+                    busy_on.end();
+                    continue;
+                }
                 let recv_start = Instant::now();
                 // Use recv_timeout so we can emit heartbeats even when the channel
                 // is idle (the 163s smoking gun should make this visible).
@@ -1374,6 +1391,7 @@ fn writer_loop(
                 &mut propagate_deltas,
                 &mut heal_latch,
                 &mut deferred_checkpoint,
+                &mut vacuum,
                 &repairs,
                 &rollups,
                 &failure_signal,
@@ -1394,6 +1412,7 @@ fn writer_loop(
             &mut propagate_deltas,
             &mut heal_latch,
             &mut deferred_checkpoint,
+            &mut vacuum,
             &repairs,
             &rollups,
             &failure_signal,
@@ -1590,6 +1609,7 @@ fn process_message(
     propagate_deltas: &mut bool,
     heal_latch: &mut bool,
     deferred_checkpoint: &mut bool,
+    vacuum: &mut VacuumWork,
     repairs: &DeferredRepairs,
     rollups: &PendingRollups,
     signal: &IndexFailureSignal,
@@ -1685,6 +1705,7 @@ fn process_message(
                     propagate_deltas,
                     heal_latch,
                     deferred_checkpoint,
+                    vacuum,
                     repairs,
                     rollups,
                     signal,
@@ -1741,8 +1762,10 @@ fn process_message(
             // drain afterwards is worse than a no-op: `pending_rollups.rs`.
             repairs.clear();
             rollups.clear();
+            vacuum.pause_for_rebuild();
         }
         WriteMessage::ComputeAllAggregates { source } => {
+            vacuum.rebuild_settled();
             handle_compute_all_aggregates(
                 conn,
                 accumulator,
@@ -1902,6 +1925,9 @@ fn process_message(
             *heal_latch = true;
         }
         WriteMessage::PayLedgerIfUnpaid => {
+            // The bulk walk ended, finished or not; its own aggregate (or this one)
+            // closes any rebuild the vacuum was waiting on.
+            vacuum.rebuild_settled();
             if *heal_latch {
                 log::debug!("Writer: bulk window closed unpaid, rebuilding aggregates");
                 handle_compute_all_aggregates(
@@ -1918,7 +1944,7 @@ fn process_message(
             }
         }
         WriteMessage::IncrementalVacuum => {
-            handle_incremental_vacuum(conn, signal);
+            vacuum.on_tick(conn, signal);
         }
         WriteMessage::WalCheckpoint => {
             request_wal_checkpoint(conn, signal, deferred_checkpoint);
