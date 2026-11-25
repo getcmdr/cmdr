@@ -1,7 +1,8 @@
 /**
- * A copy installed from the Microsoft Store. The Store updates it and its files are read-only, so the backend answers
- * `updatedByStore` without a request, and the app says the Store keeps it up to date: no failure, no download, no
- * "up to date" claim of its own, and no more background checks.
+ * A copy installed as an MSIX package. Its files are read-only, so the backend answers without a request: from the
+ * Microsoft Store, `updatedByStore`, and the app says the Store keeps it up to date; from anywhere else,
+ * `sideloadedPackage`, and the app says this copy doesn't update itself, never naming the Store. Either way: no
+ * failure, no download, no "up to date" claim of its own, and no more background checks.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,7 +56,7 @@ describe('a copy the Microsoft Store updates', () => {
 
     expect(updateState.status).toBe('idle')
     expect(updateState.failure).toBeNull()
-    expect(updateState.updatedByStore).toBe(true)
+    expect(updateState.updatesElsewhere).toBe('store')
     expect(formatUpdateStatus(updateState)).toBe('The Microsoft Store keeps this copy of Cmdr up to date.')
   })
 
@@ -76,7 +77,41 @@ describe('a copy the Microsoft Store updates', () => {
     await checkForUpdates('command')
 
     expect(checkForUpdateMock).toHaveBeenCalledTimes(2)
-    expect(updateState.updatedByStore).toBe(true)
+    expect(updateState.updatesElsewhere).toBe('store')
     expect(formatUpdateStatus(updateState)).toBe('The Microsoft Store keeps this copy of Cmdr up to date.')
+  })
+})
+
+describe('a package from outside the Microsoft Store', () => {
+  beforeEach(() => {
+    _resetUpdaterStateForTest()
+    vi.clearAllMocks()
+    checkForUpdateMock.mockResolvedValue({ kind: 'sideloadedPackage' })
+  })
+
+  afterEach(() => {
+    _resetUpdaterStateForTest()
+  })
+
+  it('says this copy doesn’t update itself, never that the Store does', async () => {
+    await checkForUpdates('settings')
+
+    expect(updateState.status).toBe('idle')
+    expect(updateState.failure).toBeNull()
+    expect(updateState.updatesElsewhere).toBe('package')
+    const text = formatUpdateStatus(updateState)
+    expect(text).toBe('This copy of Cmdr doesn’t update itself. Install a newer package to update it.')
+    expect(text).not.toContain('Store')
+  })
+
+  it('downloads nothing and reports its own outcome', async () => {
+    await checkForUpdates('startup')
+
+    expect(downloadUpdateMock).not.toHaveBeenCalled()
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(trackEventMock).toHaveBeenCalledWith(
+      'update_check',
+      expect.objectContaining({ outcome: 'sideloaded_package', failure: 'none' }),
+    )
   })
 })

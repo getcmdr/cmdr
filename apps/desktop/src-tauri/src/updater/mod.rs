@@ -166,6 +166,10 @@ pub enum UpdateCheckOutcome {
     /// so no request was made and nothing will be. Its own state, ❌ never `UpToDate`: the frontend
     /// says where updates come from, and stops its background checks.
     UpdatedByStore,
+    /// An MSIX installed outside the Store (`NotUpdatable::SideloadedPackage`): a package can't
+    /// replace its own files and nothing else updates it, so no request was made. The frontend says
+    /// this copy doesn't update itself, ❌ never that the Store does.
+    SideloadedPackage,
 }
 
 /// Why this process must not run an update check. Carried (rather than collapsed to a bool) so
@@ -273,12 +277,20 @@ where
     // offered under the newest policy.
     state.slots().offered = None;
 
-    // Ahead of the policy: the organization's update keys can't hold a Store install back (the
-    // Store and Windows' own Store policies do), so answering "turned off by your organization"
-    // there would be false. Nothing is ever staged in a package, so there's nothing to withdraw.
-    if skip == Some(SkipReason::NotUpdatable(NotUpdatable::StorePackage)) {
-        log::info!("Not checking for updates: the Microsoft Store updates this install");
-        return Ok(UpdateCheckOutcome::UpdatedByStore);
+    // Ahead of the policy: the organization's update keys can't hold a package back (the Store
+    // and Windows' own Store policies, or whoever deploys the package, do), so answering "turned
+    // off by your organization" there would be false. Nothing is ever staged in a package, so
+    // there's nothing to withdraw.
+    match skip {
+        Some(SkipReason::NotUpdatable(NotUpdatable::StorePackage)) => {
+            log::info!("Not checking for updates: the Microsoft Store updates this install");
+            return Ok(UpdateCheckOutcome::UpdatedByStore);
+        }
+        Some(SkipReason::NotUpdatable(NotUpdatable::SideloadedPackage)) => {
+            log::info!("Not checking for updates: this install is a package from outside the Store");
+            return Ok(UpdateCheckOutcome::SideloadedPackage);
+        }
+        _ => {}
     }
 
     let policy = crate::managed_policy::for_egress().await;

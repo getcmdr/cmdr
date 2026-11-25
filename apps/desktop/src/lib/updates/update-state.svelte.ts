@@ -53,6 +53,9 @@ export type UpdateFailure =
    */
   | { phase: 'notGenuine' }
 
+/** Who updates a copy Cmdr can't update itself: the Microsoft Store, or a newer package. */
+export type UpdatesElsewhere = 'store' | 'package'
+
 export interface UpdateState {
   status: 'idle' | 'checking' | 'downloading' | 'installing' | 'ready'
   update: UpdateInfo | null
@@ -73,11 +76,13 @@ export interface UpdateState {
    */
   noBuild: boolean
   /**
-   * This copy is the Microsoft Store's package, so the Store updates it and Cmdr's own updater never checks. A terminal
-   * phase like `managed`, ❌ not a failure and ❌ never "up to date": Settings and the check toast say where updates come
-   * from. Cleared when a check starts; the backend answers the same every time.
+   * This copy is an MSIX package, which never updates itself, so Cmdr's own updater never checks: `'store'` when the
+   * Microsoft Store signed it (the Store updates it), `'package'` for any other package (a newer package updates it).
+   * A terminal phase like `managed`, ❌ not a failure and ❌ never "up to date": Settings and the check toast say where
+   * updates come from, and only `'store'` names the Store. Cleared when a check starts; the backend answers the same
+   * every time.
    */
-  updatedByStore: boolean
+  updatesElsewhere: UpdatesElsewhere | null
   /** Version the user is currently running. Set when `checking` starts. */
   previousVersion: string | null
   /** Version we're moving to. Set when an update is found. Cleared on `idle`. */
@@ -97,7 +102,7 @@ export const updateState = $state<UpdateState>({
   managed: null,
   unwritable: null,
   noBuild: false,
-  updatedByStore: false,
+  updatesElsewhere: null,
   previousVersion: null,
   nextVersion: null,
   securityNotice: null,

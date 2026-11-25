@@ -24337,6 +24337,12 @@ export type UpdateCheckOutcome =
    *  says where updates come from, and stops its background checks.
    */
   | { kind: 'updatedByStore' }
+  /**
+   *  An MSIX installed outside the Store (`NotUpdatable::SideloadedPackage`): a package can't
+   *  replace its own files and nothing else updates it, so no request was made. The frontend says
+   *  this copy doesn't update itself, ❌ never that the Store does.
+   */
+  | { kind: 'sideloadedPackage' }
 
 /**
  *  What set an update check going. The frontend's `update_check` analytics event carries the same

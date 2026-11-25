@@ -6061,6 +6061,7 @@ export type MessageKey =
   | 'updates.status.noBuildForThisPlatform'
   | 'updates.status.noUpdates'
   | 'updates.status.ready'
+  | 'updates.status.sideloadedPackage'
   | 'updates.status.unwritableAdmin'
   | 'updates.status.unwritableStandard'
   | 'updates.status.updatedByStore'

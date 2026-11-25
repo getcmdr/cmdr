@@ -38,6 +38,7 @@ import {
   type UpdateFailure,
   type UpdateInfo,
   type UpdateState,
+  type UpdatesElsewhere,
 } from './update-state.svelte'
 export { dismissMoveToApplicationsNudge, updateBlockerNotice, updateState }
 export type { UpdateState }
@@ -222,7 +223,7 @@ export async function checkForUpdates(trigger: UpdateCheckTrigger): Promise<void
     updateState.managed = null
     updateState.unwritable = null
     updateState.noBuild = false
-    updateState.updatedByStore = false
+    updateState.updatesElsewhere = null
   }
 
   log.debug('Checking for updates (current: v{version})...', { version: currentVersion })
@@ -270,7 +271,10 @@ async function runUpdateFlow(
       finishCheckWithNoBuild(trigger, staged)
       return
     case 'updatedByStore':
-      finishCheckUpdatedByStore(trigger)
+      finishCheckUpdatedElsewhere(trigger, 'store')
+      return
+    case 'sideloadedPackage':
+      finishCheckUpdatedElsewhere(trigger, 'package')
       return
     case 'available':
       break
@@ -491,17 +495,18 @@ function finishCheckWithNoBuild(trigger: UpdateCheckTrigger, staged: string | nu
 }
 
 /**
- * This copy is the Microsoft Store's package: the Store updates it, and the backend made no request. Terminal and
- * calm, like a managed answer, and the background loop stops, since every later check would answer the same. Nothing
- * is ever staged inside a package, so there's no staged build to keep.
+ * This copy is an MSIX package, which never updates itself, and the backend made no request: the Microsoft Store
+ * updates a Store-signed one, a newer package any other. Terminal and calm, like a managed answer, and the background
+ * loop stops, since every later check would answer the same. Nothing is ever staged inside a package, so there's no
+ * staged build to keep.
  */
-function finishCheckUpdatedByStore(trigger: UpdateCheckTrigger): void {
-  log.info('The Microsoft Store updates this copy; stopping the background update checks')
-  reportUpdateCheck({ trigger, outcome: 'updated_by_store' })
+function finishCheckUpdatedElsewhere(trigger: UpdateCheckTrigger, by: UpdatesElsewhere): void {
+  log.info('This copy is a package ({by}) and never updates itself; stopping the background update checks', { by })
+  reportUpdateCheck({ trigger, outcome: by === 'store' ? 'updated_by_store' : 'sideloaded_package' })
   stopPollLoop()
   updateState.status = 'idle'
   updateState.nextVersion = null
-  updateState.updatedByStore = true
+  updateState.updatesElsewhere = by
 }
 
 /**
@@ -747,7 +752,7 @@ export function _resetUpdaterStateForTest(): void {
   updateState.managed = null
   updateState.unwritable = null
   updateState.noBuild = false
-  updateState.updatedByStore = false
+  updateState.updatesElsewhere = null
   updateState.previousVersion = null
   updateState.nextVersion = null
   updateState.securityNotice = null

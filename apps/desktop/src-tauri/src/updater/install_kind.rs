@@ -9,9 +9,9 @@
 //!   verified and handed to the Tauri updater plugin when Cmdr quits to restart (`handoff.rs`).
 //!   The signature's trusted comment binds the version (`--app-version`).
 //!
-//! Anything else (a dev binary, a `.deb` or `.rpm`, an MSI, the Microsoft Store's package) never
-//! checks: [`NotUpdatable`]. The Store's package is the one the UI names, since its updates still
-//! come, just from the Store.
+//! Anything else (a dev binary, a `.deb` or `.rpm`, an MSI, an MSIX package) never checks:
+//! [`NotUpdatable`]. The two package kinds are the ones the UI names: the Store's updates still
+//! come, from the Store, and a sideloaded package's come only from a newer package.
 
 /// An install the updater can update. Pure data, so every OS's arm is testable on any host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +48,10 @@ pub enum NotUpdatable {
     /// The Microsoft Store's MSIX (Windows): the Store updates it, and its files are read-only, so
     /// Cmdr's own updater stands down and the check answers `UpdatedByStore` without a request.
     StorePackage,
+    /// An MSIX from anywhere but the Store (Windows): a dev package in Developer Mode, or one
+    /// sideloaded or deployed by an organization. Its files are read-only too, and nothing updates
+    /// it but a newer package, so the check answers `SideloadedPackage`, ❌ never the Store wording.
+    SideloadedPackage,
 }
 
 impl std::fmt::Display for NotUpdatable {
@@ -58,6 +62,9 @@ impl std::fmt::Display for NotUpdatable {
             Self::PackageManagerInstall => f.write_str("installed by a package manager, which updates it"),
             Self::UnsupportedBundle => f.write_str("installed in a form Cmdr ships no update for"),
             Self::StorePackage => f.write_str("installed from the Microsoft Store, which updates it"),
+            Self::SideloadedPackage => {
+                f.write_str("installed as a package outside the Microsoft Store, which can't update itself")
+            }
         }
     }
 }

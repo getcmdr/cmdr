@@ -45,6 +45,8 @@ export type UpdateCheckOutcome =
   | 'no_build_for_platform'
   /** This copy is the Microsoft Store's package, which the Store updates: the backend made no request. */
   | 'updated_by_store'
+  /** This copy is an MSIX from outside the Store, which never updates itself: the backend made no request. */
+  | 'sideloaded_package'
   | 'blocked_by_policy'
 
 /** The typed reason behind a non-happy outcome, or `none`. ❌ Never a message. */

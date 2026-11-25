@@ -7,7 +7,7 @@
  */
 import { tString } from '#lib/intl/messages.svelte.js'
 import { describeServerRequestFailure, serverRequestLogLevel } from '#lib/error-messages/server-request.js'
-import type { ManagedUpdateOutcome, UnwritableUpdate, UpdateFailure } from './update-state.svelte'
+import type { ManagedUpdateOutcome, UnwritableUpdate, UpdateFailure, UpdatesElsewhere } from './update-state.svelte'
 
 export interface UpdateStatusReadable {
   status: 'idle' | 'checking' | 'downloading' | 'installing' | 'ready'
@@ -15,7 +15,7 @@ export interface UpdateStatusReadable {
   managed: ManagedUpdateOutcome | null
   unwritable: UnwritableUpdate | null
   noBuild: boolean
-  updatedByStore: boolean
+  updatesElsewhere: UpdatesElsewhere | null
   previousVersion: string | null
   nextVersion: string | null
 }
@@ -48,7 +48,8 @@ export function formatUpdateStatus(state: UpdateStatusReadable): string | null {
       if (state.managed !== null) return describeManagedOutcome(state.managed)
       if (state.unwritable !== null) return describeUnwritableUpdate(state.unwritable)
       if (state.noBuild) return tString('updates.status.noBuildForThisPlatform')
-      if (state.updatedByStore) return tString('updates.status.updatedByStore')
+      if (state.updatesElsewhere === 'store') return tString('updates.status.updatedByStore')
+      if (state.updatesElsewhere === 'package') return tString('updates.status.sideloadedPackage')
       // Two sub-cases share idle. If we just finished a successful check (we have a previousVersion
       // and no nextVersion), say "no updates found". Before any check has run, say nothing.
       if (state.previousVersion !== null && state.nextVersion === null) {

@@ -202,6 +202,12 @@
     "screenshot": "settings-updates.png",
     "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
   },
+  "updates.status.sideloadedPackage": "This copy of Cmdr doesn’t update itself. Install a newer package to update it.",
+  "@updates.status.sideloadedPackage": {
+    "description": "Status line in Settings > Updates, and in the toast after the person picks \"Check for updates\" from the menu, on a copy of Cmdr installed as a Windows app package (MSIX) from somewhere other than the Microsoft Store: a test build, or one their organization deployed. Such a copy can't replace its own files, so Cmdr doesn't check for updates there, and only installing a newer package updates it. Not an error: a calm, honest note. \"Package\" is the Windows app package file the copy was installed from; use your language's usual word for an app installation package. Don't mention the Microsoft Store. \"Cmdr\" is the product name; do not translate it.",
+    "screenshot": "settings-updates.png",
+    "screenshotNote": "App-update messaging. The status line renders in the Settings > Updates & privacy panel pictured here, and the update toasts appear while that check runs. Version numbers are substituted, not translated."
+  },
   "updates.status.managedOff": "Your organization manages updates for Cmdr.",
   "@updates.status.managedOff": {
     "description": "Status line after an update check, when the person's organization (their employer's IT team, through a device-management profile) has turned off updates for Cmdr, so no check ran. Shown in Settings and in the toast after the person picks \"Check for updates\" from the menu. Not an error: a calm statement of who decides.",

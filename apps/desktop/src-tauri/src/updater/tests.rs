@@ -404,6 +404,29 @@ async fn a_store_package_is_updated_by_the_store_and_never_fetches() {
     );
 }
 
+/// A package from outside the Store says it doesn't update itself, never the Store wording, and
+/// never reaches the network either.
+#[tokio::test]
+async fn a_sideloaded_package_never_fetches_and_never_claims_the_store() {
+    const SIDELOADED: SkipReason = SkipReason::NotUpdatable(NotUpdatable::SideloadedPackage);
+    assert_eq!(skip_with(Err(NotUpdatable::SideloadedPackage), &[]), Some(SIDELOADED));
+    let state = UpdateState::new();
+    let fetched = Cell::new(false);
+    for policy in [None, Some(forcing(&[DISABLE_UPDATES]))] {
+        let _policy = policy.map(override_for_test);
+        for trigger in EVERY_TRIGGER {
+            let outcome = run_check(trigger, &state, Some(SIDELOADED), RUNNING, &[], || async {
+                fetched.set(true);
+                Ok(manifest_offering("0.53.0"))
+            })
+            .await
+            .expect("no fetch, no failure");
+            assert_eq!(outcome, UpdateCheckOutcome::SideloadedPackage, "{trigger:?}");
+        }
+    }
+    assert!(!fetched.get());
+}
+
 /// A profile that arrives between the check and the download stops the download before a byte.
 #[tokio::test]
 async fn a_policy_that_arrives_after_the_check_blocks_the_download() {

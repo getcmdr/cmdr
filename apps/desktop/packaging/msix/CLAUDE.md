@@ -10,9 +10,9 @@ it, and `.github/workflows/windows-store-package.yml` builds it as a CI artifact
 - **The release identity is a placeholder until David copies it from Partner Center** (`docs/guides/releasing.md` §
   Windows releases). `windows-package msix` fails on any `PLACEHOLDER_` value, so a Windows release can't ship an MSIX
   under a made-up identity. ❌ Never invent one.
-- **The Store updates the package; Cmdr's updater never runs in it.** The process's package identity reads as
-  `StorePackage` first (`src-tauri/src/updater/platform/windows.rs`). Second guard: the MSIX gets the exe from before
-  `tauri bundle` stamped it NSIS, and the tool refuses a stamped exe.
+- **Cmdr's updater never runs in a package.** The package's origin reads as `StorePackage` (Store-signed) or
+  `SideloadedPackage` (the dev identity, any sideload) first (`src-tauri/src/updater/platform/windows.rs`). Second
+  guard: the MSIX gets the exe from before `tauri bundle` stamped it NSIS, and the tool refuses a stamped exe.
 - **❌ No registry keys in the package**, `Policies` least of all: a packaged app's registry view merges the package's
   keys with the real hive, so a shipped key would mix into what admins set. The tool refuses any hive file.
 - **Unsigned on purpose**: the Store signs it, and no certificate is made anywhere. A `-identity dev` package runs
