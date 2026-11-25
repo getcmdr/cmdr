@@ -92,6 +92,10 @@ pub(crate) use imp::registry;
 #[cfg(target_os = "windows")]
 pub(crate) use imp::apartment;
 
+/// Where the system folder is, and whether a program path starts something (`windows/files.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::files;
+
 /// The apps Windows offers for a file type, and handing files to one (`windows/assoc.rs`).
 #[cfg(target_os = "windows")]
 pub(crate) use imp::assoc;

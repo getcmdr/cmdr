@@ -87,6 +87,9 @@ export async function openTerminalHereForFolder({ folder, volumeId }: OpenTermin
       // local, but the mount behind it is gone (a share that went away), or, on
       // Windows, the folder has no plain spelling a working directory takes.
       showMessage('commands.handler.openTerminalHere.noPath', 'info')
+    } else if (outcome === 'command_prompt_cant_open_network_folder') {
+      // Windows: cmd.exe refuses a UNC working folder and would start in C:\Windows instead.
+      showMessage('commands.handler.openTerminalHere.commandPromptNetworkFolder', 'info')
     }
   } catch (error) {
     const refusal = asOpenTerminalError(error)

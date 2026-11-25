@@ -43,18 +43,59 @@ fn named(choice: &str, listed: &[&str], program_exists: &impl Fn(&str) -> bool) 
 
 /// What F4 hands the file to for the stored `choice`, and the outcome to report: a choice that
 /// names nothing any more falls back to the system default and says so.
+///
+/// `listed` is `None` when the handler lookup broke: then nothing is known to be gone, so a
+/// choice that isn't the default or an existing program is tried as a handler as it stands
+/// (its launch says whether it's there), ❌ never reset to the default on a hiccup.
 pub(crate) fn resolve(
     choice: &str,
-    listed: &[&str],
+    listed: Option<&[&str]>,
     program_exists: impl Fn(&str) -> bool,
 ) -> (WindowsEditor, EditorOpenOutcome) {
-    match named(choice, listed, &program_exists) {
-        Some(editor) => (editor, EditorOpenOutcome::Opened),
-        None => (
+    match (named(choice, listed.unwrap_or(&[]), &program_exists), listed) {
+        (Some(editor), _) => (editor, EditorOpenOutcome::Opened),
+        (None, None) => (
+            WindowsEditor::Handler(choice.trim().to_string()),
+            EditorOpenOutcome::Opened,
+        ),
+        (None, Some(_)) => (
             WindowsEditor::SystemDefault,
             EditorOpenOutcome::ChosenAppMissingOpenedDefaultInstead,
         ),
     }
+}
+
+/// What "the system default" opens a file in.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DefaultEditor {
+    /// The plain-text handler with this id.
+    Handler(String),
+    /// Notepad, from the system folder, with the file as its one argument: what F4 falls back to
+    /// when no handler claims plain text or the lookup broke. ❌ Never the file's own default
+    /// verb: on a `setup.exe`, `x.bat`, or `x.ps1` that RUNS the file, and F4 must only open it.
+    Notepad,
+}
+
+/// The system default among the plain-text handlers, each `(id, is_default)` (`None`: the lookup
+/// broke): the marked default, else the Shell's first, else [`DefaultEditor::Notepad`].
+pub(crate) fn default_editor(listed: Option<&[(&str, bool)]>) -> DefaultEditor {
+    let listed = listed.unwrap_or(&[]);
+    listed
+        .iter()
+        .find(|(_, is_default)| *is_default)
+        .or_else(|| listed.first())
+        .map_or(DefaultEditor::Notepad, |(id, _)| {
+            DefaultEditor::Handler((*id).to_string())
+        })
+}
+
+/// Notepad's program in the system folder `system_dir`, and its arguments for `file`: the file
+/// alone, as one argument (`std::process::Command` quotes it), ❌ never a built command line.
+pub(crate) fn notepad_plan(
+    system_dir: &std::path::Path,
+    file: &std::path::Path,
+) -> (std::path::PathBuf, Vec<std::ffi::OsString>) {
+    (system_dir.join("notepad.exe"), vec![file.as_os_str().to_owned()])
 }
 
 /// The stored `choice` in canonical form, for the settings row: `system`, a listed handler's id
@@ -79,7 +120,7 @@ mod tests {
     fn the_sentinel_and_an_empty_setting_are_the_system_default() {
         for choice in ["system", "", "  "] {
             assert_eq!(
-                resolve(choice, LISTED, |_| false),
+                resolve(choice, Some(LISTED), |_| false),
                 (WindowsEditor::SystemDefault, EditorOpenOutcome::Opened)
             );
         }
@@ -88,7 +129,7 @@ mod tests {
     #[test]
     fn a_listed_handler_is_found_by_its_id_ignoring_case() {
         assert_eq!(
-            resolve(&NOTEPAD_PLUS.to_uppercase(), LISTED, |_| false),
+            resolve(&NOTEPAD_PLUS.to_uppercase(), Some(LISTED), |_| false),
             (
                 WindowsEditor::Handler(NOTEPAD_PLUS.to_string()),
                 EditorOpenOutcome::Opened
@@ -104,7 +145,7 @@ mod tests {
     fn a_picked_program_that_exists_is_started_by_its_path() {
         let picked = r"D:\Tools\micro\micro.exe";
         assert_eq!(
-            resolve(picked, LISTED, |path| path == picked),
+            resolve(picked, Some(LISTED), |path| path == picked),
             (WindowsEditor::Program(picked.to_string()), EditorOpenOutcome::Opened)
         );
         assert_eq!(chosen_id(picked, LISTED, |_| true).as_deref(), Some(picked));
@@ -123,7 +164,7 @@ mod tests {
             "relative\\x.exe",
         ] {
             assert_eq!(
-                resolve(gone, LISTED, |_| false),
+                resolve(gone, Some(LISTED), |_| false),
                 (
                     WindowsEditor::SystemDefault,
                     EditorOpenOutcome::ChosenAppMissingOpenedDefaultInstead
@@ -134,5 +175,44 @@ mod tests {
         }
         // A relative path is never a program, even when something answers for it.
         assert_eq!(chosen_id("relative\\x.exe", LISTED, |_| true), None);
+    }
+
+    /// F4's default with nothing claiming plain text, or with the lookup broken, is Notepad from
+    /// the system folder with the file as its argument: on a program or a script it opens the
+    /// file's text and never runs it.
+    #[test]
+    fn with_no_plain_text_handler_the_default_is_notepad_never_the_files_own_verb() {
+        for listed in [Some(&[][..]), None] {
+            assert_eq!(default_editor(listed), DefaultEditor::Notepad);
+        }
+        let system = std::path::Path::new(r"C:\Windows\System32");
+        for file in [r"D:\Downloads\setup.exe", r"D:\Scripts\x.bat"] {
+            let file = std::path::Path::new(file);
+            let (program, args) = notepad_plan(system, file);
+            assert_eq!(program, system.join("notepad.exe"));
+            assert_eq!(args, vec![file.as_os_str().to_owned()]);
+        }
+    }
+
+    #[test]
+    fn the_default_is_the_marked_handler_else_the_first() {
+        assert_eq!(
+            default_editor(Some(&[(NOTEPAD_PLUS, false), (NOTEPAD, true)])),
+            DefaultEditor::Handler(NOTEPAD.to_string())
+        );
+        assert_eq!(
+            default_editor(Some(&[(NOTEPAD_PLUS, false)])),
+            DefaultEditor::Handler(NOTEPAD_PLUS.to_string())
+        );
+    }
+
+    /// A broken lookup proves nothing gone: the stored handler is tried as it is, not reset.
+    #[test]
+    fn a_broken_lookup_keeps_the_stored_choice() {
+        assert_eq!(
+            resolve(NOTEPAD, None, |_| false),
+            (WindowsEditor::Handler(NOTEPAD.to_string()), EditorOpenOutcome::Opened)
+        );
+        assert_eq!(resolve("system", None, |_| false).0, WindowsEditor::SystemDefault);
     }
 }

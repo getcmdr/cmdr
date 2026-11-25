@@ -29,9 +29,60 @@ pub(crate) fn default_index(
     })
 }
 
+/// The types Windows runs, rather than opens, when one is opened: the default `PATHEXT` (`.com`,
+/// `.exe`, `.bat`, `.cmd`, `.vbs`, `.vbe`, `.js`, `.jse`, `.wsf`, `.wsh`, `.msc`), plus PowerShell
+/// scripts, installers and patches, shortcuts and their kin, screen savers, Control Panel items,
+/// registry files, HTML applications, and ClickOnce apps. Lowercase, without the dot.
+const RUNS_WHEN_OPENED: &[&str] = &[
+    "appref-ms",
+    "application",
+    "bat",
+    "cmd",
+    "com",
+    "cpl",
+    "exe",
+    "hta",
+    "js",
+    "jse",
+    "lnk",
+    "msc",
+    "msi",
+    "msp",
+    "pif",
+    "ps1",
+    "reg",
+    "scr",
+    "url",
+    "vbe",
+    "vbs",
+    "ws",
+    "wsf",
+    "wsh",
+];
+
+/// Whether a file with this extension (no dot, any case) runs when opened. "Choose another app"
+/// isn't offered for one: its "Always use this app" would re-associate a program type.
+pub(crate) fn runs_when_opened(extension: &str) -> bool {
+    RUNS_WHEN_OPENED
+        .iter()
+        .any(|known| known.eq_ignore_ascii_case(extension))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn programs_scripts_and_shortcuts_run_when_opened() {
+        for extension in [
+            "exe", "EXE", "bat", "cmd", "com", "msi", "lnk", "scr", "ps1", "vbs", "reg",
+        ] {
+            assert!(runs_when_opened(extension), "{extension}");
+        }
+        for extension in ["txt", "jpg", "json", "pdf", ""] {
+            assert!(!runs_when_opened(extension), "{extension}");
+        }
+    }
 
     #[test]
     fn an_extension_asks_by_its_dotted_key() {

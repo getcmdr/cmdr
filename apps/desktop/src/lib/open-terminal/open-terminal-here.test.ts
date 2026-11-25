@@ -175,6 +175,18 @@ describe('openTerminalHereForFolder: the outcomes it reports', () => {
     expect(addToast).toHaveBeenCalledWith('commands.handler.openTerminalHere.noPath', expect.anything())
   })
 
+  it('says Command Prompt can’t start in a network folder, and points at the alternatives', async () => {
+    settings.set(SEEN_KEY, true)
+    openTerminalHere.mockResolvedValue('command_prompt_cant_open_network_folder')
+
+    await openTerminalHereForFolder({ folder: '//testnas.local/share/code', volumeId: 'root' })
+
+    expect(addToast).toHaveBeenCalledWith(
+      'commands.handler.openTerminalHere.commandPromptNetworkFolder',
+      expect.anything(),
+    )
+  })
+
   it('words a refused launch without saying anything went wrong twice', async () => {
     settings.set(SEEN_KEY, true)
     openTerminalHere.mockRejectedValue(new FakeOpenTerminalFailure({ type: 'launchRefused', errno: 2 }))

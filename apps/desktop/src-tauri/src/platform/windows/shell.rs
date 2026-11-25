@@ -73,6 +73,12 @@ pub(crate) enum ShellWait<T> {
     NoThread,
 }
 
+/// How long a thread that handed files over through `IAssocHandler::Invoke` or the "open with"
+/// dialog keeps its apartment serving messages before it leaves (`apartment::pump_messages_for`):
+/// long enough for a DDE or asynchronous handler to take the files, short enough that a thread
+/// never lingers.
+pub(crate) const HANDOFF_LINGER: Duration = Duration::from_secs(3);
+
 /// Runs `call` in an apartment on a thread of its own, named `name`, and waits at most `deadline`
 /// for its answer. A Shell call can't be cut, so a thread past the deadline is left to finish,
 /// and what it answers then is logged rather than lost.
@@ -81,14 +87,39 @@ pub(crate) async fn on_shell_thread<T: Debug + Send + 'static>(
     deadline: Duration,
     call: impl FnOnce() -> T + Send + 'static,
 ) -> ShellWait<T> {
+    on_shell_thread_lingering(name, deadline, Duration::ZERO, call).await
+}
+
+/// [`on_shell_thread`], with the thread staying in its apartment, serving messages, for `linger`
+/// after it answers ([`HANDOFF_LINGER`] after an `Invoke`). The answer goes out first, so the
+/// caller doesn't wait out the linger.
+pub(crate) async fn on_shell_thread_lingering<T: Debug + Send + 'static>(
+    name: &'static str,
+    deadline: Duration,
+    linger: Duration,
+    call: impl FnOnce() -> T + Send + 'static,
+) -> ShellWait<T> {
     let (answer_tx, answer_rx) = tokio::sync::oneshot::channel();
     let spawned = std::thread::Builder::new()
         .name(name.to_string())
         .stack_size(SHELL_THREAD_STACK)
         .spawn(move || {
-            if let Err(late) = answer_tx.send(in_apartment(call)) {
-                // allowed-log-private: `name` is our own fixed thread name, and `late` a typed code
-                log::info!(target: "file_actions", "{name} answered after its deadline: {late:?}");
+            // Held outside the apartment call, so a refused apartment still answers with its code.
+            let sender = std::cell::Cell::new(Some(answer_tx));
+            let entered = in_apartment(|| {
+                let answer = call();
+                if let Some(tx) = sender.take()
+                    && let Err(late) = tx.send(Ok(answer))
+                {
+                    // allowed-log-private: `name` is our own fixed thread name, and `late` a typed code
+                    log::info!(target: "file_actions", "{name} answered after its deadline: {late:?}");
+                }
+                if !linger.is_zero() {
+                    super::apartment::pump_messages_for(linger);
+                }
+            });
+            if let (Err(hresult), Some(tx)) = (entered, sender.take()) {
+                let _ = tx.send(Err(hresult));
             }
         });
     if let Err(e) = spawned {

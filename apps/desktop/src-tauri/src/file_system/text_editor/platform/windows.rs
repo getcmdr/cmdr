@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use super::super::{
     EditorOpenOutcome, EditorOpenReport, OpenInEditorError, SYSTEM_DEFAULT_CHOICE, TextEditorApp, TextEditorList,
 };
-use super::windows_rules::{WindowsEditor, chosen_id, resolve};
+use super::windows_rules::{DefaultEditor, WindowsEditor, chosen_id, default_editor, notepad_plan, resolve};
 use crate::platform::assoc::{self, AssocApp};
 
 /// The type whose handlers F4 offers.
@@ -34,14 +34,40 @@ fn ids(apps: &[AssocApp]) -> Vec<&str> {
     apps.iter().map(|app| app.id.as_str()).collect()
 }
 
+/// Opens `file` in Notepad from the system folder, the file its one argument, in its own folder.
+///
+/// # Errors
+///
+/// `LaunchRefused` when the system folder has no Notepad or it won't start.
+fn open_in_notepad(file: &Path) -> Result<(), OpenInEditorError> {
+    let system = crate::platform::files::system_dir().ok_or(OpenInEditorError::LaunchRefused { errno: None })?;
+    let (program, args) = notepad_plan(&system, file);
+    if !crate::platform::files::is_file_or_alias(&program) {
+        return Err(OpenInEditorError::LaunchRefused { errno: None });
+    }
+    let mut command = std::process::Command::new(program);
+    command.args(args);
+    if let Some(folder) = file.parent() {
+        command.current_dir(folder);
+    }
+    command
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| OpenInEditorError::LaunchRefused {
+            errno: e.raw_os_error(),
+        })
+}
+
 /// The stored choice is the native path the OS's file picker handed over ("Choose an app…"),
 /// never app text, so it becomes a `PathBuf` as it is.
 fn program_path(stored: &str) -> PathBuf {
     PathBuf::from(stored)
 }
 
+/// A picked editor that starts: a file, or an app execution alias (a packaged editor picked from
+/// `%LOCALAPPDATA%\Microsoft\WindowsApps`), which `is_file` reads as gone.
 fn is_program(stored: &str) -> bool {
-    program_path(stored).is_file()
+    crate::platform::files::is_file_or_alias(&program_path(stored))
 }
 
 /// A program's name for a row: its file name without `.exe`.
@@ -68,9 +94,13 @@ fn row(app: &AssocApp) -> TextEditorApp {
 /// The plain-text editors Windows offers, the system default, and which one `setting` names.
 /// Blocks on a Shell thread; the command bounds it.
 pub fn list_text_editors(setting: &str) -> TextEditorList {
-    let Some(apps) = crate::platform::shell::blocking_on_shell_thread("text-editors", || {
+    let asked = crate::platform::shell::blocking_on_shell_thread("text-editors", || {
         assoc::apps_for(PLAIN_TEXT, Some(ICON_SIZE))
-    }) else {
+    });
+    // No answer is no claim about which editors exist: an empty list with nothing chosen, which
+    // the row shows as the default without writing anything.
+    let Some(Ok(apps)) = asked else {
+        log::warn!(target: "text_editor", "The plain-text handler lookup didn't answer: {asked:?}");
         return TextEditorList::default();
     };
     let default = apps.iter().find(|app| app.is_default);
@@ -85,7 +115,9 @@ pub fn list_text_editors(setting: &str) -> TextEditorList {
                 None => TextEditorApp {
                     id: id.clone(),
                     display_name: program_name(id),
-                    icon: crate::icons::get_icon_for_native(&program_path(id)),
+                    icon: crate::icons::platform::native_icons(vec![program_path(id)])
+                        .pop()
+                        .flatten(),
                 },
             });
         }
@@ -118,7 +150,7 @@ pub async fn open_in_editor(
     setting: String,
     ask_about_other_editors: bool,
 ) -> Result<EditorOpenReport, OpenInEditorError> {
-    use crate::platform::shell::{ShellWait, on_shell_thread};
+    use crate::platform::shell::{HANDOFF_LINGER, ShellWait, on_shell_thread_lingering};
     use cmdr_fs::app_path::NativeRefusal;
 
     let app_path = crate::commands::wire_path::app_path(&path)
@@ -132,7 +164,8 @@ pub async fn open_in_editor(
     let native = app_path
         .to_native_plain()
         .map_err(|_| OpenInEditorError::LaunchRefused { errno: None })?;
-    let wait = on_shell_thread("open-in-editor", OPEN_TIMEOUT, move || {
+    // The thread stays a moment after `Invoke`, so a DDE or asynchronous handler gets the file.
+    let wait = on_shell_thread_lingering("open-in-editor", OPEN_TIMEOUT, HANDOFF_LINGER, move || {
         launch(&paths, &native, &setting)
     })
     .await;
@@ -163,8 +196,17 @@ fn launch(
     native: &Path,
     setting: &str,
 ) -> Result<Launched, OpenInEditorError> {
-    let apps = assoc::apps_for(PLAIN_TEXT, None);
-    let (editor, outcome) = resolve(setting, &ids(&apps), is_program);
+    // A broken lookup is told apart from "nothing claims plain text": neither may reset the
+    // choice, and both fall back to Notepad, ❌ never the file's own verb.
+    let asked = assoc::apps_for(PLAIN_TEXT, None);
+    if let Err(refusal) = &asked {
+        log::warn!(target: "text_editor", "The plain-text handler lookup broke: {refusal:?}");
+    }
+    let lookup_ok = asked.is_ok();
+    let apps = asked.unwrap_or_default();
+    let listed_ids = ids(&apps);
+    let listed: Option<&[&str]> = lookup_ok.then_some(listed_ids.as_slice());
+    let (editor, outcome) = resolve(setting, listed, is_program);
     let other_editors = apps.iter().any(|app| !app.is_default);
     let refused = |refusal: crate::platform::shell::ShellRefusal| {
         log::info!(target: "text_editor", "The Shell didn't open the file: {refusal:?}");
@@ -177,14 +219,15 @@ fn launch(
     };
     let app_name = match &editor {
         WindowsEditor::SystemDefault => {
-            match apps.iter().find(|app| app.is_default).or(apps.first()) {
-                Some(app) => {
-                    assoc::invoke(PLAIN_TEXT, &app.id, std::slice::from_ref(&paths.item)).map_err(refused)?;
-                    Some(app.name.clone())
+            let marked: Vec<(&str, bool)> = apps.iter().map(|app| (app.id.as_str(), app.is_default)).collect();
+            match default_editor(lookup_ok.then_some(marked.as_slice())) {
+                DefaultEditor::Handler(id) => {
+                    assoc::invoke(PLAIN_TEXT, &id, std::slice::from_ref(&paths.item)).map_err(refused)?;
+                    apps.iter().find(|app| app.id == id).map(|app| app.name.clone())
                 }
-                // Nothing claims plain text: the file's own default app, as a double-click does.
-                None => {
-                    crate::platform::shell::open_with_default_app(paths).map_err(refused)?;
+                DefaultEditor::Notepad => {
+                    open_in_notepad(native)?;
+                    // Notepad's name is the system's, in its language; the toast words the nameless variant.
                     None
                 }
             }

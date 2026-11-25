@@ -48,14 +48,24 @@ pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
 /// which `SHLoadIndirectString` resolves to the PNG it names, and a classic `file` plus `index`
 /// into its icon resources, which `SHDefExtractIconW` draws at `size`. Call it in a COM
 /// apartment (`platform/windows/apartment.rs`).
+///
+/// The location is read only when it stays on this machine and holds its bytes, as a place's own
+/// icon is (`place.rs`): a handler registered from a share (`\\server\apps\tool.exe`) would
+/// otherwise have the icon read reach the server on every right-click. Such an app gets
+/// Windows' generic program icon (`shell32.dll`'s).
 pub(crate) fn app_icon_at(location: &str, index: i32, size: u32) -> Option<RgbaImage> {
     if location.is_empty() {
         return None;
     }
     let img = if location.starts_with("@{") {
-        packaged_logo(location)?
+        packaged_logo(location, size)?
     } else {
-        extracted_icon(location, index, size)?
+        let file = super::shortcut::expand_env_vars(location, |name| std::env::var(name).ok());
+        if super::may_read_icon_location(&std::path::PathBuf::from(&file)) {
+            extracted_icon(&file, index, size)?
+        } else {
+            generic_program_icon(size)?
+        }
     };
     Some(if img.dimensions() == (size, size) {
         img
@@ -64,8 +74,17 @@ pub(crate) fn app_icon_at(location: &str, index: i32, size: u32) -> Option<RgbaI
     })
 }
 
-/// A packaged app's logo: the PNG its indirect resource string resolves to.
-fn packaged_logo(resource: &str) -> Option<RgbaImage> {
+/// Windows' generic program icon: `shell32.dll`'s third, in the system folder.
+fn generic_program_icon(size: u32) -> Option<RgbaImage> {
+    /// `shell32.dll`'s index for an application with no icon of its own.
+    const PROGRAM_ICON_INDEX: i32 = 2;
+    let shell32 = crate::platform::files::system_dir()?.join("shell32.dll");
+    extracted_icon(&shell32.to_string_lossy(), PROGRAM_ICON_INDEX, size)
+}
+
+/// A packaged app's logo: the PNG its indirect resource string resolves to, read only when that
+/// file is local (else the generic program icon).
+fn packaged_logo(resource: &str, size: u32) -> Option<RgbaImage> {
     use std::os::windows::ffi::OsStringExt;
     use windows::Win32::UI::Shell::SHLoadIndirectString;
 
@@ -75,6 +94,9 @@ fn packaged_logo(resource: &str) -> Option<RgbaImage> {
     unsafe { SHLoadIndirectString(&HSTRING::from(resource), &mut resolved, None) }.ok()?;
     let len = resolved.iter().position(|&unit| unit == 0)?;
     let path = std::path::PathBuf::from(std::ffi::OsString::from_wide(resolved.get(..len)?));
+    if !super::may_read_icon_location(&path) {
+        return generic_program_icon(size);
+    }
     Some(image::open(path).ok()?.to_rgba8())
 }
 

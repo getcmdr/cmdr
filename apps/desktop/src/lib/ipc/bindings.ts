@@ -10403,11 +10403,12 @@ export type DurabilityUnconfirmed = {
 export type EditorOpenOutcome =
   /**
    *  The chosen app got the file (the system default, when that's the choice).
-   *  ❗ It means `open` took the request, not that a window appeared.
+   *  ❗ It means the OS took the request (`open` on macOS, the Shell or the process start on
+   *  Windows), not that a window appeared.
    */
   | 'opened'
   /**
-   *  The chosen app isn't on this Mac right now, so the system default got the file.
+   *  The chosen app isn't on this computer right now, so the system default got the file.
    *  The frontend resets the setting and says so.
    */
   | 'chosen_app_missing_opened_default_instead'
@@ -16750,6 +16751,12 @@ export type OpenTerminalOutcome =
    *  device name like `CON`), so nothing was launched.
    */
   | 'no_plain_path'
+  /**
+   *  Windows: Command Prompt can't start in a network folder (`\\server\share`): it says
+   *  "UNC paths are not supported" and starts in the Windows folder instead. So nothing was
+   *  launched; PowerShell and Windows Terminal take the folder.
+   */
+  | 'command_prompt_cant_open_network_folder'
 
 /**
  *  `open-with-copy-launched`: an "Open with" launch went ahead on read-only copies of
@@ -23180,13 +23187,16 @@ export type TerminalAppList = {
 
 // One text editor, as the settings row needs it.
 export type TextEditorApp = {
-  // Exactly what goes into the setting: a bundle id, or an absolute `.app` path.
+  /**
+   *  Exactly what goes into the setting: on macOS a bundle id or an absolute `.app` path; on
+   *  Windows a Shell handler's id (`IAssocHandler::GetName`) or an absolute program path.
+   */
   id: string
-  // The app's name the way Finder shows it.
+  // The app's name the way the OS's file manager shows it (Finder, File Explorer).
   displayName: string
   /**
-   *  The app's icon as a base64 WebP data URL, read from its bundle. Absent when
-   *  the bundle carries no readable icon.
+   *  The app's icon as a base64 WebP data URL (read from its bundle on macOS, the Shell's
+   *  on Windows). Absent when there's no readable icon.
    */
   icon: string | null
 }

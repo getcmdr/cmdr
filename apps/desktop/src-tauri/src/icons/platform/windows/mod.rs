@@ -13,6 +13,12 @@ mod tests;
 
 pub(crate) use shell_image::app_icon_at;
 
+/// Whether an icon location stays on this machine and holds its bytes (`place.rs`), for
+/// `shell_image::app_icon_at`.
+pub(super) fn may_read_icon_location(path: &Path) -> bool {
+    place::may_read(path)
+}
+
 use std::path::{Path, PathBuf};
 
 use image::DynamicImage;
@@ -36,6 +42,17 @@ pub(crate) fn fetch_path_icons(paths: Vec<String>) -> PathIcons {
     super::icon_threads::fetch_on_icon_threads(paths, |path| {
         crate::app_text::native_plain(path).and_then(|native| own_icon(&native))
     })
+}
+
+/// Each native program path's own icon, gated as a place is, asked on the 8 MB icon threads (their
+/// own STAs, kept by those threads), so a caller on a tokio pool thread never joins an apartment
+/// it can't serve. For the settings rows that show a program (a terminal, a picked editor).
+pub(crate) fn native_icons(paths: Vec<PathBuf>) -> Vec<Option<String>> {
+    let texts = paths.iter().map(|path| path.to_string_lossy().into_owned()).collect();
+    super::icon_threads::fetch_on_icon_threads(texts, |text| own_icon(&PathBuf::from(text)))
+        .into_iter()
+        .map(|(_, icon)| icon)
+        .collect()
 }
 
 /// The place's own icon, or for a shortcut pointing past this machine its type's icon.

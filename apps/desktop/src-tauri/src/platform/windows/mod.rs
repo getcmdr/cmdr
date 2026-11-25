@@ -2,6 +2,7 @@
 
 pub(crate) mod apartment;
 pub(crate) mod assoc;
+pub(crate) mod files;
 mod keymenu;
 pub(crate) mod registry;
 pub(crate) mod shell;

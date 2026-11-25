@@ -52,6 +52,40 @@ pub(crate) fn in_apartment<T>(call: impl FnOnce() -> T) -> Result<T, i32> {
     Ok(call())
 }
 
+/// Keeps this thread's apartment serving its window messages for `bound`, then returns.
+///
+/// For a thread that just handed files to a handler through `IAssocHandler::Invoke` or the
+/// "open with" dialog and is about to leave its apartment: there's no `SEE_MASK_NOASYNC` for
+/// those, and a DDE or asynchronous handler finishes its launch through messages to this
+/// apartment, so a thread that left at once could drop it. Microsoft's advice for a short-lived
+/// thread is to stay and pump; `bound` caps how long.
+pub(crate) fn pump_messages_for(bound: std::time::Duration) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        DispatchMessageW, MSG, MsgWaitForMultipleObjects, PM_REMOVE, PeekMessageW, QS_ALLINPUT, TranslateMessage,
+    };
+
+    let until = std::time::Instant::now() + bound;
+    loop {
+        let left = until.saturating_duration_since(std::time::Instant::now());
+        if left.is_zero() {
+            return;
+        }
+        let wait_ms = u32::try_from(left.as_millis()).unwrap_or(u32::MAX);
+        // SAFETY: no handles to wait on (count 0, null array); wakes on any input for this
+        // thread's queue or at the timeout.
+        unsafe { MsgWaitForMultipleObjects(0, std::ptr::null(), 0, wait_ms, QS_ALLINPUT) };
+        let mut msg = MSG::default();
+        // SAFETY: `msg` is a writable `MSG`; a null window takes every message for this thread.
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            // SAFETY: `msg` holds the message `PeekMessageW` just removed from this thread's queue.
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        }
+    }
+}
+
 /// This thread's membership, held for the thread's life.
 struct ThreadApartment {
     entered: bool,

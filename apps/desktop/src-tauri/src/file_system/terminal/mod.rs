@@ -116,6 +116,10 @@ pub enum OpenTerminalOutcome {
     /// as this same folder (past 259 characters, a name ending in a dot or space, a
     /// device name like `CON`), so nothing was launched.
     NoPlainPath,
+    /// Windows: Command Prompt can't start in a network folder (`\\server\share`): it says
+    /// "UNC paths are not supported" and starts in the Windows folder instead. So nothing was
+    /// launched; PowerShell and Windows Terminal take the folder.
+    CommandPromptCantOpenNetworkFolder,
 }
 
 /// Why `open_terminal_here` couldn't answer at all. Distinct from

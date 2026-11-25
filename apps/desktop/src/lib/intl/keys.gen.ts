@@ -1173,6 +1173,7 @@ export type MessageKey =
   | 'commands.handler.noRecentlyClosedTabs'
   | 'commands.handler.openTerminalHere.appMissing'
   | 'commands.handler.openTerminalHere.appMissingUnnamed'
+  | 'commands.handler.openTerminalHere.commandPromptNetworkFolder'
   | 'commands.handler.openTerminalHere.dismiss'
   | 'commands.handler.openTerminalHere.hint'
   | 'commands.handler.openTerminalHere.launchRefused'

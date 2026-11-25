@@ -31,6 +31,24 @@ pub struct OpenPageMenu {
     /// The ids the page menu at `token` offered enabled: what a pick may name. Empty while the
     /// last menu was native.
     live: HashSet<String>,
+    /// Moved by every page menu asked for, before its slots are read: an ask whose slot read
+    /// (Windows' "Open with", up to 1.5 s) is overtaken by a newer ask stashes nothing.
+    asks: u32,
+}
+
+/// A page menu is being asked for: its number, which [`is_newest_ask`] checks after the slow
+/// slot read and before anything is stashed.
+pub fn begin_ask<R: Runtime>(menu_state: &MenuState<R>) -> u32 {
+    let mut open = menu_state.page_context.lock_ignore_poison();
+    open.asks = open.asks.wrapping_add(1);
+    open.asks
+}
+
+/// Whether no newer page menu was asked for since `ask`. A stale ask must not stash its facts
+/// or move the token: the newer menu's rows (the one the page draws) would then name a stale
+/// token, and every pick from it would run nothing.
+pub fn is_newest_ask<R: Runtime>(menu_state: &MenuState<R>, ask: u32) -> bool {
+    menu_state.page_context.lock_ignore_poison().asks == ask
 }
 
 /// What a page's pick of a right-click row did.
@@ -121,6 +139,16 @@ mod tests {
             })
             .collect();
         assert_eq!(page, native);
+    }
+
+    /// A slow first ask overtaken by a fast second one is stale, and the second one isn't.
+    #[test]
+    fn an_ask_overtaken_by_a_newer_one_is_stale() {
+        let menu_state = MenuState::<MockRuntime>::default();
+        let slow = begin_ask(&menu_state);
+        let fast = begin_ask(&menu_state);
+        assert!(is_newest_ask(&menu_state, fast));
+        assert!(!is_newest_ask(&menu_state, slow));
     }
 
     /// A pick names the menu it came from: another menu opening (page or native) makes it stale,

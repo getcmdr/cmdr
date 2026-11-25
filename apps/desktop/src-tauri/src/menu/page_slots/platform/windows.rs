@@ -26,7 +26,8 @@ pub(crate) struct PageSlots {
 struct OpenWith {
     choices: OpenWithChoices,
     /// `false` for rows only a route serves (a file inside an archive): Windows' dialog needs
-    /// the file itself.
+    /// the file itself. And for a program, script, or shortcut, whose type the dialog's
+    /// "Always use this app" would re-associate (`windows_assoc_rules::runs_when_opened`).
     offer_another: bool,
 }
 
@@ -64,7 +65,13 @@ pub(crate) async fn read(file_rows: Option<Vec<String>>) -> PageSlots {
 
 async fn read_open_with(rows: &[String]) -> OpenWith {
     let native: Vec<PathBuf> = rows.iter().filter_map(|row| crate::app_text::native(row)).collect();
-    let offer_another = !crate::file_viewer::open_with_extract::any_needs_extraction(&native);
+    // Not over a program, script, or shortcut either: the dialog's "Always use this app" would
+    // re-associate a type Windows runs.
+    let runs = native.iter().any(|path| {
+        path.extension()
+            .is_some_and(|ext| crate::platform::windows_assoc_rules::runs_when_opened(&ext.to_string_lossy()))
+    });
+    let offer_another = !runs && !crate::file_viewer::open_with_extract::any_needs_extraction(&native);
     // Only the extensions matter to the Shell's handler lists, so an archive's insides ask as
     // they are, with no stand-in file.
     let asked = tokio::time::timeout(

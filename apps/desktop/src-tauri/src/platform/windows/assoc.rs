@@ -60,22 +60,29 @@ fn take(text: PWSTR) -> Option<String> {
 }
 
 /// Every handler for `.ext` the filter keeps, in the Shell's order, each id once. An extension
-/// with no handlers (or none at all) answers an empty list.
-fn handlers(extension: &str, filter: ASSOC_FILTER) -> Vec<Handler> {
+/// with no handlers (or no extension at all) answers an empty list.
+///
+/// # Errors
+///
+/// The Shell's refusal when the lookup itself broke (`SHAssocEnumHandlers` or the enumeration
+/// failed), so "no app claims this type" and "couldn't ask" stay apart for every caller.
+fn handlers(extension: &str, filter: ASSOC_FILTER) -> Result<Vec<Handler>, ShellRefusal> {
     let Some(key) = assoc_extension(extension) else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
     // SAFETY: the extension is a live NUL-terminated `HSTRING` for the call.
-    let Ok(enumerator) = (unsafe { SHAssocEnumHandlers(&HSTRING::from(key), filter) }) else {
-        return Vec::new();
-    };
+    let enumerator = unsafe { SHAssocEnumHandlers(&HSTRING::from(key), filter) }
+        .map_err(|e| ShellRefusal::of_hresult(e.code().0))?;
     let mut found: Vec<Handler> = Vec::new();
     loop {
         let mut slot = [None];
         let mut fetched = 0u32;
         // SAFETY: one slot, and `fetched` receives how many the call filled.
         let next = unsafe { enumerator.Next(&mut slot, Some(&raw mut fetched)) };
-        if next.is_err() || fetched == 0 {
+        if let Err(e) = next {
+            return Err(ShellRefusal::of_hresult(e.code().0));
+        }
+        if fetched == 0 {
             break;
         }
         let [Some(handler)] = slot else { break };
@@ -89,13 +96,17 @@ fn handlers(extension: &str, filter: ASSOC_FILTER) -> Vec<Handler> {
         }
         found.push(Handler { handler, id, name });
     }
-    found
+    Ok(found)
 }
 
 /// The apps File Explorer's "Open with" offers for files ending in `.extension` (no dot), the
 /// default first and marked. With `icon_size`, each carries its icon at that size.
-pub(crate) fn apps_for(extension: &str, icon_size: Option<u32>) -> Vec<AssocApp> {
-    let found = handlers(extension, ASSOC_FILTER_RECOMMENDED);
+///
+/// # Errors
+///
+/// As [`handlers`]: the lookup broke, which is no answer about which apps exist.
+pub(crate) fn apps_for(extension: &str, icon_size: Option<u32>) -> Result<Vec<AssocApp>, ShellRefusal> {
+    let found = handlers(extension, ASSOC_FILTER_RECOMMENDED)?;
     let default = assoc_extension(extension).and_then(|key| {
         let executable = query(&key, ASSOCSTR_EXECUTABLE);
         let friendly = query(&key, ASSOCSTR_FRIENDLYAPPNAME);
@@ -116,7 +127,7 @@ pub(crate) fn apps_for(extension: &str, icon_size: Option<u32>) -> Vec<AssocApp>
         let first = apps.remove(index);
         apps.insert(0, first);
     }
-    apps
+    Ok(apps)
 }
 
 /// A handler's own icon at `size`.
@@ -165,7 +176,7 @@ fn query(extension_key: &str, what: ASSOCSTR) -> Option<String> {
 pub(crate) fn invoke(extension: &str, handler_id: &str, items: &[Vec<u16>]) -> Result<(), ShellRefusal> {
     // Every handler, not only the recommended ones: a stored editor may have dropped off the
     // recommended list and still open the file.
-    let handler = handlers(extension, ASSOC_FILTER_NONE)
+    let handler = handlers(extension, ASSOC_FILTER_NONE)?
         .into_iter()
         .find(|handler| handler.id.eq_ignore_ascii_case(handler_id))
         .ok_or(ShellRefusal::NoHandler)?;
@@ -191,6 +202,8 @@ fn data_object(items: &[Vec<u16>]) -> Result<IDataObject, ShellRefusal> {
 }
 
 /// Windows' "How do you want to open this file?" dialog for `item` (NUL-terminated plain path),
+/// ❗ never offered for a file that runs when opened (`windows_assoc_rules::runs_when_opened`),
+/// where "Always use this app" would re-associate a program type,
 /// owned by the window `parent` (its raw `HWND`, or 0 for none). The dialog opens the file in
 /// the app picked and, with "Always use this app" ticked, makes it the type's default, as File
 /// Explorer's "Choose another app" does. Returns once the dialog closes.

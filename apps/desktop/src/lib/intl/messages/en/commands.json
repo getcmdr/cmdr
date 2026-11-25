@@ -1587,6 +1587,10 @@
   "@commands.handler.openTerminalHere.noPath": {
     "description": "Toast shown when \"Open terminal here\" is asked for on a phone, a camera, or a search-results list, where the rows aren't files on this Mac's own filesystem and so no shell can move into them. The menu item is greyed out in those places; this covers the keyboard shortcut and the command palette, which still reach the command."
   },
+  "commands.handler.openTerminalHere.commandPromptNetworkFolder": "Command Prompt can’t start in a network folder. Pick PowerShell or Windows Terminal in Settings, under Navigation & file ops, or map the share to a drive letter.",
+  "@commands.handler.openTerminalHere.commandPromptNetworkFolder": {
+    "description": "Windows only. Toast shown when \"Open terminal here\" was asked for a folder on a network share (a \\\\server\\share path) and the chosen terminal is Command Prompt, which can't use such a folder as its starting folder (it would start somewhere else), so Cmdr opened nothing. \"Command Prompt\", \"PowerShell\", and \"Windows Terminal\" are Microsoft's app names: use the names Windows shows for them in your language. \"Settings, under Navigation & file ops\" names Cmdr's own settings page and section: match settings.navigationAndFileOps titles. \"Map the share to a drive letter\" is File Explorer's \"Map network drive\": use Windows' wording for it. Conversational; avoid the words \"error\" and \"failed\"."
+  },
   "commands.handler.openTerminalHere.launchRefused": "Cmdr couldn’t start your terminal app. Try opening it yourself once, then come back.",
   "@commands.handler.openTerminalHere.launchRefused": {
     "description": "Toast shown when macOS refused to launch the chosen terminal app. Opening the app by hand once usually clears whatever blocked it (a quarantine prompt, a permission), which is what the second sentence suggests. Conversational; avoid the words \"error\" and \"failed\"."

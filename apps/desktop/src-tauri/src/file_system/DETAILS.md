@@ -335,7 +335,16 @@ already provider-agnostic: a streamed Drive file carries `SF_DATALESS` like any 
 - **A per-extension cache, two minutes**, icons included: the Shell has no "the set of apps changed" signal to subscribe
   to, and the in-page menu waits for the list (at most 1.5 s, `commands/menu_in_page.rs`).
 - Both the list and the launch run on their own 8 MB threads in an apartment (`../platform/windows/apartment.rs`); the
-  launch is fire-and-forget and logs its answer, a dismissed dialog quietly.
+  launch is fire-and-forget and logs its answer, a dismissed dialog quietly. After `Invoke` or the dialog the thread
+  serves its apartment's messages for `shell::HANDOFF_LINGER` (3 s) before leaving: neither has a `SEE_MASK_NOASYNC`,
+  and a DDE or asynchronous handler takes the files through those messages.
+- **A broken lookup is not "no apps"**: `assoc::handlers` answers a typed refusal, so the menu caches nothing and asks
+  again next time, and F4 never reads it as "the chosen editor is gone".
+- **"Choose another app" isn't offered over a program, script, or shortcut** (`windows_assoc_rules::runs_when_opened`:
+  the default `PATHEXT`, `.ps1`, `.msi`, `.lnk`, `.scr`, `.reg`, …): its "Always use this app" would re-associate a
+  type Windows runs.
+- **A handler's icon is read only from a local location** (`place.rs`'s rule); one on a share gets Windows' generic
+  program icon, so a right-click never reaches a server for an icon.
 
 ## Default app (`default_app.rs`)
 
@@ -497,11 +506,17 @@ the per-app window-vs-tab survey) is `docs/notes/terminal-launch-sources-2026-09
 - **`CreateProcessW`, ❌ not `std::process::Command`**: `Command` hands the child Cmdr's std handles whenever Cmdr has
   any (a dev run, a console launch), so a shell on its new console would talk to Cmdr's pipes, and it lets inheritable
   handles leak. Here nothing is inherited.
-- **Icons are the Shell's own for the `.exe`** (`crate::icons::get_icon_for_native`). **`is_running` is always
+- **Icons are the Shell's own for the `.exe`**, asked on the icon threads (`icons::platform::native_icons`), ❌ never
+  on the blocking pool thread the command runs on: that would leave it in an STA nothing serves. **`is_running` is always
   `false`**: `cmd.exe` and `powershell.exe` run hidden under build tools and tasks, and Windows Terminal runs as
   `WindowsTerminal.exe`, so "exactly one running" would adopt the wrong app.
-- Not verified on a real machine yet: `wt -d .` from an execution alias honoring the inherited working directory, `cmd`
-  on a UNC folder (it refuses a UNC current directory and starts in the Windows folder; PowerShell takes one).
+- **Command Prompt in a network folder is refused** (`command_prompt_in_network_folder`, the outcome
+  `command_prompt_cant_open_network_folder`): `cmd.exe` takes no UNC current directory and would start in the Windows
+  folder. PowerShell and Windows Terminal take one. A Windows Terminal whose default profile is Command Prompt hits the
+  same refusal inside its tab; its profiles aren't read.
+- A choice that vanished between resolve and launch is `LaunchRefused`, ❌ never a bare name `CreateProcessW` would
+  search for.
+- Not verified on a real machine yet: `wt -d .` from an execution alias honoring the inherited working directory.
 
 **Considered and deferred** (revisit only when a user asks):
 
@@ -584,6 +599,12 @@ Which app F4 opens a file in: the regular pane, the search-results pane, and the
 - **A handler gets the file through `IAssocHandler::Invoke`; a picked program starts with the file as its one
   argument**, quoted by `std::process::Command`, in the file's folder. ❌ Never a hand-built command line.
 - A path with no plain spelling is `OpenInEditorError::NoPlainPath` before anything launches, worded as Enter's.
+- **F4 never runs a file.** With no plain-text handler, or with the lookup broken, "the system default" is Notepad from
+  the system folder with the file as its one argument (`DefaultEditor::Notepad`), or `LaunchRefused` if it's missing;
+  ❌ never the file's own default verb, which on a `setup.exe`, `.bat`, or `.ps1` RUNS it. A broken lookup also keeps
+  a stored handler (it's tried as it stands) rather than resetting it.
+- A picked editor counts as there when it's a file or an app execution alias (`platform::files::is_file_or_alias`):
+  a packaged editor picked from `%LOCALAPPDATA%\Microsoft\WindowsApps` fails `is_file`.
 
 ## Finder tags (`tags.rs`, `tags_io.rs`)
 

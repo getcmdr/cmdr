@@ -248,9 +248,40 @@ pub(crate) fn command_line(plan: &LaunchPlan) -> Option<String> {
     Some(line)
 }
 
+/// Whether starting `program` in `dir` would put Command Prompt in a network folder, which it
+/// refuses ("UNC paths are not supported") and replaces with the Windows folder. Keyed on the
+/// program's file name, so a picked `cmd.exe` counts too. PowerShell and Windows Terminal take a
+/// share as their folder. (A Windows Terminal whose default profile is Command Prompt hits the
+/// same refusal inside its tab; its profiles aren't read here.)
+pub(crate) fn command_prompt_in_network_folder(program: &Path, dir: &Path) -> bool {
+    // Split by hand on both separators: the rule is pure text, tested on every host.
+    let program = program.as_os_str().to_string_lossy();
+    let is_cmd = program
+        .rsplit(['\\', '/'])
+        .next()
+        .is_some_and(|name| name.eq_ignore_ascii_case("cmd.exe"));
+    is_cmd && dir.as_os_str().to_string_lossy().starts_with(r"\\")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_command_prompt_in_a_network_folder_is_refused() {
+        let share = Path::new(r"\\testnas.local\share\code");
+        let local = Path::new(r"C:\Users\test_user_10\code");
+        let cmd = Path::new(r"C:\Windows\System32\cmd.exe");
+        assert!(command_prompt_in_network_folder(cmd, share));
+        assert!(command_prompt_in_network_folder(Path::new(r"D:\Tools\CMD.EXE"), share));
+        assert!(!command_prompt_in_network_folder(cmd, local));
+        for other in [
+            r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+            r"C:\Program Files\PowerShell\7\pwsh.exe",
+        ] {
+            assert!(!command_prompt_in_network_folder(Path::new(other), share));
+        }
+    }
 
     fn id(choice: &WindowsChoice) -> String {
         choice.id()

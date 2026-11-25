@@ -402,6 +402,10 @@ each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks 
   marked, then "Choose another app" (`open-with-other`). `PageSlots::keep` stores the `id → app` map in
   `MenuState.context.open_with_apps` after the stash, so a pick runs `open_with::handle_pick` exactly as a native one
   does.
+- **An ask a newer one overtook stashes nothing** (`page_context::begin_ask` / `is_newest_ask`): the slot read awaits
+  before the stash, so without it a slow first right-click would land after a fast second one, restash `MenuState`,
+  and move the token past the menu the page drew (every pick from it then `Stale`). The stale ask answers no rows,
+  which the page drops anyway (`popContextMenu` draws only its newest answer).
 - **A pick names its menu**: `pick_context_menu_item(token, menuId)` answers `ContextPickOutcome::{Ran, Stale}`. Every
   menu that opens, native (`note_native_popup` at the top of each `show_*`) or page, moves the token and replaces the
   pickable ids, so a pick from a menu another right-click replaced (its facts are gone from `MenuState`) runs nothing,

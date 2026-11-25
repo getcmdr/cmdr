@@ -2747,7 +2747,7 @@
   },
   "settings.behavior.textEditorApp.chooseApp": "Choose an app…",
   "@settings.behavior.textEditorApp.chooseApp": {
-    "description": "Last row of the \"Edit files in\" dropdown in Settings > Behavior > Navigation & file ops. Picking it opens the macOS file picker so the user can point at any app on their Mac. The trailing … (U+2026) means \"this opens a dialog\"; keep it. Same row as on the terminal dropdown below it, so translate it identically to the settings.behavior.openTerminalHereApp.chooseApp key.",
+    "description": "Last row of the \"Edit files in\" dropdown in Settings > Behavior > Navigation & file ops. Picking it opens the system's file picker so the user can point at any app on their computer (an app bundle on macOS, a program file on Windows). The trailing … (U+2026) means \"this opens a dialog\"; keep it. Same row as on the terminal dropdown below it, so translate it identically to the settings.behavior.openTerminalHereApp.chooseApp key.",
     "screenshot": "settings-behavior-navigation-and-file-ops.png",
     "screenshotNote": "This screenshot shows the screen your string belongs to, but not the string itself: it appears in another state of this screen (a menu or tooltip open, a step running, or further down a list). Take the wording from the description and the surroundings from this image."
   },

@@ -46,6 +46,10 @@ pub(super) use imp::fetch_icon_for_path;
 #[cfg(target_os = "windows")]
 pub(crate) use imp::app_icon_at;
 
+/// Windows: each program path's own icon, on the icon threads (`windows/mod.rs`).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::native_icons;
+
 /// [`fetch_icon_for_path`] for each of `paths`, keyed `path:{path}`, in input order. Each arm
 /// picks the threads: a real folder's lookup can descend into a cloud provider.
 pub(super) use imp::fetch_path_icons;

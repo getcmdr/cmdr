@@ -102,10 +102,20 @@ pub async fn open_context_menu_in_page(
     window: Window<tauri::Wry>,
     request: InPageContextMenuRequest,
 ) -> InPageContextMenu {
+    let app = window.app_handle().clone();
+    // Numbered before the slow slot read, so an ask a newer one overtook stashes nothing.
+    let ask = crate::menu::page_context::begin_ask(&app.state::<MenuState<tauri::Wry>>());
     // Read before anything is stashed, so the stash and the rows stay one synchronous step.
     let mut slots = crate::menu::page_slots::read(file_rows(&request)).await;
-    let app = window.app_handle().clone();
     let state = app.state::<MenuState<tauri::Wry>>();
+    if !crate::menu::page_context::is_newest_ask(&state, ask) {
+        // The page draws only its newest answer (`popContextMenu`), so this one goes nowhere.
+        return InPageContextMenu {
+            token: 0,
+            rows: Vec::new(),
+            anchor: None,
+        };
+    }
     let none = ContextMenuShortcuts::default;
     let (rows, shortcuts, anchor) = match request {
         InPageContextMenuRequest::File {

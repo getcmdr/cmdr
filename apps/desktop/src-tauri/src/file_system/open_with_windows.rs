@@ -50,14 +50,22 @@ pub(super) fn listed_name(id: &Path) -> Option<String> {
         .map(|candidate| candidate.display_name.clone())
 }
 
-/// `extension`'s candidates, cached. Call it in a COM apartment.
+/// `extension`'s candidates, cached. Call it in a COM apartment. A lookup that broke answers
+/// none for now and caches nothing, so the next right-click asks again.
 fn candidates_for(extension: &str) -> Vec<AppCandidate> {
     if let Some(entry) = CACHE.lock_ignore_poison().get(extension)
         && entry.fetched_at.elapsed() < CACHE_TTL
     {
         return entry.candidates.clone();
     }
-    let candidates: Vec<AppCandidate> = crate::platform::assoc::apps_for(extension, Some(ICON_SIZE))
+    let apps = match crate::platform::assoc::apps_for(extension, Some(ICON_SIZE)) {
+        Ok(apps) => apps,
+        Err(refusal) => {
+            log::warn!(target: "open_with", "The Shell's handler lookup broke: {refusal:?}");
+            return Vec::new();
+        }
+    };
+    let candidates: Vec<AppCandidate> = apps
         .into_iter()
         .map(|app| AppCandidate {
             app_path: PathBuf::from(&app.id),
@@ -204,7 +212,9 @@ pub fn choose_another_app(path: &Path, parent: isize) -> Result<(), OpenWithLaun
 }
 
 /// Runs a Shell call on a thread of its own, in an apartment, logging how it ended:
-/// `ERROR_CANCELLED` (a dismissed dialog, a cancelled UAC prompt) quietly.
+/// `ERROR_CANCELLED` (a dismissed dialog, a cancelled UAC prompt) quietly. The thread then serves
+/// its apartment's messages for `shell::HANDOFF_LINGER` before leaving: `Invoke` and the dialog
+/// have no `SEE_MASK_NOASYNC`, and a DDE or asynchronous handler takes the files through them.
 #[cfg(not(feature = "playwright-e2e"))]
 fn on_own_thread(
     name: &'static str,
@@ -216,10 +226,17 @@ fn on_own_thread(
     let spawned = std::thread::Builder::new()
         .name(name.to_string())
         .stack_size(crate::platform::shell::SHELL_THREAD_STACK)
-        .spawn(move || match crate::platform::apartment::in_apartment(call) {
-            Ok(Ok(())) | Ok(Err(ShellRefusal::Win32(ERROR_CANCELLED))) => {}
-            // allowed-log-private: `name` is our own fixed thread name, and `answer` a typed code
-            answer => log::warn!(target: "open_with", "{name}: the Shell didn't open the file: {answer:?}"),
+        .spawn(move || {
+            let answer = crate::platform::apartment::in_apartment(|| {
+                let answer = call();
+                crate::platform::apartment::pump_messages_for(crate::platform::shell::HANDOFF_LINGER);
+                answer
+            });
+            match answer {
+                Ok(Ok(())) | Ok(Err(ShellRefusal::Win32(ERROR_CANCELLED))) => {}
+                // allowed-log-private: `name` is our own fixed thread name, and `answer` a typed code
+                answer => log::warn!(target: "open_with", "{name}: the Shell didn't open the file: {answer:?}"),
+            }
         });
     spawned.map(|_| ()).map_err(|e| {
         // allowed-log-private: `name` is our own fixed thread name, and `e` the OS's spawn refusal

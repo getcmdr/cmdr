@@ -22,6 +22,7 @@ use super::super::{OpenTerminalError, OpenTerminalOutcome, TerminalApp, Terminal
 use super::windows_table::{
     self, ExeHome, KNOWN_TERMINALS, LaunchPlan, Stored, WindowsChoice, WindowsTerminal, launch_plan,
 };
+use crate::platform::files::{is_file_or_alias, system_dir};
 
 /// The probe's answer for one known terminal: where its executable is, if anywhere.
 fn locate(terminal: &WindowsTerminal) -> Option<PathBuf> {
@@ -59,23 +60,6 @@ fn path_dirs() -> Vec<PathBuf> {
         .collect()
 }
 
-/// The system folder (`C:\Windows\System32`), as Windows reports it.
-fn system_dir() -> Option<PathBuf> {
-    use std::os::windows::ffi::OsStringExt;
-    use windows_sys::Win32::System::SystemInformation::GetSystemDirectoryW;
-
-    let mut buf = [0u16; 260];
-    // SAFETY: `buf` is a live, writable buffer of exactly the length passed; the call
-    // writes at most that many units and returns how many it wrote (excluding the NUL).
-    let len = unsafe { GetSystemDirectoryW(buf.as_mut_ptr(), buf.len() as u32) } as usize;
-    (len > 0 && len < buf.len()).then(|| PathBuf::from(std::ffi::OsString::from_wide(&buf[..len])))
-}
-
-/// A file, or an app execution alias (a reparse point `metadata` can't follow).
-fn is_file_or_alias(path: &Path) -> bool {
-    std::fs::symlink_metadata(path).is_ok_and(|meta| !meta.is_dir())
-}
-
 /// Where a choice's executable is, or `None` once it's gone.
 fn choice_program(choice: &WindowsChoice) -> Option<PathBuf> {
     match choice {
@@ -84,20 +68,26 @@ fn choice_program(choice: &WindowsChoice) -> Option<PathBuf> {
     }
 }
 
-/// The dropdown entry for an installed executable. The icon is the Shell's own for the
-/// file (`crate::icons`), as File Explorer shows it.
+/// The dropdown entries for installed executables, `(id, name, program)` each. The icons are
+/// the Shell's own for the files, as File Explorer shows them, asked together on the icon threads
+/// (`icons::platform::native_icons`), never on this pool thread.
 ///
 /// `is_running` is always `false`: the first-use picker adopts a terminal when exactly
 /// one is running, and on Windows that reads nothing real. `cmd.exe` and
 /// `powershell.exe` run hidden under build tools, installers, and scheduled tasks, and
 /// Windows Terminal runs as `WindowsTerminal.exe`, not the `wt.exe` the table launches.
-fn app_entry(id: String, display_name: String, program: &Path) -> TerminalApp {
-    TerminalApp {
-        id,
-        display_name,
-        icon: crate::icons::get_icon_for_native(program),
-        is_running: false,
-    }
+fn app_entries(found: Vec<(String, String, PathBuf)>) -> Vec<TerminalApp> {
+    let icons = crate::icons::platform::native_icons(found.iter().map(|(_, _, program)| program.clone()).collect());
+    found
+        .into_iter()
+        .zip(icons)
+        .map(|((id, display_name, _), icon)| TerminalApp {
+            id,
+            display_name,
+            icon,
+            is_running: false,
+        })
+        .collect()
 }
 
 /// Probes each known terminal once, so the list, the chosen id, and the default all
@@ -107,13 +97,13 @@ pub(crate) fn list_terminal_apps(setting: &str) -> TerminalAppList {
         .iter()
         .filter_map(|terminal| locate(terminal).map(|program| (terminal, program)))
         .collect();
-    let mut apps: Vec<TerminalApp> = located
+    let mut found: Vec<(String, String, PathBuf)> = located
         .iter()
         .map(|(terminal, program)| {
-            app_entry(
+            (
                 terminal.known.id.to_string(),
                 terminal.known.display_name.to_string(),
-                program,
+                program.clone(),
             )
         })
         .collect();
@@ -124,12 +114,13 @@ pub(crate) fn list_terminal_apps(setting: &str) -> TerminalAppList {
     if let Stored::Choice(choice @ TerminalChoice::CustomApp(path)) = &stored
         && is_file_or_alias(path)
     {
-        apps.push(app_entry(
+        found.push((
             choice.id(),
             choice.name_without_io().unwrap_or_else(|| choice.id()),
-            path,
+            path.clone(),
         ));
     }
+    let apps = app_entries(found);
 
     let installed = |choice: &WindowsChoice| match choice {
         TerminalChoice::Known(known) => located.iter().any(|(t, _)| t.known.id == known.id),
@@ -168,9 +159,12 @@ pub(crate) fn open_in_terminal(dir: &AppPath, setting: &str) -> Result<OpenTermi
         TerminalChoice::Known(known) => Some(known.recipe),
         TerminalChoice::CustomApp(_) => None,
     };
-    // The resolve above found it, so a `None` here is an uninstall in the last moment:
-    // the bare name still lets `CreateProcessW` say so with its own error.
-    let program = choice_program(&choice).unwrap_or_else(|| PathBuf::from(choice.id()));
+    // The resolve above found it, so a `None` here is an uninstall in the last moment: refused,
+    // ❌ never a bare name, which `CreateProcessW` would search for.
+    let program = choice_program(&choice).ok_or(OpenTerminalError::LaunchRefused { errno: None })?;
+    if windows_table::command_prompt_in_network_folder(&program, &dir) {
+        return Ok(OpenTerminalOutcome::CommandPromptCantOpenNetworkFolder);
+    }
     launch(&launch_plan(recipe, program, &dir))?;
     log::info!(
         target: "terminal",

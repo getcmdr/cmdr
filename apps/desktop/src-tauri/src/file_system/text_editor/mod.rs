@@ -20,9 +20,10 @@
 #[serde(rename_all = "snake_case")]
 pub enum EditorOpenOutcome {
     /// The chosen app got the file (the system default, when that's the choice).
-    /// ❗ It means `open` took the request, not that a window appeared.
+    /// ❗ It means the OS took the request (`open` on macOS, the Shell or the process start on
+    /// Windows), not that a window appeared.
     Opened,
-    /// The chosen app isn't on this Mac right now, so the system default got the file.
+    /// The chosen app isn't on this computer right now, so the system default got the file.
     /// The frontend resets the setting and says so.
     ChosenAppMissingOpenedDefaultInstead,
 }
@@ -80,12 +81,13 @@ pub(crate) const SYSTEM_DEFAULT_CHOICE: &str = "system";
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TextEditorApp {
-    /// Exactly what goes into the setting: a bundle id, or an absolute `.app` path.
+    /// Exactly what goes into the setting: on macOS a bundle id or an absolute `.app` path; on
+    /// Windows a Shell handler's id (`IAssocHandler::GetName`) or an absolute program path.
     pub id: String,
-    /// The app's name the way Finder shows it.
+    /// The app's name the way the OS's file manager shows it (Finder, File Explorer).
     pub display_name: String,
-    /// The app's icon as a base64 WebP data URL, read from its bundle. Absent when
-    /// the bundle carries no readable icon.
+    /// The app's icon as a base64 WebP data URL (read from its bundle on macOS, the Shell's
+    /// on Windows). Absent when there's no readable icon.
     pub icon: Option<String>,
 }
 
