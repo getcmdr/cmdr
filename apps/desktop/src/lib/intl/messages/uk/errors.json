@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Для цього потрібні права адміністратора. Попросіть адміністратора вийняти диск або ввійдіть як адміністратор і спробуйте ще раз.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Диск ще не відповів, тож він, можливо, ще вийметься сам.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

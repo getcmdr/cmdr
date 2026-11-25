@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Hiervoor zijn beheerdersrechten nodig. Vraag een beheerder om de schijf uit te werpen, of log in als beheerder en probeer het opnieuw.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "De schijf heeft nog niet gereageerd, dus hij wordt misschien toch nog uitgeworpen.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

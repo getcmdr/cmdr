@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Il faut des droits d’administrateur. Demandez à une personne qui a ces droits d’effectuer l’éjection, ou ouvrez une session avec un compte administrateur, puis réessayez.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Le disque n’a pas encore répondu, donc l’éjection peut encore aboutir d’elle-même.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

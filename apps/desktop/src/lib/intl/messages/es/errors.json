@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Hacen falta permisos de administrador. Pide a alguien con permisos de administrador que expulse el disco, o inicia sesión con una cuenta de administrador y vuelve a intentarlo.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "El disco aún no ha respondido, así que es posible que sí se expulse por su cuenta.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

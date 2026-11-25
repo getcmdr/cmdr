@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Det här kräver administratörsbehörighet. Be en administratör att mata ut enheten, eller logga in som administratör och försök igen.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Enheten har inte svarat än, så utmatningen kan fortfarande gå igenom.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

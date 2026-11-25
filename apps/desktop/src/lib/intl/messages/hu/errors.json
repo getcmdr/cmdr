@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Ehhez rendszergazdai jogosultság kell. Kérj meg egy rendszergazdát, hogy adja ki a meghajtót, vagy jelentkezz be rendszergazdaként, és próbáld újra.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "A meghajtó még nem válaszolt, de a kiadás magától is befejeződhet.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

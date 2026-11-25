@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Vyžaduje to oprávnění správce. Požádejte správce, aby disk vysunul, nebo se přihlaste jako správce a zkuste to znovu.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Disk zatím neodpověděl, takže se může ještě vysunout sám.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

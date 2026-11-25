@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Việc này cần quyền quản trị. Hãy nhờ quản trị viên tháo ổ đĩa, hoặc đăng nhập bằng tài khoản quản trị viên rồi thử lại.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Ổ đĩa vẫn chưa phản hồi, nên việc tháo vẫn có thể tự hoàn tất.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

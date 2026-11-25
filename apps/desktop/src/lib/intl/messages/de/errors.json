@@ -2485,6 +2485,10 @@
   "@errors.eject.unmountRefusedByCmdr": {
     "sourceHash": "1f682f4"
   },
+  "errors.eject.needsAdministrator": "Dafür sind Administratorrechte nötig. Bitte jemanden mit Administratorrechten, das Laufwerk auszuwerfen, oder melde dich mit einem Administratorkonto an und versuche es erneut.",
+  "@errors.eject.needsAdministrator": {
+    "sourceHash": "0a3d436"
+  },
   "errors.eject.timedOut": "Das Laufwerk hat noch nicht geantwortet, das Auswerfen klappt also womöglich trotzdem noch.",
   "@errors.eject.timedOut": {
     "sourceHash": "3feb944"

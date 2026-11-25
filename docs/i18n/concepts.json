@@ -337,7 +337,8 @@
       "ask you to",
       "asks you to",
       "ask for it",
-      "settings ask for"
+      "settings ask for",
+      "ask an administrator"
     ],
     "sense": "A setting option meaning \"ask me every time\"."
   },
