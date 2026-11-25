@@ -2772,7 +2772,8 @@ write-error safety-net arms in each deferred also route through `sink.emit_error
 on MTP (and to a lesser degree SMB and big local trees) used to duplicate work the backend already had in the listing
 cache. Selecting 135 photos in a watched `/DCIM/Camera` (~15k entries) and pressing F5 would re-list the parent dir over
 USB just to look up size by name — ~17 s of "Verifying before copy…" while the listing was already fresh on the pane
-behind the dialog. `run_volume_scan_preview` now groups input sources by parent dir and consults
+behind the dialog. `run_volume_scan_preview` now groups input sources by parent dir (the app path's parent and name, so
+on Windows a POSIX volume's `/dcim/sub\a.jpg` is read from `/dcim`'s listing, never `/dcim/sub`'s) and consults
 `try_get_authoritative_listing(volume_id, parent)` first. On hit, sizes and `is_directory` flags come from the cached
 `FileEntry` for top-level files; top-level directories recurse via `scan_subtree_with_oracle`, which re-applies the
 oracle at every level (so a subfolder open in another pane also short-circuits). On miss, the call falls through to

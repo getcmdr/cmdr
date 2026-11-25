@@ -278,7 +278,7 @@
     "crates/cmdr-local/src/platform/local_posix/scan.rs": 1,
     "crates/cmdr-local/src/reading/bulk_test.rs": 1,
     "crates/cmdr-local/src/reading_parity_test.rs": 1,
-    "crates/cmdr-operations/src/scan_preview/volume.rs": 2,
+    "crates/cmdr-operations/src/scan_preview/volume.rs": 1,
     "crates/cmdr-operations/src/scan_walker.rs": 2,
     "crates/cmdr-operations/src/transfer/volume/copy_crashsafe_tests.rs": 1,
     "crates/cmdr-operations/src/transfer/volume/displaced_destination_tests.rs": 1,

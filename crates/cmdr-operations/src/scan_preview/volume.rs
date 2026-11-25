@@ -2,7 +2,7 @@
 //! `Volume`), with the fresh-listing oracle in front of the backend's own
 //! batch scan. The contract it owes: the parent module.
 
-use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::app_path::{AppPath, AppPathBuf, PathArithmetic};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -15,7 +15,7 @@ use super::super::scan_cache::ScanOutcome;
 use super::super::scan_oracle::{SubtreeTotals, scan_subtree_with_oracle};
 use super::super::scan_watchdog::{ScanTally, ScanWatchdog};
 use super::super::state::{CachedScanResult, ScanPreviewState};
-use super::super::transfer::volume::{PathRole, map_volume_error};
+use super::super::transfer::volume::{PathRole, label_of, listed_path, map_volume_error, on_volume, std_of};
 use super::super::transfer_tree::{TreeOrder, TreeRecorder};
 use super::super::types::{
     ScanPreviewCancelledEvent, ScanPreviewCompleteEvent, ScanPreviewProgressEvent, ScanPreviewPurpose,
@@ -312,10 +312,13 @@ pub(crate) async fn run_oracle_aware_batch_scan(
         .collect();
     let mut groups: HashMap<PathBuf, Vec<usize>> = HashMap::new();
     let mut group_order: Vec<PathBuf> = Vec::new();
-    for (index, source) in sources.iter().enumerate() {
-        let parent = source
+    // Grouped by the app path's parent: on Windows `Path` read a POSIX volume's
+    // `/share/a\b.txt` as `b.txt` in `/share/a`, so a pane showing `/share/a`
+    // answered for it with `/share/a/b.txt`, another entry's kind and size.
+    for (index, source_app) in sources_app.iter().enumerate() {
+        let parent = source_app
             .parent()
-            .map(|p| p.to_path_buf())
+            .map(|p| std_of(p).into_owned())
             .unwrap_or_else(|| PathBuf::from("/"));
         if !groups.contains_key(&parent) {
             group_order.push(parent.clone());
@@ -372,22 +375,17 @@ pub(crate) async fn run_oracle_aware_batch_scan(
             // Index cached entries by their last path component so we can resolve
             // selected paths without a per-path linear search. `path` on a cached
             // FileEntry is the absolute path string, so the filename component
-            // is the disambiguator within this parent.
+            // is the disambiguator within this parent. Both sides are the app path's
+            // last name (a POSIX volume's `a\b.txt` is one), read as the lossy text
+            // `Path` read.
             let by_name: HashMap<String, &FileEntry> = cached_entries
                 .iter()
-                .filter_map(|e| {
-                    PathBuf::from(&e.path)
-                        .file_name()
-                        .map(|n| (n.to_string_lossy().to_string(), e))
-                })
+                .filter_map(|e| Some((label_of(&*listed_path(e).ok()?)?, e)))
                 .collect();
 
             for &index in paths_in_group {
                 let (source, source_app) = (&sources[index], &sources_app[index]);
-                let name = source
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                let name = label_of(source_app).unwrap_or_default();
                 let Some(entry) = by_name.get(&name) else {
                     // Cache doesn't know this child. Could be a stale selection
                     // (entry deleted out-of-band) or a name encoding mismatch.
@@ -605,11 +603,14 @@ pub(crate) fn entry_in_parent_listing(
     volume_id: &str,
     source: &Path,
 ) -> Option<FileEntry> {
-    let entries = listings.authoritative_listing(volume_id, source.parent()?)?;
+    // The app path's split: on Windows `Path` read a POSIX volume's `/share/a\b.txt` as
+    // `b.txt` in `/share/a`, and a listed `/share/x\b.txt` as `b.txt` too.
+    let source = on_volume(source);
+    let entries = listings.authoritative_listing(volume_id, &std_of(source.parent()?))?;
     let name = source.file_name()?;
     entries
         .iter()
-        .find(|entry| Path::new(&entry.path).file_name() == Some(name))
+        .find(|entry| on_volume(Path::new(&entry.path)).file_name() == Some(name))
         .filter(|entry| !crate::hidden_links::listed_folder_may_be_a_link(volume, entry))
         .cloned()
 }
