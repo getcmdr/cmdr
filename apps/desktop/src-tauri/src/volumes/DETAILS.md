@@ -76,6 +76,9 @@ tested on every OS.
   the `subst` target (`QueryDosDeviceW`), a mapped drive's share (`WNetGetConnectionW`, the redirector's own table, no
   server round trip), and for a local drive only `GetVolumeInformationW` (label, filesystem, read-only). What each call
   answers on Windows 10 22H2 sits in that file's header, with its evidence anchor.
+- **Row icons** (`platform/windows/drive_icons.rs`): filled in `list_locations` only. Only the system drive shows the
+  Shell's icon (bounded wait), every other drive its kind's stock icon with no call to it. Which kind
+  gets which, and why: `src/icons/DETAILS.md` § "Asking Windows for the pixels" (Drive icons).
 - **When it's read**: at startup (`register_every_mount` through `registrable_mount_roots`), on every switcher refresh
   (`list_locations` reads it fresh), when a path names a root the cached table (2 s) doesn't hold, and whenever the
   drive watcher hears a drive come or go (next section).

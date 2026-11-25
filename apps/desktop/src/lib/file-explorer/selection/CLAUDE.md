@@ -44,7 +44,8 @@ lives in `FilePane.svelte` as a `Set<number>`).
   show, ❌ never a derivation of its own. `DETAILS.md` § display modes.
 - **`FileIcon` resolves a folder by PATH before `iconId`** (`getCachedCustomFolderIcon`): a custom-icon folder keeps the
   generic `dir` id, so gold recolor skips it unless `isAccentTintedCustomFolder`, and draws an emoji folder as the gold
-  `dir` plus a `.folder-emoji` layer outside the filter (`src-tauri/src/icons/DETAILS.md`). A cache miss draws the
+  `dir` plus a `.folder-emoji` layer outside the filter (`src-tauri/src/icons/DETAILS.md`). `special:*` recolors only
+  where `convention('standardFolderIcons')` is `accentTinted`: Windows' are full-color (#1479). A cache miss draws the
   bundled macOS default, ❌ not an emoji, then swaps to the live icon on `$iconCacheVersion`.
 
 ## Status-bar hints (`SelectionInfo`)

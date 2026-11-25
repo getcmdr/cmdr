@@ -10,6 +10,7 @@
 //! (`watcher/`, task 39). A mapped drive's UNC spelling registers as an alias root of the same
 //! volume, so `Z:/x` and `//server/share/x` land on one id.
 
+mod drive_icons;
 mod drives;
 pub(crate) mod watcher;
 
@@ -133,6 +134,13 @@ pub(crate) fn list_locations() -> Vec<LocationInfo> {
     }
     locations.extend(drives.iter().filter(|drive| !drive.is_alias).map(drive_row));
     locations.push(row("home", "Home", &home, LocationCategory::Favorite));
+    // Icons only here, the switcher's list: `resolve_path_volume_fast` runs per navigation.
+    let kinds = drives
+        .iter()
+        .filter(|drive| !drive.is_alias)
+        .map(|drive| (drive.root.clone(), drive.kind))
+        .collect();
+    drive_icons::fill_icons(&mut locations, &kinds);
     locations
 }
 

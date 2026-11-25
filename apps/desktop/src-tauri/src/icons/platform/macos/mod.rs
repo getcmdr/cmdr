@@ -11,7 +11,7 @@ use objc2::rc::autoreleasepool;
 
 use super::super::image_to_data_url;
 use super::PathIcons;
-pub(crate) use super::unix::extended_attribute;
+pub(crate) use super::unix::{draws_own_folder_icon, extended_attribute, icon_source_modified};
 use crate::config::ICON_SIZE;
 
 /// Global-domain key behind Finder > Settings > Tags > "Tint folders based on tags". Absent (the

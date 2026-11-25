@@ -1,6 +1,6 @@
 /**
  * How this platform's own apps behave (dialog button order, the keys that commit and cancel a
- * dialog, access keys, the menu model, who draws the context menus, the keys that force a drop's copy or move, the screen readers to expect, and on Linux the desktop), as
+ * dialog, access keys, the menu model, who draws the context menus, the keys that force a drop's copy or move, how its standard folders' icons are colored, the screen readers to expect, and on Linux the desktop), as
  * the backend says, read synchronously. A UI primitive asks a convention, ❌ never "is this
  * Windows", so Linux follows its desktop with no extra branch. Mechanics: `DETAILS.md` § Conventions.
  */
@@ -17,6 +17,7 @@ import type {
   MenuModel,
   PlatformConventions,
   ScreenReader,
+  StandardFolderIcons,
 } from '#lib/ipc/bindings.js'
 import conventionsOn from './conventions-on.json'
 
@@ -55,6 +56,7 @@ const MENU_MODELS = every<MenuModel>()('systemMenuBar', 'windowMenuBar', 'primar
 const HIDDEN_MENU_BARS = every<HiddenMenuBar>()('none', 'showsOnAltOrF10', 'f10OpensMainMenu')
 const CONTEXT_MENUS = every<ContextMenus>()('native', 'inPage')
 const DROP_MODIFIERS = every<DropModifiers>()('optionCopiesCommandMoves', 'controlCopiesShiftMoves')
+const STANDARD_FOLDER_ICONS = every<StandardFolderIcons>()('accentTinted', 'ownColors')
 const SCREEN_READERS = every<ScreenReader>()('voiceOver', 'jaws', 'nvda', 'narrator', 'orca')
 const LINUX_DESKTOPS = every<LinuxDesktop>()('gnome', 'kde', 'other')
 const APP_FILES = every<AppFile>()('appBundle', 'exe', 'executable')
@@ -84,6 +86,7 @@ export function platformConventions(): PlatformConventions {
     hiddenMenuBar: oneOf(HIDDEN_MENU_BARS, answered.hiddenMenuBar, fallback.hiddenMenuBar),
     contextMenus: oneOf(CONTEXT_MENUS, answered.contextMenus, fallback.contextMenus),
     dropModifiers: oneOf(DROP_MODIFIERS, answered.dropModifiers, fallback.dropModifiers),
+    standardFolderIcons: oneOf(STANDARD_FOLDER_ICONS, answered.standardFolderIcons, fallback.standardFolderIcons),
     screenReaders:
       Array.isArray(readers) &&
       readers.length > 0 &&

@@ -41,8 +41,9 @@ Full details: `DETAILS.md`.
 - **Every cache write is epoch-guarded** (`cache_icon(epoch, ..)`, FE `applyIconsToCache(.., epoch)`), epoch taken
   BEFORE asking the OS. `DETAILS.md` § Flushes.
 - **Disk-cache staleness token is the place's mtime**, ❌ not a watcher: Finder bumps it when re-iconing.
-- **Windows asks a real place only if `may_read_own_icon` says it's local and holds its bytes**, and a `.lnk` only if
-  its icon location and target are too; else its type's icon stands in, memory only, ❌ never the disk tier. ❌ No
-  `.url`. `DETAILS.md` § Asking Windows for the pixels.
+- **Windows asks a real place only if it's local and holds its bytes** (`may_read_own_icon`), a `.lnk` only if what it
+  names is too; else the type's icon stands in, memory only. ❌ No `.url`. A listed folder is attacker input: ❌ never
+  hand a `desktop.ini` folder to the Shell (Cmdr extracts its vetted icon file), and only the system drive's row asks
+  the Shell. `DETAILS.md` § Asking Windows for the pixels.
 - **Providers live in `platform/`**; on Linux `special:*` degrades to the generic folder. The macOS fetch is ours
   (`platform/macos/workspace.rs`), not a crate: a crate can hard-link a framework newer than our floor.

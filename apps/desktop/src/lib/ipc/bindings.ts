@@ -17877,6 +17877,11 @@ export type PlatformConventions = {
   // Which keys held during a drag force a copy or a move.
   dropModifiers: DropModifiers
   /**
+   *  How the OS draws its standard folders' icons (Documents, Downloads, …), which decides
+   *  whether Cmdr's gold folder recolor may touch them.
+   */
+  standardFolderIcons: StandardFolderIcons
+  /**
    *  The screen readers this platform's users run, most used first: the ones a screen reader
    *  pass tests with and any hint names.
    */
@@ -22626,6 +22631,20 @@ export type StandardFolder =
   | 'users'
   // `/`: the top of the startup disk.
   | 'startupDisk'
+
+// How a standard folder's icon is drawn.
+export type StandardFolderIcons =
+  /**
+   *  A plain folder in the system accent with a one-color glyph on it (macOS), so the
+   *  grayscale-first gold filter recolors it like the generic folder.
+   */
+  | 'accentTinted'
+  /**
+   *  Full-color artwork of their own (Windows' blue Desktop, Downloads arrow, Music note), which
+   *  the gold filter would gray into a plain gold folder (#1479). Only the generic folder is
+   *  recolored.
+   */
+  | 'ownColors'
 
 /**
  *  Whether a notarization ticket is stapled to the item. An absent ticket doesn't

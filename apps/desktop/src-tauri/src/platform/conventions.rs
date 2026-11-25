@@ -26,6 +26,9 @@ pub struct PlatformConventions {
     pub context_menus: ContextMenus,
     /// Which keys held during a drag force a copy or a move.
     pub drop_modifiers: DropModifiers,
+    /// How the OS draws its standard folders' icons (Documents, Downloads, …), which decides
+    /// whether Cmdr's gold folder recolor may touch them.
+    pub standard_folder_icons: StandardFolderIcons,
     /// The screen readers this platform's users run, most used first: the ones a screen reader
     /// pass tests with and any hint names.
     pub screen_readers: &'static [ScreenReader],
@@ -47,6 +50,19 @@ pub enum AppFile {
     Exe,
     /// Any executable file, which no extension names: Linux.
     Executable,
+}
+
+/// How a standard folder's icon is drawn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum StandardFolderIcons {
+    /// A plain folder in the system accent with a one-color glyph on it (macOS), so the
+    /// grayscale-first gold filter recolors it like the generic folder.
+    AccentTinted,
+    /// Full-color artwork of their own (Windows' blue Desktop, Downloads arrow, Music note), which
+    /// the gold filter would gray into a plain gold folder (#1479). Only the generic folder is
+    /// recolored.
+    OwnColors,
 }
 
 /// Where the affirmative ("do it") button sits relative to Cancel.
@@ -211,6 +227,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             hidden_menu_bar: HiddenMenuBar::None,
             context_menus: ContextMenus::Native,
             drop_modifiers: DropModifiers::OptionCopiesCommandMoves,
+            standard_folder_icons: StandardFolderIcons::AccentTinted,
             screen_readers: &[ScreenReader::VoiceOver],
             linux_desktop: None,
             app_file: AppFile::AppBundle,
@@ -225,6 +242,7 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             // In the page, so the bar's flyouts and the right-click menus share one look (D5).
             context_menus: ContextMenus::InPage,
             drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
+            standard_folder_icons: StandardFolderIcons::OwnColors,
             screen_readers: &[ScreenReader::Jaws, ScreenReader::Nvda, ScreenReader::Narrator],
             linux_desktop: None,
             app_file: AppFile::Exe,
@@ -251,6 +269,9 @@ pub(crate) const fn conventions_on(desktop: Desktop) -> PlatformConventions {
             context_menus: ContextMenus::Native,
             // Nautilus, Dolphin, and Thunar all read Ctrl and Shift the way Explorer does.
             drop_modifiers: DropModifiers::ControlCopiesShiftMoves,
+            // Linux shows a standard folder as the generic folder today (`icons/CLAUDE.md`), so
+            // it's recolored like the rest.
+            standard_folder_icons: StandardFolderIcons::AccentTinted,
             screen_readers: &[ScreenReader::Orca],
             linux_desktop: Some(desktop),
             app_file: AppFile::Executable,
@@ -336,6 +357,19 @@ mod tests {
             "`apps/desktop/src/lib/platform/conventions-on.json` drifted from `conventions_on`; write this:\n{}",
             serde_json::to_string_pretty(&expected).expect("serializes")
         );
+    }
+
+    /// #1479: Cmdr gold grayed Windows' full-color Desktop, Downloads, and Music icons into plain
+    /// gold folders.
+    #[test]
+    fn only_windows_draws_its_standard_folders_in_their_own_colors() {
+        for desktop in Desktop::ALL {
+            let expected = match desktop {
+                Desktop::Windows => StandardFolderIcons::OwnColors,
+                Desktop::Macos | Desktop::Linux(_) => StandardFolderIcons::AccentTinted,
+            };
+            assert_eq!(conventions_on(desktop).standard_folder_icons, expected, "{desktop:?}");
+        }
     }
 
     #[test]

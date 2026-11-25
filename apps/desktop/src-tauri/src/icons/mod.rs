@@ -8,6 +8,8 @@ mod disk_cache;
 mod memory_cache;
 pub mod per_path;
 mod per_place_fetch;
+/// Crate-visible for the OS-only extras its `mod.rs` re-exports (Windows' app icons, stock drive
+/// icons).
 pub(crate) mod platform;
 // The special-folder classifier moved to `cmdr-fs`, where `FileEntry::new` can
 // reach it. Aliased so `icons::special_folders::…` keeps resolving.
@@ -250,6 +252,17 @@ pub fn custom_folder_icon_ids(directory_paths: Vec<String>) -> Vec<CustomFolderI
 ///
 /// Returns a map of icon_id -> data URL.
 pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> HashMap<String, String> {
+    get_icons_within(icon_ids, use_app_icons_for_documents, PER_PLACE_BUDGET)
+}
+
+/// [`get_icons`], waiting at most `budget` (from its start) for real places. A caller with a
+/// tighter deadline than the IPC command's (the volume list) passes its own; a place that
+/// answers later lands in the cache for the next ask.
+pub(crate) fn get_icons_within(
+    icon_ids: Vec<String>,
+    use_app_icons_for_documents: bool,
+    budget: Duration,
+) -> HashMap<String, String> {
     let started = Instant::now();
     let mut result = HashMap::new();
     // Taken before asking the OS, so a flush during the fetch refuses its writes.
@@ -333,7 +346,7 @@ pub fn get_icons(icon_ids: Vec<String>, use_app_icons_for_documents: bool) -> Ha
     }
 
     if !per_path_to_fetch.is_empty() {
-        let wait = PER_PLACE_BUDGET.saturating_sub(started.elapsed());
+        let wait = budget.saturating_sub(started.elapsed());
         result.extend(per_place_fetch::fetch_within(per_path_to_fetch, epoch, wait));
     }
 

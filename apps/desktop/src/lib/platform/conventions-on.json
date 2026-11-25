@@ -8,6 +8,7 @@
     "hiddenMenuBar": "none",
     "contextMenus": "native",
     "dropModifiers": "optionCopiesCommandMoves",
+    "standardFolderIcons": "accentTinted",
     "screenReaders": ["voiceOver"],
     "linuxDesktop": null,
     "appFile": "appBundle"
@@ -21,6 +22,7 @@
     "hiddenMenuBar": "showsOnAltOrF10",
     "contextMenus": "inPage",
     "dropModifiers": "controlCopiesShiftMoves",
+    "standardFolderIcons": "ownColors",
     "screenReaders": ["jaws", "nvda", "narrator"],
     "linuxDesktop": null,
     "appFile": "exe"
@@ -34,6 +36,7 @@
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
+    "standardFolderIcons": "accentTinted",
     "screenReaders": ["orca"],
     "linuxDesktop": "gnome",
     "appFile": "executable"
@@ -47,6 +50,7 @@
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
+    "standardFolderIcons": "accentTinted",
     "screenReaders": ["orca"],
     "linuxDesktop": "kde",
     "appFile": "executable"
@@ -60,6 +64,7 @@
     "hiddenMenuBar": "f10OpensMainMenu",
     "contextMenus": "native",
     "dropModifiers": "controlCopiesShiftMoves",
+    "standardFolderIcons": "accentTinted",
     "screenReaders": ["orca"],
     "linuxDesktop": "other",
     "appFile": "executable"

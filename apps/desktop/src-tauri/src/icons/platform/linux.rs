@@ -8,7 +8,7 @@ use rayon::prelude::*;
 
 use super::super::image_to_data_url;
 use super::PathIcons;
-pub(crate) use super::unix::extended_attribute;
+pub(crate) use super::unix::{draws_own_folder_icon, extended_attribute, icon_source_modified};
 use crate::config::ICON_SIZE;
 
 /// Fetches icon for a specific file path via XDG icon theme lookup.

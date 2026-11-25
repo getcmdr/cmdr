@@ -1,6 +1,6 @@
 //! Asking the Shell for a place's icon pixels: `IShellItemImageFactory::GetImage` with
-//! `SIIGBF_ICONONLY`, read back through `GetDIBits`. Why this API and not `SHGetFileInfoW`:
-//! `DETAILS.md` § "Asking Windows for the pixels".
+//! `SIIGBF_ICONONLY`, read back through `GetDIBits`, plus the shortcut arrow on a link. Why
+//! this API and not `SHGetFileInfoW`: `DETAILS.md` § "Asking Windows for the pixels".
 
 use std::path::Path;
 
@@ -11,21 +11,43 @@ use windows::Win32::Graphics::Gdi::{
     BI_RGB, BITMAP, BITMAPINFO, BITMAPINFOHEADER, CreateCompatibleDC, DIB_RGB_COLORS, DeleteDC, DeleteObject,
     GetDIBits, GetObjectW, HBITMAP, HDC, HGDIOBJ,
 };
-use windows::Win32::UI::Shell::{IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_ICONONLY};
-use windows::core::HSTRING;
+use windows::Win32::System::SystemServices::SFGAO_LINK;
+use windows::Win32::UI::Shell::{IShellItem, IShellItemImageFactory, SHCreateItemFromParsingName, SIIGBF_ICONONLY};
+use windows::core::{HSTRING, Interface};
 
 /// The Shell's icon for the place at native `path`, `size` × `size` straight-alpha RGBA, or
-/// `None` when the Shell has none for it (gone, unreadable, no icon).
+/// `None` when the Shell has none for it (gone, unreadable, no icon). A shortcut (anything the
+/// Shell calls a link: `.lnk`, `.url`, `.appref-ms`, a type Cmdr samples or a real file) carries
+/// the system's shortcut arrow, as Explorer draws it: `GetImage` leaves overlays to the view,
+/// so the arrow is composited here (`overlay.rs`).
+pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
+    let (img, is_link) = render_item(path, size)?;
+    Some(if is_link {
+        super::overlay::with_link_arrow(img)
+    } else {
+        img
+    })
+}
+
+/// [`render`] without the shortcut arrow: the Shell's own image of the item.
+pub(super) fn render_plain(path: &Path, size: u32) -> Option<RgbaImage> {
+    render_item(path, size).map(|(img, _)| img)
+}
+
+/// The Shell's image of the item, and whether the Shell calls it a link (`SFGAO_LINK`, which
+/// it answers from the type's registration, the `IsShortcut` value, without opening the file).
 ///
 /// `SIIGBF_ICONONLY` keeps it to the icon: never a thumbnail, which would read the file's
 /// content (and on a cloud placeholder, download it).
-pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
+fn render_item(path: &Path, size: u32) -> Option<(RgbaImage, bool)> {
     crate::platform::apartment::ensure_on_this_thread();
     let side = i32::try_from(size).ok()?;
     // SAFETY: the path is a live, NUL-terminated `HSTRING` for the whole call, and no bind
     // context is passed (`None`), which the API documents as allowed.
-    let factory: IShellItemImageFactory =
-        unsafe { SHCreateItemFromParsingName(&HSTRING::from(path.as_os_str()), None) }.ok()?;
+    let item: IShellItem = unsafe { SHCreateItemFromParsingName(&HSTRING::from(path.as_os_str()), None) }.ok()?;
+    // SAFETY: `item` is a live interface; the mask names the one attribute asked about.
+    let is_link = unsafe { item.GetAttributes(SFGAO_LINK) }.is_ok_and(|found| found.0 & SFGAO_LINK.0 != 0);
+    let factory: IShellItemImageFactory = item.cast().ok()?;
     // SAFETY: `factory` is a live interface; the Shell hands back a bitmap this call owns.
     let bitmap = unsafe { factory.GetImage(SIZE { cx: side, cy: side }, SIIGBF_ICONONLY) }.ok()?;
     let pixels = read_bitmap(bitmap);
@@ -34,11 +56,16 @@ pub(super) fn render(path: &Path, size: u32) -> Option<RgbaImage> {
     let _ = unsafe { DeleteObject(HGDIOBJ::from(bitmap)) };
     let (width, height, bgra) = pixels?;
     let img = RgbaImage::from_raw(width, height, bgra_to_straight_rgba(bgra)?)?;
-    Some(if (width, height) == (size, size) {
+    Some((fit(img, size), is_link))
+}
+
+/// `img` at `size` × `size`, resampled only when it isn't already.
+pub(super) fn fit(img: RgbaImage, size: u32) -> RgbaImage {
+    if img.dimensions() == (size, size) {
         img
     } else {
         image::imageops::resize(&img, size, size, FilterType::Lanczos3)
-    })
+    }
 }
 
 /// The icon at an app's declared icon location (`IAssocHandler::GetIconLocation`), `size` ×
@@ -100,39 +127,13 @@ fn packaged_logo(resource: &str, size: u32) -> Option<RgbaImage> {
     Some(image::open(path).ok()?.to_rgba8())
 }
 
-/// The icon at index `index` of `file`'s icon resources, drawn at `size`.
+/// The icon at index `index` of `file`'s icon resources, drawn at `size` (`overlay::extract_icon`).
 fn extracted_icon(file: &str, index: i32, size: u32) -> Option<RgbaImage> {
-    use windows::Win32::UI::Shell::SHDefExtractIconW;
-    use windows::Win32::UI::WindowsAndMessaging::{DestroyIcon, GetIconInfo, HICON, ICONINFO};
-
-    let mut icon = HICON::default();
-    // SAFETY: the file is a live NUL-terminated `HSTRING`; `icon` receives an icon this call
-    // owns, destroyed below; no small icon is asked for. The size's low word is the large size.
-    let extracted = unsafe { SHDefExtractIconW(&HSTRING::from(file), index, 0, Some(&raw mut icon), None, size) };
-    if extracted.is_err() || icon.is_invalid() {
-        return None;
-    }
-    let mut info = ICONINFO::default();
-    // SAFETY: `icon` is the live icon extracted above; `info` receives two bitmaps this call
-    // owns and deletes below.
-    let read = unsafe { GetIconInfo(icon, &raw mut info) }.is_ok();
-    let pixels = if read { read_bitmap(info.hbmColor) } else { None };
-    // SAFETY: each bitmap came from `GetIconInfo` above (a null one is skipped), and the icon
-    // from `SHDefExtractIconW`; nothing else holds them.
-    unsafe {
-        for bitmap in [info.hbmColor, info.hbmMask] {
-            if !bitmap.is_invalid() {
-                let _ = DeleteObject(HGDIOBJ::from(bitmap));
-            }
-        }
-        let _ = DestroyIcon(icon);
-    }
-    let (width, height, bgra) = pixels?;
-    RgbaImage::from_raw(width, height, bgra_to_straight_rgba(bgra)?)
+    super::overlay::extract_icon(Path::new(file), index, size)
 }
 
 /// The bitmap's pixels as 32-bit top-down BGRA, with its width and height.
-fn read_bitmap(bitmap: HBITMAP) -> Option<(u32, u32, Vec<u8>)> {
+pub(super) fn read_bitmap(bitmap: HBITMAP) -> Option<(u32, u32, Vec<u8>)> {
     let mut header = BITMAP::default();
     let header_len = i32::try_from(size_of::<BITMAP>()).ok()?;
     // SAFETY: `header` is a `BITMAP` of exactly `header_len` bytes, which `GetObjectW` fills.

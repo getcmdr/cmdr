@@ -3,6 +3,7 @@
 //! are portable.
 
 use std::path::Path;
+use std::time::SystemTime;
 
 use image::DynamicImage;
 
@@ -30,6 +31,22 @@ const _: fn(fn() -> bool) -> bool = with_object_pool;
 const _: fn() -> bool = tag_tinting_disabled;
 const _: fn(&Path, &str) -> Option<Vec<u8>> = extended_attribute;
 const _: fn(&str) -> bool = may_read_own_icon;
+const _: fn(&Path) -> bool = draws_own_folder_icon;
+const _: fn(&Path) -> Option<SystemTime> = icon_source_modified;
+
+/// Whether the folder at native `path` carries a custom icon its OS keeps in a file of its own
+/// that Cmdr may draw as-is (Windows: a `desktop.ini` naming a local icon). False where the OS
+/// keeps custom icons in extended attributes instead (`per_path` reads those). Only for the
+/// visible folders the frontend asks about, ❌ never during a listing.
+pub(super) use imp::draws_own_folder_icon;
+
+/// When the icon of the place at `path` last changed, as far as its files say: the disk
+/// cache's staleness token. `None` when that can't be read (gone, a dead mount).
+pub(super) use imp::icon_source_modified;
+
+/// A drive kind's stock icon, for a volume row whose drive mustn't be asked (Windows only).
+#[cfg(target_os = "windows")]
+pub(crate) use imp::{PLACE_LOOKUP_STACK, StockDriveIcon, stock_drive_icon, system_drive_icon};
 
 /// Whether the place at app path `path` may be asked for its OWN icon: the ask stays on this
 /// machine and leaves the file as it is (no network round trip, no cloud download, no place
