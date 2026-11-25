@@ -38,6 +38,9 @@ Some notes here are load-bearing rather than historical. Those are grouped below
 - `windows-port/real-windows-check-2026-11-23.md`: PRs #1389, #1390, #1405, and #1406 in the running app on the real
   Windows 10 desktop (shares, a folder mount, growing files, junctions, every write op and its undo, 3,000-file bursts),
   a free look around, and the bugs it filed.
+- `windows-port/real-windows-check-2026-11-25.md`: PRs #1447–#1459 on the real Windows 10 desktop (folder search, open
+  and reveal, Shell icons, the junk set, the index watch, clipboard and drag with Explorer, remote names), one line per
+  check, and the bugs it filed.
 - `ci-gate-review-2026-11-05.md`: the adversarial review of the per-lane CI (lane markers, Rust test scope, runner
   allowlist) before it landed: every false-green path it found, the fixes, and what it checked and found sound.
 - `local-network-after-update-2026-11-06.md`: why Local Network stopped applying after each in-place update (#1019),
