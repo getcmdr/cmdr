@@ -14,26 +14,29 @@ use super::{
     BackendKind, ConnectionState, IndexWalk, LandedModified, NodeIdentity, SpaceInfo, StreamWritten, SupportedDates,
     VolumeError,
 };
-use crate::app_path::BridgedPath;
+use crate::app_path::{AppPath, AppPathBuf};
 use crate::entry::FileEntry;
 use crate::ignore_poison::IgnorePoison;
 use crate::ignore_poison::RwLockIgnorePoison;
 use crate::metadata::{CarriedMetadata, ClassOutcome, MetadataCaps, MetadataClasses, MetadataReport};
-use crate::os_error::OsErrorClass;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 pub use device::InMemoryContent;
 use device::{Bandwidth, Yielder};
+use keys::{join_tail, name_of, shown, slash};
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use subtree_totals::{HeldAt, SubtreeTotals};
 
 mod carry_on;
 mod device;
 mod imports;
+mod keys;
 mod links;
 mod panes;
+mod scan;
 mod subtree_totals;
 #[cfg(test)]
 #[path = "in_memory/subtree_totals_test.rs"]
@@ -96,18 +99,19 @@ impl InMemoryEntry {
 /// - Stress testing with large file counts
 pub struct InMemoryVolume {
     name: String,
-    root: BridgedPath,
-    entries: RwLock<HashMap<PathBuf, InMemoryEntry>>,
+    root: AppPathBuf,
+    /// The store, keyed by app path: a name holding `\` is one name on every host.
+    entries: RwLock<HashMap<AppPathBuf, InMemoryEntry>>,
     /// Configurable space info for testing. None means get_space_info returns NotSupported.
     space_info: Option<SpaceInfo>,
     /// Per-subtree space for [`Volume::get_space_info_at`], modeling a volume
     /// that spans several filesystems. The deepest matching prefix answers;
     /// a path under none of them falls back to `space_info`.
-    space_info_under: Vec<(PathBuf, SpaceInfo)>,
+    space_info_under: Vec<(AppPathBuf, SpaceInfo)>,
     /// Per-subtree answers for [`Volume::write_access_at`], set by
     /// [`with_write_access_under`](Self::with_write_access_under). The deepest
     /// matching prefix answers; a path under none of them is `Unknown`.
-    write_access_under: Vec<(PathBuf, super::WriteAccess)>,
+    write_access_under: Vec<(AppPathBuf, super::WriteAccess)>,
     /// Lane key the operation manager uses to (de)serialize this volume against
     /// others. `None` ⇒ fall back to the root lane (the trait default), so the
     /// ~169 existing `new(...)` sites are untouched. Manager tests set it via
@@ -159,7 +163,7 @@ pub struct InMemoryVolume {
     bandwidth: Option<Arc<Bandwidth>>,
     /// The home folder when this volume stands in for the computer's own disk
     /// (`Volume::stands_in_for_own_disk`). Set via [`Self::standing_in_for_own_disk`].
-    own_disk_home: Option<BridgedPath>,
+    own_disk_home: Option<AppPathBuf>,
     /// Hands the caller's thread back every slice, like a device waiting on I/O.
     /// `None` (the default) never yields. Set via [`Self::with_yielding`].
     yielder: Option<Arc<Yielder>>,
@@ -175,7 +179,7 @@ pub struct InMemoryVolume {
     /// `AlreadyExists`" need a rename that fails some OTHER way. Default `None`.
     /// Set via [`Self::with_rename_failing`].
     rename_failure: Option<VolumeError>,
-    rename_to_failing: RwLock<HashSet<PathBuf>>, // [`Self::set_rename_to_failing`]
+    rename_to_failing: RwLock<HashSet<AppPathBuf>>, // [`Self::set_rename_to_failing`]
     /// When `true`, [`Volume::create_directory`] returns `NotFound` for the path it
     /// was handed instead of creating it. Models a backend that can't ADDRESS the
     /// destination at all (a share answering `NotFound` for a path outside its
@@ -224,7 +228,7 @@ pub struct InMemoryVolume {
     /// that turns an unanswered stat into a confident "not a directory" is what
     /// routes a folder into a destructive file-shaped branch. Set via
     /// [`Self::set_stat_failing`]. Empty by default.
-    stat_failing: RwLock<HashSet<PathBuf>>,
+    stat_failing: RwLock<HashSet<AppPathBuf>>,
     /// What [`Volume::connection_state`] reports. `None` (the default) is a
     /// volume with no session at all; `Some` lets a test drive a code path gated
     /// on a live remote session without a server.
@@ -245,7 +249,7 @@ pub struct InMemoryVolume {
     /// [`Volume::index_walk`] answers set by
     /// [`with_index_walk`](Self::with_index_walk), by directory path. Any other
     /// directory keeps the trait's default.
-    index_walk_overrides: Vec<(PathBuf, IndexWalk)>,
+    index_walk_overrides: Vec<(AppPathBuf, IndexWalk)>,
     /// Live [`Volume::hold_for_transfer`] holds, when counting (`transfer_holds.rs`).
     transfer_holds: Option<Arc<std::sync::atomic::AtomicUsize>>,
     /// What [`Volume::list_directory`] reports as every FILE's modified time,
@@ -275,7 +279,7 @@ impl InMemoryVolume {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            root: BridgedPath::new(PathBuf::from("/")),
+            root: slash().to_owned(),
             entries: RwLock::new(HashMap::new()),
             space_info: None,
             space_info_under: Vec::new(),
@@ -418,7 +422,7 @@ impl InMemoryVolume {
     /// stored modified time, the one `get_metadata` answers.
     fn written(
         &self,
-        dest: &Path,
+        dest: &AppPath,
         bytes: u64,
         carried: &CarriedMetadata,
         modified: Option<std::time::SystemTime>,
@@ -432,7 +436,7 @@ impl InMemoryVolume {
         let stored = self
             .entries
             .read_ignore_poison()
-            .get(&self.normalize(dest))
+            .get(&*self.normalize(dest))
             .and_then(|entry| entry.metadata.modified_at);
         written.landed_at(LandedModified::Known(stored))
     }
@@ -442,7 +446,7 @@ impl InMemoryVolume {
     /// walks (a phone's `/proc`) or names the link that is its storage (a phone's
     /// `/sdcard`). Every other directory keeps the trait's default answer.
     pub fn with_index_walk(mut self, dir: impl Into<PathBuf>, walk: IndexWalk) -> Self {
-        self.index_walk_overrides.push((dir.into(), walk));
+        self.index_walk_overrides.push((app_of(&dir.into()).into_owned(), walk));
         self
     }
 
@@ -450,7 +454,7 @@ impl InMemoryVolume {
     /// mounted at a real-looking path (`/Volumes/X`, `/media/X`) in a test that
     /// exercises mount-root resolution.
     pub fn with_root(mut self, root: impl Into<PathBuf>) -> Self {
-        self.root = BridgedPath::new(root.into());
+        self.root = app_of(&root.into()).into_owned();
         self
     }
 
@@ -554,7 +558,7 @@ impl InMemoryVolume {
     /// per-path twin of [`Self::with_rename_failing`], which refuses every name
     /// and so can't exercise a caller reaching for a SECOND one.
     pub fn set_rename_to_failing(&self, to: &Path) {
-        let normalized = self.normalize(to);
+        let normalized = self.normalize(&app_of(to)).into_owned();
         self.rename_to_failing.write_ignore_poison().insert(normalized);
     }
 
@@ -563,25 +567,25 @@ impl InMemoryVolume {
     /// existing for everything else, so a test can put an unanswerable stat in
     /// front of code that has to decide what to do without one.
     pub fn set_stat_failing(&self, path: &Path) {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(&app_of(path)).into_owned();
         self.stat_failing.write_ignore_poison().insert(normalized);
     }
 
     /// Whether `path`'s stat is configured to fail.
-    fn stat_fails_for(&self, normalized: &Path) -> bool {
+    fn stat_fails_for(&self, normalized: &AppPath) -> bool {
         self.stat_failing.read_ignore_poison().contains(normalized)
     }
 
     /// The stat body behind `get_metadata` and `is_directory`: answers `f` over the
     /// entry's metadata, the same way [`Self::stat_entry_with`] does.
-    fn stat_with<T>(&self, path: &Path, f: impl FnOnce(&FileEntry) -> T) -> Result<T, VolumeError> {
+    fn stat_with<T>(&self, path: &AppPath, f: impl FnOnce(&FileEntry) -> T) -> Result<T, VolumeError> {
         self.stat_entry_with(path, |entry| f(&entry.metadata))
     }
 
     /// The one stat body behind every per-path question: answers `f` over the
     /// stored entry, `NotFound` for a missing path, and the typed `IoError` for a
     /// path under [`Self::set_stat_failing`].
-    fn stat_entry_with<T>(&self, path: &Path, f: impl FnOnce(&InMemoryEntry) -> T) -> Result<T, VolumeError> {
+    fn stat_entry_with<T>(&self, path: &AppPath, f: impl FnOnce(&InMemoryEntry) -> T) -> Result<T, VolumeError> {
         let entries = self.entries.read().map_err(|_| VolumeError::IoError {
             message: "Lock poisoned".into(),
             raw_os_error: None,
@@ -590,28 +594,30 @@ impl InMemoryVolume {
         let normalized = self.normalize(path);
         if self.stat_fails_for(&normalized) {
             return Err(VolumeError::IoError {
-                message: crate::error_detail::ErrorDetail::at_path(
-                    "Stat unavailable for ",
-                    normalized.to_string_lossy(),
-                ),
+                message: crate::error_detail::ErrorDetail::at_path("Stat unavailable for ", shown(&normalized)),
                 raw_os_error: None,
             });
         }
 
         entries
-            .get(&normalized)
+            .get(&*normalized)
             .map(f)
-            .ok_or_else(|| VolumeError::NotFound(normalized.display().to_string()))
+            .ok_or_else(|| VolumeError::NotFound(shown(&normalized)))
     }
 
     /// Test helper: overwrites an existing entry's `modified_at` (unix seconds), so
     /// a test can age a file into the past (or clear its mtime). Panics if the path
     /// isn't present.
     pub fn set_modified_at(&self, path: &Path, modified_at: Option<u64>) {
+        self.stamp_modified(&app_of(path), modified_at);
+    }
+
+    /// [`Self::set_modified_at`] for an app path, what a landing write stamps.
+    fn stamp_modified(&self, path: &AppPath, modified_at: Option<u64>) {
         let normalized = self.normalize(path);
         self.entries
             .write_ignore_poison()
-            .get_mut(&normalized)
+            .get_mut(&*normalized)
             .expect("set_modified_at: entry must exist")
             .metadata
             .modified_at = modified_at;
@@ -622,7 +628,7 @@ impl InMemoryVolume {
     /// `permissions` (`None` for 0) off the listing, the flags and xattrs off
     /// the double's own store. `None` when the path isn't present.
     pub fn carried_metadata(&self, path: &Path) -> Option<CarriedMetadata> {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(&app_of(path)).into_owned();
         self.entries.read_ignore_poison().get(&normalized).map(Self::carried_of)
     }
 
@@ -630,10 +636,15 @@ impl InMemoryVolume {
     /// source a copy reads (`created`, `mode`, the flags, and the xattrs;
     /// `None` leaves that field as it was). Panics if the path isn't present.
     pub fn set_carried_metadata(&self, path: &Path, carried: CarriedMetadata) {
+        self.store_carried_at(&app_of(path), carried);
+    }
+
+    /// [`Self::set_carried_metadata`] for an app path, what a landing write keeps.
+    fn store_carried_at(&self, path: &AppPath, carried: CarriedMetadata) {
         let normalized = self.normalize(path);
         let mut entries = self.entries.write_ignore_poison();
         let entry = entries
-            .get_mut(&normalized)
+            .get_mut(&*normalized)
             .expect("set_carried_metadata: entry must exist");
         Self::store_carried(entry, carried);
     }
@@ -743,8 +754,10 @@ impl InMemoryVolume {
     /// phone's shared storage beside its read-only system image). The volume's
     /// own figure stays whatever [`with_space_info`](Self::with_space_info) set.
     pub fn with_space_info_under(mut self, under: impl Into<PathBuf>, total_bytes: u64, available_bytes: u64) -> Self {
-        self.space_info_under
-            .push((under.into(), SpaceInfo::bounded(total_bytes, available_bytes)));
+        self.space_info_under.push((
+            app_of(&under.into()).into_owned(),
+            SpaceInfo::bounded(total_bytes, available_bytes),
+        ));
         self
     }
 
@@ -753,7 +766,8 @@ impl InMemoryVolume {
     /// write into. Every other path answers `Unknown`, as a backend with no way to
     /// ask does.
     pub fn with_write_access_under(mut self, under: impl Into<PathBuf>, access: super::WriteAccess) -> Self {
-        self.write_access_under.push((under.into(), access));
+        self.write_access_under
+            .push((app_of(&under.into()).into_owned(), access));
         self
     }
 
@@ -763,7 +777,7 @@ impl InMemoryVolume {
     /// content is untouched — `open_read_stream` still yields the real bytes — so
     /// a transfer that plans against the real stream lands correct bytes. Test-only.
     pub fn set_reported_size(&self, path: &Path, reported_size: u64) {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(&app_of(path)).into_owned();
         let mut entries = self.entries.write_ignore_poison();
         if let Some(entry) = entries.get_mut(&normalized) {
             entry.metadata.size = Some(reported_size);
@@ -777,7 +791,7 @@ impl InMemoryVolume {
     /// and picks the destructive cleanup branch, and until now there was no way
     /// to express it in a test. Test-only.
     pub fn set_reported_type(&self, path: &Path, is_directory: bool) {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(&app_of(path)).into_owned();
         let mut entries = self.entries.write_ignore_poison();
         if let Some(entry) = entries.get_mut(&normalized) {
             entry.metadata.is_directory = is_directory;
@@ -790,7 +804,7 @@ impl InMemoryVolume {
     /// destination path has to refuse it rather than write outside the folder it
     /// was given (`ChildName`). Test-only.
     pub fn set_reported_name(&self, path: &Path, reported_name: &str) {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(&app_of(path)).into_owned();
         let mut entries = self.entries.write_ignore_poison();
         if let Some(entry) = entries.get_mut(&normalized) {
             entry.metadata.name = reported_name.to_string();
@@ -803,7 +817,12 @@ impl InMemoryVolume {
         {
             let mut map = volume.entries.write_ignore_poison();
             for entry in entries {
-                let path = PathBuf::from(&entry.path);
+                // A row's own path, through the listed-row door; an empty or climbing
+                // row (no plain row path) keys as the bridge reads its text.
+                let path = match AppPath::from_listed_row(&entry.path) {
+                    Ok(path) => path.into_owned(),
+                    Err(_) => app_of(Path::new(&entry.path)).into_owned(),
+                };
                 map.insert(path, InMemoryEntry::new(entry, None));
             }
         }
@@ -835,148 +854,17 @@ impl InMemoryVolume {
         Self::with_entries(name, entries)
     }
 
-    /// Normalizes a path relative to the volume root.
-    ///
-    /// A SCHEME-shaped path (`mtp://device/1/DCIM`) counts as absolute even though
-    /// `Path::is_absolute` says otherwise: that's the whole path vocabulary of an
-    /// MTP volume, and rooting it under `/` would make every lookup miss while the
-    /// entries it was built with keep their real keys.
-    fn normalize(&self, path: &Path) -> PathBuf {
-        if path.as_os_str().is_empty() || path == Path::new(".") {
-            PathBuf::from("/")
-        } else if path.is_absolute() || path.to_string_lossy().contains("://") {
-            path.to_path_buf()
-        } else {
-            PathBuf::from("/").join(path)
-        }
-    }
-
-    /// Hands `recorder` the entry at `path` and every one below it, each named
-    /// under `path` as the caller spelled it. Counted the way `scan_for_copy`
-    /// counts: a directory flag makes a folder, anything else a file.
-    /// `scan_for_copy`'s count of `path`, leaving out what `os_junk` says to
-    /// below it (never `path` itself: a selected file goes).
-    fn scan_subtree(
-        &self,
-        path: &Path,
-        os_junk: crate::os_junk_files::OsJunkFiles,
-    ) -> Result<super::CopyScanResult, VolumeError> {
-        let normalized = self.normalize(path);
-        let entries = self.entries.read().map_err(|_| VolumeError::IoError {
-            message: "Lock poisoned".into(),
-            raw_os_error: None,
-        })?;
-
-        // Check if the path is a file
-        if let Some(entry) = entries.get(&normalized)
-            && !entry.metadata.is_directory
-        {
-            return Ok(super::CopyScanResult {
-                file_count: 1,
-                dir_count: 0,
-                total_bytes: entry.metadata.size.unwrap_or(0),
-                // In-memory volume has no hardlinks: footprints are equal.
-                dedup_bytes: entry.metadata.size.unwrap_or(0),
-                top_level_is_directory: false,
-                top_level_modified_at: entry.metadata.modified_at,
-                top_level_created_at: entry.metadata.created_at,
-            });
-        }
-
-        // Recursively scan all descendants
-        let mut file_count = 0;
-        let mut dir_count = 0;
-        let mut total_bytes = 0u64;
-
-        for (entry_path, entry) in entries.iter() {
-            // Skip the root path itself, only count descendants
-            if entry_path == &normalized || !entry_path.starts_with(&normalized) {
-                continue;
-            }
-            if Self::left_out(entry_path, entry, os_junk) {
-                continue;
-            }
-            if entry.metadata.is_directory {
-                dir_count += 1;
-            } else {
-                file_count += 1;
-                total_bytes += entry.metadata.size.unwrap_or(0);
-            }
-        }
-
-        Ok(super::CopyScanResult {
-            file_count,
-            dir_count,
-            total_bytes,
-            // In-memory volume has no hardlinks: footprints are equal.
-            dedup_bytes: total_bytes,
-            // We only reach this branch if the path isn't a known file
-            // entry. In-memory roots and unknown paths both report `true`
-            // to match how callers use the flag (fall through to the
-            // directory-recursion path). Empty roots or unknown paths
-            // behave like empty directories, which is the existing
-            // contract on this backend.
-            top_level_is_directory: true,
-            top_level_modified_at: entries.get(&normalized).and_then(|entry| entry.metadata.modified_at),
-            top_level_created_at: entries.get(&normalized).and_then(|entry| entry.metadata.created_at),
-        })
-    }
-
-    /// Whether a scan under `os_junk` leaves out the descendant at `path`.
-    fn left_out(path: &Path, entry: &InMemoryEntry, os_junk: crate::os_junk_files::OsJunkFiles) -> bool {
-        path.file_name()
-            .is_some_and(|name| os_junk.leaves_out(name, entry.metadata.is_directory))
-    }
-
-    fn record_subtree(
-        &self,
-        path: &Path,
-        recorder: &dyn super::ScanRecorder,
-        os_junk: crate::os_junk_files::OsJunkFiles,
-    ) {
-        let normalized = self.normalize(path);
-        let entries = self.entries.read_ignore_poison();
-        match entries.get(&normalized) {
-            Some(entry) if !entry.metadata.is_directory => {
-                recorder.file(path, entry.metadata.size.unwrap_or(0));
-                return;
-            }
-            _ => recorder.dir(path),
-        }
-        for (entry_path, entry) in entries.iter() {
-            let Ok(relative) = entry_path.strip_prefix(&normalized) else {
-                continue;
-            };
-            if relative.as_os_str().is_empty() || Self::left_out(entry_path, entry, os_junk) {
-                continue;
-            }
-            let as_called = path.join(relative);
-            if entry.metadata.is_directory {
-                recorder.dir(&as_called);
-            } else {
-                recorder.file(&as_called, entry.metadata.size.unwrap_or(0));
-            }
-        }
-    }
-
-    /// Gets the parent path of a given path.
-    fn parent_of(path: &Path) -> PathBuf {
-        path.parent()
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| PathBuf::from("/"))
-    }
-
     /// Puts `data` at `path` in one step, replacing a FILE that's there: the
     /// landing of a [`with_whole_publish`](Self::with_whole_publish) write.
     /// A folder at the name is refused, as an object store's would be.
-    fn replace_whole(&self, path: &Path, data: InMemoryContent) -> Result<(), VolumeError> {
-        let normalized = self.normalize(path);
+    fn replace_whole(&self, path: &AppPath, data: InMemoryContent) -> Result<(), VolumeError> {
+        let normalized = self.normalize(path).into_owned();
         let mut entries = self.entries.write_ignore_poison();
         if entries
             .get(&normalized)
             .is_some_and(|entry| entry.metadata.is_directory)
         {
-            return Err(VolumeError::IsADirectory(normalized.display().to_string()));
+            return Err(VolumeError::IsADirectory(shown(&normalized)));
         }
         Self::insert_file(&mut entries, normalized, data);
         Ok(())
@@ -984,11 +872,7 @@ impl InMemoryVolume {
 
     /// Puts a fresh file holding `data` at `normalized`, dated now, replacing
     /// whatever entry is there. The caller has already decided it may.
-    fn insert_file(entries: &mut HashMap<PathBuf, InMemoryEntry>, normalized: PathBuf, data: InMemoryContent) {
-        let name = normalized
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
+    fn insert_file(entries: &mut HashMap<AppPathBuf, InMemoryEntry>, normalized: AppPathBuf, data: InMemoryContent) {
         let metadata = FileEntry {
             size: Some(data.len()),
             modified_at: Some(Self::now_secs()),
@@ -996,33 +880,10 @@ impl InMemoryVolume {
             permissions: 0o644,
             owner: "testuser".to_string(),
             group: "staff".to_string(),
-            ..FileEntry::new(name, normalized.display().to_string(), false, false)
+            ..FileEntry::new(name_of(&normalized), shown(&normalized), false, false)
         };
         Self::touch_parent_of(entries, &normalized);
         entries.insert(normalized, InMemoryEntry::new(metadata, Some(data)));
-    }
-
-    /// Moves a folder's date to now when an entry lands in it or leaves it, as on
-    /// every real store, so an engine test can tell a folder dated after its
-    /// contents landed from one dated before them.
-    fn touch_parent_of(entries: &mut HashMap<PathBuf, InMemoryEntry>, child: &Path) {
-        if let Some(parent) = child.parent().and_then(|parent| entries.get_mut(parent))
-            && parent.metadata.is_directory
-        {
-            parent.metadata.modified_at = Some(Self::now_secs());
-        }
-    }
-
-    /// [`OsErrorClass::NotEmpty`] when `path` is a folder that holds something:
-    /// the refusal `Volume::delete` and a forced `Volume::rename` both owe, and
-    /// real data-safety logic leans on. It carries the host's `ENOTEMPTY`, as a
-    /// real disk's refusal would.
-    fn refuse_if_held(entries: &HashMap<PathBuf, InMemoryEntry>, path: &Path) -> Result<(), VolumeError> {
-        let is_dir = entries.get(path).is_some_and(|e| e.metadata.is_directory);
-        if is_dir && entries.keys().any(|k| k.parent() == Some(path)) {
-            return Err(VolumeError::io_of_class("Directory not empty", OsErrorClass::NotEmpty));
-        }
-        Ok(())
     }
 
     /// Gets current timestamp as seconds since Unix epoch.
@@ -1034,4 +895,17 @@ impl InMemoryVolume {
             .map(|d| d.as_secs())
             .unwrap_or(0)
     }
+}
+
+/// The ONE crossing from a `std::path` argument (the public test helpers, the
+/// builders) to the store's app path: the bridge's lossless read, so a name that
+/// isn't UTF-8 keys as its escapes, exactly as a `Volume` call's bridged path does.
+fn app_of(path: &Path) -> Cow<'_, AppPath> {
+    AppPath::legacy_unchecked(path)
+}
+
+/// The ONE crossing back, for what still answers `std::path` (`canonicalize`, the
+/// scan recorder): the exact native bytes the app path spells.
+fn std_of(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }

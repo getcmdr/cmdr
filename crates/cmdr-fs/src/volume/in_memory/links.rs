@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use super::{InMemoryEntry, InMemoryVolume};
-use crate::app_path::{AppPath, AppPathBuf, PathFlavor};
+use super::{InMemoryEntry, InMemoryVolume, app_of, name_of, shown, slash, std_of};
+use crate::app_path::{AppName, AppPath, AppPathBuf, PathArithmetic};
 use crate::entry::FileEntry;
 use crate::ignore_poison::RwLockIgnorePoison;
 
@@ -31,8 +31,9 @@ impl InMemoryVolume {
     /// Stores a symlink at `path` directly, for a source a test reads from. The
     /// `create_symlink` route needs [`Self::with_links`].
     pub fn plant_symlink(&self, path: &Path, target: &Path) {
+        let normalized = self.normalize(&app_of(path)).into_owned();
         let mut entries = self.entries.write_ignore_poison();
-        Self::insert_link(&mut entries, self.normalize(path), target);
+        Self::insert_link(&mut entries, normalized, target);
     }
 
     /// Gives the symlink row already at `path` its `target`, stored as given, for a
@@ -41,8 +42,10 @@ impl InMemoryVolume {
     /// holding no symlink row is left alone.
     pub fn with_link_target(self, path: &Path, target: &Path) -> Self {
         {
+            let app = app_of(path);
+            let normalized = self.normalize(&app);
             let mut entries = self.entries.write_ignore_poison();
-            if let Some(entry) = entries.get_mut(&self.normalize(path)).filter(|e| e.metadata.is_symlink) {
+            if let Some(entry) = entries.get_mut(&*normalized).filter(|e| e.metadata.is_symlink) {
                 entry.link_target = Some(target.to_path_buf());
             }
         }
@@ -55,41 +58,42 @@ impl InMemoryVolume {
     /// it doesn't exist or the links loop (more than [`MAX_LINK_HOPS`]), where
     /// `realpath` fails too. Names match exactly: the volume has no case rules.
     ///
-    /// The volume's paths are `/`-separated app text, so the walk splits and joins on `/`
-    /// alone, the same on every OS (a `Path` on Windows split the root into `\` and joined
-    /// with it). It works on the paths' encoded bytes, so a name that isn't UTF-8 resolves
-    /// by its exact bytes, ❌ never a lossy spelling that names no row (or a sibling).
+    /// The volume's paths are `/`-separated app text, so the walk splits on `/` alone
+    /// and joins by the app path's own join, the same on every OS (a `Path` on Windows
+    /// split `a\b` into two names). A name that isn't UTF-8 walks as its escapes, which
+    /// key its row, ❌ never a lossy spelling that names no row (or a sibling).
     pub fn canonicalize(&self, path: &Path) -> Option<PathBuf> {
-        let normalized = self.normalize(path);
-        self.canonical_bytes(normalized.as_os_str().as_encoded_bytes())
+        let app = app_of(path);
+        self.resolve_links(&self.normalize(&app))
+            .map(|resolved| std_of(&resolved))
     }
 
-    /// The walk behind [`Self::canonicalize`], from a normalized key's bytes.
-    fn canonical_bytes(&self, normalized: &[u8]) -> Option<PathBuf> {
+    /// [`Self::canonicalize`] for an app path, answered as one: the store's keys are
+    /// app paths, so the resolved key is the answer, on every host.
+    pub fn canonical_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        self.resolve_links(path)
+    }
+
+    /// The walk behind [`Self::canonicalize`], over `path`'s `/`-separated names from `/`.
+    fn resolve_links(&self, path: &AppPath) -> Option<AppPathBuf> {
         let entries = self.entries.read_ignore_poison();
-        let mut pending: Vec<Vec<u8>> = Vec::new();
-        let push_reversed = |pending: &mut Vec<Vec<u8>>, bytes: &[u8]| {
-            pending.extend(bytes.split(|&b| b == b'/').rev().map(<[u8]>::to_vec));
+        let mut pending: Vec<String> = Vec::new();
+        let push_reversed = |pending: &mut Vec<String>, text: &str| {
+            pending.extend(text.split('/').rev().map(str::to_owned));
         };
-        push_reversed(&mut pending, normalized);
-        let mut resolved: Vec<u8> = b"/".to_vec();
+        push_reversed(&mut pending, path.as_str());
+        let mut resolved: AppPathBuf = slash().to_owned();
         let mut hops = 0;
         while let Some(part) = pending.pop() {
-            match part.as_slice() {
-                b"" | b"." => continue,
-                b".." => {
-                    let cut = resolved.iter().rposition(|&b| b == b'/').unwrap_or(0);
-                    resolved.truncate(cut.max(1));
+            match part.as_str() {
+                "" | "." => continue,
+                ".." => {
+                    resolved = Self::parent_of(&resolved).to_owned();
                     continue;
                 }
                 _ => {}
             }
-            let mut next = resolved.clone();
-            if next != b"/" {
-                next.push(b'/');
-            }
-            next.extend_from_slice(&part);
-            let next = path_of_bytes(next);
+            let next = resolved.join(AppName::from_app_spelling(&part).ok()?).ok()?;
             let entry = entries.get(&next)?;
             match &entry.link_target {
                 Some(target) => {
@@ -97,52 +101,28 @@ impl InMemoryVolume {
                     if hops > MAX_LINK_HOPS {
                         return None;
                     }
-                    if target.as_os_str().as_encoded_bytes().first() == Some(&b'/') {
-                        resolved = b"/".to_vec();
+                    let target = app_of(target);
+                    if target.as_str().starts_with('/') {
+                        resolved = slash().to_owned();
                     }
-                    push_reversed(&mut pending, target.as_os_str().as_encoded_bytes());
+                    push_reversed(&mut pending, target.as_str());
                 }
-                None => resolved = next.into_os_string().into_encoded_bytes(),
+                None => resolved = next,
             }
         }
         // The root itself is always there; anything else was found on the way.
-        Some(path_of_bytes(resolved))
+        Some(resolved)
     }
-
-    /// [`Self::canonicalize`] for an app path, answered as one: the store's keys are
-    /// `/`-separated app text, so a canonical app path is its own key and the resolved key
-    /// reads back as an app path, on every host. `None` also for a resolved key that isn't
-    /// UTF-8 text, which names no app path here.
-    pub fn canonical_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
-        let resolved = self
-            .canonical_bytes(path.as_str().as_bytes())?
-            .into_os_string()
-            .into_string()
-            .ok()?;
-        AppPathBuf::parse(&resolved, PathFlavor::Posix).ok()
-    }
-}
-
-/// Bytes [`InMemoryVolume::canonicalize`] made, back as a path.
-fn path_of_bytes(bytes: Vec<u8>) -> PathBuf {
-    // SAFETY: every caller hands names cut from paths' `as_encoded_bytes` only at an ASCII
-    // `/`, rejoined with `/`. `from_encoded_bytes_unchecked` allows exactly that (a split
-    // before or after valid non-empty UTF-8, here the `/`).
-    PathBuf::from(unsafe { std::ffi::OsString::from_encoded_bytes_unchecked(bytes) })
 }
 
 impl InMemoryVolume {
     /// A symlink row holding `target`, stored as given: a leaf with no bytes,
     /// reported as the link whatever it points at.
-    pub(super) fn insert_link(entries: &mut HashMap<PathBuf, InMemoryEntry>, normalized: PathBuf, target: &Path) {
-        let name = normalized
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
+    pub(super) fn insert_link(entries: &mut HashMap<AppPathBuf, InMemoryEntry>, normalized: AppPathBuf, target: &Path) {
         let metadata = FileEntry {
             size: Some(0),
             modified_at: Some(Self::now_secs()),
-            ..FileEntry::new(name, normalized.display().to_string(), false, true)
+            ..FileEntry::new(name_of(&normalized), shown(&normalized), false, true)
         };
         Self::touch_parent_of(entries, &normalized);
         let mut entry = InMemoryEntry::new(metadata, Some(super::InMemoryContent::bytes(Vec::new())));

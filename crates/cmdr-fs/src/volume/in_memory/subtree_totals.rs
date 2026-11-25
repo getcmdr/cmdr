@@ -3,7 +3,9 @@
 //! browser demo's folder sizes stand on it (`crates/cmdr-listing-wasm`'s
 //! `folder_sizes.rs`), so the demo shows real sizes without the drive index.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+use crate::app_path::PathArithmetic;
 
 use super::InMemoryVolume;
 use crate::entry::FileEntry;
@@ -49,9 +51,9 @@ impl InMemoryVolume {
         let entries = self.entries.read_ignore_poison();
         entries
             .iter()
-            .filter(|(path, _)| **path != *self.root && path.as_path() != Path::new("/"))
+            .filter(|(path, _)| **path != *self.root && **path != *super::slash())
             .map(|(path, held)| FileEntry {
-                path: path.to_string_lossy().into_owned(),
+                path: super::shown(path),
                 ..held.metadata.clone()
             })
             .collect()
@@ -65,9 +67,10 @@ impl InMemoryVolume {
         paths
             .iter()
             .map(|path| {
-                let path = self.normalize(path);
-                let is_root = path == *self.root || path == Path::new("/");
-                match entries.get(&path) {
+                let app = super::app_of(path);
+                let path = self.normalize(&app);
+                let is_root = *path == *self.root || *path == *super::slash();
+                match entries.get(&*path) {
                     Some(held) if !held.metadata.is_directory || held.metadata.is_symlink => Some(HeldAt::Leaf {
                         size: held.metadata.size.unwrap_or(0),
                     }),
@@ -75,7 +78,7 @@ impl InMemoryVolume {
                     _ => {
                         let mut totals = SubtreeTotals::default();
                         for (below, held) in entries.iter() {
-                            if below == &path || !below.starts_with(&path) {
+                            if **below == *path || !below.starts_with(&path) {
                                 continue;
                             }
                             let meta = &held.metadata;

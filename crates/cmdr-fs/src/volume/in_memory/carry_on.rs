@@ -4,7 +4,6 @@
 //! with [`InMemoryVolume::with_continuable_writes`]).
 
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
 
 use super::device::ContentSink;
@@ -67,12 +66,10 @@ impl InMemoryVolume {
             return Box::pin(async { Err(VolumeError::NotSupported) });
         };
         Box::pin(async move {
-            let target_std = target.as_std_legacy();
-            let target: &Path = &target_std;
             let prefix = self
                 .entries
                 .read_ignore_poison()
-                .get(&self.normalize(target))
+                .get(&*self.normalize(target))
                 .and_then(|entry| entry.content.clone())
                 .filter(|content| content.len() >= at)
                 .ok_or(VolumeError::NotSupported)?;
@@ -106,10 +103,10 @@ impl InMemoryVolume {
                 .modified_at()
                 .and_then(|date| date.duration_since(std::time::UNIX_EPOCH).ok())
             {
-                self.set_modified_at(target, Some(secs.as_secs()));
+                self.stamp_modified(target, Some(secs.as_secs()));
             }
             if !kept.is_empty() {
-                self.set_carried_metadata(target, kept);
+                self.store_carried_at(target, kept);
             }
             Ok(self.written(target, bytes_written, &carried, stream.modified_at()))
         })

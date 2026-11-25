@@ -5,14 +5,14 @@
 //! patcher (`crate::volume::patching`), the way SFTP and S3 do; without it (every
 //! test that only cares about the store) nothing is patched, as before.
 
-use crate::app_path::AppPath;
+use crate::app_path::{AppPath, AppPathBuf};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::InMemoryVolume;
 use crate::entry::FileEntry;
 use crate::volume::host::listings::ListingHost;
-use crate::volume::patching::{PatchSource, patch_created, patch_deleted, patch_mutation, patch_renamed};
+use crate::volume::patching::{PatchSource, patch_created_at, patch_deleted_at, patch_mutation_at, patch_renamed_at};
 use crate::volume::scan_walk::Walking;
 use crate::volume::{MutationEvent, Volume};
 
@@ -44,6 +44,11 @@ impl PatchSource for Patcher<'_> {
     fn patch_display_path(&self, path: &Path) -> Option<PathBuf> {
         Some(path.to_path_buf())
     }
+
+    /// The store's paths are the app's own: nothing to translate.
+    fn patch_app_path(&self, path: &AppPath) -> Option<AppPathBuf> {
+        Some(path.to_owned())
+    }
 }
 
 impl InMemoryVolume {
@@ -64,30 +69,30 @@ impl InMemoryVolume {
     }
 
     /// `path` appeared.
-    pub(super) async fn patch_created_at(&self, path: &Path) {
+    pub(super) async fn patch_created_at(&self, path: &AppPath) {
         if let Some(patcher) = self.patcher() {
-            patch_created(&patcher, path).await;
+            patch_created_at(&patcher, path).await;
         }
     }
 
     /// `path` went away.
-    pub(super) async fn patch_deleted_at(&self, path: &Path) {
+    pub(super) async fn patch_deleted_at(&self, path: &AppPath) {
         if let Some(patcher) = self.patcher() {
-            patch_deleted(&patcher, path).await;
+            patch_deleted_at(&patcher, path).await;
         }
     }
 
     /// `from` is now `to`.
-    pub(super) async fn patch_renamed_at(&self, from: &Path, to: &Path) {
+    pub(super) async fn patch_renamed_at(&self, from: &AppPath, to: &AppPath) {
         if let Some(patcher) = self.patcher() {
-            patch_renamed(&patcher, from, to).await;
+            patch_renamed_at(&patcher, from, to).await;
         }
     }
 
     /// A change the engine reports itself (`Volume::notify_mutation`).
-    pub(super) async fn patch_reported(&self, parent_path: &Path, mutation: MutationEvent) {
+    pub(super) async fn patch_reported(&self, parent_path: &AppPath, mutation: MutationEvent) {
         if let Some(patcher) = self.patcher() {
-            patch_mutation(&patcher, parent_path, mutation).await;
+            patch_mutation_at(&patcher, parent_path, mutation).await;
         }
     }
 }

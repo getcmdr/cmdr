@@ -53,12 +53,13 @@ the next section.
   `path_order_pin_test.rs`, and `list_alloc_ceiling_test.rs`) hold today's macOS and Linux answers for the typed app
   path conversion (#1225), ❌ never edited to green one; `friendly_error/` (typed, word-free classification);
   `usb_speed.rs` (❗ its doc comment reaches `bindings.ts`); `in_memory.rs` (the store and its knobs;
-  `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/imports.rs` its door for outside bytes, the
-  browser demo's dropped files, stored as real bytes beside the synthetic ones, no clobber); `conformance.rs` (+
-  `conformance/directory_creation.rs`, the three `create_directory_all` promises, and
-  `conformance/modification_date.rs`, the two date ones, `src/volume/conformance/xattrs.rs`, the xattr one, and
-  `src/volume/conformance/link_landing.rs`, what `can_hold_links` promises); and `host/` (what a backend needs from the
-  app, as named traits; read `src/volume/host/CLAUDE.md` before writing a backend).
+  `in_memory/volume_impl.rs` is its `impl Volume`; `src/volume/in_memory/keys.rs` the store's keys, § "App paths";
+  `src/volume/in_memory/imports.rs` its door for outside bytes, the browser demo's dropped files, stored as real bytes
+  beside the synthetic ones, no clobber); `conformance.rs` (+ `conformance/directory_creation.rs`, the three
+  `create_directory_all` promises, and `conformance/modification_date.rs`, the two date ones,
+  `src/volume/conformance/xattrs.rs`, the xattr one, and `src/volume/conformance/link_landing.rs`, what `can_hold_links`
+  promises); and `host/` (what a backend needs from the app, as named traits; read `src/volume/host/CLAUDE.md` before
+  writing a backend).
 - `app_path/`: the typed app path. `mod.rs` (the types and their arithmetic), `parse.rs` (normalizing and validating
   text), `escape.rs` (the lossless escape), `native.rs` (the pure native conversions), `bridge.rs` (the transition
   bridge), `shape.rs` (root shapes and the compared components), `platform/` (the `OsStr` and `PathBuf` crossing per
@@ -288,14 +289,13 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `RemoteRoot::{app, to_remote, to_app}` beside `app_root`/`to_remote_path`/`to_app_path`; `volume::anchor_at_root`
   beside `root_anchored`; `scan_walk::{scan_tree_at, scan_one_at, scan_trees_at, scan_conflicts_at, fold_batch_at}`;
   `twin_path::{folder_of_app, own_pick_app, unpicked_app}`; `patching::patch_*_at` with `PatchSource::patch_app_path` (a
-  typed core; the `std::path` forms, for ADB and the in-memory panes, and the trait's default cross once each through a
-  named helper, and the listing host, which files listings by `std::path` until the app's host converts, is
-  `patch_mutation_at`'s one crossing). `mkdir_all` is typed only (`create_directory_all_at`,
-  `MakesDirectories::remote_path_of(&AppPath)`): its four implementors, SFTP, WebDAV, S3, and NFS, speak app paths. The
-  `std::path` forms already run the same arithmetic inside, so they're right on Windows too: `RemoteRoot` and
-  `normalize_remote_path` read a server path as POSIX bytes split on `/` alone (a `\` is a name character, `C:` a name),
-  and `InMemoryVolume::canonicalize` splits the encoded bytes on `/` (a name that isn't UTF-8 resolves by its bytes,
-  never lossily).
+  typed core; the `std::path` forms, for ADB, and the trait's default cross once each through a named helper, and the
+  listing host, which files listings by `std::path` until the app's host converts, is `patch_mutation_at`'s one
+  crossing). `mkdir_all` is typed only (`create_directory_all_at`, `MakesDirectories::remote_path_of(&AppPath)`): its
+  four implementors, SFTP, WebDAV, S3, and NFS, speak app paths. The `std::path` forms already run the same arithmetic
+  inside, so they're right on Windows too: `RemoteRoot` and `normalize_remote_path` read a server path as POSIX bytes
+  split on `/` alone (a `\` is a name character, `C:` a name), and `InMemoryVolume::canonicalize` walks its app path's
+  names split on `/` (a name that isn't UTF-8 resolves by its escapes, which key its row, never lossily).
 - **A listed name joins its folder through `app_path::ListedFolder`**, the one rule the scan walk, the listing patcher,
   and `unpicked_app` share: the folder's canonical twin is looked up ONCE (a walk level, not per entry), a folder with
   one joins by the app path's own join, and a bridge folder with none (a relative `src/album` a local engine hands its
@@ -307,9 +307,17 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   git, and restic only from a hostile or broken source). Cost: about 100 ns per entry against `Path::join`'s 50
   (release, 200,000 names, 2026-11-19); the per-entry canonical check it replaced cost 530 ns, 2.4 µs under a top with a
   trailing `/`. What still bridges here: the old forms' one crossing each, the boundary's `ScanRecorder`/`ScanOutages`
-  (they take `std::path` and live in the engines), `InMemoryVolume`'s `PathBuf`-keyed store, the conformance suites
-  (they drive other crates' volumes through their `std::path` fixtures), and `tally_by_listing`, `mkdir_all`,
-  `root_echo`, `routed` (a `FileEntry.path` is still text until escapes go live).
+  (they take `std::path` and live in the engines), the conformance suites (they drive other crates' volumes through
+  their `std::path` fixtures), and `tally_by_listing`, `mkdir_all`, `root_echo`, `routed` (a `FileEntry.path` is still
+  text until escapes go live).
+- **`InMemoryVolume` keys its store by `AppPathBuf`** (`src/volume/in_memory/keys.rs`): `normalize` takes `&AppPath`
+  (empty or `.` is `/`, a rooted or scheme path stays, a relative one goes under `/`; a drive path is rooted only on a
+  Windows host, so on macOS and Linux `C:/x` keys as `/C:/x`, as `Path` read it), and parent, name, subtree, and rename
+  re-keying are the app path's own arithmetic, so `/a\b.txt` is one name in `/` on every host and `foo\..` a name. What
+  a test sees stays `Path`'s text: a listing's `name` and `path` and an error's path decode an escaped name and spell it
+  lossily (`keys.rs::lossy`). The `std::path` test helpers (`set_modified_at`, `plant_symlink`, the builders) cross once
+  through `in_memory.rs::app_of`, and `canonicalize` and the scan recorder back through `std_of`. Pinned by
+  `in_memory_test.rs::a_backslash_is_part_of_a_name_on_every_host`.
 - **`ChildName` refuses by the host's flavor** (`is_plain_name`): on Windows also `\` (a separator) and `:` (a stream,
   or a drive-relative path), since a native join would land the item in a subfolder or a stream. Reserved names and
   trailing dots and spaces pass: NTFS holds them, and only the plain form refuses them (`NotPlainSafe`). A walk that

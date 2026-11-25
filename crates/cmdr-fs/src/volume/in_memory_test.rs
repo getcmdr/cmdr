@@ -1060,3 +1060,35 @@ fn canonicalize_keeps_a_name_that_is_not_utf8() {
         Some(PathBuf::from("/real/inner"))
     );
 }
+
+/// The store keys app paths, so a `\` is a name character on every host: `/a\b.txt` is one
+/// file in `/`, beside a real `/a/b.txt`, and `foo\..` is a name, never a climb. On Windows
+/// a `PathBuf` key split both into a folder and a name (#1225).
+#[tokio::test]
+async fn a_backslash_is_part_of_a_name_on_every_host() {
+    let volume = InMemoryVolume::new("Test");
+    volume.create_directory(app_path!("/a")).await.unwrap();
+    volume.create_file(app_path!("/a/b.txt"), b"slash").await.unwrap();
+    volume.create_file(app_path!("/a\\b.txt"), b"backslash").await.unwrap();
+    volume.create_directory(app_path!("/foo\\..")).await.unwrap();
+
+    let rows = |entries: Vec<FileEntry>| entries.into_iter().map(|e| (e.name, e.path)).collect::<Vec<_>>();
+    let row = |name: &str, path: &str| (name.to_owned(), path.to_owned());
+    assert_eq!(
+        rows(volume.list_directory(app_path!("/"), None).await.unwrap()),
+        [row("a", "/a"), row("foo\\..", "/foo\\.."), row("a\\b.txt", "/a\\b.txt")]
+    );
+    assert_eq!(
+        rows(volume.list_directory(app_path!("/a"), None).await.unwrap()),
+        [row("b.txt", "/a/b.txt")]
+    );
+
+    volume
+        .rename(app_path!("/a\\b.txt"), app_path!("/c\\d.txt"), false)
+        .await
+        .unwrap();
+    assert!(volume.get_metadata(app_path!("/c\\d.txt")).await.is_ok());
+    assert!(volume.get_metadata(app_path!("/a/b.txt")).await.is_ok());
+    volume.delete(app_path!("/foo\\..")).await.unwrap();
+    assert!(volume.get_metadata(app_path!("/a")).await.is_ok());
+}

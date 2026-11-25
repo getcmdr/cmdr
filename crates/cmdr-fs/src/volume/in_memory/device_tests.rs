@@ -1,6 +1,6 @@
 use crate::app_path;
 use crate::app_path::AppPath;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
 use super::super::InMemoryVolume;
@@ -41,7 +41,7 @@ async fn stream_copy(source: &InMemoryVolume, from: &str, dest: &InMemoryVolume,
 }
 
 fn content_of(volume: &InMemoryVolume, path: &str) -> InMemoryContent {
-    volume.entries.read_ignore_poison()[&PathBuf::from(path)]
+    volume.entries.read_ignore_poison()[AppPath::from_normalized(path).expect("a canonical test path")]
         .content
         .clone()
         .expect("a file holds content")

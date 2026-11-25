@@ -336,7 +336,7 @@ impl super::InMemoryVolume {
     /// Stands in for the computer's own disk, `home` its home folder, so path
     /// labels read as the desktop's (`Volume::stands_in_for_own_disk`).
     pub fn standing_in_for_own_disk(mut self, home: impl Into<std::path::PathBuf>) -> Self {
-        self.own_disk_home = Some(crate::app_path::BridgedPath::new(home.into()));
+        self.own_disk_home = Some(super::app_of(&home.into()).into_owned());
         self
     }
 
@@ -370,12 +370,13 @@ impl super::InMemoryVolume {
     /// When `path` isn't a file this volume holds: a builder mistake.
     pub fn with_content(self, path: impl AsRef<Path>, content: InMemoryContent) -> Self {
         {
-            let normalized = self.normalize(path.as_ref());
+            let app = super::app_of(path.as_ref());
+            let normalized = self.normalize(&app);
             let mut entries = self.entries.write_ignore_poison();
             let entry = entries
-                .get_mut(&normalized)
+                .get_mut(&*normalized)
                 .filter(|entry| !entry.metadata.is_directory)
-                .unwrap_or_else(|| panic!("with_content: no file at {}", normalized.display()));
+                .unwrap_or_else(|| panic!("with_content: no file at {}", super::shown(&normalized)));
             entry.metadata.size = Some(content.len());
             entry.content = Some(content);
         }
@@ -424,15 +425,13 @@ impl super::InMemoryVolume {
     /// `create_file` does): the landing of a streamed write.
     pub(super) fn create_content(
         &self,
-        path: &Path,
+        path: &crate::app_path::AppPath,
         content: InMemoryContent,
     ) -> Result<(), crate::volume::VolumeError> {
-        let normalized = self.normalize(path);
+        let normalized = self.normalize(path).into_owned();
         let mut entries = self.entries.write_ignore_poison();
         if entries.contains_key(&normalized) {
-            return Err(crate::volume::VolumeError::AlreadyExists(
-                normalized.display().to_string(),
-            ));
+            return Err(crate::volume::VolumeError::AlreadyExists(super::shown(&normalized)));
         }
         Self::insert_file(&mut entries, normalized, content);
         Ok(())
