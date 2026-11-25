@@ -29,7 +29,8 @@ move-vs-copy decision happens at paste time: a cut is Cmdr's own flag on macOS (
   Succeeded` = MOVE (❌ never `Performed DropEffect` = MOVE: that asks Explorer to delete) and empties a cut nobody else
   ended. `DETAILS.md` § Windows.
 - **A marked cut whose files are all gone is used up**: Explorer pasted it and nothing told Cmdr, so the paste reads no
-  files (a quiet note), ❌ never a move that fails on missing sources. `DETAILS.md` § Windows.
+  files (a quiet note), ❌ never a move that fails on missing sources. Gone needs the parent folder still there: a
+  missing drive also reads "not found", and its cut must stay. `DETAILS.md` § Windows.
 - **Paths coming IN pass the plain-form rule too**: a plain `C:\x\a.` or `C:\x\CON` from another app refuses the whole
   paste (`UnreadablePath`), ❌ never a subset. A refused cut disarms the earlier one, so Ctrl+V never moves stale files.
 - **Cut state lives in Rust, not the frontend**. A clipboard that no longer matches the cut-state paths clears the

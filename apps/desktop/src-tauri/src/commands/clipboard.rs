@@ -210,16 +210,25 @@ async fn read_for_paste(
 
 /// Whether none of a cut's files is where the clipboard names it: another app already pasted the
 /// cut (Explorer moves a Cmdr cut, and with no data object to answer, nothing tells Cmdr; #1478).
-/// Only a sure "not found" counts as gone: a file Cmdr can't stat still pastes, and fails typed.
+/// Only a file that's surely gone from a folder still there counts ([`moved_away`]); anything else
+/// still pastes, and fails typed with its own wording.
 async fn every_source_is_gone(natives: Vec<PathBuf>) -> bool {
-    tokio::task::spawn_blocking(move || {
-        !natives.is_empty()
-            && natives.iter().all(|native| {
-                std::fs::symlink_metadata(native).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound)
-            })
-    })
-    .await
-    .unwrap_or(false)
+    tokio::task::spawn_blocking(move || !natives.is_empty() && natives.iter().all(|native| moved_away(native)))
+        .await
+        .unwrap_or(false)
+}
+
+/// The file is "not found" while its folder reads as a folder: moved away. ❗ A missing DRIVE
+/// (a pulled stick, a volume not mounted yet) answers "not found" too (Windows'
+/// `ERROR_PATH_NOT_FOUND`), so a parent that's missing, unreadable, or not a folder means the
+/// cut isn't used up: the paste then fails honestly ("the drive went away"), ❌ never a silently
+/// lost cut. Any other error on the file itself (`NotADirectory`, a permission) isn't "gone".
+fn moved_away(native: &std::path::Path) -> bool {
+    let file_is_missing = std::fs::symlink_metadata(native).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound);
+    file_is_missing
+        && native
+            .parent()
+            .is_some_and(|folder| std::fs::metadata(folder).is_ok_and(|m| m.is_dir()))
 }
 
 /// A cut someone else already pasted is used up, as a cut pasted in Explorer is: the paste finds
@@ -404,5 +413,41 @@ mod tests {
         .expect("a read");
         assert_eq!(read.paths.len(), 2);
         assert!(read.is_cut);
+    }
+
+    /// Reads a Cmdr cut of `paths` and asserts it still pastes as a move of them, cut kept.
+    async fn assert_cut_kept(paths: Vec<std::path::PathBuf>) {
+        crate::clipboard::set_cut_state(paths.clone());
+        let on_clipboard = paths.clone();
+        let read = read_for_paste(move || {
+            Ok(ClipboardFiles {
+                paths: on_clipboard,
+                marked_cut: true,
+            })
+        })
+        .await
+        .expect("a read");
+        assert_eq!(read.paths.len(), paths.len(), "the paste still names the cut");
+        assert!(read.is_cut);
+        assert_eq!(crate::clipboard::get_cut_state(), Some(paths), "the cut stays");
+    }
+
+    /// A cut whose FOLDER is gone (a pulled stick, a drive not mounted yet: Windows says "not
+    /// found" for those too) isn't used up: the paste fails honestly, ❌ never a lost cut.
+    #[tokio::test]
+    async fn a_cut_whose_folder_is_gone_keeps_the_cut() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_folder_gone");
+        let unplugged = dir.app_path().to_native().expect("native").join("unplugged");
+        assert_cut_kept(vec![unplugged.join("a.txt")]).await;
+    }
+
+    /// A source whose stat fails with anything but "not found" (here `NotADirectory`: a file
+    /// named as a folder) isn't gone: the cut stays and the paste moves, failing typed.
+    #[tokio::test]
+    async fn a_cut_whose_source_stat_fails_otherwise_keeps_the_cut() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_stat_fails");
+        let file = dir.app_path().to_native().expect("native").join("file.txt");
+        std::fs::write(&file, b"x").expect("a file");
+        assert_cut_kept(vec![file.join("child")]).await;
     }
 }

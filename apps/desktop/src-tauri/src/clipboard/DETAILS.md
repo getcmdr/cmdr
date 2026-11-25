@@ -58,8 +58,10 @@ start returns, so the ledger remembers the last 64 unclaimed endings, as `drop_i
 **The other way round, nobody tells Cmdr** (#1478): Explorer pasting a Cmdr cut moves the files, but it ends a cut
 through `Paste Succeeded` on the source's data object, and Cmdr's plain-API cut has none, so the cut stays on the
 clipboard (seen on Windows 10 22H2, real-machine check, 2026-11-25). So the paste read (`commands/clipboard.rs::
-read_for_paste`) treats a clipboard-marked cut whose every file is gone (a sure `NotFound`, not a failed stat) as used
-up: it answers no files (the frontend's quiet "No files on the clipboard"), forgets the cut, and empties the clipboard
+read_for_paste`) treats a clipboard-marked cut whose every file is gone as used up. Gone means `NotFound` while the
+parent still reads as a folder (`moved_away`): Windows answers `NotFound` for a missing DRIVE too (a pulled stick, a
+volume not mounted yet), and a cut there must stay and fail honestly at paste, ❌ never vanish; any other stat error isn't
+gone either. A used-up cut: it answers no files (the frontend's quiet "No files on the clipboard"), forgets the cut, and empties the clipboard
 when the cut is Cmdr's own (`drop_cut_mark`); another app's cut stays that app's to end. A cut with any file left still
 moves. Only the clipboard's own mark arms this, so macOS (no mark) is unchanged. Paste itself stays enabled on every OS,
 as it always was: nothing watches the clipboard to grey it out. The `OleSetClipboard` route would hear Explorer's
