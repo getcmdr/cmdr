@@ -154,10 +154,17 @@ pub async fn cut_paths_to_clipboard(app: tauri::AppHandle, paths: Vec<String>) -
 #[tauri::command]
 #[specta::specta]
 pub async fn read_clipboard_files(app: tauri::AppHandle) -> Result<ClipboardReadResult, ClipboardFilesError> {
+    read_for_paste(move || clipboard::platform::read_file_urls(app)).await
+}
+
+/// [`read_clipboard_files`] over an injected clipboard read.
+async fn read_for_paste(
+    read: impl FnOnce() -> Result<ClipboardFiles, ClipboardFilesError> + Send + 'static,
+) -> Result<ClipboardReadResult, ClipboardFilesError> {
     let ClipboardFiles {
         paths: clipboard_paths,
         marked_cut,
-    } = off_runtime(move || clipboard::platform::read_file_urls(app)).await?;
+    } = off_runtime(read).await?;
 
     // Check cut state: if set, verify paths match (order-insensitive)
     let cut_by_cmdr = if let Some(cut_paths) = clipboard::get_cut_state() {
@@ -174,6 +181,10 @@ pub async fn read_clipboard_files(app: tauri::AppHandle) -> Result<ClipboardRead
     } else {
         false
     };
+
+    if marked_cut && every_source_is_gone(clipboard_paths.clone()).await {
+        return Ok(used_up_cut(clipboard_paths, cut_by_cmdr).await);
+    }
     let is_cut = marked_cut || cut_by_cmdr;
 
     let paths = app_texts(&clipboard_paths, clipboard::platform::app_text)?;
@@ -195,6 +206,44 @@ pub async fn read_clipboard_files(app: tauri::AppHandle) -> Result<ClipboardRead
         is_cut,
         is_directory,
     })
+}
+
+/// Whether none of a cut's files is where the clipboard names it: another app already pasted the
+/// cut (Explorer moves a Cmdr cut, and with no data object to answer, nothing tells Cmdr; #1478).
+/// Only a sure "not found" counts as gone: a file Cmdr can't stat still pastes, and fails typed.
+async fn every_source_is_gone(natives: Vec<PathBuf>) -> bool {
+    tokio::task::spawn_blocking(move || {
+        !natives.is_empty()
+            && natives.iter().all(|native| {
+                std::fs::symlink_metadata(native).is_err_and(|e| e.kind() == std::io::ErrorKind::NotFound)
+            })
+    })
+    .await
+    .unwrap_or(false)
+}
+
+/// A cut someone else already pasted is used up, as a cut pasted in Explorer is: the paste finds
+/// no files (the frontend's quiet "No files on the clipboard"), ❌ never a move that fails on files
+/// that are gone. Cmdr's own cut also leaves the clipboard, so the next Ctrl+V finds it empty
+/// too; another app's cut stays that app's to end.
+async fn used_up_cut(natives: Vec<PathBuf>, cut_by_cmdr: bool) -> ClipboardReadResult {
+    log::info!(
+        target: "clipboard",
+        "The clipboard's cut of {} item(s) was already pasted elsewhere: its files are gone",
+        natives.len()
+    );
+    clipboard::cut_paste::note_read(&[], &[], false);
+    if cut_by_cmdr {
+        clipboard::clear_cut_state();
+        if let Err(error) = off_runtime(move || clipboard::platform::drop_cut_mark(natives)).await {
+            log::warn!(target: "clipboard", "Couldn't empty the used-up cut off the clipboard: {error:?}");
+        }
+    }
+    ClipboardReadResult {
+        paths: Vec::new(),
+        is_cut: false,
+        is_directory: Vec::new(),
+    }
 }
 
 /// Reads plain text from the system clipboard.
@@ -238,7 +287,7 @@ pub fn clear_clipboard_cut_state() {
 
 #[cfg(test)]
 mod tests {
-    use super::{ClipboardFilesError, app_texts, disarm_earlier_cut, native_rows};
+    use super::{ClipboardFiles, ClipboardFilesError, app_texts, disarm_earlier_cut, native_rows, read_for_paste};
 
     /// Every row crosses, in order; one row with no native file (a server's, a `..`) refuses the
     /// whole set, ❌ never a quiet subset under a "copied" toast.
@@ -313,5 +362,47 @@ mod tests {
         crate::clipboard::set_cut_state(vec![dir.app_path().to_native().expect("native").join("earlier.txt")]);
         disarm_earlier_cut().await;
         assert_eq!(crate::clipboard::get_cut_state(), None);
+    }
+
+    /// A cut another app already pasted (every file gone from where the clipboard names it) is
+    /// used up: the paste finds no files and Cmdr's cut state goes, ❌ never a move that fails on
+    /// files that are gone (#1478).
+    #[tokio::test]
+    async fn a_cut_whose_files_are_all_gone_reads_as_no_files() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_used_up");
+        let native = dir.app_path().to_native().expect("native");
+        let gone = vec![native.join("x1.txt"), native.join("x2.txt")];
+        crate::clipboard::set_cut_state(gone.clone());
+        let read = read_for_paste(move || {
+            Ok(ClipboardFiles {
+                paths: gone,
+                marked_cut: true,
+            })
+        })
+        .await
+        .expect("a read");
+        assert!(read.paths.is_empty(), "got {:?}", read.paths);
+        assert!(!read.is_cut);
+        assert_eq!(crate::clipboard::get_cut_state(), None);
+    }
+
+    /// A cut with one file still there pastes as a move, as before: only a cut wholly gone is
+    /// used up.
+    #[tokio::test]
+    async fn a_cut_with_a_file_still_there_still_moves() {
+        let dir = crate::test_support::AppTestDir::new("clipboard_cut_left");
+        let native = dir.app_path().to_native().expect("native");
+        std::fs::write(native.join("here.txt"), b"x").expect("a source");
+        let paths = vec![native.join("here.txt"), native.join("gone.txt")];
+        let read = read_for_paste(move || {
+            Ok(ClipboardFiles {
+                paths,
+                marked_cut: true,
+            })
+        })
+        .await
+        .expect("a read");
+        assert_eq!(read.paths.len(), 2);
+        assert!(read.is_cut);
     }
 }
