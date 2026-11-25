@@ -222,7 +222,7 @@ fn the_notice_names_the_file_and_the_app_as_the_person_sees_them() {
         error: ViewerError::IsDirectory,
     };
 
-    let notice = OpenWithCopyRefused::new(&refused, Path::new("/System/Applications/Preview.app"));
+    let notice = OpenWithCopyRefused::new(&refused, "Preview".to_string());
 
     assert_eq!(notice.file_name, "report.pdf");
     assert_eq!(notice.app_name, "Preview");
@@ -291,14 +291,13 @@ fn the_launched_notice_names_the_first_copy_and_counts_the_copies() {
         PathBuf::from("/data/.cmdr-open-with-2/b.pdf"),
     ];
 
-    let notice = OpenWithCopyLaunched::new(&rows, &launched, Path::new("/System/Applications/Preview.app"))
-        .expect("two rows were copies");
+    let notice = OpenWithCopyLaunched::new(&rows, &launched, "Preview".to_string()).expect("two rows were copies");
 
     assert_eq!(notice.file_name, "a.pdf");
     assert_eq!(notice.copy_count, 2);
     assert_eq!(notice.app_name, "Preview");
     assert!(
-        OpenWithCopyLaunched::new(&rows[1..2], &launched[1..2], Path::new("/Applications/Preview.app")).is_none(),
+        OpenWithCopyLaunched::new(&rows[1..2], &launched[1..2], "Preview".to_string()).is_none(),
         "a launch with no copy says nothing"
     );
 }

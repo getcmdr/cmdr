@@ -19,7 +19,7 @@ const m = vi.hoisted(() => ({
 
 /** The typed refusal `openInEditor` throws, as much of it as this suite reads. */
 interface EditorRefusal {
-  type: 'launchRefused' | 'timedOut'
+  type: 'launchRefused' | 'timedOut' | 'noPlainPath'
   errno?: number | null
 }
 
@@ -255,7 +255,7 @@ describe('openFileInEditor: a launch that never started', () => {
     await expect(openFileInEditor(FILE)).resolves.toBe(false)
 
     expect(addToast).toHaveBeenCalledWith(
-      'fileExplorer.open.noPlainPath',
+      `fileExplorer.open.noPlainPath ${JSON.stringify({ fileName: 'notes.txt' })}`,
       expect.objectContaining({ id: TOAST_ID, level: 'error' }),
     )
   })

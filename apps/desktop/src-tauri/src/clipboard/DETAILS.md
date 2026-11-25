@@ -75,7 +75,7 @@ trailing dot, opens `CON` as a device). So the command crosses each row with `to
 improvement if it proves reliable.
 
 **OLE vs COM apartments**: `OleGetClipboard` needs `OleInitialize` (an STA with OLE's extras), so `settle_cut` enters
-and leaves one on its dedicated thread. The Shell helpers elsewhere (`icons/platform/windows/apartment.rs`) use
+and leaves one on its dedicated thread. The Shell helpers elsewhere (`platform/windows/apartment.rs`) use
 `CoInitializeEx`; OLE's clipboard functions are documented to need `OleInitialize` itself.
 
 ## Direct NSPasteboard via `objc2`, not a Tauri plugin

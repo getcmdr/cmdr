@@ -192,11 +192,11 @@ pub struct OpenWithCopyRefused {
 
 #[cfg(any(target_os = "macos", target_os = "windows", test))]
 impl OpenWithCopyRefused {
-    /// The notice for `refused`, a launch of the app bundle at `app_path`.
-    pub(crate) fn new(refused: &RefusedCopy, app_path: &Path) -> Self {
+    /// The notice for `refused`, a launch of the app named `app_name`.
+    pub(crate) fn new(refused: &RefusedCopy, app_name: String) -> Self {
         Self {
             file_name: display_name(refused.path.file_name(), &refused.path),
-            app_name: crate::file_system::open_with::app_display_name(app_path),
+            app_name,
             reason: refused.reason,
             source: refused.source,
         }
@@ -221,13 +221,13 @@ pub struct OpenWithCopyLaunched {
 impl OpenWithCopyLaunched {
     /// The notice for a launch of the app bundle at `app_path` on `launched`, what
     /// [`launch_paths`] made of `rows`; `None` when no row needed a copy.
-    pub(crate) fn new(rows: &[PathBuf], launched: &[PathBuf], app_path: &Path) -> Option<Self> {
+    pub(crate) fn new(rows: &[PathBuf], launched: &[PathBuf], app_name: String) -> Option<Self> {
         let mut copied = rows.iter().zip(launched).filter(|(row, launched)| row != launched);
         let (first, _) = copied.next()?;
         Some(Self {
             file_name: display_name(first.file_name(), first),
             copy_count: u32::try_from(copied.count() + 1).unwrap_or(u32::MAX),
-            app_name: crate::file_system::open_with::app_display_name(app_path),
+            app_name,
         })
     }
 }

@@ -148,7 +148,11 @@ pub(crate) fn launch_with<R: Runtime>(app: &AppHandle<R>, rows: &[String], targe
                 return;
             }
         };
-        let notice = open_with_extract::OpenWithCopyLaunched::new(&paths, &copies, &app_path);
+        let notice = open_with_extract::OpenWithCopyLaunched::new(
+            &paths,
+            &copies,
+            crate::file_system::open_with::app_display_name(&app_path),
+        );
         let launcher = app.clone();
         let hopped =
             app.run_on_main_thread(
@@ -221,7 +225,9 @@ fn announce_refused_copy<R: Runtime>(
     use crate::file_viewer::open_with_extract::OpenWithCopyRefused;
     use tauri_specta::Event;
 
-    if let Err(e) = OpenWithCopyRefused::new(refused, app_path).emit(app) {
+    if let Err(e) =
+        OpenWithCopyRefused::new(refused, crate::file_system::open_with::app_display_name(app_path)).emit(app)
+    {
         log::warn!("Open with: couldn't tell the main window the copy was refused: {e}");
     }
 }
