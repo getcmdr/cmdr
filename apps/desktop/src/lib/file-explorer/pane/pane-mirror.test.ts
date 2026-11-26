@@ -1,24 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { NavigationHistory } from '../navigation/navigation-history'
 import type { NavigateIntent, NavigateResult } from './navigate'
 import type { FilePaneAPI } from './types'
+import type { NetworkHost } from '../types'
 
-const { getCurrentEntrySpy, pushHistoryEntrySpy } = vi.hoisted(() => ({
-  getCurrentEntrySpy: vi.fn(),
-  pushHistoryEntrySpy: vi.fn(() => ({ pushed: true }) as unknown as NavigationHistory),
-}))
-
-vi.mock('../navigation/navigation-history', () => ({ getCurrentEntry: getCurrentEntrySpy }))
-vi.mock('../tabs/tab-state-manager.svelte', () => ({ pushHistoryEntry: pushHistoryEntrySpy }))
+const net = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
+vi.mock('../network/network-store.svelte', () => ({ getNetworkHosts: () => net.hosts, setListedAccount: vi.fn() }))
 
 import { createPaneMirror, type PaneMirrorDeps } from './pane-mirror'
+
+const testnas: NetworkHost = {
+  id: 'testnas-id',
+  name: 'Testnas',
+  hostname: 'testnas.local',
+  port: 445,
+  source: 'discovered',
+}
 
 function makePaneRef(overrides: Record<string, unknown> = {}) {
   return {
     getCursorEntry: vi.fn(() => null),
     getNetworkCursorEntry: vi.fn(() => null),
-    setNetworkHost: vi.fn(),
-    setNetworkAutoMount: vi.fn(),
+    openShareList: vi.fn(),
     ...overrides,
   }
 }
@@ -33,22 +35,19 @@ function setup(opts: {
     () => ({ status: 'started' }) as unknown as NavigateResult,
   )
   const setFocusedPane = vi.fn()
-  const setPaneHistory = vi.fn()
   let focused = opts.focused ?? 'left'
   const deps: PaneMirrorDeps = {
     navigate,
     getPaneRef: (p) => opts.refs?.[p] as unknown as FilePaneAPI | undefined,
     getPaneVolumeId: (p) => opts.volumeIdByPane?.[p] ?? 'root',
     getPanePath: (p) => opts.pathByPane?.[p] ?? '/',
-    getPaneHistory: () => ({}) as NavigationHistory,
-    setPaneHistory,
     getFocusedPane: () => focused,
     setFocusedPane: (p) => {
       focused = p
       setFocusedPane(p)
     },
   }
-  return { mirror: createPaneMirror(deps), navigate, setFocusedPane, setPaneHistory }
+  return { mirror: createPaneMirror(deps), navigate, setFocusedPane }
 }
 
 describe('createPaneMirror', () => {
@@ -61,7 +60,6 @@ describe('createPaneMirror', () => {
   })
 
   it('mirrors a local listing to the target pane via a goTo/mirror navigation', () => {
-    getCurrentEntrySpy.mockReturnValue({ networkHost: null })
     const left = makePaneRef()
     const right = makePaneRef()
     const { mirror, navigate } = setup({
@@ -81,7 +79,6 @@ describe('createPaneMirror', () => {
   })
 
   it('refines to the folder under the cursor when the source pane is focused', () => {
-    getCurrentEntrySpy.mockReturnValue({ networkHost: null })
     const left = makePaneRef({
       getCursorEntry: vi.fn(() => ({ isDirectory: true, name: 'sub', path: '/a/b/sub' }) as never),
     })
@@ -103,7 +100,6 @@ describe('createPaneMirror', () => {
   })
 
   it('copies the pane location exactly, cursor or not, with followCursor: false (Clone pane)', () => {
-    getCurrentEntrySpy.mockReturnValue({ networkHost: null })
     const getCursorEntry = vi.fn(() => ({ isDirectory: true, name: 'sub', path: '/a/b/sub' }) as never)
     const left = makePaneRef({ getCursorEntry })
     const right = makePaneRef()
@@ -125,7 +121,6 @@ describe('createPaneMirror', () => {
   })
 
   it('skips the redundant navigation when the target already shows the same volume + path', () => {
-    getCurrentEntrySpy.mockReturnValue({ networkHost: null })
     const { mirror, navigate, setFocusedPane } = setup({
       refs: { left: makePaneRef(), right: makePaneRef() },
       volumeIdByPane: { left: 'root', right: 'root' },
@@ -140,21 +135,76 @@ describe('createPaneMirror', () => {
     expect(setFocusedPane).not.toHaveBeenCalled()
   })
 
-  it('mirrors a network host under the cursor to the target pane', () => {
-    getCurrentEntrySpy.mockReturnValue({ networkHost: { name: 'srcHost' } })
+  it('opens the server under the hub’s cursor as its share list in the target pane, keeping focus', () => {
     const left = makePaneRef({
-      getNetworkCursorEntry: vi.fn(() => ({ kind: 'host', host: { name: 'pickedHost' } }) as never),
+      getNetworkCursorEntry: vi.fn(() => ({ kind: 'host', host: testnas }) as never),
     })
     const right = makePaneRef()
-    const { mirror, setPaneHistory } = setup({
+    const { mirror, navigate } = setup({
       refs: { left, right },
       volumeIdByPane: { left: 'network', right: 'root' },
+      pathByPane: { left: 'smb://', right: '/x' },
       focused: 'left',
     })
 
     mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
 
-    expect(right.setNetworkHost).toHaveBeenCalledWith({ name: 'pickedHost' })
-    expect(setPaneHistory).toHaveBeenCalled()
+    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: undefined })
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('sends the target to the hub (a volume select, never a remembered share list) from a hub row with no server', () => {
+    const { mirror, navigate } = setup({
+      refs: { left: makePaneRef(), right: makePaneRef() },
+      volumeIdByPane: { left: 'network', right: 'root' },
+      pathByPane: { left: 'smb://', right: '/x' },
+      focused: 'left',
+    })
+
+    mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
+
+    expect(navigate).toHaveBeenCalledWith({
+      pane: 'right',
+      to: { selectVolume: { volumeId: 'network', path: 'smb://' } },
+      source: 'mirror',
+    })
+  })
+
+  it('opens the same share list from a share list, mounting the share under the cursor once it lands', () => {
+    net.hosts = [testnas]
+    const left = makePaneRef({
+      getCursorEntry: vi.fn(() => ({ isDirectory: true, name: 'public', path: 'smb://testnas/public' }) as never),
+    })
+    const right = makePaneRef()
+    const { mirror, navigate } = setup({
+      refs: { left, right },
+      volumeIdByPane: { left: 'network', right: 'root' },
+      pathByPane: { left: 'smb://testnas', right: '/x' },
+      focused: 'left',
+    })
+
+    mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
+
+    // ❌ Never the share's `smb://` path: a share is mounted, not navigated to.
+    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: 'public' })
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('opens the share list alone with the cursor on `..`', () => {
+    net.hosts = [testnas]
+    const left = makePaneRef({
+      getCursorEntry: vi.fn(() => ({ isDirectory: true, name: '..', path: 'smb://' }) as never),
+    })
+    const right = makePaneRef()
+    const { mirror } = setup({
+      refs: { left, right },
+      volumeIdByPane: { left: 'network', right: 'root' },
+      pathByPane: { left: 'smb://testnas', right: '/x' },
+      focused: 'left',
+    })
+
+    mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
+
+    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: undefined })
   })
 })

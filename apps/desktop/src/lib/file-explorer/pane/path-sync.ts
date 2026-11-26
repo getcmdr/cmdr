@@ -46,9 +46,10 @@ export function resolveInitialPathAction(input: InitialPathSyncInput): InitialPa
   // factory's own `onConnected`, at the path this arm commits.
   if (input.deviceIsConnecting) return { kind: 'sync-path', path: initialPath }
 
-  // The network view owns its own data (ServersHub / PlacesBrowser), so nothing
-  // loads, ❗ but the path still commits: a pane that came from a share kept that
-  // share's path, and its header read "Servers ▸ /Volumes/public".
+  // The Servers hub (`isNetworkView`: the NEW path's kind, `smb://`) lists nothing, so
+  // nothing loads, ❗ but the path still commits: a pane that came from a share kept that
+  // share's path, and its header read "Servers ▸ /Volumes/public". A server's share list
+  // (`smb://<server>`) is a listing, and loads like any folder.
   if (input.isNetworkView) return { kind: 'sync-path', path: initialPath }
 
   return { kind: 'load', path: initialPath }

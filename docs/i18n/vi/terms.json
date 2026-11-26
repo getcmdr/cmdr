@@ -2670,7 +2670,7 @@
     "decision": "Rà soát trôi thuật ngữ toàn catalog",
     "exceptions": {
       "commands.cloudRemoveDownload.description": "The local copy really is deleted, so `xóa` (Finder: Remove Download → Xóa bản tải về).",
-      "commands.resticForgetPassword.description": "The backup's saved password is deleted from the keychain, so `xóa` (like `fileExplorer.network.share.forgetPasswordTooltip`).",
+      "commands.resticForgetPassword.description": "The backup's saved password is deleted from the keychain, so `xóa` (like `fileExplorer.network.forgotPassword`).",
       "commands.cloudRemoveDownload.label": "Finder's own item: Remove Download → `Xóa bản tải về` (N153.4_V1); the local bytes really go.",
       "commands.handler.cloudRemoveDownloadFailed": "Same deletion as `commands.cloudRemoveDownload.label`, so `xóa`.",
       "menu.context.removeDownload": "Finder's own item: Remove Download → `Xóa bản tải về`; identical to `commands.cloudRemoveDownload.label`.",

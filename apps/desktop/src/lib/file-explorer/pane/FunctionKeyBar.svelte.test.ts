@@ -60,6 +60,12 @@ describe('FunctionKeyBar capability disablement', () => {
     expect(f4Edit.disabled).toBe(false)
   })
 
+  it('a server’s share list enables F2, which edits that server, and nothing that writes', () => {
+    const [f2Rename, , , f5Copy, f6Move, f7NewFolder, f8Delete] = mountOn('network', 'smb://testnas')
+    expect(f2Rename.disabled).toBe(false)
+    for (const button of [f5Copy, f6Move, f7NewFolder, f8Delete]) expect(button.disabled).toBe(true)
+  })
+
   it('a search-results pane disables F2 / F7 (destination ops), keeps F5 / F6 / F8 (source ops)', () => {
     // caps: canWrite false ⇒ F2, F7 disabled;
     // canBeSource true ⇒ F5, F6, F8 enabled (snapshot rows are real files).

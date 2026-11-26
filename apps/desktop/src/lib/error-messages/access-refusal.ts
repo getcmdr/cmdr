@@ -2,7 +2,10 @@ import type { ListingErrorReason } from '#lib/ipc/bindings.js'
 
 /**
  * Reasons that say the path IS there and this account, app, or device may not read it:
- * the OS, macOS privacy (TCC), a file server, an object store, or a phone refused it.
+ * the OS, macOS privacy (TCC), a file server, an object store, or a phone refused it. A
+ * server's share list the server refused (or couldn't be asked) counts too: the path names
+ * the server itself, and the existence probe would only ask the share cache, whose "no"
+ * walked the pane up to the Servers hub, which lists nothing.
  */
 const ACCESS_REFUSALS: ReadonlySet<ListingErrorReason['reason']> = new Set([
   'permissionDenied',
@@ -13,6 +16,8 @@ const ACCESS_REFUSALS: ReadonlySet<ListingErrorReason['reason']> = new Set([
   'objectStoreRefused',
   'serverRefused',
   'phoneRefused',
+  'shareListSignIn',
+  'shareListUnavailable',
 ])
 
 /**

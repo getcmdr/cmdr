@@ -35,10 +35,10 @@ describe('EmptyFolderState', () => {
     resetShortcut('view.showHidden')
   })
 
-  function paragraphs(hiddenCount: number): () => string[] {
+  function paragraphs(hiddenCount: number, emptyText?: string): () => string[] {
     const target = document.createElement('div')
     document.body.appendChild(target)
-    const component = mount(EmptyFolderState, { target, props: { hiddenCount } })
+    const component = mount(EmptyFolderState, { target, props: { hiddenCount, emptyText } })
     flushSync()
     cleanups.push(() => {
       void unmount(component)
@@ -49,6 +49,10 @@ describe('EmptyFolderState', () => {
 
   it('says "Empty folder" when nothing is hidden', () => {
     expect(paragraphs(0)()).toEqual(['Empty folder'])
+  })
+
+  it('says the pane kind’s own words in place of "Empty folder"', () => {
+    expect(paragraphs(0, 'No shares here.')()).toEqual(['No shares here.'])
   })
 
   it('names one hidden item in the singular', () => {

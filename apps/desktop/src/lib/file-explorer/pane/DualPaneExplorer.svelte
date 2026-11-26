@@ -357,8 +357,6 @@
         getPaneRef,
         getPaneVolumeId,
         getPanePath,
-        getPaneHistory,
-        setPaneHistory,
         getFocusedPane: () => focusedPane,
         setFocusedPane: (pane) => {
             explorerState.setFocusedPane(pane)
@@ -1272,7 +1270,7 @@
      * list there showed no mount, no share list, and no selection.
      */
     export function openSmbHandOffInFocusedPane(handOff: SmbHandOff): void {
-        paneMirror.showNetworkState(explorerState.getFocusedPane(), handOff.host, handOff.sharePath ?? undefined)
+        paneMirror.openShareList(explorerState.getFocusedPane(), handOff.host, handOff.sharePath ?? undefined)
     }
 
     /**

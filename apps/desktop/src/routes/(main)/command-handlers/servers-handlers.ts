@@ -22,7 +22,8 @@ import type { ServerAccountAction } from '#lib/file-explorer/navigation/row-menu
 import type { NetworkHost } from '#lib/file-explorer/types.js'
 import { isSmbShareVolume, toggleShareParentRow } from '#lib/file-explorer/network/share-parent-row.svelte.js'
 import { serverCommandTarget, type ServerCommandTarget } from '#lib/servers/server-command-target.js'
-import { getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
+import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
+import { shareListHostAt } from '#lib/file-explorer/network/share-list-label.js'
 import { getVolumes } from '#lib/stores/volume-store.svelte.js'
 import { listSavedServers } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
@@ -36,8 +37,8 @@ const log = getAppLogger('servers')
  * The server whose share list the focused pane shows, or `null`. The ONE read of it the
  * servers commands make, so Edit and the target below can't disagree on it.
  */
-function shareListHost(explorerRef: ExplorerAPI | undefined): NetworkHost | null {
-  return explorerRef?.getFocusedPaneNetworkHost() ?? null
+function shareListHost(): NetworkHost | null {
+  return shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath())
 }
 
 /** The server the user is pointing at, or `null`. */
@@ -45,7 +46,7 @@ function target(explorerRef: ExplorerAPI | undefined): ServerCommandTarget | nul
   const volumeId = getFocusedPaneVolumeId()
   return serverCommandTarget({
     cursorRow: explorerRef?.getFocusedPaneHubRow() ?? null,
-    shareListHost: shareListHost(explorerRef),
+    shareListHost: shareListHost(),
     paneVolume: getVolumes().find((volume) => volume.id === volumeId) ?? null,
   })
 }
@@ -149,7 +150,7 @@ export const serversHandlers = {
     // at a host, which has no place for the other commands to act on but does have a
     // name to edit.
     if (explorerRef && getFocusedPaneVolumeId() === 'network') {
-      detached(editServerInView({ row: explorerRef.getFocusedPaneHubRow(), host: shareListHost(explorerRef) }))
+      detached(editServerInView({ row: explorerRef.getFocusedPaneHubRow(), host: shareListHost() }))
       return
     }
     const server = target(explorerRef)

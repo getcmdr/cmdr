@@ -383,14 +383,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "返回",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "重试",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "登录",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -539,10 +531,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "正在连接到 {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "无法连接到 {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -559,22 +547,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "没有可用的共享",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "这台主机没有可以访问的共享，或者需要先通过身份验证。",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "返回",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {从钥匙串中移除保存的密码} windows {从凭据管理器中移除保存的密码} linuxKde {从 KDE 密码库中移除保存的密码} other {从你的密钥环中移除保存的密码}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "以客人身份浏览",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -582,10 +554,6 @@
   "fileExplorer.network.share.signInAs": "用其他账户登录…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "清除保存的密码",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, other {{countText} 个共享}}",
   "@fileExplorer.network.share.shareCount": {

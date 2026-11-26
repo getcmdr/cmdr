@@ -86,7 +86,7 @@ Apple's form (iPhone Mirroring, Rosetta): `Нужен Mac с чипом Apple`.
 - A switch named after a command keeps it byte for byte (`Перейти к последней загрузке`).
 - A label read into a dropdown is a noun (`Редактор файлов`), or `Редактировать файлы в Как в системе (TextEdit)`.
 
-## Host: хост over узел (`commands.network*`, `commands.shareBack.label`, `fileExplorer.network.*`)
+## Host: хост over узел (`commands.network*`, `fileExplorer.network.*`)
 
 macOS (DirectoryBinding Хост, ssh `подлинность хоста`); MS's `узел` gave one panel two words.
 

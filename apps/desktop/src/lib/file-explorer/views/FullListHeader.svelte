@@ -37,6 +37,8 @@
         scrollbarWidth: number
         /** Passed to the ACTIVE column's header. See `SortableHeader`'s prop. */
         clearsSortLabel?: string
+        /** The Ext column's header, when the pane's kind names it otherwise (a share list's "Description"). */
+        extHeader?: string
         onSortChange?: (column: SortColumn) => void
         /**
          * Opens the Sort by popup (the three dates): at `anchor` from the date chevron, at the
@@ -58,6 +60,7 @@
         skipTransition,
         scrollbarWidth,
         clearsSortLabel,
+        extHeader,
         onSortChange,
         onSortMenu,
     }: Props = $props()
@@ -108,7 +111,7 @@
                 column="extension"
                 {isFocused}
                 {clearsSortLabel}
-                label={tString('fileExplorer.columns.ext')}
+                label={extHeader ?? tString('fileExplorer.columns.ext')}
                 align="right"
                 currentSortColumn={sortBy}
                 currentSortOrder={sortOrder}
@@ -134,7 +137,7 @@
             column="extension"
             {isFocused}
             {clearsSortLabel}
-            label={tString('fileExplorer.columns.ext')}
+            label={extHeader ?? tString('fileExplorer.columns.ext')}
             currentSortColumn={sortBy}
             currentSortOrder={sortOrder}
             onClick={sort}

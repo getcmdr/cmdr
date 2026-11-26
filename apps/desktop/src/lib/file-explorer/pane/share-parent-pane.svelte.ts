@@ -19,18 +19,17 @@ import {
   showsParentRow,
   type ShareParentLanding,
 } from '../network/share-parent-row.svelte'
-import { showShareParentHintOnce } from '../network/share-parent-hint'
-import type { VolumeChangePayload } from './types'
 
 export interface ShareParentPaneDeps {
   /** The volume the pane's `volumeId` names, from the live list. */
   getVolume: () => VolumeInfo | null
   /** Whether the pane shows its volume's top folder. */
   getIsAtTopFolder: () => boolean
-  /** Takes the pane to the network volume on `networkHost`'s share list. */
-  openServer: (change: VolumeChangePayload & { networkHost: NetworkHost }) => void
-  getLanding: () => ShareParentLanding | undefined
-  setLanding: (landing: ShareParentLanding | undefined) => void
+  /**
+   * Takes the pane to `host`'s share list, the cursor landing on the share and the hint
+   * explaining where `..` went once it does (`share-list-pane.svelte.ts`).
+   */
+  openServer: (host: NetworkHost, arrival: { land: ShareParentLanding }) => void
 }
 
 export interface ShareParentPane {
@@ -47,8 +46,6 @@ export interface ShareParentPane {
    * navigation to run.
    */
   leaveTopFolder: () => boolean
-  /** The share list is on screen with the cursor on the share: spend the landing. */
-  landed: () => void
 }
 
 export function createShareParentPane(deps: ShareParentPaneDeps): ShareParentPane {
@@ -71,22 +68,15 @@ export function createShareParentPane(deps: ShareParentPaneDeps): ShareParentPan
     if (shareVolumeId === null || !leadsOutHere) return false
     const parent = shareParentOf(shareVolumeId)
     if (!parent) return false
-    // ❗ The switch first, then the landing: the pane drops its network state whenever it
-    // isn't on the network volume, so a landing set before would be cleared at once.
-    deps.openServer({ volumeId: 'network', volumePath: 'smb://', targetPath: 'smb://', networkHost: parent.host })
-    deps.setLanding({
-      volumeId: shareVolumeId,
-      hostId: parent.host.id,
-      shareName: parent.shareName,
-      serverLabel: parent.serverLabel,
+    deps.openServer(parent.host, {
+      land: {
+        volumeId: shareVolumeId,
+        hostId: parent.host.id,
+        shareName: parent.shareName,
+        serverLabel: parent.serverLabel,
+      },
     })
     return true
-  }
-
-  function landed(): void {
-    const landing = deps.getLanding()
-    deps.setLanding(undefined)
-    if (landing) showShareParentHintOnce(landing)
   }
 
   return {
@@ -97,6 +87,5 @@ export function createShareParentPane(deps: ShareParentPaneDeps): ShareParentPan
       return leadsOutHere
     },
     leaveTopFolder,
-    landed,
   }
 }

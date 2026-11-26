@@ -1,20 +1,16 @@
 /**
  * Mounting a share from a server's share list: the dial, its wait and Cancel, the sign-in
- * a refused mount asks for, the refusal the pane shows, and the share queued to mount once
- * the list lands (`pendingMount`).
+ * a refused mount asks for, and the refusal the pane shows.
  *
  * A factory, ❌ not a component: the pane renders `view` through the ONE `RemoteConnectView`
  * (connecting, the calm `signed_out` sign-in state, a `refused` one with Try again), and the
- * share list's host is the caller's (`deps.getServer`). Created during component init, since
- * the MCP mirror below is an effect.
+ * share list's host is the caller's (`deps.getServer`). The share a door queued to mount
+ * once the list lands is the pane's arrival (`share-list-arrival.svelte.ts`), ❌ not this
+ * controller's: a pinned tab opens the list in a new pane component.
  *
- * ❗ **`pendingMount` is a one-shot for the visit it was queued with** (cmdr-reports#7: "Cmdr
- * tried to open the share on that server"). It's spent the moment the list hands it to the
- * mount (`takePending`), and retired on every exit (a mount that went through, leaving the
- * host, another host). A value that outlived its visit mounted a share nobody picked each
- * time the list came back. `deps.onPendingConsumed` clears the pane's own copy too; the pane
- * ALSO clears it on leaving the network volume (`network-host-state.svelte.ts`), and the
- * E2E pin holds only while both layers stand.
+ * ❗ **No credential lives here.** A mount with none signs in with the server's session
+ * credential on the backend (`network/share_list_sign_in.rs::mount_with_session`); only an
+ * answer the person types on the sheet crosses, once, for that one remount.
  */
 
 import type { MountError, NetworkHost, ShareInfo } from '../types'
@@ -25,12 +21,10 @@ import {
   resolvePathVolume,
   saveSmbCredentials,
   setSmbAccountPreference,
-  updateLeftPaneState,
-  updateRightPaneState,
 } from '#lib/tauri-commands/index.js'
+import type { MountErrorInfo } from '#lib/ipc/bindings.js'
 import { getMountTimeoutMs } from '#lib/settings/network-settings.js'
 import { getAppLogger } from '#lib/logging/logger.js'
-import { addToast } from '#lib/ui/toast/index.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { eventMatchesCommand } from '#lib/shortcuts/index.js'
 import { claimKey } from '#lib/shortcuts/claim-key.js'
@@ -63,15 +57,10 @@ export interface ShareMountCredentials {
 }
 
 export interface ShareMountDeps {
-  getPaneId: () => 'left' | 'right' | undefined
-  /** The share list's server, or `null` on the Servers list. */
+  /** The share list's server, or `null` when the pane shows none. */
   getServer: () => ShareMountServer | null
-  /** A mount went through: the pane leaves the share list (before it lands on the share). */
-  onMounted: () => void
   /** Takes the pane to the mounted share's volume. */
   onVolumeChange: (change: VolumeChangePayload) => void
-  /** The queued share is spent; the pane clears its own copy, so the same name can be queued again. */
-  onPendingConsumed: () => void
 }
 
 /** What `RemoteConnectView` renders while a mount runs or after it stopped short. */
@@ -90,21 +79,14 @@ export interface ShareMount {
   readonly view: ShareMountView | null
   /** True while the sign-in sheet is up over a refused mount. */
   readonly signingIn: boolean
-  /** The share queued to mount once the list lands, or `undefined`. */
-  readonly pendingMount: string | undefined
+  /**
+   * A mount that didn't go through, for `cmdr://state`'s `mountError` (the refusal and the
+   * sign-in state a credential question routes to alike), or `null`. Without it a failed
+   * mount is invisible there: the pane's `files` still describe the share list it replaced.
+   */
+  readonly mountErrorInfo: MountErrorInfo | null
   /** Mounts `share`, and asks for a credential if that's what's missing (Enter on a share). */
   mount: (share: ShareInfo, credentials: ShareMountCredentials | null) => Promise<void>
-  /** The pane's queued share (its reactive copy): adopted once per distinct value. */
-  adoptQueued: (shareName: string | undefined) => void
-  /** Queues a share for this visit only (an address that named one, a saved share via its host). */
-  queue: (shareName: string) => void
-  /** Ends the queued share, here and in the pane. */
-  retirePending: () => void
-  /**
-   * Spends the queued share against the loaded list: the match to mount, or `null` with a
-   * "not found" toast. Either way the queue is retired.
-   */
-  takePending: (shares: ShareInfo[]) => ShareInfo | null
   /** Back from a refused mount to the share list (the host stays). */
   back: () => void
   /** A different host, or none: drops the refusal and the attempt it would retry. */
@@ -139,11 +121,6 @@ function friendlyServerName(networkHost: NetworkHost, label: string | undefined,
   return isAddress ? null : friendly
 }
 
-/** The hub row's own name, for the `volumeName` the mirror pushes: the switcher's label, in the UI language. */
-function serversVolumeName(): string {
-  return tString('fileExplorer.navigation.networkVolume')
-}
-
 export function createShareMount(deps: ShareMountDeps): ShareMount {
   /** The share, its server's friendly name, and the address it dials: what the views name. */
   interface MountTarget {
@@ -172,59 +149,10 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
   /** Whether the person pressed Cancel on the running mount, so its `cancelled` answer goes back quietly. */
   let mountCancelRequested = false
 
-  let pendingMount = $state<string | undefined>(undefined)
-  /**
-   * The pane's value this controller last adopted, so the same one isn't adopted twice.
-   * ❗ Compared with what was ADOPTED, ❌ not with `pendingMount`: a retired target is
-   * `undefined` here while the pane may still hold the name, and re-adopting it is the
-   * stale auto-mount this exists to prevent.
-   */
-  let adoptedPending: string | undefined
-
-  function retirePending() {
-    if (pendingMount === undefined && adoptedPending === undefined) return
-    pendingMount = undefined
-    deps.onPendingConsumed()
-  }
-
-  /**
-   * Mirrors a mount that didn't go through into `cmdr://state`: the refusal and the sign-in
-   * state a credential question routes to alike. Without it a failed mount is invisible
-   * there: the pane's `path` and `files` still describe the share list either replaced.
-   *
-   * The clear is explicit, ❌ not left to whichever view comes next: the share list only
-   * pushes once it has shares, so a host that has since gone quiet pushes nothing at all,
-   * and a `mountError` outliving its pane misleads a reader worse than the silence.
-   */
-  // Not `$state`: writing it inside the effect that reads it would re-run the effect forever.
-  let mirroredMountError = false
-  $effect(() => {
-    const paneId = deps.getPaneId()
-    if (!paneId) return
-    const error = mountError
+  const mountErrorInfo = $derived.by((): MountErrorInfo | null => {
     const share = lastMountAttempt?.share.name
-    if (!error || share === undefined) {
-      if (!mirroredMountError) return
-      mirroredMountError = false
-    } else {
-      mirroredMountError = true
-    }
-    const host = deps.getServer()?.host ?? null
-    const update = paneId === 'left' ? updateLeftPaneState : updateRightPaneState
-    void update({
-      path: host ? `smb://${host.ipAddress ?? host.name}/` : 'smb://',
-      volumeId: 'network',
-      volumeName: host ? `${serversVolumeName()} > ${host.name}` : serversVolumeName(),
-      files: [],
-      cursorIndex: 0,
-      viewMode: 'full',
-      mountError:
-        error && share !== undefined
-          ? { share, reason: error.type, message: renderMountError(error, host?.name) }
-          : null,
-    }).catch(() => {
-      // MCP mirroring is optional; a failed push must not touch the UI.
-    })
+    if (!mountError || share === undefined) return null
+    return { share, reason: mountError.type, message: renderMountError(mountError, deps.getServer()?.host.name) }
   })
 
   /**
@@ -306,10 +234,6 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
         attemptId,
       )
       lastMountAttempt = null
-      retirePending()
-      // ❗ The pane leaves the host first, so the next visit to Servers lands on the hub
-      // rather than this host's share list.
-      deps.onMounted()
       await landOnMount(result.mountPath)
       return null
     } catch (e) {
@@ -458,38 +382,10 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
     get signingIn() {
       return signingIn
     },
-    get pendingMount() {
-      return pendingMount
+    get mountErrorInfo() {
+      return mountErrorInfo
     },
     mount,
-    adoptQueued: (shareName) => {
-      if (shareName && shareName !== adoptedPending) {
-        adoptedPending = shareName
-        pendingMount = shareName
-      } else if (!shareName) {
-        adoptedPending = undefined
-      }
-    },
-    queue: (shareName) => {
-      pendingMount = shareName
-    },
-    retirePending,
-    takePending: (shares) => {
-      const shareName = pendingMount
-      if (shareName === undefined) return null
-      retirePending()
-      const match = shares.find((s) => s.name.localeCompare(shareName, undefined, { sensitivity: 'base' }) === 0)
-      if (match) return match
-      const current = deps.getServer()
-      addToast(
-        tString('fileExplorer.network.share.notFound', {
-          shareName,
-          hostName: current?.label ?? current?.host.name ?? '',
-        }),
-        { level: 'warn' },
-      )
-      return null
-    },
     back,
     reset: () => {
       mountError = null

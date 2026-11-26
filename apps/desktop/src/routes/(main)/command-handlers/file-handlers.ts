@@ -22,6 +22,7 @@ import { showInFileManagerOrExplain } from '#lib/file-explorer/file-manager-reve
 import { addToast } from '#lib/ui/toast/index.js'
 import CopiedPathToastContent from '#lib/file-explorer/CopiedPathToastContent.svelte'
 import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
+import { shareListHostAt } from '#lib/file-explorer/network/share-list-label.js'
 import { capabilitiesFor, capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
 import { pathInsideArchive } from '#lib/file-explorer/pane/archive-paths.js'
 import { openInEditorOrExplain } from '#lib/file-explorer/pane/editor-open.js'
@@ -149,7 +150,7 @@ async function copySelectionOr(
 
 /** What the Servers volume shows: the hub row under the cursor, or the host whose share list is up. */
 function serverInView(explorer: NonNullable<CommandHandlerContext['explorerRef']>) {
-  return { row: explorer.getFocusedPaneHubRow(), host: explorer.getFocusedPaneNetworkHost() }
+  return { row: explorer.getFocusedPaneHubRow(), host: shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath()) }
 }
 
 export const fileHandlers = {

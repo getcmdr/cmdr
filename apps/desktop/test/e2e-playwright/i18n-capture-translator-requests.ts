@@ -127,7 +127,7 @@ export async function captureNetworkSurfaces(main: TauriPage, report: Report, fa
               var row = rows.find(function(r){ return (r.textContent || '').includes(${JSON.stringify(NEARBY_HOST.name)}) && !r.querySelector('.nearby-group-label'); });
               if (row) row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             })()`)
-            return main.evaluate<boolean>(`document.querySelector('.sign-in-state') !== null`)
+            return main.evaluate<boolean>(`document.querySelector('.error-pane') !== null`)
           },
           { timeout: waitBudget(5000) },
         )

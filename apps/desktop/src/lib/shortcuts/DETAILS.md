@@ -395,11 +395,10 @@ keypresses propagate normally to component-level handlers in DualPaneExplorer an
 
 ❗ **A BARE key is not automatically Tier 2.** `Enter` (`nav.open`), `Tab` (`pane.switch`), Space, F5, and Insert all
 belong to Tier 1 commands and sit in the map, so the claim rule below governs them exactly as it governs a ⌘ combo.
-Enter is the sharpest case: `nav.open` WINS the combo globally (it beats `share.selectShare` on registry order at equal
-scope depth), and its handler is `sendKeyToFocusedPane('Enter')`, which posts the key straight back into the focused
-pane. A pane branch that only `preventDefault`s therefore opens the entry TWICE. That hid for months because a second OS
-open is invisible for a file whose app reuses its window; a Google Drive file is what surfaced it, opening two browser
-tabs for one Enter.
+Enter is the sharpest case: `nav.open` WINS the combo globally, and its handler is `sendKeyToFocusedPane('Enter')`,
+which posts the key straight back into the focused pane. A pane branch that only `preventDefault`s therefore opens the
+entry TWICE. That hid for months because a second OS open is invisible for a file whose app reuses its window; a Google
+Drive file is what surfaced it, opening two browser tabs for one Enter.
 
 ### Local handlers resolve through the registry too (`eventMatchesCommand`)
 
@@ -461,8 +460,8 @@ Callers today: `../file-explorer/pane/selection-keys.ts` (`Space` / `Insert` / `
 `nav.parent` — and `⌘Backspace` falls through to `file.delete` for free, since it isn't `nav.parent`'s combo),
 `../file-explorer/pane/cursor-nav-keys.ts` (the ten cursor commands, as one gate in front of the per-view math),
 `../file-explorer/navigation/keyboard-shortcuts.ts` (`nav.home` / `nav.end` / `nav.pageUp` / `nav.pageDown` for both
-views, the places browser, and the servers hub), and `../file-explorer/network/PlacesBrowser.svelte` (`share.back` /
-`share.selectShare`).
+views and the servers hub), and `../file-explorer/pane/share-mount.svelte.ts` (`share.back`, while a share's mount is
+up).
 
 A handler that needs "the platform's primary modifier" (a row's toggle click, the viewer's copy, select all, and search)
 asks `holdsPrimaryModifier(event)` (`primary-modifier.ts`: ⌘ on macOS, Ctrl elsewhere), ❌ never `metaKey` alone or

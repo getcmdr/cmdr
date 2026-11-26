@@ -385,14 +385,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Zpět",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Zkusit znovu",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Přihlásit se",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -541,10 +533,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Připojování k hostiteli {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "K hostiteli {hostName} se nepodařilo připojit",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -561,22 +549,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Žádné dostupné sdílené složky",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Tento hostitel nemá žádné přístupné sdílené složky, nebo je potřeba ověření.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Zpět",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Odstranit uložené heslo ze svazku klíčů} windows {Odstranit uložené heslo ze Správce přihlašovacích údajů} linuxKde {Odstranit uložené heslo z úschovny KDE} other {Odstranit uložené heslo ze systémové klíčenky}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Procházet jako host",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -584,10 +556,6 @@
   "fileExplorer.network.share.signInAs": "Přihlásit se jako…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Zapomenout uložené heslo",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} sdílená složka} few {{countText} sdílené složky} many {{countText} sdílené složky} other {{countText} sdílených složek}}",
   "@fileExplorer.network.share.shareCount": {

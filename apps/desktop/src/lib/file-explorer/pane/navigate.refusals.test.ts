@@ -33,13 +33,38 @@ describe('shareListNavigationRefusal: the narrowed smb:// rule', () => {
     expect(shareListNavigationRefusal('/Users/test_user_1')).toBeNull()
   })
 
-  it('isn’t wired yet: `nav_to_path` still refuses a share list until every door opens one as a listing', () => {
+  it('opens a server’s share list from another volume: `nav_to_path` and go-to-path reach one', () => {
     h = makeHarness({ left: { path: '/Users/me', volumeId: 'root' } })
     const result = navigate(
       { pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://testnas' } }, source: 'mcp' },
       h.deps,
     )
-    expect(result).toEqual({ status: 'refused', reason: SMB_PATH_REFUSAL })
+    expect(result.status).toBe('started')
+    expect(h.tab('left')).toMatchObject({ volumeId: 'network', path: 'smb://testnas' })
+  })
+
+  it('lists a share list in place from the hub, and still refuses anything else there', () => {
+    h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
+    expect(
+      navigate({ pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://testnas' } }, source: 'user' }, h.deps)
+        .status,
+    ).toBe('started')
+    expect(
+      navigate(
+        { pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://testnas/public' } }, source: 'user' },
+        h.deps,
+      ),
+    ).toEqual({ status: 'refused', reason: SMB_PATH_REFUSAL })
+  })
+
+  it('lands the hub from a share list by the switch arm, which loads nothing', () => {
+    h = makeHarness({ left: { path: 'smb://testnas', volumeId: 'network' } })
+    const result = navigate(
+      { pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://' } }, source: 'user' },
+      h.deps,
+    )
+    expect(result.status).toBe('started')
+    expect(h.tab('left').path).toBe('smb://')
   })
 })
 
@@ -72,7 +97,7 @@ describe('refusal strings (L12) — byte-for-byte contract', () => {
       reason: {
         kind: 'smb-path-unsupported',
         message:
-          "nav_to_path doesn't take smb:// paths. A mounted share is its own volume, so use select_volume with the name from cmdr://state volumes; for a share that isn't mounted, use select_volume Network and open the host.",
+          "nav_to_path doesn't take a share's smb:// path. A mounted share is its own volume, so use select_volume with the name from cmdr://state volumes; for a share that isn't mounted, nav_to_path its server (smb://<server>) and open the share.",
       },
     })
     expect(h.tab('left').volumeId).toBe('root')

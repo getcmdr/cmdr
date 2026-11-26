@@ -1160,14 +1160,6 @@
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
   },
-  "commands.shareBack.label": "Zurück zur Hostliste",
-  "@commands.shareBack.label": {
-    "sourceHash": "42c44d5"
-  },
-  "commands.shareSelectShare.label": "Mit Freigabe verbinden",
-  "@commands.shareSelectShare.label": {
-    "sourceHash": "6c48c8c"
-  },
   "commands.volumeSelect.label": "Volume auswählen",
   "@commands.volumeSelect.label": {
     "sourceHash": "60f5ce1"

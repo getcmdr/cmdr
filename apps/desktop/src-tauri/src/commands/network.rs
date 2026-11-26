@@ -273,14 +273,6 @@ pub fn save_smb_credentials(
     keychain::save_credentials(&server, share.as_deref(), &username, &password)
 }
 
-/// Retrieves SMB credentials from the Keychain.
-/// Returns the stored username and password if found.
-#[tauri::command]
-#[specta::specta]
-pub fn get_smb_credentials(server: String, share: Option<String>) -> Result<SmbCredentials, KeychainError> {
-    keychain::get_credentials(&server, share.as_deref())
-}
-
 /// Whether a server-level password was already read this session, from the
 /// in-memory cache only. ❗ Never touches the Keychain (`keychain::has_cached_credentials`):
 /// the share list uses it to offer "Forget saved password" without costing a prompt.

@@ -2053,7 +2053,7 @@ the bottom right, if that's clear (WCAG 2.4.11). Decisions:
 command in three of its four call sites, a filesystem path in the fourth, and the name says the JOB (hand the user a
 string to copy verbatim) rather than one payload. Handles clipboard internally (`copyToClipboard` with
 `navigator.clipboard` fallback). Parent controls spacing via its own wrapper. Used in `PtpcameradDialog`,
-`MtpPermissionDialog`, `PlacesBrowser`, and `AlertDialog`.
+`MtpPermissionDialog`, `ErrorPane`, and `AlertDialog`.
 
 Props: `text` (displayed and copied), `displayText` (rendered INSTEAD of `text`, for a caller that shortens a long
 string; Copy still carries the whole `text`, because the cap protects the layout and the clipboard has none), and

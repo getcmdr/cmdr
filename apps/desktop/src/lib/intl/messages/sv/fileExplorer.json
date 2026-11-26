@@ -386,14 +386,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Tillbaka",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Försök igen",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Logga in",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -542,10 +534,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Ansluter till {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Det gick inte att ansluta till {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -562,22 +550,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Inga delade mappar tillgängliga",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Den här värden har inga åtkomliga delade mappar, eller så krävs inloggning.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Tillbaka",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Ta bort sparat lösenord från nyckelringen} windows {Ta bort sparat lösenord från Autentiseringshanteraren} linuxKde {Ta bort sparat lösenord från KDE:s plånbok} other {Ta bort sparat lösenord från din nyckelring}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Bläddra som gäst",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -585,10 +557,6 @@
   "fileExplorer.network.share.signInAs": "Logga in som…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Glöm sparat lösenord",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} delning} other {{countText} delningar}}",
   "@fileExplorer.network.share.shareCount": {

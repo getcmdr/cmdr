@@ -143,10 +143,14 @@ suite:
   `supportsTrash`, plus the archive boundary), shared by the delete opener and the rename conflict dialog. A volume
   missing from the list answers YES on purpose: a refused trash is honest and reversible, a permanent delete isn't. A
   caller with its own reason to force permanence (an online-only cloud file) folds it in on top.
-- `network-host-state.svelte.ts`: the open Network host, its queued auto-mount share, and the share `..` came out of.
+- `network-host-state.svelte.ts`: the Network host a history entry still names (nothing sets one now: a share list is a
+  path), retiring with the history plumbing.
+- `share-list-pane.svelte.ts`: a pane's side of a server's share list (Enter mounts, a door's arrival lands, a sign-in
+  refusal asks once, the error screen's friendly label), with `share-list-arrival.svelte.ts` (what a door queued, per
+  pane) and `list-kind-words.ts` (the list's words on the kind). § "A server's share list (kind-from-path)".
 - `share-mount.svelte.ts`: mounting a share from a server's share list (the wait, Cancel, the sign-in a refused mount
-  asks for, the refusal, its MCP mirror, and the queued share as a one-shot `pendingMount`), rendered by
-  `NetworkMountView` through `RemoteConnectView` (§ "The connect views").
+  asks for, the refusal, and its `mountErrorInfo` for the MCP mirror), rendered by FilePane through `RemoteConnectView`
+  (§ "The connect views").
 - `share-parent-pane.svelte.ts`: `..` out of an SMB share's top folder, the pane's side (whether the row shows, Go to
   parent and the row's Enter leaving for the server's shares). `../network/DETAILS.md` § "`..` out of a share's top
   folder".
@@ -1367,14 +1371,13 @@ registration.
 `PaneState.typeToJump` whenever the buffer or indicator is live, so MCP-driven E2E can assert without DOM poking. See
 `apps/desktop/src-tauri/src/ui_state/DETAILS.md` § State stores.
 
-`share-mount.svelte.ts` mirrors a mount that didn't go through the same way, as `PaneState.mountError`
-(`{ share, reason, message }`: the typed `MountError` tag beside the sentence the pane shows, which is in the UI's
-language): the `refused` state and the sign-in state an auth-class failure routes to alike. Without it a failed mount is
-invisible from `cmdr://state`: the pane's `path` and `files` still describe the share list either view replaced, so a
-reader sees a pane that simply didn't move. The clear is an explicit push of its own rather than something the next view
-is trusted to do: `PlacesBrowser` only pushes once it has a share list, so a host that went quiet between the failure
-and Back pushes nothing at all, and a `mountError` outliving its pane misleads a reader worse than the silence the
-mirror replaced. `share-mount.svelte.test.ts` holds that line.
+A mount that didn't go through reaches `cmdr://state` as `PaneState.mountError` (`{ share, reason, message }`: the typed
+`MountError` tag beside the sentence the pane shows, which is in the UI's language), the `refused` state and the sign-in
+state an auth-class failure routes to alike: `share-mount.svelte.ts::mountErrorInfo`, carried by the share list's
+standard push (`pane-mcp-sync.svelte.ts`'s `getMountError`), which `share-list-pane.svelte.ts` re-runs when it changes,
+the clear included. Without it a failed mount is invisible: the pane's `files` still describe the share list the view
+replaced, so a reader sees a pane that simply didn't move. The same push names each share row with its description as a
+`comment="…"` token, so an agent reads what the Description column shows.
 
 **The `navigate()` transaction (`navigate.ts`).** Every coordinator-level pane navigation goes through one
 `navigate(intent, deps)` entry. `DualPaneExplorer` builds the `NavigateDeps` (store getters/mutators + the FilePane
@@ -1416,11 +1419,13 @@ return-point bookkeeping. `navigate.ts` re-exports the names callers use, so the
   strings (on-network, smb-path-unsupported, snapshot-path-unsupported, MTP-mismatch, on-MTP-volume, pane-unavailable)
   are EXACT contract — the MCP adapter forwards them verbatim as the `mcp-response` error; `navigate.refusals.test.ts` +
   the handler suite pin them byte-for-byte.
-- **An `smb://` path below the host-list sentinel is refused (`smb-path-unsupported`).** `resolve_location` maps EVERY
-  `smb://` path onto the virtual `network` volume, whose state is a host plus a share list rather than a path, so
-  `smb://` itself is the only navigable one. A longer path used to take the switch arm and report success from the host
-  list, which is why `nav_to_path` advertised `smb://` support it never had. A mounted share is its own volume
-  (`select_volume` by stable volume id, or by a unique legacy name); an unmounted one opens from the Network host list.
+- **A share's `smb://<server>/<share>` is refused (`smb-path-unsupported`); the hub and a share list aren't.**
+  `resolve_location` maps EVERY `smb://` path onto the `network` volume, where `smb://` (the hub) and `smb://<server>`
+  (a share list) are places and a share is mounted, never navigated to
+  (`navigate-refusals.ts::shareListNavigationRefusal`, asked by `navigateToLocation`). On the `network` volume, the
+  in-place arm lists a share list, lands the hub through the switch arm (the hub lists nothing), and refuses anything
+  else (`on-network-volume`). A share's path used to take the switch arm and report success from the host list. A
+  mounted share is its own volume (`select_volume` by stable volume id, or by a unique legacy name).
 - **A `search-results://` path in a `{ goTo }` is refused (`snapshot-path-unsupported`).** Only the `{ snapshot }` arm
   may open a result set: it routes through the volume-change machinery that claims the snapshot's refcount, so a path
   arriving any other way would leave a pane holding an id nothing keeps alive. The refusal is the frontend's own answer
@@ -2096,9 +2101,30 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
 - **Never remembered**: `persistence-subscriber.svelte.ts` records no share list as `network`'s last-used path, and a
   volume switch to a place with no listing runs no background "better path" correction (`navigate.ts`), so picking
   Servers always lands on the hub, never on a remembered or other-pane share list (each would be a dial).
-- **Not yet reached**: `navigate-refusals.ts::shareListNavigationRefusal` holds the narrowed `smb://` rule, unwired;
-  `nav_to_path` and in-place navigation on `network` still refuse a share list until every entry point opens one as a
-  listing in the same change.
+- **Every door is a path**: the hub's rows, the add-server hand-off, the mirror, `..` out of a share's top folder,
+  go-to- path, MCP `nav_to_path`, and history all send the pane to `smb://<server>`. A door that has more to say queues
+  the pane's ARRIVAL first (`share-list-arrival.svelte.ts`: a share to mount, the share `..` came out of), kept per pane
+  because a pinned tab opens the list in a new pane component, spent once the list lands, and dropped the moment the
+  pane is anywhere but where it was queued from or for (cmdr-reports#7). ❌ No door threads a host or a share through
+  the navigation. The hub commits through the switch arm (`onVolumeChange`, `exact`), so the initial-path effect asks
+  the NEW path's kind (`path-sync.ts`: the hub syncs, a share list loads), and a switch off a share list to the hub ends
+  its listing (`leaveListing`).
+- **Enter mounts** (`share-list-pane.svelte.ts::openShare`, ahead of `entry-activation.ts` in `handleNavigate` and the
+  tool open): the share-mount controller, with no credential of the frontend's own (the backend signs in with the
+  server's session credential). Its states render through the ONE `RemoteConnectView`, in FRONT of the error and list
+  arms, and the key router's first arm hands it every key while it's up (`share.back` cancels or steps back, the rest
+  are dead, so Enter on a retained row starts nothing); one mount at a time.
+- **A sign-in refusal** (`shareListSignIn`) is the calm error screen: no assertive alert, the server by its friendly
+  label, Sign in (`share-list-sign-in.ts::askToSignInToList`, then Retry), no Try again. It's final like an access
+  refusal (`#lib/error-messages/access-refusal.ts`): ❌ never the existence probe, whose cache-only "no" walked the pane
+  up to the hub. The sheet also opens on its own, ONCE, for a listing the person started: a door's arrival or a
+  `navigateToPath` (a navigation, Retry, an account door) arms it; a tab coming back, a repaint, or a re-list nobody
+  started asks nothing (servers principle 4). Cancelling it goes to the hub.
+- **The kind's words** (`list-kind-words.ts` → `../views/list-words.ts`, plain props): the Ext column headed Description
+  with each share's description in it (`extCellText`), `..` named "Back to Servers", the empty list pointing at the path
+  bar's account, and the footer counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then
+  its account (`ShareListAccountChip.svelte`), which also hosts a share row's menu: a right-click or `⌃⏎` on a share
+  list opens `row-menu.ts::shareRowMenu` there, ❌ never the native file menu.
 
 ## Enter-behavior policy (archives and bundles)
 
@@ -2464,10 +2490,10 @@ The producers:
   per-status booleans: a status without its own arm used to render a plain listing over a dead session.
 - `device-connect.svelte.ts` owns `waiting_for_device` and a phone's `connecting` / `refused`. Its sentences come from
   `#lib/adb/adb-connect-errors.ts`, so the view stays generic and the words stay Android's.
-- `share-mount.svelte.ts` (rendered by `NetworkMountView.svelte`) owns a share mount's states: its wait as `connecting`,
-  passing the view's optional `server` (the share's server by its friendly name, so the identity line reads "testshare
-  on Testnas"), with a `hint` once it runs past 10 s (`../network/DETAILS.md` § "A mount that waits"); an
-  `auth_required` refusal as `signed_out` with the producer's own `title` and `hint` ("Sign in to open …", ❌ not
+- `share-mount.svelte.ts` (rendered by `FilePane.svelte` on a share list) owns a share mount's states: its wait as
+  `connecting`, passing the view's optional `server` (the share's server by its friendly name, so the identity line
+  reads "testshare on Testnas"), with a `hint` once it runs past 10 s (`../network/DETAILS.md` § "A mount that waits");
+  an `auth_required` refusal as `signed_out` with the producer's own `title` and `hint` ("Sign in to open …", ❌ not
   "Signed out of …": nothing dropped) and a `back`, with the sheet opened over it at once since the person just started
   the mount; and every other `MountError` as `refused` with the `renderMountError` sentence, `retry`, and `back`. `back`
   (both arms, "Go back") returns to the share list. The view is keyed on "is it a wait", so a Try again's wait starts

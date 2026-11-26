@@ -8,10 +8,10 @@ Signing in is `#lib/servers`' one sheet; this module only says what to ask and w
 - `network-store.svelte.ts`: the `$state` singleton behind all network data. `lazy-trigger.ts`: the network-action hook.
 - `ServersHub.svelte` (+ `servers-hub-{rows,items,shares,keys,actions,mcp,columns}.ts`, `servers-hub-list.svelte.ts`,
   `host-status.ts`, `ServersHubRowMenu.svelte`, `ServersHubStatusBar.svelte`): the hub table on the `network` volume.
-  `PlacesBrowser.svelte` (+ `PlacesHeader.svelte`): renders one account's places. `share-list-sign-in.ts`: the listing's
-  sign-in and every door's account actions. `smb-sign-in.ts`: SMB's side of the sheet. `list-cursor.ts`: both lists'
-  arrow keys, jump rule, and scrolling. `mount-error-messages.ts` (+ `mount-error.ts`): a refused mount's words.
-  `share-parent-*`: `..` out of a share's top folder (DETAILS).
+  `share-list-sign-in.ts`: a share list's sign-in and every door's account actions. `ShareListAccountChip.svelte`: the
+  path bar's account and a share row's menu. `share-list-label.ts`: a share-list path's friendly name. `smb-sign-in.ts`:
+  SMB's side of the sheet. `list-cursor.ts`: the hub's arrow keys, jump rule, and scrolling. `mount-error-messages.ts`
+  (+ `mount-error.ts`): a refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
 - `SmbLinkConsentDialog.svelte`: the ask before a link signs in to another server, opened from the pane's error screen
   (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link").
 - `direct-connect.ts` (+ `upgrade-messages.ts`, `LocalNetworkBlockedToastContent.svelte`): the "Connect directly"
@@ -30,24 +30,22 @@ Signing in is `#lib/servers`' one sheet; this module only says what to ask and w
   saved server's prefetch waits for a Servers view on screen: nothing is listed at launch.
 - **The hub's cursor counts what's on screen; MCP indexes the full list** (a collapsed nearby group hides rows). Cross
   with `servers-hub-items.ts`, ❌ never index `rows` by the cursor. DETAILS § "The nearby group".
-- **❌ Never ask the Keychain twice**: each access can raise a system prompt. No `hasSmbCredentials` pre-check before
-  `getSmbCredentials`, and share activation never pre-prompts (`activateShare`): try stored creds, mount, and let the
-  mount's own refusal ask (`PlacesBrowser.test.ts` pins it). "Is one stored?" for a button reads the backend's in-memory
-  cache only (`noteCachedCredentials`); a menu never asks it.
+- **❌ The frontend never reads the Keychain**: each access can raise a system prompt, so the backend reads a server's
+  stored password at most once per session, inside a listing or a mount the person started
+  (`src-tauri/src/network/share_list_sign_in.rs`). "Is one stored?" for a button reads the backend's in-memory cache
+  only (`noteCachedCredentials`); a menu never asks it.
 - **`direct-connect.ts::connectDirectly` is the ONE upgrade flow** (the chip's yellow dot, the switcher's
   direct-connection switch, the fallback notice): route a new entry point through it. Every answer is a typed
   `UpgradeResult` status worded by `upgrade-messages.ts`; ❌ never toast `String(e)`.
 - **A credential is asked for on the sheet and ❌ never in the pane**, through `smb-sign-in.ts`. The three sites, what
   each `attempt` runs, and where cancelling lands: `../../servers/DETAILS.md`.
-- **`NetworkMountView` must propagate its local `currentNetworkHost` via `onNetworkHostChange`**, mirrored in the parent
-  `FilePane` (`initialNetworkHost`). Without it, leaving Network and coming back re-mounts a stale host and opens
-  `PlacesBrowser` for the wrong one.
 - **"as testuser" / "as guest" comes only from what's known** (`signed-in-as.ts`), ❌ never a Keychain read. A SHARE
-  row: its live mount's account. A SERVER row and its share list's header: the same server-level account (the listing's,
-  `getListedAccount`, else the one it's set to be used with), ❌ never a share's mount, which made the two disagree.
+  row: its live mount's account. A SERVER row and its share list's path-bar account: the same server-level account (the
+  listing's, `getListedAccount`, else the one it's set to be used with), ❌ never a share's mount.
 - **Credential status is keyed by lowercase `host.name`** (the stable Bonjour name); IP and hostname both drift.
-- **The `network` volume id is virtual**: its `smb://` path is a sentinel, not a mount. Mounted shares arrive as
-  separate `VolumeInfo` entries with real ids.
+- **On the `network` volume, `smb://` is the hub (it lists nothing) and `smb://<server>` a server's share list**, a real
+  listing (`../pane/share-list-pane.svelte.ts`). The path is the only record of the server: every door opens one through
+  the pane's arrival, ❌ never by holding a host. Mounted shares are their own volumes.
 
 Architecture, the auth hand-offs, the reconnect flow, and decision rationale: `DETAILS.md`. Read it before any
 non-trivial work here: editing, planning, reorganizing, or advising.

@@ -594,18 +594,6 @@
     "screenshot": "servers-hub.png",
     "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
-  "fileExplorer.network.back": "Back",
-  "@fileExplorer.network.back": {
-    "description": "Button that returns to the previous network screen (for example from a host’s shares back to the host list).",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
-  "fileExplorer.network.retry": "Retry",
-  "@fileExplorer.network.retry": {
-    "description": "Button that re-attempts a failed network operation, such as connecting to a host.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
   "fileExplorer.network.signIn": "Sign in",
   "@fileExplorer.network.signIn": {
     "description": "Button that opens the credentials form to sign in to a network host or share.",
@@ -862,15 +850,6 @@
     "screenshot": "servers-hub.png",
     "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
-  "fileExplorer.network.share.connecting": "Connecting to {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "description": "Loading status while opening a host’s share list.",
-    "placeholders": {
-      "hostName": "the display name of the host being connected to"
-    },
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
   "fileExplorer.network.share.connectFailedTitle": "Couldn’t connect to {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "description": "Error title shown when opening a host’s share list failed.",
@@ -899,30 +878,11 @@
     "screenshot": "servers-hub.png",
     "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
-  "fileExplorer.network.share.noSharesTitle": "No shares available",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "description": "Empty-state title when a host exposes no accessible shares.",
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {No shares to show here. To see more, sign in: select the account next to the path.} other {No shares to show here. To see more, sign in: click the account next to the path.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "description": "Shown in the middle of a server's share list when it lists no shares (often because the server shows guests none). Points at the clickable account (\"as guest\" or \"Sign in as…\") just right of the path at the top of the pane, which opens the sign-in.",
     "screenshot": "servers-hub.png",
     "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
-  "fileExplorer.network.share.noSharesMessage": "This host has no accessible shares, or authentication is needed.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "description": "Empty-state body when a host exposes no accessible shares, hinting that signing in might help.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
-  "fileExplorer.network.share.backArrow": "Back",
-  "@fileExplorer.network.share.backArrow": {
-    "description": "Compact back button in the share-list header that returns to the host list. The UI renders a back-arrow icon before this label; the label itself is text-only.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Remove saved password from Keychain} windows {Remove saved password from Credential Manager} linuxKde {Remove saved password from KDE Wallet} other {Remove saved password from your keyring}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "description": "Hover tooltip for the button that deletes this host’s saved password. Each branch names that OS’s password store: the Keychain on macOS, Credential Manager on Windows, the keyring on Linux. Use the name each OS shows in your language. The screenshot shows the macOS wording. The `linuxKde` branch names KDE’s password store, KDE Wallet: use the name KDE’s own translation gives it in your language.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it.",
-    "visibility": "tooltip"
   },
   "fileExplorer.network.share.useGuest": "Browse as guest",
   "@fileExplorer.network.share.useGuest": {
@@ -944,12 +904,6 @@
       "account": "the button's visible text, like “as testuser”"
     },
     "visibility": "screenReader"
-  },
-  "fileExplorer.network.share.forgetPassword": "Forget saved password",
-  "@fileExplorer.network.share.forgetPassword": {
-    "description": "Button in the share-list header that deletes this host’s saved password from the system’s password store (the Keychain on macOS, Credential Manager on Windows, the keyring on Linux). The UI renders a key icon before this label; the label itself is text-only.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} share} other {{countText} shares}}",
   "@fileExplorer.network.share.shareCount": {
@@ -1793,6 +1747,12 @@
   "@fileExplorer.columns.ext": {
     "description": "File-list column header for the file extension (abbreviation of \"extension\"). Tight column; keep it very short. Its rendered text is also measured to size the column, so the same wording must be used everywhere it appears.",
     "screenshot": "main-window.png"
+  },
+  "fileExplorer.columns.description": "Description",
+  "@fileExplorer.columns.description": {
+    "description": "File-list column header on a server's share list, over the column holding each share's description as the server set it (where a folder list shows the file extension). Its rendered text is also measured to size the column.",
+    "screenshot": "servers-hub.png",
+    "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
   "fileExplorer.columns.size": "Size",
   "@fileExplorer.columns.size": {
@@ -3033,7 +2993,9 @@
   "@fileExplorer.navigation.showShareParentRowTooltip": {
     "description": "Tooltip on the “Show “..” in the top folder” checkbox (fileExplorer.navigation.showShareParentRow) in a network share’s row menu in the volume switcher. Keep “..” as written.",
     "placeholders": {
-      "server": { "description": "The server’s name, for example “Testnas” or “192.168.1.20”." }
+      "server": {
+        "description": "The server’s name, for example “Testnas” or “192.168.1.20”."
+      }
     },
     "screenshot": "pane-volume-chooser.png",
     "visibility": "tooltip"
@@ -3042,7 +3004,9 @@
   "@fileExplorer.shareParentRow.hint": {
     "description": "Text of a one-time notification, shown the first time someone opens “..” in a network share’s top folder and lands on the list of that server’s shares. “Turn it off here” points at the buttons below it (fileExplorer.shareParentRow.turnOffForShare and .turnOffForAll). “The share’s menu in the volume switcher” is the submenu of the share’s row in the drive list that opens from the pane’s header. Keep “..” as written.",
     "placeholders": {
-      "server": { "description": "The server’s name, for example “Testnas” or “192.168.1.20”." }
+      "server": {
+        "description": "The server’s name, for example “Testnas” or “192.168.1.20”."
+      }
     }
   },
   "fileExplorer.shareParentRow.turnOffForShare": "Turn off for this share",

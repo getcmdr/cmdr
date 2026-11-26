@@ -1,4 +1,4 @@
-import type { FileEntry, FriendlyError, NetworkHost, ShareInfo } from '../types'
+import type { FileEntry, FriendlyError, NetworkHost } from '../types'
 import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
 import type { Initiator, ListingIndexSizesChanged, Location } from '#lib/tauri-commands/index.js'
 import type { HubRow } from '../network/servers-hub-rows'
@@ -270,8 +270,11 @@ export interface FilePaneAPI {
   getNetworkItemCount(): number
   refreshNetworkHosts(): void
   setNetworkHost(host: NetworkHost | null): void
-  /** Queue a share name to auto-mount once the share browser is ready. */
-  setNetworkAutoMount(shareName: string | undefined): void
+  /**
+   * Opens `host`'s share list in this pane, mounting `arrival.mount` once it lands when
+   * named (`share-list-arrival.svelte.ts`).
+   */
+  openShareList(host: NetworkHost, arrival?: { mount?: string }): void
 
   getSelectedIndices(): number[]
   isAllSelected(): boolean
@@ -454,7 +457,7 @@ export interface FavoritesMenuAPI {
   getIsOpen(): boolean
 }
 
-/** Typed interface for ServersHub/PlacesBrowser shared methods. */
+/** The list methods ServersHub exports. */
 export interface BrowserAPI {
   /**
    * No "handled" return: both browsers sit below the document-level dispatcher, so a
@@ -492,12 +495,6 @@ export interface ServersHubAPI extends BrowserAPI {
   openContextMenuAtCursor(): Promise<void>
 }
 
-/** Typed interface for PlacesBrowser. */
-export interface PlacesBrowserAPI extends BrowserAPI {
-  /** Share under cursor; `null` when login form is up or list is empty. */
-  getShareUnderCursor(): ShareInfo | null
-}
-
 /** Typed interface for SearchResultsView's exported methods. */
 /**
  * Which view a pane renders, as a function of its capability KIND. `FilePane`'s
@@ -524,31 +521,27 @@ export interface NetworkMountViewAPI {
   handleKeyDown(e: KeyboardEvent): void
   setCursorIndex(index: number): void
   findItemIndex(name: string): number
-  /** Type-to-jump in whichever browser is up; answers the name it landed on, or `null`. */
+  /** Type-to-jump in the hub; answers the name it landed on, or `null`. */
   jumpToPrefix(prefix: string): string | null
   openCursorItem(): void
-  /**
-   * Rows the cursor can sit on in whichever browser is up, and `0` while a
-   * mount is running or its failure is on screen (neither browser is mounted then).
-   */
+  /** Rows the cursor can sit on in the hub. */
   getItemCount(): number
   refreshNetworkHosts(): void
-  setNetworkHost(host: NetworkHost | null): void
-  /**
-   * Returns what the cursor is on inside the network view:
-   * - `'host'` (host list, cursor on a real host),
-   * - `'share'` (share list, cursor on a share),
-   * - `null` (anywhere else: connect row, login form, mounting state, error).
-   */
+  /** What the hub's cursor is on: an SMB host, another server's row, or `null` (the Add row, an empty hub). */
   getNetworkCursorEntry(): NetworkCursorEntry | null
-  /** ⌃⏎ in the servers hub: the cursor row's menu. A host's places list has none yet. */
+  /** ⌃⏎ in the servers hub: the cursor row's menu. */
   openContextMenuAtCursor(): Promise<void>
 }
 
-/** Cursor target inside the network browser stack, returned by NetworkMountView. */
+/** `ShareListAccountChip.svelte`'s exports: a share row's menu on a server's share list. */
+export interface ShareListAccountChipAPI {
+  /** Opens the share row's menu at `anchor` (⌃⏎'s), or where the last right-click landed. */
+  openRowMenu(entry: FileEntry, anchor: { x: number; y: number } | null | undefined): void
+}
+
+/** What the Servers hub's cursor is on, returned by NetworkMountView. */
 export type NetworkCursorEntry =
   /** An SMB host in the hub, with the hub row it is on (Edit server… acts on the row). */
   | { kind: 'host'; host: NetworkHost; row: HubRow }
-  | { kind: 'share'; share: ShareInfo }
   /** A hub row with no SMB host: an SFTP or WebDAV server, or an S3 account or one of its places. */
   | { kind: 'server'; row: HubRow }

@@ -43,7 +43,7 @@ export type DispatchExemptId =
   | 'nav.firstInFull'
   | 'nav.lastInFull'
   // Family 3 — Component-scoped. Handled inside the component that owns the modal /
-  // sub-view (CommandPalette, VolumeChooser, ServersHub, PlacesBrowser), via its own
+  // sub-view (CommandPalette, VolumeChooser, ServersHub, a share's mount), via its own
   // keydown handler — not the global dispatch spine. Registered for the rebinding UI.
   | 'palette.up'
   | 'palette.down'
@@ -85,7 +85,6 @@ export type DispatchExemptId =
   | 'aboutThis.stopVerdict'
   | 'network.selectHost'
   | 'share.back'
-  | 'share.selectShare'
   // The operation queue window's keys: a window of its own, answered by its keydown.
   | 'queue.cursorUp'
   | 'queue.cursorDown'

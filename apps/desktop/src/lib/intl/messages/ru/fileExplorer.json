@@ -385,14 +385,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Назад",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Повторить",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Войти",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -541,10 +533,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Подключение к {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Не удалось подключиться к {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -561,22 +549,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Нет доступных общих папок",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "У этого хоста нет доступных общих папок, или требуется аутентификация.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Назад",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Удалить сохраненный пароль из Связки ключей} windows {Удалить сохраненный пароль из Диспетчера учетных данных} linuxKde {Удалить сохраненный пароль из бумажника KDE} other {Удалить сохраненный пароль из хранилища ключей}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Просмотреть как гость",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -584,10 +556,6 @@
   "fileExplorer.network.share.signInAs": "Войти как…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Забыть сохраненный пароль",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} общая папка} few {{countText} общие папки} many {{countText} общих папок} other {{countText} общей папки}}",
   "@fileExplorer.network.share.shareCount": {

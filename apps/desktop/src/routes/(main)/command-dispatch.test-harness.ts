@@ -72,7 +72,6 @@ export const EXEMPT_IDS = [
   'aboutThis.stopVerdict',
   'network.selectHost',
   'share.back',
-  'share.selectShare',
   'queue.cursorUp',
   'queue.cursorDown',
   'queue.cursorFirst',

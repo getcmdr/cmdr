@@ -336,6 +336,8 @@ export function computeFullListColumnWidths(args: {
    * the grid template in this mode. Defaults to the split layout.
    */
   showExtensionInName?: boolean
+  /** The Ext header's words when the pane's kind names it otherwise (`ListWords.extHeader`). */
+  extHeader?: string
 }): ColumnWidths {
   const {
     entries,
@@ -351,6 +353,7 @@ export function computeFullListColumnWidths(args: {
     sizeFormatOpts,
     isRestricted,
     showExtensionInName = false,
+    extHeader,
   } = args
 
   const measure = getMeasure()
@@ -370,7 +373,7 @@ export function computeFullListColumnWidths(args: {
   const chromeFor = (column: SortColumn): number => (sortBy === column ? HEADER_CHROME_ACTIVE : HEADER_CHROME_INACTIVE)
 
   // Start with header widths (the column must fit its header regardless of data).
-  let extMax = measure(tString('fileExplorer.columns.ext')) + chromeFor('extension')
+  let extMax = measure(extHeader ?? tString('fileExplorer.columns.ext')) + chromeFor('extension')
   let sizeMax = measure(tString('fileExplorer.columns.size')) + chromeFor('size')
   // The date header sorts by the requested date (`dateHeaderSortColumn`), so it's active for any
   // date sort while its label names the date it shows. Its Sort by chevron rides in the same track.

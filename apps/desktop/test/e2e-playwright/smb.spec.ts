@@ -50,14 +50,17 @@ import {
   mcpConfirmedCopy,
 } from '../e2e-shared/mcp-client.js'
 import {
+  dismissOverlay,
   dispatchMenuCommand,
   ensureAppReady,
+  pressKey,
   escapeOverlayUntilGone,
   expectAndDismissToast,
   getFixtureRoot,
   pollUntil,
   isStateClean,
 } from './helpers.js'
+import { defaultKey } from './helpers/registry-keys.js'
 import type { CredentialSource, ShareListResult } from '../../src/lib/ipc/bindings.js'
 
 import os from 'os'
@@ -178,12 +181,14 @@ async function hostExistsInPane(hostName: string): Promise<boolean> {
  * One pane as `cmdr://state` publishes it: its volume id, the cursor's row, and each row's text (what follows
  * `i:<n> <kind> `, with the `[cur]` / `[sel]` markers taken off).
  *
- * ❗ The share-list pins read THIS, ❌ never the share list's DOM: the list is meant to become an ordinary file listing,
- * and these pins have to hold across that swap. They read only the volume id, the rows, and the cursor, ❌ never the
- * pane `path` or `volume` name: both change spelling on purpose when it does.
+ * ❗ The share-list pins read THIS, ❌ never the share list's DOM. A share list is an ordinary file listing on the
+ * `network` volume: its `path` is the server's key (`smb://<key>`, no trailing slash) and its `volume` the hub's own
+ * name, ❌ never `Network > <host>`.
  */
 interface PaneRows {
   volumeId: string
+  volume: string
+  path: string
   cursorIndex: number
   rows: string[]
 }
@@ -191,7 +196,7 @@ interface PaneRows {
 async function paneRows(side: 'left' | 'right'): Promise<PaneRows> {
   const state = await mcpReadResource('cmdr://state')
   const start = state.indexOf(`\n${side}:\n`)
-  if (start === -1) return { volumeId: '', cursorIndex: -1, rows: [] }
+  if (start === -1) return { volumeId: '', volume: '', path: '', cursorIndex: -1, rows: [] }
   const body = state.slice(start + side.length + 2)
   // The pane's block ends at the next top-level key.
   const end = /\n\S/.exec(body)
@@ -199,6 +204,8 @@ async function paneRows(side: 'left' | 'right'): Promise<PaneRows> {
   const rows = [...section.matchAll(/^ {4}- "i:\d+ [dfl] (.*)"$/gm)].map((m) => m[1].replace(/( \[(cur|sel)\])+$/, ''))
   return {
     volumeId: /^ {2}volumeId: (.+)$/m.exec(section)?.[1] ?? '',
+    volume: /^ {2}volume: (.+)$/m.exec(section)?.[1] ?? '',
+    path: /^ {2}path: (.+)$/m.exec(section)?.[1] ?? '',
     cursorIndex: Number(/^ {2}cursor:\n {4}index: (\d+)$/m.exec(section)?.[1] ?? '-1'),
     rows,
   }
@@ -400,6 +407,66 @@ describeSmb('SMB share browsing', () => {
     expect(pane.volumeId).toBe('network')
     expect(pane.rows[0]).toBe('..')
     expect(pane.cursorIndex).toBe(0)
+    // The standard mirror's spelling: the server's stable key, and the hub's own volume name.
+    expect(pane.path).toBe('smb://smb test (guest)')
+    expect(pane.volume).not.toContain(' > ')
+  })
+
+  test('nav_to_path onto a server opens its share list, and a share’s path still refuses', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    await mcpSelectVolume('left', 'Servers')
+    await expect.poll(async () => hostExistsInPane('SMB Test (Guest)'), { timeout: waitBudget(15000) }).toBeTruthy()
+
+    await mcpNavToPath('left', 'smb://smb test (guest)')
+    await expect
+      .poll(async () => shareExistsInPane('left', SMB_GUEST_SHARE), { timeout: waitBudget(30000) })
+      .toBeTruthy()
+  })
+
+  test('a share list refuses F5 and MCP copy with words, and opens no transfer', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    await mcpSelectVolume('left', 'Servers')
+    await expect.poll(async () => hostExistsInPane('SMB Test (Guest)'), { timeout: waitBudget(15000) }).toBeTruthy()
+    await openHost('left', 'SMB Test (Guest)', SMB_GUEST_SHARE)
+    await mcpCall('move_cursor', { pane: 'left', filename: SMB_GUEST_SHARE })
+
+    const answer = await mcpCallRaw('copy', { pane: 'left' })
+    expect(answer.error, 'a share list is no copy source').toBeDefined()
+
+    await dispatchMenuCommand(tauriPage, 'file.copy')
+    await expect
+      .poll(async () => tauriPage.evaluate<string>('document.body.textContent || ""'), { timeout: waitBudget(5000) })
+      .toContain('nothing here to copy')
+    expect(await tauriPage.isVisible('[data-dialog-id="transfer"]')).toBe(false)
+    await dismissOverlay(tauriPage)
+  })
+
+  test('a share row’s menu opens by right-click and by the keyboard, with Open and Copy path', async ({
+    tauriPage,
+  }) => {
+    await ensureAppReady(tauriPage)
+    await mcpSelectVolume('left', 'Servers')
+    await expect.poll(async () => hostExistsInPane('SMB Test (Guest)'), { timeout: waitBudget(15000) }).toBeTruthy()
+    await openHost('left', 'SMB Test (Guest)', SMB_GUEST_SHARE)
+    await mcpCall('move_cursor', { pane: 'left', filename: SMB_GUEST_SHARE })
+    const menuRows = async () =>
+      tauriPage.evaluate<string[]>(
+        `[...document.querySelectorAll('[data-menu] [data-menu-row]')].map(function (el) { return el.textContent.trim() })`,
+      )
+
+    // The keyboard's context-menu key, anchored at the cursor row.
+    await pressKey(tauriPage, defaultKey('file.contextMenu'))
+    await expect.poll(menuRows, { timeout: waitBudget(5000) }).toEqual(expect.arrayContaining(['Open', 'Copy path']))
+    await escapeOverlayUntilGone(tauriPage, '[data-menu]')
+
+    // A right-click on the share's row: the same menu, ❌ never the native file menu.
+    await tauriPage.evaluate(`(function () {
+      var row = document.querySelector('[data-filename=${JSON.stringify(SMB_GUEST_SHARE)}]');
+      var box = row.getBoundingClientRect();
+      row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: box.left + 10, clientY: box.top + 5 }));
+    })()`)
+    await expect.poll(menuRows, { timeout: waitBudget(5000) }).toEqual(expect.arrayContaining(['Open', 'Copy path']))
+    await escapeOverlayUntilGone(tauriPage, '[data-menu]')
   })
 
   test('`..` on a share list goes back to the Servers list with the cursor on that server', async ({ tauriPage }) => {

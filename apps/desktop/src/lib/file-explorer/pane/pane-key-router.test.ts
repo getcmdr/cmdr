@@ -79,6 +79,7 @@ describe('createPaneKeyRouter', () => {
   }
   let state: {
     renameActive: boolean
+    shareMountHoldsKeys: boolean
     isNetworkView: boolean
     isSearchResultsView: boolean
     viewMode: 'brief' | 'full'
@@ -95,6 +96,7 @@ describe('createPaneKeyRouter', () => {
     shortcuts.eventMatchesCommand.mockReturnValue(false)
     state = {
       renameActive: false,
+      shareMountHoldsKeys: false,
       isNetworkView: false,
       isSearchResultsView: false,
       viewMode: 'full',
@@ -103,6 +105,7 @@ describe('createPaneKeyRouter', () => {
     }
     deps = {
       getRenameActive: vi.fn(() => state.renameActive),
+      handleShareMountKeyDown: vi.fn(() => state.shareMountHoldsKeys),
       getIsNetworkView: vi.fn(() => state.isNetworkView),
       getIsSearchResultsView: vi.fn(() => state.isSearchResultsView),
       getViewMode: vi.fn(() => state.viewMode),
@@ -131,6 +134,16 @@ describe('createPaneKeyRouter', () => {
       const e = keyEvent()
       router().handleKeyDown(e)
       expect(renameActivation.cancelClickToRename).not.toHaveBeenCalled()
+      expect(deps.handleFullModeKeys).not.toHaveBeenCalled()
+    })
+
+    it('hands every key to a share’s mount while it’s up, and none to the list under it (Enter starts nothing)', () => {
+      state.shareMountHoldsKeys = true
+      shortcuts.eventMatchesCommand.mockImplementation((_e: KeyboardEvent, id: string) => id === 'nav.open')
+      const e = keyEvent()
+      router().handleKeyDown(e)
+      expect(deps.handleShareMountKeyDown).toHaveBeenCalledWith(e)
+      expect(deps.openEntry).not.toHaveBeenCalled()
       expect(deps.handleFullModeKeys).not.toHaveBeenCalled()
     })
 

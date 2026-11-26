@@ -6,17 +6,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { flushSync } from 'svelte'
 import type { NetworkHost, VolumeInfo } from '../types'
-import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
-const { getSmbShareParent, showShareParentHintOnce, defaultShow } = vi.hoisted(() => ({
+const { getSmbShareParent, defaultShow } = vi.hoisted(() => ({
   getSmbShareParent: vi.fn(),
-  showShareParentHintOnce: vi.fn(),
   defaultShow: { value: true },
 }))
 vi.mock('#lib/tauri-commands/index.js', () => ({ getSmbShareParent, setSmbShareParentRow: vi.fn() }))
 vi.mock('#lib/settings/reactive-settings.svelte.js', () => ({ getShowShareParentRow: () => defaultShow.value }))
 vi.mock('#lib/settings/index.js', () => ({ getSetting: () => defaultShow.value, setSetting: vi.fn() }))
-vi.mock('../network/share-parent-hint', () => ({ showShareParentHintOnce }))
 
 import { createShareParentPane, type ShareParentPane } from './share-parent-pane.svelte'
 
@@ -43,17 +40,12 @@ beforeEach(() => {
 async function create(override: boolean | null, { atTop = true } = {}) {
   getSmbShareParent.mockResolvedValue({ host, serverLabel: 'Testnas', shareName: 'media', showParentRow: override })
   const openServer = vi.fn()
-  let landing: ShareParentLanding | undefined
   let pane!: ShareParentPane
   dispose = $effect.root(() => {
     pane = createShareParentPane({
       getVolume: () => share,
       getIsAtTopFolder: () => atTop,
       openServer,
-      getLanding: () => landing,
-      setLanding: (next) => {
-        landing = next
-      },
     })
   })
   flushSync()
@@ -62,21 +54,17 @@ async function create(override: boolean | null, { atTop = true } = {}) {
   })
   await Promise.resolve()
   flushSync()
-  return { pane, openServer, getLanding: () => landing }
+  return { pane, openServer }
 }
 
 describe('createShareParentPane', () => {
   it('shows `..` by default, and leads to the server’s share list with the cursor on the share', async () => {
-    const { pane, openServer, getLanding } = await create(null)
+    const { pane, openServer } = await create(null)
     expect(pane.topFolderLeadsOut).toBe(true)
 
     expect(pane.leaveTopFolder()).toBe(true)
-    expect(openServer).toHaveBeenCalledWith(expect.objectContaining({ volumeId: 'network', networkHost: host }))
-    expect(getLanding()).toEqual({
-      volumeId: share.id,
-      hostId: 'testnas',
-      shareName: 'media',
-      serverLabel: 'Testnas',
+    expect(openServer).toHaveBeenCalledWith(host, {
+      land: { volumeId: share.id, hostId: 'testnas', shareName: 'media', serverLabel: 'Testnas' },
     })
   })
 
@@ -103,13 +91,5 @@ describe('createShareParentPane', () => {
     const { pane, openServer } = await create(null, { atTop: false })
     expect(pane.leaveTopFolder()).toBe(false)
     expect(openServer).not.toHaveBeenCalled()
-  })
-
-  it('spends the landing once the share list is on screen, raising the explainer', async () => {
-    const { pane, getLanding } = await create(null)
-    pane.leaveTopFolder()
-    pane.landed()
-    expect(showShareParentHintOnce).toHaveBeenCalledWith(expect.objectContaining({ shareName: 'media' }))
-    expect(getLanding()).toBeUndefined()
   })
 })

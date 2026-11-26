@@ -86,6 +86,7 @@
     import type { RenameState, RenameSessionId } from '../rename/rename-state.svelte'
     import type { RenameStepDirection } from '../rename/rename-step'
     import { formatByteSizeTiered } from '#lib/units/index.js'
+    import type { ListWords } from './list-words'
     import { createRowActivation } from './row-activation'
     import { sortFallbackNote } from '../pane/sort-fallback'
 
@@ -104,6 +105,8 @@
         totalCount: number
         /** Hidden items the pane hides while it shows no rows: the empty state's hint (`EmptyFolderState`). */
         hiddenCount?: number
+        /** The pane kind's own words for the `..` row, the empty state, and (Full) the Ext header. */
+        listWords?: ListWords
         includeHidden: boolean
         cacheGeneration?: number
         /**
@@ -178,6 +181,7 @@
         volumeId,
         totalCount,
         hiddenCount = 0,
+        listWords,
         includeHidden,
         cacheGeneration = 0,
         softRefreshTick = 0,
@@ -900,13 +904,14 @@
 
     /**
      * Build tooltip for a directory entry showing recursive size info, under a
-     * restic snapshot row's host, tags, and paths (Brief has no Ext cell to show
-     * the host in, so the hover is where they live).
+     * restic snapshot row's host, tags, and paths, or a server's share row's
+     * description (Brief has no Ext cell to show them in, so the hover is where
+     * they live).
      */
     function buildDirTooltip(file: FileEntry): string | { html: string } | undefined {
         const sizeTip = buildDirSizeOnlyTooltip(file)
-        if (file.resticMeta == null) return sizeTip
-        const snapshotTip = wordResticSnapshot(file.resticMeta)
+        const snapshotTip =
+            file.resticMeta != null ? wordResticSnapshot(file.resticMeta) : (file.shareMeta?.description ?? '')
         if (snapshotTip === '') return sizeTip
         if (!sizeTip) return snapshotTip
         const sizeHtml = typeof sizeTip === 'object' ? sizeTip.html : escapeHtml(sizeTip)
@@ -1095,6 +1100,7 @@
                                         entry: file,
                                         syncStatus: syncStatusMap[file.path],
                                         isRestricted: fileIsRestricted,
+                                        parentRowName: listWords?.parentRowName,
                                     }),
                                 })}
                                 class="file-entry"
@@ -1191,7 +1197,7 @@
         <div class="loading-overlay">{@render loadingOverlay()}</div>
     {:else if (hasParent ? totalCount - 1 : totalCount) === 0}
         <!-- Beside the listbox, never in it: see `EmptyFolderState`. -->
-        <EmptyFolderState {hiddenCount} />
+        <EmptyFolderState {hiddenCount} emptyText={listWords?.emptyText} />
     {/if}
     </div>
 </div>

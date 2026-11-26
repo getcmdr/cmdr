@@ -33,6 +33,12 @@ vi.mock('#lib/shortcuts/index.js', () => ({ boundShortcuts: () => boundCombos })
 vi.mock('../navigation/eject-predicate', () => ({ isVolumeEjectable: eject.isVolumeEjectable }))
 vi.mock('#lib/mtp/index.js', () => ({ getMtpDisplayPath: mtp.getMtpDisplayPath }))
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: volumeStore.getVolumes }))
+vi.mock('../network/network-store.svelte', () => ({
+  getNetworkHosts: () => [
+    { id: 'testnas-id', name: 'Testnas', hostname: 'testnas.local', port: 445, source: 'discovered' },
+  ],
+  setListedAccount: vi.fn(),
+}))
 
 import { breadcrumbDisplayPath, createBreadcrumbHandlers, type BreadcrumbHandlerDeps } from './breadcrumb-bar'
 
@@ -191,6 +197,15 @@ describe('breadcrumbDisplayPath', () => {
         searchLabel: undefined,
       }),
     ).toBe('Search')
+  })
+
+  it('names a server’s share list by the server’s friendly name, not its path’s key', () => {
+    const shareList = { volumeId: 'network', volumePath: 'smb://', userHomePath: '', isSearchResultsView: false }
+    expect(breadcrumbDisplayPath({ ...shareList, currentPath: 'smb://testnas', searchLabel: undefined })).toBe(
+      'Testnas',
+    )
+    // A server the discovery state doesn't hold reads as its key.
+    expect(breadcrumbDisplayPath({ ...shareList, currentPath: 'smb://attic', searchLabel: undefined })).toBe('attic')
   })
 })
 

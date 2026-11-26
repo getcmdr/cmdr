@@ -40,7 +40,7 @@ into a connection per saved host per launch. Three places hold the found-host li
 
 - `startPrefetchShares`: no prefetch.
 - `refreshAllStaleShares` (entering the Servers view): a saved host's stale list is re-read; a found host's is DROPPED,
-  so opening it reads a fresh one (`PlacesBrowser` shows a cached list without asking how old it is).
+  so opening it reads a fresh one (the share list answers from the cache without asking how old it is).
 - The hub's refresh (`ServersHub.handleRefreshClick`, ⌘R): every host's list is dropped, and only the saved ones are
   re-read.
 
@@ -307,61 +307,50 @@ the same body ⌘R runs locally, which is why the local branch stops propagation
 discovery off, NFS, empty state) too. **Why**: a list may only hold items, so a hint's bare `LinkButton` trips axe's
 `aria-required-children`. `network.a11y.test.ts` pins it.
 
-## `PlacesBrowser.svelte`
+## A server's share list
 
-The places under ONE account: an SMB host's shares today, a storage account's buckets later. ❗ Its `account` prop is a
-tagged union with one arm (`{ protocol: 'smb', host }`), on purpose: the second lister is then a compile-checked
-addition rather than a second component. Inside, `const host = $derived(account.host)` keeps the SMB body untouched.
+A server's shares are a real listing: the `network` volume at `smb://<server>` (`#lib/servers/share-list-path.ts` writes
+and reads the path; the backend's `SmbServerVolume` lists it, `src-tauri/src/network/share_list_volume.rs`), and the
+standard views render it with the kind's own words (`../pane/list-kind-words.ts`: the Description column, "8 shares",
+"Back to Servers"). The hub opens one by sending the pane there; ❌ no component here holds a host. What a share list
+does that a folder doesn't is `../pane/share-list-pane.svelte.ts` (pane `DETAILS.md` § "A server's share list"): Enter
+mounts a share, a door's arrival lands, a sign-in refusal asks.
 
-Auth flow on mount:
-
-The component renders; the sign-in flows are `share-list-sign-in.ts` (below), which answers typed outcomes
-(`ShareListAttempt`, `ShareListSheetOutcome`) the component applies to its rows and states. Its tests are
-`share-list-sign-in.test.ts`; `PlacesBrowser.test.ts` keeps only the rendering and wiring.
-
-1. Check `shareStates` cache; use if loaded.
-2. If cache shows `auth_required` / `signing_required`: `tryStoredCredentials` reads the stored password with ONE
-   `getSmbCredentials` (no `hasSmbCredentials` pre-check, to avoid a redundant Keychain dialog) and lists with it. If
-   that lists shares, `authenticatedCredentials` is set and auth is transparent; otherwise `askToList` opens the sign-in
-   sheet.
-3. If cache shows another error (`host_unreachable`, `timeout`, ...): fall through to a fresh fetch (user-initiated host
-   open is an implicit retry; the background prefetch may have run before the host was ready).
-4. Otherwise (no cache or loading): `fetchShares(host)`, same auth fallback.
-
-`authenticatedCredentials` is passed to `onShareSelect` so the caller mounts without re-prompting.
-
-The stored-creds attempt matters because the share list often loads via the SYSTEM Keychain (`smbutil view -N`) without
-exercising Cmdr's own creds, so `authenticatedCredentials` is null even when a working password is saved.
-
-`PlacesBrowser` asks for a credential ONLY when the share **listing** needs one (`loadShares`, and the two "Sign in"
-buttons on its error and empty states). ❗ Cancelling goes BACK to the host list: this sheet is up because the listing
-itself can't be read, so "not now" leaves the user in a room with nothing in it. (Share-activation auth is the mount's
-question; `../pane/share-mount.svelte.ts` asks it.) "Sign in as…" opens the same sheet with no refusal and no guest,
-prefilled with the listed account, and its cancel stays on the list.
+**Signing in to list.** The backend's ladder signs the listing in (session credential, the typed account's stored
+password read ONCE per session, else guest: `src-tauri/src/network/share_list_sign_in.rs`) and answers a typed refusal
+the pane shows as the calm sign-in screen (`ErrorPane`'s Sign in, `share-list-sign-in.ts::askToSignInToList`). ❗ The
+frontend reads no Keychain at all: there is no `get_smb_credentials` command. A listing the person started (a door, a
+navigation, Retry) opens the sheet on its own once; cancelling it goes BACK to Servers, because this sheet is up only
+because the listing itself can't be read. "Sign in as…" opens the same sheet with no refusal and no guest, prefilled
+with the listed account, and its cancel stays on the list.
 
 `share-list-sign-in.ts`, the sheet round: every `attempt` is `listWithAccount`, which answers `handed_off` on success
 (nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on `authentication_rejected` /
 `needs_credentials`, and closes it onto the pane's own error state for anything else, because that is where the retry
-and a missing dependency's install command live. The round answers the attempt that closed the sheet (`listed` or
-`failed`), or `cancelled`. A listing that worked leaves every record behind in one place: the share cache, the
-credential status, the listed account, the account preference (the choice sticks), the Keychain when Remember, and the
-known-shares store. "Browse as guest" (`useGuest`) clears the account preference FIRST, since the backend never lists a
-server with an account as guest. ❗ One ask at a time is the MODULE's guard (`sheetRound`): four places open the sheet
-(the share list itself, the hub's row menu, the path bar's account menu, the palette), and a second sheet would close
-the first as `cancelled`, read as "the person said no" from under a sheet that's still up. A round asked for while one
-is up answers `null` and asks nothing; `isShareListSheetUp()` is what stops a list offering rows past the modal.
+and a missing dependency's install command live. The round answers the attempt that closed it (`listed` or `failed`), or
+`cancelled`; ❗ a `listed` carries no password back (the backend keeps the typed account as the server's session
+credential, which the re-list and a mount sign in with). A listing that worked leaves every record behind in one place:
+the share cache, the credential status, the listed account, the account preference (the choice sticks), the Keychain
+when Remember, and the known-shares store. "Browse as guest" (`useGuest`) clears the account preference FIRST, since the
+backend never lists a server with an account as guest. ❗ One ask at a time is the MODULE's guard (`sheetRound`): the
+error screen, the auto-ask, the hub's row menu, the path bar's account menu, and the palette all open the sheet, and a
+second sheet would close the first as `cancelled`, read as "the person said no" from under a sheet that's still up. A
+round asked for while one is up answers `null` and asks nothing.
 
 **The account doors** (Sign in as…, Browse as guest, Forget saved password) are one action vocabulary
 (`../navigation/row-menu.ts`'s `ServerAccountAction`, built by ONE `serverAccountEntries(facts)`) with one runner,
 `runServerAccountAction`, behind every door: the hub's SMB host row menu, the path bar's account menu on a share list
-(`ShareListAccountChip.svelte`, a member of the chip's ONE `openMenu`), the share-row menu (`shareRowMenu`), and the
-palette (`servers.signInAs`, `servers.browseAsGuest`, `servers.forgetSecret`). The facts are `serverAccountFacts(host)`:
-the listed account and whether a guest listing worked, both this session's own answers, ❌ never a Keychain read. Browse
-as guest shows only while signed in as a user on a server a guest listing worked on, and the runner refuses it otherwise
-(a rebound palette key gets a sentence), because it drops the account FIRST. Forget saved password shows
-unconditionally, in every door: a delete raises no prompt, and the store's typed `not_found` words "there was none". A
-door that isn't on the share list opens it once an action listed (the hub row: as activating it; the palette from a hub
-row: `openSmbHandOffInFocusedPane`); `PlacesBrowser` follows a listing another door landed through the share cache.
+(`ShareListAccountChip.svelte`, a member of the chip's ONE `openMenu`), the share-row menu (`shareRowMenu`, hosted by
+the same chip, `openRowMenu`), and the palette (`servers.signInAs`, `servers.browseAsGuest`, `servers.forgetSecret`).
+The facts are `serverAccountFacts(host)`: the listed account and whether a guest listing worked, both this session's own
+answers, ❌ never a Keychain read. Browse as guest shows only while signed in as a user on a server a guest listing
+worked on, and the runner refuses it otherwise (a rebound palette key gets a sentence), because it drops the account
+FIRST. Forget saved password shows unconditionally, in every door: a delete raises no prompt, and the store's typed
+`not_found` words "there was none". A door that isn't on the share list opens it once an action listed (the hub row: as
+activating it; the palette from a hub row: `openSmbHandOffInFocusedPane`); a door on the share list re-lists it.
+
+**Who it signed in as**: a share list's `listing-complete` carries `shareListAccount`, noted into the store by
+`share-list-label.ts::noteShareListAccount`, so the path bar's account and the hub's row say the same thing.
 
 The error state's sentence, and the servers list's tooltip for the same failure (`host-status.ts`), come from
 `share-list-error-messages.ts`: one `errors.shareList.*` key per `ShareListError` type, naming the host. ❌ Never
@@ -370,25 +359,15 @@ own stderr. `listSharesOnHost` and `listSharesWithCredentials` throw the typed v
 (`share-list-error.ts`), `fetchShares` throws its own for a host with no hostname yet (`resolution_failed`), and every
 catch reads the value back through `shareListErrorOf`. ❌ Never `e as ShareListError`: anything untyped that lands in
 the catch (a runtime exception, an IPC call that broke) had no `type`, and the renderer threw on it; it reads as
-`protocol_error` now, its text kept for the log. Pinned by `PlacesBrowser.test.ts`.
+`protocol_error` now, its text kept for the log. Pinned by `share-list-error-messages.test.ts`.
 
-A "Forget saved password" button appears in the header once this session has READ a password for the server
-(`authenticatedCredentials`, or the host's `has_creds` status), whichever way the listing went: a guest listing of a
-host whose server-level password was in use offered no way to forget it. `noteCachedCredentials` sets that status from
-the backend's in-memory credential cache (`has_cached_smb_credentials`), filled by the listing's own lookup or a mount.
-❗ It never touches the Keychain, so an unread password shows no button until something reads it. Clicking it calls
-`forgetCredentials` (through `share-list-sign-in.ts::forgetPassword`), which clears both. Shares sort
-case-insensitively. Escape/Backspace go back.
-
-❗ **A queued share is a one-shot for the visit it was queued with.** `../pane/share-mount.svelte.ts` owns it
-(`pendingMount`; `NetworkMountView` adopts the pane's copy into it) and spends it the moment the loaded list hands it to
-the mount (`takePending`, which also toasts "not found" when the list lacks it). It retires it, clearing the pane's copy
-through `onAutoMountConsumed`, on every exit too: a mount went through, the person went back, or another host was
-picked. Opening a host from the servers list only ever lists its shares. The bugs this closes: cmdr-reports#7 ("Cmdr
-tried to open the share on that server"), where the value outlived its visit and every new `PlacesBrowser` instance
-fired it again, so a host row the person meant to browse mounted a share they never picked; and a Cancel (or a refused
-mount's Back) bringing a fresh share list that fired the same queued share again at once. Pinned by
-`share-mount.svelte.test.ts` and `../pane/NetworkMountView.test.ts`.
+❗ **A queued share is a one-shot for the visit it was queued with.** The pane's arrival
+(`../pane/share-list-arrival.svelte.ts`) holds it per pane, spends it once the list lands (and toasts "not found" when
+the list lacks it), and drops it the moment the pane is anywhere but where it was queued from or for. Opening a host
+from the servers list only ever lists its shares. The bugs this closes: cmdr-reports#7 ("Cmdr tried to open the share on
+that server"), where the value outlived its visit and fired again each time the list came back, so a host row the person
+meant to browse mounted a share they never picked. Pinned by `../pane/share-list-arrival.svelte.test.ts`,
+`../pane/share-list-pane.svelte.test.ts`, and the SMB E2E.
 
 ## `share-list-label.ts`
 
@@ -398,21 +377,12 @@ tab label reads it (`../tabs/tab-label.ts::tabLabelFor`); ❌ never show the key
 
 ## `..` on top of a server's share list
 
-`PlacesBrowser` heads its list with a `..` row, back to the Servers list, ALWAYS: `network.showShareParentRow` is about
-a share's top folder, and the share list has nowhere else to go up to. It's the file list's parent row in look (folder
-glyph, `..`) and in meaning: Enter, a double-click, or `openCursorItem` on it does what Back, Escape, Backspace, and
-`⌘↑` do (`onBack` → `NetworkMountView.handleNetworkBack`, which puts the Servers cursor back on that server's row).
-
-- **❗ Every index counts it** (`PARENT_ROWS`): share `i` is row `i + 1`, in the cursor, `setCursorIndex`,
-  `findItemIndex` (`..` is 0), `getItemCount`, the arrows, and the `..`-out-of-a-share landing (`landOnShare`). The same
-  parent offset as a file list.
-- **The list opens with the cursor on `..`**, the way a file list opens on its parent row. Landing by name wins: coming
-  up out of a share's top folder lands on that share (`landOnShare`).
-- **Type-to-jump never lands on it**: `jumpToPrefix` matches shares only.
-- **The MCP mirror lists it as row 0**: name `..`, path `smb://` (the Servers list's own sentinel), so an agent's
-  indices match the person's. Only while the shares are on screen, like the row itself.
-- **A screen reader hears "Back to Servers"** (`fileExplorer.network.share.parentRowName`), the way a file list's `..`
-  says "Parent folder".
+The share list's `..` is the standard parent row (`computeHasParent`: the volume's root is `smb://`), so every index
+counts it like any list's. Enter, `⌘↑`, and Backspace on it, or on the error screen where there's no row, go to the
+Servers hub (`FilePane`'s `leaveShareList`, which commits `smb://` with no load), and the hub lands its cursor on that
+server's row (`../pane/hub-landing.svelte.ts`, derived from the path it left). Escape doesn't: on a file list it never
+means "parent". It names the hub in the MCP mirror (`smb://`) and says "Back to Servers" to a screen reader
+(`fileExplorer.network.share.parentRowName`, through `ListWords.parentRowName`).
 
 ## `..` out of a share's top folder
 
@@ -432,17 +402,17 @@ Every SMB share, Cmdr-mounted or OS-mounted; SMB only.
   for good, so a later `null` only means it was asked too early again), and any answer replaces a `null`. Regression
   anchor for #1238's missing `..` on a saved share the pane landed on before its mount was up.
 - **The pane side is `../pane/share-parent-pane.svelte.ts`**: it adds the `..` row through `has-parent.ts`'s
-  `topFolderLeadsOut`, and leaves through `onVolumeChange` with a `networkHost` (the `{ selectVolume }` arm's own
-  `networkHost`), so the history entry carries the host and Back returns to the share. ❗ That `..` row has no parent
-  path, so it's no drop target and opens no context menu: its `entry.path` would otherwise be the mount's parent on the
-  boot disk (`/Volumes`).
+  `topFolderLeadsOut`, and leaves for the server's share-list path (`share-list-pane.svelte.ts::openServer`), so the
+  history entry holds the path and Back returns to the share. ❗ That `..` row has no parent path, so it's no drop
+  target and opens no context menu: its `entry.path` would otherwise be the mount's parent on the boot disk
+  (`/Volumes`).
 - **Opening the share list is the person opening the host** (#324 holds): it lists, and ❌ never mounts anything. The
   host comes from discovery when it knows the server, else one made from the mount's server the way Add server makes
   one.
-- **The landing is a one-shot like `autoMountShare`** (`../pane/network-host-state.svelte.ts`, cleared when the pane
-  leaves the network volume). `PlacesBrowser`'s `landOnShare` puts the cursor on the share once the list is on screen
-  (`list-cursor.ts::indexOfName`, case- and Unicode-form-blind) and reports back; only then does `share-parent-hint.ts`
-  raise the once-per-install explainer (`behavior.shareParentRowHintSeen`), so the person sees where they landed.
+- **The landing is the pane's arrival, a one-shot like a queued share** (`../pane/share-list-arrival.svelte.ts`). Once
+  the list lands, the cursor goes to the share's row (the listing's own name lookup) and only then does
+  `share-parent-hint.ts` raise the once-per-install explainer (`behavior.shareParentRowHintSeen`), so the person sees
+  where they landed.
 - **"Turn off for all shares" turns the default off and keeps every override**, so a share someone turned on keeps its
   `..`. Default flips never prune overrides either: each is a choice someone made about that share.
 - **The toast's buttons are written in macOS order** (dismissive first, primary last). `ToastActions` doesn't flip them
@@ -487,9 +457,9 @@ User opens the Servers volume → NetworkMountView: holdDiscoveryForServersView(
        └─ first view shown → startPrefetchShares() over every known host
      → ServersHub mounts → listSavedServers() + refreshAllStaleShares()
 
-User double-clicks an SMB host → PlacesBrowser mounts → loadShares()
-       ├─ cache hit → render (a saved host's prefetch, or an earlier visit)
-       └─ auth required → tryStoredCredentials() → the sign-in sheet if needed
+User double-clicks an SMB host → the pane goes to smb://<server> → its listing (SmbServerVolume)
+       ├─ the share cache answers (a saved host's prefetch, or an earlier visit), else the backend's ladder lists
+       └─ a sign-in refusal → the calm error screen, and the sheet once (a listing the person started)
 
 User activates a one-place server → onVolumeChange → the pane lands on a `saved`
        volume → ../pane/place-connect dials, RemoteConnectView renders the wait
@@ -499,8 +469,7 @@ User activates the "Add server…" row → the sign-in sheet opens in add mode
        └─ SMB → connectToServer(address, name) → TCP check → save + inject host
             │   ("Add anyway": no check, saved without contact, nothing injected)
             └─ the sheet answers `handed_off`
-                 ├─ PlacesBrowser mounts (host set)
-                 └─ if sharePath → autoMountShare triggers mount
+                 └─ the pane opens the host's share list, its arrival mounting sharePath once it lands
 ```
 
 ## Connect directly
@@ -647,9 +616,9 @@ Two properties are load-bearing:
   reports it. Cancelling clears it through `handleMountErrorBack`, back to the share list.
 - **`auth_required` gets a calm pane, ❌ never the red one.** Behind the sheet it reads "Sign in to open …" with a lock,
   Sign in, and Back, and no Try again (without an account it gets the same answer). `auth_failed` and
-  `permission_denied` keep the red "Couldn't mount share" pane: there an answer the person gave was turned away.
-  `PlacesBrowser`'s listing does the same for `auth_required` / `signing_required` ("Sign in to {host}", no Retry). Red
-  is feedback on something the person did (cmdr-reports#10).
+  `permission_denied` keep the red "Couldn't mount share" pane: there an answer the person gave was turned away. A share
+  list's listing does the same for `auth_required` / `signing_required` ("Sign in to {host}", no Retry). Red is feedback
+  on something the person did (cmdr-reports#10).
 - **Only a credential refusal keeps the sheet open.** A retry that comes back `share_not_found`, `host_unreachable`, or
   `mount_missing` (the system reported the share connected and no mount of it is there:
   `src-tauri/src/network/DETAILS.md` § "A reported mount counts once it's there") answers `handed_off`, closing the
@@ -820,8 +789,6 @@ the hosts it found, so a view opens on them at once and the fresh browse adds an
   whether or not anyone looks.
 - **State via getters, not raw `$state` exports**: raw exports lose reactivity when imported from a plain `.ts`; getters
   work everywhere and make the API boundary explicit.
-- **`tryStoredCredentials` skips the `hasSmbCredentials` pre-check**: two Keychain calls = two system prompts; one
-  direct call plus catch = one.
 - **A reconnect is silent: no toast fires for one.** The recovery already shows itself where the user is looking, in the
   pane (the reconnect cycle's countdown, then the give-up banner) and on the volume picker's dot, and every laptop
   lid-close drops the session, so a toast per reconnect would fire on routine sleep/wake and teach the user to dismiss
@@ -859,8 +826,8 @@ the hosts it found, so a view opens on them at once and the fresh browse adds an
 ## Dependencies
 
 - `#lib/tauri-commands`: `listNetworkHosts`, `resolveNetworkHost`, `listSharesOnHost`, `listSharesWithCredentials`,
-  `prefetchShares`, `getSmbCredentials`, `saveSmbCredentials`, `deleteSmbCredentials`, `getUsernameHint`,
-  `getKnownShareByName`, `updateKnownShare`, `updateLeftPaneState`, `updateRightPaneState`, `connectToServer`
+  `prefetchShares`, `saveSmbCredentials`, `deleteSmbCredentials`, `getUsernameHint`, `getKnownShareByName`,
+  `updateKnownShare`, `updateLeftPaneState`, `updateRightPaneState`, `connectToServer`
 - `#lib/settings/network-settings`: `getNetworkTimeoutMs`, `getShareCacheTtlMs`
 - `#lib/utils/confirm-dialog`: `confirmDialog`
 - `#lib/ui/toast`: `addToast`

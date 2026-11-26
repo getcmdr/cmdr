@@ -68,7 +68,16 @@ export interface FileRowNameInput {
    * The Full view's cells, as the row already formatted them. An empty or missing value is
    * left out (a folder whose size isn't known yet says no size).
    */
-  details?: { host?: string; size?: string; date?: { column: DateColumn; text: string }; gitStatus?: string }
+  details?: {
+    host?: string
+    /** A server's share row: the description its Ext cell shows. */
+    description?: string
+    size?: string
+    date?: { column: DateColumn; text: string }
+    gitStatus?: string
+  }
+  /** What `..` says in place of "Parent folder" (a share list's "Back to Servers"). */
+  parentRowName?: string
 }
 
 /**
@@ -80,7 +89,8 @@ export interface FileRowNameInput {
  * `..` says "Parent folder" in place of its name, then its cells like any row, its size as
  * "(this folder) 36,860": that cell shows the CURRENT folder's total, and bare after "Parent
  * folder" it sounded like the parent's. A restic snapshot row's Ext cell shows the host its
- * backup ran on, so the name says "(Backed up from) testnas" right after the row's own name.
+ * backup ran on, so the name says "(Backed up from) testnas" right after the row's own name; a
+ * server's share row says its description there, bare, since the cell shows it as it reads.
  *
  * It's set as the option's `aria-label`, which replaces the name the row's content would give,
  * so every badge that speaks through content (`FileIcon`'s sync badge, the restricted and
@@ -92,19 +102,31 @@ export interface FileRowNameInput {
  * compares and VoiceOver doesn't speak; the visible ones stay bare, the `<dir>` placeholder
  * included. Joined by {@link formatUnitList}, which never adds an "and".
  */
-export function fileRowName({ entry, syncStatus, isRestricted = false, details }: FileRowNameInput): string {
+export function fileRowName({
+  entry,
+  syncStatus,
+  isRestricted = false,
+  details,
+  parentRowName,
+}: FileRowNameInput): string {
   const parent = isParentRow(entry)
+  const head = parent
+    ? (parentRowName ?? tString('fileExplorer.list.parentRowName'))
+    : withAside(entry.name, rowAsides(entry, syncStatus, isRestricted))
+  const parts = [head, ...cellParts(details, parent)]
+  return formatUnitList(parts.filter((part) => part !== ''))
+}
+
+/** The Full view's cells as the name says them, in the order the row shows them; `''` for a cell it doesn't have. */
+function cellParts(details: FileRowNameInput['details'], parent: boolean): string[] {
   const size = details?.size ?? ''
-  const parts = [
-    parent
-      ? tString('fileExplorer.list.parentRowName')
-      : withAside(entry.name, rowAsides(entry, syncStatus, isRestricted)),
+  return [
     details?.host ? asideAround('fileExplorer.restic.snapshot.host', details.host) : '',
+    details?.description ?? '',
     parent && size !== '' ? asideAround('fileExplorer.list.parentRowSize', size) : size,
     details?.date?.text ? asideAround(rowDatePhraseKey(details.date.column), details.date.text) : '',
     details?.gitStatus ? tString('fileExplorer.list.rowGitStatus', { status: details.gitStatus }) : '',
   ]
-  return formatUnitList(parts.filter((part) => part !== ''))
 }
 
 /** What the row's kind and badges mean: the words its name adds that nothing on the row writes out. */

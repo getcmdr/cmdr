@@ -385,14 +385,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Назад",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Спробувати ще раз",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Увійти",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -541,10 +533,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Підʼєднання до сервера «{hostName}»…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Не вдалося підʼєднатися до сервера «{hostName}»",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -561,22 +549,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Немає доступних спільних папок",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Цей хост не має доступних спільних папок, або потрібна автентифікація.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Назад",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Вилучити збережений пароль із вʼязки ключів} windows {Вилучити збережений пароль із Диспетчера облікових даних} linuxKde {Вилучити збережений пароль із торбинки KDE} other {Вилучити збережений пароль із вашої вʼязки ключів}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Переглядати як гість",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -584,10 +556,6 @@
   "fileExplorer.network.share.signInAs": "Увійти як…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Забути збережений пароль",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} спільна папка} few {{countText} спільні папки} many {{countText} спільних папок} other {{countText} спільної папки}}",
   "@fileExplorer.network.share.shareCount": {

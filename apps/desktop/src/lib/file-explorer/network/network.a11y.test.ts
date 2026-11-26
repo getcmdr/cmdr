@@ -1,6 +1,7 @@
 /**
  * Tier 3 a11y tests for the network browsing surfaces: the host list, a row's menu, its status
- * bar, the share list and its header, the OS-mount fallback toast, and the Local Network toast.
+ * bar, the OS-mount fallback toast, and the Local Network toast. A server's share list is a
+ * file listing, audited with the views (`../views/full-list.a11y.test.ts`).
  *
  * One file per component would cost about five times as much: `svelte-tests`
  * charges per test FILE, not per test (`docs/testing.md` § "What a test actually
@@ -8,9 +9,7 @@
  * assertions. Adding a server and signing in to one both live in the sign-in
  * sheet now; its own blocks are `#lib/servers/servers.a11y.test.ts`.
  *
- * One stub genuinely disagrees between blocks: `getShareState` is `undefined` for
- * the host list and a loaded result for the share list, so it reads a mutable each
- * block installs in its own `beforeEach`. The four `#lib/tauri-commands` sets are
+ * `getShareState` reads a mutable each block installs in its own `beforeEach`. The four `#lib/tauri-commands` sets are
  * disjoint, so their union is what each block always saw, and every `#lib/*` stub
  * spreads the real module first.
  */
@@ -19,10 +18,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { flushSync, mount, tick } from 'svelte'
 import ServersHub from './ServersHub.svelte'
 import ServersHubRowMenu from './ServersHubRowMenu.svelte'
-import PlacesBrowser from './PlacesBrowser.svelte'
 import SmbOsMountFallbackToastContent from './SmbOsMountFallbackToastContent.svelte'
 import LocalNetworkBlockedToastContent from './LocalNetworkBlockedToastContent.svelte'
-import PlacesHeader from './PlacesHeader.svelte'
 import ServersHubStatusBar from './ServersHubStatusBar.svelte'
 import type { HubActions, HubRowMenuAPI } from './servers-hub-actions'
 import type { HubRow } from './servers-hub-rows'
@@ -79,7 +76,6 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
   getKnownShareByName: vi.fn(() => Promise.resolve(null)),
   listSharesWithCredentials: vi.fn(() => Promise.resolve([])),
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
-  getSmbCredentials: vi.fn(() => Promise.resolve(null)),
   isUsingCredentialFileFallback: vi.fn(() => Promise.resolve(false)),
   updateKnownShare: vi.fn(() => Promise.resolve()),
   listSavedServers: vi.fn(() => Promise.resolve(mockSavedServers)),
@@ -185,53 +181,6 @@ describe('ServersHub a11y', () => {
 })
 
 /**
- * Tier 3 a11y tests for `PlacesBrowser.svelte`.
- *
- * Share listing for a host. Covers the loaded-with-shares state and the
- * auth-required one. The sign-in itself is the modal sheet, audited in
- * `#lib/servers/servers.a11y.test.ts`. Auto-mount and autoMountAttempted paths
- * are not exercised; those flow through the network-store into async mount IPC
- * which we just stub.
- */
-describe('PlacesBrowser a11y', () => {
-  beforeEach(() => {
-    mockShareState = {
-      status: 'loaded',
-      result: {
-        shares: [
-          { name: 'Public', type: 'disk' },
-          { name: 'Media', type: 'disk' },
-        ],
-        authMode: 'guest_allowed',
-      },
-      fetchedAt: Date.now(),
-    }
-  })
-
-  it('loaded with shares has no a11y violations', async () => {
-    const target = document.createElement('div')
-    document.body.appendChild(target)
-    mount(PlacesBrowser, {
-      target,
-      props: {
-        account: {
-          protocol: 'smb',
-          host: { id: 'h1', name: 'testnas.local', hostname: 'testnas.local', ipAddress: '10.0.0.10', port: 445 },
-        },
-        paneId: 'left',
-        isFocused: true,
-        onShareSelect: () => {},
-        onBack: () => {},
-      },
-    })
-    await tick()
-    await new Promise((r) => setTimeout(r, 0))
-    await tick()
-    await expectNoA11yViolations(target)
-  })
-})
-
-/**
  * Tier 3 a11y for `ServersHubRowMenu.svelte`, OPEN: a one-place row's right-click menu, with
  * an action group, a greyed action, and a checkbox row below it. The menu portals out of its
  * container, so the audit looks at the whole document.
@@ -287,32 +236,6 @@ describe('ServersHubRowMenu a11y', () => {
       expect(document.querySelector('[data-menu]')).not.toBeNull()
     })
     await expectNoA11yViolations(document.body)
-  })
-})
-
-/**
- * Tier 3 a11y for `PlacesHeader.svelte` with every button showing: Back, Sign in as…,
- * Browse as guest, and Forget saved password, next to the account and the share count.
- */
-describe('PlacesHeader a11y', () => {
-  it('the header with every action has no a11y violations', async () => {
-    const target = document.createElement('div')
-    document.body.appendChild(target)
-    mount(PlacesHeader, {
-      target,
-      props: {
-        hostLabel: 'Testnas',
-        account: { kind: 'user', username: 'testuser' },
-        canForgetPassword: true,
-        shareCount: 3,
-        onBack: () => {},
-        onSignInAs: () => {},
-        onUseGuest: () => {},
-        onForgetPassword: () => {},
-      },
-    })
-    await tick()
-    await expectNoA11yViolations(target)
   })
 })
 

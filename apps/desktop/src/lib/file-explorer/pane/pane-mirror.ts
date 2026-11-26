@@ -1,41 +1,40 @@
 /**
  * "Copy path from <source> to <target> pane": mirror the source pane's location
- * (volume + path + network state) into the target pane WITHOUT shifting keyboard
- * focus. Lifted out of `DualPaneExplorer`; the component keeps the one-line
- * `export function copyPathBetweenPanes` delegate.
+ * (volume + path) into the target pane WITHOUT shifting keyboard focus. Lifted out of
+ * `DualPaneExplorer`; the component keeps the one-line `export function
+ * copyPathBetweenPanes` delegate.
  *
  * When the source pane is focused, the cursor refines the destination:
- * cursor-on-folder uses the folder's path; cursor-on-server (network browser)
- * sets the target's selected host; cursor-on-share (share browser) queues
- * auto-mount on the target. `followCursor: false` skips that refinement: Clone
- * pane (`pane.clone`, ⌘⇧C, TC's "Target = Source") copies the location exactly.
- * All navigation uses `source: 'mirror'`, which keeps
- * focus on the source pane (no focus shift, L1); `restoreFocus` re-anchors STORE
- * focus to wherever it was, so the user keeps working where they were.
+ * cursor-on-folder uses the folder's path; cursor-on-server (the Servers hub) opens that
+ * server's share list; cursor-on-share (a server's share list) opens the same share list
+ * and mounts that share once it lands (`share-list-arrival.svelte.ts`), ❌ never the
+ * share's `smb://` path, which is mounted, not navigated to. `followCursor: false` skips
+ * that refinement: Clone pane (`pane.clone`, ⌘⇧C, Total Commander's "Target = Source")
+ * copies the location exactly. All navigation uses `source: 'mirror'`, which keeps focus
+ * on the source pane (no focus shift, L1); `restoreFocus` re-anchors STORE focus to
+ * wherever it was, so the user keeps working where they were.
  */
 
-import { getCurrentEntry } from '../navigation/navigation-history'
-import { pushHistoryEntry } from '../tabs/tab-state-manager.svelte'
-import type { NavigationHistory } from '../navigation/navigation-history'
 import type { NetworkHost } from '../types'
 import type { NavigateIntent, NavigateResult } from './navigate'
 import type { CopyPathBetweenPanesArgs, FilePaneAPI } from './types'
+import { capabilitiesForPane } from './volume-capabilities'
+import { shareListHostAt } from '../network/share-list-label'
+import { NETWORK_VOLUME_PATH } from './navigate-refusals'
 
 export interface PaneMirrorDeps {
   navigate: (intent: NavigateIntent) => NavigateResult
   getPaneRef: (pane: 'left' | 'right') => FilePaneAPI | undefined
   getPaneVolumeId: (pane: 'left' | 'right') => string
   getPanePath: (pane: 'left' | 'right') => string
-  getPaneHistory: (pane: 'left' | 'right') => NavigationHistory
-  setPaneHistory: (pane: 'left' | 'right', history: NavigationHistory) => void
   getFocusedPane: () => 'left' | 'right'
   setFocusedPane: (pane: 'left' | 'right') => void
 }
 
 export interface PaneMirror {
   copyPathBetweenPanes: (args: CopyPathBetweenPanesArgs) => void
-  /** Takes `target` to the network view on `host`'s share list, mounting `autoMountShare` when named. */
-  showNetworkState: (target: 'left' | 'right', host: NetworkHost | null, autoMountShare: string | undefined) => void
+  /** Takes `target` to `host`'s share list, mounting `mount` once it lands when named, keeping focus where it is. */
+  openShareList: (target: 'left' | 'right', host: NetworkHost, mount: string | undefined) => void
 }
 
 export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
@@ -63,31 +62,21 @@ export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
     restoreFocus(originalFocused)
   }
 
-  /** Mirror a network state ({host, autoMountShare}) to a target pane without shifting focus. */
-  function mirrorNetworkStateToPane(
-    target: 'left' | 'right',
-    host: NetworkHost | null,
-    autoMountShare: string | undefined,
-  ): void {
+  /** The Servers hub in `target`: a volume select, which always lands on the hub, never a remembered share list. */
+  function mirrorHub(target: 'left' | 'right'): void {
     const originalFocused = deps.getFocusedPane()
-    const targetPaneRef = deps.getPaneRef(target)
-    if (deps.getPaneVolumeId(target) !== 'network') {
-      deps.navigate({
-        pane: target,
-        to: { selectVolume: { volumeId: 'network', path: 'smb://' } },
-        source: 'mirror',
-      })
-    }
-    targetPaneRef?.setNetworkHost(host)
-    deps.setPaneHistory(
-      target,
-      pushHistoryEntry(deps.getPaneHistory(target), {
-        volumeId: 'network',
-        path: 'smb://',
-        networkHost: host ?? undefined,
-      }),
-    )
-    targetPaneRef?.setNetworkAutoMount(autoMountShare)
+    deps.navigate({
+      pane: target,
+      to: { selectVolume: { volumeId: 'network', path: NETWORK_VOLUME_PATH } },
+      source: 'mirror',
+    })
+    restoreFocus(originalFocused)
+  }
+
+  /** Opens `host`'s share list in `target` without shifting focus, mounting `mount` once it lands. */
+  function openShareList(target: 'left' | 'right', host: NetworkHost, mount: string | undefined): void {
+    const originalFocused = deps.getFocusedPane()
+    deps.getPaneRef(target)?.openShareList(host, { mount })
     restoreFocus(originalFocused)
   }
 
@@ -104,35 +93,31 @@ export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
 
     const sourceVolumeId = deps.getPaneVolumeId(source)
     const sourcePath = deps.getPanePath(source)
-    const sourceHistoryEntry = getCurrentEntry(deps.getPaneHistory(source))
-    const sourceHost = sourceHistoryEntry.networkHost ?? null
+    const sourceKind = capabilitiesForPane(sourceVolumeId, sourcePath).kind
 
-    // Normal listing on the source: cursor-on-folder refines the path.
-    if (sourceVolumeId !== 'network') {
-      let destPath = sourcePath
-      if (sourceFocused) {
-        const entry = sourcePaneRef.getCursorEntry()
-        if (entry && entry.isDirectory && entry.name !== '..') {
-          destPath = entry.path
-        }
-      }
-      mirrorLocalStateToPane(target, sourceVolumeId, destPath)
+    // The Servers hub: a server under the cursor opens its share list, anything else the hub.
+    if (sourceKind === 'network') {
+      const cursor = sourceFocused ? sourcePaneRef.getNetworkCursorEntry() : null
+      if (cursor?.kind === 'host') openShareList(target, cursor.host, undefined)
+      else mirrorHub(target)
       return
     }
 
-    // Source is on the network volume (host list or share list).
-    let destHost: NetworkHost | null = sourceHost
-    let destAutoMountShare: string | undefined
-    if (sourceFocused) {
-      const cursor = sourcePaneRef.getNetworkCursorEntry()
-      if (cursor?.kind === 'host') {
-        destHost = cursor.host
-      } else if (cursor?.kind === 'share' && sourceHost) {
-        destAutoMountShare = cursor.share.name
-      }
+    const entry = sourceFocused ? sourcePaneRef.getCursorEntry() : null
+
+    // A server's share list: the same list, mounting the share under the cursor.
+    if (sourceKind === 'share-list') {
+      const host = shareListHostAt(sourceVolumeId, sourcePath)
+      const share = entry && entry.name !== '..' ? entry.name : undefined
+      if (host) openShareList(target, host, share)
+      else mirrorLocalStateToPane(target, sourceVolumeId, sourcePath)
+      return
     }
-    mirrorNetworkStateToPane(target, destHost, destAutoMountShare)
+
+    // Normal listing on the source: cursor-on-folder refines the path.
+    const destPath = entry && entry.isDirectory && entry.name !== '..' ? entry.path : sourcePath
+    mirrorLocalStateToPane(target, sourceVolumeId, destPath)
   }
 
-  return { copyPathBetweenPanes, showNetworkState: mirrorNetworkStateToPane }
+  return { copyPathBetweenPanes, openShareList }
 }

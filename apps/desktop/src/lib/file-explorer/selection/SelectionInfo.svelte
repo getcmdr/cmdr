@@ -96,6 +96,11 @@
          * the browsable folders add up to less than the used space.
          */
         mtpSpaceHint?: string
+        /**
+         * The pane kind's own count noun for the no-selection line ("8 shares" on a server's
+         * share list), in place of files and dirs (`ListWords.countRows`).
+         */
+        countRows?: (count: number) => string
     }
 
     const {
@@ -110,6 +115,7 @@
         totalMatches,
         showInFolderHint = false,
         mtpSpaceHint,
+        countRows,
     }: Props = $props()
 
     /** The free-space readout: a figure to show, and a pane allowed to show it. */
@@ -249,6 +255,8 @@
                 totalText: formatNumber(totalMatches),
             })
         }
+
+        if (countRows) return tString('fileExplorer.selectionInfo.noSelection', { files: countRows(shown), dirs: '' })
 
         const filesPart = tString('fileExplorer.selectionInfo.noSelectionFiles', {
             count: totalFiles,

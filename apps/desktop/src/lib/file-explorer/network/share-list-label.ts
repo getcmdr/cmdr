@@ -5,8 +5,9 @@
  * and the error screen read it, ❌ never the path's host key, which is identity only.
  */
 
-import { sameShareList, shareListHostKey, shareListPath } from '#lib/servers/share-list-path.js'
-import { getNetworkHosts } from './network-store.svelte'
+import { isShareListLocation, sameShareList, shareListHostKey, shareListPath } from '#lib/servers/share-list-path.js'
+import { getNetworkHosts, setListedAccount } from './network-store.svelte'
+import type { ShareListAccount } from '#lib/ipc/bindings.js'
 import type { ShareListServer } from './share-list-sign-in'
 import type { NetworkHost } from '../types'
 
@@ -25,6 +26,24 @@ export function shareListServerLabel(path: string): string | null {
 export function shareListServerOf(path: string): ShareListServer | null {
   const host = shareListHost(path)
   return host ? { host, label: host.name } : null
+}
+
+/**
+ * The server whose share list a pane on `volumeId` at `path` shows, or `null` (another
+ * place, or a server the discovery state doesn't hold). What Edit server and the servers
+ * commands aim at on a share list: the path is the one record of which server it is.
+ */
+export function shareListHostAt(volumeId: string, path: string): NetworkHost | null {
+  return isShareListLocation(volumeId, path) ? shareListHost(path) : null
+}
+
+/**
+ * Notes who a share list's listing signed in as (`listing-complete`'s `shareListAccount`),
+ * so the path bar's account and the hub's row say the same, the way a sheet's listing does.
+ */
+export function noteShareListAccount(path: string, account: ShareListAccount): void {
+  const host = shareListHost(path)
+  if (host) setListedAccount(host.id, account)
 }
 
 /** The discovery state's host whose share-list path is `path`, the same key the path was written from. */

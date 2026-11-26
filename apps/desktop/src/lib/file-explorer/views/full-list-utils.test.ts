@@ -378,6 +378,25 @@ describe('restic snapshot rows', () => {
   })
 })
 
+describe("a server's share rows", () => {
+  const share = (description: string | null): FileEntry => ({
+    name: 'public',
+    path: 'smb://testnas/public',
+    isDirectory: true,
+    isSymlink: false,
+    permissions: 0,
+    owner: '',
+    group: '',
+    iconId: 'dir',
+    shareMeta: { description },
+  })
+
+  it('shows the share’s description in the Ext cell, as the server set it', () => {
+    expect(extCellText(share('Family photos'))).toBe('Family photos')
+    expect(extCellText(share(null))).toBe('')
+  })
+})
+
 describe('showsPausedSizeWarning', () => {
   it('warns on every folder size while the drive is paused for disk space', () => {
     for (const state of ['size', 'size-stale', 'lower-bound'] as const) {

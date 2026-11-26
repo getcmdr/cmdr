@@ -1,8 +1,9 @@
 /**
  * A pane on a server's share list (`network` at `smb://<server>`) is a real listing the
- * standard views render, and its `..` goes to the Servers hub with the cursor on THAT
- * server's row. No door opens a share list yet (the navigation refusals stand), so this
- * starts the pane there the way a test can: as its tab's path.
+ * standard views render, with its kind's own words (the Description column, "2 shares",
+ * "Back to Servers"), and its `..` goes to the Servers hub with the cursor on THAT server's
+ * row. A refused listing is the calm sign-in screen naming the server. The doors and the
+ * mount are `share-list-pane.svelte.test.ts`'s; this starts the pane on its tab's path.
  */
 import { describe, it, expect, vi } from 'vitest'
 import { mount, unmount } from 'svelte'
@@ -55,7 +56,17 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => {
     getFileAt: vi.fn((_id: string, index: number) => Promise.resolve(SHARES[index] ?? null)),
     findFileIndex: vi.fn().mockResolvedValue(null),
     getTotalCount: vi.fn().mockResolvedValue(SHARES.length),
-    getListingStats: vi.fn().mockResolvedValue({ data: null, timedOut: false }),
+    // What the backend counts for the fixture's two shares: folders, no files, no bytes.
+    getListingStats: vi.fn().mockResolvedValue({
+      totalFiles: 0,
+      totalDirs: 2,
+      totalSize: 0,
+      totalPhysicalSize: 0,
+      selectedFiles: null,
+      selectedDirs: null,
+      selectedSize: null,
+      selectedPhysicalSize: null,
+    }),
     setListingIncludeHidden: vi
       .fn()
       .mockResolvedValue({ sequence: 0, totalCount: 0, newCursorIndex: null, newSelectedIndices: null }),
@@ -204,6 +215,14 @@ describe("FilePane on a server's share list", () => {
     expect(account?.getAttribute('aria-label')).toBe('Account on Testnas: Sign in as…')
     // The footer counts the shares and says nothing about disk space, which no server answers.
     expect(getTarget().querySelector('[role="meter"]')).toBeNull()
+    await vi.waitFor(() => {
+      expect(getTarget().querySelector('.selection-info')?.textContent).toContain('No selection, 2 shares.')
+    })
+    // The Ext column is the shares' Description (jsdom renders no rows, so `..`'s own name
+    // is `file-row-a11y.test.ts`'s).
+    expect(getTarget().querySelector('.full-list-header')?.textContent ?? getTarget().textContent).toContain(
+      'Description',
+    )
 
     await pane.navigateToParent()
     await waitForUpdates(100)
@@ -214,6 +233,50 @@ describe("FilePane on a server's share list", () => {
     })
     // The landing is spent once the hub has it.
     expect(getActiveTab(explorerState.getTabMgr('left')).landOnServer).toBeUndefined()
+    await unmount(component)
+  })
+
+  it('shows a refused listing as the calm sign-in screen, naming the server by its label', async () => {
+    net.hosts = [ATTIC, TESTNAS]
+    listDirectoryStartMock.mockImplementation((_v, _p, _h, _sb, _so, listingId: string) =>
+      Promise.resolve({ listingId, status: { status: 'loading' } }),
+    )
+    explorerState.setTabMgr('left', createTabManager(createInitialTabState('smb://testnas', 'network')))
+    const component = mount(FilePane, {
+      target: getTarget(),
+      props: {
+        paneId: 'left',
+        initialPath: 'smb://testnas',
+        volumeId: 'network',
+        volumePath: 'smb://',
+        isFocused: true,
+        showHiddenFiles: true,
+        viewMode: 'full',
+      },
+    })
+    await waitForUpdates()
+    events.recorder?.fireListingEvent('listing-error', {
+      listingId: lastListingId(),
+      message: 'sign in',
+      error: {
+        category: 'needs_action',
+        reason: { reason: 'shareListSignIn', refusal: { type: 'auth_required', message: '' }, server: 'Testnas' },
+        provider: null,
+        actionKind: 'sign_in_to_server',
+        retryHint: false,
+        rawDetail: '',
+      },
+    })
+    await vi.waitFor(() => {
+      expect(getTarget().querySelector('.error-pane')).toBeTruthy()
+    })
+    const errorPane = getTarget().querySelector('.error-pane')
+    // ❗ No assertive alert: the sheet opens over it, and VoiceOver would read both.
+    expect(errorPane?.getAttribute('role')).toBeNull()
+    expect(errorPane?.querySelector('.folder-path')?.textContent).toBe('Testnas')
+    expect([...(errorPane?.querySelectorAll('button') ?? [])].map((b) => b.textContent.trim())).toContain('Sign in')
+    // A sign-in class offers no Try again: without an account, the server answers the same.
+    expect(errorPane?.textContent).not.toContain('Try again')
     await unmount(component)
   })
 })

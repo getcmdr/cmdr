@@ -388,14 +388,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Terug",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Probeer opnieuw",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Log in",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -544,10 +536,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Verbinden met {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Verbinden met {hostName} lukte niet",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -564,22 +552,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Geen gedeelde mappen beschikbaar",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Deze host heeft geen toegankelijke gedeelde mappen, of inloggen is vereist.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Terug",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Verwijder opgeslagen wachtwoord uit Sleutelhanger} windows {Verwijder opgeslagen wachtwoord uit Referentiebeheer} linuxKde {Verwijder opgeslagen wachtwoord uit de KDE-portefeuille} other {Verwijder opgeslagen wachtwoord uit je sleutelhanger}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Blader als gast",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -587,10 +559,6 @@
   "fileExplorer.network.share.signInAs": "Log in als…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Vergeet opgeslagen wachtwoord",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} gedeelde map} other {{countText} gedeelde mappen}}",
   "@fileExplorer.network.share.shareCount": {

@@ -33,7 +33,6 @@ const h = vi.hoisted(() => ({
   forgetSavedServer: vi.fn(() => Promise.resolve()),
   addToast: vi.fn(() => 'id'),
   smbHostHasMounts: vi.fn(() => Promise.resolve(false)),
-  getSmbCredentials: vi.fn(() => Promise.reject(new Error('not read in these tests'))),
   /** Every command the document dispatcher resolved a key to, in order. */
   dispatched: [] as string[],
   setSetting: vi.fn(),
@@ -141,7 +140,6 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   updateLeftPaneState: vi.fn(() => Promise.resolve()),
   updateRightPaneState: vi.fn(() => Promise.resolve()),
   smbHostHasMounts: h.smbHostHasMounts,
-  getSmbCredentials: h.getSmbCredentials,
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   listSavedServers: h.listSavedServers,
 }))
@@ -570,7 +568,6 @@ describe('ServersHub keyboard context menu', () => {
     const labels = [...document.querySelectorAll('[data-menu] [data-menu-row]')].map((el) => el.textContent.trim())
     expect(labels).toEqual(['Open', 'Sign in as…', 'Forget saved password'])
     expect(h.smbHostHasMounts).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'h2' }))
-    expect(h.getSmbCredentials).not.toHaveBeenCalled()
     await cleanup()
   })
 

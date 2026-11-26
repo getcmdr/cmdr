@@ -102,17 +102,11 @@ afterEach(() => {
 
 /** A controller on `server`, with every dep a spy. */
 function create(server: ShareMountServer | null = { host, label: undefined }) {
-  let current = $state<ShareMountServer | null>(server)
-  const deps = {
-    onMounted: vi.fn(() => {
-      current = null
-    }),
-    onVolumeChange: vi.fn(),
-    onPendingConsumed: vi.fn(),
-  }
+  const current = $state<ShareMountServer | null>(server)
+  const deps = { onVolumeChange: vi.fn() }
   let mount!: ShareMount
   dispose = $effect.root(() => {
-    mount = createShareMount({ getPaneId: () => 'left', getServer: () => current, ...deps })
+    mount = createShareMount({ getServer: () => current, ...deps })
   })
   flushSync()
   return { mount, ...deps }
@@ -313,7 +307,7 @@ describe('a mount that stopped short', () => {
     h.mountNetworkShare
       .mockRejectedValueOnce(refused({ type: 'mount_missing', server: ADDRESS, share: 'testshare' }))
       .mockResolvedValueOnce({ mountPath: '/Volumes/testshare', alreadyMounted: false })
-    const { mount, onMounted, onVolumeChange } = create()
+    const { mount, onVolumeChange } = create()
     await mount.mount(testshare, null)
 
     const state = mount.view?.state
@@ -328,32 +322,33 @@ describe('a mount that stopped short', () => {
       })
     })
     expect(h.mountNetworkShare).toHaveBeenCalledTimes(2)
-    expect(onMounted).toHaveBeenCalledOnce()
     expect(mount.view).toBeNull()
   })
 
-  it('mirrors the refusal into the pane state MCP reads, and clears it on the way back', async () => {
+  it('says the refusal for the pane state MCP reads, and nothing once the person went back', async () => {
     h.mountNetworkShare.mockRejectedValue(refused(unreachable))
     const { mount } = create()
     await mount.mount(testshare, null)
     flushSync()
 
-    expect(h.updateLeftPaneState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        volumeId: 'network',
-        mountError: {
-          share: 'testshare',
-          reason: 'host_unreachable',
-          message: renderMountError(unreachable, 'Testnas'),
-        },
-      }),
-    )
+    expect(mount.mountErrorInfo).toEqual({
+      share: 'testshare',
+      reason: 'host_unreachable',
+      message: renderMountError(unreachable, 'Testnas'),
+    })
 
     mount.back()
     flushSync()
-    // An explicit `null`: the share list's own push omits the key, so it can't clear it.
-    expect(h.updateLeftPaneState).toHaveBeenLastCalledWith(expect.objectContaining({ mountError: null }))
+    expect(mount.mountErrorInfo).toBeNull()
     expect(mount.view).toBeNull()
+  })
+
+  it('mounts with no credential of its own: the backend signs in with the server’s session one', async () => {
+    h.mountNetworkShare.mockResolvedValue({ mountPath: '/Volumes/testshare', alreadyMounted: false })
+    const { mount } = create()
+    await mount.mount(testshare, null)
+    const [, , username, password] = h.mountNetworkShare.mock.calls[0] as unknown[]
+    expect([username, password]).toEqual([null, null])
   })
 
   it('answers the keyboard there, one step back to the share list', async () => {
@@ -465,56 +460,5 @@ describe('a mount that waits', () => {
     if (state?.kind !== 'refused') throw new Error('expected a refusal')
     expect(state.refusal).toContain('Testnas')
     expect(state.refusal).toContain('killall NetAuthSysAgent')
-  })
-})
-
-/**
- * ❗ cmdr-reports#7: "Cmdr tried to open the share on that server." A queued share is a
- * one-shot for the visit it was queued with.
- */
-describe('the queued share', () => {
-  it('adopts the pane’s value once, and the same value again only after the pane cleared it', () => {
-    const { mount } = create()
-    mount.adoptQueued('testshare')
-    expect(mount.pendingMount).toBe('testshare')
-
-    mount.retirePending()
-    mount.adoptQueued('testshare')
-    expect(mount.pendingMount, 'a retired target is not re-adopted').toBeUndefined()
-
-    mount.adoptQueued(undefined)
-    mount.adoptQueued('testshare')
-    expect(mount.pendingMount).toBe('testshare')
-  })
-
-  it('is spent the moment the list hands it to the mount, and the pane hears so', () => {
-    const { mount, onPendingConsumed } = create()
-    mount.adoptQueued('TestShare')
-
-    expect(mount.takePending([testshare])).toBe(testshare)
-    expect(mount.pendingMount).toBeUndefined()
-    expect(onPendingConsumed).toHaveBeenCalledOnce()
-    // A list that comes back (after a Cancel, a refused mount) finds nothing queued.
-    expect(mount.takePending([testshare])).toBeNull()
-  })
-
-  it('says the share wasn’t found on a list that lacks it, and is spent all the same', () => {
-    const { mount } = create({ host, label: 'My NAS' })
-    mount.queue('missing')
-
-    expect(mount.takePending([testshare])).toBeNull()
-    expect(h.addToast).toHaveBeenCalledWith(expect.stringContaining('missing'), { level: 'warn' })
-    expect(mount.pendingMount).toBeUndefined()
-  })
-
-  it('is retired by a mount that went through', async () => {
-    h.mountNetworkShare.mockResolvedValue({ mountPath: '/Volumes/other', alreadyMounted: false })
-    const { mount, onPendingConsumed } = create()
-    mount.queue('testshare')
-
-    await mount.mount({ ...testshare, name: 'other' }, null)
-
-    expect(mount.pendingMount).toBeUndefined()
-    expect(onPendingConsumed).toHaveBeenCalled()
   })
 })

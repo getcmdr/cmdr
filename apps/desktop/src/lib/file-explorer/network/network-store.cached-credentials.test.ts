@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const { ipc } = vi.hoisted(() => ({
   ipc: {
     hasCachedSmbCredentials: vi.fn(),
-    getSmbCredentials: vi.fn(),
     hasSmbCredentials: vi.fn(),
   },
 }))
@@ -32,7 +31,6 @@ describe('noteCachedCredentials', () => {
     ipc.hasCachedSmbCredentials.mockResolvedValue(false)
     await noteCachedCredentials('localhost:11480')
     expect(getCredentialStatus('localhost:11480')).toBe('unknown')
-    expect(ipc.getSmbCredentials).not.toHaveBeenCalled()
     expect(ipc.hasSmbCredentials).not.toHaveBeenCalled()
   })
 })

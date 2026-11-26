@@ -8,8 +8,8 @@ item once settled, and record the outcome in `terms.json` or `decisions.md`.
   and macOS.
 - **Advanced** (`settings.section.advanced`): Apple's tab name `Дополнения` can also read as add-ons. Does it mislead in
   Cmdr's Settings sidebar?
-- **Network share** (`commands.shareSelectShare.label`, `settings.section.smbNetworkShares`): does `общая папка` read
-  naturally to SMB users used to Windows's `общий ресурс`, or does it sound like an iCloud shared folder?
+- **Network share** (`settings.section.smbNetworkShares`): does `общая папка` read naturally to SMB users used to
+  Windows's `общий ресурс`, or does it sound like an iCloud shared folder?
 - **Mount folded into connect** (`errors.listing.authRequiredEauth.suggestion`): `подключить` covers both; is
   `Отключите и снова подключите том` clear where both senses meet?
 - **Click verb** (`settings.behavior.doubleClickPaneNavigatesToParent.label`): `нажать` / `дважды нажать` follows macOS;

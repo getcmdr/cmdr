@@ -10,6 +10,7 @@ const runServerAccountAction = vi.fn((_action: string, _server: unknown) => Prom
 const disconnectSmbHost = vi.fn((_host: unknown, _label: string) => Promise.resolve())
 const runServerRowAction = vi.fn((_payload: unknown) => Promise.resolve())
 let volumeId = 'network'
+let focusedPath = 'smb://'
 
 vi.mock('#lib/file-explorer/network/share-list-sign-in.js', () => ({
   runServerAccountAction: (action: string, server: unknown) => runServerAccountAction(action, server),
@@ -23,10 +24,17 @@ vi.mock('#lib/file-explorer/navigation/server-row-actions.js', async (importOrig
   runServerRowAction: (payload: unknown) => runServerRowAction(payload),
 }))
 vi.mock('#lib/file-explorer/pane/focused-pane-reads.js', () => ({
-  getFocusedPanePath: () => 'smb://',
+  getFocusedPanePath: () => focusedPath,
   getFocusedPaneVolumeId: () => volumeId,
 }))
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: () => [] }))
+// The server a share-list path names, as the discovery state holds it.
+vi.mock('#lib/file-explorer/network/network-store.svelte.js', () => ({
+  getNetworkHosts: () => [
+    { id: 'testnas-id', name: 'Testnas', hostname: 'testnas.local', port: 445, source: 'discovered' },
+  ],
+  setListedAccount: vi.fn(),
+}))
 vi.mock('#lib/tauri-commands/index.js', () => ({ listSavedServers: () => Promise.resolve([]) }))
 
 import { serversHandlers } from './servers-handlers'
@@ -51,10 +59,11 @@ const hostRow = {
   host: nas,
 } as unknown as HubRow
 
+/** The pane on the hub (its cursor on `view.row`), or on `view.shareListHost`'s share list: the path names the server. */
 function hctx(view: { row?: HubRow | null; shareListHost?: NetworkHost | null }) {
+  focusedPath = view.shareListHost ? 'smb://testnas' : 'smb://'
   const explorerRef = {
     getFocusedPaneHubRow: vi.fn(() => view.row ?? null),
-    getFocusedPaneNetworkHost: vi.fn(() => view.shareListHost ?? null),
     openSmbHandOffInFocusedPane: vi.fn(),
   }
   return { ctx: { explorerRef, ctx: {}, dispatchArgs: undefined } as unknown as CommandHandlerContext, explorerRef }

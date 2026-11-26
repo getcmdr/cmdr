@@ -154,6 +154,28 @@ describe('FullList a11y', () => {
     await expectNoA11yViolations(list.target)
   })
 
+  // A server's share list: `..` goes back to Servers, and each share's Ext cell is its
+  // description, so the name says it where the cell shows it (WCAG 2.5.3).
+  it('a server’s share list (Back to Servers, a Description column) has no a11y violations', async () => {
+    const share = (name: string, description: string | null) =>
+      dirEntry({ name, path: `smb://testnas/${name}`, recursiveSize: undefined, shareMeta: { description } })
+    const list = await mountFullList({
+      entries: [share('media', 'Family photos'), share('public', null)],
+      props: {
+        hasParent: true,
+        parentPath: 'smb://',
+        currentPath: 'smb://testnas',
+        totalCount: 3,
+        listWords: { extHeader: 'Description', parentRowName: 'Back to Servers' },
+      },
+    })
+    const [parent, media] = list.rows()
+    expect(parent.getAttribute('aria-label')).toMatch(/^Back to Servers/)
+    expect(media.getAttribute('aria-label')).toContain('media (folder), Family photos')
+    expect(list.target.textContent).toContain('Description')
+    await expectNoA11yViolations(list.target)
+  })
+
   it('unfocused pane has no a11y violations', async () => {
     const list = await mountFullList({
       entries: [fileEntry({ name: 'report.md' })],

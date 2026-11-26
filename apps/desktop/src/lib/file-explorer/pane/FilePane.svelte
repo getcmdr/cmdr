@@ -64,6 +64,7 @@
         VolumeChangePayload,
     } from './types'
     import { paneFooterVisibility } from './pane-footer'
+    import { listWordsFor } from './list-kind-words'
     import { getMutationTick, getSnapshot, snapshotIdFromPanePath } from '#lib/search/snapshot-store.svelte.js'
     import RemoteConnectView from './RemoteConnectView.svelte'
     import { createPlaceConnect } from './place-connect.svelte'
@@ -137,6 +138,7 @@
     import { countFolderOnSpace as countFolderOnSpaceAt } from './folder-size-count'
     import { createNetworkHostState } from './network-host-state.svelte'
     import { createShareParentPane } from './share-parent-pane.svelte'
+    import { createShareListPane } from './share-list-pane.svelte'
     import { createMtpDisconnectWatch } from './mtp-disconnect-watch.svelte'
     import { createSnapshotSelectionSync } from './snapshot-selection-sync.svelte'
     import { createHistoryCursorSync } from './history-cursor-sync.svelte'
@@ -474,7 +476,10 @@
         },
         fetchEntryUnderCursor: () => void selectionInfo.fetchEntry(),
         fetchListingStats: () => void selectionInfo.fetchStats(),
-        onPathChange: (path) => onPathChange?.(path),
+        onPathChange: (path) => {
+            onPathChange?.(path)
+            shareList.landed(path)
+        },
         adoptStoredPath,
         onVolumeChange: (change) => onVolumeChange?.(change),
         onMtpFatalError: (message) => onMtpFatalError?.(message),
@@ -505,7 +510,7 @@
     let volumeRootFromEvent = $state<string | undefined>(undefined)
 
 
-    import type { ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry } from './types'
+    import type { ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
     import type { StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
@@ -514,6 +519,7 @@
     let fullListRef: ListViewAPI | undefined = $state()
     let briefListRef: ListViewAPI | undefined = $state()
     let volumeBreadcrumbRef: VolumeBreadcrumbAPI | undefined = $state()
+    let shareListAccountChipRef: ShareListAccountChipAPI | undefined = $state()
     let networkMountViewRef: NetworkMountViewAPI | undefined = $state()
     let searchResultsViewRef: SearchResultsViewAPI | undefined = $state()
     // The pane's root element, so the Enter-behavior popup can anchor at the cursor row.
@@ -702,6 +708,8 @@
      * this in the chain, with byte-identical precedence: a runtime
      * state always wins over the kind view, exactly as the string-compare chain did.
      */
+    // The list's words where the pane's kind has its own (a share list's "Description", "8 shares").
+    const listWords = $derived(listWordsFor(caps.kind))
     const paneViewKind = $derived<PaneViewKind>(
         isNetworkView ? 'network' : isSearchResultsView ? 'search-results' : 'normal',
     )
@@ -815,13 +823,21 @@
         onHostChange: (host) => onNetworkHostChange?.(host),
     })
 
+    // A server's share list: Enter mounts, a door's arrival lands, a sign-in refusal asks (`share-list-pane.svelte.ts`).
+    const shareList = createShareListPane({
+        getPaneId: () => paneId, getVolumeId: () => volumeId, getCurrentPath: () => currentPath,
+        getListingId: () => listingId, getIncludeHidden: () => includeHidden, getFriendlyError: () => friendlyError,
+        getListingFailed: () => Boolean(friendlyError || error),
+        moveCursorTo: (index) => { moveCursorTo(index) }, relist: () => void navigateToPath(currentPath),
+        leave: () => void navigateToParent(), onVolumeChange: (change) => onVolumeChange?.(change),
+        syncMcp: () => { debouncedSyncMcp.call() },
+    })
+
     // `..` in an SMB share's top folder opens the server's share list (`share-parent-pane.svelte.ts`).
     const shareParent = createShareParentPane({
         getVolume: () => currentVolumeInfo,
         getIsAtTopFolder: () => currentPath === effectiveVolumeRoot,
-        openServer: (change) => onVolumeChange?.(change),
-        getLanding: () => networkHost.shareLanding,
-        setLanding: networkHost.setShareLanding,
+        openServer: (host, arrival) => { shareList.openServer(host, arrival) },
     })
 
     // noinspection JSUnusedGlobalSymbols -- Used dynamically
@@ -1446,18 +1462,11 @@
     // noinspection JSUnusedGlobalSymbols -- Used dynamically
     export function setNetworkHost(host: NetworkHost | null): void {
         networkHost.setHost(host)
-        networkMountViewRef?.setNetworkHost(host)
     }
 
-    /**
-     * Queues a share to auto-mount once `NetworkMountView`'s `PlacesBrowser` is ready.
-     * Survives a not-yet-mounted view because the value is held here and re-passed
-     * via the `initialAutoMountShare` prop. Cleared automatically when the pane
-     * leaves the network volume.
-     */
-    // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer.copyPathBetweenPanes
-    export function setNetworkAutoMount(shareName: string | undefined): void {
-        networkHost.setAutoMountShare(shareName)
+    // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer's pane mirror and SMB hand-off
+    export function openShareList(host: NetworkHost, arrival?: { mount?: string }): void {
+        shareList.openServer(host, arrival)
     }
 
     /**
@@ -1474,9 +1483,6 @@
         if (shareParent.leaveTopFolder() || leaveShareList()) return Promise.resolve(true)
         if (isNetworkView) {
             if (networkHost.host === null) return Promise.resolve(false)
-            // Clear the view first (it also drops the mount error), then the pane
-            // state, which bubbles the change out for history tracking.
-            networkMountViewRef?.setNetworkHost(null)
             networkHost.handleHostChange(null)
             return Promise.resolve(true)
         }
@@ -1548,6 +1554,7 @@
         getLastJumpMatchedName: () => jump.lastMatchedName,
         getQuickFilterPattern: () => quickFilter.pattern,
         getListing: () => paneListingOf({ hasError: Boolean(friendlyError || error), loading, stalled: stalled !== null }),
+        getMountError: () => shareList.mount.mountErrorInfo,
     })
     const syncPaneStateToMcp = mcpSync.syncPaneStateToMcp
 
@@ -1662,6 +1669,7 @@
     // Returns a Promise that resolves when the directory listing completes, or rejects on error.
     // noinspection JSUnusedGlobalSymbols -- Used dynamically
     export function navigateToPath(path: string, selectName?: string): Promise<void> {
+        shareList.noteListingStarted(path)
         return loader.navigateToPath({ path, selectName })
     }
 
@@ -1692,9 +1700,12 @@
         navigateToParent: () => void navigateToParent(),
     })
     const handleSelect = pointer.handleSelect
-    // A `..` out of an SMB share's top folder is no folder to favorite, so it has no menu.
-    const handleContextMenu: typeof pointer.handleContextMenu = (entry, anchor) =>
-        entry.name === '..' && shareParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
+    // A `..` out of an SMB share's top folder is no folder to favorite, so it has no menu; a
+    // share list's rows get the share-row menu (`ShareListAccountChip.openRowMenu`), ❌ never the file menu.
+    const handleContextMenu: typeof pointer.handleContextMenu = (entry, anchor) => {
+        if (caps.kind === 'share-list') { shareListAccountChipRef?.openRowMenu(entry, anchor); return Promise.resolve() }
+        return entry.name === '..' && shareParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
+    }
 
     // Opening an entry (Enter, ⌘↓, double-click, or a popup choice): the redirect
     // arm, the archive/bundle Enter policy, the browse-in-place arm, the viewer
@@ -1715,9 +1726,10 @@
         },
         onGoToLocation: (location) => onGoToLocation?.(location),
     })
-    // `..` out of an SMB share's top folder goes to the server's shares, as Go to parent does there.
+    // `..` out of an SMB share's top folder goes to the server's shares, as Go to parent does
+    // there; a share on a server's share list mounts.
     const handleNavigate = (entry: FileEntry): Promise<void> =>
-        entry.name === '..' && (shareParent.leaveTopFolder() || leaveShareList())
+        (entry.name === '..' && (shareParent.leaveTopFolder() || leaveShareList())) || shareList.openShare(entry)
             ? Promise.resolve() : activation.handleNavigate(entry)
 
     // The breadcrumb's three interactions (ancestor click, right-click menu with
@@ -1778,8 +1790,7 @@
     // noinspection JSUnusedGlobalSymbols -- Used dynamically by DualPaneExplorer/MCP
     export async function openCursorItem(): Promise<void> {
         if (isNetworkView) {
-            // Network view: cursor lives in ServersHub/PlacesBrowser, not the file list.
-            // Delegate to NetworkMountView, which forwards to whichever child is active.
+            // The Servers hub: its cursor lives in ServersHub, not the file list.
             networkMountViewRef?.openCursorItem()
             return
         }
@@ -1813,6 +1824,7 @@
         }
         const entry = entryForTool()
         if (!entry) throw new Error('No entry under cursor')
+        if (shareList.openShare(entry)) return 'opened'
         return activation.openForTool(entry, gate)
     }
 
@@ -1843,6 +1855,7 @@
     // `pane-key-router.ts`; the pane keeps the refs and state it reads.
     const keyRouter = createPaneKeyRouter({
         getRenameActive: () => rename.active,
+        handleShareMountKeyDown: (e) => shareList.mount.handleKeyDown(e),
         getIsNetworkView: () => isNetworkView,
         getIsSearchResultsView: () => isSearchResultsView,
         getViewMode: () => viewMode,
@@ -1962,7 +1975,8 @@
             initialPath, // Track this
             currentPath: untrack(() => currentPath), // Don't track: user navigation changes this
             isSearchResultsView,
-            isNetworkView,
+            // The path's OWN kind: the hub lists nothing, and a share list it opens does.
+            isNetworkView: capabilitiesForPane(volumeId, initialPath).kind === 'network',
             deviceIsConnecting: deviceConnect.holdsListing,
         })
 
@@ -1976,6 +1990,8 @@
                 void loader.loadDirectory({ path: action.path })
                 break
             case 'sync-path':
+                // Off a share list to the hub: its listing ends here, so a late completion can't land it back.
+                if (untrack(() => caps.kind) === 'share-list') loader.leaveListing()
                 currentPath = action.path
                 break
             case 'none':
@@ -2145,8 +2161,8 @@
         // Live disk-space updates from the backend poller (typed event).
         diskSpace.startListening()
 
-        // Skip directory loading for network views (they handle their own data via
-        // ServersHub/PlacesBrowser) and the search-results snapshot.
+        // Skip directory loading for the Servers hub (ServersHub holds its own data) and
+        // the search-results snapshot.
         log.debug(
             '[FilePane] onMount: paneId={paneId}, volumeId={volumeId}, currentPath={currentPath}, isNetworkView={isNetworkView}',
             { paneId, volumeId, currentPath, isNetworkView },
@@ -2250,7 +2266,7 @@
                     onclick={() => { breadcrumb.handleSegmentClick(seg.target as string); }}
                 >{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</button>{:else}<span class:git-portal={seg.gitPortal} use:tooltip={shown === seg.text ? '' : seg.text}>{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</span>{/if}{/each}</span>
         {#if caps.kind === 'share-list'}
-            <ShareListAccountChip path={currentPath} onListed={() => void navigateToPath(currentPath)} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} />
+            <ShareListAccountChip bind:this={shareListAccountChipRef} path={currentPath} onListed={() => void navigateToPath(currentPath)} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} onOpenShare={(entry: FileEntry) => void handleNavigate(entry)} />
         {/if}
         {#if gitBrowser.showRepoChip && gitBrowser.gitRepoInfo}
             <RepoChip info={gitBrowser.gitRepoInfo} />
@@ -2311,19 +2327,13 @@
                 gaveUp={true}
                 onDisconnect={smbView.handleSmbReconnectDisconnect}
             />
+        {:else if shareList.mount.view}
+            <!-- A share's mount: keyed on the wait, so a retry's wait starts with the view's own quiet reveal again. -->
+            {#key shareList.mount.view.state.kind === 'connecting'}
+                <RemoteConnectView name={shareList.mount.view.name} server={shareList.mount.view.server} address={shareList.mount.view.address} state={shareList.mount.view.state} />
+            {/key}
         {:else if paneViewKind === 'network'}
-            <NetworkMountView
-                bind:this={networkMountViewRef}
-                {paneId}
-                {isFocused}
-                initialNetworkHost={networkHost.host}
-                initialAutoMountShare={networkHost.autoMountShare}
-                onAutoMountConsumed={() => { networkHost.setAutoMountShare(undefined) }}
-                shareLanding={networkHost.shareLanding}
-                onShareLanded={shareParent.landed}
-                {onVolumeChange}
-                onNetworkHostChange={networkHost.handleHostChange}
-            />
+            <NetworkMountView bind:this={networkMountViewRef} {paneId} {isFocused} {onVolumeChange} onOpenServer={shareList.openServer} />
         {:else if paneViewKind === 'search-results'}
             <SearchResultsView
                 bind:this={searchResultsViewRef}
@@ -2355,6 +2365,7 @@
             <ErrorPane
                 friendly={friendlyError}
                 folderPath={currentPath}
+                folderLabel={shareList.label}
                 onRetry={() => navigateToPath(currentPath)}
                 {canGoBack}
                 onGoBack={() => onGoBack?.()}
@@ -2390,6 +2401,7 @@
                 {volumeId}
                 totalCount={listingPresentation.totalCount}
                 hiddenCount={listingPresentation.hiddenCount}
+                {listWords}
                 {includeHidden}
                 {cacheGeneration}
                 {softRefreshTick}
@@ -2443,6 +2455,7 @@
                 {volumeId}
                 totalCount={listingPresentation.totalCount}
                 hiddenCount={listingPresentation.hiddenCount}
+                {listWords}
                 {includeHidden}
                 {cacheGeneration}
                 {softRefreshTick}
@@ -2541,6 +2554,7 @@
             totalMatches={searchSnapshot?.totalCount}
             showInFolderHint={isSearchResultsView}
             {mtpSpaceHint}
+            countRows={listWords?.countRows}
         />
     {/if}
 </div>

@@ -385,14 +385,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Vissza",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Újra",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Bejelentkezés",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -541,10 +533,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Csatlakozás ehhez: {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Nem sikerült csatlakozni ehhez: {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -561,22 +549,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Nincs elérhető megosztás",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Ezen a gépen nincs elérhető megosztás, vagy hitelesítés szükséges.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Vissza",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Mentett jelszó eltávolítása a kulcskarikából} windows {Mentett jelszó eltávolítása a Hitelesítőadat-kezelőből} linuxKde {Mentett jelszó eltávolítása a KDE jelszókezelőből} other {Mentett jelszó eltávolítása a kulcstartódból}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Böngészés vendégként",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -584,10 +556,6 @@
   "fileExplorer.network.share.signInAs": "Bejelentkezés másként…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Mentett jelszó elfelejtése",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} megosztás} other {{countText} megosztás}}",
   "@fileExplorer.network.share.shareCount": {

@@ -67,6 +67,29 @@ describe('pinned-tab fork (L7 — unified, both arms)', () => {
     expect(active.path).toBe('/Volumes/Ext')
   })
 
+  it('opening a server from the hub on a pinned tab opens its share list in a NEW unpinned tab', () => {
+    // Pinned means pinned: a share list is a new path like any folder, so the hub stays put.
+    h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
+    getActiveTab(h.mgr('left')).pinned = true
+    const pinnedId = getActiveTab(h.mgr('left')).id
+
+    navigate(
+      {
+        pane: 'left',
+        to: { selectVolume: { volumeId: 'network', path: 'smb://testnas' } },
+        source: 'user',
+        exact: true,
+      },
+      h.deps,
+    )
+
+    expect(h.mgr('left').tabs.find((t) => t.id === pinnedId)?.path).toBe('smb://')
+    const active = getActiveTab(h.mgr('left'))
+    expect(active.id).not.toBe(pinnedId)
+    expect(active.pinned).toBe(false)
+    expect(active).toMatchObject({ volumeId: 'network', path: 'smb://testnas' })
+  })
+
   it('at MAX_TABS_PER_PANE a pinned path landing commits in-place and toasts "Tab limit reached"', () => {
     const mgr = h.mgr('left')
     getActiveTab(mgr).pinned = true

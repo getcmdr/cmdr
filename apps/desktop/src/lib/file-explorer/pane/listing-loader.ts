@@ -54,6 +54,7 @@ import {
 import { sweepListingTags } from './tag-sweep'
 import { resolveValidPath } from '../navigation/path-resolution'
 import { noteShareParent } from '../network/share-parent-row.svelte'
+import { noteShareListAccount } from '../network/share-list-label'
 import { restoredCursorIndex } from '../navigation/history-cursor'
 import type { HistoryCursor } from '../navigation/navigation-history'
 import { renderListingError } from '#lib/error-messages/listing-error.js'
@@ -700,6 +701,8 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     // the row is in the rows' first frame (no late insert shifting every index by one) and
     // the cursor below counts it. It also replaces a `null` asked before the mount was up.
     if (payload.shareParent) noteShareParent(load.volumeId, shareParentFromWire(payload.shareParent))
+    // A server's share list says who it signed in as, for the path bar's account.
+    if (payload.shareListAccount) noteShareListAccount(load.path, payload.shareListAccount)
     deps.setTotalCount(payload.totalCount)
     deps.setHiddenCount(payload.hiddenCount)
     // With the count, before any await: the rows that land now are in this column's

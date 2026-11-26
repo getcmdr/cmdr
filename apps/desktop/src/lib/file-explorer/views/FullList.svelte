@@ -96,6 +96,7 @@
     import type { RenameState, RenameSessionId } from '../rename/rename-state.svelte'
     import type { RenameStepDirection } from '../rename/rename-step'
     import { formatByteSizeTiered } from '#lib/units/index.js'
+    import type { ListWords } from './list-words'
 
     interface Props {
         listingId: string
@@ -112,6 +113,8 @@
         totalCount: number
         /** Hidden items the pane hides while it shows no rows: the empty state's hint (`EmptyFolderState`). */
         hiddenCount?: number
+        /** The pane kind's own words for the `..` row, the empty state, and (Full) the Ext header. */
+        listWords?: ListWords
         includeHidden: boolean
         cacheGeneration?: number
         /**
@@ -216,6 +219,7 @@
         volumeId,
         totalCount,
         hiddenCount = 0,
+        listWords,
         includeHidden,
         cacheGeneration = 0,
         softRefreshTick = 0,
@@ -563,6 +567,7 @@
             sizeFormatOpts,
             isRestricted,
             showExtensionInName,
+            extHeader: listWords?.extHeader,
         })
         // Which rows are on screen and how they're measured: while this stays put, only in-place
         // data changed (index sizes, the hourglass), and `holdSizeColumnWidth` keeps Size from
@@ -860,6 +865,7 @@
         {skipTransition}
         {scrollbarWidth}
         {clearsSortLabel}
+        extHeader={listWords?.extHeader}
         {onSortChange}
         {onSortMenu}
     />
@@ -944,6 +950,7 @@
                                 isRestricted: fileIsRestricted,
                                 details: {
                                     host: extInName ? undefined : file.resticMeta?.hostname,
+                                    description: extInName ? undefined : (file.shareMeta?.description ?? undefined),
                                     size: rowSizeText({
                                         override: sizeOverride.override,
                                         triads: sizeTriads,
@@ -954,6 +961,7 @@
                                     date: { column: dateColumn, text: date.text },
                                     gitStatus: gitStatus ? labelFor(gitStatus) : undefined,
                                 },
+                                parentRowName: listWords?.parentRowName,
                             }),
                         })}
                         class="file-entry"
@@ -1183,7 +1191,7 @@
     {:else if (hasParent ? totalCount - 1 : totalCount) === 0}
         <!-- Laid over the row area, beside the listbox, never in it (an EMPTY listbox is
              fine): see `EmptyFolderState`. Inside the block scroller it sat right under `..`. -->
-        <EmptyFolderState {hiddenCount} />
+        <EmptyFolderState {hiddenCount} emptyText={listWords?.emptyText} />
     {/if}
     </div>
 </div>

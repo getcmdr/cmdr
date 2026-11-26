@@ -9,6 +9,7 @@ const editServerInView = vi.fn((_view: unknown) => Promise.resolve())
 const runServerRowAction = vi.fn((_payload: unknown) => Promise.resolve())
 const openInEditorOrExplain = vi.fn(() => Promise.resolve('opened'))
 let volumeId = 'root'
+let focusedPath = '/Users/me'
 
 vi.mock('#lib/file-explorer/network/servers-hub-actions.js', () => ({
   editServerInView: (view: unknown) => editServerInView(view),
@@ -18,10 +19,15 @@ vi.mock('#lib/file-explorer/navigation/server-row-actions.js', () => ({
 }))
 vi.mock('#lib/file-explorer/pane/editor-open.js', () => ({ openInEditorOrExplain: () => openInEditorOrExplain() }))
 vi.mock('#lib/file-explorer/pane/focused-pane-reads.js', () => ({
-  getFocusedPanePath: () => '/Users/me',
+  getFocusedPanePath: () => focusedPath,
   getFocusedPaneVolumeId: () => volumeId,
 }))
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: () => [] }))
+// The server a share-list path names, as the discovery state holds it.
+vi.mock('#lib/file-explorer/network/network-store.svelte.js', () => ({
+  getNetworkHosts: () => [{ id: 'h1', name: 'Testnas', port: 445, source: 'discovered' }],
+  setListedAccount: vi.fn(),
+}))
 vi.mock('#lib/tauri-commands/index.js', () => ({ listSavedServers: () => Promise.resolve([]), trackEvent: vi.fn() }))
 
 import { fileHandlers } from './file-handlers'
@@ -33,10 +39,11 @@ import type { NetworkHost } from '#lib/file-explorer/types.js'
 const hubRow = { id: 'manual-nas', kind: 'server', name: 'Testnas' } as unknown as HubRow
 const host: NetworkHost = { id: 'h1', name: 'Testnas', port: 445, source: 'discovered' }
 
+/** The pane on the hub (its cursor on `row`), or on `placesHost`'s share list: the path names the server. */
 function hctx(row: HubRow | null, placesHost: NetworkHost | null = null) {
+  focusedPath = placesHost ? 'smb://testnas' : volumeId === 'network' ? 'smb://' : '/Users/me'
   const explorerRef = {
     getFocusedPaneHubRow: vi.fn(() => row),
-    getFocusedPaneNetworkHost: vi.fn(() => placesHost),
     startRename: vi.fn(),
     getFileAndPathUnderCursor: vi.fn(() => ({ path: '/Users/me/a.txt', filename: 'a.txt' })),
   }
@@ -53,6 +60,7 @@ const onServersVolume: [string, Handler][] = [
 beforeEach(() => {
   vi.clearAllMocks()
   volumeId = 'root'
+  focusedPath = '/Users/me'
 })
 
 describe('on the Servers volume', () => {

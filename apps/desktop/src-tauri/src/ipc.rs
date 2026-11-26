@@ -659,7 +659,6 @@ macro_rules! ipc_command_manifest {
                     crate::commands::network::forget_smb_link_target,
                     crate::commands::network::list_smb_link_consents,
                     crate::commands::network::save_smb_credentials,
-                    crate::commands::network::get_smb_credentials,
                     crate::commands::network::has_cached_smb_credentials,
                     crate::commands::network::delete_smb_credentials,
                     crate::commands::network::is_using_credential_file_fallback,

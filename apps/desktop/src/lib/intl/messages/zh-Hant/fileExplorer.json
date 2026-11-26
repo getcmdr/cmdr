@@ -383,14 +383,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "返回",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "再試一次",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "登入",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -539,10 +531,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "正在連線到 {hostName}⋯",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "無法連線到 {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -559,22 +547,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "沒有可用的共享資料夾",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "這台主機沒有可存取的共享資料夾，也可能是需要先通過驗證。",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "返回",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {從鑰匙圈中移除已儲存的密碼} windows {從認證管理員中移除已儲存的密碼} linuxKde {從 KDE 錢包中移除已儲存的密碼} other {從你的鑰匙圈中移除已儲存的密碼}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "以訪客身分瀏覽",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -582,10 +554,6 @@
   "fileExplorer.network.share.signInAs": "以其他身分登入⋯",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "忘記已儲存的密碼",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, other {{countText} 個共享資料夾}}",
   "@fileExplorer.network.share.shareCount": {

@@ -9,7 +9,7 @@ import type { CanonicalPath } from '#lib/path/canonical.js'
 import { parentRowPath } from './has-parent'
 import { capabilitiesForPane } from './volume-capabilities'
 import type { ViewMode } from '#lib/app-status-store.js'
-import type { PaneListing, SearchResultEntry, SortColumn } from '#lib/ipc/bindings.js'
+import type { MountErrorInfo, PaneListing, SearchResultEntry, SortColumn } from '#lib/ipc/bindings.js'
 import type { SnapshotSort } from '#lib/search/snapshot-store.svelte.js'
 import { getWalkedGround, isVolumeAggregating } from '#lib/indexing/index-state.svelte.js'
 import { isPathAffectedByWalk } from '#lib/indexing/walked-ground.js'
@@ -114,6 +114,11 @@ export interface PaneMcpSyncDeps {
    * a load in flight, or settled. What tells an agent an empty folder from a stuck one.
    */
   getListing: () => PaneListing
+  /**
+   * A share mount that didn't go through on a server's share list (`share-mount.svelte.ts`),
+   * or `null`: what `cmdr://state` says in place of a silent share list.
+   */
+  getMountError?: () => MountErrorInfo | null
 }
 
 /**
@@ -197,7 +202,9 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
     inFlux: InFluxAnswer,
   ): PaneFileEntry {
     return {
-      name: entry.name,
+      // A server's share row carries its description as a `comment="…"` token, so an agent
+      // reads what the Description column shows.
+      name: entry.shareMeta?.description ? `${entry.name}  comment="${entry.shareMeta.description}"` : entry.name,
       path: entry.path,
       isDirectory: entry.isDirectory,
       size: entry.size ?? null,
@@ -360,6 +367,7 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
         typeToJump: typeToJumpInfo,
         quickFilter: deps.getQuickFilterPattern() || null,
         listing: deps.getListing(),
+        mountError: deps.getMountError?.() ?? null,
       }
 
       const updateFn = deps.paneId === 'left' ? updateLeftPaneState : updateRightPaneState

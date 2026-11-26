@@ -16,6 +16,8 @@
     import { offersErrorReport } from '#lib/error-messages/listing-error.js'
     import ReportOffer from '#lib/error-reporter/ReportOffer.svelte'
     import { openSettingsToSmbEncryption } from '../network/smb-encryption-setting'
+    import { askToSignInToList } from '../network/share-list-sign-in'
+    import CopyBox from '#lib/ui/CopyBox.svelte'
 
     const log = getAppLogger('errorPane')
 
@@ -31,6 +33,11 @@
     interface Props {
         friendly: FriendlyError
         folderPath: string
+        /**
+         * What to SHOW for the place, when that isn't `folderPath`: a server's share list
+         * names its server as the path bar does, ❌ never the path's host key.
+         */
+        folderLabel?: string
         onRetry?: () => void
         /**
          * Whether this pane's tab has somewhere to go back to. False on a first-paint
@@ -51,6 +58,7 @@
     const {
         friendly,
         folderPath,
+        folderLabel,
         onRetry,
         canGoBack = false,
         onGoBack,
@@ -115,6 +123,23 @@
 
     const isPermissionDenied = $derived(friendly.actionKind === 'open_privacy_settings')
     const offersSmbEncryptionSetting = $derived(friendly.actionKind === 'open_smb_encryption_setting')
+    /**
+     * A server's share list that wants an account: a normal step, not a failure. Its Sign in
+     * is the one share-list sheet, and the screen is no assertive alert, since that sheet
+     * opens over it on its own (`share-list-pane.svelte.ts`) and VoiceOver would read both.
+     */
+    const offersSignIn = $derived(friendly.actionKind === 'sign_in_to_server')
+    /** The command a missing share-listing tool installs with, for the copy box. */
+    const installCommand = $derived(
+        friendly.shareListRefusal?.type === 'missing_dependency' ? friendly.shareListRefusal.installCommand : null,
+    )
+
+    /** The sheet, for the server this share list names; a listing that landed (or failed anew) re-lists. */
+    async function signIn() {
+        const refusal = friendly.shareListRefusal ?? { type: 'auth_required', message: '' }
+        const outcome = await askToSignInToList(folderPath, refusal)
+        if (outcome && outcome.kind !== 'cancelled') onRetry?.()
+    }
 
     // `retryHint` alone decides this: it IS the backend's "retrying might help"
     // signal, and it's deliberately set on Serious errnos (`friendly_error/errno.rs`'s
@@ -143,7 +168,7 @@
     })
 </script>
 
-<div class="error-pane" role="alert" aria-live="assertive">
+<div class="error-pane" role={offersSignIn ? undefined : 'alert'} aria-live={offersSignIn ? undefined : 'assertive'}>
     <div class="content">
         <h2 class="title">
             {#if friendly.category === 'serious'}
@@ -153,7 +178,7 @@
             {/if}
             {friendly.title}
         </h2>
-        <p class="folder-path">{folderPath}</p>
+        <p class="folder-path">{folderLabel ?? folderPath}</p>
 
         <!-- Click delegate for anchor tags inside rendered markdown. Each link is focusable, and its Enter bubbles here as a click. -->
         <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
@@ -174,7 +199,15 @@
           ways out read as one set. Every error screen gets at least "Go to home folder":
           44 of the ~60 error reasons carry no CTA of their own and were dead ends.
         -->
+        {#if installCommand}
+            <CopyBox text={installCommand} />
+        {/if}
+
         <div class="cta">
+            {#if offersSignIn}
+                <Button variant="primary" onclick={() => void signIn()}>{tString('fileExplorer.network.signIn')}</Button>
+            {/if}
+
             {#if showRetryButton}
                 <Button variant="primary" onclick={handleRetry}>{tString('fileExplorer.errorPane.tryAgain')}</Button>
             {/if}

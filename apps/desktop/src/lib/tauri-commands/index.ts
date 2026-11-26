@@ -290,7 +290,6 @@ export {
   forgetSmbLinkTarget,
   listSmbLinkConsents,
   saveSmbCredentials,
-  getSmbCredentials,
   hasCachedSmbCredentials,
   deleteSmbCredentials,
   isUsingCredentialFileFallback,

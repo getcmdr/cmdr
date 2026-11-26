@@ -156,7 +156,6 @@ operationLog.rollBack	Ctrl+Enter
 network.selectHost	Enter
 network.refresh	
 share.back	Backspace, Escape, Alt+↑
-share.selectShare	Enter
 servers.show	
 servers.togglePin	
 servers.disconnect	

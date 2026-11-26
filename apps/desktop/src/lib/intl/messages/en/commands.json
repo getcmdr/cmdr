@@ -1411,14 +1411,9 @@
     "description": "Command name that re-scans the network for hosts (servers). Appears in the command palette.",
     "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
-  "commands.shareBack.label": "Back to host list",
-  "@commands.shareBack.label": {
-    "description": "Command name that goes back from a server's shares to the list of network hosts (servers). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts-page-17.png"
-  },
-  "commands.shareSelectShare.label": "Connect to share",
-  "@commands.shareSelectShare.label": {
-    "description": "Command name that connects to the selected network share (a shared folder on a server). Appears in the command palette.",
+  "commands.shareMountBack.label": "Cancel or step back from opening a share",
+  "@commands.shareMountBack.label": {
+    "description": "Keyboard-settings name of the keys that work while a network share is connecting (after Enter on a share in a server's share list): Escape cancels the connection, Backspace goes back from a connection that didn't work to the list of shares.",
     "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.volumeSelect.label": "Select volume",

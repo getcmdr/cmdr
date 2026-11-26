@@ -141,12 +141,13 @@ import { isLocalPath } from '#lib/path/grammar.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import type { Location } from '#lib/tauri-commands/index.js'
+import { isShareListLocation } from '#lib/servers/share-list-path.js'
 import {
   NETWORK_VOLUME_PATH,
   PANE_UNAVAILABLE_REFUSAL,
-  SMB_PATH_REFUSAL,
   SNAPSHOT_PATH_REFUSAL,
   onNetworkRefusal,
+  shareListNavigationRefusal,
   validateAdbNavigation,
   validateMtpNavigation,
   validateServerNavigation,
@@ -434,10 +435,10 @@ export function navigate(intent: NavigateIntent, deps: NavigateDeps): NavigateRe
 function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, asked: Location): NavigateResult {
   const { pane } = intent
   const location = homedOnItsRow(deps, asked)
-  // A share inside the Network volume has no path to navigate to (see the refusal).
-  if (location.path.startsWith(NETWORK_VOLUME_PATH) && location.path !== NETWORK_VOLUME_PATH) {
-    return { status: 'refused', reason: SMB_PATH_REFUSAL }
-  }
+  // A share inside the Network volume has no path to navigate to (see the refusal); the hub
+  // and a server's share list do.
+  const smbRefusal = shareListNavigationRefusal(location.path)
+  if (smbRefusal) return { status: 'refused', reason: smbRefusal }
   // A snapshot path is the `{ snapshot }` arm's alone, whatever volume the backend
   // resolver decided it belongs to (see the refusal).
   if (isSnapshotPath(location.path)) {
@@ -498,8 +499,12 @@ function navigateInPlace(deps: NavigateDeps, intent: NavigateIntent, path: strin
   const currentVolumeId = deps.getPaneVolumeId(pane)
   const currentVolumeName = deps.getPaneVolumeName(pane)
 
-  // On-network-volume refusal (synchronous).
-  if (currentVolumeId === 'network') {
+  // On the network volume only a server's share list lists. The hub lists nothing, so the
+  // switch arm lands it (no load, and the Servers select's "always the hub"); anything else refuses.
+  if (currentVolumeId === 'network' && path === NETWORK_VOLUME_PATH) {
+    return switchVolumeArm(deps, { ...intent, exact: true }, currentVolumeId, path)
+  }
+  if (currentVolumeId === 'network' && !isShareListLocation(currentVolumeId, path)) {
     return { status: 'refused', reason: onNetworkRefusal(currentVolumeName ?? currentVolumeId) }
   }
 

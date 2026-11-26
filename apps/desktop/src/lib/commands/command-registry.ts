@@ -140,7 +140,6 @@ export const FIXED_KEY_COMMAND_IDS = [
   'aboutThis.stopVerdict',
   'network.selectHost',
   'share.back',
-  'share.selectShare',
   // The operation queue window's keys, answered by its own keydown.
   'queue.cursorUp',
   'queue.cursorDown',

@@ -284,8 +284,8 @@ What changes in this module while it's on:
 
 ### A listing names each share once
 
-Gotcha: a server can list one share name twice, and the frontend's share list (`PlacesBrowser.svelte`) keys its rows on
-the name, so the repeat crashed the window with Svelte's `each_key_duplicate` (cmdr-reports#81: a Mac on macOS 27,
+Gotcha: a server can list one share name twice, and a share list keys its rows on the name (a listing's names are
+unique), so the repeat crashed the window with Svelte's `each_key_duplicate` (cmdr-reports#81: a Mac on macOS 27,
 authenticated listing, 6 disk shares; verified on 0.55.0 by rebuilding its frontend and mapping all three crash stacks
 to that `{#each}`, 2026-10-23). Why the backend owns it: every fresh listing, smb2 or a CLI fallback, leaves `smb_client::list_shares`
 through `with_unique_share_names` before it's cached, keeping the first of the names that fold together (NFC,

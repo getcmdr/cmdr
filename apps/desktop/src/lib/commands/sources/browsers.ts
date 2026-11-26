@@ -33,29 +33,22 @@ export const browsersCommands: CommandSource[] = [
   },
 
   // ============================================================================
-  // Share browser
+  // A share's mount, on a server's share list
   // ============================================================================
   {
+    // Escape cancels a running mount; Backspace and `⌘↑` (the file list's parent key)
+    // step back from a refused one to the share list. Only while the mount's state is up
+    // (`pane/share-mount.svelte.ts`); the share list itself goes back with `..`, so this
+    // is off the palette. Display-only — `fixedKey` handling is in the controller.
     id: 'share.back',
-    nameKey: 'commands.shareBack.label',
+    nameKey: 'commands.shareMountBack.label',
     scope: 'Main window/Places',
-    showInPalette: true,
-    // `⌘↑` mirrors the file list's `⌘↑` = parent; PlacesBrowser handles all three
-    // keys (`handleBackToHostKey`). Display-only — `fixedKey` handling is in-component.
+    showInPalette: false,
     shortcuts: {
       macos: ['Backspace', 'Escape', '⌘↑'],
       windows: ['Backspace', 'Escape', 'Alt+↑'],
       linux: ['Backspace', 'Escape', 'Alt+↑'],
     },
-    whileDialogOpen: BLOCKED_BY_DIALOGS,
-    fixedKey: true,
-  },
-  {
-    id: 'share.selectShare',
-    nameKey: 'commands.shareSelectShare.label',
-    scope: 'Main window/Places',
-    showInPalette: true,
-    shortcuts: sameOnAll('Enter'),
     whileDialogOpen: BLOCKED_BY_DIALOGS,
     fixedKey: true,
   },

@@ -386,14 +386,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Quay lại",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Thử lại",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Đăng nhập",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -542,10 +534,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Đang kết nối tới {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Không thể kết nối tới {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -562,22 +550,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Không có mục chia sẻ nào",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Máy chủ này không có mục chia sẻ nào truy cập được, hoặc cần xác thực.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Quay lại",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Xóa mật khẩu đã lưu khỏi chuỗi khóa} windows {Xóa mật khẩu đã lưu khỏi Trình quản lý thông tin xác thực} linuxKde {Xóa mật khẩu đã lưu khỏi Ví KDE} other {Xóa mật khẩu đã lưu khỏi kho khóa của bạn}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Duyệt với tư cách khách",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -585,10 +557,6 @@
   "fileExplorer.network.share.signInAs": "Đăng nhập với tư cách…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Quên mật khẩu đã lưu",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, other {{countText} mục chia sẻ}}",
   "@fileExplorer.network.share.shareCount": {

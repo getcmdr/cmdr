@@ -4,7 +4,8 @@
  * (a snapshot isn't a place on any one disk, so the free-space readout is off).
  *
  * The counting and selection-summary paths themselves are shared with a normal
- * pane and covered by the other `SelectionInfo.*` files.
+ * pane and covered by the other `SelectionInfo.*` files. A share list's own count noun
+ * (`countRows`) is the third pane-kind prop, so it's pinned here too.
  */
 
 import { describe, it, expect, vi } from 'vitest'
@@ -83,6 +84,19 @@ describe('SelectionInfo on an empty pane', () => {
     const target = render({ stats: stats({ totalFiles: 0 }), volumeSpace: space })
     expect(target.querySelector('.summary-text')).toBeNull()
     expect(target.querySelector('.disk-space-text')).not.toBeNull()
+  })
+})
+
+describe("SelectionInfo on a server's share list", () => {
+  it('counts the rows by the noun the pane’s kind gives, with no disk space', () => {
+    const target = render({
+      stats: stats({ totalFiles: 0, totalDirs: 8, totalSize: 0, totalPhysicalSize: 0 }),
+      countRows: (count: number) => `${String(count)} shares`,
+      showVolumeSpace: false,
+    })
+    expect(target.textContent).toContain('No selection, 8 shares.')
+    expect(target.textContent).not.toContain('dirs')
+    expect(target.querySelector('.disk-space-text')).toBeNull()
   })
 })
 

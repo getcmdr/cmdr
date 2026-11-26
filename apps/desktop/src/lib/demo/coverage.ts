@@ -132,7 +132,6 @@ export const notInDemo = {
   forgetSmbLinkTarget: NETWORK,
   listSmbLinkConsents: NETWORK,
   saveSmbCredentials: NETWORK,
-  getSmbCredentials: NETWORK,
   hasCachedSmbCredentials: NETWORK,
   deleteSmbCredentials: NETWORK,
   isUsingCredentialFileFallback: NETWORK,

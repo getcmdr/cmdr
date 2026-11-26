@@ -144,8 +144,6 @@ const EXPECTED_PALETTE_IDS: readonly CommandId[] = [
   'selection.selectFiles',
   'selection.deselectFiles',
   'network.refresh',
-  'share.back',
-  'share.selectShare',
   'servers.show',
   'servers.togglePin',
   'servers.disconnect',

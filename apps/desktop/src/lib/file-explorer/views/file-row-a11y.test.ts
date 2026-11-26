@@ -124,6 +124,21 @@ describe('fileRowName for a restic snapshot row', () => {
   })
 })
 
+describe("fileRowName on a server's share list", () => {
+  it('says the share’s description after its name, bare, as the Ext cell shows it', () => {
+    const share = entry({ name: 'public', isDirectory: true })
+    expect(fileRowName({ entry: share, details: { description: 'Family photos' } })).toBe(
+      'public (folder), Family photos',
+    )
+  })
+
+  it('names the `..` row by the words the pane’s kind gives it', () => {
+    expect(fileRowName({ entry: createParentEntry('smb://'), parentRowName: 'Back to Servers' })).toBe(
+      'Back to Servers',
+    )
+  })
+})
+
 describe('rowSizeText', () => {
   const triads = [
     { value: '1', tierClass: 'size-kb' },

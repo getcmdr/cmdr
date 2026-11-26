@@ -174,7 +174,6 @@ operationLog.rollBack	⌘Enter
 network.selectHost	Enter
 network.refresh	
 share.back	Backspace, Escape, ⌘↑
-share.selectShare	Enter
 servers.show	
 servers.togglePin	
 servers.disconnect	

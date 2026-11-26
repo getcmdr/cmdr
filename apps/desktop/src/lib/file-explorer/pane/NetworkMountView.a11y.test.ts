@@ -1,11 +1,7 @@
 /**
- * Tier 3 a11y tests for `NetworkMountView.svelte`.
- *
- * The component renders one of three inner views: ServersHub (no
- * host), PlacesBrowser (host selected), mounting spinner, or a mount
- * error state. Mounting/error states are deterministic and inline in
- * this file; ServersHub + PlacesBrowser have their own a11y tests,
- * so this audits the shell with no host.
+ * Tier 3 a11y tests for `NetworkMountView.svelte`, the Servers hub. A server's share list
+ * is a file listing (`full-list.a11y.test.ts`), and ServersHub has its own a11y tests, so
+ * this audits the shell.
  */
 
 import { describe, it, vi } from 'vitest'
@@ -24,7 +20,6 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   listSharesWithCredentials: vi.fn(() => Promise.resolve([])),
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
-  getSmbCredentials: vi.fn(() => Promise.resolve(null)),
   isUsingCredentialFileFallback: vi.fn(() => Promise.resolve(false)),
   updateKnownShare: vi.fn(() => Promise.resolve()),
   getUsernameHint: vi.fn(() => Promise.resolve(null)),

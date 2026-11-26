@@ -386,14 +386,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Voltar",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Tentar novamente",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "Iniciar sessão",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -542,10 +534,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Conectando a {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Não foi possível conectar a {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -562,22 +550,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Nenhum compartilhamento disponível",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Este host não tem compartilhamentos acessíveis, ou a autenticação é necessária.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Voltar",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Remover a senha salva do Acesso às Chaves} windows {Remover a senha salva do Gerenciador de Credenciais} linuxKde {Remover a senha salva da Carteira do KDE} other {Remover a senha salva do seu chaveiro}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Navegar como convidado",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -585,10 +557,6 @@
   "fileExplorer.network.share.signInAs": "Iniciar sessão como…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Esquecer senha salva",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} compartilhamento} many {{countText} compartilhamentos} other {{countText} compartilhamentos}}",
   "@fileExplorer.network.share.shareCount": {

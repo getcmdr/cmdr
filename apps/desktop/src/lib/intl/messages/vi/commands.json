@@ -1160,14 +1160,6 @@
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
   },
-  "commands.shareBack.label": "Quay lại danh sách máy chủ",
-  "@commands.shareBack.label": {
-    "sourceHash": "42c44d5"
-  },
-  "commands.shareSelectShare.label": "Kết nối với mục chia sẻ",
-  "@commands.shareSelectShare.label": {
-    "sourceHash": "6c48c8c"
-  },
   "commands.volumeSelect.label": "Chọn ổ đĩa",
   "@commands.volumeSelect.label": {
     "sourceHash": "60f5ce1"

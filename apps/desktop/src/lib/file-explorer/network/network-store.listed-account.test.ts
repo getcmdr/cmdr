@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const { ipc } = vi.hoisted(() => ({
   ipc: {
     listSharesOnHost: vi.fn(),
-    getSmbCredentials: vi.fn(),
   },
 }))
 vi.mock('#lib/tauri-commands/index.js', () => ipc)
@@ -69,6 +68,5 @@ describe('the account a share list signed in as', () => {
     setListedAccount('d', { kind: 'guest' })
     forgetShareListsOfMachine(host('d'))
     expect(getListedAccount('d')).toBeUndefined()
-    expect(ipc.getSmbCredentials).not.toHaveBeenCalled()
   })
 })

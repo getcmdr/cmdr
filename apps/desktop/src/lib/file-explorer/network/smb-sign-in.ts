@@ -207,13 +207,3 @@ export function refusalForMountError(error: MountError): ConnectRefusalKind {
 export function isMountSignInQuestion(error: MountError): boolean {
   return error.type === 'auth_failed' || error.type === 'auth_required' || error.type === 'permission_denied'
 }
-
-/**
- * Whether a LISTING failure is a credential question.
- *
- * ❗ `signing_required` counts: the server wants a signed session, which it only
- * grants an authenticated one, so the fix is the same one the user can offer.
- */
-export function isListingAuthError(error: ShareListError): boolean {
-  return error.type === 'auth_required' || error.type === 'signing_required'
-}

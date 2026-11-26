@@ -10,20 +10,18 @@ import type { NetworkHost, ShareInfo, ShareListResult } from '../types'
 import { ShareListFailure } from './share-list-error'
 import {
   askToList,
+  askToSignInToList,
   forgetPassword,
   isShareListSheetUp,
   listWithAccount,
-  readStoredCredentials,
   runServerAccountAction,
   signInAs,
-  tryStoredCredentials,
   useGuest,
   type ShareListServer,
 } from './share-list-sign-in'
 
 const h = vi.hoisted(() => ({
   listSharesWithCredentials: vi.fn(),
-  getSmbCredentials: vi.fn(),
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
   setSmbAccountPreference: vi.fn(() => Promise.resolve(true)),
   updateKnownShare: vi.fn(() => Promise.resolve()),
@@ -41,7 +39,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
   listSharesWithCredentials: h.listSharesWithCredentials,
-  getSmbCredentials: h.getSmbCredentials,
   saveSmbCredentials: h.saveSmbCredentials,
   setSmbAccountPreference: h.setSmbAccountPreference,
   updateKnownShare: h.updateKnownShare,
@@ -58,6 +55,7 @@ vi.mock('./network-store.svelte', () => ({
   forgetCredentials: h.forgetCredentials,
   getListedAccount: h.getListedAccount,
   guestListingWorked: h.guestListingWorked,
+  getNetworkHosts: () => [host],
 }))
 
 vi.mock('#lib/ui/toast/index.js', () => ({ addToast: h.addToast }))
@@ -114,7 +112,6 @@ beforeEach(() => {
   vi.clearAllMocks()
   h.getListedAccount.mockReturnValue(undefined)
   h.guestListingWorked.mockReturnValue(false)
-  h.getSmbCredentials.mockRejectedValue(new Error('not found'))
   h.openSignInSheet.mockResolvedValue({ kind: 'cancelled' })
 })
 
@@ -203,20 +200,17 @@ describe('askToList: the LISTING needs a sign-in', () => {
       5000,
       30000,
     )
-    expect(outcome).toEqual({ kind: 'listed', result: listed('guest_allowed'), credentials: null })
+    expect(outcome).toEqual({ kind: 'listed', result: listed('guest_allowed') })
   })
 
-  it('answers the listing that closed the sheet, with the account that listed', async () => {
+  it('answers the listing that closed the sheet, and ❗ hands no password back', async () => {
     h.listSharesWithCredentials.mockResolvedValue(listed('creds_required'))
     sheetAnswering({ mode: 'sign-in', secret: { secret: 'hunter2', remember: false }, username: 'test_user_3' })
 
     const outcome = await askToList(server, { refusal: 'needs_credentials', guestAllowed: false })
 
-    expect(outcome).toEqual({
-      kind: 'listed',
-      result: listed('creds_required'),
-      credentials: { username: 'test_user_3', password: 'hunter2' },
-    })
+    // The backend keeps the typed account as the server's session credential.
+    expect(outcome).toEqual({ kind: 'listed', result: listed('creds_required') })
   })
 
   it('closes onto the share list’s own error state for a refusal about the SERVER', async () => {
@@ -261,34 +255,18 @@ describe('listWithAccount: what a listing that worked leaves behind', () => {
   })
 })
 
-describe('the stored password', () => {
-  it('lists with it as a SAVED credential, reading the Keychain once', async () => {
-    h.getSmbCredentials.mockResolvedValue({ username: 'test_user_3', password: 'hunter2' })
-    h.listSharesWithCredentials.mockResolvedValue(listed('creds_required'))
+describe('askToSignInToList: the error screen’s Sign in, and the ask a refused listing raises', () => {
+  it('asks the sheet about the server the share-list path names, with the refusal that asked and no guest', async () => {
+    await askToSignInToList('smb://testnas', { type: 'auth_failed', message: '' })
 
-    const stored = await tryStoredCredentials(server)
-
-    expect(h.getSmbCredentials).toHaveBeenCalledOnce()
-    expect(h.getSmbCredentials).toHaveBeenCalledWith('Testnas', null)
-    expect(stored?.credentials).toEqual({ username: 'test_user_3', password: 'hunter2' })
-    expect(stored?.attempt.kind).toBe('listed')
-    expect(h.listSharesWithCredentials).toHaveBeenCalledWith(
-      'testnas-id',
-      'Testnas.local',
-      '192.168.50.10',
-      445,
-      'test_user_3',
-      'hunter2',
-      'saved',
-      5000,
-      30000,
-    )
+    const request = sheetRequest()
+    expect(request.refusal).toBe('authentication_rejected')
+    expect(request.shape.guestAllowed).toBe(false)
   })
 
-  it('answers null, listing nothing, when none is saved', async () => {
-    expect(await tryStoredCredentials(server)).toBeNull()
-    expect(await readStoredCredentials(server)).toBeNull()
-    expect(h.listSharesWithCredentials).not.toHaveBeenCalled()
+  it('asks nothing for a path that names no server this session knows', async () => {
+    expect(await askToSignInToList('smb://gone-nas', { type: 'auth_required', message: '' })).toBeNull()
+    expect(h.openSignInSheet).not.toHaveBeenCalled()
   })
 })
 
@@ -420,15 +398,5 @@ describe('runServerAccountAction: every door’s one runner', () => {
   it('Forget saved password forgets, with no listing to open', async () => {
     expect(await runServerAccountAction('forget-secret', server)).toEqual({ listed: false })
     expect(h.forgetCredentials).toHaveBeenCalledWith('Testnas')
-  })
-
-  /** ❗ No door reads the Keychain to decide anything: the facts are this session's listings. */
-  it('reads no password for any action', async () => {
-    h.guestListingWorked.mockReturnValue(true)
-    h.listSharesWithCredentials.mockResolvedValue(listed('guest_allowed'))
-    for (const action of ['sign-in-as', 'browse-as-guest', 'forget-secret'] as const) {
-      await runServerAccountAction(action, server)
-    }
-    expect(h.getSmbCredentials).not.toHaveBeenCalled()
   })
 })

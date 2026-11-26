@@ -182,6 +182,22 @@ describe('createListingLoader — error / MTP / cancel handling', () => {
     expect(spies.onPathChange).toHaveBeenCalledWith('/Volumes/testshare/private')
   })
 
+  it.each(['shareListSignIn', 'shareListUnavailable'])(
+    'shows a server’s refused share list ($0) in place, never walking up to the hub, which lists nothing',
+    async (kind) => {
+      const { loader, state } = makeHarness({ volumeId: 'network', volumePath: 'smb://' })
+      h.pathExistsChecked.mockResolvedValue({ data: false, timedOut: false })
+      await loader.loadDirectory({ path: 'smb://testnas' })
+      const reason = { reason: kind, refusal: { type: 'auth_required', message: '' }, server: 'Testnas' }
+      h.listeners.error[0]({ listingId: state.listingId, message: 'refused', error: { reason } })
+      await vi.waitFor(() => {
+        expect(state.error).toBe('refused')
+      })
+      expect(h.pathExistsChecked).not.toHaveBeenCalled()
+      expect(h.resolveValidPath).not.toHaveBeenCalled()
+    },
+  )
+
   it('shows a phone refusal on an MTP pane in place, never as a lost device', async () => {
     // Android refuses some folders (`Android/data`) on purpose; the phone is still there.
     const { loader, state, spies } = makeHarness({ isMtpView: true, volumeId: 'mtp-1:2' })

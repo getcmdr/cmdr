@@ -18,6 +18,8 @@ import { isVolumeEjectable } from '../navigation/eject-predicate'
 import type { VolumeChangePayload } from './types'
 import { displayPath, withoutPicks } from '#lib/utils/display-path.js'
 import { parsePath, shownPath, volumePrefix } from '#lib/path/grammar.js'
+import { isShareListLocation } from '#lib/servers/share-list-path.js'
+import { shareListServerLabel } from '../network/share-list-label'
 
 export interface BreadcrumbDisplayPathInput {
   currentPath: string
@@ -41,11 +43,16 @@ export interface BreadcrumbDisplayPathInput {
  * itself reads the generic "Search results" so the slots map cleanly:
  * volume-kind on the left, query-specific label on the right. Don't invert this
  * (label on the left, no path on the right) — see `lib/search/CLAUDE.md`
- * § "Search-specific UI behavior".
+ * § "Search-specific UI behavior". A server's share list likewise shows the server's
+ * friendly name after "Servers", followed by its account (`ShareListAccountChip`).
  */
 export function breadcrumbDisplayPath(input: BreadcrumbDisplayPathInput): string {
   if (input.isSearchResultsView) {
     return input.searchLabel ?? 'Search'
+  }
+  // A server's share list reads as the server's friendly name, ❌ never the path's host key.
+  if (isShareListLocation(input.volumeId, input.currentPath)) {
+    return shareListServerLabel(input.currentPath) ?? input.currentPath
   }
   const drive = driveOrShareDisplayPath(input.currentPath, input.volumePath)
   if (drive !== null) return drive

@@ -5,7 +5,8 @@
  *
  * The order is the contract:
  * 1. an active inline rename swallows everything (the editor owns the keyboard),
- * 2. the network and search-results views take the whole event,
+ * 2. a share's mount on a server's share list, and the network and search-results
+ *    views, take the whole event,
  * 3. open / parent (Enter, ⌘↓, Backspace, ⌘↑) run above the view-mode split, so
  *    every view gets them,
  * 4. the Selection dialog's bare `+` / `-`,
@@ -30,6 +31,12 @@ import { cancelClickToRename } from '../rename/rename-activation'
 
 export interface PaneKeyRouterDeps {
   getRenameActive: () => boolean
+  /**
+   * A share's mount (its wait, its refusal, or its sign-in sheet) on a server's share list:
+   * answers whether it owns the keyboard right now (`share-mount.svelte.ts`). It claims
+   * `share.back` and leaves every other key dead, ❌ never the hidden list's.
+   */
+  handleShareMountKeyDown: (event: KeyboardEvent) => boolean
   getIsNetworkView: () => boolean
   getIsSearchResultsView: () => boolean
   getViewMode: () => ViewMode
@@ -176,6 +183,9 @@ export function createPaneKeyRouter(deps: PaneKeyRouterDeps): PaneKeyRouter {
 
     // Any keyboard action cancels a pending click-to-rename timer
     cancelClickToRename()
+
+    // A mount running, its refusal, or its sign-in sheet replaced the share list's rows.
+    if (deps.handleShareMountKeyDown(e)) return
 
     if (deps.getIsNetworkView()) {
       deps.handleNetworkKeyDown(e)

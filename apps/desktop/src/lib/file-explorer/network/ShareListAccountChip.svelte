@@ -14,13 +14,21 @@
      * Its menu is a member of the chip's ONE `openMenu` (`VolumeBreadcrumb.svelte`), reported
      * through `onOpenChange`, so `isHeaderMenuOpen()` stays the single answer the panes
      * suppress keys on.
+     *
+     * The same menu is a share ROW's menu on this list (`openRowMenu`: right-click or ⌃⏎ on a
+     * share): Open (mounts it), Copy path, then the server's account items
+     * (`row-menu.ts::shareRowMenu`). Hosted here, ❌ not in FilePane (at its size cap), and
+     * ❌ never the native file menu, whose Copy, Delete, and Reveal are all wrong for a share.
      */
     import { onDestroy } from 'svelte'
     import Menu from '#lib/ui/Menu.svelte'
     import { createMenu } from '#lib/ui/menu-controller.svelte.js'
     import { captureFocusOrigin, restoreFocus, type FocusOrigin } from '#lib/ui/focus-restore.js'
     import { tString } from '#lib/intl/messages.svelte.js'
-    import { accountMenu, rowMenuSections, type ServerRowMenuEntry } from '../navigation/row-menu'
+    import { accountMenu, rowMenuSections, shareRowMenu, type ServerRowMenuEntry } from '../navigation/row-menu'
+    import type { FileEntry } from '../types'
+    import type { MenuAnchor } from '#lib/tauri-commands/index.js'
+    import { getAppLogger } from '#lib/logging/logger.js'
     import { runServerAccountAction, serverAccountFacts } from './share-list-sign-in'
     import { shareListServerOf } from './share-list-label'
     import { signedInAsLabel } from './signed-in-as-label'
@@ -32,9 +40,13 @@
         onListed: () => void
         /** So the chip can keep one header menu open at a time (`VolumeBreadcrumb.noteAccountMenu`). */
         onOpenChange: (change: { open: boolean; close: () => void }) => void
+        /** A share row's Open: the pane mounts the share, as Enter does. */
+        onOpenShare: (entry: FileEntry) => void
     }
 
-    const { path, onListed, onOpenChange }: Props = $props()
+    const { path, onListed, onOpenChange, onOpenShare }: Props = $props()
+
+    const log = getAppLogger('network')
 
     const server = $derived(shareListServerOf(path))
     const facts = $derived(server ? serverAccountFacts(server.host) : null)
@@ -45,12 +57,28 @@
     let button: HTMLButtonElement | undefined = $state()
     let focusBeforeOpen: FocusOrigin | null = null
 
+    /** The share row whose menu is up, or `null` for the account's own. */
+    let row = $state<FileEntry | null>(null)
+    /** Where the last right-click landed, for a row menu the list opens with no anchor of its own. */
+    let pointer: MenuAnchor | null = null
+
     // Read live, so a listing that lands under the open menu moves its items.
     const menu = createMenu<ServerRowMenuEntry>({
-        getSections: () => (server && facts ? rowMenuSections(path, accountMenu(facts), (entry) => entry) : []),
+        getSections: () => {
+            if (!server || !facts) return []
+            return row
+                ? rowMenuSections(row.path, shareRowMenu(facts), (entry) => entry)
+                : rowMenuSections(path, accountMenu(facts), (entry) => entry)
+        },
         onSelect: (item) => {
             const entry = item.data
             const picked = server
+            const share = row
+            if (entry?.type === 'share' && share) {
+                if (entry.share === 'open-share') onOpenShare(share)
+                else void copyPath(share.path)
+                return
+            }
             if (entry?.type !== 'account' || !picked) return
             void runServerAccountAction(entry.account, picked).then(({ listed }) => {
                 if (listed) onListed()
@@ -68,8 +96,40 @@
     function toggle(): void {
         if (!button) return
         if (!menu.isOpen) focusBeforeOpen = captureFocusOrigin()
+        row = null
         menu.toggleUnder(button)
     }
+
+    /**
+     * A share row's menu, at `anchor` (⌃⏎ passes the cursor row's) or where the right-click
+     * landed. `..` has none: it's no share.
+     */
+    export function openRowMenu(entry: FileEntry, anchor: MenuAnchor | null | undefined): void {
+        const at = anchor ?? pointer
+        if (entry.name === '..' || !at) return
+        focusBeforeOpen = captureFocusOrigin()
+        row = entry
+        menu.openAt(at)
+    }
+
+    async function copyPath(text: string): Promise<void> {
+        try {
+            await navigator.clipboard.writeText(text)
+        } catch (error) {
+            log.warn("Couldn't copy the share's path: {error}", { error })
+        }
+    }
+
+    // The list's right-click reaches the pane without its event, so the point is kept here.
+    $effect(() => {
+        const note = (event: MouseEvent) => {
+            pointer = { x: event.clientX, y: event.clientY }
+        }
+        document.addEventListener('contextmenu', note, true)
+        return () => {
+            document.removeEventListener('contextmenu', note, true)
+        }
+    })
 
     onDestroy(() => {
         menu.destroy()

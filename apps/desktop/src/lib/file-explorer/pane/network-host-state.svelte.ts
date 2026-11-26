@@ -1,18 +1,13 @@
 /**
- * The Network host a pane currently has open, plus any share queued to
- * auto-mount on it. Kept on the pane (not inside `NetworkMountView`) because the
- * view re-mounts, and because history navigation tracks the host.
+ * The Network host a pane has open, as history entries still carry it. A server's share
+ * list is a path now (`smb://<server>`), so nothing sets a host here any more: what's left
+ * is the history plumbing that retires with it.
  *
- * Guardrail: leaving the network volume by ANY route clears both, so re-entering
- * Network always lands on the host list. Clearing only on `PlacesBrowser`'s Back
- * button (the obvious place) misses volume switches from the picker, the
- * breadcrumb, history navigation, and MCP, which leaves `NetworkMountView`
- * re-mounting with a stale `initialNetworkHost` and the user staring at the
- * previous host's share list. See `file-explorer/network/CLAUDE.md`.
+ * Guardrail: leaving the network volume by ANY route clears it, so re-entering Network
+ * always lands on the host list.
  */
 
 import type { NetworkHost } from '../types'
-import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
 export interface NetworkHostStateDeps {
   getIsNetworkView: () => boolean
@@ -21,45 +16,25 @@ export interface NetworkHostStateDeps {
 }
 
 export interface NetworkHostState {
-  /** The host whose shares the pane is showing, or null for the host list. */
+  /** The host the pane's history entry names, or null for the host list. */
   readonly host: NetworkHost | null
-  /**
-   * A share to mount as soon as the share browser is ready, or undefined. ❗ A
-   * one-shot: `NetworkMountView` hands it back through `onAutoMountConsumed`
-   * the moment the visit it was queued with ends.
-   */
-  readonly autoMountShare: string | undefined
   /** Set the host without bubbling (the pane API's `setNetworkHost`). */
   setHost: (host: NetworkHost | null) => void
-  /** The view reports a host change: remember it AND bubble it. */
+  /** Remember a host change AND bubble it. */
   handleHostChange: (host: NetworkHost | null) => void
-  setAutoMountShare: (shareName: string | undefined) => void
-  /**
-   * The share `..` came out of on the way here (#1238), for the share list's cursor and the
-   * one-time explainer. A one-shot like `autoMountShare`, and cleared the same way.
-   */
-  readonly shareLanding: ShareParentLanding | undefined
-  setShareLanding: (landing: ShareParentLanding | undefined) => void
 }
 
 export function createNetworkHostState(deps: NetworkHostStateDeps): NetworkHostState {
   let host = $state<NetworkHost | null>(null)
-  let autoMountShare = $state<string | undefined>(undefined)
-  let shareLanding = $state<ShareParentLanding | undefined>(undefined)
 
   $effect(() => {
     if (deps.getIsNetworkView()) return
     if (host !== null) host = null
-    if (autoMountShare !== undefined) autoMountShare = undefined
-    if (shareLanding !== undefined) shareLanding = undefined
   })
 
   return {
     get host() {
       return host
-    },
-    get autoMountShare() {
-      return autoMountShare
     },
     setHost: (next) => {
       host = next
@@ -67,15 +42,6 @@ export function createNetworkHostState(deps: NetworkHostStateDeps): NetworkHostS
     handleHostChange: (next) => {
       host = next
       deps.onHostChange(next)
-    },
-    setAutoMountShare: (shareName) => {
-      autoMountShare = shareName
-    },
-    get shareLanding() {
-      return shareLanding
-    },
-    setShareLanding: (landing) => {
-      shareLanding = landing
     },
   }
 }

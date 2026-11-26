@@ -62,12 +62,14 @@ export function getNameColumnText(name: string, kind: NameKind, showExtensionInN
 }
 
 /**
- * What the Ext cell renders for one row: the extension, except on a restic
- * snapshot row, a folder whose Ext cell would be empty, where it names the
- * machine the backup ran on. The renderer and the measurer both call this.
+ * What the Ext cell renders for one row: the extension, except on two folders
+ * whose Ext cell would be empty: a restic snapshot row names the machine the
+ * backup ran on, and a server's share row carries the server's description of
+ * the share. The renderer and the measurer both call this.
  */
 export function extCellText(entry: FileEntry): string {
   if (entry.resticMeta != null) return entry.resticMeta.hostname
+  if (entry.shareMeta != null) return entry.shareMeta.description ?? ''
   return getDisplayExtension(entry.name, nameKindOf(entry))
 }
 

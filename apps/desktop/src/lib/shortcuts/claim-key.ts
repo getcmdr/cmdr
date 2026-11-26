@@ -19,8 +19,8 @@
  *
  * What it has cost, each found by someone tripping over it: ⌘R in `ServersHub`
  * re-read every host's shares twice; Enter in the file pane opened a file twice (two
- * browser tabs for a Google Drive file); Enter in `ServersHub` and `PlacesBrowser`
- * opened a host and mounted a share twice; PageDown moved two pages instead of one.
+ * browser tabs for a Google Drive file); Enter in `ServersHub` opened a host and
+ * mounted a share twice; PageDown moved two pages instead of one.
  *
  * Enforced by `cmdr/claim-acted-key`.
  */

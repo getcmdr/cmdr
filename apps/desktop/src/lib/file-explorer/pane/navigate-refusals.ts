@@ -42,15 +42,16 @@ export const PANE_UNAVAILABLE_REFUSAL: NavigateRefusal = { kind: 'pane-unavailab
 export const NETWORK_VOLUME_PATH = 'smb://'
 
 /**
- * `resolve_location` maps EVERY `smb://` path to the virtual `network` volume, whose
- * state is a host and a share list rather than a path, so only the `smb://` sentinel
- * above is navigable. Anything longer used to commit the switch and report success
- * while the pane sat on the host list, which is a worse answer than saying so.
+ * `resolve_location` maps EVERY `smb://` path to the virtual `network` volume, where the
+ * hub (`smb://`) and a server's share list (`smb://<server>`) are places and a share
+ * (`smb://<server>/<share>`) is not: it's mounted, as its own volume. A share's path used
+ * to commit the switch and report success while the pane sat on the host list, which is
+ * a worse answer than saying so.
  */
 export const SMB_PATH_REFUSAL: NavigateRefusal = {
   kind: 'smb-path-unsupported',
   message:
-    "nav_to_path doesn't take smb:// paths. A mounted share is its own volume, so use select_volume with the name from cmdr://state volumes; for a share that isn't mounted, use select_volume Network and open the host.",
+    "nav_to_path doesn't take a share's smb:// path. A mounted share is its own volume, so use select_volume with the name from cmdr://state volumes; for a share that isn't mounted, nav_to_path its server (smb://<server>) and open the share.",
 }
 
 /**
@@ -59,10 +60,9 @@ export const SMB_PATH_REFUSAL: NavigateRefusal = {
  * the pane routing's `isShareListLocation`) are places a pane can go, and a share
  * (`smb://<server>/<share>`) keeps {@link SMB_PATH_REFUSAL}: a share is mounted, ❌ never
  * navigated to. `null` for a path off the `smb://` namespace, which this doesn't judge.
- *
- * ❗ Not yet wired into `navigateToLocation` / `navigateInPlace` / MCP `nav_to_path`:
- * both refusals stand until every entry point opens a share list as a listing (whose
- * Enter mounts and whose sign-in refusal has a button), in the same change.
+ * `navigateToLocation` asks it (so go-to-path, a link, and MCP `nav_to_path` reach a
+ * share list, and a share still refuses), and `navigateInPlace` lets a share list through
+ * on the `network` volume while refusing anything else there.
  */
 export function shareListNavigationRefusal(path: string): NavigateRefusal | null {
   if (!path.startsWith(NETWORK_VOLUME_PATH)) return null

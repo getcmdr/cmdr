@@ -262,6 +262,9 @@ function seedCustomShortcut(commandId: string, shortcuts: unknown): void {
   // the map without an entry, so the registry default applies, and
   // `writeBackHealedEntries` deletes the stale disk key.
   if (isNativeShortcutCommand(commandId) || isFixedKeyCommand(commandId)) return
+  // A command that retired since (`share.selectShare`) has nothing to bind: dropped, and
+  // `writeBackHealedEntries` deletes its disk key, the same way.
+  if (!commandById.has(commandId)) return
   if (!Array.isArray(shortcuts)) return // skip non-array garbage
 
   // Heal leaked empty-string entries. A `''` is never a real shortcut; it's

@@ -252,6 +252,17 @@ describe('shortcuts-store persistence round-trips', () => {
     expect(store.getEffectiveShortcuts('app.about')).toEqual(getDefaultShortcuts('app.about'))
     expect(store.isShortcutModified('app.about')).toBe(false)
   })
+
+  it('drops a customization for a command that no longer exists, and deletes it from disk', async () => {
+    // `share.selectShare` retired when a server's share list became a listing (Enter opens a row).
+    disk.set('shortcut:share.selectShare', ['⌘O'])
+
+    const store = await loadStore()
+    await store.initializeShortcuts()
+
+    expect(store.isShortcutModified('share.selectShare')).toBe(false)
+    expect(disk.has('shortcut:share.selectShare')).toBe(false)
+  })
 })
 
 describe('shortcuts-store cross-window propagation', () => {

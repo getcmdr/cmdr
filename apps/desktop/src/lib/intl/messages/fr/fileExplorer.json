@@ -386,14 +386,6 @@
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"
   },
-  "fileExplorer.network.back": "Retour",
-  "@fileExplorer.network.back": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.retry": "Réessayer",
-  "@fileExplorer.network.retry": {
-    "sourceHash": "942087c"
-  },
   "fileExplorer.network.signIn": "S’identifier",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -542,10 +534,6 @@
   "@fileExplorer.network.share.notFound": {
     "sourceHash": "afdd472"
   },
-  "fileExplorer.network.share.connecting": "Connexion à {hostName}…",
-  "@fileExplorer.network.share.connecting": {
-    "sourceHash": "fe38aec"
-  },
   "fileExplorer.network.share.connectFailedTitle": "Impossible de se connecter à {hostName}",
   "@fileExplorer.network.share.connectFailedTitle": {
     "sourceHash": "4c3d88d"
@@ -562,22 +550,6 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
-  "fileExplorer.network.share.noSharesTitle": "Aucun partage disponible",
-  "@fileExplorer.network.share.noSharesTitle": {
-    "sourceHash": "56890aa"
-  },
-  "fileExplorer.network.share.noSharesMessage": "Cet hôte n’a aucun partage accessible, ou une authentification est nécessaire.",
-  "@fileExplorer.network.share.noSharesMessage": {
-    "sourceHash": "6633416"
-  },
-  "fileExplorer.network.share.backArrow": "Retour",
-  "@fileExplorer.network.share.backArrow": {
-    "sourceHash": "76900f1"
-  },
-  "fileExplorer.network.share.forgetPasswordTooltip": "{platform, select, macos {Retirer le mot de passe enregistré du trousseau} windows {Retirer le mot de passe enregistré du Gestionnaire d’identification} linuxKde {Retirer le mot de passe enregistré du portefeuille KDE} other {Retirer le mot de passe enregistré de votre trousseau de clés}}",
-  "@fileExplorer.network.share.forgetPasswordTooltip": {
-    "sourceHash": "ed20dcd"
-  },
   "fileExplorer.network.share.useGuest": "Parcourir en tant qu’invité",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -585,10 +557,6 @@
   "fileExplorer.network.share.signInAs": "S’identifier en tant que…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
-  },
-  "fileExplorer.network.share.forgetPassword": "Oublier le mot de passe enregistré",
-  "@fileExplorer.network.share.forgetPassword": {
-    "sourceHash": "ed68566"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} partage} many {{countText} partages} other {{countText} partages}}",
   "@fileExplorer.network.share.shareCount": {

@@ -19,9 +19,10 @@ All under `apps/desktop/src/lib/`.
 - `file-explorer/selection/`: Space/Shift/Cmd selection, range operations
 - `file-explorer/navigation/`: Back/forward history, breadcrumb, path utilities
 - `file-explorer/network/`: the servers hub (`ServersHub.svelte`: every saved and nearby server, with its merge, order,
-  and MCP encoding in `servers-hub-*.ts`), the places under one account (`PlacesBrowser.svelte`, its sign-in in
-  `share-list-sign-in.ts`; mounting one is `pane/share-mount.svelte.ts`), SMB's side of the sign-in sheet
-  (`smb-sign-in.ts`), the "Connect directly" upgrade, the per-volume reconnect cycle, and the mDNS discovery store
+  and MCP encoding in `servers-hub-*.ts`), a server's share list (a file listing at `smb://<server>`, the pane's side
+  `pane/share-list-pane.svelte.ts`, its sign-in `share-list-sign-in.ts`, mounting a share `pane/share-mount.svelte.ts`),
+  SMB's side of the sign-in sheet (`smb-sign-in.ts`), the "Connect directly" upgrade, the per-volume reconnect cycle,
+  and the mDNS discovery store
 - `security-notices/`: the toast that tells the person Cmdr turned an access attempt away (a web page at the MCP server,
   a refused server reply, an update that isn't genuine), one per source, quiet once closed. See
   `apps/desktop/src/lib/security-notices/CLAUDE.md`

@@ -31,9 +31,9 @@ import {
   setShareState,
 } from './network-store.svelte'
 import { renderShareListError } from './share-list-error-messages'
+import { shareListServerOf } from './share-list-label'
 import type { ServerAccountAction, ServerAccountFacts } from '../navigation/row-menu'
 import {
-  getSmbCredentials,
   isUsingCredentialFileFallback,
   listSharesWithCredentials,
   saveSmbCredentials,
@@ -55,16 +55,13 @@ export interface ShareListServer {
   label: string
 }
 
-/** An account that listed the server, kept for the mount that follows (an empty password is valid SMB). */
-export interface ShareListCredentials {
-  username: string
-  password: string
-}
-
 /** What one listing round with an account (or as guest) came to. */
 export type ShareListAttempt =
-  /** It listed. `credentials` is the account it listed as, `null` for guest. */
-  | { kind: 'listed'; result: ShareListResult; credentials: ShareListCredentials | null }
+  /**
+   * It listed. ❗ No password rides back: the backend keeps the account as the server's
+   * session credential, which the share list's re-list and a mount sign in with.
+   */
+  | { kind: 'listed'; result: ShareListResult }
   /** The server turned the CREDENTIAL away: the sheet stays up for another try. */
   | { kind: 'refused'; refusal: 'authentication_rejected' | 'needs_credentials' }
   /** Anything about the SERVER: the share list's own error state words it, with its retry. */
@@ -135,11 +132,7 @@ export async function listWithAccount(
       result.authMode === 'guest_allowed' ? 'guest_or_credentials' : 'credentials_only',
       username,
     )
-    return {
-      kind: 'listed',
-      result,
-      credentials: username !== null ? { username, password: password ?? '' } : null,
-    }
+    return { kind: 'listed', result }
   } catch (e) {
     const error = shareListErrorOf(e)
     if (error.type === 'auth_failed') setCredentialStatus(host.name, 'failed')
@@ -147,39 +140,6 @@ export async function listWithAccount(
     if (refusal === 'authentication_rejected' || refusal === 'needs_credentials') return { kind: 'refused', refusal }
     return { kind: 'failed', error }
   }
-}
-
-/**
- * Cmdr's stored password for the server, or `null` when none is saved.
- *
- * ❗ ONE Keychain read, ❌ never preceded by a "has one?" check: each access can raise a
- * system prompt, and asking whether one exists costs the same prompt as reading it.
- */
-export async function readStoredCredentials(server: ShareListServer): Promise<ShareListCredentials | null> {
-  try {
-    const creds = await getSmbCredentials(server.host.name, null)
-    return { username: creds.username, password: creds.password }
-  } catch {
-    return null
-  }
-}
-
-/**
- * The silent rung before the sheet: list with the stored password, if one is saved.
- * Answers `null` when nothing is stored; otherwise the credentials it read (the mount
- * reuses them whatever the listing said) and what the listing came to.
- */
-export async function tryStoredCredentials(
-  server: ShareListServer,
-): Promise<{ credentials: ShareListCredentials; attempt: ShareListAttempt } | null> {
-  const credentials = await readStoredCredentials(server)
-  if (!credentials) return null
-  const attempt = await listWithAccount(
-    server,
-    { username: credentials.username, password: credentials.password, remember: false },
-    'saved',
-  )
-  return { credentials, attempt }
 }
 
 /** Whether a listing's sign-in sheet is up (`sheetRound`), so a list stops offering rows behind it. */
@@ -232,6 +192,20 @@ export async function askToList(
   options: { refusal: ConnectRefusalKind; guestAllowed: boolean },
 ): Promise<ShareListSheetOutcome | null> {
   return await sheetRound(server, options)
+}
+
+/**
+ * The sign-in a server's share list asks for when its listing came back refused (the
+ * error screen's Sign in, and the ask a listing the person started raises on its own):
+ * the sheet, opening with the refusal that asked. `path` is the share list's, which names
+ * the server. No guest choice: the listing already tried guest where it could
+ * (`network/share_list_sign_in.rs`), and that's what came back refused. `null` when the
+ * path names no server this session knows, or another round's sheet is up.
+ */
+export async function askToSignInToList(path: string, refusal: ShareListError): Promise<ShareListSheetOutcome | null> {
+  const server = shareListServerOf(path)
+  if (!server) return null
+  return await askToList(server, { refusal: refusalForShareError(refusal), guestAllowed: false })
 }
 
 /**

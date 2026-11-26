@@ -53,37 +53,17 @@ describe('createNetworkHostState', () => {
     expect(created.state.host).toStrictEqual(host)
   })
 
-  it('queues a share to auto-mount', () => {
-    const { state } = create()
-    state.setAutoMountShare('media')
-    flushSync()
-    expect(state.autoMountShare).toBe('media')
-  })
-
-  it('clears both when the pane leaves the network volume', () => {
+  it('clears the host when the pane leaves the network volume', () => {
     const created = create()
     created.state.setHost(host)
-    created.state.setAutoMountShare('media')
     flushSync()
 
     created.leaveNetwork()
     expect(created.state.host).toBeNull()
-    expect(created.state.autoMountShare).toBeUndefined()
-  })
-
-  it('drops the share `..` came out of when the pane leaves the network volume', () => {
-    const created = create()
-    created.state.setShareLanding({ volumeId: 'smb-1', hostId: 'nas', shareName: 'media', serverLabel: 'Testnas' })
-    flushSync()
-    expect(created.state.shareLanding?.shareName).toBe('media')
-
-    created.leaveNetwork()
-    expect(created.state.shareLanding).toBeUndefined()
   })
 
   it('starts clean on a pane that was never on the network volume', () => {
     const { state } = create(false)
     expect(state.host).toBeNull()
-    expect(state.autoMountShare).toBeUndefined()
   })
 })

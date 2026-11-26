@@ -6,6 +6,7 @@ import type {
   GitEntryMeta,
   ListingErrorReason,
   ResticSnapshotMeta,
+  ShareListError,
   ShareMeta,
   TagRef,
 } from '#lib/ipc/bindings.js'
@@ -199,6 +200,9 @@ export interface FriendlyError {
   /** Set on a folder behind a link to another server nobody allowed: the pair the error
    *  screen's button asks about. */
   linkConsent?: { server: string; target: string }
+  /** Set on a server's share list the server refused: what it answered, which the
+   *  error screen's Sign in asks about and a `missing_dependency` shows the install of. */
+  shareListRefusal?: ShareListError
 }
 
 /**

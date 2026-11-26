@@ -5157,12 +5157,6 @@ export const commands = {
   saveSmbCredentials: (server: string, share: string | null, username: string, password: string) =>
     typedError<null, KeychainError>(__TAURI_INVOKE('save_smb_credentials', { server, share, username, password })),
   /**
-   *  Retrieves SMB credentials from the Keychain.
-   *  Returns the stored username and password if found.
-   */
-  getSmbCredentials: (server: string, share: string | null) =>
-    typedError<SmbCredentials, KeychainError>(__TAURI_INVOKE('get_smb_credentials', { server, share })),
-  /**
    *  Whether a server-level password was already read this session, from the
    *  in-memory cache only. ❗ Never touches the Keychain (`keychain::has_cached_credentials`):
    *  the share list uses it to offer "Forget saved password" without costing a prompt.
@@ -13650,7 +13644,7 @@ export type ListingCompleteEvent = {
   shareParent: ShareParent | null
   /**
    *  Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
-   *  for the pane's "as <account>"; `None` for every other listing, and for a share list
+   *  for the pane's "as `<account>`"; `None` for every other listing, and for a share list
    *  answered from the cache, which doesn't say. Memory only, read on the way out.
    */
   shareListAccount: ShareListAccount | null
@@ -21766,7 +21760,7 @@ export type ShareLinkExpiry =
   // Seven days: the default, and the longest a SigV4 signature may live.
   | 'sevenDays'
 
-// The account a share list was listed as, for the pane's "as <account>".
+// The account a share list was listed as, for the pane's "as `<account>`".
 export type ShareListAccount =
   // An anonymous session.
   | { kind: 'guest' }
@@ -21843,7 +21837,7 @@ export type ShareListError =
       message: string
     }
   /**
-   *  Cmdr requires encryption ([`crate::SmbEncryption`]) and this connection can't have it:
+   *  Cmdr requires encryption (`SmbEncryption`, in `cmdr-smb`) and this connection can't have it:
    *  the server agreed on no cipher, or it answered with a guest session, which has no keys.
    *  ❌ Never a fallback to another client: the CLI fallback ignores the requirement.
    */
@@ -22234,14 +22228,6 @@ export type SlowOperation =
 
 // Which side a stalled transfer is waiting on, from the backend's own classification.
 export type SlowWaitingOn = 'destination' | 'source' | 'unknown'
-
-// Credentials for SMB authentication.
-export type SmbCredentials = {
-  // Username for authentication
-  username: string
-  // Password for authentication
-  password: string
-}
 
 export type SmbDiagnosticsDto = {
   client: ClientInfoDto

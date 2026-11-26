@@ -19,9 +19,11 @@
     interface Props {
         /** Hidden items the pane hides while it shows no rows (zero for a truly empty folder). */
         hiddenCount: number
+        /** What the pane's kind says in place of "Empty folder" (`ListWords.emptyText`). */
+        emptyText?: string
     }
 
-    const { hiddenCount }: Props = $props()
+    const { hiddenCount, emptyText }: Props = $props()
 
     const shortcutBound = $derived(commandHasShortcut('view.showHidden'))
 </script>
@@ -31,7 +33,7 @@
 
 <div class="empty-folder-state">
     {#if hiddenCount <= 0}
-        <p>{tString('fileExplorer.list.empty')}</p>
+        <p>{emptyText ?? tString('fileExplorer.list.empty')}</p>
     {:else}
         <p>{hiddenItemsText(hiddenCount)}</p>
         {#if shortcutBound}

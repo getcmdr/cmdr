@@ -326,7 +326,6 @@ export const COMMAND_IDS = [
 
   // Share browser
   'share.back',
-  'share.selectShare',
 
   // Servers: the hub and the actions on one saved server. Each acts on the
   // hub's cursor row when the focused pane is the hub, and on the focused

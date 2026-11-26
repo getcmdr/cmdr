@@ -52,6 +52,10 @@ export function renderListingError(error: ListingError): FriendlyError {
       error.reason.reason === 'linkNeedsConsent'
         ? { server: error.reason.server, target: error.reason.target }
         : undefined,
+    shareListRefusal:
+      error.reason.reason === 'shareListSignIn' || error.reason.reason === 'shareListUnavailable'
+        ? error.reason.refusal
+        : undefined,
   }
 }
 

@@ -13,7 +13,6 @@ import type {
   ShareParent as ShareParentWire,
   SignInShape,
   SignedInReply,
-  SmbCredentials,
   SmbFellBackToOsMount,
   SmbLinkConsent,
   SmbOsMountNoticeWithdrawn,
@@ -285,19 +284,6 @@ export async function saveSmbCredentials(
 /** Returns whether credential storage is using an encrypted file fallback instead of the system keyring. */
 export async function isUsingCredentialFileFallback(): Promise<boolean> {
   return commands.isUsingCredentialFileFallback()
-}
-
-/**
- * Retrieves SMB credentials from the Keychain.
- * @param server Server hostname or IP
- * @param share Optional share name (null for server-level credentials)
- * @returns Stored credentials if found
- * @throws KeychainError if credentials not found or access denied
- */
-export async function getSmbCredentials(server: string, share: string | null): Promise<SmbCredentials> {
-  const res = await commands.getSmbCredentials(server, share)
-  if (res.status === 'error') throwIpcError(res.error)
-  return res.data
 }
 
 /**

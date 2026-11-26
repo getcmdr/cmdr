@@ -1,6 +1,8 @@
 /**
  * The share list's account in the path bar: "as testuser" as a button whose menu holds the
- * server's account items, run by the one runner every door shares. ❗ It reads no password.
+ * server's account items, run by the one runner every door shares; and the same menu as a
+ * share row's (Open, Copy path, the account items). ❗ No password crosses into it: the
+ * frontend has no Keychain read at all.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, unmount, flushSync, tick } from 'svelte'
@@ -10,29 +12,24 @@ interface Hoisted {
   listedAccount: { kind: 'user'; username: string } | { kind: 'guest' } | undefined
   guestListingWorked: boolean
   runServerAccountAction: (action: string, server: unknown) => Promise<{ listed: boolean }>
-  getSmbCredentials: () => Promise<never>
 }
 
-const h = vi.hoisted(
-  (): Hoisted & { runServerAccountAction: ReturnType<typeof vi.fn>; getSmbCredentials: ReturnType<typeof vi.fn> } => ({
-    hosts: [],
-    listedAccount: undefined,
-    guestListingWorked: false,
-    runServerAccountAction: vi.fn((_action: string, _server: unknown) => Promise.resolve({ listed: false })),
-    getSmbCredentials: vi.fn(() => Promise.reject(new Error('never read here'))),
-  }),
-)
+const h = vi.hoisted((): Hoisted & { runServerAccountAction: ReturnType<typeof vi.fn> } => ({
+  hosts: [],
+  listedAccount: undefined,
+  guestListingWorked: false,
+  runServerAccountAction: vi.fn((_action: string, _server: unknown) => Promise.resolve({ listed: false })),
+}))
 
 vi.mock('./network-store.svelte', () => ({ getNetworkHosts: () => h.hosts }))
 vi.mock('./share-list-sign-in', () => ({
   runServerAccountAction: (action: string, server: unknown) => h.runServerAccountAction(action, server),
   serverAccountFacts: () => ({ listedAccount: h.listedAccount, guestListingWorked: h.guestListingWorked }),
 }))
-vi.mock('#lib/tauri-commands/index.js', () => ({ getSmbCredentials: h.getSmbCredentials }))
 
 import ShareListAccountChip from './ShareListAccountChip.svelte'
 import { shareListPath } from '#lib/servers/share-list-path.js'
-import type { NetworkHost } from '../types'
+import type { FileEntry, NetworkHost } from '../types'
 
 const nas: NetworkHost = {
   id: 'testnas-id',
@@ -46,10 +43,34 @@ let target: HTMLElement
 let instance: ReturnType<typeof mount> | null = null
 const onListed = vi.fn()
 const onOpenChange = vi.fn((_change: { open: boolean; close: () => void }) => {})
+const onOpenShare = vi.fn((_entry: FileEntry) => {})
 
-function render(path = shareListPath(nas)): void {
-  instance = mount(ShareListAccountChip, { target, props: { path, onListed, onOpenChange } })
+interface ChipApi {
+  openRowMenu: (entry: FileEntry, anchor: { x: number; y: number } | null | undefined) => void
+}
+
+function render(path = shareListPath(nas)): ChipApi {
+  instance = mount(ShareListAccountChip, { target, props: { path, onListed, onOpenChange, onOpenShare } })
   flushSync()
+  return instance as unknown as ChipApi
+}
+
+const publicShare: FileEntry = {
+  name: 'public',
+  path: 'smb://testnas/public',
+  isDirectory: true,
+  isSymlink: false,
+  permissions: 0,
+  owner: '',
+  group: '',
+  iconId: 'dir',
+  shareMeta: { description: null },
+}
+
+function menuRow(label: string): HTMLElement | undefined {
+  return [...document.querySelectorAll<HTMLElement>('[data-menu] [data-menu-row]')].find(
+    (el) => el.textContent.trim() === label,
+  )
 }
 
 function button(): HTMLButtonElement | null {
@@ -109,8 +130,6 @@ describe('ShareListAccountChip', () => {
     expect(menuLabels()).toEqual(['Sign in as…', 'Browse as guest', 'Forget saved password'])
     expect(onOpenChange).toHaveBeenCalledWith(expect.objectContaining({ open: true }))
     expect(button()?.getAttribute('aria-expanded')).toBe('true')
-    // ❗ No password read to decide any of it.
-    expect(h.getSmbCredentials).not.toHaveBeenCalled()
   })
 
   it('runs a pick through the one runner, and re-lists the pane once it listed', async () => {
@@ -126,5 +145,34 @@ describe('ShareListAccountChip', () => {
       expect(onListed).toHaveBeenCalledOnce()
     })
     expect(h.runServerAccountAction).toHaveBeenCalledExactlyOnceWith('sign-in-as', { host: nas, label: 'Testnas' })
+  })
+
+  it('opens a share row’s menu at the key’s anchor: Open, Copy path, then the account items', async () => {
+    const chip = render()
+    chip.openRowMenu(publicShare, { x: 40, y: 80 })
+    await vi.waitFor(() => {
+      expect(document.querySelector('[data-menu]')).not.toBeNull()
+    })
+    expect(menuLabels()).toEqual(['Open', 'Copy path', 'Sign in as…', 'Forget saved password'])
+    expect(onOpenChange).toHaveBeenCalledWith(expect.objectContaining({ open: true }))
+  })
+
+  it('opens a right-click’s row menu where the click landed, and Open mounts that share', async () => {
+    const chip = render()
+    document.dispatchEvent(new MouseEvent('contextmenu', { clientX: 12, clientY: 34, bubbles: true }))
+    chip.openRowMenu(publicShare, undefined)
+    await vi.waitFor(() => {
+      expect(menuRow('Open')).toBeTruthy()
+    })
+    menuRow('Open')?.click()
+    await tick()
+    expect(onOpenShare).toHaveBeenCalledWith(publicShare)
+  })
+
+  it('has no menu for `..`, which is no share', async () => {
+    const chip = render()
+    chip.openRowMenu({ ...publicShare, name: '..', path: 'smb://' }, { x: 1, y: 1 })
+    await tick()
+    expect(document.querySelector('[data-menu]')).toBeNull()
   })
 })
