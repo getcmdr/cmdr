@@ -321,6 +321,16 @@ A milestone that touches a flow keeps its pin green; M7 walks this list.
 
 ## Decisions (David)
 
+**Decided (David, 2026-11-26):** 1 (a) AND (b): F7 / palette / empty-list words, plus a last "+ Add server…" row (the
+views get one generic trailing action row through a per-kind seam, never an `if server`; it stays last under any sort,
+and filter/type-to-jump skip it). 2 (a). 3 (a). 4 (a). 5 (b). 6 (a). 7 (a), UNLESS reading a server's shares is slow
+enough to feel: measure a typical share-list read (fixtures plus the timings the dev log records for real servers); if a
+saved server's list takes long enough that opening it visibly waits, keep a prefetch for SAVED servers only, under the
+existing #324 gates, and record the numbers. 8 (a). 9 accept. 10 (a). Also in scope: ⌘R must refresh a share list (David
+saw nothing happen; Servers already refreshes), and getcmdr/cmdr#1518 (share identity must not treat a Samba server GUID
+as proof of one machine; it's derived from the NetBIOS name). The stacked-folders share icon and the filled monitor
+server icon are approved.
+
 1. **Where "+ Add server…" lives.** (a) F7 on the Servers list (the F-key bar reads "F7 Add server", since F7 means "new
    item here" everywhere), plus ⌘K from anywhere (exists), plus the empty list saying "Press F7 to add a server"; (b)
    keep a last pseudo-row (sort, filter, and type-to-jump would move or hide it, so the views need a special row); (c) a
