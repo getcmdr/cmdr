@@ -425,6 +425,11 @@ as proof of one machine; it's derived from the NetBIOS name). The stacked-folder
 server icon are approved. Where each answer lands: 1 → branch 13, M7, M8; 7 → M1 measures, M8 acts; ⌘R and #1518 → M2,
 with two follow-up questions in § "Questions".
 
+**Decided (David, 2026-11-26, after M4): a server saved by IP merges with the discovered host at exactly that address
+and port** (one row, the discovered name, for example "Naspolya" at `192.168.1.111`; the Tailscale address stays its own
+row). Plain address-and-port equality, ❌ never a GUID. The in-pane sign-in state stays (David weighed removing it and
+kept it).
+
 **Decision 7 resolved (lead, 2026-11-26, after the measurement): stop the prefetch, (a).** Saved servers read in p90 643
 ms (Pi by name) and 517 ms (NAS by LAN IP), under the 800 ms loading-view delay. The one slow server (a Pi by IP, p90
 1,422 ms) is slow only because guests are refused and the read falls back to `smbutil` plus a Keychain read; a
