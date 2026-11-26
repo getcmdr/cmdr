@@ -290,6 +290,8 @@
     let loading = $state(true)
     let error = $state<string | null>(null)
     let friendlyError = $state<FriendlyError | null>(null)
+    /** The volume `friendlyError` came from: `live-retry.svelte.ts` retries only that volume's. */
+    let friendlyErrorVolumeId = $state<string | null>(null)
     /** The sign-in the error screen's button is asking about, while its dialog is up. */
     let linkConsentPair = $state<{ server: string; target: string } | null>(null)
 
@@ -425,6 +427,8 @@
         },
         setFriendlyError: (value) => {
             friendlyError = value
+            // A late error of a superseded load never lands here (the loader drops it), so this is the load's volume.
+            friendlyErrorVolumeId = value ? volumeId : null
         },
         setOpeningFolder: (value) => {
             openingFolder = value
@@ -779,7 +783,7 @@
     // A listing that failed lists again the moment its volume is live, by any route (`live-retry.svelte.ts`).
     createLiveRetry({
         getVolumeInfo: () => currentVolumeInfo,
-        hasListingError: () => friendlyError !== null,
+        getListingErrorVolumeId: () => (friendlyError !== null ? friendlyErrorVolumeId : null),
         retry: () => void navigateToPath(currentPath),
     })
 

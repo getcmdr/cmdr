@@ -18,6 +18,10 @@
  * SMB encryption" the mount itself can be refused (#966), and the direct, encrypted
  * session is what can serve the folder the refusal blocked, so the pane heals the
  * moment it's up instead of waiting for a click.
+ *
+ * ❗ Only an error the pane's OWN volume gave counts. Back from a share list's sign-in
+ * screen onto a live share switched the volume while the share list's error still
+ * showed, and the retry listed `smb://<server>/` on the share's volume (QA 2026-11-26).
  */
 
 import type { VolumeInfo } from '../types'
@@ -26,8 +30,8 @@ import { isLiveSession } from '../navigation/connection-state'
 export interface LiveRetryDeps {
   /** The pane's volume as the volume list has it now. */
   getVolumeInfo: () => VolumeInfo | null
-  /** Whether the pane shows a listing error. */
-  hasListingError: () => boolean
+  /** The volume the listing error the pane shows came from, or `null` with none showing. */
+  getListingErrorVolumeId: () => string | null
   /** Lists the pane's folder again. */
   retry: () => void
 }
@@ -42,7 +46,9 @@ export function createLiveRetry(deps: LiveRetryDeps): void {
       retriedIn = null
       return
     }
-    if (!deps.hasListingError()) return
+    // ❗ Only an error from THIS volume: a pane switching onto a live volume still shows
+    // the last one's error for a moment, and retrying then listed that volume's path here.
+    if (deps.getListingErrorVolumeId() !== info.id) return
     const spell = `${info.id}:${info.path}:${info.connectionState ?? ''}`
     if (retriedIn === spell) return
     retriedIn = spell

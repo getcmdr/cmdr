@@ -25,11 +25,13 @@ describe('createLiveRetry', () => {
   let dispose: (() => void) | undefined
   let info = $state<VolumeInfo | null>(null)
   let failed = $state(false)
+  /** The volume the failed listing was on: the share's unless a test says otherwise. */
+  let failedOn = $state(share(null).id)
 
   function create() {
     const retry = vi.fn()
     dispose = $effect.root(() => {
-      createLiveRetry({ getVolumeInfo: () => info, hasListingError: () => failed, retry })
+      createLiveRetry({ getVolumeInfo: () => info, getListingErrorVolumeId: () => (failed ? failedOn : null), retry })
     })
     flushSync()
     return retry
@@ -38,6 +40,21 @@ describe('createLiveRetry', () => {
   afterEach(() => {
     dispose?.()
     dispose = undefined
+    failedOn = share(null).id
+  })
+
+  // Regression (QA 2026-11-26): Back from a share list's sign-in screen onto a live share
+  // listed the share list's `smb://` path on the SHARE's volume, before the pane's own
+  // load of the share corrected it. The error was the share list's, not the share's.
+  it('leaves an error from another volume alone when the pane switches onto a live one', () => {
+    info = null
+    failed = true
+    failedOn = 'network'
+    const retry = create()
+
+    info = share('os_mount')
+    flushSync()
+    expect(retry).not.toHaveBeenCalled()
   })
 
   it('lists the volume once it goes live after the listing failed', () => {

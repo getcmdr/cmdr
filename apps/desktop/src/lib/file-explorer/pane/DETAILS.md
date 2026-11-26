@@ -781,7 +781,10 @@ no session behind it, so every listing on it would refuse until something dials.
 - **A failed listing lists again the moment its volume is live** (`live-retry.svelte.ts`), by any route and with no
   timing assumptions, once per live spell so a real error can't loop. ❗ The structural answer to the Cancel race: a
   Cancel within ~20 ms of a pick left "Not connected yet" over a share whose mount then finished; whatever order the
-  cancel answer, the error, and the mount arrive in, "failed, then live" now heals.
+  cancel answer, the error, and the mount arrive in, "failed, then live" now heals. ❗ Only an error from the pane's OWN
+  volume (`FilePane`'s `friendlyErrorVolumeId`): Back from a share list's sign-in screen onto a live share switched the
+  volume while the share list's error still showed, and the retry listed `smb://<server>/` on the share's volume before
+  the pane's own load corrected it (QA 2026-11-26).
 - **A pick of the place the pane stands on dials it when it isn't connected** (`picked`, fed from the breadcrumb's
   volume change): after a Cancel or a refusal the pane is already on that volume, so nothing else moves, and the
   switcher's pick of it did nothing. A reload alone left the pane's root at the share's old mount path, so the status
