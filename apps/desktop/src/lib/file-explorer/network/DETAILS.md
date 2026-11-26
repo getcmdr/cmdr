@@ -85,22 +85,25 @@ either way.
 
 ### What Enter does, per row kind
 
-- **An SMB host** opens its places list (`onHostSelect`). A saved host mDNS isn't seeing right now is handed over as a
-  synthesized `NetworkHost` whose `hostname` is the saved address, the only spelling anything has for it.
+- **An SMB host** opens its share list (`onHostSelect` → the pane's `onOpenServer`, which sends the pane to
+  `shareListPath(host)`). A saved host mDNS isn't seeing right now is handed over as a synthesized `NetworkHost` whose
+  `hostname` is the saved address, the only spelling anything has for it; the backend's resolver falls back to the
+  manual server the same way.
 - **A one-place server** (SFTP, WebDAV) takes the pane to its place (`onServerSelect` → `NetworkMountView` →
   `onVolumeChange` with the place's `appRoot`). ❗ The PANE does the dialing, not the hub: landing on a `saved` volume
   is what `../pane/place-connect.svelte.ts` watches for, so the connecting view and its Cancel render where every other
   wait does.
 - **A saved SMB share** (a row right under its host, `docs/specs/saved-smb-shares.md`) takes the pane to its place when
   the volume list has one, exactly like a one-place server, so an unmounted one is mounted IN THE PANE. One no mount
-  went through yet (Add named it) opens its host's places list and mounts that share for the visit (`onShareViaHost`).
+  went through yet (Add named it) opens its host's share list and mounts that share for the visit (`onShareViaHost`, the
+  arrival's queued mount).
 - **An unsaved share** of a saved server (§ "A saved server's other shares") goes the same way as a saved share no mount
-  went through: its host's places list, mounting that share, and that mount is what saves it.
-- **The "More shares on …" row** opens its server's places list, exactly what Enter on the server row does.
+  went through: its host's share list, mounting that share, and that mount is what saves it.
+- **The "More shares on …" row** opens its server's share list, exactly what Enter on the server row does.
 - **An S3 place** (a bucket, or the account root, right under its account) takes the pane to its place, exactly like a
   one-place server. **The S3 account row** is no place, so Enter answers a toast pointing at the places under it.
 - **The add row** opens the one sign-in sheet in add mode (`../../servers/open-sign-in.ts`). An SMB address comes back
-  as a hand-off, and `NetworkMountView` opens the injected host's places.
+  as a hand-off, and `NetworkMountView` opens the injected host's share list.
 
 `servers-hub-rows.ts::openMoveFor` is the one place that decides which of these a row gets
 (`servers-hub-shares.ts::shareItemMove` for the two share items); the component only carries it out.
@@ -161,11 +164,12 @@ also sees stays among the saved ones with its "Found nearby" status.
 
 ### Typing jumps
 
-The hub and the share list answer type-to-jump from memory: `jumpToPrefix` moves the cursor to the first row whose name
-starts with the buffer (`list-cursor.ts::nameStartsWith`, case-insensitive) and skips the group header and "Add
-server…". The buffer, timeout, and indicator are the folders' own (`../pane/type-to-jump-controller.svelte.ts`, through
-`getInMemoryJump`). A prefix rather than the folders' fuzzy match: these lists hold a handful of names you read off the
-screen. With "typing filters" on these views still jump (`typingFilters`), since they have no backend listing to narrow.
+The hub answers type-to-jump from memory: `jumpToPrefix` moves the cursor to the first row whose name starts with the
+buffer (`list-cursor.ts::nameStartsWith`, case-insensitive) and skips the group header and "Add server…". The buffer,
+timeout, and indicator are the folders' own (`../pane/type-to-jump-controller.svelte.ts`, through `getInMemoryJump`). A
+prefix rather than the folders' fuzzy match: the hub holds a handful of names you read off the screen. With "typing
+filters" on the hub still jumps (`typingFilters`), since it has no backend listing to narrow. A server's share list is a
+real listing, so it takes the folders' own type-to-jump and quick filter.
 
 ### The pure modules beside it
 
@@ -188,7 +192,7 @@ unit-tested:
 
   ❗ **A saved SMB host still `awaitingFirstConnect` reads `not_connected_yet`** ("Not connected yet"), even when mDNS
   sees it, ranked with `saved`: "Saved" with no shares under it read like an add that didn't work (#777). Enter opens
-  its places list like any host's, which is the user connecting; its first mount clears the flag.
+  its share list like any host's, which is the user connecting; its first mount clears the flag.
 
   ❗ **A many-place server's places are rows right under it** (`hasManyPlaces`: an SMB host's saved shares, an S3
   account's saved buckets and root; `kind: 'place'`, id `share:<volume id>`), placed AFTER the sort so they never drift
@@ -290,7 +294,7 @@ when a row disappears.
 
 `⌃⏎` (`file.contextMenu`) opens the cursor row's menu from the keyboard, the same menu a right-click opens, placed just
 under the row by `../pane/context-menu-anchor.ts`; a right-click opens it at the pointer. The "Add server…" row has
-none. A host's places list has no row menu yet, so `⌃⏎` there does nothing.
+none. On a server's share list, right-click and `⌃⏎` on a share open the share-row menu (§ "A server's share list").
 
 ❗ **Every row action carries the row's own id, end to end.** `ServersHubRowMenu` holds the row by its exact id and
 reads it live (a row gone meanwhile gets nothing), `runRowEntry` acts on that row, and the backend's
@@ -641,10 +645,11 @@ same sentence plus the typed `reason`. Why the variants are cut the way they are
 A NetFS mount can hang behind a stuck macOS sign-in helper for the whole mount timeout (#604), so the share-mount
 controller renders the wait through `../pane/RemoteConnectView.svelte`, the ONE remote-wait view: a `connecting` state
 named after the share, with the server's friendly name beside it ("testshare on Testnas": the hub's label, else the
-host's name) and the `host:port` it dials under that, and that view's Cancel (`share.back` cancels too, since no browser
-is mounted to take the key). Each mount mints an attempt id (`newServerAttemptId`) and passes it to `mountNetworkShare`;
-Cancel hands it to `cancelServerConnect`. After 10 s (`MOUNT_SLOW_AFTER_MS`, the backend's `SUSPECT_AFTER`) the state's
-`hint` swaps the generic "This can take a few seconds." for a line saying it's still waiting for macOS.
+host's name) and the `host:port` it dials under that, and that view's Cancel (`share.back`, Escape, cancels too: the
+pane's key router hands the controller every key while its state is up). Each mount mints an attempt id
+(`newServerAttemptId`) and passes it to `mountNetworkShare`; Cancel hands it to `cancelServerConnect`. After 10 s
+(`MOUNT_SLOW_AFTER_MS`, the backend's `SUSPECT_AFTER`) the state's `hint` swaps the generic "This can take a few
+seconds." for a line saying it's still waiting for macOS.
 
 - **The wait keeps its own copy of what it names** (`mounting`: share, server, address), captured at mount start: a
   mount that went through clears `lastMountAttempt`, the host, and its label before it lands on the share, and the wait
@@ -658,8 +663,6 @@ Cancel hands it to `cancelServerConnect`. After 10 s (`MOUNT_SLOW_AFTER_MS`, the
   with the command that restarts the helper. Try again re-mounts; while the old NetFS call is still stuck in the same
   helper, the backend answers the same right away. How the backend decides: `src-tauri/src/network/DETAILS.md` § "A
   mount Cmdr gave up on, and a wedged sign-in helper".
-- **The running mount keeps its own `mounting` copy** (share + address), ❌ not one derived from `lastMountAttempt`: a
-  mount that went through clears it before it lands on the share, with the wait still up.
 
 ## SMB live-reconnect flow (cross-component)
 
@@ -812,9 +815,9 @@ the hosts it found, so a view opens on them at once and the fresh browse adds an
   `refreshPane` → `refreshNetworkHosts()` → `ServersHub.refresh()`, the same `handleRefreshClick()` the local branch
   just ran, giving every host two `clearShareState` + `fetchShares` rounds per keypress. Pinned by `ServersHub.test.ts`;
   the general rule is in `#lib/shortcuts/DETAILS.md` § "Local handlers resolve through the registry too".
-- **Neither browser's `handleKeyDown` returns a "handled" boolean** (`BrowserAPI` in `../pane/types.ts`). Nothing above
-  them branches on one: `NetworkMountView` and `pane-key-router` hand the network view every key and return either way,
-  so the claim is `preventDefault()` + `stopPropagation()` on the event.
+- **The hub's `handleKeyDown` returns no "handled" boolean** (`BrowserAPI` in `../pane/types.ts`). Nothing above it
+  branches on one: `NetworkMountView` and `pane-key-router` hand the hub every key and return either way, so the claim
+  is `preventDefault()` + `stopPropagation()` on the event.
 - **The hub's MCP sync encodes metadata into the `name` field** as a flat string because MCP `PaneFileEntry` has only
   `name` / `path` / `isDirectory`; the encoding lets agents read what the UI shows without a schema change.
   `servers-hub-mcp.ts` owns it, and its status token stays untranslated on purpose.

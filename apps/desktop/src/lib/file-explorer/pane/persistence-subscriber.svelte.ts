@@ -1,7 +1,7 @@
 /**
  * The single nav-state persistence subscriber (invariant A5).
  *
- * After this milestone there is exactly ONE module that watches the explorer
+ * There is exactly ONE module that watches the explorer
  * store and writes pane navigation state to `app-status.json`: this one. The
  * scattered `saveAppStatus` + `saveTabsForPaneSide` trigger sites that used to
  * live in `navigate()`'s `persist` fan-out and the surviving `DualPaneExplorer`

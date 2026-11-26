@@ -2094,7 +2094,7 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   volume switch to a place with no listing runs no background "better path" correction (`navigate.ts`), so picking
   Servers always lands on the hub, never on a remembered or other-pane share list (each would be a dial).
 - **Every door is a path**: the hub's rows, the add-server hand-off, the mirror, `..` out of a share's top folder,
-  go-to- path, MCP `nav_to_path`, and history all send the pane to `smb://<server>`. A door that has more to say queues
+  go-to-path, MCP `nav_to_path`, and history all send the pane to `smb://<server>`. A door that has more to say queues
   the pane's ARRIVAL first (`share-list-arrival.svelte.ts`: a share to mount, the share `..` came out of), kept per pane
   because a pinned tab opens the list in a new pane component, spent once the list lands, and dropped the moment the
   pane is anywhere but where it was queued from or for (cmdr-reports#7). ❌ No door threads a host or a share through
@@ -2119,6 +2119,26 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   bar's account, and the footer counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then
   its account (`ShareListAccountChip.svelte`), which also hosts a share row's menu: a right-click or `⌃⏎` on a share
   list opens `row-menu.ts::shareRowMenu` there, ❌ never the native file menu.
+
+Decisions (David, 2026-11-25), each with its why:
+
+- **❌ No `if share` in the views or the engine.** `FullList`, `BriefList`, `SelectionInfo`, and `cmdr-listing` take the
+  kind's words as plain props; everything share-specific hangs off a seam that already branched per kind. Why: the share
+  list used to be its own hand-rolled list (cursor, `..`, landing, MCP push, header buttons) that drifted from the file
+  list; a kind check inside a view would start that drift again.
+- **The description is the Ext track, headed "Description"**, measured like any Ext cell (restic's precedent): one cell
+  rule and no new column machinery. Size and date stay as for any folder.
+- **Escape doesn't leave a share list**: on a file list Escape never means "parent", so the share list follows the list.
+  Backspace, `⌘↑`, and `..` leave it. `share.back` (Escape, Backspace, `⌘↑`) lives on only for the mount controller's
+  wait and refusal, off the palette.
+- **An empty share list gets words only, ❌ no Sign in button**: `EmptyFolderState` is a `pointer-events: none` overlay
+  with no tab stop in both views, so a button there would break the focus model. The words point at the path bar's
+  account, one click away, and the row menu and palette are the other doors.
+- **The share-row menu is the house `Menu`, ❌ not a native popup**: the account items then have ONE vocabulary
+  (`row-menu.ts`) in all three doors, and hosting it in the chip's `openMenu` means `isHeaderMenuOpen()` suppresses pane
+  keys with no second source of truth. The standard file menu (Copy, Delete, Reveal…) would be wrong on every item.
+- **Selection is allowed, but no operation takes a share list as source or destination**, and every verb refuses with
+  words at its seam before a dialog opens or a backend write starts (typed for MCP).
 
 ## Enter-behavior policy (archives and bundles)
 

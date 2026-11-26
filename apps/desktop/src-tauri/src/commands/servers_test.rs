@@ -595,7 +595,7 @@ fn signed_in_manual_server(
     row.port = Some(port);
     known_shares::remember_share(row.clone());
 
-    // The share list's sign-in (`PlacesBrowser` → `save_smb_credentials`), under the
+    // The share list's sign-in (`share-list-sign-in.ts` → `save_smb_credentials`), under the
     // host's discovery name.
     save_credentials(&discovery_name, None, "test_user_1", "pw").expect("saved");
     let resolved = smb_server(address.trim_end_matches('.'), port);

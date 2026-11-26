@@ -212,10 +212,6 @@
         "reason": "A caption names a policy; the radio is a command. `fileOperations.transferProgress.policyName.askEach` follows the colon in `Als een bestand al bestaat: …`, so it takes the infinitive name `Per bestand vragen`; the copy dialog's radio `fileOperations.transferDialog.policyAskEach` is the imperative button `Vraag voor elk`."
       },
       {
-        "source": "Back",
-        "reason": "`Terug` is the standalone back button in a list you drill into (network browser, share list, mount sheet). `Vorige` is the paired previous/next of the Go menu and the onboarding wizard, where macOS Dutch pairs `Vorige` with `Volgende`. See `docs/i18n/nl/terms.json` `back`."
-      },
-      {
         "source": "Created",
         "reason": "`Aanmaakdatum` is Finder's column header (Date Created); the date balloon lists participles (`Aangemaakt`, `Laatst gewijzigd`, `Laatst geopend`), so it takes the participle."
       },

@@ -68,6 +68,23 @@ function buttonTexts(target: HTMLElement): string[] {
   return Array.from(target.querySelectorAll('button')).map((b) => b.textContent.trim())
 }
 
+describe('a share list with no tool to list it', () => {
+  it('shows the install command in a copy box, and no Sign in (an account can’t fix it)', async () => {
+    const installCommand = 'sudo apt install smbclient'
+    const friendly: FriendlyError = {
+      ...base,
+      category: 'needs_action',
+      retryHint: true,
+      shareListRefusal: { type: 'missing_dependency', message: 'smbclient: not found', installCommand },
+    }
+    const target = mountPane({ friendly, folderPath: 'smb://testnas.local' })
+    await tick()
+    expect(target.textContent).toContain(installCommand)
+    expect(buttonTexts(target)).not.toContain('Sign in')
+    target.remove()
+  })
+})
+
 describe('ErrorPane action row', () => {
   it('offers Try again whenever the backend set retryHint, not only on transient errors', async () => {
     // `retry_hint: true` is set on Serious errnos too (the `serious` helper in

@@ -1055,7 +1055,7 @@ fallback"), so ❗ a new route that switches a share off goes through `set_direc
 app-path grammar spells it `smb:///`). The hub at `smb://` answers `NotADirectory` (the frontend draws it); a server's
 share list at `smb://<key>[:<port>]` lists one folder `FileEntry` per share, `smb://<key>/<share>`, carrying the
 server's description as `cmdr_fs::share_meta::ShareMeta`; a path at or inside a share answers `NotConnected` (a share
-is mounted, ❌ never entered here). Tracking issue: getcmdr/cmdr#1511; the frontend doesn't reach it yet.
+is mounted, ❌ never entered here). Every door in the frontend opens one by path (`apps/desktop/src/lib/file-explorer/pane/DETAILS.md` § "A server's share list (kind-from-path)"); design history: getcmdr/cmdr#1511.
 
 - **Only a pane the person pointed at a share list dials** (#324: listing signs in to the server). The engine's pane
   open reads through `Volume::list_directory_for_pane` (`cmdr_listing`'s `list_as_stored`) and ⌘R through
@@ -1109,6 +1109,11 @@ is mounted, ❌ never entered here). Tracking issue: getcmdr/cmdr#1511; the fron
   `std::fs`). `location::facts` skips it (it's no place), and favorites don't hold it. Its root stays `smb://` whichever
   server is listed, so the root history never reads a "move" that would rebase restored `smb://a` tabs onto `b`
   (`a_restored_share_list_tab_keeps_its_server_after_two_were_listed`).
+- **Considered and rejected** (David, 2026-11-25): a listing overlay on a fake directory (overlays decorate a real
+  listing, and a share list has no underlying directory); a frontend in-memory listing (the backend must own the sign-in
+  ladder and the typed refusals); a volume id per server (`smb-server:<host>`) registered per visit (a lifecycle for
+  something with no session to manage, while one `network` volume with path routing keeps the hub and its share lists
+  on one volume, so the switcher, history, and the drop-foreign-listings prefix rule stay as they are).
 - **The engine needed no change for the path**: `smb://<server>/` is its own scheme root in Rust (`smb:///` is another),
   and the listing engine never checks a listed path against the volume's root (verified by
   `the_engine_lists_a_share_list_as_folder_rows`, 2026-11-26).

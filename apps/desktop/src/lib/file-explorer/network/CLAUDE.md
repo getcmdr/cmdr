@@ -1,7 +1,7 @@
 # Network browser
 
-SMB discovery and browsing: the servers hub, a host's places, the direct-connect upgrade, and the reconnect manager.
-Signing in is `#lib/servers`' one sheet; this module only says what to ask and what to do with the answer.
+SMB discovery and browsing: the servers hub, a server's share list, the direct-connect upgrade, and the reconnect
+manager. Signing in is `#lib/servers`' one sheet; this module only says what to ask and what to do with the answer.
 
 ## Module map
 

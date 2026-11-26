@@ -377,10 +377,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connect": "Csatlakozás",
-  "@fileExplorer.network.connect": {
-    "sourceHash": "1a2303e"
-  },
   "fileExplorer.network.connecting": "Csatlakozás…",
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"

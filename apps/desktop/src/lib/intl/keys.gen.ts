@@ -2648,7 +2648,6 @@ export type MessageKey =
   | 'fileExplorer.network.browser.tooltip.requiresLogin'
   | 'fileExplorer.network.browser.tooltip.resolving'
   | 'fileExplorer.network.browser.tooltip.waitingForNetwork'
-  | 'fileExplorer.network.connect'
   | 'fileExplorer.network.connecting'
   | 'fileExplorer.network.deletePasswordFailed'
   | 'fileExplorer.network.forgotPassword'

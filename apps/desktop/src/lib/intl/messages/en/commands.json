@@ -1388,13 +1388,11 @@
   },
   "commands.serversSignInAs.label": "Sign in to server as…",
   "@commands.serversSignInAs.label": {
-    "description": "Command name that opens the sign-in form to list an SMB server's shared folders as another account, for example to see more than a guest can. Acts on the server under the cursor in the Servers list, or the server whose shared folders the pane shows. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts-page-7.png"
+    "description": "Command name that opens the sign-in form to list an SMB server's shared folders as another account, for example to see more than a guest can. Acts on the server under the cursor in the Servers list, or the server whose shared folders the pane shows. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it. Appears in the command palette."
   },
   "commands.serversBrowseAsGuest.label": "Browse server as guest",
   "@commands.serversBrowseAsGuest.label": {
-    "description": "Command name that lists an SMB server's shared folders as a guest again, and stops using the account for that server. Only does something on a server that already let a guest in. Same meaning as fileExplorer.network.share.useGuest. VERB phrase, imperative. Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts-page-7.png"
+    "description": "Command name that lists an SMB server's shared folders as a guest again, and stops using the account for that server. Only does something on a server that already let a guest in. Same meaning as fileExplorer.network.share.useGuest. VERB phrase, imperative. Appears in the command palette."
   },
   "commands.serversEdit.label": "Edit server…",
   "@commands.serversEdit.label": {
@@ -1413,8 +1411,7 @@
   },
   "commands.shareMountBack.label": "Cancel or step back from opening a share",
   "@commands.shareMountBack.label": {
-    "description": "Keyboard-settings name of the keys that work while a network share is connecting (after Enter on a share in a server's share list): Escape cancels the connection, Backspace goes back from a connection that didn't work to the list of shares.",
-    "screenshot": "settings-keyboard-shortcuts-page-17.png"
+    "description": "Keyboard-settings name of the keys that work while a network share is connecting (after Enter on a share in a server's share list): Escape cancels the connection, Backspace goes back from a connection that didn't work to the list of shares."
   },
   "commands.volumeSelect.label": "Select volume",
   "@commands.volumeSelect.label": {

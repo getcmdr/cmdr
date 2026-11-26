@@ -375,10 +375,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connect": "连接",
-  "@fileExplorer.network.connect": {
-    "sourceHash": "1a2303e"
-  },
   "fileExplorer.network.connecting": "正在连接…",
   "@fileExplorer.network.connecting": {
     "sourceHash": "72021eb"

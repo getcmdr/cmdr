@@ -174,7 +174,7 @@ a credential refusal back to the pane, which has the words and the retry for it.
 ❗ **`open-sign-in.ts` is where the standing picks the command**: a REGISTERED volume is mended with
 `reconnectVolumeWithCredentials`, an absent one is dialed with `connectSavedPlace`, and a typed server goes through
 `connectServer`. SMB's add path has no target at all (its connect is a share MOUNT), so it answers `handed_off` and the
-caller opens the host's places list.
+caller opens the host's share list.
 
 **Remember, and who decides where it starts.** `add`: on, because someone typing a password into a new server means to
 come back to it. `edit`: from `hasServerSecret`. `sign-in`: from the request's `remembered`, which the ❗ OPENER
@@ -525,7 +525,7 @@ somewhere else. Only "Add and open" moves a pane:
 - **"Add and open" lands a pane on the new place**, through `openAddServerSheet`'s `onConnected` (the place's volume id
   and app root, read off `list_saved_servers` rather than the volume store, which can still hold the previous
   `volumes-changed`). ⌘K and Go to path land the focused pane; the hub lands its own. SMB's add is a share mount, so it
-  hands off instead (`onSmbHandOff`): the saved host's places list, mounting the share the address named. ⌘K and Go to
+  hands off instead (`onSmbHandOff`): the saved host's share list, mounting the share the address named. ⌘K and Go to
   path both go through `ExplorerAPI.openSmbHandOffInFocusedPane` (one destination, ❌ never a bare Servers list); the
   hub does the same to its own pane.
 - **"Add" closes as `added`** with the server's saved id, and `onAdded` shows it: the hub selects the new row
