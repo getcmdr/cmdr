@@ -18,7 +18,8 @@ have an OS mount (David's NAS by `192.168.1.111` and by `100.127.48.122`) don't 
    quick filter, type-to-jump, `SelectionInfo` footer, the standard MCP mirror), exactly as the share list now is. No
    share rows under a server. Enter on a server opens its share list; `..` from a share list lands on the Servers list
    with the cursor on that server; `..` out of a share's top folder lands on its share list (#1238, unchanged).
-2. "+ Add server…" keeps a natural home (§ "Decisions", 1).
+2. "+ Add server…" keeps a natural home: F7, the palette, the empty list's words, AND a last "+ Add server…" row that
+   the views draw through one generic per-kind trailing-row seam (§ "Decisions", 1; branch 13).
 3. The "NFS servers don't announce themselves…" line goes.
 4. Every server with a mounted share (Cmdr's mount or the OS's) shows in the list.
 5. One NAS reached by two addresses stays two servers. Samba derives its server GUID from the NetBIOS name, so a GUID
@@ -26,6 +27,9 @@ have an OS mount (David's NAS by `192.168.1.111` and by `100.127.48.122`) don't 
 6. Every protocol the hub lists today (SMB, SFTP, WebDAV, S3, NFS; saved and discovered) maps onto the standard views'
    columns with ❌ no `if server` in a view.
 7. #324 still holds, now literally: listing servers never dials anything.
+8. ⌘R refreshes a share list: it already re-reads a listed one, a refused one retries, and what an unchanged refresh
+   shows is § "Questions", 1 (§ "Current state", the ⌘R finding; M2).
+9. getcmdr/cmdr#1518: a Samba server GUID (derived from the NetBIOS name) never proves two shares are one (M2).
 
 This is a just-in-time plan per `docs/guides/multi-agent-refactors.md` § "The loop". It captures intent: when the code
 disagrees with a step here, follow the intent and say so in the report.
@@ -36,8 +40,10 @@ disagrees with a step here, follow the intent and say so in the report.
   (a Rust test, a pure-module test, or an MCP-level E2E), and the pin lands BEFORE the rewrite.
 - **The views stay generic.** `FullList`, `BriefList`, `FullListHeader`, `SelectionInfo`, `FileIcon`, and the listing
   engine get ❌ no `if server` / `kind === 'network'`. Server facts reach them the way share facts do: a per-entry meta
-  read by the ONE cell rule (`extCellText`), the date cell, and kind words through `ListWords` (`views/list-words.ts`,
-  filled by `pane/list-kind-words.ts`). A need that fits none of those is a stop-and-report, ❌ not a new ad-hoc check.
+  read by the ONE cell rule (`extCellText`), the date cell, a reserved icon id (the `git:*` / `restic:snapshots` /
+  `network:share` precedent), kind words through `ListWords` (`views/list-words.ts`, filled by
+  `pane/list-kind-words.ts`), and the one trailing-row prop (branch 13). A need that fits none of those is a
+  stop-and-report, ❌ not a new ad-hoc check.
 - **❌ Never classify by a volume-id or path string** when a kind exists: `capabilitiesForPane(volumeId, path)` answers
   "is this the Servers list" (`network` + `smb://`) and "is this a share list" (`network` + `smb://<server>`).
 - **#324, literal: building the Servers list never dials.** Its rows come from memory, the saved-server stores, the
@@ -58,11 +64,32 @@ disagrees with a step here, follow the intent and say so in the report.
   where the words don't change (`servers.hub.status.*`, `servers.hub.neverUsed`, `servers.hub.addServer`, the account
   item labels).
 - **`main` stays whole after every milestone**: no milestone removes a door whose replacement lands later. The saved
-  share facts reach the share list (M5) BEFORE the switch deletes the hub's share rows (M6).
+  share facts reach the share list (M6) BEFORE the switch deletes the hub's share rows (M8). ❗ "Whole" includes #324: a
+  milestone that adds saved servers (M4) must not hand them to the hub's prefetch, which dials every saved SMB host
+  until M8 stops or narrows it.
 - Foreground commands only. Checks per `AGENTS.md` § "Checker script"; `desktop-e2e-playwright` (SMB and servers specs)
-  from M6 on, Linux E2E on M6 and M7.
+  from M8 on, Linux E2E on M8 and M9.
 
-## Current state (fresh read, 2026-11-26, `231892e473`)
+## Current state (fresh read, 2026-11-26, `aa3fa4bbf2`)
+
+- **Just landed on the share list** (keep, don't regress): `ListWords.rowsHaveNoSizes` (the share list drops Size,
+  `85372d4d7c`; the Servers list REUSES it, ❌ no second field); share rows carry the `network:share` icon id, which
+  `FileIcon` draws as stacked platform folders through `#lib/stacked-icons.ts` (`c966f6413b`); the hub's SMB server rows
+  draw the `monitor-filled` glyph (`MonitorFilledIcon`, `--color-server-icon`) chosen by
+  `servers-hub-rows.ts::hubRowIcon`, other servers `server`, place rows `folder`; Cancel on a share list's sign-in sheet
+  stays on the in-pane sign-in state (`ErrorPane`, focus on Sign in, `9b31e957a1`), and ⌘[ from it lands on the server's
+  Servers row; a Servers visit no longer re-dials an OS mount whose direct upgrade failed (`c96149081f`).
+- **The ⌘R finding (share list)**: by code AND the worktree's dev log (2026-11-26 10:03:36, `smb://naspolya`), ⌘R on a
+  share list that lists DOES re-read: `pane-commands.ts::refreshPane` (caps kind `share-list` isn't the network view) →
+  `refresh_listing(force: true)`, which skips the `EveryWriter` short-circuit → `Listings::refresh` →
+  `SmbServerVolume::list_directory_for_refresh` → `Reader::Refresh` → `Freshness::Fresh` (cache dropped) → a fresh dial
+  (guest refused, smbutil's Keychain fallback, the same 8 shares, about 76 ms). Same rows, so an empty diff, so nothing
+  on screen: on Servers the hub's own ⌘R visibly re-scans, which is why the share list reads as dead. ❗ A real hole by
+  reading (verify in M2): on the share list's sign-in or refusal state (`ErrorPane`) no listing is live, so
+  `refreshPane` either has no listing id or hits `RefreshOutcome::ListingGone`, and ⌘R does nothing at all.
+- **The GUID evidence for #1518**: the same log shows Naspolya (QNAP, Samba) negotiating `server_guid` data1
+  `0x7073616e`, data2 `0x6c6f`, data3 `0x6179`, data4 zeros: little-endian, that's the ASCII `naspolya`, NUL-padded. So
+  a Samba GUID is the lowercased NetBIOS name, recognizable by shape.
 
 - **The pane**: `FilePane.svelte` routes `caps.kind === 'network'` (the `network` volume at `smb://`) to
   `paneViewKind === 'network'`, which renders `pane/NetworkMountView.svelte` (158 lines, now a thin wrapper): it holds
@@ -101,7 +128,15 @@ disagrees with a step here, follow the intent and say so in the report.
   answers the Servers name.
 - **Prefetch** (`network-store.svelte.ts`): while a Servers view is up, every SAVED host (`savedSmbHostIds`) has its
   shares listed (`prefetchSharesCmd`, a dial), feeding the nested share items, `shares=`, and `host-status.ts`'s
-  tooltip; `refreshAllStaleShares` on entering the view; ⌘R drops every list and re-reads the saved ones.
+  tooltip; `refreshAllStaleShares` on entering the view; ⌘R drops every list and re-reads the saved ones. The worktree's
+  dev log (2026-11-26) shows it re-dialing `raspi`, `raspi.local`, and `192.168.1.111` on each Servers visit. First
+  numbers for § "Decisions", 7 (`stall_probe::listing listing_done path=smb://<server>/`, `read_dir_ms`, cache hits of 0
+  ms excluded): `raspi` 64–131 ms in 11 of 13 uncached reads, outliers 643 and 1,174 ms; `naspolya` 80–450 ms (guest
+  refused, then smbutil's Keychain read). M1 measures properly.
+- **Keychain on a share-list read**: the share list's own ladder reads Cmdr's stored password at most once per session
+  (`share_list_sign_in.rs`, `stored_once`), but a guest-refused listing with no credentials falls back to `smbutil view`
+  with macOS Keychain auth (`smb_client.rs`, `list_shares_cli_with_keychain`) on EVERY such dial, ⌘R included. Not new
+  and not the Servers list's, but anything that keeps a prefetch inherits it.
 - **Share list precedents to reuse** (#1511): `ShareMeta` on `cmdr_fs::FileEntry` worded by `extCellText`; `ListWords`
   (`extHeader`, `extIsProse`, `rowsHaveNoDates`, `parentRowName`, `emptyText`, `countRows`); the `share-list` row in
   `CAPABILITY_TABLE` and its refusal arms (`file-operation-commands.ts::readOnlyRefusal`, `transfer-entry.ts` guards);
@@ -110,8 +145,12 @@ disagrees with a step here, follow the intent and say so in the report.
   open seam (Enter on a share mounts).
 - **Server identity in the backend**: `server_identity::same_server*` (address + port). Separately,
   `location/share_identity.rs::same_share` treats two shares as one when their recorded server GUIDs and share names
-  match (Ask Cmdr's LAN/Tailscale pairing). ❗ Finding (not in this plan's scope, see § "Bugs spotted"): per David's
-  note, that proof is weaker on Samba than its doc claims.
+  match (Ask Cmdr's LAN/Tailscale pairing); `redirectable` lets one answer a read for the other when both GUIDs came
+  from signed-in sessions. Its callers are `location/same_share.rs::same_share_as` (volume snapshot, important folders,
+  "volume not connected", `finish`). ❗ On Samba that proof only proves one NetBIOS name (#1518, the evidence above): in
+  scope, M2. `network/server_guid.rs`'s module doc and `network/DETAILS.md` § "Which server a share is on" claim the
+  GUID names one box, and that each Docker fixture's Samba "mints its own" GUID (it differs only because the hostnames
+  do).
 - **Address change already exists**: `manual_servers_relocate.rs` (`server_move::smb`) moves a saved SMB host to a new
   address in one write; the Edit server sheet drives it.
 - **Commands**: `servers.connect` ("Connect to server…", ⌘K, also the dock) opens the Add sheet from anywhere;
@@ -122,9 +161,11 @@ disagrees with a step here, follow the intent and say so in the report.
 ## Fit check
 
 **Verdict: it fits, with the same shape the share list used: `SmbServerVolume` lists `smb://` too, and the `network`
-kind becomes a listing kind. The hub's merge moves to Rust as a pure module; the views need two generic `ListWords`
-flags and one entry-meta badge, no kind checks.** The Servers list is a flat, read-only, memory-backed directory whose
-rows change when discovery, the stores, or the volume list change. Unlike the share list, it needs live updates.
+kind becomes a listing kind. The hub's merge moves to Rust as a pure module; the views need one new `ListWords` field
+(`dateHeader`; `rowsHaveNoSizes` already exists), one entry-meta badge, two reserved icon ids, and one generic
+trailing-row prop, no kind checks. The trailing row is the one genuinely new piece of view machinery, and the biggest
+risk in the plan (branch 13).** The Servers list is a flat, read-only, memory-backed directory whose rows change when
+discovery, the stores, or the volume list change. Unlike the share list, it needs live updates.
 
 **The shape.**
 
@@ -144,11 +185,26 @@ rows change when discovery, the stores, or the volume list change. Unlike the sh
   place `appRoot`; an S3 account per § "Decisions", 6. ❗ Entries whose path isn't under the listed directory are new
   for the engine: prove it with an engine test first (diffs by path, `findFileIndex`, the drop-foreign-listings rule);
   if it refuses them, fall back to an in-volume form for non-SMB rows and say so, ❌ not a special case in
-  `cmdr-listing`.
+  `cmdr-listing`. ❗ Every row is `is_directory: true`: a file entry's Enter is the OS opener, which would hand
+  `sftp://…` to Launch Services. ❗ A row whose path is on another scheme meets every generic verb that takes a
+  directory entry's path as a path ON THE PANE'S VOLUME (`network`): Enter / ⌘↓, open in new tab / other pane, history,
+  Go to path, MCP `nav_to_path` / `open_under_cursor`, Copy path, drag-out. Each either takes the open arm (branch 5) or
+  refuses with kind words; M6 pins every one.
+- **Icons**: Rust sets a reserved icon id per row (`network:server-smb`, drawn as `MonitorFilledIcon`; `network:server`,
+  the generic server glyph), resolved in `FileIcon` the way `git:*` and `restic:snapshots` already are, and kept out of
+  `prefetchIcons`'s OS asks (the `network:share` precedent). `hubRowIcon`'s `folder` for place rows goes with the place
+  rows.
 - **Live updates**: the volume answers `listing_watch_coverage(smb://) = EveryWriter` and, on each input change
   (`network-host-found` / `-lost` / `-resolved`, `volumes-changed`, a saved-store write, a mount-table change), pushes a
-  re-list of `smb://` through `Listings::directory_changed` (the path every other watched backend uses), debounced. ❌
-  No poll. The cursor follows its row by path across a rebuild, which today's `cursorAcrossRebuild` did by id.
+  re-list of `smb://` through `Listings::directory_changed` (the path every other watched backend uses) with the
+  "re-listed, these are its contents now" `DirectoryChange` variant (`cmdr-fs` `volume/types.rs`), debounced. ❌ No
+  poll. The cursor follows its row by path across a rebuild, which today's `cursorAcrossRebuild` did by id. ❗ Because
+  the volume answers `EveryWriter` for `smb://`, an unforced `refresh_listing` (every delete or trash tops up both
+  panes) short-circuits; ⌘R (forced) re-lists from memory and the stores. Both are dial-free on `smb://`, so the
+  forced/unforced split only matters one level down, on `smb://<server>` (M2).
+- **The mount table is read without touching a mount**: `volumes::smb_mounts()` (`getfsstat`, no per-mount `statfs` or
+  `stat`, which hang on a dead share), and `smb_share_parent::made_host` resolves an mDNS service name from fresh
+  discovery only (`smb_server_address.rs`). Keep it that way: a dead NAS must not stall the Servers list.
 - **The `network` kind becomes a listing**: `CAPABILITY_TABLE.network` gets `hasBackendListing: true`,
   `syncsToMcp: true`, `hasParentRow: false` (it's the volume root), everything write- and source-shaped `false`, like
   `share-list`. `paneViewKind` stops routing it to `NetworkMountView`.
@@ -158,9 +214,11 @@ rows change when discovery, the stores, or the volume list change. Unlike the sh
 1. `volume-capabilities.ts`: the `network` row's cells. The ONE path read stays `isShareListLocation`.
 2. The cells: `extCellText` gains a `serverMeta` arm (the "Details" text: protocol, address, account, per § "Decisions",
    2), worded by a pure `network/server-row-words.ts` it calls (restic and share precedent); the date cell reads
-   `modified_at` as today (blank when never used); a new `ListWords.rowsHaveNoSizes` drops the Size track the way
-   `rowsHaveNoDates` drops the date (`full-list-column-fit.ts`); a new `ListWords.dateHeader` labels the date track
-   "Last used". Renderer and measurer stay one contract (`views/CLAUDE.md`).
+   `modified_at` as today (blank when never used); the existing `ListWords.rowsHaveNoSizes` drops the Size track (the
+   share list's, `85372d4d7c`); a new `ListWords.dateHeader` labels the date track "Last used" (header, sort trigger,
+   the row's accessible name, and the measurer all read it). Renderer and measurer stay one contract
+   (`views/CLAUDE.md`). ❗ Sorting by the date column must sort by `modified_at` (Last used), and a never-used row (no
+   date) sorts last ascending; check `EffectiveSort::resolve` doesn't remap it for a volume with no dates.
 3. The status dot: `FileIcon` already takes per-row badges (`syncStatus`, `imageIndexBadge`) chosen outside it. A
    `rowBadgeFor(entry)` in `views/file-list-utils.ts` returns the server status badge (the `ConnectionDot` colors) from
    `serverMeta.status`, with its words as the badge's accessible name, so screen readers hear "Connected". ❌ No status
@@ -175,11 +233,14 @@ rows change when discovery, the stores, or the volume list change. Unlike the sh
    take the same move (an SMB server's share list, a place); drag-out, Space's size walk, Quick Look, About (⌘I), and
    MCP `about_item` / `inspect_file` refuse with kind words. ❗ A drop ONTO a one-place server row would target its
    `appRoot` on another volume, which would dial and copy: Servers rows are no drop targets (the row-drop target is off
-   for the kind), and the destination guard refuses the `network` kind. Pin both.
+   for the kind), and the destination guard refuses the `network` kind. Pin both. ❗ The open arm must run BEFORE the
+   generic directory open for every verb in § "Fit check"'s path list, or a place row navigates the `network` volume to
+   `sftp://…`.
 6. Keys and the F-key bar: F2 (`file.rename`, already Edit server on `network`), F8 (`readOnlyRefusal`'s `network` arm
    becomes "Forget server", today's hub F8), F7 (`file.newFolder` on `network` → Add server, § "Decisions", 1), ⌘R (a
-   forced re-list: re-reads the stores, no dial). The F-key bar's labels per kind come through the same words seam, ❌
-   not a kind check in `FunctionKeyBar`.
+   forced re-list: re-reads the stores, no dial; `refreshPane`'s `isInNetworkView` branch goes). The F-key bar's labels
+   per kind (F7 "Add server", F8 "Forget") come from a per-kind table beside `list-kind-words.ts`; `FunctionKeyBar`
+   already checks `caps.kind === 'network'` for `canRename`, which folds into that table, ❌ no second kind check.
 7. The row menu: `file.contextMenu` (right-click, ⌃⏎) on a `network` row opens the server row menu from `row-menu.ts`
    (`smbHostRowMenu`, `volumeRowMenu`), hosted in `VolumeBreadcrumb`'s ONE `openMenu` the way the share-row menu is
    (`isHeaderMenuOpen()` stays the one key-suppression answer). The row comes from `serverMeta.row_id`; Edit reads the
@@ -197,19 +258,37 @@ rows change when discovery, the stores, or the volume list change. Unlike the sh
 11. The footer: `pane-footer.ts` gives the `network` kind `SelectionInfo` without disk space, like `share-list`.
 12. The discovery hold: `holdDiscoveryForServersView` follows the pane's LOCATION (a pane on `network` at `smb://`) from
     a pane factory, ❌ not a component mount.
+13. The trailing "+ Add server…" row (§ "Decisions", 1b). A new generic, optional `trailingRow` prop on both views
+    (label, icon, command id), filled per kind beside `list-kind-words.ts` (only `network` sets one). It's the mirror
+    image of the synthetic `..` row: ❌ not an engine entry, so sort, quick filter, and type-to-jump never touch it by
+    construction. Its frontend index is `parentOffset + rowCount`; the cursor reaches it (↓, End, PageDown, click), and
+    Enter, double-click, and MCP `open_under_cursor` dispatch its command (`servers.connect`, the same sheet F7 opens).
+    It's never selectable (Space, Insert, ⇧-ranges, ⌘A, select-same-kind), never counted (footer, `countRows`, stats),
+    never an operation's source, target, or drop target, never draggable. It stays visible under a quick filter (it's an
+    action, not a match), so a filter that matches nothing leaves "+ Add server…" as the obvious next step. The MCP
+    mirror lists it as the last item at its screen index with `kind=action command=servers.connect`. a11y: an option in
+    the listbox whose name is its label. ❗ This is real cursor machinery: every consumer of the effective row count or
+    the parent offset (`move-cursor.ts`'s range, page and End keys, cursor restore across a rebuild, `findFileIndex` +
+    offset in `pane-commands.ts`, selection ranges, MCP indices, virtual-scroll height, Brief's column flow, drag hit
+    tests) must learn ONE `trailingRowCount`, from a pure helper, ❌ never per-site arithmetic. `FilePane` is at its
+    cap: a `*.svelte.ts` factory.
 
-Twelve named branches, each at a seam that already branches per kind, with two new generic `ListWords` fields and one
-generic badge hook. Zero in the engine and the views' row code.
+Thirteen named branches, each at a seam that already branches per kind (or, for 13, one new generic prop), with one new
+`ListWords` field, two reserved icon ids, and one generic badge hook. Zero in the engine and the views' row code.
 
 **Considered and rejected**: keeping the merge in TS and pushing rows to Rust (two sources of truth and a startup race);
 a frontend in-memory listing (the snapshot pane's six coupling points, and Rust owns every input anyway); real extra
 columns (Type, Address, Status) in the views (column machinery, measurer, and fit rules for one pane kind; §
 "Decisions", 2 keeps it as an option); keeping the nearby group as a pseudo-row (a row the engine doesn't list breaks
-sort, filter, indices, and MCP).
+sort, filter, indices, and MCP); "+ Add server…" as a Rust-listed entry (sort and filter would move or hide it, and
+pinning it last would need a special case in the engine's ONE comparator and filter point, so it's a view-side trailing
+row, branch 13, which sits outside both by construction).
 
 ## Line estimate
 
-**Production code about −1,400 (range −900 to −1,900); tests about −1,600; total about −3,000 (−2,000 to −4,000).**
+**Production code about −1,150 (range −650 to −1,650); tests about −1,400; total about −2,550 (−1,600 to −3,500).**
+(Revised up from −1,400 for the trailing row, ~+150 prod and ~+150 tests, and M2's ⌘R and #1518 fixes, ~+100 prod and
+~+100 tests.)
 
 - **Removed (~−2,950 prod)**: `ServersHub.svelte` 1,031, `NetworkMountView.svelte` 158, `servers-hub-rows.ts` 534
   (ported), `servers-hub-items.ts` 115, `-keys` 28, `-shares` 84, `-columns` 16, `-mcp` 174,
@@ -230,7 +309,7 @@ live re-list is new. The win is deleting a parallel list implementation and ever
 
 ## Coverage contract (every current Servers flow → where it lives after)
 
-A milestone that touches a flow keeps its pin green; M7 walks this list.
+A milestone that touches a flow keeps its pin green; M9 walks this list.
 
 **Opening things**
 
@@ -240,14 +319,16 @@ A milestone that touches a flow keeps its pin green; M7 walks this list.
   AFTER: the `network` open arm (branch 5), same `pathForPickedVolume`.
 - Enter on an S3 account → toast today. AFTER: § "Decisions", 6.
 - Enter on a saved share row, an unsaved share item, or "More shares on…" → mount / share list. AFTER: gone from the
-  Servers list; the share list carries every share, and a saved one keeps its facts and its account (M5, § "Decisions",
+  Servers list; the share list carries every share, and a saved one keeps its facts and its account (M6, § "Decisions",
   10). A saved share stays reachable from the switcher when pinned.
 - Enter / click on the nearby group header → toggle. AFTER: no group (§ "Decisions", 3); `network.nearbyServersGroup`
   retires (a hidden setting: drop it quietly on load).
 - Add server: the pseudo-row (Enter, click, double-click) and the empty state → the sheet; SMB hand-off → share list
-  with a queued mount; `onConnected` → the place; `onAdded` → select the new row. AFTER: § "Decisions", 1's door(s),
-  running the same `openAddServerSheet` callbacks from a pane factory; "select the new row" is the generic select by
-  path once the re-list lands.
+  with a queued mount; `onConnected` → the place; `onAdded` → select the new row. AFTER: both doors of § "Decisions", 1:
+  the trailing "+ Add server…" row (branch 13: Enter, click, double-click, MCP `open_under_cursor`) and F7 / the palette
+  / ⌘K, all running the same `openAddServerSheet` callbacks from a pane factory; the empty list's words name F7, with
+  the trailing row below them. "Select the new row" is the generic select by path once the re-list lands (the sheet
+  closes before the re-list, so the select WAITS for the path, as `pendingSelection` does today).
 - NFS hint and its link → gone (goal 3). The Add sheet's protocol picker still offers NFS.
 - Discovery off line + Settings link, searching line → § "Decisions", 8.
 
@@ -263,7 +344,9 @@ A milestone that touches a flow keeps its pin green; M7 walks this list.
 - Prefix type-to-jump → the folders' fuzzy type-to-jump and quick filter.
 - Arrows, PageUp/PageDown, Home/End, Left/Right jumps → the file list's own keys.
 - The status bar (count, refresh button) → `SelectionInfo` "N servers" (branch 11) and ⌘R.
-- The empty state with Refresh → `EmptyFolderState` words (§ "Decisions", 1 and 8).
+- The empty state with Refresh → `EmptyFolderState` words (§ "Decisions", 1 and 8), with the trailing row under them.
+- The "+ Add server…" pseudo-row (italic, keyboard reachable, last) → the trailing row (branch 13): last under any sort
+  and any filter, skipped by type-to-jump, never selected or counted. Pin each of those in M7.
 - Rows landing late keep the cursor on its row (`cursorAcrossRebuild`) → the engine's diff keeps the cursor by path; pin
   it with a host arriving above the cursor.
 - Row id uniqueness (Svelte `each_key_duplicate` crash) → the Rust merge keeps "first writer wins" and the engine needs
@@ -295,25 +378,35 @@ A milestone that touches a flow keeps its pin green; M7 walks this list.
 **#324 and the Keychain**
 
 - Nothing lists at launch; found hosts never listed unasked. AFTER: stronger: building the Servers list never dials, for
-  any server (§ "Decisions", 7). Pin: a Rust test that `list(smb://)` with a counting `ServerShares` makes zero dials
-  and zero Keychain reads; an E2E that opening Servers with a saved SMB fixture issues no share listing (the backend's
-  listing counter).
+  any server (§ "Decisions", 7, as M1's measurement settles it). Pin: a Rust test that `list(smb://)` with a counting
+  `ServerShares` makes zero dials and zero Keychain reads for every reader (pane, refresh, other) and on a live re-list;
+  an E2E that opening Servers with a saved SMB fixture issues no share listing (the backend's listing counter). If M1's
+  numbers keep a prefetch for saved servers, the E2E instead pins "saved only, never a found or a mounted-only server".
+- Servers M4 saves from the mount table are never dialed by the hub's prefetch while it still runs (M4 to M8). Pin in
+  M4.
 - Opening a row menu reads no password → unchanged pin.
+- ⌘R on a share list (forced) dials past the share cache, and its Cmdr-store read stays at most once per session
+  (`stored_once`); an unforced refresh (delete, trash, rename top-up) never dials (`share_list_volume.rs`'s
+  `EveryWriter`). Pin both in M2.
+- Share identity (#1518): a name-derived Samba GUID never makes two shares `same_share` / `redirectable`. Pin in M2.
 
 **MCP**
 
 - `cmdr://state` on Servers: today the hub's own push (`hubPaneState`): one entry per item incl. the group header and
   the add row, `protocol=` / `status=` / `address=` / `shares=` tokens, indices over the FULL list. AFTER: the standard
-  mirror (`syncsToMcp: true`), tokens per branch 10, indices match the screen (no hidden rows). `move_cursor` by name
-  and `open_under_cursor` work as on any list. Specs that poll `shares=`, `kind=group`, or `smb://add` (`smb.spec.ts`,
+  mirror (`syncsToMcp: true`), tokens per branch 10, indices match the screen (no hidden rows), the trailing row last
+  with `kind=action command=servers.connect` (branch 13). `move_cursor` by name and `open_under_cursor` work as on any
+  list, the trailing row included. Specs that poll `shares=`, `kind=group`, or `smb://add` (`smb.spec.ts`,
   `servers.spec.ts`, `favorites-offline-smb.spec.ts`, `suggested-ops-server-card.spec.ts`,
-  `i18n-capture-main-overlays.ts`) move to the new spelling in M6.
+  `i18n-capture-main-overlays.ts`) move to the new spelling in M8.
+- MCP `refresh` on a share list → the same forced re-read as ⌘R (M2).
 - MCP `list_dir` on `smb://` → today `NotADirectory`; AFTER: the server rows (memory-only, safe).
 
 **Elsewhere, unchanged but must keep working**
 
 - The share list, its sign-in ladder, the account chip, the share-row menu, share mounting, #1238's `..` out of a
-  share's top folder.
+  share's top folder, its stacked-folders share icon, its dropped Size column, and Cancel on its sign-in sheet staying
+  on the in-pane sign-in state (⌘[ from there lands on the server's Servers row, now by the generic landing).
 - Two panes on Servers at once (each lists; one shared live re-list).
 - Direct-connect upgrade, the reconnect manager, the switcher's Servers row and dots.
 - Linux and Windows: the mount-table source is per platform (`volumes::smb_mounts`); `clippy-windows`.
@@ -329,7 +422,8 @@ saved server's list takes long enough that opening it visibly waits, keep a pref
 existing #324 gates, and record the numbers. 8 (a). 9 accept. 10 (a). Also in scope: ⌘R must refresh a share list (David
 saw nothing happen; Servers already refreshes), and getcmdr/cmdr#1518 (share identity must not treat a Samba server GUID
 as proof of one machine; it's derived from the NetBIOS name). The stacked-folders share icon and the filled monitor
-server icon are approved.
+server icon are approved. Where each answer lands: 1 → branch 13, M7, M8; 7 → M1 measures, M8 acts; ⌘R and #1518 → M2,
+with two follow-up questions in § "Questions".
 
 1. **Where "+ Add server…" lives.** (a) F7 on the Servers list (the F-key bar reads "F7 Add server", since F7 means "new
    item here" everywhere), plus ⌘K from anywhere (exists), plus the empty list saying "Press F7 to add a server"; (b)
@@ -374,105 +468,180 @@ server icon are approved.
 ## Milestones
 
 Sequential, one agent each. Each reports in ≤350 words: what landed, what deviated from this plan and why, which pins it
-added.
+added. M2 is independent of the rest and may land first or in parallel with M1.
 
-### M1: characterize what must survive
+### M1: characterize what must survive, and measure the prefetch
 
 - **Scope**: MCP-level E2E pins that outlive `ServersHub`: Enter on an SMB server opens its share list; `..` back lands
   on that server (by name and by IP-added server); Enter on an SFTP and a WebDAV fixture lands the pane on the place; F8
   on a saved server forgets it (and refuses on a found one); Edit server from F2 on a row; Add server via ⌘K then the
   new server is in the list; the row menu's account item lists the share list; `select_volume` Servers lands on
-  `smb://`; opening Servers with a saved SMB fixture issues zero share listings when the prefetch is off (§ "Decisions",
-  7: pin with a listing counter, red against today's prefetch only if (a) was chosen). Pin semantics (which server,
-  which pane location), ❌ not the encoding: `protocol=` / `shares=` / `kind=group` spellings change on purpose.
+  `smb://`. Pin semantics (which server, which pane location), ❌ not the encoding: `protocol=` / `shares=` /
+  `kind=group` spellings change on purpose. Add the backend's share-listing counter the #324 E2E reads (if none exists),
+  and record today's count for "open Servers with a saved SMB fixture" as the baseline M8 flips.
+- **The prefetch measurement (§ "Decisions", 7)**: time a saved server's FIRST, uncached share-list read, the wait a
+  person sees when the prefetch is gone. Sources: the fixtures (`test/smb-servers/`: guest, auth, and a slow-network one
+  if the stack has it) via `stall_probe::listing listing_done path=smb://<server>/ … read_dir_ms`, plus the dev and prod
+  logs' real servers (exclude `read_dir_ms=0`, a prefetch cache hit). **Threshold: the pane's wait view reveals at
+  `WAIT_REVEAL_AFTER_MS` (800 ms, `#lib/ui/wait-reveal.ts`), below which a person sees no wait at all. If the p90 of
+  uncached reads for reachable saved servers is under 800 ms, (a) holds: M8 stops the prefetch. At or over 800 ms, M8
+  keeps a prefetch for SAVED servers only (never found-only or mounted-only ones), under the existing #324 gates.**
+  Unreachable servers don't count (no prefetch makes them faster; they wait in the pane either way). Record the numbers
+  (n, p50, p90, max per server) in the report and in `network/DETAILS.md`, dated. First look (2026-11-26 dev log, §
+  "Current state"): p90 around 650 ms on `raspi`, under 450 ms on `naspolya`, so (a) is likely.
 - **Intentions**: the E2E proves the flows survive the swap; green on today's code first.
-- **Landmines**: hub indices count the full list (nearby group); pick rows by name. Don't pin the add row, the group,
-  the NFS line, or nested share rows (they're meant to go).
+- **Landmines**: hub indices count the full list (nearby group); pick rows by name. Don't pin the hub's add row, the
+  group, the NFS line, or nested share rows (they're meant to go; the trailing row gets its own pins in M7).
 - **Test plan**: `pnpm check desktop-e2e-playwright` with the servers and SMB specs; each new spec red-first by breaking
   the behavior once.
-- **DONE**: specs green on `main`'s behavior, mapped to coverage-contract lines in the report.
+- **DONE**: specs green on `main`'s behavior, mapped to coverage-contract lines in the report; the measurement and the
+  (a)/(b) verdict recorded.
 
-### M2: the server rows in Rust (not yet wired)
+### M2: ⌘R on a share list, and #1518 (independent)
+
+- **⌘R scope**: the finding in § "Current state": a listed share list re-reads on ⌘R but shows nothing when nothing
+  changed; on its sign-in or refusal state (`ErrorPane`) ⌘R likely does nothing. First confirm the second from code and
+  a test (what `refreshPane` gets from `getListingId()` there, and what `refresh_listing` answers). Then: ⌘R on a pane
+  whose listing failed retries that navigation (generic, any kind in an error state, ❌ not a share-list check; reuse
+  the Try again path if `ErrorPane` has one); and whatever visible sign § "Questions" Q1 settles on.
+- **#1518 scope**: a GUID in Samba's name-derived shape (the 16 little-endian bytes are printable ASCII, then NUL
+  padding: `naspolya` → `7073616e-6c6f-6179-0000-000000000000`) is recognized in `ServerGuid` (a typed flag or a
+  `GuidOrigin`, ❌ never a string compare at the call site) and per § "Questions" Q2 never proves `same_share` or
+  `redirectable`. Fix the stale docs: `server_guid.rs`'s module doc ("only the server's own GUID says they're one box"),
+  `network/DETAILS.md` § "Which server a share is on" (incl. the "mints its own on first start" fixture line). This plan
+  already says servers never merge by GUID; nothing in the Servers list reads it.
+- **Pins**: Rust: a forced refresh of `smb://<server>` with `FakeShares` makes ONE `Freshness::Fresh` dial and an
+  unforced one makes none (the `EveryWriter` short-circuit); a refused share list's ⌘R re-runs the navigation (FE test);
+  `same_share` / `redirectable` false for two rows sharing a name-derived GUID, true for a Windows-shaped random GUID as
+  today; each `same_share_as` caller's test gets a name-derived case.
+- **Landmines**: don't add a Cmdr-store read to the forced path (`stored_once` stays once per session); the smbutil
+  Keychain fallback already runs per dial and stays as is (§ "Current state"); `refresh_listing`'s
+  `watcher_backed_listing_path` must keep short-circuiting unforced refreshes on `network`. The `GuidProof` vocabulary
+  (Authenticated / Unauthenticated) is orthogonal to the origin: a signed-in Samba session still only proves a name.
+- **Test plan**: `cargo nextest run share_list_volume same_share server_guid`; `svelte-tests-related`; `clippy`.
+- **DONE**: ⌘R on a refused share list retries; #1518 closed by the commit.
+
+### M3: the server rows in Rust (not yet wired)
 
 - **Scope**: `src-tauri/src/network/servers_listing.rs`: `server_rows(ServerRowInputs) -> Vec<ServerRow>`, a port of
   `servers-hub-rows.ts`'s merge minus place rows, with its tests ported (`servers-hub-rows.test.ts`, `.s3.test.ts`);
-  `ServerMeta` in `cmdr-fs` (specta + bindings regen); an SMB server reads `connected` when a share from it is mounted
-  (mount table, `same_server`). S3 accounts per § "Decisions", 6.
+  `ServerMeta` in `cmdr-fs` (specta + bindings regen); the row's reserved icon id (§ "Fit check", Icons); an SMB server
+  reads `connected` when a share from it is mounted (mount table, `same_server`). S3 accounts per § "Decisions", 6.
 - **Intentions**: every regression anchor in the TS merge survives (name rank, `primaryHost`, "Found nearby" only from a
-  DISCOVERED match, `not_connected_yet`, unique ids, first writer wins, port in the address off 445).
+  DISCOVERED match, `not_connected_yet`, unique ids, first writer wins, port in the address off 445, `hubRowIcon`'s
+  monitor for SMB and server glyph for the rest).
 - **Landmines**: `listed_as` lives in `SmbServerVolume` keyed by host id: read it without locking across an await.
   `matchingHosts` compares lowercase name/address; use `server_identity` where the TS compared strings only if the
   answers match on every ported test, else keep the TS semantics and say so. The S3 root label is a WORD
-  (`servers.hub.s3AllBuckets`): Rust marks the root, the FE words it.
+  (`servers.hub.s3AllBuckets`): Rust marks the root, the FE words it. Row PATHS must be unique, not just ids (the engine
+  keys by path).
 - **Test plan**: ported unit tests; `pnpm check clippy`; `cargo nextest run servers_listing`.
 - **DONE**: Rust rows equal the TS rows on every ported fixture (flat).
 
-### M3: servers behind mounted shares
+### M4: servers behind mounted shares
 
 - **Scope**: § "Decisions", 4 and 5. For (4a): a mount-table pass (the OS-mount pass the upgrade already runs at launch
   and on mount events) saves each mounted share's SERVER into `manual_servers` with a name source that ranks below a
-  person's name; ❌ no share row in `known_shares`. Forget on a server with a live mount offers Disconnect first. For
-  (5b): verify Edit server's address change on an SMB row and that it never merges two saved servers (the relocate
-  refusal). Two mounts of one NAS by two addresses yield two rows.
+  person's name and marks it as saved from a mount; ❌ no share row in `known_shares`. Forget on a server with a live
+  mount offers Disconnect first. For (5b): verify Edit server's address change on an SMB row and that it never merges
+  two saved servers (the relocate refusal). Two mounts of one NAS by two addresses yield two rows. The hub (still live
+  until M8) shows these servers as ordinary saved rows.
 - **Intentions**: David's `192.168.1.111` and `100.127.48.122` both show, as two servers, without anyone dialing them.
-- **Landmines**: identity is address + port, ❌ never GUID; an mDNS service name in `statfs` (`friendly_server_name`)
-  must not save a second row beside the discovered host; the write must be idempotent across launches; `smb_hosts`
-  dedupes by ADDRESS while row ids come from the NAME (the duplicate-id crash in `network/DETAILS.md`); a manual entry
-  injects a `manual` host into discovery at startup, so the new rows must not read "Found nearby".
+- **Landmines**: identity is address + port, ❌ never GUID. ❗ #324 until M8: the hub's prefetch lists every SAVED SMB
+  host's shares on each Servers visit (`savedSmbHostIds`), so the servers this milestone saves (a Tailscale address
+  included) would start being dialed; they're excluded from the prefetch by their mount-saved mark until M8 decides the
+  prefetch (pin it). ❗ Key the saved server by the mount's own server spelling (`statfs`'s, port included), ❌ never by
+  `made_host`'s discovery-resolved address: that one flips between an IP and a `.local` name with discovery timing, so
+  launches would save duplicates. An mDNS service name in `statfs` (`friendly_server_name`) must not save a second row
+  beside the discovered host; the write must be idempotent across launches; `smb_hosts` dedupes by ADDRESS while row ids
+  come from the NAME (the duplicate-id crash in `network/DETAILS.md`); a manual entry injects a `manual` host into
+  discovery at startup, so the new rows must not read "Found nearby". The pass reads the mount table only
+  (`smb_mounts()`), ❌ never `statfs` / `stat` per mount (a dead share hangs it).
 - **Test plan**: Rust tests with a fake mount table (LAN + Tailscale of one GUID → two rows; a share mounted from a
-  discovered host → no extra row); `clippy`, `clippy-windows`.
-- **DONE**: with both mounts present, `server_rows` lists both servers, status connected.
+  discovered host → no extra row; one mount seen as IP then as `.local` across two passes → one saved row; mount-saved
+  servers absent from the prefetch set); `clippy`, `clippy-windows`.
+- **DONE**: with both mounts present, `server_rows` lists both servers, status connected, and a Servers visit dials
+  neither.
 
-### M4: `SmbServerVolume` lists `smb://`, live
+### M5: `SmbServerVolume` lists `smb://`, live
 
-- **Scope**: `list(smb://)` returns the M2 rows as entries (paths per § "Fit check"); `get_metadata` on a row's path;
-  `listing_watch_coverage(smb://) = EveryWriter`; a debounced re-list through `Listings::directory_changed` on every
-  input change; MCP `list_dir smb://` returns them.
+- **Scope**: `list(smb://)` returns the M3 rows as entries (paths per § "Fit check", every row a directory);
+  `get_metadata` on a row's path; `listing_watch_coverage(smb://) = EveryWriter` (it already answers that for every
+  path); a debounced re-list through `Listings::directory_changed` on every input change; MCP `list_dir smb://` returns
+  them.
 - **Intentions**: the views can render the Servers list with no special code, and it stays current with no poll.
 - **Landmines**: the engine test FIRST for entries whose path isn't under `smb://` (diffs, `findFileIndex`, the
   drop-foreign-listings rule, `indexOfPath`); the volume `root()` stays the constant `smb://` (`RootHistory`, #1511's
   landmine); the change hooks must not fire a re-list per discovery event storm (debounce, one per burst); `smb://<x>`
-  share-list behavior is untouched (its `Reader` gate stays).
+  share-list behavior is untouched (its `Reader` gate stays, and M2's forced-refresh pin stays green). Until M8 no pane
+  opens a listing on `smb://` (the hub renders), so the re-list must cost nothing with no listing open
+  (`listings_for_path_on_volume` empty → no work).
 - **Test plan**: Rust tests: zero dials and zero Keychain reads for `smb://` from every reader; a host found → one
   re-list; an engine-level `Listings::start` on `smb://` completes with server rows.
 - **DONE**: a listing of `smb://` returns the fixture servers through the engine and updates when a host appears.
 
-### M5: the kind, the cells, the verbs, and the share list's saved facts (not yet reached)
+### M6: the kind, the cells, the verbs, and the share list's saved facts (not yet reached)
 
-- **Scope**: branches 1–8, 10, 11 behind the `network` kind (cells, `ListWords` fields, badge, words, open arm, keys,
-  F-key labels, row menu host, palette target, MCP tokens, footer, every verb refusal incl. the drop-on-row pin), plus §
-  "Decisions", 10 on the share list (saved/mounted dot, Pin and Forget share in the share-row menu, Enter on a saved
-  share mounts as its saved account through its place). `paneViewKind` still renders `NetworkMountView`, so `main`
-  behaves as before for Servers; the share list gains its saved-share facts live.
-- **Intentions**: every generic seam knows the Servers list before the switch, so M6 is a switch, not a hunt.
+- **Scope**: branches 1–8, 10, 11 behind the `network` kind (cells, `dateHeader`, badge, icon ids in `FileIcon`, words,
+  open arm, keys, F-key labels, row menu host, palette target, MCP tokens, footer, every verb refusal incl. the
+  drop-on-row pin and § "Fit check"'s cross-scheme path list), plus § "Decisions", 10 on the share list (saved/mounted
+  dot, Pin and Forget share in the share-row menu, Enter on a saved share mounts as its saved account through its
+  place). `paneViewKind` still renders `NetworkMountView`, so `main` behaves as before for Servers; the share list gains
+  its saved-share facts live.
+- **Intentions**: every generic seam knows the Servers list before the switch, so M8 is a switch, not a hunt.
 - **Landmines**: `rg "=== 'network'"` and `rg "capabilitiesFor\("` are the real audit; each kept volume-only check says
-  why in the report. The F7 / F8 arms must not change what F7 / F8 do on the share list (still refusals). The badge's
-  words are the row's accessible name's, ❌ not a second live region. A saved share's mount uses its SAVED account, ❌
-  not the server's session credential (today the hub's place row does).
+  why in the report. ❗ Find out which handler wins F2 / F7 / F8 / ⌃⏎ on `network` TODAY (the hub's own keydown or the
+  global command): the new arms must not double-fire beside the hub's while it still renders (M6 to M8). The F7 / F8
+  arms must not change what F7 / F8 do on the share list (still refusals). The badge's words are the row's accessible
+  name's, ❌ not a second live region. A saved share's mount uses its SAVED account, ❌ not the server's session
+  credential (today the hub's place row does). Showing a saved share's dot on the share list reads `known_shares` and
+  the volume list only, ❌ no Keychain.
 - **Test plan**: unit tests per branch; a FilePane component test that a tab on `network` + `smb://` with a mocked
-  listing renders Full with Name / Details / Last used and no Size; refusal tests per verb; `svelte-tests-related`.
+  listing renders Full with Name / Details / Last used and no Size, server glyphs, and the status badge; refusal tests
+  per verb; `svelte-tests-related`.
 - **DONE**: the component test green; the share list shows saved shares' dots and menu items in the app.
 
-### M6: the switch
+### M7: the trailing row (generic, not yet reached)
+
+- **Scope**: branch 13: the `trailingRow` prop on `FullList` and `BriefList`, the ONE `trailingRowCount` helper every
+  index consumer reads, cursor reach (↓, End, PageDown, click), Enter / double-click / MCP `open_under_cursor` dispatch,
+  never selectable or counted or draggable or a drop target, visible under a quick filter, skipped by type-to-jump, the
+  MCP mirror line, a11y name. Only the `network` kind sets it (to `servers.connect`), so nothing changes on `main` until
+  M8.
+- **Intentions**: one generic row the views draw for any kind that asks, the `..` row's mirror image, ❌ no `if server`.
+- **Landmines**: § branch 13's consumer list; `hasParentEntry()`'s +1 and the trailing row's count must compose (a kind
+  could have both; Servers has none); the virtual scroller's total height and Brief's column count include it; cursor
+  restore across a rebuild must not land on it when the cursor's row still exists; a cursor ON it stays on it across a
+  re-list. `FilePane` is at its cap: a `*.svelte.ts` factory.
+- **Test plan**: component tests on a stub kind with a plain mocked listing (sort desc, filter matching nothing, ⌘A,
+  Space, ⇧↓ through it, End, type-to-jump letters, MCP indices); axe on the stub; `svelte-tests-related`.
+- **DONE**: the stub-kind tests green; no view file names a kind.
+
+### M8: the switch
 
 - **Scope**: `paneViewKind` routes `network` to the list; the discovery hold factory (branch 12); the landing (branch
-  9); the Add server door (§ "Decisions", 1); stop the prefetch and stale refresh (§ "Decisions", 7); delete
+  9); the Add server doors (F7 and the trailing row); the prefetch per M1's verdict (stop it, or narrow it to saved
+  servers under the #324 gates) and the stale refresh; `refreshPane`'s `isInNetworkView` branch; delete
   `NetworkMountView.svelte`, `ServersHub.svelte`, `ServersHubStatusBar.svelte`, `ServersHubRowMenu.svelte` (if branch 7
   doesn't reuse it), `servers-hub-{rows,items,keys,shares,columns,mcp}.ts`, `servers-hub-list.svelte.ts`,
-  `list-cursor.ts`, `hub-landing.svelte.ts`, the NFS hint and its keys, the nearby-group setting, and their tests; move
-  the E2E specs to the new MCP spelling.
+  `network/list-cursor.ts` (❌ not `lib/ui/list-cursor.ts`, which other lists use), `hub-landing.svelte.ts`, the NFS
+  hint and its keys, the nearby-group setting, and their tests; move the E2E specs to the new MCP spelling; flip M1's
+  share-listing-counter baseline into the #324 pin.
 - **Rollback**: a tab state this build writes is still `network` + `smb://` or `smb://<server>`, which the previous
   build reads; check it once and say so.
 - **Intentions**: every M1 pin green with the standard rendering.
-- **Landmines**: `getNetworkCursorEntry` and `NetworkCursorEntry` readers (`DualPaneExplorer`, `pane-mirror.ts`,
-  `navigation-transaction-handlers`); `pane-mirror.ts`'s Copy-path-between-panes onto Servers; the pinned-tab fork
-  (Servers on a pinned tab → share list opens a new tab, as any folder); `holdDiscoveryForServersView` must release when
-  the pane leaves `smb://` (and both panes share one lease).
+- **Landmines**: `getNetworkCursorEntry`, `getNetworkItemCount`, `isInNetworkView`, and `NetworkCursorEntry` readers
+  (`DualPaneExplorer`, `move-cursor.ts`, `pane-commands.ts`, `pane-mirror.ts`, `navigation-transaction-handlers`);
+  `pane-mirror.ts`'s Copy-path-between-panes onto Servers; the pinned-tab fork (Servers on a pinned tab → share list
+  opens a new tab, as any folder); `holdDiscoveryForServersView` must release when the pane leaves `smb://` (and both
+  panes share one lease); `pane/CLAUDE.md`'s "`network` at `smb://` is the SERVERS HUB (`NetworkMountView`, own MCP
+  push)" must-know changes in this commit.
 - **Test plan**: M1 E2E on macOS and Linux; axe on a Servers pane; `svelte-tests-related`; `clippy`.
 - **DONE**: `rg -w 'ServersHub|NetworkMountView|hubLandingFor|nearbyServersGroup|prefetchSharesCmd' apps/desktop/src`
-  finds nothing; the screenshot shows a flat Servers list with the footer band at the share list's height.
+  finds nothing (or, if M1 kept a saved-only prefetch, only that); the screenshot shows a flat Servers list ending in "+
+  Add server…" with the footer band at the share list's height.
 
-### M7: close-out
+### M9: close-out
 
 - **Scope**: dead i18n keys (`servers.hub.nfsHint*`, `col*`, `moreShares`, `nearbyGroup`, the status-bar words if
   unused), `knip`, the full SMB and servers E2E on macOS and Linux, `pnpm check --only-slow`, docs audit of every
@@ -481,24 +650,43 @@ added.
 - **DONE**: the conformance review against the invariants finds nothing; this spec is ready to wipe per
   `docs/specs/DETAILS.md`.
 
+## Questions (David)
+
+1. **What should ⌘R on a share list show when nothing changed?** It does re-read today (the log shows a fresh read of
+   Naspolya's eight shares in about 76 ms), but the rows come back the same, so nothing moves. (a) Nothing, like a
+   folder; fix only the dead ⌘R on the sign-in or refusal screen. (b) A short "Up to date" in the footer after any ⌘R,
+   on every pane, so a refresh always answers. (c) (b), but only on network panes, where a refresh is a real round trip.
+   **Recommended: (a)** for consistency with folders, unless you were expecting to see new shares that didn't appear (if
+   so, say which server: that would be a different bug).
+2. **#1518: how strict should share identity get on Samba?** A Samba box's GUID is its NetBIOS name, so two Pis both
+   named `raspberrypi` with a `share` share look like one share today. (a) A name-shaped GUID is only a hint: Cmdr never
+   lets one share answer for the other. Safe, but your NAS by LAN and by Tailscale also stops pairing in Ask Cmdr (it
+   lists the Tailscale one live instead of reusing the LAN one's index). (b) Keep pairing name-shaped GUIDs only when
+   both sides also signed in as the same account. Keeps your NAS pairing, still wrong for two Pis with the default `pi`
+   account. **Recommended: (a)**: a wrong answer from the wrong box is worse than a slower live listing.
+
 ## Invariants (the conformance register)
 
 1. Building the Servers list never dials a server or reads the Keychain, for any reader; a server's shares are read only
-   when a pane opens its share list.
-2. The Servers list is flat: one row per server, ❌ no share rows; every row's path is unique.
+   when a pane opens its share list (or by a saved-only prefetch, if M1's numbers keep one).
+2. The Servers list is flat: one row per server, ❌ no share rows; every row's path is unique; every row is a directory.
 3. Every server with a mounted SMB share is listed; two addresses are two rows; nothing merges servers by GUID.
 4. The views, `SelectionInfo`, `FileIcon`, and the listing engine hold no Servers-specific code; server facts reach them
-   only through `ServerMeta` via `extCellText`, the date cell, the badge hook, and `ListWords`.
+   only through `ServerMeta` via `extCellText`, the date cell, the badge hook, reserved icon ids, `ListWords`, and the
+   generic trailing-row prop.
 5. Every row action resolves its saved entry by the row's own id, never by host, name, or address.
 6. `..` from a share list lands the Servers cursor on that server's row; a restored share-list tab lands there without
    listing anything.
 7. The Servers list updates on discovery, store, mount, and volume changes by subscription, never a poll.
 8. No file operation takes a Servers row as source or destination, and a Servers row is no drop target.
 9. The MCP mirror is the standard one: indices match the screen, tokens are locale-independent.
+10. The trailing row is no entry: never selected, counted, sorted, filtered out, dragged, or an operation's source,
+    target, or drop target; it's always last.
+11. ⌘R on a share list re-reads past the share cache; an unforced refresh never dials it.
+12. A name-derived Samba GUID never makes two shares one (`same_share`, `redirectable`).
 
 ## Bugs spotted (outside this plan)
 
-- `location/share_identity.rs::same_share` calls two shares "proven the same" on matching server GUID + share name. Per
-  David's note, Samba derives the GUID from the NetBIOS name, so two different Samba boxes sharing a NetBIOS name (a
-  common default) with a same-named share would pair, and Ask Cmdr's `list_dir` could answer one box's folder from the
-  other's index. Worth an issue: either require more than the GUID for Samba or downgrade the claim to a hint.
+- None open beyond what this plan now covers: #1518 moved into M2. Worth knowing, not a bug: every guest-refused share
+  listing with no credentials runs `smbutil view` against the macOS Keychain (`smb_client.rs`), so each ⌘R on such a
+  share list reads the Keychain once more; Cmdr's own store stays once per session.
