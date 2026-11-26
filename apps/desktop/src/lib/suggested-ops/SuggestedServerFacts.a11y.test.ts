@@ -160,6 +160,7 @@ describe('a refused card', () => {
           sourceFolder: null,
           liveOpCount: 0,
           totalOpCount: 0,
+          retiredOpCount: 0,
           fromSelector: false,
           server: addServer,
         } as never,

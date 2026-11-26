@@ -84,6 +84,10 @@ pub(super) struct GroupSummaryOut {
     /// Ops the user deselected. Their rows stay, so the record says what was offered.
     #[serde(skip_serializing_if = "is_zero")]
     pub excluded_op_count: u64,
+    /// Ops another suggestion took over: a newer one names the same file, or one that ran
+    /// already moved it. They never run.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub taken_over_op_count: u64,
     /// True when a pattern produced this group. Its `displayName` IS that pattern.
     #[serde(skip_serializing_if = "crate::tools::read::is_false")]
     pub from_selector: bool,
@@ -245,6 +249,7 @@ pub(super) fn to_group_summary(summary: GroupSummary) -> GroupSummaryOut {
         group,
         live_op_count,
         total_op_count,
+        retired_op_count,
         server,
     } = summary;
     let runs_as = source_runs_as(group.verb, &group.source_volume_id);
@@ -260,7 +265,10 @@ pub(super) fn to_group_summary(summary: GroupSummary) -> GroupSummaryOut {
         runs_as,
         reversible: group.reversible,
         op_count: live_op_count,
-        excluded_op_count: total_op_count.saturating_sub(live_op_count),
+        excluded_op_count: total_op_count
+            .saturating_sub(live_op_count)
+            .saturating_sub(retired_op_count),
+        taken_over_op_count: retired_op_count,
         from_selector: group.selector.is_some(),
         server: server.map(|proposal| ServerOut {
             draft: proposal.draft,

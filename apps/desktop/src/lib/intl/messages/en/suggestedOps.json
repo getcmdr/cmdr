@@ -381,6 +381,14 @@
     "description": "Shown in a file's Size column when the file isn't where the suggestion says any more: something moved or deleted it since. Approving skips it. The row can be a file or a folder.",
     "screenshot": "suggested-ops-downloads-cleanup.png"
   },
+  "suggestedOps.opSuperseded": "A newer suggestion covers this file",
+  "@suggestedOps.opSuperseded": {
+    "description": "Short note in a file row of an AI suggestion, after the file's name, when a NEWER AI suggestion names the same file, so this older one steps aside for it. The row's tick box is off and can't be ticked: approving this suggestion skips the file. The newer suggestion is elsewhere in the same list."
+  },
+  "suggestedOps.opHandledElsewhere": "Another suggestion already changed this file",
+  "@suggestedOps.opHandledElsewhere": {
+    "description": "Short note in a file row of an AI suggestion, after the file's name, when ANOTHER AI suggestion the person approved already moved, renamed, trashed, or deleted this file, so this one can't act on it any more. The row's tick box is off and can't be ticked: approving this suggestion skips the file."
+  },
   "suggestedOps.snapshotOnly": "From when the AI suggested this",
   "@suggestedOps.snapshotOnly": {
     "description": "Screen-reader name of a small clock glyph beside a file's size or date when Cmdr couldn't look at the file just now, so the value is what it was when the AI made the suggestion. The tooltip is suggestedOps.snapshotOnlyTooltip.",
@@ -457,6 +465,14 @@
     "description": "What to do next, under suggestedOps.refusal.nothingToRun.message. \"It\" is the suggestion; the approve button and Reject are on it.",
     "screenshot": "suggested-ops-changed-and-refused.png",
     "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
+  },
+  "suggestedOps.refusal.sourcesGone.message": "These files aren’t where this suggestion expected them any more, so nothing ran. Another suggestion or app may have renamed or moved them.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "description": "Reason shown under a suggestion whose approval didn't start because every file it names is no longer at its path: something renamed, moved, or deleted them since the AI suggested it (often another AI suggestion the person approved first). Cmdr knows they're gone, not merely unreadable. The suggestion is back on the list, waiting for an answer. Followed by suggestedOps.refusal.sourcesGone.suggestion."
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Reject it to clear it from the list.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "description": "What to do next, under suggestedOps.refusal.sourcesGone.message. \"It\" is the suggestion; the Reject button is on it. Approving again can't help, since the files aren't there."
   },
   "suggestedOps.refusal.nothingSelected.message": "None of the files you ticked are in this suggestion any more, so nothing ran.",
   "@suggestedOps.refusal.nothingSelected.message": {

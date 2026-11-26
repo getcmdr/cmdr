@@ -107,6 +107,18 @@ their panes sees MB here too.
 - **Couldn't check (or not checked yet)**: the creation snapshot in tertiary text behind a clock `StatusGlyph` labelled
   "From when the AI suggested this". No value at all says "Unknown". ❌ Never a zero: it reads as an empty file.
 
+**A row another suggestion took over** (#1524; status `superseded` or `handledElsewhere`, the store's rule in
+`apps/desktop/src-tauri/src/agent/store/proposals/DETAILS.md` § Two groups naming one file): its name cell says why ("A
+newer suggestion covers this file" / "Another suggestion already changed this file"), and its box is unticked and
+disabled. `isRetiredOp` (`suggested-ops-selection.svelte.ts`) is the one test: `flippedOn` answers `false` for it in
+every mode, so the count, the header box, and the wire all leave it out. An `allExcept` counts down from
+`totalOpCount - retiredOpCount`, and a taken-over row the disk also calls gone counts once. The store never moves such a
+row whatever the wire says, so this is about honest counts, not safety.
+
+**A refused approval whose files are all gone** answers `sourcesGone`, worded apart from `nothingToRun` ("couldn't
+read"): the backend tells the two apart from the stats themselves
+(`../../../src-tauri/src/agent/suggested_ops/DETAILS.md` § The approval bridge).
+
 **Decision: the snapshot is the fallback, not the column.** The columns used to show only the creation snapshot, headed
 "Size when suggested", which was honest but answered the wrong question: the user is deciding about the file as it is
 NOW. The snapshot stays as the comparison point and the fallback, always labelled when it's what's on screen.

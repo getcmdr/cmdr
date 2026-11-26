@@ -39,6 +39,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
             destinationLandsOn: null,
             liveOpCount: 3,
             totalOpCount: 3,
+            retiredOpCount: 0,
             fromSelector: false,
             server: null,
             revision: 1,

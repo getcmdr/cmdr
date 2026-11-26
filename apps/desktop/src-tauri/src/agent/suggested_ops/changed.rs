@@ -38,6 +38,11 @@ pub enum SuggestionChange {
     Rejected,
     /// An approval the write engine refused gave its group back: pending again, nothing ran.
     GivenBack,
+    /// A run that settled already changed files other pending groups named, so those ops were
+    /// marked handled elsewhere: the groups shrank (their `revision` moved) or retired. Carries
+    /// no group id, since it's about the OTHER groups. A newer suggestion taking a file over
+    /// needs no reason of its own: it rides the `Proposed` or `Amended` that wrote it.
+    HandledElsewhere,
 }
 
 /// The pending suggestion set changed.

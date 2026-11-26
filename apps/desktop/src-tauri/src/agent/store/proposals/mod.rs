@@ -28,6 +28,7 @@
 mod claim;
 mod complete;
 mod draft;
+mod overlap;
 mod read;
 mod recovery;
 mod server;
@@ -43,6 +44,7 @@ pub use claim::{
 };
 pub use complete::{CompleteOutcome, mark_group_completed, record_op_outcome};
 pub use draft::{ServerDraft, ServerEdit, ServerProposal};
+pub use overlap::{Retirement, retire_handled_elsewhere};
 pub use read::{
     GroupSummary, ProposalOp, ProposalSweep, count_ops, count_pending, get_group, get_sweep, list_groups, page_ops,
     read_server_proposal, rejected_groups_since,

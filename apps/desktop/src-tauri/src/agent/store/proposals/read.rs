@@ -60,6 +60,9 @@ pub struct GroupSummary {
     pub live_op_count: u64,
     /// Every op row the group has, whatever its status.
     pub total_op_count: u64,
+    /// How many of those another suggestion took over (`OpStatus::RETIRED`): rows the review
+    /// shows, labelled, that no selection ever ticks.
+    pub retired_op_count: u64,
     /// What a server group proposes; `None` for a file group. A server group whose draft is
     /// missing fails the read rather than arriving without one.
     pub server: Option<ServerProposal>,
@@ -130,15 +133,20 @@ pub fn list_groups(conn: &Connection, status: Option<ProposalStatus>) -> Result<
     let sql = format!(
         "SELECT {GROUP_COLUMNS},
                 (SELECT COUNT(*) FROM proposal_ops o WHERE o.group_id = p.id AND o.status = ?2) AS live_ops,
-                (SELECT COUNT(*) FROM proposal_ops o WHERE o.group_id = p.id) AS total_ops
+                (SELECT COUNT(*) FROM proposal_ops o WHERE o.group_id = p.id) AS total_ops,
+                (SELECT COUNT(*) FROM proposal_ops o WHERE o.group_id = p.id AND o.status IN (?3, ?4))
+                    AS retired_ops
          FROM proposals p
          WHERE (?1 IS NULL OR p.status = ?1)
          ORDER BY p.created_at DESC, p.id DESC"
     );
     let mut stmt = conn.prepare_cached(&sql)?;
+    let [superseded, handled] = OpStatus::RETIRED;
     let mut rows = stmt.query(params![
         status.map(ProposalStatus::as_token),
-        OpStatus::Pending.as_token()
+        OpStatus::Pending.as_token(),
+        superseded.as_token(),
+        handled.as_token(),
     ])?;
     let mut out = Vec::new();
     while let Some(row) = rows.next()? {
@@ -146,6 +154,7 @@ pub fn list_groups(conn: &Connection, status: Option<ProposalStatus>) -> Result<
             group: map_group_row(row)?,
             live_op_count: row.get(16)?,
             total_op_count: row.get(17)?,
+            retired_op_count: row.get(18)?,
             server: None,
         });
     }

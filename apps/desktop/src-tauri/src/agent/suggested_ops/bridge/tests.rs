@@ -7,7 +7,6 @@
 use cmdr_fs::app_path;
 use cmdr_fs::app_path::AppPathBuf;
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use rusqlite::Connection;
@@ -232,6 +231,70 @@ fn a_group_the_decorator_settled_survives_the_next_launch_sweep() {
     assert_eq!(group_status(&conn, group_id), ProposalStatus::Completed);
 }
 
+/// #1524: a suggestion proposed while another one ran names a file that run then trashed. At the
+/// run's settle the later op learns its file is gone, so it can't be approved into a refusal,
+/// and a group left with nothing to offer retires. (A skipped file staying put:
+/// `store/proposals/tests/overlap.rs`.)
+#[test]
+fn a_settled_run_retires_other_suggestions_ops_on_the_files_it_changed() {
+    let dir = TestDir::new("bridge_handled_elsewhere");
+    let (conn, reporting, group_id, ops) = fixture(&dir);
+    crate::agent::store::proposals::record_acceptance(
+        &conn,
+        group_id,
+        0,
+        &crate::agent::store::proposals::OpSelection::all_except(&[]),
+        200,
+    )
+    .expect("preflight");
+    crate::agent::store::proposals::claim_group_for_execution(&conn, group_id, 200).expect("claim");
+    // Proposed while the run is in flight: an approved group is the user's answer, so nothing
+    // supersedes it, and these overlap it.
+    let later_group = |paths: &[&str]| {
+        let set_id = create_sweep(&conn, &NewSweep::default(), 210).expect("sweep");
+        create_group(
+            &conn,
+            set_id,
+            &NewGroup {
+                intent: GroupIntent::Trash {
+                    sources: paths
+                        .iter()
+                        .map(|path| NewOp {
+                            source_path: (*path).to_string(),
+                            snapshot: None,
+                        })
+                        .collect(),
+                },
+                source_volume_id: "root".to_string(),
+                display_name: "later".to_string(),
+                rationale: None,
+                selector: None,
+            },
+            210,
+        )
+        .expect("group")
+    };
+    // Each names its own file: two PENDING groups never share one (newest wins).
+    let shrinks = later_group(&["/Users/someone/Downloads/one.dmg", "/Users/someone/Downloads/three.dmg"]);
+    let retires = later_group(&["/Users/someone/Downloads/two.dmg"]);
+    let (_collector, sink) = sink_over(&ops, group_id, reporting);
+
+    sink.emit_source_item_done(done("/Users/someone/Downloads/one.dmg", SourceItemOutcome::Done));
+    sink.emit_source_item_done(done("/Users/someone/Downloads/two.dmg", SourceItemOutcome::Done));
+    sink.emit_settled(settled());
+
+    assert_eq!(
+        status_of_op(&conn, shrinks, "/Users/someone/Downloads/one.dmg"),
+        OpStatus::HandledElsewhere
+    );
+    assert_eq!(
+        status_of_op(&conn, shrinks, "/Users/someone/Downloads/three.dmg"),
+        OpStatus::Pending
+    );
+    assert_eq!(group_status(&conn, shrinks), ProposalStatus::Pending);
+    assert_eq!(group_status(&conn, retires), ProposalStatus::Retired);
+}
+
 /// ⚠️ **An approval's real outcome is only known at SETTLE.** Recording it at the claim would
 /// tell the agent the user got what they approved; here, one of the two files was skipped, and
 /// the lesson has to say so or the agent learns from a claim rather than from what happened.
@@ -273,7 +336,7 @@ async fn the_binding_holds_what_preflight_saw_not_what_the_agent_saw() {
 
     let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![reviewed.clone()];
-    let expected = super::capture_expected_sources(&volume, &sources).await;
+    let expected = super::capture_expected_sources(&volume, &sources).await.expected;
 
     // Somebody rewrites it between the review and the operation getting its turn.
     std::fs::write(&reviewed, b"edited while it waited in the queue").expect("rewrite");
@@ -301,7 +364,7 @@ async fn an_untouched_source_survives_its_own_binding() {
 
     let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![reviewed.clone()];
-    let expected = super::capture_expected_sources(&volume, &sources).await;
+    let expected = super::capture_expected_sources(&volume, &sources).await.expected;
 
     let sink = CollectorEventSink::new();
     let kept = cmdr_operations::testing::retain_bound_sources(
@@ -325,7 +388,8 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
     let gone = dir.join("gone.dmg");
 
     let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
-    let expected = super::capture_expected_sources(&volume, std::slice::from_ref(&gone)).await;
+    let preflight = super::capture_expected_sources(&volume, std::slice::from_ref(&gone)).await;
+    assert_eq!(preflight.nothing_left(), Some(super::NothingLeft::Gone));
 
     let sink = CollectorEventSink::new();
     let kept = cmdr_operations::testing::retain_bound_sources(
@@ -333,11 +397,83 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
         "op-1",
         WriteOperationType::Trash,
         &cmdr_operations::testing::new_operation_state(app_engine(), std::time::Duration::ZERO),
-        Some(&expected),
+        Some(&preflight.expected),
         vec![gone],
     );
 
     assert!(kept.is_none());
+}
+
+/// #1524: a file whose folder won't let Cmdr look is NOT gone, so a batch left with nothing says
+/// "couldn't read", never "isn't there". Typed by the errno's kind, never its message.
+#[cfg(unix)]
+#[tokio::test]
+async fn a_source_that_refuses_its_stat_reads_as_unreadable_not_gone() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = TestDir::new("bridge_live_binding_unreadable");
+    let locked = dir.join("locked");
+    std::fs::create_dir_all(&locked).expect("folder");
+    let inside = locked.join("hidden.dmg");
+    std::fs::write(&inside, b"here").expect("seed");
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).expect("lock");
+
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
+    let preflight = super::capture_expected_sources(&volume, std::slice::from_ref(&inside)).await;
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).expect("unlock");
+
+    assert_eq!(preflight.nothing_left(), Some(super::NothingLeft::Unreadable));
+}
+
+/// One readable file means something runs, so there's no "nothing left" to word.
+#[tokio::test]
+async fn one_present_file_leaves_something_to_run() {
+    let dir = TestDir::new("bridge_live_binding_some");
+    let here = dir.join("here.dmg");
+    std::fs::write(&here, b"here").expect("seed");
+
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
+    let preflight = super::capture_expected_sources(&volume, &[here, dir.join("gone.dmg")]).await;
+
+    assert_eq!(preflight.nothing_left(), None);
+}
+
+/// #1524's item-4 twin, and the tripwire for escapes going live: preflight stats the path the
+/// review's live facts stat (the app path's native crossing). A name holding an escape-range code
+/// point is where the stored text and that crossing could part: while escapes aren't live
+/// (`ESCAPES_LIVE`) the text keeps it literally and the two agree. Once they go live, this fails
+/// until `stored_spellings` crosses through the bridge.
+#[cfg(unix)]
+#[tokio::test]
+async fn preflight_finds_a_file_whose_name_holds_an_escape_range_code_point() {
+    let dir = TestDir::new("bridge_escape_range_name");
+    let odd = char::from_u32(0x10_FEFF).expect("a scalar value");
+    let file = dir.join(format!("caf{odd}.txt"));
+    std::fs::write(&file, b"here").expect("seed");
+    // As the drive index lists it: the name's own text.
+    let stored = file.to_str().expect("a UTF-8 scratch path").to_string();
+    let typed = crate::commands::wire_path::start_paths([stored.as_str()]).expect("an app path");
+    let op = ProposalOp {
+        id: 1,
+        group_id: 1,
+        seq: 0,
+        source_path: stored,
+        destination: None,
+        status: OpStatus::Pending,
+        snapshot_size: None,
+        snapshot_mtime: None,
+        snapshot_inode: None,
+    };
+
+    let spelled = super::stored_spellings(std::slice::from_ref(&op));
+    let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
+    let preflight = super::capture_expected_sources(&volume, &spelled).await;
+
+    assert_eq!(
+        spelled[0],
+        typed[0].to_native().expect("a local path"),
+        "the spelling the volume opens"
+    );
+    assert_eq!(preflight.nothing_left(), None, "the file is there, so it's bound");
 }
 
 /// Registers the local-FS "root" volume the bridge resolves a group's sources through, rooted
@@ -418,8 +554,11 @@ async fn an_approval_the_engine_refuses_returns_the_group_to_pending() {
     .expect("the store answers");
 
     assert!(
-        matches!(outcome, super::ApprovalOutcome::Refused(_)),
-        "nothing could start: {outcome:?}"
+        matches!(
+            outcome,
+            super::ApprovalOutcome::Refused(super::ApprovalRefusal::NothingToRun(super::NothingLeft::Gone))
+        ),
+        "nothing could start, because the file is gone, ❌ not unreadable (#1524): {outcome:?}"
     );
     assert_eq!(
         group_status(&conn, group_id),
@@ -755,12 +894,14 @@ async fn a_rename_the_review_started_settles_its_group_and_its_thread_line() {
     )
     .expect("preflight");
     let ops = page_ops(&conn, group_id, 10, 0).expect("ops");
-    let sources: Vec<PathBuf> = ops.iter().map(|op| PathBuf::from(&op.source_path)).collect();
+    let sources = super::stored_spellings(&ops);
     let volume = crate::file_system::volume::manager::get_volume_manager()
         .get("root")
         .expect("root volume");
-    let expected = super::capture_expected_sources(volume.as_ref(), &sources).await;
-    let rows = super::rename_rows(&parent, &ops, &expected).expect("rows");
+    let expected = super::capture_expected_sources(volume.as_ref(), &sources)
+        .await
+        .expected;
+    let rows = super::rename_rows(&parent, &ops, &sources, &expected).expect("rows");
     let ClaimOutcome::Claimed(claimed) = crate::agent::suggested_ops::approve(&conn, group_id, 200).expect("approve")
     else {
         panic!("the claim is refused");
@@ -823,7 +964,7 @@ async fn the_names_a_move_carries_are_keyed_by_the_sources_the_binding_keeps() {
 
     let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
     let sources = vec![renamed.clone(), kept.clone(), gone.clone()];
-    let expected = super::capture_expected_sources(&volume, &sources).await;
+    let expected = super::capture_expected_sources(&volume, &sources).await.expected;
     let op = |id: i64, path: &std::path::Path, name: Option<&str>| ProposalOp {
         id,
         group_id: 1,
@@ -842,7 +983,7 @@ async fn the_names_a_move_carries_are_keyed_by_the_sources_the_binding_keeps() {
     ];
 
     assert_eq!(
-        super::transfer_names(&ops, &expected),
+        super::transfer_names(&ops, &sources, &expected),
         vec![(renamed, "2026 OpenAI.pdf".to_string())]
     );
 }

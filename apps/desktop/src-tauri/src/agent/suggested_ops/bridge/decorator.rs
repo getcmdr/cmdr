@@ -142,6 +142,14 @@ impl OperationEventSink for ProposalReportingSink {
             // learn the user wanted something they never got. The per-op statuses above are
             // already written by the time settle fires, so this reads the truth.
             crate::agent::outcomes::record_completion(&conn, self.memory.as_ref(), self.group_id, now_secs());
+            // The files this run moved away are no longer what other pending ops on those paths
+            // meant (#1524). After the per-op statuses, which say which ones it moved.
+            if let Err(e) = crate::agent::suggested_ops::retire_handled(&conn, self.group_id, now_secs()) {
+                log::warn!(
+                    target: "agent::suggested_ops",
+                    "couldn't retire other suggestions' ops on group {}'s files: {e}", self.group_id
+                );
+            }
         }
         self.inner.emit_settled(event);
     }

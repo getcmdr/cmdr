@@ -1369,12 +1369,12 @@ the optional seams), what each seam's contract is, and where Cmdr answers it: `s
 
 ## The public surface is capped
 
-`index-crate-isolation` holds this crate to 91 root promises, 60 `Operations` methods, one public module (`host`), and
+`index-crate-isolation` holds this crate to 92 root promises, 60 `Operations` methods, one public module (`host`), and
 25 public items inside it (`scripts/check/checks/index-crate-isolation-ceilings.go`). The numbers are exactly what the
 crate exposes, measured with no headroom, so an addition has to be argued for. Everything counted exists for a named
 caller.
 
-Root promises (91), by who needs them:
+Root promises (92), by who needs them:
 
 - **The handle** (3): `Operations`, `OperationsBuilder` (from `Operations::builder`), and `AlreadyClaimed` (a second
   `claim_ledger`'s refusal).
@@ -1391,9 +1391,10 @@ Root promises (91), by who needs them:
   (`BulkRenameRow`, `RenameStartError`, `RenameValidityResult`, `RenamesStarted`), which `commands/rename.rs`,
   `multi_rename`, and the agent's suggested renames speak, and `RenameTarget`, `rename_managed`'s destination, whose
   only constructor refuses a `.` or `..` new name on the sender's text (#1229).
-- **Pre-flight and undo** (9): `SourceItemInput`, `VolumeScanError`, and `CONFLICT_CHECK_BUDGET` (the transfer dialog's
+- **Pre-flight and undo** (10): `SourceItemInput`, `VolumeScanError`, and `CONFLICT_CHECK_BUDGET` (the transfer dialog's
   conflict check), `ScanCostFacts` (the S3 estimate prices a preview's counts), the source binding a reviewed batch
-  supplies (`ExpectedSources`, `LocalContent`, `RemoteContent`, `SourceFingerprint`, for the agent's approved ops), and
+  supplies (`ExpectedSources`, `LocalContent`, `RemoteContent`, `SourceFingerprint`, for the agent's approved ops, and
+  `SourceUnread`, why a source gave no fingerprint, so an approval left with nothing says gone or unreadable), and
   `UndoReport` (`undo_operations`' answer).
 - **Engine-free helpers the IPC edge asks** (8): `trash_routing_for_selection` and its `TrashRoutingAnswer` (F8's
   trash-or-delete question), `trash_dir_for_path`, `move_to_trash_sync` (the bare, unjournaled trash move, for the

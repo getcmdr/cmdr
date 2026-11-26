@@ -234,7 +234,7 @@ pub use conflict_preflight::CONFLICT_CHECK_BUDGET;
 pub use conflict_preflight::{SourceItemInput, VolumeScanError};
 pub use rollback::UndoReport;
 pub use scan_cache::ScanCostFacts;
-pub use source_binding::{ExpectedSources, LocalContent, RemoteContent, SourceFingerprint};
+pub use source_binding::{ExpectedSources, LocalContent, RemoteContent, SourceFingerprint, SourceUnread};
 
 // Engine-free helpers the IPC edge asks before or beside an operation: the F8
 // routing question, where a path's trash is, the bare unjournaled trash move

@@ -44,7 +44,7 @@ use crate::operations_host::{operations, refuse_not_installed};
 use cmdr_operation_log::types::Initiator;
 use cmdr_operations::{
     BulkRenameRow, ExpectedSources, OperationEventSink, Operations, RenameStartError, RenamesStarted,
-    SourceFingerprint, TransferLeaves, VolumeCopyConfig, WriteOperationConfig, WriteOperationError,
+    SourceFingerprint, SourceUnread, TransferLeaves, VolumeCopyConfig, WriteOperationConfig, WriteOperationError,
     WriteOperationStartResult,
 };
 
@@ -76,6 +76,19 @@ pub enum ApprovalRefusal {
     Engine(WriteOperationError),
     /// The group claimed cleanly and the rename batch refused to start.
     Rename(RenameStartError),
+    /// The group claimed cleanly, but preflight could fingerprint none of its files, so the batch
+    /// had no row to run: the rename's `NothingToRename`, with the typed reason the stats gave.
+    NothingToRun(NothingLeft),
+}
+
+/// Why preflight left nothing to run, from the stats themselves (`SourceUnread`), ❌ never a
+/// message: "these files aren't there" and "Cmdr couldn't read them" are different answers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NothingLeft {
+    /// Every file is gone from its path: renamed, moved, or deleted since the suggestion.
+    Gone,
+    /// At least one file didn't answer its stat, so "gone" would be a guess.
+    Unreadable,
 }
 
 /// What approving a group did.
@@ -143,7 +156,7 @@ pub async fn approve_and_execute(
             )));
         }
     };
-    let sources: Vec<PathBuf> = ops.iter().map(|op| PathBuf::from(&op.source_path)).collect();
+    let sources = stored_spellings(&ops);
 
     let volume_id = source_volume_of(conn, group_id)?;
     // Before `install` no source volume resolves, and the start refusal says why.
@@ -165,7 +178,8 @@ pub async fn approve_and_execute(
         let refusal = engine.unregistered_source_error(&volume_id, &first).await;
         return Ok(ApprovalOutcome::Refused(ApprovalRefusal::SourceUnavailable(refusal)));
     };
-    let expected = capture_expected_sources(source_volume.as_ref(), &sources).await;
+    let preflight = capture_expected_sources(source_volume.as_ref(), &sources).await;
+    let unread = preflight.nothing_left();
 
     // Through the service layer, which owns both the claim's announcement and the approval
     // metric. The metric waits for the start: a refused start gives the group back.
@@ -186,7 +200,12 @@ pub async fn approve_and_execute(
     // drive that gained a Trash since takes the trash the verb asked for, and one that lost it
     // under a review that offered a trash refuses each item, as a clicked trash there would.
     let runs = approved_runs_as(shown_runs_as, runs_as(claimed.group.verb, Some(source_volume.as_ref())));
-    match start_for(engine, &claimed.group, runs, typed_sources, &ops, expected, sink).await {
+    let bound = BoundOps {
+        ops: &ops,
+        sources: &sources,
+        expected: preflight.expected,
+    };
+    match start_for(engine, &claimed.group, runs, typed_sources, bound, sink).await {
         Ok(operation) => {
             super::started(&claimed);
             // The thread says "running" now, and the decorator's settle rewrites that line.
@@ -194,6 +213,14 @@ pub async fn approve_and_execute(
             Ok(ApprovalOutcome::Started(ApprovedGroup { group_id, operation }))
         }
         Err(refusal) => {
+            // A batch with no row left says WHY none was: every file gone reads differently
+            // from files that didn't answer (#1524).
+            let refusal = match (refusal, unread) {
+                (ApprovalRefusal::Rename(RenameStartError::NothingToRename), Some(why)) => {
+                    ApprovalRefusal::NothingToRun(why)
+                }
+                (refusal, _) => refusal,
+            };
             give_back_after(conn, group_id, &refusal);
             Ok(ApprovalOutcome::Refused(refusal))
         }
@@ -334,10 +361,14 @@ async fn start_for(
     group: &ProposalGroup,
     runs: Option<RunsAs>,
     sources: Vec<AppPathBuf>,
-    ops: &[ProposalOp],
-    expected: ExpectedSources,
+    bound: BoundOps<'_>,
     events: Arc<dyn OperationEventSink>,
 ) -> Result<WriteOperationStartResult, ApprovalRefusal> {
+    let BoundOps {
+        ops,
+        sources: spellings,
+        expected,
+    } = bound;
     // A trash group on a drive with no Trash, approved as the permanent delete the review
     // offered: the same delete a user gets there, through the same entry point as `Delete`.
     if runs == Some(RunsAs::PermanentDelete) {
@@ -356,7 +387,7 @@ async fn start_for(
     match group.verb {
         ProposalVerb::Move => {
             let (path, volume) = target_of(group)?;
-            let config = named_config(ops, &expected);
+            let config = named_config(ops, spellings, &expected);
             engine
                 .start_volume_move(
                     events,
@@ -375,7 +406,7 @@ async fn start_for(
             let (path, volume) = target_of(group)?;
             // An extract's ops never carry a name (`GroupIntent::Extract` can't hold one), so
             // this is the default config there.
-            let config = named_config(ops, &expected);
+            let config = named_config(ops, spellings, &expected);
             engine
                 .start_volume_copy(
                     events,
@@ -437,7 +468,7 @@ async fn start_for(
                 .destination
                 .clone()
                 .ok_or(ApprovalRefusal::TargetMissing { verb: group.verb })?;
-            let rows = rename_rows(parent.as_str(), ops, &expected)?;
+            let rows = rename_rows(parent.as_str(), ops, spellings, &expected)?;
             // Routed: where a rename copies (an S3 folder), the batch runs as one move.
             engine
                 .start_renames(events, group.source_volume_id.clone(), rows, Initiator::Agent)
@@ -463,23 +494,24 @@ async fn start_for(
 fn rename_rows(
     parent: &str,
     ops: &[ProposalOp],
+    sources: &[PathBuf],
     expected: &ExpectedSources,
 ) -> Result<Vec<BulkRenameRow>, ApprovalRefusal> {
+    let parent = PathBuf::from(parent);
     let mut rows = Vec::with_capacity(ops.len());
-    for op in ops {
+    for (op, source) in ops.iter().zip(sources) {
         let Some(new_name) = op.destination.as_deref() else {
             return Err(ApprovalRefusal::TargetMissing {
                 verb: ProposalVerb::Rename,
             });
         };
-        let source = PathBuf::from(&op.source_path);
-        let Some(fingerprint) = expected.fingerprint_of(&source) else {
+        let Some(fingerprint) = expected.fingerprint_of(source) else {
             continue;
         };
         rows.push(BulkRenameRow {
             row_id: op.id.to_string(),
-            source,
-            destination: PathBuf::from(parent).join(new_name),
+            source: source.clone(),
+            destination: parent.join(new_name),
             expected_fingerprint: fingerprint.clone(),
         });
     }
@@ -488,25 +520,72 @@ fn rename_rows(
 
 /// The default config a clicked transfer gets, plus the name each op lands under: the ONE
 /// thing a proposal adds, and the user saw every one in the review. No name means the default.
-fn named_config(ops: &[ProposalOp], expected: &ExpectedSources) -> VolumeCopyConfig {
+fn named_config(ops: &[ProposalOp], sources: &[PathBuf], expected: &ExpectedSources) -> VolumeCopyConfig {
     VolumeCopyConfig {
-        leaves: TransferLeaves::per_source(transfer_names(ops, expected)),
+        leaves: TransferLeaves::per_source(transfer_names(ops, sources, expected)),
         ..VolumeCopyConfig::default()
     }
 }
 
 /// The names a move's or copy's ops land under, as the engine's per-source leaves take them:
-/// keyed by EXACTLY the sources the binding keeps, so a source preflight couldn't read (which
-/// the binding drops) takes its name with it. An op keeping its own name sends none.
-fn transfer_names(ops: &[ProposalOp], expected: &ExpectedSources) -> Vec<(PathBuf, String)> {
+/// keyed by EXACTLY the sources the binding keeps (`sources`, one per op, the engine's own
+/// spelling), so a source preflight couldn't read (which the binding drops) takes its name with
+/// it. An op keeping its own name sends none.
+fn transfer_names(ops: &[ProposalOp], sources: &[PathBuf], expected: &ExpectedSources) -> Vec<(PathBuf, String)> {
     ops.iter()
-        .filter_map(|op| {
+        .zip(sources)
+        .filter_map(|(op, source)| {
             let name = op.destination.clone()?;
-            let source = PathBuf::from(&op.source_path);
-            expected.fingerprint_of(&source)?;
-            Some((source, name))
+            expected.fingerprint_of(source)?;
+            Some((source.clone(), name))
         })
         .collect()
+}
+
+/// The `std::path` spelling of each op's source, one per op, in order: what preflight stats, what
+/// the binding keys by, and what the rename rows and transfer names carry. The ONE place it's
+/// derived, so every key agrees.
+///
+/// ⚠️ The stored text, which is the engine's own spelling (`AppPath::as_std_legacy`) and the path
+/// the review's live facts stat while escapes aren't live (`ESCAPES_LIVE`): a stored name keeps an
+/// escape-range code point literally, so the two can't part
+/// (`tests.rs::preflight_finds_a_file_whose_name_holds_an_escape_range_code_point`). Once escapes
+/// go live (plan milestone 10f) an escaped name decodes to native bytes there and this must cross
+/// through the bridge instead, or approval calls a present file gone.
+fn stored_spellings(ops: &[ProposalOp]) -> Vec<PathBuf> {
+    ops.iter().map(|op| PathBuf::from(&op.source_path)).collect()
+}
+
+/// A group's live ops beside what preflight made of them: each source's spelling (one per op, in
+/// op order, [`stored_spellings`]) and the binding over those.
+struct BoundOps<'a> {
+    ops: &'a [ProposalOp],
+    sources: &'a [PathBuf],
+    expected: ExpectedSources,
+}
+
+/// What preflight captured: the binding, and how many sources gave no fingerprint, by why.
+struct Preflight {
+    expected: ExpectedSources,
+    captured: usize,
+    gone: usize,
+    unreadable: usize,
+}
+
+impl Preflight {
+    /// Why nothing is left to run, when no source gave a fingerprint: [`NothingLeft::Gone`] only
+    /// when every one is gone (one that didn't answer makes "gone" a guess). `None` while any
+    /// source was captured.
+    fn nothing_left(&self) -> Option<NothingLeft> {
+        if self.captured > 0 {
+            return None;
+        }
+        if self.gone > 0 && self.unreadable == 0 {
+            Some(NothingLeft::Gone)
+        } else {
+            Some(NothingLeft::Unreadable)
+        }
+    }
 }
 
 /// Stat every source as it is RIGHT NOW, and bind the operation to what it finds.
@@ -526,28 +605,43 @@ fn transfer_names(ops: &[ProposalOp], expected: &ExpectedSources) -> Vec<(PathBu
 ///
 /// A source that can't be read gets no entry, and the binding drops what it doesn't name, so
 /// a source that vanished between the proposal and the review is skipped and reported rather
-/// than acted on.
-async fn capture_expected_sources(volume: &dyn Volume, sources: &[PathBuf]) -> ExpectedSources {
+/// than acted on. Each miss is counted by its typed reason (`SourceUnread`), so a batch left
+/// with nothing says whether its files are gone or only didn't answer.
+///
+/// `sources` are [`stored_spellings`], the same keys the engine looks its binding up by.
+async fn capture_expected_sources(volume: &dyn Volume, sources: &[PathBuf]) -> Preflight {
     // The rule the binding itself documents: a local-FS volume answers with the identity the
     // kernel maintains, anything else answers through its own backend.
     let local = volume.local_path().is_some();
     let mut entries = Vec::with_capacity(sources.len());
+    let (mut gone, mut unreadable) = (0, 0);
     for source in sources {
         let captured = if local {
-            SourceFingerprint::capture_local(source)
+            SourceFingerprint::read_local(source)
         } else {
-            SourceFingerprint::capture_remote(volume, source).await
+            SourceFingerprint::read_remote(volume, source).await
         };
         match captured {
-            Some(fingerprint) => entries.push((source.clone(), fingerprint)),
-            None => log::info!(
-                target: "agent::suggested_ops",
-                "{} couldn't be read at preflight, so the operation won't touch it",
-                cmdr_fs::log_private::LogPrivate::path(source)
-            ),
+            Ok(fingerprint) => entries.push((source.clone(), fingerprint)),
+            Err(why) => {
+                match why {
+                    SourceUnread::Gone => gone += 1,
+                    SourceUnread::Unreadable => unreadable += 1,
+                }
+                log::info!(
+                    target: "agent::suggested_ops",
+                    "{} couldn't be read at preflight ({why:?}), so the operation won't touch it",
+                    cmdr_fs::log_private::LogPrivate::path(source)
+                );
+            }
         }
     }
-    ExpectedSources::new(entries)
+    Preflight {
+        captured: entries.len(),
+        expected: ExpectedSources::new(entries),
+        gone,
+        unreadable,
+    }
 }
 
 /// The target a destination-binding verb stored, as the routed entry points take it.

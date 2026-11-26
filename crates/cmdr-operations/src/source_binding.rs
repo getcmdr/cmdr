@@ -96,6 +96,18 @@ pub enum RemoteContent {
 /// the journal's unit.
 const NANOS_PER_SECOND: u128 = 1_000_000_000;
 
+/// Why a source gave no fingerprint, for a caller that tells the person which:
+/// "isn't there any more" and "couldn't be read" want different words.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SourceUnread {
+    /// Nothing is at the path: it was moved, renamed, or deleted (`ENOENT`, or a
+    /// parent that's no longer a folder; a backend's `NotFound`).
+    Gone,
+    /// Something may be there, but the stat didn't answer: refused, timed out, or
+    /// a backend that couldn't say.
+    Unreadable,
+}
+
 impl SourceFingerprint {
     /// Reads a local source's identity now. `None` when the path can't be
     /// stat'd at all, which every caller treats as a mismatch: an unreadable
@@ -104,7 +116,20 @@ impl SourceFingerprint {
     /// Symlinks are never followed (`symlink_metadata`), matching every other
     /// walker in this module: the link IS the source item.
     pub fn capture_local(path: &Path) -> Option<Self> {
-        let metadata = std::fs::symlink_metadata(path).ok()?;
+        Self::read_local(path).ok()
+    }
+
+    /// [`Self::capture_local`], saying why a source gave no fingerprint.
+    ///
+    /// # Errors
+    ///
+    /// [`SourceUnread::Gone`] when nothing is at the path, else
+    /// [`SourceUnread::Unreadable`]. Typed by the errno's kind, ❌ never its text.
+    pub fn read_local(path: &Path) -> Result<Self, SourceUnread> {
+        let metadata = std::fs::symlink_metadata(path).map_err(|e| match e.kind() {
+            std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory => SourceUnread::Gone,
+            _ => SourceUnread::Unreadable,
+        })?;
         let content = if metadata.file_type().is_dir() {
             LocalContent::Directory
         } else {
@@ -117,7 +142,7 @@ impl SourceFingerprint {
                     .map(|time| time.as_nanos()),
             }
         };
-        Some(Self::Local {
+        Ok(Self::Local {
             // From the stat above where it carries the id (Unix: no second read, so id and
             // content describe one node), else by path, the one reader Windows answers.
             id: FileId::of(&metadata).or_else(|| FileId::at(path, Follow::NotLinks)),
@@ -128,7 +153,20 @@ impl SourceFingerprint {
     /// Reads a remote source's identity now, through the volume that owns it.
     /// `None` when the backend can't stat it.
     pub async fn capture_remote(volume: &dyn Volume, path: &Path) -> Option<Self> {
-        let metadata = volume.get_metadata(&on_volume(path)).await.ok()?;
+        Self::read_remote(volume, path).await.ok()
+    }
+
+    /// [`Self::capture_remote`], saying why a source gave no fingerprint.
+    ///
+    /// # Errors
+    ///
+    /// [`SourceUnread::Gone`] for the backend's typed `NotFound`, else
+    /// [`SourceUnread::Unreadable`].
+    pub async fn read_remote(volume: &dyn Volume, path: &Path) -> Result<Self, SourceUnread> {
+        let metadata = volume.get_metadata(&on_volume(path)).await.map_err(|e| match e {
+            cmdr_fs::volume::VolumeError::NotFound(_) => SourceUnread::Gone,
+            _ => SourceUnread::Unreadable,
+        })?;
         let content = if metadata.is_directory {
             RemoteContent::Directory
         } else {
@@ -137,7 +175,7 @@ impl SourceFingerprint {
                 modified: metadata.modified_at.map(|value| value as i64),
             }
         };
-        Some(Self::Remote {
+        Ok(Self::Remote {
             normalized_path: normalized_path(path),
             content,
         })

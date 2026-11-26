@@ -566,6 +566,11 @@ export const commands = {
    *  whose rows read as a server's friendly name while the share list the pane left is
    *  `smb://<key>`. A plain walk of the visible rows: such a list is a handful of rows, and
    *  `with_rows` is the engine's one read over them.
+   *
+   *  ❗ When no row has that path, the row that stands for the server the share list lists
+   *  (`share_list_volume::servers_row_path`, by identity): a share list opened at a Bonjour
+   *  twin's path belongs to the row of the server saved by its IP, which lists under the IP's
+   *  path, so a lookup by path alone left the cursor on the first row.
    */
   findPathIndex: (listingId: string, path: string, includeHidden: boolean) =>
     typedError<number | null, ListingLookupError>(
@@ -6074,7 +6079,8 @@ export const commands = {
    *  another host filed goes with it, not even a server on another port of the
    *  same machine. Rows only: nothing is unmounted and no stored password is touched
    *  ("Forget saved password" is its own request), though an account this session
-   *  typed for the host stops signing in for it.
+   *  typed for the host stops signing in for it, and the share list it bought is dropped
+   *  from the share cache.
    *
    *  ❗ Emits `volumes-changed`: a pinned share of the host leaves the switcher.
    */
@@ -7632,10 +7638,15 @@ export type ApprovalResultView =
    */
   | { kind: 'refused'; error: WriteOperationError }
   /**
-   *  Every file was gone or unreadable by the time the user approved, so there was nothing
-   *  to run.
+   *  No file answered its stat by the time the user approved (at least one didn't answer, so
+   *  "gone" would be a guess), so there was nothing to run.
    */
   | { kind: 'nothingToRun' }
+  /**
+   *  Every file was gone from its path by the time the user approved: another suggestion or
+   *  app renamed, moved, or deleted it. Nothing ran.
+   */
+  | { kind: 'sourcesGone' }
   /**
    *  The selection left nothing to run (an "only these" with no files ticked). Nothing was
    *  recorded or claimed; the group stays `pending` with the last review's selection.
@@ -16665,6 +16676,17 @@ export type OpStatus =
   | 'skipped'
   // It ran and didn't succeed.
   | 'failed'
+  /**
+   *  A newer suggestion named the same file, so this older op stepped aside: newest wins,
+   *  per file. Outside the live set, and no selection ever ticks it back on.
+   */
+  | 'superseded'
+  /**
+   *  Another suggestion that ran already changed this file (moved, renamed, trashed, or
+   *  deleted it), so the path this op names is no longer the file it meant. Outside the
+   *  live set, and no selection ever ticks it back on.
+   */
+  | 'handledElsewhere'
 
 /**
  *  `open-error-report`: a window that doesn't host the error-report dialog (the queue
@@ -18231,6 +18253,14 @@ export type ProposalStatus =
   | 'completed'
   // The user said no.
   | 'rejected'
+  /**
+   *  Nothing left to offer: every op it named was taken over by a newer suggestion
+   *  (`OpStatus::Superseded`) or already changed by another one that ran
+   *  (`OpStatus::HandledElsewhere`). Nobody answered it, so it teaches the agent nothing
+   *  and counts in no metric (`agent/store/proposals/DETAILS.md` § Two groups naming one
+   *  file).
+   */
+  | 'retired'
 
 /**
  *  What a proposal group asks to do, stored in `proposals.verb`.
@@ -23022,6 +23052,12 @@ export type SuggestedGroupView = {
   // Every op row the group has, including the ones a previous review deselected.
   totalOpCount: number
   /**
+   *  How many of those rows another suggestion took over (`superseded`, `handledElsewhere`).
+   *  They show, labelled, and no selection ever ticks them: an "all but these" counts down
+   *  from `total_op_count - retired_op_count`.
+   */
+  retiredOpCount: number
+  /**
    *  True when a pattern produced this group, so the dialog can show the pattern as the
    *  provenance of a list the user didn't watch being built.
    */
@@ -23063,7 +23099,9 @@ export type SuggestedOpView = {
   /**
    *  `excluded` when an earlier review turned this op off (an approval the engine then refused to
    *  start leaves it so). Seed the tick from it and approve with `fromStored`, so that "no"
-   *  survives without the review naming ops it never loaded.
+   *  survives without the review naming ops it never loaded. `superseded` (a newer suggestion
+   *  names the file) and `handledElsewhere` (another suggestion's run already changed it) are
+   *  shown with their reason and never ticked.
    */
   status: OpStatus
   /**
@@ -23166,6 +23204,13 @@ export type SuggestionChange =
   | 'rejected'
   // An approval the write engine refused gave its group back: pending again, nothing ran.
   | 'given_back'
+  /**
+   *  A run that settled already changed files other pending groups named, so those ops were
+   *  marked handled elsewhere: the groups shrank (their `revision` moved) or retired. Carries
+   *  no group id, since it's about the OTHER groups. A newer suggestion taking a file over
+   *  needs no reason of its own: it rides the `Proposed` or `Amended` that wrote it.
+   */
+  | 'handled_elsewhere'
 
 // The pending suggestion set changed.
 export type SuggestionsChanged = {

@@ -32,7 +32,7 @@ use crate::agent::store::proposals::{AcceptanceOutcome, ClaimRefusal, OpSelectio
 use crate::agent::store::proposals::{
     GroupSummary, ProposalGroup, ProposalOp, ProposalSweep, count_ops, get_sweep, list_groups, page_ops,
 };
-use crate::agent::suggested_ops::bridge::{ApprovalOutcome, ApprovalRefusal};
+use crate::agent::suggested_ops::bridge::{ApprovalOutcome, ApprovalRefusal, NothingLeft};
 use crate::agent::suggested_ops::facts::{RunsAs, runs_as};
 use crate::agent::suggested_ops::server::{SavedServers, ServerProposalView, server_card};
 use crate::agent::types::{OpStatus, ProposalStatus, ProposalVerb, Reversibility};
@@ -148,6 +148,10 @@ pub struct SuggestedGroupView {
     pub live_op_count: u64,
     /// Every op row the group has, including the ones a previous review deselected.
     pub total_op_count: u64,
+    /// How many of those rows another suggestion took over (`superseded`, `handledElsewhere`).
+    /// They show, labelled, and no selection ever ticks them: an "all but these" counts down
+    /// from `total_op_count - retired_op_count`.
+    pub retired_op_count: u64,
     /// True when a pattern produced this group, so the dialog can show the pattern as the
     /// provenance of a list the user didn't watch being built.
     pub from_selector: bool,
@@ -186,7 +190,9 @@ pub struct SuggestedOpView {
     pub new_name: Option<String>,
     /// `excluded` when an earlier review turned this op off (an approval the engine then refused to
     /// start leaves it so). Seed the tick from it and approve with `fromStored`, so that "no"
-    /// survives without the review naming ops it never loaded.
+    /// survives without the review naming ops it never loaded. `superseded` (a newer suggestion
+    /// names the file) and `handledElsewhere` (another suggestion's run already changed it) are
+    /// shown with their reason and never ticked.
     pub status: OpStatus,
     /// What the index held for this file when the group was frozen. `None` when the index had
     /// nothing, which the row says in words: never a zero, which reads as an empty file.
@@ -458,6 +464,7 @@ fn to_group_view(
         destination_lands_on: facts.destination_lands_on,
         live_op_count: summary.live_op_count,
         total_op_count: summary.total_op_count,
+        retired_op_count: summary.retired_op_count,
         from_selector: group.selector.is_some(),
         server,
     }
@@ -652,9 +659,12 @@ pub enum ApprovalResultView {
     /// or server nobody connected is `source_not_connected`, a drive that left is
     /// `source_no_longer_connected`.
     Refused { error: WriteOperationError },
-    /// Every file was gone or unreadable by the time the user approved, so there was nothing
-    /// to run.
+    /// No file answered its stat by the time the user approved (at least one didn't answer, so
+    /// "gone" would be a guess), so there was nothing to run.
     NothingToRun,
+    /// Every file was gone from its path by the time the user approved: another suggestion or
+    /// app renamed, moved, or deleted it. Nothing ran.
+    SourcesGone,
     /// The selection left nothing to run (an "only these" with no files ticked). Nothing was
     /// recorded or claimed; the group stays `pending` with the last review's selection.
     NothingSelected,
@@ -750,7 +760,9 @@ fn refusal_view(refusal: ApprovalRefusal) -> ApprovalResultView {
         ApprovalRefusal::SourceUnavailable(error)
         | ApprovalRefusal::Engine(error)
         | ApprovalRefusal::Rename(RenameStartError::Engine { error }) => ApprovalResultView::Refused { error },
-        ApprovalRefusal::Rename(RenameStartError::NothingToRename) => ApprovalResultView::NothingToRun,
+        ApprovalRefusal::NothingToRun(NothingLeft::Gone) => ApprovalResultView::SourcesGone,
+        ApprovalRefusal::NothingToRun(NothingLeft::Unreadable)
+        | ApprovalRefusal::Rename(RenameStartError::NothingToRename) => ApprovalResultView::NothingToRun,
         ApprovalRefusal::Rename(RenameStartError::NotInOneFolder) => {
             log::warn!(target: "agent::suggested_ops", "a stored rename group spans folders, so it can't start");
             ApprovalResultView::CouldNotStart

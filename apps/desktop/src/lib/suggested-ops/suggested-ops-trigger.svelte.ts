@@ -40,7 +40,13 @@ import {
   type SuggestedSweepView,
 } from '#lib/tauri-commands/index.js'
 import { asSuggestedOpsError } from './suggested-ops-failure'
-import { type OpSelection, flippedOn, selectionWire, storedSelection } from './suggested-ops-selection.svelte'
+import {
+  type OpSelection,
+  flippedOn,
+  isRetiredOp,
+  selectionWire,
+  storedSelection,
+} from './suggested-ops-selection.svelte'
 
 const log = getAppLogger('suggestedOps')
 
@@ -103,7 +109,7 @@ export type DecisionNotice = Extract<MessageKey, 'suggestedOps.decisionNotRecord
 /** Why a file group's approval didn't start. */
 export type FileGroupRefusal = Extract<
   ApprovalResultView,
-  { kind: 'refused' | 'nothingToRun' | 'nothingSelected' | 'couldNotStart' }
+  { kind: 'refused' | 'nothingToRun' | 'sourcesGone' | 'nothingSelected' | 'couldNotStart' }
 >
 
 /** Why a server card's save gave it back: nothing was written. */
@@ -262,7 +268,8 @@ export function approvableCount(groupId: number): number {
     case 'only':
       return Math.max(0, selection.ids.size - gone)
     case 'allExcept':
-      return Math.max(0, group.totalOpCount - selection.ids.size - gone)
+      // A row another suggestion took over never runs, so "all" starts from the rest.
+      return Math.max(0, group.totalOpCount - group.retiredOpCount - selection.ids.size - gone)
   }
 }
 
@@ -278,7 +285,7 @@ export function canApprove(groupId: number): boolean {
  *  and one whose file is gone is never ticked: it can't run. */
 export function isOpSelected(groupId: number, op: SuggestedOpView): boolean {
   const review = reviewOf(groupId)
-  if (!review) return op.status !== 'excluded'
+  if (!review) return op.status === 'pending'
   if (review.missing.has(op.opId)) return false
   return flippedOn(review.selection, op)
 }
@@ -298,9 +305,10 @@ export function selectionState(groupId: number): 'all' | 'none' | 'some' {
   const group = groupById(groupId)
   const count = approvableCount(groupId)
   if (count === 0) return 'none'
-  // A gone file can't be ticked, so "all" is every op that's still there.
-  const gone = reviewOf(groupId)?.missing.size ?? 0
-  if (group && count >= group.totalOpCount - gone) return 'all'
+  // "All" is every op still there and still offered; a taken-over row that's also gone counts once.
+  let gone = 0
+  for (const op of reviewOf(groupId)?.missing.values() ?? []) if (!isRetiredOp(op)) gone++
+  if (group && count >= group.totalOpCount - group.retiredOpCount - gone) return 'all'
   return 'some'
 }
 
@@ -627,8 +635,8 @@ export function opAt(groupId: number, index: number): SuggestedOpView | null {
 /** Turn one op off, or back on: flip its membership in whichever set records it against the base. */
 export function toggleOp(groupId: number, op: SuggestedOpView): void {
   const review = reviewOf(groupId)
-  // A gone file's box is disabled: there's nothing to tick back on.
-  if (!review || review.missing.has(op.opId)) return
+  // A gone file's box is disabled, as is a taken-over row's: there's nothing to tick back on.
+  if (!review || review.missing.has(op.opId) || isRetiredOp(op)) return
   const selection = review.selection
   const flips =
     selection.mode !== 'fromStored' ? selection.ids : op.status === 'excluded' ? selection.include : selection.exclude
@@ -737,6 +745,7 @@ function isRefusalToStart(result: ApprovalResultView): result is FileGroupRefusa
   switch (result.kind) {
     case 'refused':
     case 'nothingToRun':
+    case 'sourcesGone':
     case 'nothingSelected':
     case 'couldNotStart':
       return true

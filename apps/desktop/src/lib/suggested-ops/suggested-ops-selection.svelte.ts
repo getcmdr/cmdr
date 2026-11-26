@@ -32,7 +32,9 @@ export function storedSelection(): OpSelection {
  * and the row showed it unticked. Still flips over the base, so the wire carries only the ops the
  * user flipped plus the few gone ones the list has drawn, at any group size.
  */
-export function selectionWire(selection: OpSelection, missing: Iterable<SuggestedOpView>): WireOpSelection {
+export function selectionWire(selection: OpSelection, gone: Iterable<SuggestedOpView>): WireOpSelection {
+  // A retired op never runs whatever the wire says, so it needs no turning off.
+  const missing = [...gone].filter((op) => !isRetiredOp(op))
   if (selection.mode === 'fromStored') {
     const exclude = new SvelteSet(selection.exclude)
     const include = new SvelteSet(selection.include)
@@ -50,8 +52,16 @@ export function selectionWire(selection: OpSelection, missing: Iterable<Suggeste
   return { mode: selection.mode, opIds: [...ids] }
 }
 
-/** Whether the user's flips over the base tick `op`, before anything the disk says about it. */
+/** Whether another suggestion took this op's file over (a newer one names it, or one that ran
+ *  already changed it). Its row shows why, and nothing ever ticks it: the store never runs it. */
+export function isRetiredOp(op: SuggestedOpView): boolean {
+  return op.status === 'superseded' || op.status === 'handledElsewhere'
+}
+
+/** Whether the user's flips over the base tick `op`, before anything the disk says about it. A
+ *  retired op (`isRetiredOp`) is never ticked, whatever the flips say. */
 export function flippedOn(selection: OpSelection, op: SuggestedOpView): boolean {
+  if (isRetiredOp(op)) return false
   switch (selection.mode) {
     case 'fromStored':
       return op.status === 'excluded' ? selection.include.has(op.opId) : !selection.exclude.has(op.opId)

@@ -127,6 +127,12 @@ token_enum! {
         Completed => "completed",
         /// The user said no.
         Rejected => "rejected",
+        /// Nothing left to offer: every op it named was taken over by a newer suggestion
+        /// (`OpStatus::Superseded`) or already changed by another one that ran
+        /// (`OpStatus::HandledElsewhere`). Nobody answered it, so it teaches the agent nothing
+        /// and counts in no metric (`agent/store/proposals/DETAILS.md` § Two groups naming one
+        /// file).
+        Retired => "retired",
     }
 }
 
@@ -145,6 +151,40 @@ token_enum! {
         Skipped => "skipped",
         /// It ran and didn't succeed.
         Failed => "failed",
+        /// A newer suggestion named the same file, so this older op stepped aside: newest wins,
+        /// per file. Outside the live set, and no selection ever ticks it back on.
+        Superseded => "superseded",
+        /// Another suggestion that ran already changed this file (moved, renamed, trashed, or
+        /// deleted it), so the path this op names is no longer the file it meant. Outside the
+        /// live set, and no selection ever ticks it back on.
+        HandledElsewhere => "handled_elsewhere",
+    }
+}
+
+impl OpStatus {
+    /// The two statuses an op gets when ANOTHER suggestion took its file over: never in the live
+    /// set, never selectable, and what leaves a group with nothing to offer.
+    pub const RETIRED: [OpStatus; 2] = [OpStatus::Superseded, OpStatus::HandledElsewhere];
+
+    /// Whether another suggestion took this op's file over ([`OpStatus::RETIRED`]).
+    pub fn is_retired(self) -> bool {
+        Self::RETIRED.contains(&self)
+    }
+}
+
+impl ProposalVerb {
+    /// Whether a run of this verb leaves its sources somewhere other than their path: a move,
+    /// rename, trash, or delete does; a copy, extract, or compress only reads them. It decides
+    /// whether a settled group's done ops retire other groups' ops on the same files.
+    pub fn moves_its_sources(self) -> bool {
+        match self {
+            ProposalVerb::Move | ProposalVerb::Rename | ProposalVerb::Trash | ProposalVerb::Delete => true,
+            ProposalVerb::Copy
+            | ProposalVerb::Extract
+            | ProposalVerb::Compress
+            | ProposalVerb::AddServer
+            | ProposalVerb::EditServer => false,
+        }
     }
 }
 

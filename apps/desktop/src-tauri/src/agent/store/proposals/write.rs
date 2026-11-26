@@ -9,6 +9,7 @@ use rusqlite::{Connection, Transaction, TransactionBehavior, params};
 
 use super::super::AgentStoreError;
 use super::GroupIntent;
+use super::overlap::supersede_overlaps;
 use super::server::{delete_server_draft, write_server_draft};
 use crate::agent::types::{OpStatus, ProposalStatus};
 
@@ -148,6 +149,10 @@ pub fn create_group(conn: &Connection, set_id: i64, group: &NewGroup, now: i64) 
     let group_id = tx.last_insert_rowid();
     insert_ops(&tx, group_id, &group.intent, now)?;
     write_beside_ops(&tx, group_id, &group.intent)?;
+    // Newest wins, per file, in this same transaction: an older pending op on a file this group
+    // names steps aside. Which groups shrank needs no reply: they moved `revision`, which an open
+    // review compares on the re-read the caller's announcement triggers.
+    supersede_overlaps(&tx, group_id, now)?;
     tx.commit()?;
     Ok(group_id)
 }
@@ -261,6 +266,8 @@ pub fn repropose_group(
         .execute(params![group_id])?;
     insert_ops(&tx, group_id, &group.intent, now)?;
     write_beside_ops(&tx, group_id, &group.intent)?;
+    // An amend is the newest word on the files it now names, exactly as a new group is.
+    supersede_overlaps(&tx, group_id, now)?;
     tx.commit()?;
     Ok(ReproposeOutcome::Reproposed)
 }

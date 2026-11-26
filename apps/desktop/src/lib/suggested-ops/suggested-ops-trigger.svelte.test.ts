@@ -49,6 +49,7 @@ vi.mock('#lib/logging/logger.js', () => ({
 }))
 
 import { SuggestedOpsFailure } from './suggested-ops-failure'
+import { isRetiredOp } from './suggested-ops-selection.svelte'
 import {
   INITIAL_ROWS,
   SHOW_MORE_STEP,
@@ -108,6 +109,7 @@ function group(groupId: number, liveOpCount: number, overrides: Record<string, u
     destinationLandsOn: null,
     liveOpCount,
     totalOpCount: liveOpCount,
+    retiredOpCount: 0,
     fromSelector: false,
     server: null,
     revision: 1,
@@ -635,7 +637,12 @@ describe('an approval that refuses to start', () => {
   })
 
   it('gives every refusal to start a reason, not only a volume one', async () => {
-    for (const result of [{ kind: 'nothingToRun' }, { kind: 'nothingSelected' }, { kind: 'couldNotStart' }]) {
+    for (const result of [
+      { kind: 'nothingToRun' },
+      { kind: 'sourcesGone' },
+      { kind: 'nothingSelected' },
+      { kind: 'couldNotStart' },
+    ]) {
       approveMock.mockResolvedValueOnce(result)
       await openSuggestedOps()
 
@@ -757,6 +764,39 @@ describe('selection', () => {
 
     expect(selectionState(BIG)).toBe('all')
     expect(isOpSelected(BIG, pending(1))).toBe(true)
+  })
+
+  // #1524: a row another suggestion took over shows why, never ticks, and counts for nothing.
+  describe('a row another suggestion took over', () => {
+    const superseded = { ...pending(2), status: 'superseded' } as const
+    const handled = { ...pending(3), status: 'handledElsewhere' } as const
+
+    it('is never ticked, and a click doesn’t tick it', async () => {
+      listMock.mockResolvedValue([sweep([group(BIG, 8, { totalOpCount: 10, retiredOpCount: 2 })])])
+      await openSuggestedOps()
+
+      toggleOp(BIG, superseded)
+      toggleAllOps(BIG)
+      toggleAllOps(BIG)
+
+      expect(isOpSelected(BIG, superseded)).toBe(false)
+      expect(isOpSelected(BIG, handled)).toBe(false)
+      expect(isRetiredOp(superseded)).toBe(true)
+      expect(isRetiredOp(pending(4))).toBe(false)
+    })
+
+    it('reads "all" when every row still offered is ticked, and counts only those', async () => {
+      listMock.mockResolvedValue([sweep([group(BIG, 8, { totalOpCount: 10, retiredOpCount: 2 })])])
+      await openSuggestedOps()
+      expect(selectionState(BIG)).toBe('all')
+
+      toggleAllOps(BIG)
+      toggleAllOps(BIG)
+
+      expect(reviewOf(BIG)?.selection).toMatchObject({ mode: 'allExcept' })
+      expect(approvableCount(BIG)).toBe(8)
+      expect(selectionState(BIG)).toBe('all')
+    })
   })
 })
 

@@ -135,6 +135,7 @@ function group(overrides: Record<string, unknown> = {}) {
     destinationLandsOn: null,
     liveOpCount: 3,
     totalOpCount: 3,
+    retiredOpCount: 0,
     fromSelector: false,
     server: null,
     ...overrides,
@@ -547,6 +548,7 @@ describe('a server card', () => {
     sourceFolder: null,
     liveOpCount: 0,
     totalOpCount: 0,
+    retiredOpCount: 0,
     server: {
       protocol: 'sftp',
       fields: [

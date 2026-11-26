@@ -30,6 +30,7 @@ const groupNamed = (groupId: number, displayName: string) => ({
   destinationLandsOn: null,
   liveOpCount: 3,
   totalOpCount: 3,
+  retiredOpCount: 0,
   fromSelector: false,
   server: null,
   revision: 1,

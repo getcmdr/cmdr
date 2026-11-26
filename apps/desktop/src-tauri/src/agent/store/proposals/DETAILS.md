@@ -94,9 +94,42 @@ reviewable, and a half-written GROUP is what would matter — that one is atomic
   analytics count one re-approval rather than two proposals) or discards.
 - `completed` — every op reached a terminal outcome. Written by the executor.
 - `rejected` — the user said no.
+- `retired` — nobody answered: every op it offered was taken over by another suggestion (§ Two groups naming one file).
 
-`OpStatus`: `pending` (in the live set) / `excluded` (deselected at review, row kept) / `done` / `skipped` / `failed`.
-The last three are the executor's, and they are what make a partial apply reportable.
+`OpStatus`: `pending` (in the live set) / `excluded` (deselected at review, row kept) / `done` / `skipped` / `failed` /
+`superseded` / `handled_elsewhere`. `done`, `skipped`, and `failed` are the executor's, and they are what make a partial
+apply reportable. The last two (`OpStatus::RETIRED`) are `overlap.rs`'s, and no selection ever moves them: preflight
+only moves `pending` and `excluded` rows.
+
+## Two groups naming one file
+
+`overlap.rs` (#1524, from `ERR-BD64C`: groups from different nights named the same files; once one renamed them, the
+others stayed approvable and refused with "couldn't read any of these files").
+
+- **Newest wins, per file, not per sweep.** `create_group` and `repropose_group` call `supersede_overlaps` inside their
+  own `BEGIN IMMEDIATE`: every OTHER pending group's `pending` or `excluded` op on a source path the new op list names
+  becomes `superseded`. So two pending groups never share a file. An approved (in-flight) group is the user's answer and
+  is never touched.
+- **A run that moved a file away retires the rest.** At settle, the decorator calls `suggested_ops::retire_handled` →
+  `retire_handled_elsewhere`: other pending groups' still-offered ops on a path the settled group's `done` ops name
+  become `handled_elsewhere`. Only for a verb whose run leaves its sources elsewhere (`ProposalVerb::moves_its_sources`:
+  move, rename, trash, delete); a copy, extract, or compress only reads them, so the path still means the file. This is
+  what catches a suggestion made WHILE another one ran (newest-wins can't touch an approved group).
+- **Same volume, same stored text.** The match is `source_volume_id` plus `source_path` text, which every producer
+  spells the drive index's way. The same text on another volume is another file; a sibling volume addressing the same
+  share by another id isn't matched (no known producer does that across pending groups).
+- **The row stays; the group's `revision` moves.** A taken-over op keeps its row (the decision record says what was
+  offered) and the review shows it labelled and unticked. Bumping `revision` makes an approval of the version the user
+  read refuse as `listChanged` rather than run fewer files than it showed; the open review sees the moved revision on
+  its re-read.
+- **Nothing left to offer → `retired`**, with `decided_at`. Not `rejected` (nobody said no, so the agent learns nothing
+  and no follow-up turn is earned) and not `completed` (nothing ran). No analytics either: `suggestion_group_proposed`
+  counted it once, and a retired group is never decided, so the acceptance rate's denominator is unchanged by a rule the
+  user didn't act on.
+- **Announcing.** A newer group's takeover rides the `Proposed` / `Amended` its write already announces; a settle's
+  retire announces `SuggestionChange::HandledElsewhere` (no group id: it's about the other groups).
+- ⚠️ A database from an older build can still hold overlapping pending groups (they predate newest-wins); the settle
+  rule covers them as the runs happen.
 
 The **recovery sweep** flips `approved` → `interrupted` and nothing else. It must not touch `completed`: re-approving a
 finished group would run its ops a second time. It runs from `agent::start`, once, and is idempotent because the first

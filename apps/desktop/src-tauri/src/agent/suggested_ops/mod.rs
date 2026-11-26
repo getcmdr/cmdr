@@ -42,7 +42,8 @@ use super::outcomes::{self, RejectSource};
 use super::store::AgentStoreError;
 use super::store::proposals::{
     ClaimOutcome, ClaimedGroup, GroupIntent, NewGroup, NewOp, NewSweep, OpSnapshot, RejectOutcome, ReproposeOutcome,
-    claim_group_for_execution, count_ops, create_group, create_sweep, get_group, release_claim, repropose_group,
+    Retirement, claim_group_for_execution, count_ops, create_group, create_sweep, get_group, release_claim,
+    repropose_group, retire_handled_elsewhere,
 };
 
 /// A sweep as created: its id and the ids of the groups inside it, in order.
@@ -149,6 +150,21 @@ pub fn give_back(conn: &Connection, group_id: i64) -> Result<bool, AgentStoreErr
         changed::announce(conn, SuggestionChange::GivenBack, Some(group_id));
     }
     Ok(released)
+}
+
+/// After `group_id`'s run settled: every other pending op still naming a file it moved away is
+/// handled elsewhere, and a group left with nothing to offer retires (#1524). Announced when any
+/// group changed, so the badge and an open review re-read.
+///
+/// ❌ No analytics and nothing for the agent: nobody answered those groups. The agent already
+/// hears the run that handled the files (`outcomes::record_completion`), and a retired group
+/// is neither an approval nor a rejection.
+pub fn retire_handled(conn: &Connection, group_id: i64, now: i64) -> Result<Retirement, AgentStoreError> {
+    let retirement = retire_handled_elsewhere(conn, group_id, now)?;
+    if !retirement.is_empty() {
+        changed::announce(conn, SuggestionChange::HandledElsewhere, None);
+    }
+    Ok(retirement)
 }
 
 /// Reject a group on the user's say-so, and report the rejection.

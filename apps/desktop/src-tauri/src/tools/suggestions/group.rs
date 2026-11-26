@@ -98,6 +98,8 @@ pub async fn execute_get_suggestion_group<R: Runtime>(app: &AppHandle<R>, params
             group,
             live_op_count: count_ops(&conn, group_id, Some(OpStatus::Pending))?,
             total_op_count: count_ops(&conn, group_id, None)?,
+            retired_op_count: count_ops(&conn, group_id, Some(OpStatus::Superseded))?
+                + count_ops(&conn, group_id, Some(OpStatus::HandledElsewhere))?,
             server: read_server_proposal(&conn, group_id)?,
         };
         let ops = page_ops(&conn, group_id, limit, offset)?;

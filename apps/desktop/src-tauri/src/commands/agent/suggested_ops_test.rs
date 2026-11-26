@@ -88,6 +88,15 @@ fn a_refusal_to_start_carries_a_reason_the_dialog_can_word() {
         refusal_view(ApprovalRefusal::Rename(RenameStartError::NothingToRename)),
         ApprovalResultView::NothingToRun
     ));
+    // #1524: gone and unreadable are two answers, so the dialog can say which.
+    assert!(matches!(
+        refusal_view(ApprovalRefusal::NothingToRun(NothingLeft::Gone)),
+        ApprovalResultView::SourcesGone
+    ));
+    assert!(matches!(
+        refusal_view(ApprovalRefusal::NothingToRun(NothingLeft::Unreadable)),
+        ApprovalResultView::NothingToRun
+    ));
     assert!(matches!(
         refusal_view(ApprovalRefusal::TargetMissing {
             verb: ProposalVerb::Move
@@ -118,6 +127,7 @@ fn group(id: i64, set_id: i64, verb: ProposalVerb) -> GroupSummary {
         },
         live_op_count: 5,
         total_op_count: 7,
+        retired_op_count: 1,
         server: None,
     }
 }
@@ -352,6 +362,10 @@ fn a_group_view_carries_every_fact_the_user_judges_it_by() {
     assert_eq!(view.destination_state, DestinationState::WillBeCreated);
     assert_eq!(view.live_op_count, 5);
     assert_eq!(view.total_op_count, 7, "the deselected rows are part of the record");
+    assert_eq!(
+        view.retired_op_count, 1,
+        "the rows another suggestion took over, which no selection ticks"
+    );
     assert!(!view.from_selector);
 }
 

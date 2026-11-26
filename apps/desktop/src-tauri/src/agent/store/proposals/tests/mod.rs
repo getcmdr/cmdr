@@ -12,6 +12,7 @@ mod claim;
 mod completion;
 mod destination;
 mod lifecycle;
+mod overlap;
 mod scale;
 mod schema;
 mod server;
@@ -32,11 +33,13 @@ pub(super) fn migrated_conn() -> Connection {
 
 /// A trash group over `count` synthetic sources, in a sweep of its own. Trash because it
 /// binds no target at all, which keeps the fixture about the lifecycle rather than a path.
+/// Each sweep names its own files, so two of these never overlap (a newer one would supersede
+/// the older's ops: `overlap.rs`).
 pub(super) fn group_with_ops(conn: &Connection, count: usize) -> i64 {
     let set_id = create_sweep(conn, &NewSweep::default(), 100).expect("sweep");
     let sources = (0..count)
         .map(|i| NewOp {
-            source_path: format!("/Users/someone/Downloads/file-{i:05}.dmg"),
+            source_path: format!("/Users/someone/Downloads/file-{set_id}-{i:05}.dmg"),
             snapshot: None,
         })
         .collect();

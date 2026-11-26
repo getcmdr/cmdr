@@ -562,6 +562,12 @@ var surfaceGuardedCrates = []struct {
 		// the SAME resolver, or a share's `CON` reads fine in the field and is
 		// refused on Enter. No existing verb answers it without starting something.
 		//
+		// Raised to 92 root promises on 2026-11-27 for `SourceUnread`, the typed reason
+		// `SourceFingerprint::read_local` / `read_remote` give for a source with no
+		// fingerprint (gone vs. unreadable, #1524). The approval preflight words a batch
+		// left with nothing by it, and only the binding's own reader sees the errno or the
+		// backend's `NotFound`: a second stat app-side would race and fork the rule.
+		//
 		// Raised to 91 root promises on 2026-11-23 for `RenameTarget`: `rename_managed`
 		// takes it, and its only constructor refuses a `.` or `..` new name on the
 		// sender's TEXT, before a typed reading folds `/docs/.` into `/docs` (#1229).
@@ -602,7 +608,7 @@ var surfaceGuardedCrates = []struct {
 		Name:       "cmdr-operations",
 		HandleType: "Operations",
 		Ceilings: surfaceCeilings{
-			RootPromises:   91,
+			RootPromises:   92,
 			HandleMethods:  60,
 			PublicModules:  1,
 			SubsystemItems: 25,

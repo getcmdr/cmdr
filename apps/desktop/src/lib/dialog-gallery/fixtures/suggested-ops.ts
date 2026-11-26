@@ -94,6 +94,7 @@ function view(group: FixtureGroup, sweepId: number): SuggestedGroupView {
     destinationLandsOn: group.destinationLandsOn ?? null,
     liveOpCount: total - group.files.filter((file) => file.excluded).length,
     totalOpCount: total,
+    retiredOpCount: 0,
     fromSelector: group.fromSelector ?? false,
     server: group.server ?? null,
   }

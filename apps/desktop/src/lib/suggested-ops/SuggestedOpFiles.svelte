@@ -51,6 +51,7 @@
         totalRows,
     } from './suggested-ops-trigger.svelte'
     import { fileIconId, fileName, parentFolder, rowFacts } from './suggested-ops-copy'
+    import { isRetiredOp } from './suggested-ops-selection.svelte'
 
     /** The list grows with "Show more" up to this many rows, then scrolls. */
     const MAX_VISIBLE_ROWS = 20
@@ -191,12 +192,13 @@
     </span>
 {/snippet}
 
-<!-- A file that's gone can't run, so its box is off and can't be ticked back on. -->
+<!-- A file that's gone can't run, nor can one another suggestion took over, so its box is off and
+     can't be ticked back on. -->
 {#snippet includeCell({ row }: ColumnListCellContext<SuggestedOpView>)}
     <span class="include">
         <Checkbox
             checked={isOpSelected(group.groupId, row)}
-            disabled={isOpMissing(group.groupId, row)}
+            disabled={isOpMissing(group.groupId, row) || isRetiredOp(row)}
             onCheckedChange={() => {
                 toggleOp(group.groupId, row)
             }}
@@ -253,6 +255,12 @@
                         tooltipWhenTruncated: true,
                     }}
                 ></span>
+            </span>
+        {/if}
+        {#if row.status === 'superseded' || row.status === 'handledElsewhere'}
+            <!-- Why this row can't be ticked (#1524): another suggestion has this file. -->
+            <span class="taken-over">
+                {tString(row.status === 'superseded' ? 'suggestedOps.opSuperseded' : 'suggestedOps.opHandledElsewhere')}
             </span>
         {/if}
     </span>
@@ -478,6 +486,18 @@
 
     .new-name {
         font-weight: 400;
+    }
+
+    /* Says why the row is off, in at most half the cell so the name stays readable. */
+    .taken-over {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 50%;
+        overflow: hidden;
+        color: var(--color-text-tertiary);
+        font-weight: 400;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .fact {

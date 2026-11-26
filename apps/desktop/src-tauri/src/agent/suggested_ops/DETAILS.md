@@ -108,6 +108,10 @@ Converting the first into the second cannot work: whole seconds turn into a `mod
 
 A source that cannot be read at preflight simply gets no entry, and the binding drops what it does not name, so it is skipped and reported rather than acted on.
 
+**Gone and unreadable are two answers.** The capture reads through `SourceFingerprint::read_local` / `read_remote`, which say why a source gave no fingerprint (`SourceUnread`: `Gone` for `ENOENT` or a backend's `NotFound`, else `Unreadable`), and `Preflight` counts each. When the rename batch then has no row (`NothingToRename`), the bridge turns it into `ApprovalRefusal::NothingToRun(NothingLeft)`: `Gone` only when every miss was gone, since one stat that didn't answer makes "gone" a guess. The view words them apart (`sourcesGone`: "aren't where this suggestion expected them"; `nothingToRun`: "couldn't read"). Other verbs start with an empty set and skip, as a clicked one would.
+
+**One spelling per op** (`stored_spellings`): the preflight stat, the binding's keys, the rename rows, and the transfer names all read it, so they can't disagree. It's the stored text, which equals the engine's crossing (`AppPath::as_std_legacy`) and the review's live-facts path while escapes aren't live. ⚠️ When escapes go live (plan milestone 10f), it must cross through the bridge instead (an `app-path-std-bridge` budget raise, David's OK), or an escaped name stats a path that isn't the file; `bridge/tests.rs::preflight_finds_a_file_whose_name_holds_an_escape_range_code_point` is the tripwire.
+
 **Decision: the operation log records `Initiator::Agent`, even though behaviour is identical either way.**
 **Why**: the guiding principle is about BEHAVIOUR, not about erasing provenance. An approved op runs exactly as a
 clicked one does, and the audit trail is the one place the difference is worth keeping: recording plain `User` would
@@ -245,16 +249,17 @@ ran.
 What the follow-up turn itself does, and why it is coalesced per sweep: `../wake/DETAILS.md` § The turn a rejection
 earns.
 
-## Two live groups naming the same file: safe, but unexplained
+## Two groups naming the same file
 
-Nothing stops the agent proposing the same path in two pending groups. Approving both is data-SAFE: the second run's
-preflight fingerprint no longer matches what the first run did to the file, so those sources are skipped and reported
-rather than acted on.
+Settled at the proposal boundary, ❌ never on the execution path (#1524): a newer suggestion takes the file over from an
+older pending op (`superseded`), and a settled run that moved a file away marks every other pending op on it
+`handled_elsewhere`; a group left with nothing to offer is `retired`. The rules, and why `retired` teaches nothing and
+counts nowhere: `../store/proposals/DETAILS.md` § Two groups naming one file. The service half is `retire_handled`,
+which the decorator calls at settle, after the per-op outcomes it reads, and which announces
+`SuggestionChange::HandledElsewhere`. The agent's `list_suggestions` reports a group's `takenOverOpCount`.
 
-What is missing is the explanation. Nothing invalidates the loser at approval time, and the skip surfaces as a bare
-per-op outcome rather than "another group already moved this". David's call, recorded so nobody re-derives the risk:
-**okay for now.** If it gets fixed, the fix belongs at the proposal boundary (invalidate or flag the overlap when the
-winner claims), never as an extra check on the execution path.
+Approving an overlap is still data-SAFE without any of this: the later run's preflight fingerprint no longer matches, so
+those sources are skipped. What the rule adds is the explanation, before the click.
 
 ## Saying that the pending set moved
 

@@ -41,6 +41,15 @@ describe('refusalReason', () => {
     expect(refusalReason({ kind: 'nothingSelected' }, 'move').message).toContain('nothing ran')
     expect(refusalReason({ kind: 'couldNotStart' }, 'move').message).toContain('nothing ran')
   })
+
+  // #1524: files another suggestion renamed are gone, not unreadable, and the words say so.
+  it('says gone files are gone, never that Cmdr couldn’t read them', () => {
+    const gone = refusalReason({ kind: 'sourcesGone' }, 'rename')
+
+    expect(gone.message).toContain('aren’t where this suggestion expected them')
+    expect(gone.message).not.toContain('couldn’t read')
+    expect(gone.message).not.toBe(refusalReason({ kind: 'nothingToRun' }, 'rename').message)
+  })
 })
 
 describe('a server card’s refusal', () => {

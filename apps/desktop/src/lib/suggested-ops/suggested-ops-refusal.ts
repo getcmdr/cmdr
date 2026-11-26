@@ -64,6 +64,11 @@ export function refusalReason(
         message: tString('suggestedOps.refusal.nothingToRun.message'),
         suggestion: tString('suggestedOps.refusal.nothingToRun.suggestion'),
       }
+    case 'sourcesGone':
+      return {
+        message: tString('suggestedOps.refusal.sourcesGone.message'),
+        suggestion: tString('suggestedOps.refusal.sourcesGone.suggestion'),
+      }
     case 'couldNotStart':
       return couldNotStart()
     case 'nothingSelected':
