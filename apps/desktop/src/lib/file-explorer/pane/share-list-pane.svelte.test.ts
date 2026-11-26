@@ -157,6 +157,14 @@ describe('a door’s arrival', () => {
     expect(shareListArrivalFor('left')).toMatchObject({ path: 'smb://testnas', origin: 'smb://', mount: 'public' })
   })
 
+  /** A Servers row IS a door: Enter on it is the person opening that server, so its refusal asks once. */
+  it('queues an arrival for a Servers row that opens a share list, then lets the folder open run', () => {
+    const { pane } = create({ path: 'smb://' })
+    const serverRow = { ...shareRow('Testnas'), path: 'smb://testnas', shareMeta: undefined }
+    expect(pane.openShare(serverRow), 'the generic folder open takes the pane there').toBe(false)
+    expect(shareListArrivalFor('left')).toMatchObject({ path: 'smb://testnas', origin: 'smb://' })
+  })
+
   it('mounts the queued share once the list lands, and once only', async () => {
     const { pane } = create()
     queueShareListArrival('left', { path: 'smb://testnas', origin: 'smb://', mount: 'public' })

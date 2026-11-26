@@ -205,6 +205,12 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
       if (entry.name === '..') return false
       // A row leading off the `network` volume (a Servers row's place, a saved share's place) goes there first.
       if (onNetworkVolume && openNetworkRow(entry, networkRowDeps)) return true
+      // An SMB server's Servers row is a door: the person opens that server, so its arrival is queued (a refused
+      // listing asks once), and the generic folder open takes the pane to the row's path.
+      if (onNetworkVolume && !onShareList && isShareListLocation(deps.getVolumeId(), entry.path)) {
+        queueShareListArrival(deps.getPaneId(), { path: entry.path, origin: deps.getCurrentPath() })
+        return false
+      }
       if (!onShareList) return false
       // ❗ One mount at a time: Enter or MCP on a row the wait still covers starts nothing.
       if (mount.view === null) void mount.mount(shareOf(entry), null)

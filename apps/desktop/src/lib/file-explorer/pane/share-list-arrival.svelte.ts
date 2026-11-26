@@ -5,8 +5,9 @@
  * sign-in refusal on the way asks for an account on its own (the person opened it).
  *
  * Every door that opens a server's share list goes through {@link queueShareListArrival},
- * then navigates the pane there: the hub's rows, the add-server hand-off, the mirror, and
- * `..` out of a share's top folder. ❌ No door threads a share through the navigation.
+ * then navigates the pane there: an SMB server's Servers row (`share-list-pane.svelte.ts::openShare`),
+ * the add-server hand-off, the mirror, and `..` out of a share's top folder. ❌ No door threads a
+ * share through the navigation.
  *
  * ❗ **A one-shot for the visit it was queued with** (cmdr-reports#7: "Cmdr tried to open
  * the share on that server"). Kept per PANE, ❌ not on a pane component: a pinned tab

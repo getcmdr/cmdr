@@ -855,6 +855,17 @@ describeSmb('SMB authentication', () => {
     await expect
       .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
       .toBeTruthy()
+    // #1519: the sign-in screen mirrors THIS pane in `cmdr://state` (the share list's path, no rows), ❌ never the
+    // Servers rows it came from.
+    await expect
+      .poll(
+        async () => {
+          const pane = await paneRows('left')
+          return { path: pane.path, rows: pane.rows }
+        },
+        { timeout: waitBudget(15000) },
+      )
+      .toEqual({ path: 'smb://smb test (auth)', rows: [] })
 
     // Sign in asks again; a second "Not now" lands on Sign in again.
     await tauriPage.evaluate(`document.activeElement.click()`)

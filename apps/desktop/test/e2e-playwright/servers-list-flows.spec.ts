@@ -430,40 +430,6 @@ describeSmb('Servers list survives: SMB servers', () => {
     }
   })
 
-  /**
-   * #1519: while a share list's sign-in screen is up, `cmdr://state` describes THAT pane (the share list's path, no
-   * rows), ❌ never the Servers rows it came from. The standard mirror follows the pane's own location.
-   */
-  test('SMB: a share list’s sign-in screen mirrors the share list, not the Servers rows', async ({ tauriPage }) => {
-    const address = authServerIp()
-    test.skip(address === null, 'needs the auth server’s IP (Linux Docker)')
-    if (address === null) return
-    const server = 'SMB Test auth by IP (mirror)'
-    const added = await addSmbServerByIp(tauriPage, address, server)
-    try {
-      await openServersList('left')
-      await awaitServerListed('left', server)
-      await mcpCall('move_cursor', { pane: 'left', filename: server })
-      await mcpCall('open_under_cursor', {})
-      // The refused listing opens the sign-in sheet once; cancelling stays on the in-pane sign-in screen.
-      await expect.poll(async () => tauriPage.isVisible(SHEET), { timeout: waitBudget(30000) }).toBeTruthy()
-      await cancelSheet(tauriPage)
-
-      await expect
-        .poll(
-          async () => {
-            const view = await paneView('left')
-            return { path: view.path, rows: [...view.rows.values()].map(nameOf) }
-          },
-          { timeout: waitBudget(15000) },
-        )
-        .toEqual({ path: `smb://${address}`, rows: [] })
-    } finally {
-      await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
-      await forgetSmbHost(tauriPage, added.host.id)
-    }
-  })
-
   async function signInFromRowMenu(tauriPage: PageLike, server: string): Promise<void> {
     await openServersList('left')
     await awaitServerListed('left', server)
