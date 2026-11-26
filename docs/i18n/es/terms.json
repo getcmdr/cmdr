@@ -4343,5 +4343,21 @@
     "chosen": "Menú principal",
     "confidence": "high",
     "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
+  },
+  "last-used": {
+    "chosen": "Último uso",
+    "confidence": "high",
+    "forms": "the Servers list's Last used column header, a noun phrase like macOS's date columns",
+    "avoid": [
+      {
+        "form": "Usado por última vez",
+        "why": "a participle; macOS es names its date columns with nouns (Última apertura)"
+      },
+      {
+        "form": "Última conexión",
+        "why": "says connected, not used"
+      }
+    ],
+    "sources": "macOS Finder/AppKit (Last Opened → Última apertura, N228); Nautilus (fecha de último uso); decisions.md § Servidores"
   }
 }

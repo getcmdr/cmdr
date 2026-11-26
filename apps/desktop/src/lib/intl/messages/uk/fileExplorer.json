@@ -485,6 +485,56 @@
   "@fileExplorer.network.share.shareCount": {
     "sourceHash": "4cc6002"
   },
+  "fileExplorer.columns.details": "Деталі",
+  "@fileExplorer.columns.details": {
+    "sourceHash": "45989de"
+  },
+  "fileExplorer.columns.lastUsed": "Останнє використання",
+  "@fileExplorer.columns.lastUsed": {
+    "sourceHash": "830ec7f"
+  },
+  "fileExplorer.network.servers.details": "{protocol} · {address}",
+  "@fileExplorer.network.servers.details": {
+    "sourceHash": "b7648ac",
+    "sameAsSourceJustification": "Placeholder-only value with the middle-dot separator; Ukrainian lists facts the same way (macOS uk uses · in Finder status lines), so nothing translates."
+  },
+  "fileExplorer.network.servers.detailsWithAccount": "{protocol} · {address} · {account}",
+  "@fileExplorer.network.servers.detailsWithAccount": {
+    "sourceHash": "7deea5a",
+    "sameAsSourceJustification": "Placeholder-only value with middle-dot separators; {account} arrives already worded in Ukrainian, so nothing translates."
+  },
+  "fileExplorer.network.servers.serverCount": "{count, plural, one {{countText} сервер} few {{countText} сервери} many {{countText} серверів} other {{countText} сервера}}",
+  "@fileExplorer.network.servers.serverCount": {
+    "sourceHash": "7ef87d1"
+  },
+  "fileExplorer.network.servers.serverCountSearching": "{count, plural, one {{countText} сервер, пошук інших поблизу…} few {{countText} сервери, пошук інших поблизу…} many {{countText} серверів, пошук інших поблизу…} other {{countText} сервера, пошук інших поблизу…}}",
+  "@fileExplorer.network.servers.serverCountSearching": {
+    "sourceHash": "5fbcf02"
+  },
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} сервер, пошук поблизу вимкнено} few {{countText} сервери, пошук поблизу вимкнено} many {{countText} серверів, пошук поблизу вимкнено} other {{countText} сервера, пошук поблизу вимкнено}}",
+  "@fileExplorer.network.servers.serverCountDiscoveryOff": {
+    "sourceHash": "9cff4c3"
+  },
+  "fileExplorer.network.servers.emptyList": "Серверів ще немає. Натисніть F7, щоб додати сервер.",
+  "@fileExplorer.network.servers.emptyList": {
+    "sourceHash": "2036046"
+  },
+  "fileExplorer.network.servers.addServerKey": "Додати сервер",
+  "@fileExplorer.network.servers.addServerKey": {
+    "sourceHash": "1099b2a"
+  },
+  "fileExplorer.network.servers.forgetKey": "Забути",
+  "@fileExplorer.network.servers.forgetKey": {
+    "sourceHash": "a6bd489"
+  },
+  "fileExplorer.network.servers.accountRootGone": "Для облікового запису «{name}» більше нічого не збережено, тож відкривати нічого.",
+  "@fileExplorer.network.servers.accountRootGone": {
+    "sourceHash": "f8cc647"
+  },
+  "fileExplorer.network.servers.notAFile": "«{name}» — це сервер. Відкрийте сервер, щоб побачити, що на ньому.",
+  "@fileExplorer.network.servers.notAFile": {
+    "sourceHash": "5ed9610"
+  },
   "fileExplorer.network.reconnect.once": "один раз",
   "@fileExplorer.network.reconnect.once": {
     "sourceHash": "200651a"
@@ -848,6 +898,14 @@
   "fileExplorer.readOnly.shareListSourceMessage": "Спільна папка — це місце на сервері, тож тут нічого копіювати. Відкрийте спільну папку, щоб скопіювати з неї файли.",
   "@fileExplorer.readOnly.shareListSourceMessage": {
     "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.serversListTitle": "Спочатку відкрийте сервер",
+  "@fileExplorer.readOnly.serversListTitle": {
+    "sourceHash": "df012ea"
+  },
+  "fileExplorer.readOnly.serversListSourceMessage": "Сервер — це місце в мережі, тож тут нічого копіювати. Відкрийте сервер, а потім одну з його спільних папок, щоб скопіювати з неї файли.",
+  "@fileExplorer.readOnly.serversListSourceMessage": {
+    "sourceHash": "1135e8c"
   },
   "fileExplorer.readOnly.notASourceTitle": "Тут нічого копіювати",
   "@fileExplorer.readOnly.notASourceTitle": {

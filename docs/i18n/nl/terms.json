@@ -4497,5 +4497,11 @@
     "confidence": "high",
     "forms": "indexed and up to date → Geïndexeerd en up-to-date; X keeps Y up to date → houdt Y up-to-date",
     "sources": "catalog (fileExplorer.navigation.driveIndex.tooltipFresh, tooltipFreshNoScan: Geïndexeerd en up-to-date); gnome-control-center.po actueel bijgewerkt"
+  },
+  "last-used": {
+    "chosen": "Laatst gebruikt",
+    "confidence": "high",
+    "sources": "GNOME Control Center (Last used → Laatst gebruikt), Nautilus (laatst gebruikt of laatst gewijzigd); macOS has only Laatst geopend / Openingsdatum for documents, a different sense (opening a file)",
+    "note": "Column header on the Servers list; a server is connected to, not opened, so Finder's Laatst geopend doesn't fit."
   }
 }

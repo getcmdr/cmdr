@@ -4946,5 +4946,18 @@
     "chosen": "主選單",
     "confidence": "high",
     "sources": "GNOME Nautilus zh-TW (Main Menu → 主選單)"
+  },
+  "last-used": {
+    "chosen": "上次使用",
+    "confidence": "tentative",
+    "accept": ["上次使用時間"],
+    "sources": "AP-HK 上次使用 (decisions.md § Servers); AP-TW Finder Date Last Opened → 上次打開日期 (上次 + verb shape); GNOME gnome-control-center Last used → 最後使用時間; zh 上次使用时间",
+    "avoid": [
+      {
+        "form": "最後使用時間",
+        "why": "GNOME's 最後 reads bookish beside the catalog's 50+ 上次 phrases"
+      }
+    ],
+    "note": "Servers list column header (fileExplorer.columns.lastUsed)."
   }
 }

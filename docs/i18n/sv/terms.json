@@ -4237,5 +4237,18 @@
         "why": "git.po's bookish loan; the catalog and GNOME say uppdaterad"
       }
     ]
+  },
+  "last-used": {
+    "chosen": "senast använd",
+    "confidence": "high",
+    "accept": ["senast använda", "senast använt"],
+    "forms": "column header Senast använd (agrees with servern)",
+    "avoid": [
+      {
+        "form": "Senast öppnad",
+        "why": "Finder's Date Last Opened column for files; the server column's English says used, and GNOME's Last used is Senast använd"
+      }
+    ],
+    "sources": "GNOME Control Center (Last used → Senast använd); GNOME Nautilus (senast använd eller senast ändrad); macOS Finder (Date Last Opened → Senast öppnad, the file sense)"
   }
 }

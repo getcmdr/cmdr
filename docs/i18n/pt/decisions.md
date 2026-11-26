@@ -213,8 +213,8 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 
 ## Servers (`servers.hub.*`, `commands.servers*`, `shortcuts.scope.*`)
 
-- `Status` over Apple's `Estado`, matching `licensing.section.labelStatus` (review queue). nearby → `por perto`;
-  `Próximo` means "next". `local network` lowercase; `Rede Local` names the macOS permission.
+- `Status` over Apple's `Estado`, matching `licensing.section.labelStatus` (review queue). nearby → `por perto`
+  (`Próximo` is "next"); `Rede Local` names only the macOS permission.
 
 ## Server sheet and host keys (`servers.sheet.*`, `servers.hostKey.*`, `servers.paneState.*`, `goToPath.dialog.*`)
 

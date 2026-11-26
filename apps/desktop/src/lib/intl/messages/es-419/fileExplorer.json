@@ -23,6 +23,14 @@
   "@fileExplorer.reveal.noPath": {
     "sourceHash": "b27a9fa"
   },
+  "fileExplorer.network.servers.emptyList": "Aún no hay servidores. Presiona F7 para agregar uno.",
+  "@fileExplorer.network.servers.emptyList": {
+    "sourceHash": "dcbf054"
+  },
+  "fileExplorer.network.servers.addServerKey": "Agregar servidor",
+  "@fileExplorer.network.servers.addServerKey": {
+    "sourceHash": "edc745a"
+  },
   "fileExplorer.openWith.copyRefused.notEnoughSpace": "{platform, select, macos {El disco de tu Mac no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.} windows {Tu PC no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.} other {El disco de tu computadora no tiene espacio suficiente para una copia de {size} de {fileName}, así que Cmdr no puede abrirlo en {appName}. Libera algo de espacio y vuelve a intentarlo.}}",
   "@fileExplorer.openWith.copyRefused.notEnoughSpace": {
     "sourceHash": "c024a6a"

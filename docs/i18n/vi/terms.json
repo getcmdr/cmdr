@@ -2859,7 +2859,10 @@
     "confidence": "high",
     "decision": "Rà soát trôi thuật ngữ toàn catalog",
     "forms": "wherever English says Search, write tìm kiếm in full; Find → tìm; discovery on the network → tìm",
-    "sources": "macOS AppKit (Search → Tìm kiếm, Find → Tìm; Finder MenuBar 300783)"
+    "sources": "macOS AppKit (Search → Tìm kiếm, Find → Tìm; Finder MenuBar 300783)",
+    "exceptions": {
+      "fileExplorer.network.servers.serverCountDiscoveryOff": "EN 'nearby search' is network discovery (finding servers on the local network), which the ruling's forms send to tìm, as in settings.network.enabled.summary (Tìm máy chủ SMB…); tìm kiếm belongs to finding files."
+    }
   },
   "search-match": {
     "accept": ["khớp"],
@@ -4069,5 +4072,17 @@
         "why": "GNOME word; Cmdr says menu everywhere (menu ruling)"
       }
     ]
+  },
+  "last-used": {
+    "chosen": "Dùng lần cuối",
+    "confidence": "high",
+    "forms": "the Servers list date column → Dùng lần cuối (header); same word order as aboutThis.label.lastOpened (Mở lần cuối)",
+    "avoid": [
+      {
+        "form": "Đã sửa đổi",
+        "why": "the modified column; a server was used, not changed"
+      }
+    ],
+    "sources": "GNOME Control Center (Last used → Dùng lần cuối), Nautilus (Last _used → Lần _dùng cuối); macOS has only Date Last Opened → Ngày mở cuối cùng (Finder N169.32)"
   }
 }

@@ -4411,5 +4411,12 @@
     "chosen": "主菜单",
     "confidence": "high",
     "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
+  },
+  "last-used": {
+    "chosen": "上次使用时间",
+    "accept": ["上次使用"],
+    "forms": "column header over a date 上次使用时间; mid-sentence 上次使用",
+    "confidence": "high",
+    "sources": "macOS zh-CN Keychain Access column 上次使用时间, Finder 上次打开日期 (date headings carry the time noun); GNOME Settings 上次使用 (bare, not a date column); catalog servers list"
   }
 }

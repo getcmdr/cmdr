@@ -4466,5 +4466,11 @@
     "chosen": "Menu principal",
     "confidence": "high",
     "sources": "GNOME Nautilus and gnome-control-center (Main Menu)"
+  },
+  "last-used": {
+    "chosen": "Dernière utilisation",
+    "confidence": "high",
+    "forms": "the Servers list date column header; stays a noun phrase, unlike the participle date columns (Modifié, Créé), because « Utilisé » alone reads as a used/unused flag",
+    "sources": "GNOME gnome-control-center « Last used » → « Dernière utilisation »; macOS AppKit « Last Opened » → « Dernière ouverture » (same noun-phrase shape, also aboutThis.label.lastOpened)"
   }
 }

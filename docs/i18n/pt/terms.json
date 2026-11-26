@@ -4156,5 +4156,21 @@
     "confidence": "high",
     "forms": "indexed and up to date → Indexado e atualizado; X keeps Y up to date → mantém Y atualizado or atualizada, agreeing with Y",
     "sources": "catalog (fileExplorer.navigation.driveIndex.tooltipFresh, tooltipFreshNoScan: Indexado e atualizado); git.po up to date → atualizado; gnome-control-center.po perfil de cor atualizado"
+  },
+  "last-used": {
+    "chosen": "Último uso",
+    "confidence": "high",
+    "sources": "GNOME Settings and Nautilus pt-BR (Last used → Último uso); macOS Última Usada rejected for its feminine agreement",
+    "avoid": [
+      {
+        "form": "Última usada",
+        "why": "the macOS form agrees in the feminine; the column is about a server"
+      },
+      {
+        "form": "Usado pela última vez",
+        "why": "too long for a narrow column header"
+      }
+    ],
+    "decision": "Servers"
   }
 }

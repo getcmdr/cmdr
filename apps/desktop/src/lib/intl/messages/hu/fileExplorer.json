@@ -485,6 +485,56 @@
   "@fileExplorer.network.share.shareCount": {
     "sourceHash": "4cc6002"
   },
+  "fileExplorer.columns.details": "Részletek",
+  "@fileExplorer.columns.details": {
+    "sourceHash": "45989de"
+  },
+  "fileExplorer.columns.lastUsed": "Utolsó használat",
+  "@fileExplorer.columns.lastUsed": {
+    "sourceHash": "830ec7f"
+  },
+  "fileExplorer.network.servers.details": "{protocol} · {address}",
+  "@fileExplorer.network.servers.details": {
+    "sourceHash": "b7648ac",
+    "sameAsSourceJustification": "Placeholder-only frame; Hungarian lists facts with the same middle dot (the hu catalog's servers.hub rows use it too), so nothing to translate."
+  },
+  "fileExplorer.network.servers.detailsWithAccount": "{protocol} · {address} · {account}",
+  "@fileExplorer.network.servers.detailsWithAccount": {
+    "sourceHash": "7deea5a",
+    "sameAsSourceJustification": "Placeholder-only frame; {account} arrives already worded (servers.hub.shareAccount → „{username} felhasználóként”), and the middle dot reads fine in Hungarian."
+  },
+  "fileExplorer.network.servers.serverCount": "{count, plural, one {{countText} szerver} other {{countText} szerver}}",
+  "@fileExplorer.network.servers.serverCount": {
+    "sourceHash": "7ef87d1"
+  },
+  "fileExplorer.network.servers.serverCountSearching": "{count, plural, one {{countText} szerver, továbbiak keresése a közelben…} other {{countText} szerver, továbbiak keresése a közelben…}}",
+  "@fileExplorer.network.servers.serverCountSearching": {
+    "sourceHash": "5fbcf02"
+  },
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} szerver, keresés a közelben kikapcsolva} other {{countText} szerver, keresés a közelben kikapcsolva}}",
+  "@fileExplorer.network.servers.serverCountDiscoveryOff": {
+    "sourceHash": "9cff4c3"
+  },
+  "fileExplorer.network.servers.emptyList": "Még nincs szerver. Nyomd meg az F7-et egy szerver hozzáadásához.",
+  "@fileExplorer.network.servers.emptyList": {
+    "sourceHash": "2036046"
+  },
+  "fileExplorer.network.servers.addServerKey": "Szerver hozzáadása",
+  "@fileExplorer.network.servers.addServerKey": {
+    "sourceHash": "1099b2a"
+  },
+  "fileExplorer.network.servers.forgetKey": "Elfelejtés",
+  "@fileExplorer.network.servers.forgetKey": {
+    "sourceHash": "a6bd489"
+  },
+  "fileExplorer.network.servers.accountRootGone": "{name} alatt már nincs semmi mentve, ezért nincs mit megnyitni.",
+  "@fileExplorer.network.servers.accountRootGone": {
+    "sourceHash": "f8cc647"
+  },
+  "fileExplorer.network.servers.notAFile": "{name} egy szerver. Nyisd meg, hogy lásd, mi van rajta.",
+  "@fileExplorer.network.servers.notAFile": {
+    "sourceHash": "5ed9610"
+  },
   "fileExplorer.network.reconnect.once": "egyszer",
   "@fileExplorer.network.reconnect.once": {
     "sourceHash": "200651a"
@@ -848,6 +898,14 @@
   "fileExplorer.readOnly.shareListSourceMessage": "A megosztás egy hely a szerveren, ezért itt nincs mit másolni. Nyisd meg a megosztást, hogy fájlokat másolj belőle.",
   "@fileExplorer.readOnly.shareListSourceMessage": {
     "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.serversListTitle": "Előbb nyiss meg egy szervert",
+  "@fileExplorer.readOnly.serversListTitle": {
+    "sourceHash": "df012ea"
+  },
+  "fileExplorer.readOnly.serversListSourceMessage": "A szerver egy hely a hálózaton, ezért itt nincs mit másolni. Nyisd meg a szervert, aztán az egyik megosztását, hogy fájlokat másolj belőle.",
+  "@fileExplorer.readOnly.serversListSourceMessage": {
+    "sourceHash": "1135e8c"
   },
   "fileExplorer.readOnly.notASourceTitle": "Itt nincs mit másolni",
   "@fileExplorer.readOnly.notASourceTitle": {
