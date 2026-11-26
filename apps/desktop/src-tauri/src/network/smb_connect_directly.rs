@@ -238,8 +238,14 @@ pub(crate) async fn connect_directly(volume_id: &str) -> UpgradeResult {
     // warm up, so nobody is asked for a password they already saved.
     let discovered = discover_server(&info.server, HOSTNAME_WAIT).await;
     let display_name = friendly_server_name(&info.server);
-    let Some((username, password)) =
-        get_keychain_password(&info.server, discovered.hostname.as_deref(), info.port, &info.share).await
+    let Some((username, password)) = get_keychain_password(
+        &info.server,
+        discovered.hostname.as_deref(),
+        info.port,
+        &info.share,
+        &mount_path,
+    )
+    .await
     else {
         log::info!("No stored credentials found, requesting credentials from user");
         let hint = info.username.clone();

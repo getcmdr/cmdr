@@ -1301,6 +1301,16 @@ answers by volume id, reading the share mounted at the volume's root off the ker
   one), else one made from the mount's server the way Add server makes one (`create_network_host`), so it works with
   discovery off. Its name in words is the share label's (`smb_share_label::mounted`): a typed name, else the friendly
   name with the port off 445.
+- ❗ **A mount maps to its SAVED server before its own spelling** (`known_shares::saved_share_of_mount`: the share row
+  whose place has the mount's id, else the row of that share whose last mount sat at the mount's root). macOS reports
+  a mount Cmdr made by a server's NAME under the address it resolved the name to (an IPv6 ULA), which no saved server
+  is called: `..` made a new server for that address and asked for a sign-in beside the saved server and its account
+  (QA 2026-11-26). The same lookup gives the OS-mount upgrade the saved server's password
+  (`smb_server_address.rs::get_keychain_password`, the saved name as the first key spelling), which otherwise went
+  out as a guest. ❌ Never merged by server GUID (a Samba GUID proves nothing). Pinned by
+  `the_host_is_the_saved_server_when_the_mount_is_spelled_by_another_address`,
+  `the_upgrade_signs_in_as_the_saved_server_whatever_address_the_mount_has`, and `known_shares_test.rs`'s
+  `a_mount_spelled_by_its_ipv6_address_finds_the_saved_share_it_filed`.
 
 ## A pane on an OS-mounted share tries the direct connection
 

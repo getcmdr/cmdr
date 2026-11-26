@@ -623,7 +623,7 @@ pub(crate) async fn resolve_and_register_smb_volume(
     notice: FallbackNotice,
 ) {
     let discovered = discover_server(server, std::time::Duration::from_millis(1500)).await;
-    let creds = get_keychain_password(server, discovered.hostname.as_deref(), port, share).await;
+    let creds = get_keychain_password(server, discovered.hostname.as_deref(), port, share, mount_path).await;
     let (username, password) = match &creds {
         Some((u, p)) => (Some(u.as_str()), Some(p.as_str())),
         None => (None, None),

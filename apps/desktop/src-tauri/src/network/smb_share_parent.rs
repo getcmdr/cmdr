@@ -51,15 +51,19 @@ pub(crate) fn share_parent_of(volume_id: &str) -> Option<ShareParent> {
 }
 
 fn share_parent_with(volume_id: &str, read: impl FnOnce(&str) -> Option<SmbMountInfo>) -> Option<ShareParent> {
-    let info = share_at_root(volume_id, read)?;
+    let (root, info) = share_at_root(volume_id, read)?;
+    // The server and account the person saved, which the mount's own spelling can lose
+    // (macOS reports the address it resolved a name to).
+    let saved = known_shares::saved_share_of_mount(&info.server, info.port, &info.share, &root);
+    let saved_server = saved.as_ref().map(|row| row.server_name.as_str());
     // Discovery is read BEFORE the store's lock is taken, so the two never nest.
     let hosts = crate::network::fresh_discovered_hosts();
     let show_parent_row = known_shares::read_parent_row_overrides(|overrides| {
         parent_row_override(overrides, &info.server, &info.share, &hosts)
     });
     Some(ShareParent {
-        host: host_for_mount(&info, &hosts),
-        server_label: server_label(&info),
+        host: host_for_mount(&info, saved_server, &hosts),
+        server_label: server_label(&info, saved_server),
         share_name: info.share,
         show_parent_row,
     })
@@ -77,7 +81,7 @@ fn set_parent_row_with(
     default_show: bool,
     read: impl FnOnce(&str) -> Option<SmbMountInfo>,
 ) -> bool {
-    let Some(info) = share_at_root(volume_id, read) else {
+    let Some((_, info)) = share_at_root(volume_id, read) else {
         return false;
     };
     let hosts = crate::network::fresh_discovered_hosts();
@@ -90,12 +94,13 @@ fn set_parent_row_with(
 /// The SMB share mounted at the root of the volume `volume_id` names, as `read` finds
 /// it there (the kernel's cached mount table in the app). A direct share is read off
 /// its mount too: its OS mount stays up underneath the session, and spells the server
-/// and share the way the auto upgrade sees them.
-fn share_at_root(volume_id: &str, read: impl FnOnce(&str) -> Option<SmbMountInfo>) -> Option<SmbMountInfo> {
+/// and share the way the auto upgrade sees them. Answered with the root it sits at.
+fn share_at_root(volume_id: &str, read: impl FnOnce(&str) -> Option<SmbMountInfo>) -> Option<(String, SmbMountInfo)> {
     let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id)?;
     // A server URL (an SFTP or WebDAV place) has no native spelling, so no share is mounted there.
-    let root = volume.root().to_native().ok()?;
-    read(&root.to_string_lossy())
+    let root = volume.root().to_native().ok()?.to_string_lossy().into_owned();
+    let info = read(&root)?;
+    Some((root, info))
 }
 
 /// The server a mount is from, as the share list opens it.
@@ -104,20 +109,28 @@ fn share_at_root(volume_id: &str, read: impl FnOnce(&str) -> Option<SmbMountInfo
 /// same cached shares and sign-in the Servers row's share list does (both key on the host). With
 /// none, the host is made from the mount's own server the way "Add server" makes one,
 /// so `..` works with discovery off too.
-fn host_for_mount(info: &SmbMountInfo, hosts: &[NetworkHost]) -> NetworkHost {
+///
+/// ❗ `saved_server` (the saved share row's server, `known_shares::saved_share_of_mount`)
+/// is looked for FIRST: macOS reports a mount Cmdr made by a server's name under the
+/// address it resolved the name to (an IPv6 ULA), which only the saved row ties back to
+/// the saved server and its account.
+fn host_for_mount(info: &SmbMountInfo, saved_server: Option<&str>, hosts: &[NetworkHost]) -> NetworkHost {
     let mounted = SmbServer::new(&info.server, info.port);
-    let serves = |host: &&NetworkHost| smb_servers_of(host).iter().any(|server| server.is(&mounted, hosts));
+    saved_server
+        .and_then(|saved| best_host_serving(&SmbServer::new(saved, info.port), hosts))
+        .or_else(|| best_host_serving(&mounted, hosts))
+        .unwrap_or_else(|| made_host(info))
+}
+
+/// The host among `hosts` that serves `wanted`, a discovered one with a hostname first.
+fn best_host_serving(wanted: &SmbServer, hosts: &[NetworkHost]) -> Option<NetworkHost> {
+    let serves = |host: &&NetworkHost| smb_servers_of(host).iter().any(|server| server.is(wanted, hosts));
     let rank = |host: &NetworkHost| match (host.hostname.is_some(), host.source) {
         (true, HostSource::Discovered) => 0,
         (true, HostSource::Manual) => 1,
         (false, _) => 2,
     };
-    let mut matching: Vec<&NetworkHost> = hosts.iter().filter(serves).collect();
-    matching.sort_by_key(|host| rank(host));
-    matching
-        .first()
-        .map(|host| (*host).clone())
-        .unwrap_or_else(|| made_host(info))
+    hosts.iter().filter(serves).min_by_key(|host| rank(host)).cloned()
 }
 
 /// A host for each SMB mount in `mounts`, made the way [`host_for_mount`] makes one for a
@@ -139,10 +152,17 @@ fn made_host(info: &SmbMountInfo) -> NetworkHost {
     create_network_host(&address, info.port)
 }
 
-/// The server's name in words, the way `smb_share_label::mounted` names it.
-fn server_label(info: &SmbMountInfo) -> String {
-    typed_name(&[SmbServer::new(&info.server, info.port)])
-        .unwrap_or_else(|| smb_server(&friendly_server_name(&info.server), info.port))
+/// The server's name in words, the way `smb_share_label::mounted` names it: the saved
+/// server's before the mount's own spelling.
+fn server_label(info: &SmbMountInfo, saved_server: Option<&str>) -> String {
+    let mounted = SmbServer::new(&info.server, info.port);
+    let servers: Vec<SmbServer> = saved_server
+        .map(|saved| SmbServer::new(saved, info.port))
+        .into_iter()
+        .chain(std::iter::once(mounted))
+        .collect();
+    typed_name(&servers)
+        .unwrap_or_else(|| smb_server(&friendly_server_name(saved_server.unwrap_or(&info.server)), info.port))
 }
 
 #[cfg(test)]

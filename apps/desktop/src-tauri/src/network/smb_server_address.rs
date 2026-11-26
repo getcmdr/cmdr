@@ -222,8 +222,9 @@ fn system_keychain_aliases_from(server: &str, hosts: &[NetworkHost]) -> Vec<Stri
 
 /// Tries to retrieve SMB credentials from the Keychain.
 ///
-/// Tries multiple keys: by hostname (from mDNS discovery), then by IP (from statfs),
-/// at both share-level and server-level.
+/// Tries multiple keys: by the server of the saved share the mount belongs to
+/// (`known_shares::saved_share_of_mount`, by the mount's id or `mount_path`), by hostname
+/// (from mDNS discovery), then by IP (from statfs), at both share-level and server-level.
 ///
 /// ❗ Keyed with the `port` (`server_identity::smb_server`), which is how the sign-in
 /// sheet saves them: it files a server off 445 under its discovery name
@@ -236,14 +237,24 @@ pub(crate) async fn get_keychain_password(
     hostname: Option<&str>,
     port: u16,
     share: &str,
+    mount_path: &str,
 ) -> Option<(String, String)> {
     use crate::network::server_identity::smb_server;
 
-    let mut names: Vec<String> = hostname
+    // The saved share's server first: a mount Cmdr made by a server's name reports the
+    // address macOS resolved it to (an IPv6 ULA), and the password is filed under the name.
+    let saved = crate::network::known_shares::saved_share_of_mount(server_ip, port, share, mount_path)
+        .map(|row| row.server_name);
+    let mut names: Vec<String> = Vec::new();
+    for name in saved
         .into_iter()
-        .chain(std::iter::once(server_ip))
-        .map(str::to_string)
-        .collect();
+        .chain(hostname.map(str::to_string))
+        .chain(std::iter::once(server_ip.to_string()))
+    {
+        if !names.contains(&name) {
+            names.push(name);
+        }
+    }
     // The keys this port files under first, then (off 445) the port-less ones older saves used.
     let mut servers_to_try: Vec<String> = names.iter().map(|name| smb_server(name, port)).collect();
     let with_port = servers_to_try.len();

@@ -99,12 +99,15 @@ fn the_host_is_the_discovered_one_when_discovery_knows_the_server() {
             HostSource::Discovered,
         ),
     ];
-    assert_eq!(host_for_mount(&mount("198.51.100.7", "media"), &hosts).id, "testnas");
+    assert_eq!(
+        host_for_mount(&mount("198.51.100.7", "media"), None, &hosts).id,
+        "testnas"
+    );
 }
 
 #[test]
 fn the_host_is_made_from_the_mount_when_discovery_knows_nothing() {
-    let made = host_for_mount(&mount("198.51.100.9", "media"), &[]);
+    let made = host_for_mount(&mount("198.51.100.9", "media"), None, &[]);
     assert_eq!(made.hostname.as_deref(), Some("198.51.100.9"));
     assert_eq!(made.port, 445);
     assert_eq!(made.source, HostSource::Manual);
@@ -120,8 +123,32 @@ fn a_host_on_another_port_is_not_the_server() {
         HostSource::Manual,
     );
     other_port.port = 11480;
-    let found = host_for_mount(&mount("198.51.100.7", "media"), &[other_port]);
+    let found = host_for_mount(&mount("198.51.100.7", "media"), None, &[other_port]);
     assert_ne!(found.id, "other", "one machine can run several servers");
+}
+
+/// ❗ A share Cmdr mounted from a server saved by NAME comes back spelled by the address
+/// macOS resolved the name to (an IPv6 ULA here). `..` goes to the SAVED server's share
+/// list, signed in as its account: QA 2026-11-26 had it make a new server for the address,
+/// asking for a sign-in beside the saved one.
+#[test]
+fn the_host_is_the_saved_server_when_the_mount_is_spelled_by_another_address() {
+    use crate::network::manual_servers::create_network_host;
+    let saved = create_network_host("testnas", 445);
+    let found = host_for_mount(
+        &mount("fd00::1", "media"),
+        Some("testnas"),
+        std::slice::from_ref(&saved),
+    );
+    assert_eq!(found.id, saved.id);
+}
+
+/// With the saved server nowhere in the host list yet, `..` still leads somewhere its
+/// share list resolves: the host made from the mount.
+#[test]
+fn a_saved_server_no_host_knows_falls_back_to_the_mounts_own() {
+    let made = host_for_mount(&mount("fd00::1", "media"), Some("testnas"), &[]);
+    assert_eq!(made.hostname.as_deref(), Some("fd00::1"));
 }
 
 /// A volume registered for the length of one test, under an id no other test uses.
@@ -208,7 +235,7 @@ fn resolved_share_list(
     saved: Vec<NetworkHost>,
 ) -> (NetworkHost, Option<NetworkHost>) {
     use crate::network::share_list_path::{KnownHosts, ShareListAddress, resolve};
-    let host = host_for_mount(info, &fresh);
+    let host = host_for_mount(info, None, &fresh);
     let known = KnownHosts {
         fresh,
         saved,

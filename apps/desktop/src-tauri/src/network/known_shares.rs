@@ -566,6 +566,35 @@ pub fn share_by_volume_id(volume_id: &str) -> Option<KnownNetworkShare> {
     saved_shares().into_iter().find(|row| place_id(row) == volume_id)
 }
 
+/// The saved share a mount of `share` from `server` (as the mount spells it, `statfs`'s
+/// server) at `mount_path` belongs to: the row whose place has the id that mount carries,
+/// else the row of that share whose last mount sat at `mount_path`.
+///
+/// ❗ The way back from a mount to the saved server and account, which the mount's own
+/// spelling can lose: macOS reports a mount of a server added by name under the address
+/// it resolved (an IPv6 ULA). Memory only. ❌ Never by server GUID (Samba's proves nothing).
+pub fn saved_share_of_mount(server: &str, port: u16, share: &str, mount_path: &str) -> Option<KnownNetworkShare> {
+    saved_share_of_mount_in(&saved_shares(), server, port, share, mount_path).cloned()
+}
+
+fn saved_share_of_mount_in<'a>(
+    rows: &'a [KnownNetworkShare],
+    server: &str,
+    port: u16,
+    share: &str,
+    mount_path: &str,
+) -> Option<&'a KnownNetworkShare> {
+    let volume_id = cmdr_fs::volume::smb_volume_id(server, port, share);
+    let shares = || rows.iter().filter(|row| row.is_share());
+    shares().find(|row| place_id(row) == volume_id).or_else(|| {
+        shares().find(|row| {
+            row.mount_path.as_deref() == Some(mount_path)
+                && row.port.unwrap_or(445) == port
+                && fold_name(&row.share_name) == fold_name(share)
+        })
+    })
+}
+
 /// Records `guid` on the share row whose place is `volume_id`. `signed_in_as` is the
 /// account of the session that answered it: `None` for a guest session or the
 /// probe. ❗ The proof is decided HERE, from the row's own account, never handed in:
@@ -764,3 +793,7 @@ pub fn set_direct_connection_enabled(server_name: &str, share: &str, enabled: bo
 #[cfg(test)]
 #[path = "known_shares_test.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "known_shares_mount_test.rs"]
+mod mount_tests;

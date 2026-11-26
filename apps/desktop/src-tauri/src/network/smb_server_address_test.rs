@@ -219,7 +219,7 @@ async fn the_upgrade_finds_a_password_the_sheet_saved_off_port_445() {
     crate::network::keychain::save_credentials("keytest-offport:11482", None, "testuser", "pw")
         .expect("the test secret store always accepts");
 
-    let found = get_keychain_password("keytest-offport", None, 11482, "public").await;
+    let found = get_keychain_password("keytest-offport", None, 11482, "public", "").await;
 
     assert_eq!(found, Some(("testuser".to_string(), "pw".to_string())));
 }
@@ -232,15 +232,50 @@ async fn a_password_saved_without_the_port_is_still_found() {
     crate::network::keychain::save_credentials("keytest-legacy", None, "old", "pw")
         .expect("the test secret store always accepts");
 
-    let found = get_keychain_password("keytest-legacy", None, 11482, "public").await;
+    let found = get_keychain_password("keytest-legacy", None, 11482, "public", "").await;
 
     assert_eq!(found, Some(("old".to_string(), "pw".to_string())));
     // ❗ Noted, so forgetting this server's password takes the entry it was found under.
     crate::network::keychain::forget_server_credentials(&["keytest-legacy:11482".to_string()], &[]).expect("forgot");
     assert_eq!(
-        get_keychain_password("keytest-legacy", None, 11482, "public").await,
+        get_keychain_password("keytest-legacy", None, 11482, "public", "").await,
         None
     );
+}
+
+/// ❗ **A share Cmdr mounted from a server saved by name signs in as that server's
+/// account, whatever address macOS reports the mount by.** macOS resolved the name to an
+/// IPv6 ULA and the upgrade asked the Keychain under that address only, so the direct
+/// session went out as a guest (QA 2026-11-26). The saved share row ties the mount's id
+/// back to the server the password is filed under.
+#[tokio::test]
+async fn the_upgrade_signs_in_as_the_saved_server_whatever_address_the_mount_has() {
+    use crate::network::known_shares::{AuthOptions, ConnectionMode, KnownNetworkShare, forget_rows};
+    let _secrets = crate::test_support::isolate_secrets();
+    crate::network::keychain::save_credentials("keytest-saved-by-name", None, "test_user_1", "pw")
+        .expect("the test secret store always accepts");
+    let row = KnownNetworkShare {
+        server_name: "keytest-saved-by-name".to_string(),
+        share_name: "public".to_string(),
+        protocol: "smb".to_string(),
+        last_connected_at: "2026-11-26T20:00:00Z".to_string(),
+        last_connection_mode: ConnectionMode::Credentials,
+        last_known_auth_options: AuthOptions::CredentialsOnly,
+        username: Some("test_user_1".to_string()),
+        address: Some("fd00::7".to_string()),
+        port: None,
+        volume_id: Some(cmdr_fs::volume::smb_volume_id("fd00::7", 445, "public")),
+        mount_path: Some("/Volumes/keytest-public".to_string()),
+        pinned: true,
+        server_guid: None,
+        server_guid_proof: Default::default(),
+    };
+    crate::network::known_shares::update_known_share(row.clone());
+
+    let found = get_keychain_password("fd00::7", None, 445, "public", "/Volumes/keytest-public").await;
+    forget_rows(&[row]);
+
+    assert_eq!(found, Some(("test_user_1".to_string(), "pw".to_string())));
 }
 
 /// Two SMB servers on one machine keep apart: the port-keyed password of one is never
@@ -252,7 +287,7 @@ async fn a_password_for_another_port_of_the_machine_is_not_found() {
         .expect("the test secret store always accepts");
 
     assert_eq!(
-        get_keychain_password("keytest-twoports", None, 11482, "public").await,
+        get_keychain_password("keytest-twoports", None, 11482, "public", "").await,
         None
     );
 }
