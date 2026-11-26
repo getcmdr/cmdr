@@ -77,6 +77,53 @@ fn servers_are_read_apart() {
     assert_eq!(reads.load(Ordering::SeqCst), 2);
 }
 
+/// ❗ One server's pending read (a system prompt, up to a minute) never holds up another
+/// server's first read: the turn is per server.
+#[test]
+fn a_pending_read_blocks_only_its_own_server() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let memo = Arc::new(ReadOnce::default());
+    let (entered_tx, entered_rx) = mpsc::channel::<()>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let slow = {
+        let memo = Arc::clone(&memo);
+        std::thread::spawn(move || {
+            memo.read(
+                "smb://testnas",
+                || None::<&'static str>,
+                move || {
+                    entered_tx.send(()).expect("test channel");
+                    // The prompt waits on a person until the test releases it.
+                    release_rx.recv().expect("test channel");
+                    None
+                },
+            )
+        })
+    };
+    entered_rx.recv().expect("the slow read started");
+
+    let (done_tx, done_rx) = mpsc::channel();
+    let other = {
+        let memo = Arc::clone(&memo);
+        std::thread::spawn(move || {
+            let answer = memo.read("smb://attic", || None, || Some("testuser"));
+            done_tx.send(answer).expect("test channel");
+        })
+    };
+    let other_answer = done_rx.recv_timeout(Duration::from_secs(5));
+    release_tx.send(()).expect("test channel");
+    slow.join().expect("slow reader");
+    other.join().expect("other reader");
+
+    assert_eq!(
+        other_answer,
+        Ok(Some("testuser")),
+        "the other server read while the first prompt was pending"
+    );
+}
+
 /// Two callers racing for one server (a listing and a mount) read once between them.
 #[test]
 fn racing_callers_read_once() {

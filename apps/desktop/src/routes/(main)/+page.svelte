@@ -621,7 +621,7 @@
     /**
      * Opens the Multi-Rename Tool on the focused pane (⌃M): the backend resolves the
      * selection, or the file under the cursor, into its files once, here. A read-only
-     * pane (an archive, the `.git` portal) refuses with F2's alert before any session
+     * pane (an archive, the `.git` portal, a share list) refuses with F2's alert before any session
      * opens. `resolveMultiRenameTarget` answers `null` when there's nothing to open,
      * and says why; rows the listing moved past wait to settle, as F5 waits.
      */

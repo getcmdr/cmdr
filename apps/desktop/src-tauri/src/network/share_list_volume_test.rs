@@ -381,7 +381,8 @@ async fn it_answers_as_a_read_only_unwatched_unindexed_volume() {
     assert!(volume.watch_listing(path).is_none());
     assert_eq!(
         volume.listing_watch_coverage(path),
-        cmdr_fs::volume::WatchCoverage::None
+        WatchCoverage::EveryWriter,
+        "nothing writes a share list, so an unforced refresh may skip the dial"
     );
     assert!(!volume.has_trash());
     assert!(!volume.supports_streaming());
@@ -435,6 +436,45 @@ async fn the_engine_lists_a_share_list_as_folder_rows() {
     read.expect("the pane's open completes");
     assert_eq!(rows, vec![("archive".to_string(), true), ("public".to_string(), true)]);
     assert_eq!(shares.dials().len(), 1, "the pane's open dials once");
+}
+
+/// ❗ #324 and the Keychain-once rule: the unforced refresh a delete or trash sends to
+/// BOTH panes never dials a share list (a dial can read the stored password), while a
+/// forced one (⌘R, MCP `refresh`) still re-reads past the cache.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn only_a_forced_refresh_dials_an_open_share_list() {
+    let (volume, shares) = volume(testnas());
+    let volume_id = cmdr_fs::testing::unique_test_id("share-list-refresh");
+    get_volume_manager().register(&volume_id, Arc::new(volume));
+    let listing_id = uuid::Uuid::new_v4().to_string();
+    read_to_end(
+        crate::listing_host::listings(),
+        &request(&listing_id, &volume_id, "smb://testnas/"),
+    )
+    .await
+    .expect("the pane's open completes");
+
+    let unforced = crate::commands::file_system::refresh_listing(listing_id.clone(), false).await;
+    let after_unforced = shares.dials();
+    let forced = crate::commands::file_system::refresh_listing(listing_id.clone(), true).await;
+    let after_forced = shares.dials();
+    crate::listing_host::listings().end(&ListingId::new(listing_id));
+    get_volume_manager().unregister(&volume_id);
+
+    assert!(!unforced.timed_out && !forced.timed_out);
+    assert_eq!(
+        after_unforced,
+        vec![("id-testnas".to_string(), Freshness::Cached)],
+        "the unforced refresh adds no dial"
+    );
+    assert_eq!(
+        after_forced,
+        vec![
+            ("id-testnas".to_string(), Freshness::Cached),
+            ("id-testnas".to_string(), Freshness::Fresh)
+        ],
+        "the forced refresh re-reads past the cache"
+    );
 }
 
 /// ❗ The root stays `smb://` whichever server a pane lists, so a restored `smb://a` tab

@@ -115,7 +115,9 @@ describe("a server's share list refuses every file operation", () => {
     })
   }
 
-  it('refuses F7, ⇧F4, F8, and F2 with the share-list words', async () => {
+  // F2 itself is Edit server on a share list (`file-handlers.rename.test.ts`); the pane's
+  // rename refused here is what a mouse rename activation and MCP `rename` reach.
+  it('refuses F7, ⇧F4, F8, the pane’s rename, and ⌃M with the share-list words', async () => {
     const dialogs = buildDialogs()
     const commands = create(onShareList(), dialogs)
 
@@ -123,8 +125,10 @@ describe("a server's share list refuses every file operation", () => {
     await commands.openNewFileDialog({ initiator: 'user' })
     await commands.openDeleteDialog({ permanent: false, initiator: 'user' })
     commands.startRename()
+    // ❗ ⌃M asks this before it resolves any target, so no Multi-Rename session opens.
+    expect(commands.refuseMultiRename()).toBe(true)
 
-    expect(dialogs.showAlert.mock.calls).toEqual([WRITE, WRITE, WRITE, WRITE])
+    expect(dialogs.showAlert.mock.calls).toEqual([WRITE, WRITE, WRITE, WRITE, WRITE])
     expect(dialogs.showNewFolder).not.toHaveBeenCalled()
     expect(dialogs.showNewFile).not.toHaveBeenCalled()
     expect(dialogs.showDeleteConfirmation).not.toHaveBeenCalled()

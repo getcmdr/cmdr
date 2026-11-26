@@ -204,6 +204,18 @@ pub(crate) struct KnownHosts {
     pub cached: Vec<NetworkHost>,
 }
 
+impl KnownHosts {
+    /// The host a share list already resolved, by the id it listed under ([`resolve`]
+    /// keeps the id, a stale host's too), in [`resolve`]'s order.
+    pub(crate) fn by_id(&self, id: &str) -> Option<&NetworkHost> {
+        self.fresh
+            .iter()
+            .chain(&self.saved)
+            .chain(&self.cached)
+            .find(|host| host.id == id)
+    }
+}
+
 /// The server `address` names among `hosts`, or `None` when nothing known goes by it.
 ///
 /// Fresh evidence first, a discovered host before a manual one (the hub's own pick, so

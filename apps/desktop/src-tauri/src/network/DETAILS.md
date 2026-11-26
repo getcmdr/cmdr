@@ -1065,6 +1065,12 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `get_metadata` reads memory and the cache only. **Decision**: a separate trait read the engine calls, ❌ not a
   listing-context flag: a flag would have to ride every read path into the backend, and the pane's open is already its
   own call site. Pinned by `share_list_volume_test.rs`'s `a_read_that_is_no_pane_never_dials`.
+- **Only a FORCED refresh re-reads it**: the volume answers `WatchCoverage::EveryWriter` with no watch armed (nothing
+  in the app writes a share list), so the unforced `refresh_listing` a delete or trash sends to both panes
+  short-circuits instead of dialing (and maybe reading the Keychain). ⌘R and MCP `refresh` force, so a share a server's
+  admin added shows there or on the next open. **Decision**: the coverage answer, ❌ not a share-list arm in
+  `refresh_listing`: the short-circuit is the one gate every unforced caller passes. Pinned by
+  `only_a_forced_refresh_dials_an_open_share_list`.
 - **The pane read signs in with `share_list_sign_in::list_for_pane`**: a typed account's session credential, else
   its stored password read ONCE, else `AuthRequired`; with no typed account, guest, and only a guest turned away (a
   sign-in class) falls to the session credential, else the one stored read. Every other caller (prefetch, the
@@ -1074,7 +1080,8 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   this volume's).
 - **The Keychain is read at most once per server per session** (`keychain::read_server_credentials_once` over
   `keychain_session.rs`'s `ReadOnce`, keyed by the server-level account name): a hit lands in the keychain's cache, a
-  miss is remembered as spent, and a turn lock makes a racing listing and mount ask once. ❌ Only a pane listing and a
+  miss is remembered as spent, and a per-server turn lock makes a racing listing and mount ask once (per server, so one
+  server's pending prompt never holds up another's: `a_pending_read_blocks_only_its_own_server`). ❌ Only a pane listing and a
   person's mount reach it (a bare share mount, and a saved share's dial, `smb_saved_shares.rs::stored_password`);
   pinned by `keychain_session_test.rs`, `share_list_sign_in_test.rs`, and
   `a_saved_share_reads_the_store_once_hit_or_miss`, and the no-dial pin (`a_read_that_is_no_pane_never_dials`) is
@@ -1082,8 +1089,14 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   (`smb_server_address.rs::get_keychain_password`) reads the store on its own, per share and per key spelling, from
   its launch, mount-watch, and pane-open passes: outside this memo, by design of the upgrade, not of the share list.
 - **The session credential**: a sheet's answer that worked (`list_shares_with_credentials`, or a mount sent
-  credentials) becomes the server's (`keychain::remember_for_session`), Remember or not, under its discovery name and
-  its dialed name ❗ on ITS port (a bare hostname would sign the 445 server on the same machine in). The pane's
+  credentials) becomes the server's (`keychain::remember_for_session`), Remember or not, under
+  `share_list_sign_in::session_names`: the name the person knows it by, then each dialed address ❗ on ITS port (a bare
+  hostname would sign the 445 server on the same machine in). ❗ That one function spells the set on both sides: the
+  sheet's listing files under the host its share list resolved (`names_for_sheet_answer`, over `KnownHosts::by_id`, so
+  a saved or a not-fresh host gets its name too), and the mount looks up under `mount_session_names`; pinned by
+  `a_sheet_answer_is_filed_where_the_mount_looks_it_up`. A mount's answer also stands when the mount stopped short of
+  judging it (out of reach, share missing: `mount_with_sheet_answer`), so the pane's Try again sends no password;
+  one the server turned away (or the person cancelled) doesn't. The pane's
   re-list and `mount_network_share` with no credentials sign in as it (`share_list_sign_in::mount_with_session`: the
   session credential, else the stored read up front for a typed account, else guest, and a guest the share turns
   away costs the stored read and one more mount). Forget saved password (`forget_server_credentials`,
@@ -1104,7 +1117,8 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   one (the hub's pick, so the pane lists under the host id the hub's prefetch caches under), then the manual store (a
   launch where discovery hasn't loaded it), then a host only the display cache lists, ❗ with its IP dropped: that
   pairing is stale, and an IP DHCP handed to another machine must not get the dial.
-- **What it isn't**: `BackendKind::ShareList`, read-only, unwatched, not indexable, no export, and
+- **What it isn't**: `BackendKind::ShareList`, read-only, unwatched (no watch arms; the coverage answer above is
+  about writers), not indexable, no export, and
   `supports_local_fs_access` is `false` (the trait default `true` would hand `smb://<server>/<share>` to Quick Look and
   `std::fs`). `location::facts` skips it (it's no place), and favorites don't hold it. Its root stays `smb://` whichever
   server is listed, so the root history never reads a "move" that would rebase restored `smb://a` tabs onto `b`

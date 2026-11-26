@@ -9,19 +9,21 @@
 //! share this one memo. ❌ Nothing on a background path calls [`ReadOnce::read`]: only a
 //! listing or a mount a person started.
 
-use std::collections::HashSet;
-use std::sync::Mutex;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex};
 
 use crate::ignore_poison::IgnorePoison;
 
 /// The one store read per key, whatever it found.
 ///
-/// ❗ A turn lock spans the read, so two callers racing for one server (a listing and a
-/// mount) ask once: the second waits, then answers from what the first left in memory.
+/// ❗ A turn lock PER KEY spans the read, so two callers racing for one server (a listing
+/// and a mount) ask once: the second waits, then answers from what the first left in
+/// memory. Per key, so one server's pending prompt (up to a minute) never holds up
+/// another server's first read.
 #[derive(Default)]
 pub(crate) struct ReadOnce {
     spent: Mutex<HashSet<String>>,
-    turn: Mutex<()>,
+    turns: Mutex<HashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl ReadOnce {
@@ -33,7 +35,9 @@ impl ReadOnce {
         known: impl Fn() -> Option<T>,
         read: impl FnOnce() -> Option<T>,
     ) -> Option<T> {
-        let _turn = self.turn.lock_ignore_poison();
+        // The map lock is held only to find the key's turn, never across the read.
+        let turn = Arc::clone(self.turns.lock_ignore_poison().entry(key.to_string()).or_default());
+        let _turn = turn.lock_ignore_poison();
         if let Some(found) = known() {
             return Some(found);
         }

@@ -2509,9 +2509,12 @@ The producers:
   reads "testshare on Testnas"), with a `hint` once it runs past 10 s (`../network/DETAILS.md` § "A mount that waits");
   an `auth_required` refusal as `signed_out` with the producer's own `title` and `hint` ("Sign in to open …", ❌ not
   "Signed out of …": nothing dropped) and a `back`, with the sheet opened over it at once since the person just started
-  the mount; and every other `MountError` as `refused` with the `renderMountError` sentence, `retry`, and `back`. `back`
-  (both arms, "Go back") returns to the share list. The view is keyed on "is it a wait", so a Try again's wait starts
-  quiet again like a fresh one.
+  the mount; and every other `MountError` as `refused` with the `renderMountError` sentence, `retry`, and `back`. ❗ The
+  controller keeps no password: Try again mounts with no credentials, and a sheet's answer the server never judged (out
+  of reach, share missing) is already the backend's session credential
+  (`share_list_sign_in.rs::mount_with_sheet_answer`); only the username stays, as the sheet's prefill. `back` (both
+  arms, "Go back") returns to the share list. The view is keyed on "is it a wait", so a Try again's wait starts quiet
+  again like a fresh one.
 
 **A wait starts quiet.** Until `WAIT_REVEAL_AFTER_MS` (800 ms, `#lib/ui/wait-reveal.ts`, the one reveal a slow folder's
 loading view shares), a `connecting` or `waiting_for_device` state renders the view's live region and nothing in it, so

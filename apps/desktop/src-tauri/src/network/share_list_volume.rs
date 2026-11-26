@@ -14,6 +14,9 @@
 //! `list_directory_with_cancel` and gets the share cache, else `NotConnected`, ❌ never a
 //! dial.
 //!
+//! An unforced refresh (the one a delete or trash sends to both panes) never re-reads
+//! it: the volume answers `WatchCoverage::EveryWriter`, so only ⌘R dials past the cache.
+//!
 //! Read-only, unwatched, unindexed, and no export: a server's list has nothing to write,
 //! watch, walk, or copy out. Its paths are no filesystem paths
 //! (`supports_local_fs_access` is `false`), so Quick Look and every `std::fs` fast path
@@ -28,7 +31,7 @@ use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::share_list::ShareListRefusal;
 use cmdr_fs::share_meta::ShareMeta;
-use cmdr_fs::volume::{BackendKind, ListingProgress, Volume, VolumeError};
+use cmdr_fs::volume::{BackendKind, ListingProgress, Volume, VolumeError, WatchCoverage};
 use cmdr_smb::{ShareListError, ShareListResult};
 use tokio_util::sync::CancellationToken;
 
@@ -256,6 +259,14 @@ impl Volume for SmbServerVolume {
         false
     }
 
+    /// ❗ `EveryWriter`, with no watch armed: nothing in the app writes a share list, so
+    /// the unforced `refresh_listing` a delete or trash sends to both panes skips the
+    /// re-read, which would dial the server and could read the stored password (#324).
+    /// A share a server's admin adds shows on ⌘R (a forced refresh) or the next open.
+    fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
+        WatchCoverage::EveryWriter
+    }
+
     fn list_directory<'a>(
         &'a self,
         path: &'a AppPath,
@@ -303,17 +314,23 @@ impl AppServerShares {
     }
 }
 
+/// The servers a share-list path may name, as the app knows them: discovery, the manual
+/// store, and the display cache. Memory and the manual store only.
+pub(crate) fn app_known_hosts(app: &tauri::AppHandle) -> KnownHosts {
+    use crate::network::manual_servers::{all, create_network_host};
+    KnownHosts {
+        fresh: crate::network::fresh_discovered_hosts(),
+        saved: all(app)
+            .iter()
+            .map(|entry| create_network_host(&entry.address, entry.port))
+            .collect(),
+        cached: crate::network::cached_discovered_hosts(),
+    }
+}
+
 impl ServerShares for AppServerShares {
     fn known_hosts(&self) -> KnownHosts {
-        use crate::network::manual_servers::{all, create_network_host};
-        KnownHosts {
-            fresh: crate::network::fresh_discovered_hosts(),
-            saved: all(&self.app)
-                .iter()
-                .map(|entry| create_network_host(&entry.address, entry.port))
-                .collect(),
-            cached: crate::network::cached_discovered_hosts(),
-        }
+        app_known_hosts(&self.app)
     }
 
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult> {

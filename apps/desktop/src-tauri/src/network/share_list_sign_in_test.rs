@@ -388,3 +388,88 @@ async fn a_refused_guest_mount_tries_the_stored_password_once() {
     assert_eq!(session.reads(), 1);
     assert_eq!(share.mounts(), vec![None, Some("testuser".to_string())]);
 }
+
+fn host(name: &str, ip: Option<&str>, port: u16, source: crate::network::HostSource) -> crate::network::NetworkHost {
+    crate::network::NetworkHost {
+        id: format!("id-{}", name.to_lowercase()),
+        name: name.to_string(),
+        hostname: Some(format!("{}.local", name.to_lowercase())),
+        ip_address: ip.map(str::to_string),
+        port,
+        source,
+    }
+}
+
+/// ❗ A sheet's answer on a share list lands under every name the mount looks it up by,
+/// whichever list the pane's host came from: a saved host not yet in discovery, or one
+/// only the display cache still lists. Filing the discovery name only for a FRESH host
+/// made a typed-not-remembered sign-in ask again at mount.
+#[test]
+fn a_sheet_answer_is_filed_where_the_mount_looks_it_up() {
+    use crate::network::HostSource;
+    use crate::network::share_list_path::KnownHosts;
+
+    let saved = host("Testnas", Some("192.168.50.20"), 11482, HostSource::Manual);
+    let stale = host("Attic", None, 445, HostSource::Discovered);
+    let hosts = KnownHosts {
+        saved: vec![saved.clone()],
+        cached: vec![stale.clone()],
+        ..KnownHosts::default()
+    };
+
+    for (listed, dialed_ip) in [(&saved, Some("192.168.50.20")), (&stale, None)] {
+        let hostname = listed.hostname.as_deref().expect("a hostname");
+        let filed = super::names_for_sheet_answer(&hosts, &listed.id, hostname, dialed_ip, listed.port);
+        // What the pane's mount sends: the IP (else the hostname) and the host's own name.
+        let server = dialed_ip.unwrap_or(hostname);
+        let looked_up = super::mount_session_names(server, Some(&listed.name), listed.port);
+        for name in &looked_up {
+            assert!(
+                filed.contains(name),
+                "{} filed {filed:?}, the mount looks up {name}",
+                listed.name
+            );
+        }
+    }
+}
+
+/// A mount known by no name files the address on ITS port, ❌ never bare: a bare
+/// `testnas.local` is the 445 server on the same machine.
+#[test]
+fn a_mount_with_no_host_name_keys_its_port() {
+    assert_eq!(
+        super::mount_session_names("testnas.local", None, 11482),
+        vec!["testnas.local:11482".to_string()]
+    );
+}
+
+/// ❗ Try again after a typed mount stopped short (the server out of reach) mounts with
+/// no credentials: the sheet's answer is the session credential, so the frontend never
+/// keeps the password. An answer the server turned away is no session credential.
+#[tokio::test]
+async fn a_sheet_answer_the_server_never_judged_is_the_session_credential() {
+    let _secrets = crate::test_support::isolate_secrets();
+    let unjudged = vec!["sheet-unjudged-host:11482".to_string()];
+    let refused = vec!["sheet-refused-host:11482".to_string()];
+
+    let out_of_reach: Result<(), MountError> = super::mount_with_sheet_answer(creds("testuser"), &unjudged, |_| {
+        ready(Err(MountError::HostUnreachable {
+            server: "sheet-unjudged-host".to_string(),
+        }))
+    })
+    .await;
+    let turned_away: Result<(), MountError> = super::mount_with_sheet_answer(creds("testuser"), &refused, |_| {
+        ready(Err(MountError::AuthFailed {
+            server: "sheet-refused-host".to_string(),
+        }))
+    })
+    .await;
+
+    assert!(out_of_reach.is_err() && turned_away.is_err());
+    assert_eq!(
+        crate::network::keychain::session_credentials(&unjudged[0]).map(|c| c.username),
+        Some("testuser".to_string()),
+        "Try again signs in as the answer"
+    );
+    assert!(crate::network::keychain::session_credentials(&refused[0]).is_none());
+}

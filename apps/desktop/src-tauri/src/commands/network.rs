@@ -355,23 +355,19 @@ pub async fn list_shares_with_credentials(
             username: username.to_string(),
             password: password.to_string(),
         };
-        for name in names_of_listed_host(&host_id, &hostname, port) {
+        let hosts = crate::network::share_list_volume::app_known_hosts(&app_handle);
+        let names = crate::network::share_list_sign_in::names_for_sheet_answer(
+            &hosts,
+            &host_id,
+            &hostname,
+            ip_address.as_deref(),
+            port,
+        );
+        for name in names {
             keychain::remember_for_session(&name, proved.clone());
         }
     }
     result
-}
-
-/// Every name a sheet's answer for the host listed as `host_id` is filed under: its
-/// discovery name (what a sign-in saves and looks up under), and the hostname it dialed,
-/// ❗ on ITS port, or a server on 445 of the same machine would sign in as this account.
-fn names_of_listed_host(host_id: &str, hostname: &str, port: u16) -> Vec<String> {
-    let discovered = crate::network::fresh_discovered_hosts()
-        .into_iter()
-        .find(|host| host.id == host_id)
-        .map(|host| host.name);
-    let dialed = crate::network::server_identity::smb_server(hostname, port);
-    discovered.into_iter().chain(std::iter::once(dialed)).collect()
 }
 
 // --- Mount Commands ---
@@ -454,11 +450,12 @@ pub async fn mount_network_share(
     let (result, username, password) = match (username, password) {
         (Some(username), Some(password)) => {
             let offered = SmbCredentials { username, password };
-            let result = mount(Some(offered.clone())).await?;
-            let dialed = crate::network::server_identity::smb_server(&server, actual_port);
-            for name in host_name.iter().cloned().chain(std::iter::once(dialed)) {
-                keychain::remember_for_session(&name, offered.clone());
-            }
+            let names =
+                crate::network::share_list_sign_in::mount_session_names(&server, host_name.as_deref(), actual_port);
+            let result = crate::network::share_list_sign_in::mount_with_sheet_answer(offered.clone(), &names, |c| {
+                mount(Some(c))
+            })
+            .await?;
             (result, Some(offered.username), Some(offered.password))
         }
         _ => {

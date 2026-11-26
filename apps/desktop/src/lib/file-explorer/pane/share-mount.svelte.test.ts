@@ -249,6 +249,35 @@ describe('a mount a credential answers', () => {
     expect(mount.view?.state.kind).toBe('refused')
   })
 
+  it('keeps no password for Try again: the retry mounts with none, as the backend’s session credential', async () => {
+    h.mountNetworkShare
+      .mockRejectedValueOnce(refused(authFailed))
+      .mockRejectedValueOnce(refused(unreachable))
+      .mockRejectedValueOnce(refused(unreachable))
+    h.openSignInSheet.mockReturnValue(new Promise(() => {}))
+    const { mount } = create()
+    void mount.mount(testshare, null)
+    await vi.waitFor(() => {
+      expect(h.openSignInSheet).toHaveBeenCalled()
+    })
+    await sheetRequest().attempt({
+      mode: 'sign-in',
+      secret: { secret: 'hunter2', remember: false },
+      username: 'test_user_3',
+    })
+    const state = mount.view?.state
+    if (state?.kind !== 'refused') throw new Error('expected a refusal')
+
+    state.retry?.()
+
+    await vi.waitFor(() => {
+      expect(h.mountNetworkShare).toHaveBeenCalledTimes(3)
+    })
+    const [, , username, password] = h.mountNetworkShare.mock.calls[2] as unknown[]
+    // ❗ The typed answer became the server's session credential on the backend.
+    expect([username, password]).toEqual([null, null])
+  })
+
   it('goes back to the share list when the sign-in is cancelled', async () => {
     h.mountNetworkShare.mockRejectedValue(refused(authFailed))
     const { mount } = create()

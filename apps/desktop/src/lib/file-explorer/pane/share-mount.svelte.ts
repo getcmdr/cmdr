@@ -10,7 +10,8 @@
  *
  * ❗ **No credential lives here.** A mount with none signs in with the server's session
  * credential on the backend (`network/share_list_sign_in.rs::mount_with_session`); only an
- * answer the person types on the sheet crosses, once, for that one remount.
+ * answer the person types on the sheet crosses, once, for that one remount, and ❌ nothing
+ * here keeps its password: Try again mounts with none.
  */
 
 import type { MountError, NetworkHost, ShareInfo } from '../types'
@@ -135,10 +136,15 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
    */
   let mounting = $state<MountTarget | null>(null)
   let mountError = $state<MountError | null>(null)
-  /** The attempt a retry replays, and what the refusal views name. */
+  /**
+   * The share a retry mounts again, the account last offered (the sheet's prefill), and what
+   * the refusal views name. ❗ No password: a typed answer the server never judged is the
+   * backend's session credential (`share_list_sign_in.rs::mount_with_sheet_answer`), so Try
+   * again mounts with none.
+   */
   let lastMountAttempt = $state<{
     share: ShareInfo
-    credentials: ShareMountCredentials | null
+    username: string | null
     target: MountTarget
   } | null>(null)
   let signingIn = $state(false)
@@ -215,7 +221,7 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
       server: friendlyServerName(host, label, server),
       address: dialedAddress(server, host.port),
     }
-    lastMountAttempt = { share, credentials, target }
+    lastMountAttempt = { share, username: credentials?.username ?? null, target }
     mountError = null
     mounting = target
     const { attemptId, finish } = startMountAttempt()
@@ -289,7 +295,7 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
         // ❗ No guest option: an unauthenticated mount is exactly what just came back
         // refused, so offering it again would be inert.
         guestAllowed: false,
-        initialUsername: lastMountAttempt?.credentials?.username,
+        initialUsername: lastMountAttempt?.username ?? undefined,
         refusal: refusalForMountError(firstError),
         attempt: (answer) => remountWith(share, host.name, answer),
       })
@@ -337,7 +343,7 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
   }
 
   function retry() {
-    if (lastMountAttempt) void mount(lastMountAttempt.share, lastMountAttempt.credentials)
+    if (lastMountAttempt) void mount(lastMountAttempt.share, null)
   }
 
   /** The running mount as the ONE remote-wait state every pane renders. */
