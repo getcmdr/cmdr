@@ -73,6 +73,7 @@
     } from './tab-operations'
     import { initNetworkDiscovery, cleanupNetworkDiscovery } from '../network/network-store.svelte'
     import type { HubRow } from '../network/servers-hub-rows'
+    import { serverRowUnderCursor } from '../network/server-row-of-entry'
     import { initVolumeStore, getVolumes as getStoreVolumes, cleanupVolumeStore } from '#lib/stores/volume-store.svelte.js'
     import { initVolumeBusyStore, cleanupVolumeBusyStore } from '#lib/stores/volume-busy-store.svelte.js'
     import { initRestrictedPathsStore } from '#lib/stores/restricted-paths-store.svelte.js'
@@ -1261,14 +1262,13 @@
     }
 
     /**
-     * ANY hub row under the focused pane's cursor, an SMB host's included, or `null`
-     * off the hub (and on "Add server…"). What the servers commands aim at (the hub IS
-     * a pane, so "the focused pane's volume" would answer the synthetic hub row), and
-     * what Edit and Rename act on there.
+     * The Servers row under the focused pane's cursor (`serverRowUnderCursor`), or `null` off
+     * the Servers list (and on "Add server…"). What the servers commands aim at (the list IS a
+     * pane, so "the focused pane's volume" would answer the synthetic hub row), and what Edit,
+     * Rename, and F8 act on there.
      */
-    export function getFocusedPaneHubRow(): HubRow | null {
-        const entry = getPaneRef(explorerState.getFocusedPane())?.getNetworkCursorEntry() ?? null
-        return entry?.kind === 'server' || entry?.kind === 'host' ? entry.row : null
+    export function getFocusedPaneServerRow(): Promise<HubRow | null> {
+        return serverRowUnderCursor(getPaneRef(explorerState.getFocusedPane()))
     }
 
     export async function handleMcpSelect(

@@ -502,6 +502,16 @@ describe('shareRowMenu', () => {
       'account:forget-secret',
     ])
   })
+
+  it('offers a saved share’s pin and Forget share after Copy path', () => {
+    expect(namesOf(shareRowMenu(asUserWithGuest, { pinned: false })).slice(0, 4)).toEqual([
+      'share:open-share',
+      'share:copy-path',
+      'share:pin',
+      'share:forget-share',
+    ])
+    expect(namesOf(shareRowMenu(asUserWithGuest, { pinned: true }))[2]).toBe('share:unpin')
+  })
 })
 
 describe('accountMenu', () => {

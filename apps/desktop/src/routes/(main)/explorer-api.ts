@@ -338,11 +338,13 @@ export interface ExplorerAPI {
   /** An SMB add's hand-off: the saved host's share list in the focused pane, mounting the share it named. */
   openSmbHandOffInFocusedPane: (handOff: SmbHandOff) => void
   /**
-   * Any hub row under the focused pane's cursor, an SMB host's included, or `null`
-   * off the hub. What the servers commands aim at (`serverCommandTarget`), and what
-   * Edit and Rename there edit (`editHubRow`).
+   * The Servers row under the focused pane's cursor, an SMB host's included, or `null`
+   * off the Servers list: the hub's cursor row while it renders, else the listing's
+   * (`network/server-row-of-entry.ts`, resolved by the row's own id). What the servers
+   * commands aim at (`serverCommandTarget`), what Edit and Rename there edit
+   * (`editHubRow`), and what F8 forgets.
    */
-  getFocusedPaneHubRow: () => HubRow | null
+  getFocusedPaneServerRow: () => Promise<HubRow | null>
   injectError: (pane: 'left' | 'right', friendly: FriendlyError) => void
   resetError: (pane: 'left' | 'right' | 'both') => void
   /** E2E only: drive the native drag-and-drop drop entry programmatically (real

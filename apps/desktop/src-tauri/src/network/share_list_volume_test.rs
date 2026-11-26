@@ -155,10 +155,17 @@ async fn a_pane_lists_a_servers_shares_as_folders() {
     assert_eq!(
         entries[0].share_meta,
         Some(ShareMeta {
-            description: Some("Old photos".to_string())
+            description: Some("Old photos".to_string()),
+            saved: None,
         })
     );
-    assert_eq!(entries[1].share_meta, Some(ShareMeta { description: None }));
+    assert_eq!(
+        entries[1].share_meta,
+        Some(ShareMeta {
+            description: None,
+            saved: None
+        })
+    );
     // A share draws as stacked folders, ❌ not the plain `dir` folder.
     assert!(entries.iter().all(|entry| entry.icon_id == SHARE_ICON_ID));
     assert_eq!(shares.dials(), vec![("id-testnas".to_string(), Freshness::Cached)]);
@@ -209,6 +216,130 @@ async fn a_read_that_is_no_pane_answers_from_the_cache() {
         .expect("the cache answers");
 
     assert_eq!(entries.len(), 1);
+    assert!(shares.dials().is_empty());
+}
+
+/// `Testnas` saved with two shares, `archive` (mounted as `test_user_1`, pinned) and
+/// `media` (saved as `test_user_2`, not mounted), beside the discovered host.
+fn testnas_saved_with_shares() -> ServerSources {
+    use crate::saved_servers::{SavedPlace, SavedServer, ServerNameSource};
+    use crate::volumes::SmbMountInfo;
+    use cmdr_fs::server_meta::ServerProtocol;
+    let place = |name: &str, user: &str, pinned: bool| SavedPlace {
+        volume_id: format!("smb-testnas-{name}"),
+        name: name.to_string(),
+        pinned,
+        connected: false,
+        app_root: format!("smb://testnas.local/{name}"),
+        username: Some(user.to_string()),
+        auto_reconnect: None,
+    };
+    ServerSources {
+        saved: vec![SavedServer {
+            id: "manual-testnas".to_string(),
+            protocol: ServerProtocol::Smb,
+            display_name: "Testnas".to_string(),
+            name_source: ServerNameSource::User,
+            address: "testnas.local".to_string(),
+            username: None,
+            pinned: false,
+            last_connected_at: None,
+            auto_reconnect: None,
+            places: vec![
+                place("archive", "test_user_9", true),
+                place("media", "test_user_2", false),
+            ],
+            awaiting_first_connect: false,
+            saved_from_mount: false,
+        }],
+        hosts: vec![host("Testnas", 445)],
+        smb_mounts: vec![SmbMountInfo {
+            server: "testnas.local".to_string(),
+            share: "archive".to_string(),
+            subpath: None,
+            username: Some("test_user_1".to_string()),
+            port: 445,
+        }],
+        ..ServerSources::default()
+    }
+}
+
+/// ❗ A saved share's row carries its place: connected as the LIVE mount's account while
+/// mounted (❌ not the saved one), saved as its saved account otherwise, its pin, and the
+/// volume id Enter, Pin, and Forget share act on. A share nobody saved carries none.
+#[tokio::test]
+async fn a_saved_share_carries_its_place_on_the_share_list() {
+    use cmdr_fs::server_meta::ServerStatus;
+    let mut shares = testnas();
+    shares.dialed.insert(
+        "id-testnas".to_string(),
+        Ok(listed(vec![
+            share("archive", None),
+            share("media", None),
+            share("public", None),
+        ])),
+    );
+    let (volume, _) = volume(with_servers(shares, testnas_saved_with_shares()));
+
+    let entries = volume
+        .list_directory_for_pane(&app("smb://testnas"), None, None)
+        .await
+        .expect("the share list lists");
+    let saved: Vec<Option<SavedShareMeta>> = entries
+        .iter()
+        .map(|entry| entry.share_meta.as_ref().and_then(|meta| meta.saved.clone()))
+        .collect();
+
+    assert_eq!(
+        saved,
+        vec![
+            Some(SavedShareMeta {
+                volume_id: "smb-testnas-archive".to_string(),
+                status: ServerStatus::Connected,
+                account: Some(ShareListAccount::User {
+                    username: "test_user_1".to_string()
+                }),
+                pinned: true,
+            }),
+            Some(SavedShareMeta {
+                volume_id: "smb-testnas-media".to_string(),
+                status: ServerStatus::Saved,
+                account: Some(ShareListAccount::User {
+                    username: "test_user_2".to_string()
+                }),
+                pinned: false,
+            }),
+            None,
+        ]
+    );
+}
+
+/// A re-list of an open share list reads its saved facts afresh off the share cache, with
+/// no dial; with nothing cached it hands nothing (the rows on screen stay).
+#[test]
+fn a_share_list_relists_from_the_cache_with_fresh_saved_facts() {
+    let mut shares = testnas();
+    shares
+        .cache
+        .insert("id-testnas".to_string(), listed(vec![share("media", None)]));
+    let (volume, shares) = volume(with_servers(shares, testnas_saved_with_shares()));
+
+    let entries = volume
+        .cached_share_list_entries("smb://testnas")
+        .expect("the cache holds the list");
+    let empty = volume.cached_share_list_entries("smb://othernas");
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(
+        entries[0]
+            .share_meta
+            .as_ref()
+            .and_then(|meta| meta.saved.as_ref())
+            .map(|saved| saved.volume_id.as_str()),
+        Some("smb-testnas-media")
+    );
+    assert!(empty.is_none());
+    assert!(volume.cached_share_list_entries("smb://").is_none());
     assert!(shares.dials().is_empty());
 }
 
@@ -491,7 +622,8 @@ async fn metadata_never_dials() {
     assert_eq!(
         cached_share.share_meta,
         Some(ShareMeta {
-            description: Some("Old photos".to_string())
+            description: Some("Old photos".to_string()),
+            saved: None,
         })
     );
     assert!(

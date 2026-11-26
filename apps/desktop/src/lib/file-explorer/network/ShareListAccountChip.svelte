@@ -16,7 +16,8 @@
      * suppress keys on.
      *
      * The same menu is a share ROW's menu on this list (`openRowMenu`: right-click or ⌃⏎ on a
-     * share): Open (mounts it), Copy path, then the server's account items
+     * share): Open (mounts it, or opens a saved one's place), Copy path, a saved share's pin and
+     * Forget share, then the server's account items
      * (`row-menu.ts::shareRowMenu`). Hosted here, ❌ not in FilePane (at its size cap), and
      * ❌ never the native file menu, whose Copy, Delete, and Reveal are all wrong for a share.
      */
@@ -25,7 +26,15 @@
     import { createMenu } from '#lib/ui/menu-controller.svelte.js'
     import { captureFocusOrigin, restoreFocus, type FocusOrigin } from '#lib/ui/focus-restore.js'
     import { tString } from '#lib/intl/messages.svelte.js'
-    import { accountMenu, rowMenuSections, shareRowMenu, type ServerRowMenuEntry } from '../navigation/row-menu'
+    import {
+        accountMenu,
+        rowMenuSections,
+        shareRowMenu,
+        type ServerRowMenuEntry,
+        type ShareRowAction,
+    } from '../navigation/row-menu'
+    import { runServerRowAction } from '../navigation/server-row-actions'
+    import { forgetSavedShare } from './servers-hub-actions'
     import type { FileEntry } from '../types'
     import type { MenuAnchor } from '#lib/tauri-commands/index.js'
     import { getAppLogger } from '#lib/logging/logger.js'
@@ -67,7 +76,7 @@
         getSections: () => {
             if (!server || !facts) return []
             return row
-                ? rowMenuSections(row.path, shareRowMenu(facts), (entry) => entry)
+                ? rowMenuSections(row.path, shareRowMenu(facts, row.shareMeta?.saved ?? undefined), (entry) => entry)
                 : rowMenuSections(path, accountMenu(facts), (entry) => entry)
         },
         onSelect: (item) => {
@@ -75,8 +84,7 @@
             const picked = server
             const share = row
             if (entry?.type === 'share' && share) {
-                if (entry.share === 'open-share') onOpenShare(share)
-                else void copyPath(share.path)
+                void runShareVerb(entry.share, share)
                 return
             }
             if (entry?.type !== 'account' || !picked) return
@@ -110,6 +118,30 @@
         focusBeforeOpen = captureFocusOrigin()
         row = entry
         menu.openAt(at)
+    }
+
+    /**
+     * A share row's verb. A saved share's pin and Forget share act on its PLACE (the volume id
+     * its row carries, `ShareMeta.saved`), through what the switcher's and the hub's menus run;
+     * the row's dot follows with the re-list their `volumes-changed` brings.
+     */
+    async function runShareVerb(verb: ShareRowAction, share: FileEntry): Promise<void> {
+        const saved = share.shareMeta?.saved
+        switch (verb) {
+            case 'open-share':
+                onOpenShare(share)
+                return
+            case 'copy-path':
+                await copyPath(share.path)
+                return
+            case 'pin':
+            case 'unpin':
+                if (saved) await runServerRowAction({ action: verb, volumeId: saved.volumeId, volumeName: share.name })
+                return
+            case 'forget-share':
+                if (saved) await forgetSavedShare(saved.volumeId, share.name)
+                return
+        }
     }
 
     async function copyPath(text: string): Promise<void> {

@@ -12,6 +12,7 @@ import { tString } from '#lib/intl/messages.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import type { GitCountKind, GitEntryMeta, ResticSnapshotMeta } from '#lib/ipc/bindings.js'
 import { formatUnitList } from '#lib/intl/list-format.js'
+import { wordServerDetails } from '../network/server-row-words'
 import { fileExtension, nameKindOf, nameWithoutExtension, type NameKind } from '#lib/utils/file-extension.js'
 
 /** Layout constants for Full mode */
@@ -62,15 +63,26 @@ export function getNameColumnText(name: string, kind: NameKind, showExtensionInN
 }
 
 /**
- * What the Ext cell renders for one row: the extension, except on two folders
- * whose Ext cell would be empty: a restic snapshot row names the machine the
- * backup ran on, and a server's share row carries the server's description of
- * the share. The renderer and the measurer both call this.
+ * What the Ext cell renders for one row: the extension, except on folders whose
+ * Ext cell would be empty: a restic snapshot row names the machine the backup ran
+ * on, and a row with a description says it ({@link rowDescription}). The renderer
+ * and the measurer both call this.
  */
 export function extCellText(entry: FileEntry): string {
   if (entry.resticMeta != null) return entry.resticMeta.hostname
-  if (entry.shareMeta != null) return entry.shareMeta.description ?? ''
+  if (entry.shareMeta != null || entry.serverMeta != null) return rowDescription(entry) ?? ''
   return getDisplayExtension(entry.name, nameKindOf(entry))
+}
+
+/**
+ * A row's prose in the Ext cell's place, or `undefined` for a row with none: a share row's
+ * description as its server set it, a Servers row's Details ("SMB · 192.168.1.111 · as
+ * testuser", `wordServerDetails`). The Ext cell, Full's accessible name, and Brief's tooltip
+ * all read it.
+ */
+export function rowDescription(entry: FileEntry): string | undefined {
+  if (entry.serverMeta != null) return wordServerDetails(entry.serverMeta)
+  return entry.shareMeta?.description ?? undefined
 }
 
 /**

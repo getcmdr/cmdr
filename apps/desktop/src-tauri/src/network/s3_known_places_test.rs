@@ -53,6 +53,36 @@ fn a_reconnect_cant_repin_a_place_the_user_unpinned() {
     assert!(!stored.auto_reconnect, "everything else is the new entry");
 }
 
+/// Enter on an S3 account's Servers row saves its root off a saved bucket (unpinned, never
+/// connected), once; an account with nothing saved answers `false` and saves nothing.
+#[test]
+fn an_accounts_root_is_saved_off_a_bucket_once() {
+    let photos = KnownS3Place {
+        pinned: true,
+        ..place("AKIAROOTSAVE", Some("photos"))
+    };
+    remember(photos.clone());
+    let root_id = id_of(&place("AKIAROOTSAVE", None));
+
+    assert_eq!(save_account_root(&root_id), RootSave::Saved);
+    assert_eq!(
+        save_account_root(&root_id),
+        RootSave::AlreadySaved,
+        "a second Enter finds it saved"
+    );
+
+    let root = find(&root_id).expect("the root is saved");
+    assert_eq!(root.bucket, None);
+    assert!(!root.pinned);
+    assert_eq!(root.last_connected_at, "");
+    let roots = all().into_iter().filter(|entry| id_of(entry) == root_id).count();
+    assert_eq!(roots, 1);
+    assert_eq!(
+        save_account_root(&id_of(&place("AKIANOTHINGSAVED", None))),
+        RootSave::NothingToCopy
+    );
+}
+
 #[test]
 fn forgetting_one_place_leaves_its_siblings() {
     let photos = place("AKIAFORGET", Some("photos"));

@@ -31,6 +31,7 @@
 use std::collections::{HashMap, HashSet};
 
 use cmdr_fs::server_meta::{ServerMeta, ServerProtocol, ServerStatus, ShareListAccount};
+use cmdr_fs::share_meta::SavedShareMeta;
 use cmdr_fs::volume::ConnectionState;
 
 use crate::network::server_identity::{SmbServer, mount_is_from, smb_servers_of};
@@ -87,6 +88,24 @@ impl ServerSources {
             smb_mounts: &self.smb_mounts,
             listed_as,
         })
+    }
+
+    /// The saved shares on the share list at `address` ([`saved_shares_on`]).
+    pub(crate) fn saved_shares(
+        &self,
+        listed_as: &HashMap<String, ShareListAccount>,
+        address: &ShareListAddress,
+    ) -> HashMap<String, SavedShareMeta> {
+        saved_shares_on(
+            &ServerRowInputs {
+                saved: &self.saved,
+                hosts: &self.hosts,
+                volume_states: &self.volume_states,
+                smb_mounts: &self.smb_mounts,
+                listed_as,
+            },
+            address,
+        )
     }
 }
 
@@ -510,6 +529,71 @@ fn user(username: Option<&str>) -> Option<ShareListAccount> {
         .map(|username| ShareListAccount::User {
             username: username.to_string(),
         })
+}
+
+/// The saved shares of the server whose share list is at `address`, by lowercase share
+/// name: what a share row on that list carries as [`SavedShareMeta`] (its dot, its Pin and
+/// Forget share, and the place Enter opens).
+///
+/// The server is the SAVED Servers row that opens this share list, so a share list reads
+/// the server its Servers row names (a server saved by IP beside its Bonjour twin
+/// included). Connected while the mount table holds the share from that server, its
+/// account then the mount's, else the saved one. ❌ No dial, no Keychain read.
+pub(crate) fn saved_shares_on(
+    inputs: &ServerRowInputs<'_>,
+    address: &ShareListAddress,
+) -> HashMap<String, SavedShareMeta> {
+    let opens = ServerOpens::ShareList(address.clone());
+    let rows = server_rows(inputs);
+    let Some(row) = rows.iter().find(|row| row.meta.saved && row.opens == opens) else {
+        return HashMap::new();
+    };
+    let Some(server) = inputs.saved.iter().find(|server| server.id == row.meta.row_id) else {
+        return HashMap::new();
+    };
+    let hosts = matching_hosts(server, inputs.hosts);
+    let twins = bonjour_twins(server, inputs.hosts, &hosts);
+    let mut targets: Vec<SmbServer> = hosts
+        .iter()
+        .chain(&twins)
+        .flat_map(|host| smb_servers_of(host))
+        .collect();
+    targets.push(SmbServer::from_name(&server.address));
+    server
+        .places
+        .iter()
+        .map(|place| {
+            let mount = inputs.smb_mounts.iter().find(|mount| {
+                mount.share.eq_ignore_ascii_case(&place.name) && mount_is_from(mount, &targets, inputs.hosts)
+            });
+            let saved_account = || user(place.username.as_deref());
+            let meta = SavedShareMeta {
+                volume_id: place.volume_id.clone(),
+                status: if mount.is_some() {
+                    ServerStatus::Connected
+                } else {
+                    ServerStatus::Saved
+                },
+                account: mount
+                    .and_then(|mount| mount_account(mount.username.as_deref()))
+                    .or_else(saved_account),
+                pinned: place.pinned,
+            };
+            (place.name.to_lowercase(), meta)
+        })
+        .collect()
+}
+
+/// The account a mount table's user names (`GUEST` for a guest mount), or `None`.
+fn mount_account(username: Option<&str>) -> Option<ShareListAccount> {
+    let username = username.filter(|name| !name.is_empty())?;
+    Some(if username.eq_ignore_ascii_case("guest") {
+        ShareListAccount::Guest
+    } else {
+        ShareListAccount::User {
+            username: username.to_string(),
+        }
+    })
 }
 
 #[cfg(test)]

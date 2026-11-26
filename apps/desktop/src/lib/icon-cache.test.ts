@@ -208,6 +208,14 @@ describe('prefetchIcons: stacked ids', () => {
     expect(getCachedIcon('dir')).toBe('dir-url')
   })
 
+  it('never asks the OS for a Servers row’s server glyph, which the frontend draws', async () => {
+    vi.mocked(getIcons).mockResolvedValue({ data: { dir: 'dir-url' }, timedOut: false })
+
+    await prefetchIcons(['network:server-smb', 'network:server', 'dir'], false)
+
+    expect(getIcons).toHaveBeenCalledWith(['dir'], false)
+  })
+
   it('asks for nothing once the base folder icon is cached', async () => {
     _applyIconsToCacheForTests({ dir: 'dir-url' })
 

@@ -107,7 +107,12 @@ describe('FullList in a narrow pane', () => {
     const description = 'System default share'
     const list = await mountFullList({
       entries: [
-        dirEntry({ name: 'media', path: 'smb://testnas/media', shareMeta: { description }, modifiedAt: undefined }),
+        dirEntry({
+          name: 'media',
+          path: 'smb://testnas/media',
+          shareMeta: { description, saved: null },
+          modifiedAt: undefined,
+        }),
       ],
       viewport: { clientHeight: 400, clientWidth: 800, offsetWidth: 800 },
       props: {

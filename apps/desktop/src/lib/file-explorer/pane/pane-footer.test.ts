@@ -38,6 +38,13 @@ describe('paneFooterVisibility', () => {
     })
   })
 
+  it('gives the Servers list the counts without the disk-space readout, like a share list', () => {
+    expect(paneFooterVisibility({ kind: 'normal', volumeKind: 'network', hasError: false })).toEqual({
+      selectionInfo: true,
+      volumeSpace: false,
+    })
+  })
+
   it('drops the whole footer while the pane shows an error', () => {
     expect(paneFooterVisibility({ kind: 'normal', volumeKind: 'local', hasError: true })).toEqual({
       selectionInfo: false,

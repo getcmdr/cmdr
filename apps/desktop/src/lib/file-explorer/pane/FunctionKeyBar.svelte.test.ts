@@ -143,14 +143,14 @@ describe('FunctionKeyBar capability disablement', () => {
     expect(f2Rename.disabled).toBe(false)
   })
 
-  it('a network pane disables both destination AND source buttons (canBeSource: false)', () => {
-    // The network host/share list isn't files, so it can neither source nor host
-    // an op. F2 is the exception: there it's "Edit server…" (the test above).
+  it('the Servers list makes F7 Add server and F8 Forget, and disables copy and move (its rows are no files)', () => {
     const [, , , f5Copy, f6Move, f7NewFolder, f8Delete] = mountOn('network')
 
-    expect(f7NewFolder.disabled).toBe(true)
+    expect(f7NewFolder.disabled).toBe(false)
+    expect(f7NewFolder.textContent).toContain('Add server')
+    expect(f8Delete.disabled).toBe(false)
+    expect(f8Delete.textContent).toContain('Forget')
     expect(f5Copy.disabled).toBe(true)
     expect(f6Move.disabled).toBe(true)
-    expect(f8Delete.disabled).toBe(true)
   })
 })

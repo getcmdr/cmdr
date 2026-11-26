@@ -5,7 +5,8 @@
  * arrival lands once the list does (mount that share, or put the cursor on the one `..`
  * came out of); a sign-in refusal on a listing the person started opens the sheet on its
  * own, once, and a cancel leaves the pane on the error screen's Sign in; and the error
- * screen names the server by its friendly label.
+ * screen names the server by its friendly label. A row leading off the `network` volume
+ * (the Servers list's places, a saved share's place) opens there first (`network-row-open.ts`).
  *
  * A factory, ❌ not FilePane code (FilePane is at its size cap), and ❌ never a view
  * branch: the views render the share list as any listing (`../views/list-words.ts`).
@@ -18,7 +19,7 @@
 
 import type { FileEntry, FriendlyError, NetworkHost, ShareInfo } from '../types'
 import type { ShareParentLanding } from '../network/share-parent-row.svelte'
-import { findFileIndex, getFileAt } from '#lib/tauri-commands/index.js'
+import { findFileIndex, getFileAt, saveS3AccountRoot } from '#lib/tauri-commands/index.js'
 import { isShareListLocation, sameShareList } from '#lib/servers/share-list-path.js'
 import { untrack } from 'svelte'
 import { addToast } from '#lib/ui/toast/index.js'
@@ -37,6 +38,12 @@ import {
   takeShareListArrival,
 } from './share-list-arrival.svelte'
 import type { VolumeChangePayload } from './types'
+import { capabilitiesForPane, type VolumeKind } from './volume-capabilities'
+import { openNetworkRow, type NetworkRowOpenDeps } from './network-row-open'
+import { getVolumes } from '#lib/stores/volume-store.svelte.js'
+
+/** The kinds on the `network` volume: the Servers list and a server's share list. */
+const NETWORK_KINDS: ReadonlySet<VolumeKind> = new Set(['network', 'share-list'])
 
 const log = getAppLogger('fileExplorer')
 
@@ -71,8 +78,10 @@ export interface ShareListPane {
   /** The server's friendly name on a share list (what the error screen shows), else `undefined`. */
   readonly label: string | undefined
   /**
-   * Enter, a double-click, or MCP `open_under_cursor` on `entry`: a share on a share list
-   * mounts. Answers whether it took the entry (`..` and any other pane's rows it leaves).
+   * Enter, a double-click, or MCP `open_under_cursor` on `entry`: a row leading off the
+   * `network` volume goes there (`network-row-open.ts`: a Servers row's place, an S3
+   * account's root, a saved share's place), else a share on a share list mounts. Answers
+   * whether it took the entry (`..`, an SMB server's row, and any other pane's rows it leaves).
    */
   openShare: (entry: FileEntry) => boolean
   /** A door in this pane opening `host`'s share list (the hub's rows, `..` out of a share). */
@@ -89,6 +98,19 @@ export interface ShareListPane {
 
 export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
   const onShareList = $derived(isShareListLocation(deps.getVolumeId(), deps.getCurrentPath()))
+  const onNetworkVolume = $derived(
+    NETWORK_KINDS.has(capabilitiesForPane(deps.getVolumeId(), deps.getCurrentPath()).kind),
+  )
+  const networkRowDeps: NetworkRowOpenDeps = {
+    onVolumeChange: (change) => {
+      deps.onVolumeChange(change)
+    },
+    getVolumes: () => getVolumes(),
+    saveS3AccountRoot: (accountId) => saveS3AccountRoot(accountId),
+    explainNoAccountRoot: (name) => {
+      addToast(tString('fileExplorer.network.servers.accountRootGone', { name }), { level: 'info' })
+    },
+  }
 
   const mount = createShareMount({
     getServer: () => (onShareList ? shareListServerOf(deps.getCurrentPath()) : null),
@@ -180,7 +202,10 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
       return onShareList ? (shareListServerLabel(deps.getCurrentPath()) ?? undefined) : undefined
     },
     openShare: (entry) => {
-      if (!onShareList || entry.name === '..') return false
+      if (entry.name === '..') return false
+      // A row leading off the `network` volume (a Servers row's place, a saved share's place) goes there first.
+      if (onNetworkVolume && openNetworkRow(entry, networkRowDeps)) return true
+      if (!onShareList) return false
       // ❗ One mount at a time: Enter or MCP on a row the wait still covers starts nothing.
       if (mount.view === null) void mount.mount(shareOf(entry), null)
       return true

@@ -11,8 +11,8 @@
  *   sitting IN that volume, so a free-space figure there would answer a question
  *   nobody asked and would follow the user around as they walk history.
  *
- * A server's share list renders as a normal list but sits on no disk either: the
- * `network` volume never answers a space query, so its usage bar would be the
+ * A server's share list and the Servers list render as normal lists but sit on no disk
+ * either: the `network` volume never answers a space query, so its usage bar would be the
  * "not yet fetched" empty track forever, which reads as "0% full". It gets the
  * counts and no space, from the pane's routed KIND (❌ never a `volumeId` check).
  *
@@ -22,6 +22,9 @@
 
 import type { PaneViewKind } from './types'
 import type { VolumeKind } from './volume-capabilities'
+
+/** The kinds a listing renders on that sit on no disk: the `network` volume's two. */
+const NO_DISK_KINDS: ReadonlySet<VolumeKind> = new Set(['share-list', 'network'])
 
 export interface PaneFooterInput {
   kind: PaneViewKind
@@ -41,7 +44,7 @@ export interface PaneFooterVisibility {
 /** Resolves which footer pieces a pane view renders. */
 export function paneFooterVisibility({ kind, volumeKind, hasError }: PaneFooterInput): PaneFooterVisibility {
   if (hasError) return { selectionInfo: false, volumeSpace: false }
-  if (kind === 'normal') return { selectionInfo: true, volumeSpace: volumeKind !== 'share-list' }
+  if (kind === 'normal') return { selectionInfo: true, volumeSpace: !NO_DISK_KINDS.has(volumeKind) }
   if (kind === 'search-results') return { selectionInfo: true, volumeSpace: false }
   return { selectionInfo: false, volumeSpace: false }
 }

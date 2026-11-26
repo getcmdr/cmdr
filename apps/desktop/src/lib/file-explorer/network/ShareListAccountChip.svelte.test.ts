@@ -21,7 +21,11 @@ const h = vi.hoisted((): Hoisted & { runServerAccountAction: ReturnType<typeof v
   runServerAccountAction: vi.fn((_action: string, _server: unknown) => Promise.resolve({ listed: false })),
 }))
 
+const saved = vi.hoisted(() => ({ runServerRowAction: vi.fn(), forgetSavedShare: vi.fn() }))
+
 vi.mock('./network-store.svelte', () => ({ getNetworkHosts: () => h.hosts }))
+vi.mock('../navigation/server-row-actions', () => ({ runServerRowAction: saved.runServerRowAction }))
+vi.mock('./servers-hub-actions', () => ({ forgetSavedShare: saved.forgetSavedShare }))
 vi.mock('./share-list-sign-in', () => ({
   runServerAccountAction: (action: string, server: unknown) => h.runServerAccountAction(action, server),
   serverAccountFacts: () => ({ listedAccount: h.listedAccount, guestListingWorked: h.guestListingWorked }),
@@ -64,7 +68,7 @@ const publicShare: FileEntry = {
   owner: '',
   group: '',
   iconId: 'dir',
-  shareMeta: { description: null },
+  shareMeta: { description: null, saved: null },
 }
 
 function menuRow(label: string): HTMLElement | undefined {
@@ -167,6 +171,40 @@ describe('ShareListAccountChip', () => {
     menuRow('Open')?.click()
     await tick()
     expect(onOpenShare).toHaveBeenCalledWith(publicShare)
+  })
+
+  it('gives a saved share its pin and Forget share, run on its place', async () => {
+    const archive: FileEntry = {
+      ...publicShare,
+      name: 'archive',
+      path: 'smb://testnas/archive',
+      shareMeta: {
+        description: null,
+        saved: { volumeId: 'smb-testnas-archive', status: 'saved', account: null, pinned: false },
+      },
+    }
+    const chip = render()
+    chip.openRowMenu(archive, { x: 40, y: 80 })
+    await vi.waitFor(() => {
+      expect(menuRow('Pin to switcher')).toBeTruthy()
+    })
+    expect(menuLabels().slice(0, 4)).toEqual(['Open', 'Copy path', 'Pin to switcher', 'Forget share'])
+    menuRow('Pin to switcher')?.click()
+    await vi.waitFor(() => {
+      expect(saved.runServerRowAction).toHaveBeenCalledWith({
+        action: 'pin',
+        volumeId: 'smb-testnas-archive',
+        volumeName: 'archive',
+      })
+    })
+    chip.openRowMenu(archive, { x: 40, y: 80 })
+    await vi.waitFor(() => {
+      expect(menuRow('Forget share')).toBeTruthy()
+    })
+    menuRow('Forget share')?.click()
+    await vi.waitFor(() => {
+      expect(saved.forgetSavedShare).toHaveBeenCalledWith('smb-testnas-archive', 'archive')
+    })
   })
 
   it('has no menu for `..`, which is no share', async () => {

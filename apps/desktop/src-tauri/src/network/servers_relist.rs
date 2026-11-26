@@ -5,6 +5,10 @@
 //! for ONE re-list once the burst goes quiet, handed to the panes as a whole
 //! (`DirectoryChange::Replaced`): the engine diffs it by path and patches.
 //!
+//! An open share list (`smb://<server>`) re-lists on the same requests, from the share
+//! cache only, so its saved shares' dots, pins, and accounts follow the stores and the
+//! mount table (`share_list_volume.rs::cached_share_list_entries`); ❌ never a dial.
+//!
 //! ❗ Nothing happens while no pane shows `smb://`: a request with no listing open costs
 //! a lookup and schedules nothing, and a quiet burst checks again before it builds rows.
 //! A discovery storm is one re-list per quiet window, ❌ never one per event.
@@ -72,15 +76,15 @@ pub(crate) struct AppServersList {
 }
 
 impl AppServersList {
-    /// Every spelling of `smb://` a listing on the volume is open at, as the listing
-    /// host seam hands it back: what a change is reported under.
+    /// Every spelling of `smb://` and of a share list a listing on the volume is open at,
+    /// as the listing host seam hands it back: what a change is reported under.
     fn shown_at(&self) -> Vec<PathBuf> {
         let mut paths: Vec<PathBuf> = crate::listing_host::listings()
             .open_listing_paths(&self.volume_id)
             .into_iter()
             .filter(|path| {
                 path.to_str()
-                    .is_some_and(|text| NetworkPath::of(text) == NetworkPath::Hub)
+                    .is_some_and(|text| matches!(NetworkPath::of(text), NetworkPath::Hub | NetworkPath::ShareList(_)))
             })
             .collect();
         paths.sort();
@@ -94,6 +98,9 @@ impl ServersList for AppServersList {
         !self.shown_at().is_empty()
     }
 
+    /// The Servers list re-lists from memory; a share list re-lists from the share cache
+    /// with its saved shares' facts read afresh (a pin, a Forget share, a mount), and
+    /// stays as it is when the cache holds nothing. ❌ Neither dials.
     fn relist(&self) {
         let Some(volume) = crate::file_system::volume::manager::get_volume_manager().get(&self.volume_id) else {
             return;
@@ -101,9 +108,17 @@ impl ServersList for AppServersList {
         let Some(servers) = volume.as_any().downcast_ref::<SmbServerVolume>() else {
             return;
         };
-        let entries = servers.server_entries();
+        let mut server_entries = None;
         for path in self.shown_at() {
-            crate::listing_host::directory_changed(&self.volume_id, &path, DirectoryChange::Replaced(entries.clone()));
+            let Some(text) = path.to_str() else { continue };
+            let entries = match NetworkPath::of(text) {
+                NetworkPath::Hub => server_entries.get_or_insert_with(|| servers.server_entries()).clone(),
+                _ => match servers.cached_share_list_entries(text) {
+                    Some(entries) => entries,
+                    None => continue,
+                },
+            };
+            crate::listing_host::directory_changed(&self.volume_id, &path, DirectoryChange::Replaced(entries));
         }
     }
 }

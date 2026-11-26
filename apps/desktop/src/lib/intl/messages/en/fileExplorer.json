@@ -935,6 +935,81 @@
     "screenshot": "servers-hub.png",
     "screenshotNote": "Network (SMB) browsing and connection flow. This shows the servers list it starts from; your string appears here or on the closely related browsing, sign-in, or reconnect states reached from it."
   },
+  "fileExplorer.columns.details": "Details",
+  "@fileExplorer.columns.details": {
+    "description": "File-list column header on the Servers list (the list of saved and nearby file servers), over the column holding each server's protocol, address, and account, for example \"SMB · 192.168.1.111 · as testuser\" (where a folder list shows the file extension). Its rendered text is also measured to size the column."
+  },
+  "fileExplorer.columns.lastUsed": "Last used",
+  "@fileExplorer.columns.lastUsed": {
+    "description": "File-list column header on the Servers list, over the date column holding when each server was last connected to (where a folder list shows the modified date). Clicking it sorts by that date. Its rendered text is also measured to size the column."
+  },
+  "fileExplorer.network.servers.details": "{protocol} · {address}",
+  "@fileExplorer.network.servers.details": {
+    "description": "What the Details column of the Servers list shows for a server nothing says the account of: its protocol and where it is, for example \"SMB · 192.168.1.111\". Keep the middle dot separator unless your language punctuates a list of facts differently.",
+    "placeholders": {
+      "protocol": "the protocol's short name, for example SMB, SFTP, WebDAV, S3, or NFS",
+      "address": "the server's address, for example 192.168.1.111 or nas.local:4450"
+    }
+  },
+  "fileExplorer.network.servers.detailsWithAccount": "{protocol} · {address} · {account}",
+  "@fileExplorer.network.servers.detailsWithAccount": {
+    "description": "What the Details column of the Servers list shows for a server with a known account: its protocol, where it is, and who it's signed in as, for example \"SMB · 192.168.1.111 · as testuser\". Keep the middle dot separators unless your language punctuates a list of facts differently.",
+    "placeholders": {
+      "protocol": "the protocol's short name, for example SMB, SFTP, WebDAV, S3, or NFS",
+      "address": "the server's address, for example 192.168.1.111",
+      "account": "who it's signed in as, already worded, for example \"as testuser\" or \"as guest\""
+    }
+  },
+  "fileExplorer.network.servers.serverCount": "{count, plural, one {{countText} server} other {{countText} servers}}",
+  "@fileExplorer.network.servers.serverCount": {
+    "description": "The footer of the Servers list when nothing is selected, counting the servers listed, for example \"5 servers\".",
+    "placeholders": {
+      "count": "the number, for plural rules",
+      "countText": "the same number, already formatted with thousands separators"
+    }
+  },
+  "fileExplorer.network.servers.serverCountSearching": "{count, plural, one {{countText} server, looking for more nearby…} other {{countText} servers, looking for more nearby…}}",
+  "@fileExplorer.network.servers.serverCountSearching": {
+    "description": "The footer of the Servers list while Cmdr is still looking for file servers on the local network, for example \"5 servers, looking for more nearby…\".",
+    "placeholders": {
+      "count": "the number, for plural rules",
+      "countText": "the same number, already formatted with thousands separators"
+    }
+  },
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} server, nearby search is off} other {{countText} servers, nearby search is off}}",
+  "@fileExplorer.network.servers.serverCountDiscoveryOff": {
+    "description": "The footer of the Servers list when the person turned off finding file servers on the local network in Settings, for example \"5 servers, nearby search is off\". Only the servers they added show.",
+    "placeholders": {
+      "count": "the number, for plural rules",
+      "countText": "the same number, already formatted with thousands separators"
+    }
+  },
+  "fileExplorer.network.servers.emptyList": "No servers yet. Press F7 to add one.",
+  "@fileExplorer.network.servers.emptyList": {
+    "description": "Shown in the middle of the Servers list when it lists no servers: nothing saved, nothing mounted, and nothing found on the local network. F7 is the key that opens the Add server sheet; keep it as is."
+  },
+  "fileExplorer.network.servers.addServerKey": "Add server",
+  "@fileExplorer.network.servers.addServerKey": {
+    "description": "Label of the F7 button in the function-key bar at the bottom of the window while the Servers list is focused. Pressing it opens the sheet that adds a file server. Very short: it fits a small button."
+  },
+  "fileExplorer.network.servers.forgetKey": "Forget",
+  "@fileExplorer.network.servers.forgetKey": {
+    "description": "Label of the F8 button in the function-key bar at the bottom of the window while the Servers list is focused. Pressing it forgets (removes from Cmdr) the saved server under the cursor, after asking. Very short: it fits a small button."
+  },
+  "fileExplorer.network.servers.accountRootGone": "Nothing is saved under {name} any more, so there’s nothing to open.",
+  "@fileExplorer.network.servers.accountRootGone": {
+    "description": "Toast when the person opens an S3 account's row on the Servers list (to see its buckets), but everything saved under that account was just forgotten, so Cmdr has nothing left to open it with. Rare: a race with Forget.",
+    "placeholders": {
+      "name": "the account's name as the Servers list shows it, for example \"Home MinIO\""
+    }
+  },
+  "fileExplorer.network.servers.notAFile": "{name} is a server. Open it to see what’s on it.",
+  "@fileExplorer.network.servers.notAFile": {
+    "description": "Toast when the person asks for Get info, Tell me about this, or Show in Finder on a row of the Servers list, which lists file servers rather than files. Opening the row (Enter) shows the server's shared folders or files.",
+    "placeholders": {
+      "name": "the server's name as the Servers list shows it, for example \"Naspolya\""
+    }
+  },
   "fileExplorer.network.reconnect.once": "once",
   "@fileExplorer.network.reconnect.once": {
     "description": "Word for one reconnection attempt, used inside the reconnect-progress sentences (e.g. \"Retried once\"). Must read naturally where the sentences embed it.",

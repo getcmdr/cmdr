@@ -23,6 +23,9 @@ import type { IconName } from '#lib/ui/icons/icon-map.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import type { TranslationParams } from '#lib/intl/messages.svelte.js'
 import { requestPendingCommitCounts } from '../git/commit-count-fill'
+import { rowStatusBadge, type RowStatusBadge } from '../network/server-row-words'
+
+export type { RowStatusBadge } from '../network/server-row-words'
 
 export type { DirStats } from '#lib/tauri-commands/index.js'
 
@@ -55,6 +58,16 @@ export function getSyncStatusLabelKey(status: SyncStatus | undefined): MessageKe
     unknown: undefined,
   }
   return keyMap[status]
+}
+
+/**
+ * The status dot a row's icon wears, chosen OUTSIDE `FileIcon` like the sync badge: a Servers
+ * row's server status, or a saved share's on its share list, worded by
+ * `network/server-row-words.ts`. `null` for every other row. ❌ No status branch inside the
+ * icon or the views: they draw what this answers.
+ */
+export function rowBadgeFor(entry: FileEntry): RowStatusBadge | null {
+  return rowStatusBadge(entry)
 }
 
 /** The resolved top-right image-index badge for a file OR folder row: a glyph plus

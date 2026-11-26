@@ -403,6 +403,15 @@ catch reads the value back through `shareListErrorOf`. ❌ Never `e as ShareList
 the catch (a runtime exception, an IPC call that broke) had no `type`, and the renderer threw on it; it reads as
 `protocol_error` now, its text kept for the log. Pinned by `share-list-error-messages.test.ts`.
 
+**A saved share on its share list** (§ "Decisions", 10 of `docs/specs/servers-list-as-listing-plan.md`): its row carries
+`ShareMeta.saved` (its place's volume id, status, account, and pin; Rust reads them, `src-tauri/src/network/DETAILS.md`
+§ "A server's share list is a listing", and re-lists an open share list from the cache when they change). The row wears
+the status dot (`server-row-words.ts::rowStatusBadge`, drawn by `FileIcon`), Enter on it lands on its PLACE when the
+volume list holds one (`../pane/network-row-open.ts`), so it opens as its saved account; a saved share with no place in
+the volume list (unpinned, unmounted) mounts from the share list like any share. Its menu (`shareRowMenu(facts, saved)`,
+hosted by `ShareListAccountChip`) adds Pin to switcher / Unpin and Forget share, run on the place (`runServerRowAction`,
+`servers-hub-actions.ts::forgetSavedShare`, the hub's own Forget share). ❌ No Keychain read for any of it.
+
 ❗ **A queued share is a one-shot for the visit it was queued with.** The pane's arrival
 (`../pane/share-list-arrival.svelte.ts`) holds it per pane, spends it once the list lands (and toasts "not found" when
 the list lacks it), and drops it the moment the pane is anywhere but where it was queued from or for. Opening a host
@@ -410,6 +419,39 @@ from the servers list only ever lists its shares. The bugs this closes: cmdr-rep
 that server"), where the value outlived its visit and fired again each time the list came back, so a host row the person
 meant to browse mounted a share they never picked. Pinned by `../pane/share-list-arrival.svelte.test.ts`,
 `../pane/share-list-pane.svelte.test.ts`, and the SMB E2E.
+
+## The Servers list as a listing
+
+`smb://` lists one folder per server (`src-tauri/src/network/servers_listing.rs`), and every generic seam already knows
+how to show and act on those rows, so the switch from `ServersHub` to the standard views is a routing change
+(`docs/specs/servers-list-as-listing-plan.md`, M8). Until it, `paneViewKind` still renders the hub, and none of the
+seams below is reached on screen. ❌ No view holds an `if server`:
+
+- **Words**: `server-row-words.ts` words Rust's `ServerMeta` (the Details cell, "SMB · 192.168.1.111 · as testuser",
+  through `extCellText` / `rowDescription`; the status words; the dot). The kind's words (`../pane/list-kind-words.ts`):
+  Details (prose), Last used (`ListWords.dateHeader`, the row's last use as its date), no Size, "5 servers" plus the
+  nearby search's state, and an empty list naming F7. The F-key bar's F7 "Add server" and F8 "Forget" come from the same
+  file's `functionKeyWordsFor`.
+- **Icons and the dot**: the reserved ids `network:server-smb` / `network:server` are the app's own glyphs
+  (`#lib/glyph-icons.ts`, never asked of the OS); the status dot is `views/file-list-utils.ts::rowBadgeFor`, decorative,
+  its words in the row's accessible name (`file-row-a11y.ts`, said even with no dot: "Found nearby").
+- **The row an action takes** (`server-row-of-entry.ts`): `HubRow`, read off the cursor entry's `ServerMeta` by the
+  row's OWN id (the saved entry and the discovered host under that id, the stores re-read at action time), or the hub's
+  own cursor row while it renders. `ExplorerAPI.getFocusedPaneServerRow` answers it for Edit, F8, and the palette's
+  server commands (`serverCommandTarget`).
+- **Verbs**: Enter on a one-place server or an S3 account goes off the volume first (`../pane/network-row-open.ts`, from
+  the share-list pane's open seam); an SMB server's row is its share list, a plain folder open. F7 opens Add server and
+  F8 Forgets, in the command handlers (`file.newFolder` / `file.delete` on the `network` kind; an agent's `mkdir` and
+  `delete` keep their own road), and Get info, Tell me about this, and Show in Finder say a server is no file. The row
+  menu is `ServersListRowMenu.svelte`, beside the path where a share list's account chip sits, a member of the chip's
+  ONE `openMenu`: the hub's own menus and actions (`createHubActions`), opened per row by its id.
+- **MCP**: `../pane/mcp-row-name.ts` adds `protocol=` / `status=` / `address=` / `account=` to a row's name.
+- **Not here yet**: the trailing "+ Add server…" row (M7), the routing, the landing, the discovery hold, and Copy path
+  between panes off a listing row (M8).
+
+**Gotchas for the switch**: the engine's date sort puts a row with no date (a server never used) FIRST ascending and
+last descending, as for any file; and under the "Folders always by name" directory mode the Last used sort keeps servers
+by name, since every Servers row is a folder.
 
 ## `share-list-label.ts`
 

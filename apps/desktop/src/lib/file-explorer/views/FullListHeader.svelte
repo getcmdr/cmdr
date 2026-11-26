@@ -41,6 +41,8 @@
         clearsSortLabel?: string
         /** The Ext column's header, when the pane's kind names it otherwise (a share list's "Description"). */
         extHeader?: string
+        /** The date column's header, when the pane's kind names it otherwise (the Servers list's "Last used"). */
+        dateHeader?: string
         onSortChange?: (column: SortColumn) => void
         /**
          * Opens the Sort by popup (the three dates): at `anchor` from the date chevron, at the
@@ -56,6 +58,7 @@
         sortOrder,
         dateColumn,
         dateFallbackNote,
+        dateHeader,
         showExtensionInName,
         showDateColumn,
         showSizeColumn = true,
@@ -170,7 +173,7 @@
                 column={dateHeaderSortColumn(sortBy)}
                 {isFocused}
                 {clearsSortLabel}
-                label={tString(headerLabelKey(dateColumn))}
+                label={dateHeader ?? tString(headerLabelKey(dateColumn))}
                 fallbackNote={dateFallbackNote}
                 align="right"
                 currentSortColumn={sortBy}

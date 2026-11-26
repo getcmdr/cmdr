@@ -274,3 +274,12 @@ export async function updateSavedS3Account(
 ): Promise<SavedServerOutcome> {
   return await commands.updateSavedS3Account(id, name, endpoint)
 }
+
+/**
+ * Saves the root of the S3 account `accountId` names (the place listing its buckets) when it
+ * isn't saved yet, answering whether it is now: what Enter on an S3 account's Servers row
+ * runs before the pane opens that root. `false` when nothing under the account is saved.
+ */
+export async function saveS3AccountRoot(accountId: string): Promise<boolean> {
+  return await commands.saveS3AccountRoot(accountId)
+}

@@ -27,7 +27,7 @@
     import RenameOverlay from '../rename/RenameOverlay.svelte'
     import { shouldMountRenameEditor } from '../rename/rename-mount'
     import { glyphFor, labelFor } from '../git/status-column'
-    import { getImageIndexBadge, getFolderCoverageBadge } from './file-list-utils'
+    import { getImageIndexBadge, getFolderCoverageBadge, rowBadgeFor } from './file-list-utils'
     import { fileRowAttributes, fileRowName, renderedCursorRow, rowSizeText } from './file-row-a11y'
     import { createFullListCache } from './full-list-cache.svelte'
     import { createListFocus } from './list-focus.svelte'
@@ -64,6 +64,7 @@
         hasSizeMismatch,
         extCellText,
         wordResticSnapshot,
+        rowDescription,
         getNameColumnText,
         pickSizeDisplay,
         isHiddenRowDimmed,
@@ -581,6 +582,7 @@
             showExtensionInName,
             extHeader: listWords?.extHeader,
             extProse: listWords?.extIsProse,
+            dateHeader: listWords?.dateHeader,
         })
         // Which rows are on screen and how they're measured: while this stays put, only in-place
         // data changed (index sizes, the hourglass), and `holdSizeColumnWidth` keeps Size from
@@ -881,6 +883,7 @@
         {scrollbarWidth}
         {clearsSortLabel}
         extHeader={listWords?.extHeader}
+        dateHeader={listWords?.dateHeader}
         {onSortChange}
         {onSortMenu}
     />
@@ -965,7 +968,7 @@
                                 isRestricted: fileIsRestricted,
                                 details: {
                                     host: extInName ? undefined : file.resticMeta?.hostname,
-                                    description: extInName ? undefined : (file.shareMeta?.description ?? undefined),
+                                    description: extInName ? undefined : rowDescription(file),
                                     size: showSizeColumn
                                         ? rowSizeText({
                                               override: sizeOverride.override,
@@ -975,7 +978,7 @@
                                         : undefined,
                                     // Named even when a narrow pane hides the date column: a screen
                                     // reader hears the same row at any width.
-                                    date: { column: dateColumn, text: date.text },
+                                    date: { column: dateColumn, text: date.text, label: listWords?.dateHeader },
                                     gitStatus: gitStatus ? labelFor(gitStatus) : undefined,
                                 },
                                 parentRowName: listWords?.parentRowName,
@@ -1013,6 +1016,7 @@
                     >
                         <FileIcon
                             {file}
+                            statusBadge={rowBadgeFor(file)}
                             syncStatus={syncStatusMap[file.path]}
                             {imageIndexBadge}
                             dimmed={rowIsHiddenDimmed}

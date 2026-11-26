@@ -348,6 +348,8 @@ export function computeFullListColumnWidths(args: {
   extHeader?: string
   /** The Ext cells carry prose (`ListWords.extIsProse`), capped at `PROSE_CAP_SAMPLE`. Defaults to extensions. */
   extProse?: boolean
+  /** The date header's words when the pane's kind names it otherwise (`ListWords.dateHeader`). */
+  dateHeader?: string
 }): ColumnWidths {
   const {
     entries,
@@ -365,6 +367,7 @@ export function computeFullListColumnWidths(args: {
     showExtensionInName = false,
     extHeader,
     extProse = false,
+    dateHeader,
   } = args
 
   const measure = getMeasure()
@@ -389,7 +392,7 @@ export function computeFullListColumnWidths(args: {
   // The date header sorts by the requested date (`dateHeaderSortColumn`), so it's active for any
   // date sort while its label names the date it shows. Its Sort by chevron rides in the same track.
   let dateMax =
-    measure(tString(headerLabelKey(dateColumn))) +
+    measure(dateHeader ?? tString(headerLabelKey(dateColumn))) +
     chromeFor(dateHeaderSortColumn(sortBy)) +
     (dateFallbackGlyph ? HEADER_FALLBACK_GLYPH : 0) +
     HEADER_DATE_SORT_CHEVRON

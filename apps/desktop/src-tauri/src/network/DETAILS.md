@@ -1108,6 +1108,19 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `get_metadata` reads memory and the cache only. **Decision**: a separate trait read the engine calls, ❌ not a
   listing-context flag: a flag would have to ride every read path into the backend, and the pane's open is already its
   own call site. Pinned by `share_list_volume_test.rs`'s `a_read_that_is_no_pane_never_dials`.
+- **A saved share carries its place** (`ShareMeta.saved`, `cmdr_fs::share_meta::SavedShareMeta`): its volume id, its
+  pin, `Connected` while the mount table holds it from that server (else `Saved`), and the account (the live mount's
+  while connected, else the saved one). `servers_listing.rs::saved_shares_on` finds the server as the SAVED Servers row
+  that opens this share list (`ServerOpens::ShareList` of the path's address), so the share list and its Servers row
+  name one server (a Bonjour twin included), then matches its places by share name and the mount table by
+  `server_identity::mount_is_from`. Memory, the stores, and the mount table only: ❌ no dial, ❌ no Keychain read. The
+  frontend draws the dot, words the account, and offers Pin and Forget share from it. Pinned by
+  `a_saved_share_carries_its_place_on_the_share_list`.
+- **An open share list re-lists from the share cache when its saved facts may change** (`servers_relist.rs`: the same
+  `volumes-changed` that every pin, Forget share, mount, and unmount republishes), through
+  `SmbServerVolume::cached_share_list_entries`: the cached shares with their facts read afresh, ❌ never a dial. With
+  nothing cached (the cache expired) it hands nothing, so the rows on screen stay until the next listing. Pinned by
+  `a_share_list_relists_from_the_cache_with_fresh_saved_facts`.
 - **Only a FORCED refresh re-reads it**: the volume answers `WatchCoverage::EveryWriter` with no watch armed (nothing
   in the app writes a share list), so the unforced `refresh_listing` a delete or trash sends to both panes
   short-circuits instead of dialing (and maybe reading the Keychain). ⌘R and MCP `refresh` force, so a share a server's
@@ -1444,6 +1457,11 @@ last place on Forget. Two writers, on purpose:
 
 A store written before the name moved carries a `displayName` per place; `migrate` (run at load, written back once)
 gives each account the name of its most recently connected named place.
+
+Enter on an S3 account's Servers row opens its root (`save_s3_account_root` → `save_account_root`): a root nobody saved
+is saved first, copied off a sibling place (unpinned, never connected), since Enter is the person asking for it; then
+the pane lands on the root's volume id, which IS the account's id. A saved root answers `AlreadySaved` and writes
+nothing; an account with nothing left to copy from answers `NothingToCopy` and the pane stays.
 
 ❗ **`cancel_connect` on an id nobody is running answers `false`** rather than raising: a click landing just after a
 connect finished is ordinary. And a `Cancelled` outcome never reaches `register` or `remember`, so a cancelled connect

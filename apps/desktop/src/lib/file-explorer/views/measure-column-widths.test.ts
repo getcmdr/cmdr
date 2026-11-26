@@ -160,7 +160,8 @@ describe('computeFullListColumnWidths', () => {
   })
 
   describe('an Ext column that carries prose (a share list’s descriptions)', () => {
-    const share = (description: string) => entry({ name: 'media', isDirectory: true, shareMeta: { description } })
+    const share = (description: string) =>
+      entry({ name: 'media', isDirectory: true, shareMeta: { description, saved: null } })
 
     it('fits a description in full, past the extension cap', () => {
       _setMeasureForTests(fakeMeasure)

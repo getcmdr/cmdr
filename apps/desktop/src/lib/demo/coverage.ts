@@ -190,6 +190,7 @@ export const notInDemo = {
   updateSavedSmbHost: NETWORK,
   ejectAndUpdateSavedSmbHost: NETWORK,
   updateSavedS3Account: NETWORK,
+  saveS3AccountRoot: NETWORK,
   forgetSavedSmbHost: NETWORK,
   forgetSavedSmbHostPassword: NETWORK,
   // A rename that runs as a move exists for S3 folders; the demo volume renames in place.

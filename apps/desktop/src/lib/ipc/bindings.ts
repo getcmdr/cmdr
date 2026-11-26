@@ -5147,7 +5147,9 @@ export const commands = {
    *  ❗ The account the person TYPED for this host (the add or edit sheet) wins over the
    *  share history: it is a stated preference, where the history is only who signed in
    *  last, and Edit is where it changes. It's looked up where the host is dialed
-   *  (`dialable_server_of`), where "Sign in as…" saves it; the share history by its name.
+   *  (`dialable_server_of`), where "Sign in as…" saves it, else under its name when that is
+   *  an address (a mounted share's upgrade knows only `host` or `host:port`); the share
+   *  history by its name.
    */
   getUsernameHint: (host: NetworkHost) => __TAURI_INVOKE<string | null>('get_username_hint', { host }),
   /**
@@ -6061,6 +6063,13 @@ export const commands = {
         }
       | null,
   ) => __TAURI_INVOKE<SavedServerOutcome>('update_saved_s3_account', { id, name, endpoint }),
+  /**
+   *  Saves the root of the S3 account `account_id` names, the place that lists its buckets,
+   *  when it isn't saved yet (`s3_known_places::save_account_root`): what Enter on an S3
+   *  account's Servers row runs before the pane opens that root. Answers whether the root is
+   *  saved now. A save emits `volumes-changed`, so the switcher and the Servers list follow.
+   */
+  saveS3AccountRoot: (accountId: string) => __TAURI_INVOKE<boolean>('save_s3_account_root', { accountId }),
   /**
    *  Forgets the saved SMB host the listing calls `id`: its manual entry, its
    *  sign-in history, and every share saved under it. Answers whether anything was
@@ -20188,6 +20197,27 @@ export type SavedServerOutcome =
   | { outcome: 'account_changed' }
 
 /**
+ *  What a saved share's row knows about its place, from memory and the mount table only
+ *  (❌ never the Keychain, ❌ never a dial).
+ */
+export type SavedShareMeta = {
+  // The saved place's volume id: what Enter, Pin, and Forget share act on.
+  volumeId: string
+  /**
+   *  [`ServerStatus::Connected`] while the share is mounted (Cmdr's mount or the OS's),
+   *  else [`ServerStatus::Saved`].
+   */
+  status: ServerStatus
+  /**
+   *  The account the live mount signed in as while it's connected, else the one its
+   *  next mount uses; `None` when nothing known says.
+   */
+  account: ShareListAccount | null
+  // Whether the place is pinned to the switcher.
+  pinned: boolean
+}
+
+/**
  *  A conflict detected during pre-copy scanning: a source item that already exists at the
  *  destination.
  */
@@ -21988,6 +22018,8 @@ export type ShareMeta = {
    *  when it set none.
    */
   description: string | null
+  // The person's saved place for this share, or `None` for a share they never saved.
+  saved: SavedShareMeta | null
 }
 
 // Where `..` in a share's top folder leads, and the share's own switch.

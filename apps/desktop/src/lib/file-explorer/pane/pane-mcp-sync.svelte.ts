@@ -16,6 +16,7 @@ import { isPathAffectedByWalk } from '#lib/indexing/walked-ground.js'
 import { isDirSizeUpdating } from '../views/full-list-utils'
 import { displayedDateColumn } from '../displayed-date'
 import { snapshotMcpRows } from './snapshot-mcp-rows'
+import { mcpRowName } from './mcp-row-name'
 
 /** Whether one mirrored row's folder size can still move. */
 type InFluxAnswer = (entry: { path: string; recursiveSizePending?: boolean | null }) => boolean
@@ -202,9 +203,9 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
     inFlux: InFluxAnswer,
   ): PaneFileEntry {
     return {
-      // A server's share row carries its description as a `comment="…"` token, so an agent
-      // reads what the Description column shows.
-      name: entry.shareMeta?.description ? `${entry.name}  comment="${entry.shareMeta.description}"` : entry.name,
+      // A share row's description and a saved share's or a Servers row's facts ride as
+      // locale-independent tokens (`mcp-row-name.ts`), so an agent reads what the row shows.
+      name: mcpRowName(entry),
       path: entry.path,
       isDirectory: entry.isDirectory,
       size: entry.size ?? null,

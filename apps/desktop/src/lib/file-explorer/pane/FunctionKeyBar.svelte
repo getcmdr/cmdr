@@ -10,6 +10,7 @@
     import { formatChord, toAriaKeyShortcut } from '#lib/shortcuts/key-capture.js'
     import { canOpenTerminalIn } from '#lib/open-terminal/terminal-target.js'
     import { fnKeyToCommand } from './function-key-commands'
+    import { functionKeyWordsFor } from './list-kind-words'
     import { tString } from '#lib/intl/messages.svelte.js'
     import type { CommandId } from '#lib/commands/index.js'
     import { showFunctionKeyBarContextMenu } from '#lib/tauri-commands/index.js'
@@ -55,8 +56,13 @@
     const caps = $derived(capabilitiesForPane(activeTab.volumeId, activeTab.path))
     const canMkdir = $derived(caps.canWrite)
     const canMkfile = $derived(caps.canWrite)
-    /** On the Servers hub and a server's share list F2 is "Edit server…" (`editServerInView`), which always answers. */
-    const canRename = $derived(caps.canWrite || caps.kind === 'network' || caps.kind === 'share-list')
+    /**
+     * The kind's own slots (`list-kind-words.ts`): on the Servers list F7 adds a server and F8
+     * forgets one; there and on a share list F2 is "Edit server…" (`editServerInView`), which
+     * always answers. ❌ No kind check here: the table says it.
+     */
+    const kindKeys = $derived(functionKeyWordsFor(caps.kind))
+    const canRename = $derived(caps.canWrite || kindKeys.renameEnabled === true)
     /** Source-side actions (copy/move/delete). The snapshot pane's rows are real files. */
     const canSourceOps = $derived(caps.canBeSource)
     /**
@@ -134,13 +140,13 @@
         },
         newFolder: {
             id: fnKeyToCommand.newFolder,
-            label: tString('fileExplorer.functionKeyBar.newFolderLabel'),
-            enabled: canMkdir,
+            label: kindKeys.newFolder?.label ?? tString('fileExplorer.functionKeyBar.newFolderLabel'),
+            enabled: kindKeys.newFolder?.enabled ?? canMkdir,
         },
         delete: {
             id: fnKeyToCommand.delete,
-            label: tString('fileExplorer.functionKeyBar.deleteLabel'),
-            enabled: canSourceOps,
+            label: kindKeys.delete?.label ?? tString('fileExplorer.functionKeyBar.deleteLabel'),
+            enabled: kindKeys.delete?.enabled ?? canSourceOps,
         },
         newFile: {
             id: fnKeyToCommand.newFile,

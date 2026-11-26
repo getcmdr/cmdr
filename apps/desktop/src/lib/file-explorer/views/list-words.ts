@@ -21,6 +21,12 @@ export interface ListWords {
    * column (`fitFullListColumns`'s `hasSizes`).
    */
   rowsHaveNoSizes?: boolean
+  /**
+   * The date column's header in place of the date's own ("Modified"): the Servers list's
+   * "Last used", whose rows carry when each server was last used as their date. The header,
+   * the measurer, and each row's accessible name read it; the column still sorts by the date.
+   */
+  dateHeader?: string
   /** What the `..` row says in place of "Parent folder". */
   parentRowName?: string
   /** What an empty list says in place of "Empty folder". */

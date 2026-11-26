@@ -114,23 +114,24 @@ the next section.
   `path_locations.rs` (how many PLACES a set of directories amounts to), `path_hash.rs` (the fixed 64-bit folder-path
   hash two resident maps key on instead of the path: search's importance weights and the media coverage score cache),
   `git_meta` (what a git portal row's Size cell states), `restic_meta` (a restic snapshot row's host, tags, and paths),
-  `share_meta` (a share-list row's server-set description), `server_meta` (a Servers row's facts: protocol, address,
-  status, account, and the row's own id; also home to `ServerProtocol` and `ShareListAccount`, which the app
-  re-exports), `share_list` (why a share list didn't list: `ShareListError`, which `cmdr-smb` fills and re-exports, and
-  `ShareListRefusal`, the `VolumeError::ShareListRefused` payload), `name_fold.rs` (the ONE "same name, spelled another
-  way" key: NFC + lowercase, shared by share IDs, transfer conflict buckets, the SMB spelling resolve, and cursor
-  placement; beside it `normalize_for_comparison`, the local filesystem's own key, which the drive index stores and the
-  write engine matches sources under, per OS: NFD + lowercase on macOS, lowercase on Windows, the name itself on Linux),
-  `log_rollup`, `log_private` + `log_detail` (`LogPrivate`, the wrapper a log site marks a user-derived value with, over
-  the ONE marker table and lexer the app's span pass reads too; `LogDetail` for external OS/server/CLI text as one
-  Debug-quoted, 1 KiB-capped field, and `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs
-  through, `error_detail`, the message field that keeps its cause typed for it, and `log_json`, a value's JSON with its
-  fields marked; § "Marked log values"), `tcc_paths`, `ignore_poison`, `pluralize`, `typed_path` (`resolve_typed_with`:
-  text a person or an agent typed, turned into an app path with each `..` answered by the volume through
-  `TypedPathHost`; a relative input's leading `..`s go up by text; docs/specs/app-path-plan.md § "Typed and pasted
-  `..`"), `go_to_path` (the "Go to path" dialog's classification over a `GoToHost`'s stat, shared by the desktop and the
-  browser demo's engine), `volume::dot_dot` (`Volume::parent_for_dot_dot`'s lexical default and `parent_across_links`,
-  the link-following body the local POSIX disk and SFTP override it with), `tilde` (`expand_tilde`, for a path a person
+  `share_meta` (a share-list row's server-set description, and a SAVED share's place, status, account, and pin as
+  `SavedShareMeta`), `server_meta` (a Servers row's facts: protocol, address, status, account, and the row's own id;
+  also home to `ServerProtocol` and `ShareListAccount`, which the app re-exports), `share_list` (why a share list didn't
+  list: `ShareListError`, which `cmdr-smb` fills and re-exports, and `ShareListRefusal`, the
+  `VolumeError::ShareListRefused` payload), `name_fold.rs` (the ONE "same name, spelled another way" key: NFC +
+  lowercase, shared by share IDs, transfer conflict buckets, the SMB spelling resolve, and cursor placement; beside it
+  `normalize_for_comparison`, the local filesystem's own key, which the drive index stores and the write engine matches
+  sources under, per OS: NFD + lowercase on macOS, lowercase on Windows, the name itself on Linux), `log_rollup`,
+  `log_private` + `log_detail` (`LogPrivate`, the wrapper a log site marks a user-derived value with, over the ONE
+  marker table and lexer the app's span pass reads too; `LogDetail` for external OS/server/CLI text as one Debug-quoted,
+  1 KiB-capped field, and `LoggedText` for our own; `log_error`, the `LogError` a path-carrying error logs through,
+  `error_detail`, the message field that keeps its cause typed for it, and `log_json`, a value's JSON with its fields
+  marked; § "Marked log values"), `tcc_paths`, `ignore_poison`, `pluralize`, `typed_path` (`resolve_typed_with`: text a
+  person or an agent typed, turned into an app path with each `..` answered by the volume through `TypedPathHost`; a
+  relative input's leading `..`s go up by text; docs/specs/app-path-plan.md § "Typed and pasted `..`"), `go_to_path`
+  (the "Go to path" dialog's classification over a `GoToHost`'s stat, shared by the desktop and the browser demo's
+  engine), `volume::dot_dot` (`Volume::parent_for_dot_dot`'s lexical default and `parent_across_links`, the
+  link-following body the local POSIX disk and SFTP override it with), `tilde` (`expand_tilde`, for a path a person
   typed on THIS machine; on Windows it answers an app path through the path grammar and takes `~\` too,
   `expand_tilde_with` tests each flavor everywhere), `twin_path` (a same-named twin's row path: `folder_of` past its
   pick, and `shown`, the one rule that takes a pick out of anything a person reads;
@@ -1237,8 +1238,8 @@ The API contract says this crate emits no user-facing strings. Two things look l
 - **`git_meta`** (`src/git_meta.rs`) looks like the second, and isn't: `FileEntry::git_meta` is a typed `GitEntryMeta`
   that states a fact, and the host words the Size column from its own catalog. `restic_meta` (`src/restic_meta.rs`) is
   the same shape: a snapshot row's host, tags, and paths as data, worded by the host. `share_meta` (`src/share_meta.rs`)
-  carries a share's description as the server set it, ❌ no words of Cmdr's own, and `server_meta`
-  (`src/server_meta.rs`) a Servers row's status as an enum and its account as data.
+  carries a share's description as the server set it (and a saved share's place facts), ❌ no words of Cmdr's own, and
+  `server_meta` (`src/server_meta.rs`) a Servers row's status as an enum and its account as data.
 
 ## Marked log values (`log_private`, `log_detail`, `log_error`)
 

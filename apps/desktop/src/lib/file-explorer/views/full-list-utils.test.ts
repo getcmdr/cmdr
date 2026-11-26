@@ -388,7 +388,7 @@ describe("a server's share rows", () => {
     owner: '',
     group: '',
     iconId: 'dir',
-    shareMeta: { description },
+    shareMeta: { description, saved: null },
   })
 
   it('shows the share’s description in the Ext cell, as the server set it', () => {

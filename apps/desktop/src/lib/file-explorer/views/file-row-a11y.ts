@@ -16,6 +16,7 @@ import type { MessageKey } from '#lib/intl/keys.gen.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { formatUnitList } from '#lib/intl/list-format.js'
 import { getSyncStatusLabelKey } from './file-list-utils'
+import { rowStatusWords } from '../network/server-row-words'
 import { LOWER_BOUND_GLYPH, type DirSizeDisplayState } from './full-list-utils'
 import type { CursorRowRef } from './list-focus.svelte'
 import { rowDatePhraseKey, type DateColumn } from '../displayed-date'
@@ -73,7 +74,8 @@ export interface FileRowNameInput {
     /** A server's share row: the description its Ext cell shows. */
     description?: string
     size?: string
-    date?: { column: DateColumn; text: string }
+    /** `label`: the date header's own words when the kind names it (`ListWords.dateHeader`). */
+    date?: { column: DateColumn; text: string; label?: string }
     gitStatus?: string
   }
   /** What `..` says in place of "Parent folder" (a share list's "Back to Servers"). */
@@ -124,9 +126,18 @@ function cellParts(details: FileRowNameInput['details'], parent: boolean): strin
     details?.host ? asideAround('fileExplorer.restic.snapshot.host', details.host) : '',
     details?.description ?? '',
     parent && size !== '' ? asideAround('fileExplorer.list.parentRowSize', size) : size,
-    details?.date?.text ? asideAround(rowDatePhraseKey(details.date.column), details.date.text) : '',
+    dateCellPart(details?.date),
     details?.gitStatus ? tString('fileExplorer.list.rowGitStatus', { status: details.gitStatus }) : '',
   ]
+}
+
+/**
+ * The date cell as the name says it: "(modified) {date}", or, where the kind names the column
+ * itself ("Last used"), that header in the parentheses, since it's the column's own words.
+ */
+function dateCellPart(date: NonNullable<FileRowNameInput['details']>['date']): string {
+  if (!date?.text) return ''
+  return date.label ? `(${date.label}) ${date.text}` : asideAround(rowDatePhraseKey(date.column), date.text)
 }
 
 /** What the row's kind and badges mean: the words its name adds that nothing on the row writes out. */
@@ -136,6 +147,8 @@ function rowAsides(entry: FileEntry, syncStatus: SyncStatus | undefined, isRestr
   return [
     kind ? tString(KIND_KEYS[kind]) : '',
     syncKey ? tString(syncKey) : '',
+    // A server's or a saved share's status (its dot, `rowBadgeFor`, is decorative): its words are said here.
+    rowStatusWords(entry) ?? '',
     isRestricted ? tString('fileExplorer.restrictedFolder.label') : '',
     entry.inColdStorage === true ? tString('fileExplorer.archivedFile.label') : '',
   ].filter((aside) => aside !== '')

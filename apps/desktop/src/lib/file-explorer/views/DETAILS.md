@@ -579,6 +579,11 @@ splitter at its 25 % limit (~240 px pane), `icon 1fr ext size date` left Name 0 
   whose Ext holds prose (`ListWords.extIsProse`) gets the measurer's `extProse`, capping Ext at `PROSE_CAP_SAMPLE`
   instead of `EXT_CAP_SAMPLE`. All default off, so a folder's layout is untouched (pinned in
   `measure-column-widths.test.ts` and `FullList.narrow-pane.test.ts`).
+- A kind that names its date column itself (`ListWords.dateHeader`, the Servers list's "Last used") hands the words to
+  the header, the measurer, and each row's accessible name ("(Last used) {date}"); the column still shows and sorts by
+  `displayedDateColumn`'s date. A row's status dot (`file-list-utils.ts::rowBadgeFor`, a Servers row's or a saved
+  share's) is chosen outside `FileIcon` like the sync badge, decorative, with its words in the row's name
+  (`file-row-a11y.ts`). Pinned in `FullList.servers-list.test.ts`.
 - A dropped Ext behaves exactly like `showExtensionInName`: `FullList`'s `extInName` (setting OR narrow) drives the
   cells, the grid template, the header's split Name/Ext triggers, the rename span, and the row name's restic host. A
   dropped date drops its cells and its header cell and chevron (the date sorts stay in the header's right-click popup),

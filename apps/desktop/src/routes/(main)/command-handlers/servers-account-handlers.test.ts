@@ -63,7 +63,7 @@ const hostRow = {
 function hctx(view: { row?: HubRow | null; shareListHost?: NetworkHost | null }) {
   focusedPath = view.shareListHost ? 'smb://testnas' : 'smb://'
   const explorerRef = {
-    getFocusedPaneHubRow: vi.fn(() => view.row ?? null),
+    getFocusedPaneServerRow: vi.fn(() => Promise.resolve(view.row ?? null)),
     openSmbHandOffInFocusedPane: vi.fn(),
   }
   return { ctx: { explorerRef, ctx: {}, dispatchArgs: undefined } as unknown as CommandHandlerContext, explorerRef }

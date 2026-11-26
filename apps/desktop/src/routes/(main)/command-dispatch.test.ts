@@ -211,13 +211,13 @@ describe('handleCommandExecute — blockedByCapabilities (search-results / netwo
     const openNewFileDialog = vi.fn()
     const startRename = vi.fn()
     // Off the Servers list: Rename there is "Edit server…" (`hub-row-edit.test.ts`).
-    const getFocusedPaneHubRow = () => null
+    const getFocusedPaneServerRow = () => Promise.resolve(null)
     const ctx = makeCtx({
       pasteFromClipboard,
       openNewFolderDialog,
       openNewFileDialog,
       startRename,
-      getFocusedPaneHubRow,
+      getFocusedPaneServerRow,
     })
     return { ctx, pasteFromClipboard, openNewFolderDialog, openNewFileDialog, startRename }
   }
@@ -320,11 +320,10 @@ describe('handleCommandExecute — blockedByCapabilities (search-results / netwo
     const g = makeGuardCtx()
 
     await handleCommandExecute('edit.paste', g.ctx)
-    await handleCommandExecute('file.newFolder', g.ctx)
 
     expect(addToast).not.toHaveBeenCalled()
     expect(g.pasteFromClipboard).toHaveBeenCalledOnce()
-    expect(g.openNewFolderDialog).toHaveBeenCalledOnce()
-    // `file.rename` there is "Edit server…" (`hub-row-edit.test.ts`), ❌ not the explorer's rename.
+    // `file.rename` there is "Edit server…" (`hub-row-edit.test.ts`), and F7 "Add server"
+    // (`file-handlers.servers-list.test.ts`), ❌ not the explorer's rename or New folder.
   })
 })

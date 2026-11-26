@@ -145,7 +145,11 @@ suite:
   caller with its own reason to force permanence (an online-only cloud file) folds it in on top.
 - `share-list-pane.svelte.ts`: a pane's side of a server's share list (Enter mounts, a door's arrival lands, a sign-in
   refusal asks once, the error screen's friendly label), with `share-list-arrival.svelte.ts` (what a door queued, per
-  pane) and `list-kind-words.ts` (the list's words on the kind). § "A server's share list (kind-from-path)".
+  pane) and `list-kind-words.ts` (the list's words and the F-key bar's on the kind). § "A server's share list
+  (kind-from-path)". Its open seam runs `network-row-open.ts` first: a row on the `network` volume that leads off it (a
+  Servers row's place, an S3 account's root, a saved share's place) goes there before any generic open.
+  `mcp-row-name.ts`: a row's facts as `cmdr://state` name tokens. The Servers list's seams together:
+  `../network/DETAILS.md` § "The Servers list as a listing".
 - `share-mount.svelte.ts`: mounting a share from a server's share list (the wait, Cancel, the sign-in a refused mount
   asks for, the refusal, and its `mountErrorInfo` for the MCP mirror), rendered by FilePane through `RemoteConnectView`
   (§ "The connect views").

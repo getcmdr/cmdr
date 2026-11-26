@@ -16,7 +16,11 @@
  */
 import { runServerRowAction } from '#lib/file-explorer/navigation/server-row-actions.js'
 import { openAddServerSheet } from '#lib/servers/open-sign-in.js'
-import { disconnectSmbHost, editServerInView } from '#lib/file-explorer/network/servers-hub-actions.js'
+import {
+  createHubActions,
+  disconnectSmbHost,
+  editServerInView,
+} from '#lib/file-explorer/network/servers-hub-actions.js'
 import { runServerAccountAction } from '#lib/file-explorer/network/share-list-sign-in.js'
 import type { ServerAccountAction } from '#lib/file-explorer/navigation/row-menu.js'
 import type { NetworkHost } from '#lib/file-explorer/types.js'
@@ -42,10 +46,10 @@ function shareListHost(): NetworkHost | null {
 }
 
 /** The server the user is pointing at, or `null`. */
-function target(explorerRef: ExplorerAPI | undefined): ServerCommandTarget | null {
+async function target(explorerRef: ExplorerAPI | undefined): Promise<ServerCommandTarget | null> {
   const volumeId = getFocusedPaneVolumeId()
   return serverCommandTarget({
-    cursorRow: explorerRef?.getFocusedPaneHubRow() ?? null,
+    cursorRow: (await explorerRef?.getFocusedPaneServerRow()) ?? null,
     shareListHost: shareListHost(),
     paneVolume: getVolumes().find((volume) => volume.id === volumeId) ?? null,
   })
@@ -60,7 +64,7 @@ type PlaceTarget = Extract<ServerCommandTarget, { kind: 'place' }>
  * share list itself the list follows the listing.
  */
 async function runAccountAction(explorerRef: ExplorerAPI | undefined, action: ServerAccountAction): Promise<void> {
-  const server = target(explorerRef)
+  const server = await target(explorerRef)
   if (server?.kind !== 'smb-server') return
   const { listed } = await runServerAccountAction(action, { host: server.host, label: server.name })
   if (listed && server.row) explorerRef?.openSmbHandOffInFocusedPane({ host: server.host, sharePath: null })
@@ -91,7 +95,7 @@ export const serversHandlers = {
 
   'servers.togglePin': async ({ explorerRef }) => {
     // An SMB server has no switcher row to pin.
-    const server = target(explorerRef)
+    const server = await target(explorerRef)
     if (server?.kind !== 'place') return
     const pinned = await isPinned(server)
     await runServerRowAction({
@@ -102,7 +106,7 @@ export const serversHandlers = {
   },
 
   'servers.disconnect': async ({ explorerRef }) => {
-    const server = target(explorerRef)
+    const server = await target(explorerRef)
     if (!server) return
     if (server.kind === 'smb-server') {
       await disconnectSmbHost(server.host, server.name)
@@ -112,7 +116,7 @@ export const serversHandlers = {
   },
 
   'servers.forgetSecret': async ({ explorerRef }) => {
-    const server = target(explorerRef)
+    const server = await target(explorerRef)
     if (!server) return
     if (server.kind === 'smb-server') {
       await runServerAccountAction('forget-secret', { host: server.host, label: server.name })
@@ -150,37 +154,67 @@ export const serversHandlers = {
     // at a host, which has no place for the other commands to act on but does have a
     // name to edit.
     if (explorerRef && getFocusedPaneVolumeId() === 'network') {
-      detached(editServerInView({ row: explorerRef.getFocusedPaneHubRow(), host: shareListHost() }))
+      const explorer = explorerRef
+      detached(explorer.getFocusedPaneServerRow().then((row) => editServerInView({ row, host: shareListHost() })))
       return
     }
-    const server = target(explorerRef)
-    if (server?.kind !== 'place') return
-    detached(runServerRowAction({ action: 'edit', volumeId: server.volumeId, volumeName: server.name }))
+    detached(editPlaceInView(explorerRef))
   },
 
   'servers.connect': ({ explorerRef }) => {
-    // ⌘K, Finder's binding for the same thing. ❗ It opens the sheet directly
-    // rather than through `serverCommandTarget`: adding a server is about no
-    // server in particular, so what the pane is pointing at is irrelevant.
-    detached(
-      openAddServerSheet({
-        // An SMB address opens the host it saved, as its share list, mounting the
-        // share the address named: its connect is a share MOUNT, not a session.
-        onSmbHandOff: (handOff) => {
-          explorerRef?.openSmbHandOffInFocusedPane(handOff)
-        },
-        // An SFTP, WebDAV, or S3 server is a place, so the focused pane goes there: a sheet
-        // that closed on a live server with every pane where it was reads as a Connect
-        // that did nothing. The root lands on the place's start folder.
-        onConnected: ({ volumeId, root }) => {
-          if (!explorerRef) return
-          explorerRef.navigate({
-            pane: explorerRef.getFocusedPane(),
-            to: { selectVolume: { volumeId, path: root } },
-            source: 'user',
-          })
-        },
-      }),
-    )
+    detached(openAddServer(explorerRef))
   },
 } satisfies Partial<CommandHandlerRecord>
+
+/**
+ * F8 on the Servers list (`file.delete` there, the F-key bar's "Forget"): forgets the server
+ * under the cursor, per row kind, through the hub row's own Forget (`createHubActions`), keyed
+ * by the row's id. A row with no server (nothing under the cursor) does nothing. ❗ The hub,
+ * while it renders, claims the F8 KEY itself; this is the bar's and the palette's road there.
+ */
+export async function forgetServerInView(explorerRef: ExplorerAPI | undefined): Promise<void> {
+  const row = (await explorerRef?.getFocusedPaneServerRow()) ?? null
+  if (!row) return
+  const actions = createHubActions({
+    getRows: () => [row],
+    getVolumes,
+    // The `volumes-changed` every Forget emits re-lists the Servers list (`servers_relist.rs`).
+    refreshSaved: () => Promise.resolve(),
+    openRow: () => {},
+  })
+  await actions.forget(row)
+}
+
+/** `servers.edit` off the Servers volume: the place the palette's target names, if any. */
+async function editPlaceInView(explorerRef: ExplorerAPI | undefined): Promise<void> {
+  const server = await target(explorerRef)
+  if (server?.kind !== 'place') return
+  await runServerRowAction({ action: 'edit', volumeId: server.volumeId, volumeName: server.name })
+}
+
+/**
+ * The Add server sheet: ⌘K (`servers.connect`, Finder's binding for the same thing) and F7 on
+ * the Servers list (`file.newFolder` there). ❗ It opens the sheet directly rather than through
+ * `serverCommandTarget`: adding a server is about no server in particular, so what the pane is
+ * pointing at is irrelevant. ❗ Resolves when the sheet closes, so callers run it `detached`.
+ */
+export async function openAddServer(explorerRef: ExplorerAPI | undefined): Promise<void> {
+  await openAddServerSheet({
+    // An SMB address opens the host it saved, as its share list, mounting the
+    // share the address named: its connect is a share MOUNT, not a session.
+    onSmbHandOff: (handOff) => {
+      explorerRef?.openSmbHandOffInFocusedPane(handOff)
+    },
+    // An SFTP, WebDAV, or S3 server is a place, so the focused pane goes there: a sheet
+    // that closed on a live server with every pane where it was reads as a Connect
+    // that did nothing. The root lands on the place's start folder.
+    onConnected: ({ volumeId, root }) => {
+      if (!explorerRef) return
+      explorerRef.navigate({
+        pane: explorerRef.getFocusedPane(),
+        to: { selectVolume: { volumeId, path: root } },
+        source: 'user',
+      })
+    },
+  })
+}

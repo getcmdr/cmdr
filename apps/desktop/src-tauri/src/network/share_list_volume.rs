@@ -34,7 +34,7 @@ use std::sync::{Arc, Mutex};
 use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::share_list::ShareListRefusal;
-use cmdr_fs::share_meta::ShareMeta;
+use cmdr_fs::share_meta::{SavedShareMeta, ShareMeta};
 use cmdr_fs::volume::{BackendKind, ListingProgress, Volume, VolumeError, WatchCoverage};
 use cmdr_smb::{ShareListError, ShareListResult};
 use tokio_util::sync::CancellationToken;
@@ -159,6 +159,36 @@ impl SmbServerVolume {
         self.shares.server_sources().rows(&listed_as)
     }
 
+    /// The saved shares on the share list at `address`, by lowercase share name. Memory,
+    /// the stores, and the mount table only.
+    fn saved_shares(&self, address: &ShareListAddress) -> HashMap<String, SavedShareMeta> {
+        let listed_as = self.listed_as.lock_ignore_poison().clone();
+        self.shares.server_sources().saved_shares(&listed_as, address)
+    }
+
+    /// The share rows of `listed`, each with its saved facts.
+    fn share_entries(&self, path: &str, address: &ShareListAddress, listed: &ShareListResult) -> Vec<FileEntry> {
+        let saved = self.saved_shares(address);
+        listed
+            .shares
+            .iter()
+            .map(|share| share_entry(path, share, saved.get(&share.name.to_lowercase()).cloned()))
+            .collect()
+    }
+
+    /// A share list's rows from the share cache alone, its saved facts read afresh: what a
+    /// re-list hands a pane showing it when a share is saved, pinned, forgotten, mounted,
+    /// or unmounted. `None` for any other path, or when the cache holds nothing (the
+    /// rows on screen stay). ❌ Never a dial, never the Keychain.
+    pub(crate) fn cached_share_list_entries(&self, path: &str) -> Option<Vec<FileEntry>> {
+        let NetworkPath::ShareList(address) = NetworkPath::of(path) else {
+            return None;
+        };
+        let host = resolve(&address, &self.shares.known_hosts())?;
+        let listed = self.shares.cached(&host)?;
+        Some(self.share_entries(path, &address, &listed))
+    }
+
     /// The Servers list as the folder entries `smb://` lists. Memory only.
     pub(crate) fn server_entries(&self) -> Vec<FileEntry> {
         self.server_rows().into_iter().map(server_entry).collect()
@@ -206,11 +236,7 @@ impl SmbServerVolume {
             Reader::Pane => self.sign_in_and_list(&host, Freshness::Cached).await?,
             Reader::Refresh => self.sign_in_and_list(&host, Freshness::Fresh).await?,
         };
-        Ok(listed
-            .shares
-            .iter()
-            .map(|share| share_entry(path.as_str(), share))
-            .collect())
+        Ok(self.share_entries(path.as_str(), &address, &listed))
     }
 
     /// What `path` is, from memory and the share cache only.
@@ -241,12 +267,13 @@ impl SmbServerVolume {
                 }
                 let host = self.server_named(path, &at.server)?;
                 let listed = self.shares.cached(&host).ok_or_else(not_connected)?;
-                listed
+                let share = listed
                     .shares
                     .iter()
                     .find(|listed| listed.name == at.share)
-                    .map(|listed| share_entry(&at.share_list, listed))
-                    .ok_or_else(not_connected)
+                    .ok_or_else(not_connected)?;
+                let saved = self.saved_shares(&at.server).remove(&share.name.to_lowercase());
+                Ok(share_entry(&at.share_list, share, saved))
             }
             // A one-place server's row sits at its place, on another scheme.
             NetworkPath::Elsewhere => self
@@ -263,11 +290,13 @@ pub(crate) const SHARE_ICON_ID: &str = "network:share";
 
 /// A share's folder row on its server's share list at `share_list` (either spelling,
 /// with or without the scheme root's trailing `/`): `smb://<key>/<share>`.
-fn share_entry(share_list: &str, share: &cmdr_smb::ShareInfo) -> FileEntry {
+/// `saved` is the person's saved place for it, when they saved one.
+fn share_entry(share_list: &str, share: &cmdr_smb::ShareInfo, saved: Option<SavedShareMeta>) -> FileEntry {
     FileEntry {
         icon_id: SHARE_ICON_ID.to_string(),
         share_meta: Some(ShareMeta {
             description: share.comment.clone().filter(|comment| !comment.trim().is_empty()),
+            saved,
         }),
         ..FileEntry::new(
             share.name.clone(),

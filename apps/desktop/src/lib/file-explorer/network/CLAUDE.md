@@ -10,8 +10,9 @@ manager. Signing in is `#lib/servers`' one sheet; this module only says what to 
   `host-status.ts`, `ServersHubRowMenu.svelte`, `ServersHubStatusBar.svelte`): the hub table on the `network` volume.
   `share-list-sign-in.ts`: a share list's sign-in and every door's account actions. `ShareListAccountChip.svelte`: the
   path bar's account and a share row's menu. `share-list-label.ts`: a share-list path's friendly name. `smb-sign-in.ts`:
-  SMB's side of the sheet. `list-cursor.ts`: the hub's arrow keys, jump rule, and scrolling. `mount-error-messages.ts`
-  (+ `mount-error.ts`): a refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
+  SMB's side of the sheet. `list-cursor.ts`: the hub's arrow keys, jump rule, and scrolling. `server-row-words.ts`,
+  `server-row-of-entry.ts`, `ServersListRowMenu.svelte`: the Servers listing (DETAILS). `mount-error-messages.ts` (+
+  `mount-error.ts`): a refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
 - `SmbLinkConsentDialog.svelte`: the ask before a link signs in to another server, opened from the pane's error screen
   (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link").
 - `direct-connect.ts` (+ `upgrade-messages.ts`, `LocalNetworkBlockedToastContent.svelte`): the "Connect directly"
@@ -43,9 +44,9 @@ manager. Signing in is `#lib/servers`' one sheet; this module only says what to 
   row: its live mount's account. A SERVER row and its share list's path-bar account: the same server-level account (the
   listing's, `getListedAccount`, else the one it's set to be used with), ❌ never a share's mount.
 - **Credential status is keyed by lowercase `host.name`** (the stable Bonjour name); IP and hostname both drift.
-- **On the `network` volume, `smb://` is the hub (it lists nothing) and `smb://<server>` a server's share list**, a real
-  listing (`../pane/share-list-pane.svelte.ts`). The path is the only record of the server: every door opens one through
-  the pane's arrival, ❌ never by holding a host. Mounted shares are their own volumes.
+- **On the `network` volume, `smb://` is the Servers list and `smb://<server>` a server's share list**, both real
+  listings (`../pane/share-list-pane.svelte.ts`). The path is the only record of the server: every door opens one
+  through the pane's arrival, ❌ never by holding a host. Mounted shares are their own volumes.
 
 Architecture, the auth hand-offs, the reconnect flow, and decision rationale: `DETAILS.md`. Read it before any
 non-trivial work here: editing, planning, reorganizing, or advising.

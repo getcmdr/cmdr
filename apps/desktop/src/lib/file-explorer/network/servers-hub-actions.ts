@@ -293,18 +293,7 @@ export function createHubActions(deps: HubActionDeps): HubActions {
    * leaves with the `volumes-changed` the command emits.
    */
   async function forgetShare(row: HubRow): Promise<void> {
-    if (!row.volumeId) return
-    const confirmed = await confirmDialog(
-      tString('servers.hub.forgetShareConfirm', { name: row.name }),
-      tString('servers.hub.forgetShareConfirmTitle'),
-      tString('fileExplorer.navigation.forgetConfirmButton'),
-    )
-    if (!confirmed) return
-    try {
-      await forgetServer(row.volumeId)
-    } catch {
-      addToast(tString('fileExplorer.navigation.forgetServerRefusedToast', { name: row.name }), { level: 'error' })
-    }
+    if (row.volumeId) await forgetSavedShare(row.volumeId, row.name)
   }
 
   /**
@@ -475,6 +464,26 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   }
 
   return { forget, rowMenu, runRowEntry, rowById }
+}
+
+/**
+ * Forgets the saved share whose place is `volumeId`, after asking: its row and its pin. ❗ A
+ * mounted share stays mounted and no password is touched, which the question says. The hub's
+ * share row and a share-list row's menu both run it; the row's dot leaves with the
+ * `volumes-changed` the command emits.
+ */
+export async function forgetSavedShare(volumeId: string, name: string): Promise<void> {
+  const confirmed = await confirmDialog(
+    tString('servers.hub.forgetShareConfirm', { name }),
+    tString('servers.hub.forgetShareConfirmTitle'),
+    tString('fileExplorer.navigation.forgetConfirmButton'),
+  )
+  if (!confirmed) return
+  try {
+    await forgetServer(volumeId)
+  } catch {
+    addToast(tString('fileExplorer.navigation.forgetServerRefusedToast', { name }), { level: 'error' })
+  }
 }
 
 /**

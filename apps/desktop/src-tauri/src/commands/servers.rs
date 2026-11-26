@@ -516,6 +516,23 @@ pub async fn update_saved_s3_account(
     outcome
 }
 
+/// Saves the root of the S3 account `account_id` names, the place that lists its buckets,
+/// when it isn't saved yet (`s3_known_places::save_account_root`): what Enter on an S3
+/// account's Servers row runs before the pane opens that root. Answers whether the root is
+/// saved now. A save emits `volumes-changed`, so the switcher and the Servers list follow.
+#[tauri::command]
+#[specta::specta]
+pub async fn save_s3_account_root(account_id: String) -> bool {
+    match s3_known_places::save_account_root(&account_id) {
+        s3_known_places::RootSave::Saved => {
+            crate::volume_broadcast::emit_volumes_changed();
+            true
+        }
+        s3_known_places::RootSave::AlreadySaved => true,
+        s3_known_places::RootSave::NothingToCopy => false,
+    }
+}
+
 /// Names the saved SMB host the listing calls `id`, sets the account it's used
 /// with, and moves it to `address` when that names another server. An empty name
 /// unnames it, so the UI calls it by its address again; no `username` clears the

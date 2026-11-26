@@ -36,6 +36,7 @@
         refetchIconsForEntries,
         updateIndexSizesInPlace,
         applyFolderSizes,
+        rowBadgeFor,
         type DirStats,
     } from './file-list-utils'
     import { fileRowAttributes, fileRowName, renderedCursorRow } from './file-row-a11y'
@@ -54,6 +55,7 @@
         isDirSizeUpdating,
         isHiddenRowDimmed,
         wordResticSnapshot,
+        rowDescription,
     } from './full-list-utils'
     import {
         getRowHeight,
@@ -911,7 +913,7 @@
     function buildDirTooltip(file: FileEntry): string | { html: string } | undefined {
         const sizeTip = buildDirSizeOnlyTooltip(file)
         const snapshotTip =
-            file.resticMeta != null ? wordResticSnapshot(file.resticMeta) : (file.shareMeta?.description ?? '')
+            file.resticMeta != null ? wordResticSnapshot(file.resticMeta) : (rowDescription(file) ?? '')
         if (snapshotTip === '') return sizeTip
         if (!sizeTip) return snapshotTip
         const sizeHtml = typeof sizeTip === 'object' ? sizeTip.html : escapeHtml(sizeTip)
@@ -1135,6 +1137,7 @@
                             >
                                 <FileIcon
                                     {file}
+                                    statusBadge={rowBadgeFor(file)}
                                     syncStatus={syncStatusMap[file.path]}
                                     {imageIndexBadge}
                                     dimmed={rowIsHiddenDimmed}

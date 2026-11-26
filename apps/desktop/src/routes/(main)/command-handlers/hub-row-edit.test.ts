@@ -43,11 +43,18 @@ const host: NetworkHost = { id: 'h1', name: 'Testnas', port: 445, source: 'disco
 function hctx(row: HubRow | null, placesHost: NetworkHost | null = null) {
   focusedPath = placesHost ? 'smb://testnas' : volumeId === 'network' ? 'smb://' : '/Users/me'
   const explorerRef = {
-    getFocusedPaneHubRow: vi.fn(() => row),
+    getFocusedPaneServerRow: vi.fn(() => Promise.resolve(row)),
     startRename: vi.fn(),
     getFileAndPathUnderCursor: vi.fn(() => ({ path: '/Users/me/a.txt', filename: 'a.txt' })),
   }
   return { ctx: { explorerRef, ctx: {}, dispatchArgs: undefined } as unknown as CommandHandlerContext, explorerRef }
+}
+
+/** Lets the row read (async) and the hand-over it feeds run. */
+async function settled(): Promise<void> {
+  await vi.waitFor(() => {
+    expect(editServerInView).toHaveBeenCalled()
+  })
 }
 
 type Handler = (hctx: CommandHandlerContext) => unknown
@@ -68,25 +75,28 @@ describe('on the Servers volume', () => {
     volumeId = 'network'
   })
 
-  it.each(onServersVolume)('%s edits the hub row under the cursor', (_id, handler) => {
+  it.each(onServersVolume)('%s edits the hub row under the cursor', async (_id, handler) => {
     const { ctx, explorerRef } = hctx(hubRow)
     void handler(ctx)
+    await settled()
     expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: hubRow, host: null })
     expect(explorerRef.startRename).not.toHaveBeenCalled()
     expect(openInEditorOrExplain).not.toHaveBeenCalled()
   })
 
-  it.each(onServersVolume)('%s edits the host whose share list is up', (_id, handler) => {
+  it.each(onServersVolume)('%s edits the host whose share list is up', async (_id, handler) => {
     const { ctx } = hctx(null, host)
     void handler(ctx)
+    await settled()
     expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, host })
   })
 
   /** "Add server…" under the cursor: `editServerInView` says to pick a server, ❌ never silence. */
-  it('hands over an empty view too, and never falls back to renaming a file', () => {
+  it('hands over an empty view too, and never falls back to renaming a file', async () => {
     const { ctx, explorerRef } = hctx(null)
     const rename = fileHandlers['file.rename']
     rename(ctx)
+    await settled()
     expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, host: null })
     expect(explorerRef.startRename).not.toHaveBeenCalled()
   })

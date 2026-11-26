@@ -103,7 +103,7 @@ export interface RowAccountEntry {
 }
 
 /** A share-list row's own verbs: Open (mounts the share) and Copy path. */
-export type ShareRowAction = 'open-share' | 'copy-path'
+export type ShareRowAction = 'open-share' | 'copy-path' | 'pin' | 'unpin' | 'forget-share'
 
 /** A verb on a share-list row's share. */
 export interface RowShareEntry {
@@ -431,22 +431,32 @@ export function smbHostRowMenu(facts: SmbHostRowFacts): ServerRowMenu {
 }
 
 /**
- * A share-list row's menu: Open (mounts the share), Copy path, then its server's account
- * items. ❌ Never the standard file menu: Copy, Delete, Rename, and the rest are all wrong
- * for a share, which is mounted, ❌ never browsed as a folder.
+ * A share-list row's menu: Open (mounts the share, or opens a saved one's place), Copy path,
+ * a SAVED share's pin and Forget share (`saved`, from its row's `ShareMeta.saved`), then its
+ * server's account items. ❌ Never the standard file menu: Copy, Delete, Rename, and the rest
+ * are all wrong for a share, which is mounted, ❌ never browsed as a folder.
  */
-export function shareRowMenu(facts: ServerAccountFacts): ServerRowMenu {
+export function shareRowMenu(facts: ServerAccountFacts, saved?: { pinned: boolean }): ServerRowMenu {
   const share = (verb: ShareRowAction, labelKey: MessageKey, icon: IconName): RowShareEntry => ({
     type: 'share',
     share: verb,
     label: tString(labelKey),
     icon,
   })
+  const savedEntries = saved
+    ? [
+        saved.pinned
+          ? share('unpin', 'menu.network.unpin', 'pin-off')
+          : share('pin', 'menu.network.pinToSwitcher', 'pin'),
+        share('forget-share', 'servers.hub.forgetShare', 'trash-2'),
+      ]
+    : []
   return {
     ...EMPTY_ROW_MENU,
     actions: [
       share('open-share', 'menu.network.open', 'arrow-right'),
       share('copy-path', 'menu.edit.copyPath', 'copy'),
+      ...savedEntries,
       ...serverAccountEntries(facts),
     ],
   }

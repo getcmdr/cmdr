@@ -9,11 +9,18 @@
         isAccentTintedCustomFolder,
     } from '#lib/icon-cache.js'
     import { stackedIconBase } from '#lib/stacked-icons.js'
+    import { glyphIcon } from '#lib/glyph-icons.js'
     import { getIsCmdrGold } from '#lib/settings/reactive-settings.svelte.js'
     import { dependOn } from '#lib/utils/reactivity.js'
     import Icon from '#lib/ui/Icon.svelte'
     import type { IconName } from '#lib/ui/icons/icon-map.js'
-    import { getSyncIconPath, getSyncStatusLabelKey, type ImageIndexBadge } from '../views/file-list-utils'
+    import {
+        getSyncIconPath,
+        getSyncStatusLabelKey,
+        type ImageIndexBadge,
+        type RowStatusBadge,
+    } from '../views/file-list-utils'
+    import ConnectionDot from '../navigation/ConnectionDot.svelte'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { tString } from '#lib/intl/messages.svelte.js'
     import { convention } from '#lib/platform/conventions.js'
@@ -31,9 +38,18 @@
          * reads `file.isHidden` itself.
          */
         dimmed?: boolean
+        /**
+         * The row's status dot (a Servers row's server, a saved share), chosen outside this
+         * component (`file-list-utils.ts::rowBadgeFor`). Decorative: the row's accessible name
+         * says its words; the tooltip shows them to a pointer.
+         */
+        statusBadge?: RowStatusBadge | null
     }
 
-    const { file, syncStatus, imageIndexBadge = null, dimmed = false }: Props = $props()
+    const { file, syncStatus, imageIndexBadge = null, dimmed = false, statusBadge = null }: Props = $props()
+
+    // A Servers row's server: one of the app's own glyphs, never an OS icon (`glyph-icons.ts`).
+    const glyph = $derived(glyphIcon(file.iconId))
 
     // The symlink and sync badges carry meaning the row's text doesn't, so each names itself.
     // The row's accessible name is built from its content, which folds these names into it.
@@ -146,6 +162,10 @@
         <span class="restic-icon">
             <Icon name="history" size={16} />
         </span>
+    {:else if glyph}
+        <span class="glyph-icon" class:is-machine={glyph.machine}>
+            <Icon name={glyph.name} size={16} />
+        </span>
     {:else if stackedBase}
         <!-- The base OS icon twice, shrunk, the back copy up and to the right: "folders".
              Decorative like every row icon (the name says what it is). A cold cache draws the
@@ -192,6 +212,12 @@
     {/if}
     {#if syncIcon && syncLabelKey}
         <img class="sync-badge" src={syncIcon} alt={tString(syncLabelKey)} width="10" height="10" />
+    {/if}
+    {#if statusBadge}
+        <!-- Decorative for a screen reader (the row's name says the words), a tooltip for a pointer. -->
+        <span class="status-badge" aria-hidden="true" use:tooltip={statusBadge.label}
+            ><ConnectionDot state={statusBadge.state} explain={false} /></span
+        >
     {/if}
     {#if imageIndexBadge}
         <!-- Folder badges carry an already-resolved `tooltip` (interpolated counts); file
@@ -289,6 +315,31 @@
         align-items: center;
         justify-content: center;
         color: var(--color-git-portal-text);
+    }
+
+    /* A Servers row's server glyph. Inherits the row's text color; an SMB server's machine
+       wears the server-icon accent, as macOS tints a server's icon. */
+    .glyph-icon {
+        display: inline-flex;
+        width: var(--spacing-icon-size);
+        height: var(--spacing-icon-size);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .glyph-icon.is-machine {
+        color: var(--color-server-icon);
+    }
+
+    /* The status dot, at the icon's bottom-right like the symlink badge, shrunk from the
+       switcher's 10 px dot so it doesn't cover the glyph. */
+    .status-badge {
+        position: absolute;
+        bottom: -1px;
+        right: -1px;
+        display: inline-flex;
+        transform: scale(0.7);
+        transform-origin: bottom right;
     }
 
     /* Inherits the row's text color, so it follows selection and dimming like the name. */

@@ -40,6 +40,7 @@ import { editServerInView } from '#lib/file-explorer/network/servers-hub-actions
 import { forgetResticPassword } from '#lib/file-explorer/restic/forget-password.js'
 import type { CommandArgs } from '#lib/commands/index.js'
 import { detached } from './detached'
+import { forgetServerInView, openAddServer } from './servers-handlers'
 import { confirmDialogForMcp } from '../mcp-dialog-confirm'
 import type { CommandHandlerContext, CommandHandlerRecord } from './types'
 
@@ -148,9 +149,36 @@ async function copySelectionOr(
   return onCursor()
 }
 
-/** What the Servers volume shows: the hub row under the cursor, or the host whose share list is up. */
-function serverInView(explorer: NonNullable<CommandHandlerContext['explorerRef']>) {
-  return { row: explorer.getFocusedPaneHubRow(), host: shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath()) }
+/** What the Servers volume shows: the Servers row under the cursor, or the host whose share list is up. */
+async function serverInView(explorer: NonNullable<CommandHandlerContext['explorerRef']>) {
+  const row = await explorer.getFocusedPaneServerRow()
+  return { row, host: shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath()) }
+}
+
+/** Whether the focused pane is the Servers list (`network` at `smb://`), by its kind. */
+function onServersList(): boolean {
+  return capabilitiesForPane(getFocusedPaneVolumeId(), getFocusedPanePath()).kind === 'network'
+}
+
+/**
+ * `withEntryUnderCursor` for the verbs that act on a FILE (Get info, Tell me about this, Show
+ * in Finder): on the Servers list, whose rows are servers, the row says so instead, ❌ never
+ * handing a server's place path (`sftp://…`) to a file verb, which could dial it.
+ */
+async function withFileUnderCursor(
+  hctx: CommandHandlerContext,
+  fn: (entry: EntryUnderCursor) => void | Promise<void>,
+): Promise<void> {
+  await withEntryUnderCursor(hctx, async (entry) => {
+    if (onServersList()) {
+      addToast(tString('fileExplorer.network.servers.notAFile', { name: entry.filename }), {
+        level: 'info',
+        id: 'servers-not-a-file',
+      })
+      return
+    }
+    await fn(entry)
+  })
 }
 
 export const fileHandlers = {
@@ -172,7 +200,7 @@ export const fileHandlers = {
       args?.mcpRequestId !== undefined &&
       capabilitiesForPane(getFocusedPaneVolumeId(), getFocusedPanePath()).kind === 'share-list'
     if (explorerRef && getFocusedPaneVolumeId() === 'network' && !mcpRenameOnShareList) {
-      detached(editServerInView(serverInView(explorerRef)))
+      detached(serverInView(explorerRef).then(editServerInView))
       return
     }
     // Arg-less from F2 / the palette (seed the current name); the MCP `rename`
@@ -184,7 +212,7 @@ export const fileHandlers = {
   'file.edit': (hctx) => {
     // On the Servers volume, Edit is "Edit server…", the same as Rename there.
     if (hctx.explorerRef && getFocusedPaneVolumeId() === 'network') {
-      detached(editServerInView(serverInView(hctx.explorerRef)))
+      detached(serverInView(hctx.explorerRef).then(editServerInView))
       return
     }
     return withEntryUnderCursor(hctx, async (entry) => {
@@ -227,6 +255,12 @@ export const fileHandlers = {
     // to target a specific pane, plus `{ initiator }` to tag provenance. (With a name it
     // creates directly, never reaching here.)
     const args = (dispatchArgs ?? PRESSED_BY_A_PERSON) as CommandArgs['file.newFolder']
+    // On the Servers list, F7 is "Add server": the new item a list of servers takes. An
+    // agent's `mkdir` there keeps the folder road and its refusal (it names a folder).
+    if (onServersList() && args.mcpRequestId === undefined) {
+      detached(openAddServer(explorerRef))
+      return
+    }
     detached(explorerRef?.openNewFolderDialog(args))
   },
 
@@ -239,6 +273,12 @@ export const fileHandlers = {
     // The MCP `delete` tool may pass `permanent` (from its `mode`); F8 omits it
     // (trash-default). The dialog still clamps to permanent on no-trash volumes.
     const deleteArgs = (dispatchArgs ?? PRESSED_BY_A_PERSON) as CommandArgs['file.delete']
+    // On the Servers list, F8 is "Forget": the server under the cursor, after asking. An
+    // agent's `delete` there keeps the delete road and its refusal.
+    if (onServersList() && deleteArgs.mcpRequestId === undefined) {
+      detached(forgetServerInView(explorerRef))
+      return
+    }
     detached(
       explorerRef?.openDeleteDialog({
         pane: deleteArgs.pane,
@@ -270,7 +310,7 @@ export const fileHandlers = {
   },
 
   'file.showInFinder': (hctx) =>
-    withEntryUnderCursor(hctx, async (entry) => {
+    withFileUnderCursor(hctx, async (entry) => {
       await showInFileManagerOrExplain(entry.path)
     }),
 
@@ -370,11 +410,11 @@ export const fileHandlers = {
     await explorerRef?.openContextMenuAtCursor()
   },
 
-  'file.getInfo': (hctx) => withEntryUnderCursor(hctx, (entry) => openGetInfoOrExplain(entry.path)),
+  'file.getInfo': (hctx) => withFileUnderCursor(hctx, (entry) => openGetInfoOrExplain(entry.path)),
 
   // The card is about the cursor entry, as Get info is, whatever the selection holds.
   'file.tellMeAbout': (hctx) =>
-    withEntryUnderCursor(hctx, (entry) => {
+    withFileUnderCursor(hctx, (entry) => {
       // A page bar's pick is the menu bar's to the analytics vocabulary, as a native bar's click is.
       const { source } = hctx.ctx
       const trigger = source === 'barClick' || source === 'barKeyInTextField' ? 'menu' : source

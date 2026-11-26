@@ -158,7 +158,12 @@ describe('FullList a11y', () => {
   // description, so the name says it where the cell shows it (WCAG 2.5.3).
   it('a server’s share list (Back to Servers, a Description column) has no a11y violations', async () => {
     const share = (name: string, description: string | null) =>
-      dirEntry({ name, path: `smb://testnas/${name}`, recursiveSize: undefined, shareMeta: { description } })
+      dirEntry({
+        name,
+        path: `smb://testnas/${name}`,
+        recursiveSize: undefined,
+        shareMeta: { description, saved: null },
+      })
     const list = await mountFullList({
       entries: [share('media', 'Family photos'), share('public', null)],
       props: {

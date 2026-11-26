@@ -62,7 +62,7 @@ function shareRow(name: string): FileEntry {
     owner: '',
     group: '',
     iconId: 'dir',
-    shareMeta: { description: null },
+    shareMeta: { description: null, saved: null },
   }
 }
 

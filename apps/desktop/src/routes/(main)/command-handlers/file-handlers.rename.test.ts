@@ -22,7 +22,7 @@ import type { CommandHandlerContext } from './types'
 function dispatch(args: unknown) {
   const explorerRef = {
     startRename: vi.fn(),
-    getFocusedPaneHubRow: () => null,
+    getFocusedPaneServerRow: () => Promise.resolve(null),
   }
   fileHandlers['file.rename']({ explorerRef, ctx: {}, dispatchArgs: args } as unknown as CommandHandlerContext)
   return explorerRef
@@ -43,11 +43,13 @@ describe('file.rename on the Servers volume', () => {
     expect(h.editServerInView).not.toHaveBeenCalled()
   })
 
-  it('keeps F2 on a share list, and any rename on the hub, as Edit server', () => {
+  it('keeps F2 on a share list, and any rename on the hub, as Edit server', async () => {
     h.path = 'smb://testnas'
     expect(dispatch(undefined).startRename).not.toHaveBeenCalled()
     h.path = 'smb://'
     expect(dispatch({ mcpRequestId: 'r-2', initiator: 'aiClient' }).startRename).not.toHaveBeenCalled()
-    expect(h.editServerInView).toHaveBeenCalledTimes(2)
+    await vi.waitFor(() => {
+      expect(h.editServerInView).toHaveBeenCalledTimes(2)
+    })
   })
 })

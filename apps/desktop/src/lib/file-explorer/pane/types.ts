@@ -548,10 +548,13 @@ export interface NetworkMountViewAPI {
   openContextMenuAtCursor(): Promise<void>
 }
 
-/** `ShareListAccountChip.svelte`'s exports: a share row's menu on a server's share list. */
-export interface ShareListAccountChipAPI {
-  /** Opens the share row's menu at `anchor` (⌃⏎'s), or where the last right-click landed. */
-  openRowMenu(entry: FileEntry, anchor: { x: number; y: number } | null | undefined): void
+/**
+ * What hosts a `network` kind's row menu beside the path: `ShareListAccountChip.svelte` (a
+ * share row on a share list) or `ServersListRowMenu.svelte` (a server on the Servers list).
+ */
+export interface RowMenuHostAPI {
+  /** Opens the row's menu at `anchor` (⌃⏎'s), or where the last right-click landed. */
+  openRowMenu(entry: FileEntry, anchor: { x: number; y: number } | null | undefined): void | Promise<void>
 }
 
 /** What the Servers hub's cursor is on, returned by NetworkMountView. */

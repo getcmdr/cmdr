@@ -326,6 +326,43 @@ pub fn find(volume_id: &str) -> Option<KnownS3Place> {
         .find(|entry| entry.volume_id().as_deref() == Some(volume_id))
 }
 
+/// Saves the ROOT place of the account `account_id` names (the place that lists its
+/// buckets), copied off one of its saved places, unpinned and never connected, unless
+/// it's saved already.
+///
+/// What Enter on an S3 account's Servers row runs before opening the root: Enter is the
+/// person asking for it (`docs/specs/servers-list-as-listing-plan.md` § "Decisions", 6).
+pub fn save_account_root(account_id: &str) -> RootSave {
+    let places = all();
+    if places.iter().any(|place| is_place(place, account_id)) {
+        return RootSave::AlreadySaved;
+    }
+    let Some(sibling) = places
+        .into_iter()
+        .find(|place| place.account_id().as_deref() == Some(account_id))
+    else {
+        return RootSave::NothingToCopy;
+    };
+    remember(KnownS3Place {
+        bucket: None,
+        pinned: false,
+        last_connected_at: String::new(),
+        ..sibling
+    });
+    RootSave::Saved
+}
+
+/// What [`save_account_root`] did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RootSave {
+    /// It saved the root just now.
+    Saved,
+    /// The root was saved already.
+    AlreadySaved,
+    /// Nothing under that account is saved to copy the root from.
+    NothingToCopy,
+}
+
 /// The name a person gave the account `place` belongs to, or empty when
 /// nobody did.
 pub fn account_name(place: &KnownS3Place) -> String {

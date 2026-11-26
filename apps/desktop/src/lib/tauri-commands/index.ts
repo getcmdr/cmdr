@@ -1153,6 +1153,7 @@ export {
   updateSavedSmbHost,
   ejectAndUpdateSavedSmbHost,
   updateSavedS3Account,
+  saveS3AccountRoot,
   forgetSavedSmbHost,
   forgetSavedSmbHostPassword,
 } from './servers'

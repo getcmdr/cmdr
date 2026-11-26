@@ -43,6 +43,7 @@
     import { enrichBreadcrumbSegments } from '../navigation/breadcrumb-navigation'
     import RepoChip from '../git/RepoChip.svelte'
     import ShareListAccountChip from '../network/ShareListAccountChip.svelte'
+    import ServersListRowMenu from '../network/ServersListRowMenu.svelte'
     import { createGitBrowserSync } from './git-browser-sync.svelte'
     import { createListingLoader } from './listing-loader'
     import { createListingPresentation } from './listing-presentation.svelte'
@@ -506,7 +507,7 @@
     let volumeRootFromEvent = $state<string | undefined>(undefined)
 
 
-    import type { ErrorPaneAPI, RemoteConnectViewAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
+    import type { ErrorPaneAPI, RemoteConnectViewAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, RowMenuHostAPI } from './types'
     import type { PaneErrorState, StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
@@ -518,7 +519,7 @@
     let errorPaneRef: ErrorPaneAPI | undefined = $state()
     let shareMountViewRef: RemoteConnectViewAPI | undefined = $state()
     let volumeBreadcrumbRef: VolumeBreadcrumbAPI | undefined = $state()
-    let shareListAccountChipRef: ShareListAccountChipAPI | undefined = $state()
+    let rowMenuHostRef: RowMenuHostAPI | undefined = $state()
     let networkMountViewRef: NetworkMountViewAPI | undefined = $state()
     let searchResultsViewRef: SearchResultsViewAPI | undefined = $state()
     // The pane's root element, so the Enter-behavior popup can anchor at the cursor row.
@@ -1674,9 +1675,9 @@
     })
     const handleSelect = pointer.handleSelect
     // A `..` out of an SMB share's top folder is no folder to favorite, so it has no menu; a
-    // share list's rows get the share-row menu (`ShareListAccountChip.openRowMenu`), ❌ never the file menu.
+    // share list's rows and the Servers list's get their own menu (the `RowMenuHostAPI` beside the path), ❌ never the file menu.
     const handleContextMenu: typeof pointer.handleContextMenu = (entry, anchor) => {
-        if (caps.kind === 'share-list') { shareListAccountChipRef?.openRowMenu(entry, anchor); return Promise.resolve() }
+        if (caps.kind === 'share-list' || caps.kind === 'network') { void rowMenuHostRef?.openRowMenu(entry, anchor); return Promise.resolve() }
         return entry.name === '..' && shareParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
     }
 
@@ -2235,7 +2236,9 @@
                     onclick={() => { breadcrumb.handleSegmentClick(seg.target as string); }}
                 >{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</button>{:else}<span class:git-portal={seg.gitPortal} use:tooltip={shown === seg.text ? '' : seg.text}>{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</span>{/if}{/each}</span>
         {#if caps.kind === 'share-list'}
-            <ShareListAccountChip bind:this={shareListAccountChipRef} path={currentPath} onListed={() => void navigateToPath(currentPath)} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} onOpenShare={(entry: FileEntry) => void handleNavigate(entry)} />
+            <ShareListAccountChip bind:this={rowMenuHostRef} path={currentPath} onListed={() => void navigateToPath(currentPath)} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} onOpenShare={(entry: FileEntry) => void handleNavigate(entry)} />
+        {:else if caps.kind === 'network'}
+            <ServersListRowMenu bind:this={rowMenuHostRef} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} onOpenRow={(entry: FileEntry) => void handleNavigate(entry)} />
         {/if}
         {#if gitBrowser.showRepoChip && gitBrowser.gitRepoInfo}
             <RepoChip info={gitBrowser.gitRepoInfo} />

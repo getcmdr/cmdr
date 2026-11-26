@@ -201,6 +201,12 @@ Props: `file: FileEntry`, `syncStatus?: SyncStatus` (picks the sync badge's imag
   the base in, so the OS is never asked for `network:share`. The lookup is its own module because dozens of view tests
   mock `#lib/icon-cache.js` wholesale. Pinned by `FileIcon.stacked.test.ts`; the Debug "Graphics" catalog's Row icons
   section shows it.
+- **Glyph ids** (`#lib/glyph-icons.ts::glyphIcon`): a Servers row's server is one of the app's own glyphs, an SMB server
+  (`network:server-smb`) the filled monitor in `--color-server-icon`, any other (`network:server`) the server glyph.
+  `prefetchIcons` never asks the OS for one. Its own module for the stacked ids' reason.
+- **Status dot** (`statusBadge`, from `../views/file-list-utils.ts::rowBadgeFor`): a Servers row's or a saved share's
+  `ConnectionDot`, shrunk at the icon's bottom-right, `aria-hidden` with its words as a tooltip; the row's accessible
+  name says them.
 
 ### Cmdr-gold folder recolor scope
 

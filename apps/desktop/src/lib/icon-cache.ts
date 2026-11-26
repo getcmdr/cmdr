@@ -15,6 +15,7 @@ import {
 } from './tauri-commands'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { stackedIconBase } from './stacked-icons'
+import { glyphIcon } from './glyph-icons'
 
 const log = getAppLogger('icon-cache')
 
@@ -279,7 +280,11 @@ function applyIconsToCache(icons: Record<string, string>, epoch: number): boolea
  */
 export async function prefetchIcons(iconIds: string[], useAppIconsForDocuments: boolean): Promise<void> {
   // A stacked id is drawn from its base's pixels, so the base is what the OS gets asked for.
-  const uncached = iconIds.map((id) => stackedIconBase(id) ?? id).filter((id) => !memoryCache.has(id))
+  // A glyph id (a Servers row's server) is the frontend's own drawing: nothing to ask for.
+  const uncached = iconIds
+    .filter((id) => glyphIcon(id) === undefined)
+    .map((id) => stackedIconBase(id) ?? id)
+    .filter((id) => !memoryCache.has(id))
   if (uncached.length === 0) return
 
   // Cancel any pending retry: a new fetch supersedes it
