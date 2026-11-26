@@ -588,6 +588,38 @@ async fn the_listed_account_is_remembered_per_server() {
     assert_eq!(volume.listed_account(&app("smb://")), None, "the hub has no account");
 }
 
+/// The host a share list signs in to is the one its listing resolved, by the same id: a
+/// server saved without contact (discovery never lists it) included, its address's own
+/// case kept in the id. Memory only: no dial, no cache read.
+#[test]
+fn the_share_list_host_is_the_one_its_listing_resolves() {
+    let saved = crate::network::manual_servers::create_network_host("TestNAS.local", 445);
+    let shares = FakeShares {
+        hosts: KnownHosts {
+            saved: vec![saved.clone()],
+            ..KnownHosts::default()
+        },
+        ..FakeShares::default()
+    };
+    let (volume, shares) = volume(shares);
+
+    let id_of = |path: &str| volume.share_list_host(path).map(|host| host.id);
+    assert_eq!(
+        id_of("smb://testnas.local").as_deref(),
+        Some("manual-TestNAS-local-445")
+    );
+    assert_eq!(id_of("smb://testnas.local/"), Some(saved.id));
+    let host = volume.share_list_host("smb://testnas.local").expect("resolves");
+    assert_eq!(
+        (host.name.as_str(), host.hostname.as_deref()),
+        ("TestNAS.local", Some("TestNAS.local"))
+    );
+    assert_eq!(id_of("smb://gone-nas"), None, "nothing known goes by it");
+    assert_eq!(id_of("smb://"), None, "the Servers list names no server");
+    assert!(shares.dials().is_empty());
+    assert_eq!(*shares.cache_reads.lock_ignore_poison(), 0);
+}
+
 /// A non-pane read (Ask Cmdr's `list_dir`) answers from the cache and changes no
 /// account: only the person's own listing says who the pane is signed in as.
 #[tokio::test]

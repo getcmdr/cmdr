@@ -132,6 +132,16 @@ impl SmbServerVolume {
         self.listed_as.lock_ignore_poison().get(&host.id).cloned()
     }
 
+    /// The server the share list at `path` lists under, as its listing resolves it (so by
+    /// the same host id the share cache and the session credential are keyed by), or `None`
+    /// for any other path or a server nothing knows. Memory and the stores only.
+    pub(crate) fn share_list_host(&self, path: &str) -> Option<NetworkHost> {
+        let NetworkPath::ShareList(address) = NetworkPath::of(path) else {
+            return None;
+        };
+        resolve(&address, &self.shares.known_hosts())
+    }
+
     /// A pane listing (`freshness` says whether past the cache), with who it listed as
     /// noted for its `listing-complete`.
     async fn sign_in_and_list(&self, host: &NetworkHost, freshness: Freshness) -> Result<ShareListResult, VolumeError> {
@@ -493,6 +503,14 @@ pub(crate) fn listed_account(volume_id: &str, path: &AppPath) -> Option<ShareLis
     }
     let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id)?;
     volume.as_any().downcast_ref::<SmbServerVolume>()?.listed_account(path)
+}
+
+/// The server the share list at `path` lists under ([`SmbServerVolume::share_list_host`]),
+/// for the frontend's sign-in to a server it holds no host for (one saved without contact,
+/// which discovery never lists). Memory and the stores only.
+pub(crate) fn share_list_host(path: &str) -> Option<NetworkHost> {
+    let volume = crate::file_system::volume::manager::get_volume_manager().get(NETWORK_VOLUME_ID)?;
+    volume.as_any().downcast_ref::<SmbServerVolume>()?.share_list_host(path)
 }
 
 /// The saved server whose Servers row opens the share list at `path`, by its id, or `None`

@@ -430,6 +430,31 @@ describeSmb('Servers list survives: SMB servers', () => {
     }
   })
 
+  /**
+   * A server saved without contact (`checkReachability: false`, "Add anyway"'s save) is in no discovery list, so only
+   * the backend's resolver knows its host: opening its refused share list must still ask for an account.
+   */
+  test('SMB: a server saved without contact asks for an account when its share list is refused', async ({
+    tauriPage,
+  }) => {
+    const address = authServerIp()
+    test.skip(address === null, 'needs the auth server’s IP (Linux Docker)')
+    if (address === null) return
+    const server = 'SMB Test auth saved without contact (flows)'
+    const added = await addSmbServerByIp(tauriPage, address, server)
+    try {
+      await openServersList('left')
+      await awaitServerListed('left', server)
+      await mcpCall('move_cursor', { pane: 'left', filename: server })
+      await mcpCall('open_under_cursor', {})
+      await expect.poll(async () => tauriPage.isVisible(SHEET), { timeout: waitBudget(30000) }).toBeTruthy()
+      await signInOnSheet(tauriPage)
+    } finally {
+      await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
+      await forgetSmbHost(tauriPage, added.host.id)
+    }
+  })
+
   async function signInFromRowMenu(tauriPage: PageLike, server: string): Promise<void> {
     await openServersList('left')
     await awaitServerListed('left', server)
@@ -444,7 +469,11 @@ describeSmb('Servers list survives: SMB servers', () => {
       .toBeTruthy()
     await tauriPage.evaluate(`${signInRow}.click()`)
     await expect.poll(async () => tauriPage.isVisible(SHEET), { timeout: waitBudget(15000) }).toBeTruthy()
+    await signInOnSheet(tauriPage)
+  }
 
+  /** Signs in on the open sheet as the auth fixture's account, then waits for its share list to show its share. */
+  async function signInOnSheet(tauriPage: PageLike): Promise<void> {
     // Typed, not remembered: nothing reaches the Keychain.
     await tauriPage.evaluate(`(function () {
       function type(selector, value) {

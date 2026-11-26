@@ -18,12 +18,11 @@ const { ipc } = vi.hoisted(() => ({
     onNetworkHostResolved: vi.fn(() => Promise.resolve(() => {})),
     onNetworkDiscoveryStateChanged: vi.fn(() => Promise.resolve(() => {})),
     resolveNetworkHost: vi.fn(() => Promise.resolve(null)),
-    listSharesOnHost: vi.fn(() => Promise.resolve({ shares: [], authMode: 'guest_allowed' })),
+    listSharesWithCredentials: vi.fn(() => Promise.resolve({ shares: [], authMode: 'guest_allowed' })),
     listSavedServers: vi.fn(() => Promise.resolve([{ id: 'testnas', protocol: 'smb', places: [] }])),
   },
 }))
 vi.mock('#lib/tauri-commands/index.js', () => ipc)
-vi.mock('#lib/settings/index.js', () => ({ initializeSettings: vi.fn(() => Promise.resolve()) }))
 
 import { cleanupNetworkDiscovery, holdDiscoveryForServersView, initNetworkDiscovery } from './network-store.svelte'
 
@@ -62,12 +61,26 @@ describe('holdDiscoveryForServersView', () => {
 })
 
 describe('a Servers view on screen', () => {
-  /** #324: the Servers list never dials. A saved, resolved SMB host is listed only when a pane opens it. */
-  it('lists no host’s shares, not even a saved server’s', async () => {
+  /**
+   * #324: the Servers list never dials. A saved, resolved SMB host is listed only when a pane opens it, so the
+   * store asks the backend for discovery and nothing else.
+   */
+  it('asks the backend for discovery only, never a host’s shares', async () => {
     await initNetworkDiscovery()
     const release = holdDiscoveryForServersView()
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(ipc.listSharesOnHost).not.toHaveBeenCalled()
+    const discovery = new Set([
+      'setServersViewShown',
+      'listNetworkHosts',
+      'getNetworkDiscoveryState',
+      'onNetworkHostFound',
+      'onNetworkHostLost',
+      'onNetworkHostResolved',
+      'onNetworkDiscoveryStateChanged',
+      'resolveNetworkHost',
+    ])
+    const called = Object.entries(ipc).flatMap(([name, fn]) => (fn.mock.calls.length > 0 ? [name] : []))
+    expect(called.filter((name) => !discovery.has(name))).toEqual([])
     release()
     cleanupNetworkDiscovery()
   })

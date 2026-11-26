@@ -24,16 +24,14 @@
 import type { NetworkHost, ShareListError, ShareListResult } from '../types'
 import { shareListErrorOf } from './share-list-error'
 import {
-  clearShareState,
   forgetCredentials,
   getListedAccount,
   guestListingWorked,
   setCredentialStatus,
   setListedAccount,
-  setShareState,
 } from './network-store.svelte'
 import { renderShareListError } from './share-list-error-messages'
-import { shareListServerOf } from './share-list-label'
+import { resolveShareListServer } from './share-list-label'
 import type { ServerAccountAction, ServerAccountFacts } from '../navigation/row-menu'
 import {
   isUsingCredentialFileFallback,
@@ -87,10 +85,10 @@ async function notifyIfUsingFileFallback(): Promise<void> {
 /**
  * One listing round-trip with what the person offered (`username: null` is guest).
  *
- * On success it leaves the server's whole record behind: the share cache the hub reads,
- * the credential status, the listed account the header names, the account preference
- * (❗ the choice sticks, so later listings, the background ones included, sign in as it
- * instead of as guest), the Keychain entry when `remember`, and the known-shares store.
+ * On success it leaves the server's whole record behind: the backend's share cache the
+ * pane's re-list reads, the credential status, the listed account the header names, the
+ * account preference (❗ the choice sticks, so later listings sign in as it instead of as
+ * guest), the Keychain entry when `remember`, and the known-shares store.
  */
 export async function listWithAccount(
   server: ShareListServer,
@@ -100,9 +98,6 @@ export async function listWithAccount(
   const { host } = server
   const { username, password, remember } = answer
   try {
-    // A fresh listing, ❌ never the cached one.
-    clearShareState(host.id)
-
     const result = await listSharesWithCredentials(
       host.id,
       host.hostname ?? host.name,
@@ -115,8 +110,6 @@ export async function listWithAccount(
       getShareCacheTtlMs(),
     )
 
-    // The hub reads the same server's state.
-    setShareState(host.id, result)
     setCredentialStatus(host.name, username ? 'has_creds' : 'no_creds')
     setListedAccount(host.id, username !== null ? { kind: 'user', username } : { kind: 'guest' })
     void setSmbAccountPreference(host, username).catch(() => {})
@@ -203,9 +196,12 @@ export async function askToList(
  * the server. No guest choice: the listing already tried guest where it could
  * (`network/share_list_sign_in.rs`), and that's what came back refused. `null` when the
  * path names no server this session knows, or another round's sheet is up.
+ *
+ * ❗ A server no discovered host stands for (one saved without contact) signs in to the
+ * host the backend's own listing resolved (`resolveShareListServer`).
  */
 export async function askToSignInToList(path: string, refusal: ShareListError): Promise<ShareListSheetOutcome | null> {
-  const server = shareListServerOf(path)
+  const server = await resolveShareListServer(path)
   if (!server) return null
   return await askToList(server, { refusal: refusalForShareError(refusal), guestAllowed: false })
 }

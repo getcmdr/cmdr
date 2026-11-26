@@ -47,8 +47,8 @@ getcmdr/cmdr#1517 § "Decisions", 7: `stall_probe::listing listing_done path=smb
 - Docker fixtures (Linux E2E lane, `servers-list-flows.spec.ts`): Guest 307, Guest by IP 517 and 586, Unicode 739 and
   740, 50 Shares 844 and 1,048 ms (n=7, p90 1,048).
 
-Key exported functions: `getNetworkHosts()` (sorted copy), `fetchShares(host)` (explicit, throws on error; a share list
-that landed calls it to note its account, answered from the share cache the listing filled),
+Key exported functions: `getNetworkHosts()` (sorted copy), `getResolvedShareListHost(path)` /
+`noteResolvedShareListHost` (the host the backend resolved a share list to, for a server discovery doesn't list),
 `forgetCredentials(serverName)`, `setCredentialStatus` / `getCredentialStatus` (in-memory only), `getDiscoveryState()`,
 `getListedAccount(hostId)`, `guestListingWorked(hostId)`.
 
@@ -144,17 +144,26 @@ as activating it; the palette from a Servers row: `openSmbHandOffInFocusedPane`)
 
 **Who it signed in as, and what it holds**: a share list's `listing-complete` carries `shareListAccount`, noted into the
 store by `share-list-label.ts::noteShareListAccount`, so the path bar's account and the Servers row say the same thing
-(Rust reads the same account for the row, `SmbServerVolume::listed_as`). A landed share list also notes what its listing
-said in the store (`noteShareListListed`: `fetchShares`, which the backend answers from the share cache the pane's
-listing just filled, by the same host id), so the account items know a guest listing worked.
+(Rust reads the same account for the row, `SmbServerVolume::listed_as`). A guest listing's account also marks the host
+as one guest works on (`guestListingWorked`), so the account items offer "Browse as guest". ❌ The store lists no shares
+itself: everything it knows came off a pane listing or a sheet's.
+
+**A server no discovered host stands for** (one saved without contact, `awaitingFirstConnect`, which discovery never
+lists) still has a host to sign in to and act on: `share-list-label.ts::resolveShareListServer` asks the backend for the
+host its own listing resolved (`share_list_host`, memory and the stores only), and notes it in the store, so the sign-in
+ask, the path bar's account, and the share rows' menus all reach it by the id the share cache and the session credential
+are keyed by. ❌ Never a host made up from the path: a saved address keeps its case in its id, and the path's key
+doesn't. A landed listing resolves it (`noteShareListListed`), and a refused one's ask does (`askToSignInToList`).
+Pinned by `the_share_list_host_is_the_one_its_listing_resolves` and the E2E "a server saved without contact asks for an
+account".
 
 The error state's sentence comes from `share-list-error-messages.ts`: one `errors.shareList.*` key per `ShareListError`
 type, naming the host. ❌ Never `error.message`: the backend documents it as diagnostic detail for the log, and it's
-English, often a fallback tool's own stderr. `listSharesOnHost` and `listSharesWithCredentials` throw the typed value as
-a `ShareListFailure` (`share-list-error.ts`), `fetchShares` throws its own for a host with no hostname yet
-(`resolution_failed`), and every catch reads the value back through `shareListErrorOf`. ❌ Never `e as ShareListError`:
-anything untyped that lands in the catch (a runtime exception, an IPC call that broke) had no `type`, and the renderer
-threw on it; it reads as `protocol_error` now, its text kept for the log. Pinned by `share-list-error-messages.test.ts`.
+English, often a fallback tool's own stderr. `listSharesWithCredentials` throws the typed value as a `ShareListFailure`
+(`share-list-error.ts`), and every catch reads the value back through `shareListErrorOf`. ❌ Never
+`e as ShareListError`: anything untyped that lands in the catch (a runtime exception, an IPC call that broke) had no
+`type`, and the renderer threw on it; it reads as `protocol_error` now, its text kept for the log. Pinned by
+`share-list-error-messages.test.ts`.
 
 **A saved share on its share list** (§ "Decisions", 10 of `docs/specs/servers-list-as-listing-plan.md`): its row carries
 `ShareMeta.saved` (its place's volume id, status, account, and pin; Rust reads them, `src-tauri/src/network/DETAILS.md`
@@ -660,7 +669,7 @@ live. Backend side: `src-tauri/src/network/DETAILS.md` § "Discovery runs only w
 
 ## Dependencies
 
-- `#lib/tauri-commands`: `listNetworkHosts`, `resolveNetworkHost`, `listSharesOnHost`, `listSharesWithCredentials`,
+- `#lib/tauri-commands`: `listNetworkHosts`, `resolveNetworkHost`, `listSharesWithCredentials`, `shareListHost`,
   `saveSmbCredentials`, `deleteSmbCredentials`, `getUsernameHint`, `getKnownShareByName`, `updateKnownShare`,
   `updateLeftPaneState`, `updateRightPaneState`, `connectToServer`
 - `#lib/settings/network-settings`: `getNetworkTimeoutMs`, `getShareCacheTtlMs`

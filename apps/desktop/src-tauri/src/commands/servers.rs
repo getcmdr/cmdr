@@ -69,6 +69,15 @@ pub fn saved_server_of_share_list(app: tauri::AppHandle, path: String) -> Option
     crate::network::share_list_volume::saved_server_of_share_list(&app, &path)
 }
 
+/// The host the share list at `path` signs in to, as its listing resolves it, or `None`:
+/// what a share list's sign-in asks for when the frontend holds no host for its server.
+/// Cached state only, ❌ never the wire.
+#[tauri::command]
+#[specta::specta]
+pub fn share_list_host(path: String) -> Option<crate::network::NetworkHost> {
+    crate::network::share_list_volume::share_list_host(&path)
+}
+
 // ============================================================================
 // Connecting
 // ============================================================================

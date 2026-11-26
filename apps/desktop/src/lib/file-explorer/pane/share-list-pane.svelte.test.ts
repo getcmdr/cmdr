@@ -10,7 +10,8 @@ import type { FileEntry, FriendlyError, NetworkHost } from '../types'
 
 const h = vi.hoisted(() => ({
   mountNetworkShare: vi.fn(),
-  fetchShares: vi.fn(() => Promise.resolve()),
+  shareListHost: vi.fn((_path: string): Promise<NetworkHost | null> => Promise.resolve(null)),
+  resolved: new Map<string, NetworkHost>(),
   findFileIndex: vi.fn(),
   getFileAt: vi.fn(),
   askToSignInToList: vi.fn(),
@@ -28,11 +29,13 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   resolvePathVolume: vi.fn(() => Promise.resolve({ volume: null })),
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
   setSmbAccountPreference: vi.fn(() => Promise.resolve(true)),
+  shareListHost: h.shareListHost,
 }))
 vi.mock('../network/network-store.svelte', () => ({
   getNetworkHosts: () => h.hosts,
   setListedAccount: vi.fn(),
-  fetchShares: h.fetchShares,
+  getResolvedShareListHost: (path: string) => h.resolved.get(path),
+  noteResolvedShareListHost: (path: string, host: NetworkHost) => h.resolved.set(path, host),
 }))
 vi.mock('../network/share-list-sign-in', () => ({ askToSignInToList: h.askToSignInToList }))
 vi.mock('../network/share-parent-hint', () => ({ showShareParentHintOnce: h.showShareParentHintOnce }))
@@ -87,6 +90,7 @@ afterEach(() => {
 beforeEach(() => {
   vi.clearAllMocks()
   h.hosts = [testnas]
+  h.resolved.clear()
   dropShareListArrivalOff('left', 'nowhere')
   h.mountNetworkShare.mockReturnValue(new Promise(() => {}))
   h.findFileIndex.mockResolvedValue(0)
@@ -188,10 +192,21 @@ describe('a door’s arrival', () => {
     })
   })
 
-  it('refreshes the hub’s record of the server’s shares from the cache the listing filled', () => {
+  it('asks the backend nothing when a host here stands for the listed server', () => {
     const { pane } = create()
     pane.landed('smb://testnas')
-    expect(h.fetchShares).toHaveBeenCalledWith(testnas)
+    expect(h.shareListHost).not.toHaveBeenCalled()
+  })
+
+  it('learns the host the backend listed under for a server discovery doesn’t list, so the list names it', async () => {
+    // A server saved without contact: discovery never lists it, only the backend's resolver.
+    h.shareListHost.mockResolvedValueOnce({ ...testnas, id: 'manual-Testnas2-445', name: 'Testnas2', source: 'manual' })
+    const { pane } = create({ path: 'smb://testnas2' })
+    pane.landed('smb://testnas2')
+    expect(h.shareListHost).toHaveBeenCalledWith('smb://testnas2')
+    await vi.waitFor(() => {
+      expect(pane.label).toBe('Testnas2')
+    })
   })
 
   it('says the share wasn’t found on a list that lacks it, and mounts nothing', async () => {

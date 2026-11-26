@@ -46,8 +46,8 @@ mis-renders at runtime). Change both sides in the same commit.
   and the network pane words it through `apps/desktop/src/lib/file-explorer/network/mount-error-messages.ts` under its
   "Couldn't mount share" title. The catch-all `Unexpected` keeps what NetFS or `gio` said in `detail`, for the log. A
   server's share LISTING that didn't load is worded the same way: `ShareListError`'s `message` is a diagnostic,
-  `listSharesOnHost` / `listSharesWithCredentials` throw it as a `ShareListFailure` (`share-list-error.ts`), and
-  `share-list-error-messages.ts` beside it words the type for the pane and the servers list's tooltip.
+  `listSharesWithCredentials` throws it as a `ShareListFailure` (`share-list-error.ts`), and
+  `share-list-error-messages.ts` beside it words the type for the pane.
 - **Requests to Cmdr's own api server** (an error report or its note didn't go out): the command RETURNS a typed
   `ServerRequestError` (`apps/desktop/src-tauri/src/server_request.rs`), nested in the command's own enum when it has
   failures of its own (`ErrorReportSendError`). `apps/desktop/src/lib/error-messages/server-request.ts` words it as one

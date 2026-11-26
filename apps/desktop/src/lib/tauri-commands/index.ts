@@ -282,7 +282,6 @@ export {
   listNetworkHosts,
   getNetworkDiscoveryState,
   resolveNetworkHost,
-  listSharesOnHost,
   getKnownShareByName,
   updateKnownShare,
   getUsernameHint,
@@ -1137,6 +1136,7 @@ export type {
 export {
   listSavedServers,
   savedServerOfShareList,
+  shareListHost,
   newServerAttemptId,
   SavedPlaceFailure,
   asSavedPlaceRefusal,

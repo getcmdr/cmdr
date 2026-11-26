@@ -14,8 +14,8 @@
 //!
 //! ❗ The stored read is `keychain::read_server_credentials_once`, the ONE memo the
 //! listing and the mount share, so a server is read at most once per session. ❌ Only a
-//! pane listing and a person's mount reach it: prefetch and every non-pane reader stay
-//! on `commands::network::account_listing_for`'s memory-only ladder.
+//! pane listing and a person's mount reach it: every non-pane reader stays on the share
+//! cache (memory only).
 
 use std::future::Future;
 

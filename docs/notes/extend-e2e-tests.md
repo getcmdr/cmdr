@@ -574,8 +574,8 @@ highest-priority command groups:
   `WriteOperationError` variant on the error branch.
 - **File viewer** (8 tests): `viewer_open`, `viewer_get_lines`, `viewer_search_start`/`_poll`/`_cancel`, `viewer_close`.
   Coverage report flagged this group as 9/9 untested at the IPC layer.
-- **SMB connection** (6 tests): `connect_to_server`, `list_shares_on_host`, `mount_network_share`. The mount path has 6
-  positional args and AGENTS.md specifically calls out positional-soup as fragile.
+- **SMB connection** (4 tests): `connect_to_server`, `mount_network_share`. The mount path has 6 positional args and
+  AGENTS.md specifically calls out positional-soup as fragile.
 
 What the harness catches: argument coercion, snake-case command name typos, payload-key shape drift, and the typed-error
 discriminator round-tripping. What it doesn't catch: the real Tauri permission gate (mockIPC patches

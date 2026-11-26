@@ -194,10 +194,9 @@ Every store read goes through `manual_servers_dialable.rs::usable_entries`: an e
 IP is logged once, then becomes the discovered host it names (by `same_machine`, keeping its account) or is skipped,
 so nothing dials it, and the next write persists the repair. So does a sign-in that got a refused SHARE
 mounted (`share-mount.svelte.ts`'s `remountWith`): without it, a share guests can list but not open asked for the password
-on every mount (cmdr-reports#27). And a listing that got no credentials signs in
-as the preferred account with its session credential (`smb_account_ladder::account_listing_for`, over
-`keychain::session_credentials`: a sheet's answer or a password this session already read, ❌ never a Keychain read). Without both, a background listing (the prefetch the Servers view once ran)
-listed as guest, and "Sign in as testuser" read "as guest" three seconds later.
+on every mount (cmdr-reports#27). And a pane listing with no account typed this time signs in as the preferred account with its session credential
+(`share_list_sign_in::list_for_pane`, over `keychain::session_credentials`: a sheet's answer or a password this session
+already read). Without both, a later listing listed as guest, and "Sign in as testuser" read "as guest" three seconds later.
 
 ❗ **Credentials skip guest, always** (`GuestAttempt::given_credentials`, applied before both the smb2 legs and the CLI
 fallback, which lists as guest). Credentials are the question: someone pressed "Sign in as…" or the listing is using
@@ -1128,9 +1127,7 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `only_a_forced_refresh_dials_an_open_share_list`.
 - **The pane read signs in with `share_list_sign_in::list_for_pane`**: a typed account's session credential, else
   its stored password read ONCE, else `AuthRequired`; with no typed account, guest, and only a guest turned away (a
-  sign-in class) falls to the session credential, else the one stored read. Every other caller (the
-  frontend's own `list_shares_on_host`, a non-pane read's cache rule) stays memory-only
-  (`smb_account_ladder.rs`). Timeout and cache TTL are smb_client's defaults (15 s, 30 s): the frontend's
+  sign-in class) falls to the session credential, else the one stored read. Every other reader (a non-pane read's cache rule) stays memory-only. Timeout and cache TTL are smb_client's defaults (15 s, 30 s): the frontend's
   `network.timeout` / `network.shareCacheDuration` settings don't reach the backend (a settings-plumbing gap, not
   this volume's).
 - **The Keychain is read at most once per server per session** (`keychain::read_server_credentials_once` over

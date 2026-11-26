@@ -27,14 +27,13 @@ const h = vi.hoisted(() => ({
   updateKnownShare: vi.fn(() => Promise.resolve()),
   isUsingCredentialFileFallback: vi.fn(() => Promise.resolve(false)),
   openSignInSheet: vi.fn(),
-  clearShareState: vi.fn(),
-  setShareState: vi.fn(),
   setCredentialStatus: vi.fn(),
   setListedAccount: vi.fn(),
   forgetCredentials: vi.fn(() => Promise.resolve()),
   addToast: vi.fn(() => 'id'),
   getListedAccount: vi.fn((_hostId: string): unknown => undefined),
   guestListingWorked: vi.fn((_hostId: string) => false),
+  shareListHost: vi.fn((_path: string): Promise<unknown> => Promise.resolve(null)),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
@@ -45,11 +44,12 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   isUsingCredentialFileFallback: h.isUsingCredentialFileFallback,
   getUsernameHint: vi.fn(() => Promise.resolve(null)),
   getKnownShareByName: vi.fn(() => Promise.resolve(null)),
+  shareListHost: h.shareListHost,
 }))
 
 vi.mock('./network-store.svelte', () => ({
-  clearShareState: h.clearShareState,
-  setShareState: h.setShareState,
+  getResolvedShareListHost: () => undefined,
+  noteResolvedShareListHost: vi.fn(),
   setCredentialStatus: h.setCredentialStatus,
   setListedAccount: h.setListedAccount,
   forgetCredentials: h.forgetCredentials,
@@ -235,8 +235,6 @@ describe('listWithAccount: what a listing that worked leaves behind', () => {
 
     await listWithAccount(server, { username: 'testuser', password: 'testpass', remember: false }, 'typed')
 
-    expect(h.clearShareState).toHaveBeenCalledWith('testnas-id')
-    expect(h.setShareState).toHaveBeenCalledWith('testnas-id', listed('guest_allowed'))
     expect(h.setCredentialStatus).toHaveBeenCalledWith('Testnas', 'has_creds')
     expect(h.setListedAccount).toHaveBeenCalledWith('testnas-id', { kind: 'user', username: 'testuser' })
     // ❗ The choice sticks: it becomes the server's account, so later listings sign in as it.
@@ -262,6 +260,24 @@ describe('askToSignInToList: the error screen’s Sign in, and the ask a refused
     const request = sheetRequest()
     expect(request.refusal).toBe('authentication_rejected')
     expect(request.shape.guestAllowed).toBe(false)
+  })
+
+  it('asks about a server saved without contact (no host here) by the host the backend lists it under', async () => {
+    // Discovery never lists a server saved without contact, so only the backend's resolver
+    // knows its host, by the id the share cache and the session credential are keyed by.
+    const saved: NetworkHost = {
+      id: 'manual-TestNAS-local-445',
+      name: 'TestNAS.local',
+      hostname: 'TestNAS.local',
+      port: 445,
+      source: 'manual',
+    }
+    h.shareListHost.mockResolvedValueOnce(saved)
+
+    await askToSignInToList('smb://testnas.local', { type: 'auth_required', message: '' })
+
+    expect(h.shareListHost).toHaveBeenCalledWith('smb://testnas.local')
+    expect(sheetRequest().endpoint.host).toBe('TestNAS.local')
   })
 
   it('asks nothing for a path that names no server this session knows', async () => {

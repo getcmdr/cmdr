@@ -120,43 +120,6 @@ export function onNetworkDiscoveryStateChanged(handler: (state: DiscoveryState) 
 }
 
 // ============================================================================
-// SMB share listing (macOS only)
-// ============================================================================
-
-/**
- * Lists shares available on a network host.
- * Returns cached results if available, otherwise queries the host.
- * Attempts guest access first; returns an error if authentication is required.
- * @param hostId Unique identifier for the host (used for caching)
- * @param hostname Hostname to connect to (for example, "TEST_SERVER.local")
- * @param ipAddress Optional resolved IP address (preferred over hostname for reliability)
- * @param port SMB port (default 445, but Docker containers may use different ports)
- * @param timeoutMs Optional timeout in milliseconds (default: 15000)
- * @param cacheTtlMs Optional cache TTL in milliseconds (default: 30000)
- * @returns The shares and the auth mode
- * @throws ShareListFailure carrying the typed `ShareListError`; `shareListErrorOf` gets it back
- */
-export async function listSharesOnHost(
-  hostId: string,
-  hostname: string,
-  ipAddress: string | undefined,
-  port: number,
-  timeoutMs?: number,
-  cacheTtlMs?: number,
-): Promise<ShareListResult> {
-  const res = await commands.listSharesOnHost(
-    hostId,
-    hostname,
-    ipAddress ?? null,
-    port,
-    timeoutMs ?? null,
-    cacheTtlMs ?? null,
-  )
-  if (res.status === 'error') throwShareListError(res.error)
-  return res.data
-}
-
-// ============================================================================
 // Known shares store (macOS only)
 // ============================================================================
 
@@ -279,7 +242,6 @@ export async function deleteSmbCredentials(server: string, share: string | null)
 
 /**
  * Lists shares on a host using provided credentials.
- * This is the authenticated version of listSharesOnHost.
  * @param hostId Unique identifier for the host (used for caching)
  * @param hostname Hostname to connect to
  * @param ipAddress Optional resolved IP address

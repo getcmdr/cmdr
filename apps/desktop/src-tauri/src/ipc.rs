@@ -651,7 +651,6 @@ macro_rules! ipc_command_manifest {
                     crate::commands::network::resolve_host,
                     crate::commands::network::connect_to_server,
                     crate::commands::network::get_network_discovery_state,
-                    crate::commands::network::list_shares_on_host,
                     crate::commands::network::get_known_share_by_name,
                     crate::commands::network::update_known_share,
                     crate::commands::network::get_username_hint,
@@ -754,6 +753,7 @@ macro_rules! ipc_command_manifest {
                 typed: [
                     crate::commands::servers::list_saved_servers,
                     crate::commands::servers::saved_server_of_share_list,
+                    crate::commands::servers::share_list_host,
                     crate::commands::servers::connect_saved_place,
                     crate::commands::servers::connect_server,
                     crate::commands::servers::cancel_server_connect,

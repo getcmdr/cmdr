@@ -3,7 +3,10 @@ import type { NetworkHost } from '../types'
 import { deriveTabLabel, tabLabelFor } from './tab-label'
 
 const network = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
-vi.mock('../network/network-store.svelte', () => ({ getNetworkHosts: () => network.hosts }))
+vi.mock('../network/network-store.svelte', () => ({
+  getNetworkHosts: () => network.hosts,
+  getResolvedShareListHost: () => undefined,
+}))
 
 describe("tabLabelFor: a server's share list", () => {
   it('is called what the server is, ❌ not its path`s host key', () => {

@@ -1,72 +1,52 @@
 /**
  * Which account a host's share list signed in as: what the Servers list and the
  * share list's header say ("as guest", "as testuser"). ❗ Only from the listings
- * themselves: nothing here reads the Keychain.
+ * themselves (`listing-complete`'s account, a sheet's listing): nothing here reads the
+ * Keychain or lists anything. Plus the host the backend resolved a share list to, for a
+ * server discovery doesn't list.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
-const { ipc } = vi.hoisted(() => ({
-  ipc: {
-    listSharesOnHost: vi.fn(),
-  },
-}))
-vi.mock('#lib/tauri-commands/index.js', () => ipc)
-vi.mock('#lib/settings/network-settings.js', () => ({
-  getNetworkTimeoutMs: () => 1000,
-  getShareCacheTtlMs: () => 1000,
-}))
+vi.mock('#lib/tauri-commands/index.js', () => ({}))
 
 import {
-  fetchShares,
   forgetShareListsOfMachine,
   getListedAccount,
+  getResolvedShareListHost,
   guestListingWorked,
+  noteResolvedShareListHost,
   setListedAccount,
 } from './network-store.svelte'
 import type { NetworkHost } from '../types'
 
 const host = (id: string): NetworkHost => ({ id, name: id, hostname: 'localhost', port: 11482, source: 'manual' })
-const listing = (authMode: string) => ({ shares: [], authMode, fromCache: false })
-
-beforeEach(() => {
-  vi.clearAllMocks()
-})
 
 describe('the account a share list signed in as', () => {
-  it('is guest after a guest listing', async () => {
-    ipc.listSharesOnHost.mockResolvedValue(listing('guest_allowed'))
-    await fetchShares(host('a'))
+  it('is guest after a guest listing, which also says guest works there', () => {
+    setListedAccount('a', { kind: 'guest' })
     expect(getListedAccount('a')).toEqual({ kind: 'guest' })
+    expect(guestListingWorked('a'), 'for "Browse as guest"').toBe(true)
   })
 
-  it('is the account a sign-in listed with, and a later refresh from the cache keeps it', async () => {
+  it('is the account a sign-in listed with, and guest stays unproven there', () => {
     setListedAccount('b', { kind: 'user', username: 'testuser' })
-    ipc.listSharesOnHost.mockResolvedValue(listing('creds_required'))
-    await fetchShares(host('b'))
     expect(getListedAccount('b')).toEqual({ kind: 'user', username: 'testuser' })
+    expect(guestListingWorked('b')).toBe(false)
   })
 
-  /**
-   * ❗ A background listing never takes a known account back to guest: "Sign in as
-   * testuser" reverted to "as guest" three seconds later, when the prefetch on the way
-   * back to the Servers list listed as guest (final QA).
-   */
-  it('stays the account a sign-in chose when a later listing comes back as guest', async () => {
-    setListedAccount('e', { kind: 'user', username: 'testuser' })
-    ipc.listSharesOnHost.mockResolvedValue(listing('guest_allowed'))
-    await fetchShares(host('e'))
-    expect(getListedAccount('e')).toEqual({ kind: 'user', username: 'testuser' })
-    expect(guestListingWorked('e'), 'and it knows guest works there, for "Browse as guest"').toBe(true)
-  })
-
-  it('is unknown after a listing that failed, and after the machine’s lists are dropped', async () => {
-    setListedAccount('c', { kind: 'guest' })
-    ipc.listSharesOnHost.mockRejectedValue({ type: 'auth_required', message: 'sign in' })
-    await fetchShares(host('c')).catch(() => {})
-    expect(getListedAccount('c')).toBeUndefined()
-
+  it('is unknown after the machine’s lists are dropped', () => {
     setListedAccount('d', { kind: 'guest' })
     forgetShareListsOfMachine(host('d'))
     expect(getListedAccount('d')).toBeUndefined()
+  })
+})
+
+describe('the host the backend resolved a share list to', () => {
+  it('is found again under any spelling of the same share list, and never for another', () => {
+    const saved: NetworkHost = { ...host('manual-TestNAS-local-445'), name: 'TestNAS.local', port: 445 }
+    noteResolvedShareListHost('smb://testnas.local', saved)
+    expect(getResolvedShareListHost('smb://TestNAS.local:445/')).toBe(saved)
+    expect(getResolvedShareListHost('smb://testnas.local:4450')).toBeUndefined()
+    expect(getResolvedShareListHost('smb://')).toBeUndefined()
   })
 })

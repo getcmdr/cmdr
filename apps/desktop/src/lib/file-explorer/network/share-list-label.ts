@@ -2,14 +2,21 @@
  * Which server a share-list path names, and what a person calls it: the host discovery
  * holds under that path (its Bonjour name for a server mDNS found), else the server a
  * mounted share's `..` leads to (`share-parent-row.svelte.ts`: a share macOS mounted by an
- * address discovery never saw, a Tailscale IP), else just the path's own key for the
- * label. A manual host takes the name `..` gave it when there is one (the name the person
+ * address discovery never saw, a Tailscale IP), else the host the backend's listing
+ * resolved (a server saved without contact: `resolveShareListServer`), else just the
+ * path's own key for the label. A manual host takes the name `..` gave it when there is one (the name the person
  * typed for it), since discovery names it after its address. The tab label and the error
  * screen read it, ❌ never the path's host key, which is identity only.
  */
 
 import { isShareListLocation, sameShareList, shareListHostKey, shareListPath } from '#lib/servers/share-list-path.js'
-import { fetchShares, getNetworkHosts, setListedAccount } from './network-store.svelte'
+import { shareListHost as resolveShareListHost } from '#lib/tauri-commands/index.js'
+import {
+  getNetworkHosts,
+  getResolvedShareListHost,
+  noteResolvedShareListHost,
+  setListedAccount,
+} from './network-store.svelte'
 import { shareParentServers } from './share-parent-row.svelte'
 import type { ShareListAccount } from '#lib/ipc/bindings.js'
 import type { ShareListServer } from './share-list-sign-in'
@@ -42,7 +49,7 @@ export function shareListHostAt(volumeId: string, path: string): NetworkHost | n
 
 /**
  * Notes who a share list's listing signed in as (`listing-complete`'s `shareListAccount`),
- * so the path bar's account and the hub's row say the same, the way a sheet's listing does.
+ * so the path bar's account and the Servers row say the same, the way a sheet's listing does.
  */
 export function noteShareListAccount(path: string, account: ShareListAccount): void {
   const host = shareListHost(path)
@@ -50,14 +57,28 @@ export function noteShareListAccount(path: string, account: ShareListAccount): v
 }
 
 /**
- * A share list landed at `path`: the hub's record of that server's shares (its row's share
- * count, a saved server's share rows) reads the share cache the listing just filled, the
- * way an earlier visit to the hub left it. ❗ A cache read, ❌ never a second sign-in: the
- * backend answers from the cache the pane's listing primed, by the same host id.
+ * A share list landed at `path`: when no host here stands for its server, the backend
+ * names the one its listing resolved (`resolveShareListServer`), so the path bar's account
+ * and the share rows' menus have a server to act on.
  */
 export function noteShareListListed(path: string): void {
-  const host = shareListHost(path)
-  if (host) void fetchShares(host).catch(() => {})
+  if (!shareListServer(path)) void resolveShareListServer(path)
+}
+
+/**
+ * The server `path` lists, asking the backend when nothing here holds a host for it (a
+ * server saved without contact, which discovery never lists): the host the backend's own
+ * listing resolved, ❗ so by the id its share cache and session credential are keyed by, ❌
+ * never one made up from the path (a saved address keeps its case; the path's key doesn't).
+ * Memory and the stores only. `null` when nothing knows the server.
+ */
+export async function resolveShareListServer(path: string): Promise<ShareListServer | null> {
+  const known = shareListServer(path)
+  if (known || shareListHostKey(path) === null) return known
+  const host = await resolveShareListHost(path).catch(() => null)
+  if (!host) return null
+  noteResolvedShareListHost(path, host)
+  return { host, label: host.name }
 }
 
 function shareListHost(path: string): NetworkHost | null {
@@ -67,12 +88,17 @@ function shareListHost(path: string): NetworkHost | null {
 /**
  * The server whose share-list path is `path`, by the same key the path was written from.
  * ❗ Discovery's host first: the backend resolves to it too, and caches the shares and the
- * sign-in under its id.
+ * sign-in under its id. Last, a host the backend resolved for a server discovery doesn't list.
  */
 function shareListServer(path: string): ShareListServer | null {
   const named = (host: NetworkHost) => sameShareList(shareListPath(host), path)
   const outOfShare = shareParentServers().find((server) => named(server.host)) ?? null
   const host = getNetworkHosts().find(named)
-  if (!host) return outOfShare
+  if (!host) return outOfShare ?? resolvedServer(path)
   return { host, label: host.source === 'manual' && outOfShare ? outOfShare.label : host.name }
+}
+
+function resolvedServer(path: string): ShareListServer | null {
+  const host = getResolvedShareListHost(path)
+  return host ? { host, label: host.name } : null
 }

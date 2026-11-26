@@ -12,8 +12,9 @@ import type { FileEntry, NetworkHost } from '../types'
 let hosts: NetworkHost[] = []
 vi.mock('./network-store.svelte', () => ({
   getNetworkHosts: () => hosts,
-  fetchShares: vi.fn(),
   setListedAccount: vi.fn(),
+  getResolvedShareListHost: () => undefined,
+  noteResolvedShareListHost: vi.fn(),
 }))
 vi.mock('./share-parent-row.svelte', () => ({ shareParentServers: () => [] }))
 vi.mock('#lib/tauri-commands/index.js', () => ({ listSavedServers: vi.fn(() => Promise.resolve([])) }))

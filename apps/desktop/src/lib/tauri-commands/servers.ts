@@ -25,6 +25,7 @@ import type {
 } from '#lib/ipc/bindings.js'
 import { TypedFailure, failureOf } from '#lib/ipc/typed-failure.js'
 import { throwKeychainError } from '#lib/servers/keychain-failure.js'
+import type { NetworkHost } from '#lib/file-explorer/types.js'
 
 export type {
   EjectAndSaveOutcome,
@@ -74,6 +75,17 @@ export async function listSavedServers(): Promise<SavedServer[]> {
  */
 export async function savedServerOfShareList(path: string): Promise<string | null> {
   return await commands.savedServerOfShareList(path)
+}
+
+/**
+ * The host the share list at `path` signs in to, as its listing resolves it (so by the id
+ * the share cache and the session credential are keyed by), or `null`. Cached state only.
+ */
+export async function shareListHost(path: string): Promise<NetworkHost | null> {
+  const host = await commands.shareListHost(path)
+  if (!host) return null
+  const { hostname, ipAddress, ...rest } = host
+  return { ...rest, hostname: hostname ?? undefined, ipAddress: ipAddress ?? undefined }
 }
 
 /**

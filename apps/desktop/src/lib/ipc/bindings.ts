@@ -5036,31 +5036,6 @@ export const commands = {
     ),
   // Gets the current discovery state.
   getNetworkDiscoveryState: () => __TAURI_INVOKE<DiscoveryState>('get_network_discovery_state'),
-  /**
-   *  Lists shares available on a network host.
-   *
-   *  Returns cached results if available, otherwise queries the host.
-   *  Attempts guest access first; returns an error if authentication is required.
-   *
-   *  # Arguments
-   *  * `host_id` - Unique identifier for the host (used for caching)
-   *  * `hostname` - Hostname to connect to (for example, "TEST_SERVER.local")
-   *  * `ip_address` - Optional resolved IP address (preferred over hostname for reliability)
-   *  * `port` - SMB port (default 445, but Docker containers may use different ports)
-   *  * `timeout_ms` - Optional timeout in milliseconds (default: 15000)
-   *  * `cache_ttl_ms` - Optional cache TTL in milliseconds (default: 30000)
-   */
-  listSharesOnHost: (
-    hostId: string,
-    hostname: string,
-    ipAddress: string | null,
-    port: number,
-    timeoutMs: number | null,
-    cacheTtlMs: number | null,
-  ) =>
-    typedError<ShareListResult, ShareListError>(
-      __TAURI_INVOKE('list_shares_on_host', { hostId, hostname, ipAddress, port, timeoutMs, cacheTtlMs }),
-    ),
   // Gets a specific known share by server and share name.
   getKnownShareByName: (serverName: string, shareName: string) =>
     __TAURI_INVOKE<{
@@ -5755,6 +5730,26 @@ export const commands = {
    *  what Edit server edits on a share list. Cached state only, ❌ never the wire.
    */
   savedServerOfShareList: (path: string) => __TAURI_INVOKE<string | null>('saved_server_of_share_list', { path }),
+  /**
+   *  The host the share list at `path` signs in to, as its listing resolves it, or `None`:
+   *  what a share list's sign-in asks for when the frontend holds no host for its server.
+   *  Cached state only, ❌ never the wire.
+   */
+  shareListHost: (path: string) =>
+    __TAURI_INVOKE<{
+      // Derived from service name.
+      id: string
+      // The advertised service name.
+      name: string
+      // For example, "macbook.local". None if not yet resolved.
+      hostname: string | null
+      // None if not yet resolved.
+      ipAddress: string | null
+      // Usually 445.
+      port: number
+      // How this host was added to the list.
+      source?: HostSource
+    } | null>('share_list_host', { path }),
   /**
    *  Dials a server the user has already saved, by the id its place carries.
    *

@@ -38,6 +38,7 @@ vi.mock('../network/network-store.svelte', () => ({
     { id: 'testnas-id', name: 'Testnas', hostname: 'testnas.local', port: 445, source: 'discovered' },
   ],
   setListedAccount: vi.fn(),
+  getResolvedShareListHost: () => undefined,
 }))
 
 import { breadcrumbDisplayPath, createBreadcrumbHandlers, type BreadcrumbHandlerDeps } from './breadcrumb-bar'

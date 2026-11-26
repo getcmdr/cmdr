@@ -10,8 +10,9 @@ import type { NetworkHost } from '../types'
 const h = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
 vi.mock('./network-store.svelte', () => ({
   getNetworkHosts: () => h.hosts,
-  fetchShares: vi.fn(() => Promise.resolve()),
   setListedAccount: vi.fn(),
+  getResolvedShareListHost: () => undefined,
+  noteResolvedShareListHost: vi.fn(),
 }))
 vi.mock('#lib/tauri-commands/index.js', () => ({ getSmbShareParent: vi.fn(), setSmbShareParentRow: vi.fn() }))
 vi.mock('#lib/settings/reactive-settings.svelte.js', () => ({ getShowShareParentRow: () => true }))

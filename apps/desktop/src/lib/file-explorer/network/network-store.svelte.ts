@@ -15,16 +15,13 @@ import {
   onNetworkHostLost,
   onNetworkHostResolved,
   onNetworkDiscoveryStateChanged,
-  listSharesOnHost,
   hasCachedSmbCredentials,
   deleteSmbCredentials,
   setServersViewShown,
 } from '#lib/tauri-commands/index.js'
-import { getNetworkTimeoutMs, getShareCacheTtlMs } from '#lib/settings/network-settings.js'
-import { initializeSettings } from '#lib/settings/index.js'
 import type { UnlistenFn } from '#lib/tauri-commands/index.js'
-import type { NetworkHost, DiscoveryState, ShareListResult, ShareListError } from '../types'
-import { ShareListFailure, shareListErrorOf } from './share-list-error'
+import type { NetworkHost, DiscoveryState } from '../types'
+import { shareListHostKey } from '#lib/servers/share-list-path.js'
 import type { SignedInAs } from './signed-in-as'
 
 // Singleton state for network discovery
@@ -32,12 +29,6 @@ let hosts = $state<NetworkHost[]>([])
 let discoveryState = $state<DiscoveryState>('idle')
 const resolvingHosts = new SvelteSet<string>()
 
-// Share listing state - includes fetchedAt for staleness tracking
-type ShareState =
-  | { status: 'loading' }
-  | { status: 'loaded'; result: ShareListResult; fetchedAt: number }
-  | { status: 'error'; error: ShareListError; fetchedAt: number }
-const shareStates = new SvelteMap<string, ShareState>()
 /**
  * The account each host's share list last signed in as, by host id. ❗ Off the
  * listings only: a guest listing says guest, a sign-in says its account
@@ -47,6 +38,13 @@ const shareStates = new SvelteMap<string, ShareState>()
 const listedAccounts = new SvelteMap<string, SignedInAs>()
 /** Hosts a guest listing worked on this session: where "Browse as guest" is a real way back. */
 const guestListingHosts = new SvelteSet<string>()
+/**
+ * The host the backend's share-list resolver named for a share list no discovered host
+ * stands for (a server saved without contact, which discovery never lists), by the path's
+ * server key and port. Filled from the backend's own answer, ❌ never made up here: its id
+ * is the one the share cache and the session credential are keyed by.
+ */
+const resolvedShareListHosts = new SvelteMap<string, NetworkHost>()
 /** How many Servers views are on screen (two panes can each show one). */
 let serversViewsShown = 0
 
@@ -121,9 +119,6 @@ export async function initNetworkDiscovery(): Promise<void> {
   // for the page before it: send this page's truth.
   void setServersViewShown(serversViewsShown > 0)
 
-  // Ensure settings are loaded before reading network timeout/cache values
-  await initializeSettings()
-
   // Load initial data
   hosts = await listNetworkHosts()
   discoveryState = await getNetworkDiscoveryState()
@@ -139,8 +134,6 @@ export async function initNetworkDiscovery(): Promise<void> {
 
   unlistenHostLost = await onNetworkHostLost((id) => {
     hosts = hosts.filter((h) => h.id !== id)
-    // Clean up share state for lost host
-    shareStates.delete(id)
     listedAccounts.delete(id)
   })
 
@@ -181,49 +174,29 @@ export function getDiscoveryState(): DiscoveryState {
 }
 
 // ============================================================================
-// Share listing functions
+// Share lists' servers and accounts
 // ============================================================================
 
-/**
- * Fetch shares for a host. Updates the share state reactively.
- * Returns the result or throws an error.
- */
-export async function fetchShares(host: NetworkHost): Promise<ShareListResult> {
-  if (!host.hostname) {
-    throw new ShareListFailure({ type: 'resolution_failed', message: 'the host has no hostname yet' })
-  }
+/** The share-list map key of `path`: its server key and port, or `null` for no share list. */
+function shareListMapKey(path: string): string | null {
+  const address = shareListHostKey(path)
+  return address ? `${address.key}:${String(address.port)}` : null
+}
 
-  // Mark as loading
-  shareStates.set(host.id, { status: 'loading' })
+/** The host the backend resolved the share list at `path` to, when one was noted. */
+export function getResolvedShareListHost(path: string): NetworkHost | undefined {
+  const key = shareListMapKey(path)
+  return key === null ? undefined : resolvedShareListHosts.get(key)
+}
 
-  try {
-    const result = await listSharesOnHost(
-      host.id,
-      host.hostname,
-      host.ipAddress,
-      host.port,
-      getNetworkTimeoutMs(),
-      getShareCacheTtlMs(),
-    )
-    shareStates.set(host.id, { status: 'loaded', result, fetchedAt: Date.now() })
-    noteListing(host.id, result)
-    return result
-  } catch (error) {
-    shareStates.set(host.id, { status: 'error', error: shareListErrorOf(error), fetchedAt: Date.now() })
-    listedAccounts.delete(host.id)
-    throw error
-  }
+/** Notes the host the backend resolved the share list at `path` to. */
+export function noteResolvedShareListHost(path: string, host: NetworkHost): void {
+  const key = shareListMapKey(path)
+  if (key !== null) resolvedShareListHosts.set(key, host)
 }
 
 /**
- * Clear share state for a host (for example, to force refresh).
- */
-export function clearShareState(hostId: string): void {
-  shareStates.delete(hostId)
-}
-
-/**
- * Drops the share lists of every host that is the same machine as `host`: the
+ * Drops the listed accounts of every host that is the same machine as `host`: the
  * manual host an add just injected, plus a discovered twin at the same IP or
  * hostname.
  *
@@ -236,26 +209,9 @@ export function forgetShareListsOfMachine(host: NetworkHost): void {
   for (const other of hosts) {
     const sameIp = host.ipAddress !== undefined && other.ipAddress === host.ipAddress
     const sameHostname = host.hostname !== undefined && other.hostname === host.hostname
-    if (other.id === host.id || sameIp || sameHostname) {
-      shareStates.delete(other.id)
-      listedAccounts.delete(other.id)
-    }
+    if (other.id === host.id || sameIp || sameHostname) listedAccounts.delete(other.id)
   }
-  shareStates.delete(host.id)
   listedAccounts.delete(host.id)
-}
-
-/**
- * A plain listing's account: a guest one says guest, and an account one keeps what its
- * sign-in recorded. ❗ A guest listing never takes a KNOWN account back to guest: the
- * person chose it, and a background listing ("Sign in as testuser" read "as guest" three
- * seconds later, from the prefetch on the way back) is no one choosing anything.
- * "Browse as guest" goes through `setListedAccount`.
- */
-function noteListing(hostId: string, result: ShareListResult): void {
-  if (result.authMode !== 'guest_allowed') return
-  guestListingHosts.add(hostId)
-  if (listedAccounts.get(hostId)?.kind !== 'user') listedAccounts.set(hostId, { kind: 'guest' })
 }
 
 /** Whether a guest listing worked on `hostId` this session, so "Browse as guest" can offer a way back. */
@@ -272,14 +228,6 @@ export function getListedAccount(hostId: string): SignedInAs | undefined {
 export function setListedAccount(hostId: string, account: SignedInAs): void {
   listedAccounts.set(hostId, account)
   if (account.kind === 'guest') guestListingHosts.add(hostId)
-}
-
-/**
- * Set share state for a host directly.
- * Use this when you have the result from a successful connection.
- */
-export function setShareState(hostId: string, result: ShareListResult): void {
-  shareStates.set(hostId, { status: 'loaded', result, fetchedAt: Date.now() })
 }
 
 // ============================================================================

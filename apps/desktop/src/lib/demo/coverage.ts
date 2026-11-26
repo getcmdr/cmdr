@@ -123,7 +123,6 @@ export const notInDemo = {
   setRequireSmbEncryption: NETWORK,
   resolveHost: NETWORK,
   connectToServer: NETWORK,
-  listSharesOnHost: NETWORK,
   getKnownShareByName: NETWORK,
   updateKnownShare: NETWORK,
   getUsernameHint: NETWORK,
@@ -176,6 +175,7 @@ export const notInDemo = {
   getKnownNfsPlaces: NETWORK,
   listSavedServers: NETWORK,
   savedServerOfShareList: NETWORK,
+  shareListHost: NETWORK,
   // Only the Servers list lands a cursor by a row's path
   findPathIndex: NETWORK,
   connectSavedPlace: NETWORK,
