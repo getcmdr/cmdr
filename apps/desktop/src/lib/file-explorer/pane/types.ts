@@ -402,6 +402,12 @@ export interface ErrorPaneAPI {
   focusSignIn: () => Promise<boolean>
 }
 
+/** Typed interface for `RemoteConnectView`'s exported methods used by FilePane. */
+export interface RemoteConnectViewAPI {
+  /** Focuses the sign-in state's Sign in, where a cancelled mount sign-in leaves the pane; false when it shows none. */
+  focusSignIn: () => Promise<boolean>
+}
+
 /** Typed interface for BriefList/FullList exported methods used by FilePane. */
 export interface ListViewAPI {
   /** Focuses the listbox without scrolling; false when it isn't mounted. */

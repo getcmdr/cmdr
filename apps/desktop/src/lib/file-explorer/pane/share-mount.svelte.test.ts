@@ -103,7 +103,7 @@ afterEach(() => {
 /** A controller on `server`, with every dep a spy. */
 function create(server: ShareMountServer | null = { host, label: undefined }) {
   const current = $state<ShareMountServer | null>(server)
-  const deps = { onVolumeChange: vi.fn() }
+  const deps = { onVolumeChange: vi.fn(), focusSignIn: vi.fn() }
   let mount!: ShareMount
   dispose = $effect.root(() => {
     mount = createShareMount({ getServer: () => current, ...deps })
@@ -278,13 +278,54 @@ describe('a mount a credential answers', () => {
     expect([username, password]).toEqual([null, null])
   })
 
-  it('goes back to the share list when the sign-in is cancelled', async () => {
-    h.mountNetworkShare.mockRejectedValue(refused(authFailed))
-    const { mount } = create()
+  // The in-pane sign-in state is the honest "you're not signed in" place, as on a share list's
+  // refused listing: Cancel leaves the pane on it, focus on its Sign in (Enter asks again).
+  it('stays on the in-pane sign-in state with focus on its Sign in when the sign-in is cancelled', async () => {
+    h.mountNetworkShare.mockRejectedValue(refused(authRequired))
+    const { mount, focusSignIn } = create()
 
     await mount.mount(testshare, null)
 
-    expect(mount.view, 'the share list is where cancelling lands').toBeNull()
+    expect(mount.view?.state.kind, 'the sign-in state is where cancelling lands').toBe('signed_out')
+    expect(focusSignIn).toHaveBeenCalledOnce()
+  })
+
+  it('lands on the sign-in state it opened over when a wrong password came before the cancel', async () => {
+    let cancel!: () => void
+    h.mountNetworkShare.mockRejectedValueOnce(refused(authRequired)).mockRejectedValueOnce(refused(authFailed))
+    h.openSignInSheet.mockReturnValue(
+      new Promise((resolve) => {
+        cancel = () => {
+          resolve({ kind: 'cancelled' })
+        }
+      }),
+    )
+    const { mount, focusSignIn } = create()
+    const mounting = mount.mount(testshare, null)
+    await vi.waitFor(() => {
+      expect(h.openSignInSheet).toHaveBeenCalled()
+    })
+    await sheetRequest().attempt({
+      mode: 'sign-in',
+      secret: { secret: 'wrong', remember: false },
+      username: 'test_user_3',
+    })
+
+    cancel()
+    await mounting
+
+    expect(mount.view?.state.kind).toBe('signed_out')
+    expect(focusSignIn).toHaveBeenCalledOnce()
+  })
+
+  it('goes back to the share list when a sign-in with no in-pane sign-in state behind it is cancelled', async () => {
+    h.mountNetworkShare.mockRejectedValue(refused(authFailed))
+    const { mount, focusSignIn } = create()
+
+    await mount.mount(testshare, null)
+
+    expect(mount.view, 'a refusal has no Sign in to land on').toBeNull()
+    expect(focusSignIn).not.toHaveBeenCalled()
   })
 })
 

@@ -506,7 +506,7 @@
     let volumeRootFromEvent = $state<string | undefined>(undefined)
 
 
-    import type { ErrorPaneAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
+    import type { ErrorPaneAPI, RemoteConnectViewAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
     import type { PaneErrorState, StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
@@ -514,7 +514,9 @@
     // Component refs for keyboard navigation
     let fullListRef: ListViewAPI | undefined = $state()
     let briefListRef: ListViewAPI | undefined = $state()
+    // The share list's two in-pane sign-in states, never both on screen: a refused listing's, a refused mount's.
     let errorPaneRef: ErrorPaneAPI | undefined = $state()
+    let shareMountViewRef: RemoteConnectViewAPI | undefined = $state()
     let volumeBreadcrumbRef: VolumeBreadcrumbAPI | undefined = $state()
     let shareListAccountChipRef: ShareListAccountChipAPI | undefined = $state()
     let networkMountViewRef: NetworkMountViewAPI | undefined = $state()
@@ -818,7 +820,7 @@
         getListingId: () => listingId, getIncludeHidden: () => includeHidden, getFriendlyError: () => friendlyError,
         getListingFailed: () => Boolean(friendlyError || error),
         moveCursorTo: (index) => { moveCursorTo(index) }, relist: () => void navigateToPath(currentPath),
-        focusSignIn: () => void errorPaneRef?.focusSignIn(), onVolumeChange: (change) => onVolumeChange?.(change),
+        focusSignIn: () => void (shareMountViewRef ?? errorPaneRef)?.focusSignIn(), onVolumeChange: (change) => onVolumeChange?.(change),
         syncMcp: () => { debouncedSyncMcp.call() },
     })
 
@@ -2297,7 +2299,7 @@
         {:else if shareList.mount.view}
             <!-- A share's mount: keyed on the wait, so a retry's wait starts with the view's own quiet reveal again. -->
             {#key shareList.mount.view.state.kind === 'connecting'}
-                <RemoteConnectView name={shareList.mount.view.name} server={shareList.mount.view.server} address={shareList.mount.view.address} state={shareList.mount.view.state} />
+                <RemoteConnectView bind:this={shareMountViewRef} name={shareList.mount.view.name} server={shareList.mount.view.server} address={shareList.mount.view.address} state={shareList.mount.view.state} />
             {/key}
         {:else if paneViewKind === 'network'}
             <NetworkMountView bind:this={networkMountViewRef} {paneId} {isFocused} {onVolumeChange} onOpenServer={shareList.openServer} />

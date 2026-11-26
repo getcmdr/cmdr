@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy } from 'svelte'
+    import { onDestroy, tick as settled } from 'svelte'
     import { dependOn } from '#lib/utils/reactivity.js'
     import Button from '#lib/ui/Button.svelte'
     import Icon from '#lib/ui/Icon.svelte'
@@ -53,6 +53,23 @@
     // ❗ Renamed on the way in: a local binding called `state` would make every
     // `$state(...)` in this file read as a store subscription instead of a rune.
     const { name, address = null, server = null, state: connectState }: Props = $props()
+
+    let signedOutActions: HTMLDivElement | undefined = $state()
+
+    /**
+     * Puts keyboard focus on the sign-in state's Sign in, where a cancelled share-mount sign-in
+     * leaves the pane (`share-mount.svelte.ts`): Enter asks again. Waits a tick so the sheet that
+     * just closed has unmounted. False when this state offers no Sign in.
+     */
+    export async function focusSignIn(): Promise<boolean> {
+        await settled()
+        // Sign in leads the row whenever it's offered.
+        const signInButton =
+            connectState.kind === 'signed_out' && connectState.signIn ? signedOutActions?.querySelector('button') : null
+        if (!signInButton) return false
+        signInButton.focus()
+        return true
+    }
 
     /** The line above the heading: the place, and the server it's on when that's worth saying. */
     const identity = $derived(server ? tString('servers.paneState.placeOnServer', { name, server }) : name)
@@ -198,7 +215,9 @@
                 <p class="hint">{connectState.hint}</p>
             {/if}
             {#if connectState.signIn || connectState.back}
-                <div class="actions">
+                <!-- Pane chrome (`pane-chrome.ts`), as `ErrorPane`'s row: a cancelled share-mount sign-in
+                     puts focus on Sign in here (`focusSignIn`), and it keeps Enter there. -->
+                <div class="actions" bind:this={signedOutActions} data-pane-chrome>
                     {#if connectState.signIn}
                         <Button variant="primary" size="mini" onclick={connectState.signIn}>
                             {tString('servers.paneState.signIn')}

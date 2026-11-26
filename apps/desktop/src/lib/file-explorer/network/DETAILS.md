@@ -358,7 +358,10 @@ person started (a door, a navigation, Retry) opens the sheet on its own once; ca
 in-pane sign-in state (`ErrorPane`'s Sign in, with keyboard focus on it: Enter asks again, ⌘[ goes back), the honest
 "you're not signed in" place. A cancel that went back to Servers made that state unreachable while the sheet covered it.
 "Sign in as…" opens the same sheet with no refusal and no guest, prefilled with the listed account, and its cancel stays
-on the list.
+on the list. A refused MOUNT lands the same way: its sheet opens over the mount's calm sign-in state ("Sign in to open
+…", `RemoteConnectView`), and cancelling stays there with focus on its Sign in (`share-mount.svelte.ts`). Every door
+that opens the sheet over an in-pane sign-in state leaves the pane on it; doors with none (a hub row's menu, the path
+bar's account, the palette) stay where they were.
 
 `share-list-sign-in.ts`, the sheet round: every `attempt` is `listWithAccount`, which answers `handed_off` on success
 (nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on `authentication_rejected` /

@@ -163,7 +163,9 @@ requests, so the endpoint header, the remembered username, and the refusal vocab
   the header is `smb://<host>` and guest is offered where the host allows one. Cancelling leaves the pane on the share
   list's in-pane sign-in state, focus on its Sign in (the share list's call; "Sign in as…" stays on the list).
 - **A share mount** (`../file-explorer/pane/share-mount.svelte.ts`) → `mountNetworkShare`, then `saveSmbCredentials` ❗
-  only once it went through. Cancelling goes back to the share list.
+  only once it went through. Cancelling leaves the pane on the mount's in-pane sign-in state ("Sign in to open …", the
+  one it opened over, even after a wrong password), focus on its Sign in, as the listing does; only a first refusal with
+  no such state (a rejected account) goes back to the share list.
 - **A "Connect directly" upgrade** (`../file-explorer/network/direct-connect.ts`) → `upgradeToSmbVolumeWithCredentials`,
   which stores the credential backend-side when the box is checked.
 

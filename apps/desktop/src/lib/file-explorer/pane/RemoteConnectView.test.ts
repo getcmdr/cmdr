@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, tick } from 'svelte'
 import RemoteConnectView from './RemoteConnectView.svelte'
+import type { RemoteConnectViewAPI } from './types'
 import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 
 /** Lets a wait's quiet start run out, for a test about what the view shows after it. */
@@ -87,6 +88,37 @@ describe('a refused share mount', () => {
     buttons[1].click()
     expect(signIn).toHaveBeenCalledTimes(1)
     expect(back).toHaveBeenCalledTimes(1)
+    target.remove()
+  })
+
+  // A cancelled mount sign-in leaves the pane on this state with focus on Sign in, inside a
+  // pane-chrome row so the explorer's focus guard and the sheet's focus restore leave it there.
+  it('focuses Sign in… inside a pane-chrome row when asked', async () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const view: RemoteConnectViewAPI = mount(RemoteConnectView, {
+      target,
+      props: { name: 'testshare', state: { kind: 'signed_out', signIn: vi.fn(), back: vi.fn() } },
+    })
+    await tick()
+
+    expect(await view.focusSignIn()).toBe(true)
+    const focused = document.activeElement
+    expect(focused?.textContent.trim()).toBe('Sign in…')
+    expect(focused?.closest('[data-pane-chrome]')).not.toBeNull()
+    target.remove()
+  })
+
+  it('has no Sign in to focus on a refusal', async () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const view: RemoteConnectViewAPI = mount(RemoteConnectView, {
+      target,
+      props: { name: 'testshare', state: { kind: 'refused', refusal: 'The share went away.', retry: vi.fn() } },
+    })
+    await tick()
+
+    expect(await view.focusSignIn()).toBe(false)
     target.remove()
   })
 

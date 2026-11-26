@@ -841,8 +841,11 @@ describeSmb('SMB authentication', () => {
     // Found, and not listed: no share count on its entry until someone opens it.
     expect(await hostEntryInHub('SMB Test (Auth)')).not.toContain('shares=')
 
+    // Enter on the hub row, the key a person presses (not MCP's open), with the pane focused first: a click
+    // there could land the hub's cursor on another row.
+    await focusPane(tauriPage, 0)
     await mcpCall('move_cursor', { pane: 'left', filename: 'SMB Test (Auth)' })
-    await mcpCall('open_under_cursor', {})
+    await tauriPage.keyboard.press('Enter')
     await expect.poll(async () => tauriPage.isVisible(sheet), { timeout: waitBudget(30000) }).toBeTruthy()
 
     // "Not now" leaves the pane on the in-pane sign-in state, the honest "you're not signed in" place, with

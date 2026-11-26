@@ -62,6 +62,11 @@ export interface ShareMountDeps {
   getServer: () => ShareMountServer | null
   /** Takes the pane to the mounted share's volume. */
   onVolumeChange: (change: VolumeChangePayload) => void
+  /**
+   * Puts keyboard focus on the in-pane sign-in state's Sign in (`RemoteConnectView`'s
+   * `focusSignIn`), where a cancelled ask leaves the pane: Enter asks again.
+   */
+  focusSignIn: () => void
 }
 
 /** What `RemoteConnectView` renders while a mount runs or after it stopped short. */
@@ -276,8 +281,12 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
    * Hands a mount's credential question to the one sign-in sheet, retrying the mount inside
    * it for as long as the person keeps answering.
    *
-   * ❗ Cancelling goes back to the SHARE LIST (`back`), which is where the person was: they
-   * picked a share, and the one they wanted is still on screen behind the sheet.
+   * ❗ Cancelling STAYS on the in-pane sign-in state the sheet opened over ("Sign in to open
+   * …"), focus on its Sign in, the same landing a share list's refused listing gets
+   * (`share-list-pane.svelte.ts`): it's the honest "you're not signed in" place, and Go back
+   * (or `share.back`) is one key away. A wrong password typed before the cancel doesn't move
+   * that landing. Only a first refusal with no such state (a rejected account: Try again and
+   * Go back) goes back to the share list.
    */
   async function askForMountCredentials(share: ShareInfo, firstError: MountError) {
     const current = deps.getServer()
@@ -299,10 +308,20 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
         refusal: refusalForMountError(firstError),
         attempt: (answer) => remountWith(share, host, answer),
       })
-      if (result.kind === 'cancelled') back()
+      if (result.kind === 'cancelled') leaveCancelledAsk(firstError)
     } finally {
       signingIn = false
     }
+  }
+
+  /** Where a cancelled ask lands: the calm sign-in state it opened over, else the share list. */
+  function leaveCancelledAsk(firstError: MountError) {
+    if (firstError.type !== 'auth_required') {
+      back()
+      return
+    }
+    mountError = firstError
+    deps.focusSignIn()
   }
 
   /** One mount round-trip with what the person offered, remembering the credential ❗ only once it went through. */

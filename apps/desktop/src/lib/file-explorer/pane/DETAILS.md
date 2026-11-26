@@ -2110,7 +2110,10 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   tool open): the share-mount controller, with no credential of the frontend's own (the backend signs in with the
   server's session credential). Its states render through the ONE `RemoteConnectView`, in FRONT of the error and list
   arms, and the key router's first arm hands it every key while it's up (`share.back` cancels or steps back, the rest
-  are dead, so Enter on a retained row starts nothing); one mount at a time.
+  are dead, so Enter on a retained row starts nothing); one mount at a time. A refused mount's sign-in sheet opens over
+  the calm `signed_out` state, and cancelling it STAYS there with focus on its Sign in (`RemoteConnectView.focusSignIn`,
+  through the same `focusSignIn` dep the error screen uses; the state's action row is pane chrome), as a refused
+  listing's does below.
 - **A sign-in refusal** (`shareListSignIn`) is the calm error screen: no assertive alert, the server by its friendly
   label, Sign in (`share-list-sign-in.ts::askToSignInToList`, then Retry), no Try again. It's final like an access
   refusal (`#lib/error-messages/access-refusal.ts`): ❌ never the existence probe, whose cache-only "no" walked the pane

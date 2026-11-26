@@ -5,7 +5,9 @@
  * The share list's own component only renders what these answer. Each function takes the
  * server (its `NetworkHost` and the label the person knows it by) and answers an outcome;
  * ❌ none of them touches a view. Where cancelling lands is the CALLER's call, because it
- * differs per site: a refused listing stays on its in-pane Sign in, "Sign in as…" on the list.
+ * differs per site: a refused listing stays on its in-pane Sign in, "Sign in as…" on the list. The rule
+ * every door follows: a sheet opened over an in-pane sign-in state leaves the pane on it, focus on its
+ * Sign in (a refused mount's too: `../pane/share-mount.svelte.ts`).
  *
  * ❗ **One ask at a time, guarded HERE** (`sheetRound`), since three doors (the hub's row
  * menu, the path bar's account, the palette) and the share list itself all open the sheet:

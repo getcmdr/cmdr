@@ -54,8 +54,9 @@ export interface ShareListPaneDeps {
   /** Lists the share list again, the way Retry does. */
   relist: () => void
   /**
-   * Puts keyboard focus on the error screen's Sign in (`ErrorPane`'s `focusSignIn`), where a
-   * cancelled ask leaves the pane: Enter asks again, ⌘[ goes back.
+   * Puts keyboard focus on the in-pane sign-in state's Sign in, where a cancelled ask leaves
+   * the pane: the error screen's (`ErrorPane`) for a refused listing, the mount's
+   * (`RemoteConnectView`) for a refused mount. Enter asks again.
    */
   focusSignIn: () => void
   /** Takes the pane to another volume (the mounted share) or to a share list. */
@@ -93,6 +94,9 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
     getServer: () => (onShareList ? shareListServerOf(deps.getCurrentPath()) : null),
     onVolumeChange: (change) => {
       deps.onVolumeChange(change)
+    },
+    focusSignIn: () => {
+      deps.focusSignIn()
     },
   })
 
