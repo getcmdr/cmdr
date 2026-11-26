@@ -320,10 +320,6 @@ export const COMMAND_IDS = [
   // By-name selection carried by the MCP `select` tool (names + mode), a round-trip.
   'selection.mcpSelectByNames',
 
-  // Network browser
-  'network.selectHost',
-  'network.refresh',
-
   // Share browser
   'share.back',
 

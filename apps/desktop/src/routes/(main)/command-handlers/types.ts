@@ -83,7 +83,6 @@ export type DispatchExemptId =
   | 'operationLog.rollBack'
   // The "Tell me about this" card's Stop (⌥S), answered by the card's keydown
   | 'aboutThis.stopVerdict'
-  | 'network.selectHost'
   | 'share.back'
   // The operation queue window's keys: a window of its own, answered by its keydown.
   | 'queue.cursorUp'

@@ -138,7 +138,6 @@ export const FIXED_KEY_COMMAND_IDS = [
   'operationLog.deselectAll',
   'operationLog.rollBack',
   'aboutThis.stopVerdict',
-  'network.selectHost',
   'share.back',
   // The operation queue window's keys, answered by its own keydown.
   'queue.cursorUp',

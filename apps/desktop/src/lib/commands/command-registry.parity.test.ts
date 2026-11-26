@@ -243,8 +243,6 @@ const EXPECTED_NAMES: Record<string, string> = {
   'selection.deselectFiles': 'Deselect files…',
   'selection.mcpSelect': 'Select range in pane',
   'selection.mcpSelectByNames': 'Select files by name in pane',
-  'network.selectHost': 'Select network host',
-  'network.refresh': 'Refresh network hosts',
   'share.back': 'Cancel or step back from opening a share',
   'servers.show': 'Show servers',
   'servers.togglePin': 'Pin / unpin server',

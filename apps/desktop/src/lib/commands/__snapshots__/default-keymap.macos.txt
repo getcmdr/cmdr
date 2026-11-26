@@ -171,8 +171,6 @@ operationLog.toggleItemAndDown	Insert
 operationLog.selectAll	⌘A
 operationLog.deselectAll	⌘⇧A
 operationLog.rollBack	⌘Enter
-network.selectHost	Enter
-network.refresh	
 share.back	Backspace, Escape, ⌘↑
 servers.show	
 servers.togglePin	

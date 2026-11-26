@@ -154,8 +154,6 @@ operationLog.toggleItemAndDown	Insert
 operationLog.selectAll	Ctrl+A
 operationLog.deselectAll	Ctrl+Shift+A
 operationLog.rollBack	Ctrl+Enter
-network.selectHost	Enter
-network.refresh	
 share.back	Backspace, Escape, Alt+↑
 servers.show	
 servers.togglePin	

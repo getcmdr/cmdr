@@ -1356,11 +1356,6 @@
     "description": "Internal command name for selecting files by name, driven by the automation interface; shown only in the keyboard-shortcuts list (not the palette). \"Pane\" is one of the two file lists.",
     "screenshot": "settings-keyboard-shortcuts-page-8.png"
   },
-  "commands.networkSelectHost.label": "Select network host",
-  "@commands.networkSelectHost.label": {
-    "description": "Command name that opens the selected network host (server) in the network browser. \"Host\" is a server on the network. Shown only in the keyboard-shortcuts list (not the palette).",
-    "screenshot": "settings-keyboard-shortcuts-page-17.png"
-  },
   "commands.serversShow.label": "Show servers",
   "@commands.serversShow.label": {
     "description": "Command name that takes the focused pane to the servers hub, the list of every saved and nearby server. VERB phrase, imperative. Appears in the command palette.",
@@ -1403,11 +1398,6 @@
   "@commands.serversConnect.label": {
     "description": "Command-palette entry and shortcut label for opening the form that adds a server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means “this opens something”; keep it.",
     "screenshot": "settings-keyboard-shortcuts-page-8.png"
-  },
-  "commands.networkRefresh.label": "Refresh network hosts",
-  "@commands.networkRefresh.label": {
-    "description": "Command name that re-scans the network for hosts (servers). Appears in the command palette.",
-    "screenshot": "settings-keyboard-shortcuts-page-17.png"
   },
   "commands.shareMountBack.label": "Cancel or step back from opening a share",
   "@commands.shareMountBack.label": {

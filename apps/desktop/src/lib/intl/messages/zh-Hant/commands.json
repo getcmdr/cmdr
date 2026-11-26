@@ -1124,10 +1124,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "選取網路主機",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "顯示伺服器",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1163,10 +1159,6 @@
   "commands.serversConnect.label": "連接伺服器⋯",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "重新整理網路主機",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "取消開啟共享資料夾或返回上一步",
   "@commands.shareMountBack.label": {

@@ -19,7 +19,7 @@ Quote a section name verbatim from `settings.section.*`. Wilting `Hervadás`, Sm
 
 The Network group stays `Hálózat`, its Servers row `Szerverek`; don't collapse them.
 
-## Gép vagy gazdagép (`fileExplorer.network.*`, `commands.networkSelectHost.*`, `errors.listing.host*`)
+## Gép vagy gazdagép (`fileExplorer.network.*`, `errors.listing.host*`)
 
 The network browser says `gép`, connection-failure prose `gazdagép`, deliberately. `kiszolgáló` in `errors.json` is the
 participle "serving".

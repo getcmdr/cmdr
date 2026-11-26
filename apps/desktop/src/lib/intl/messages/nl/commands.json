@@ -1126,10 +1126,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "Selecteer netwerkhost",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "Toon servers",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1165,10 +1161,6 @@
   "commands.serversConnect.label": "Verbind met server…",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "Ververs netwerkhosts",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "Annuleer het openen van een gedeelde map of ga terug",
   "@commands.shareMountBack.label": {

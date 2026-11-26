@@ -1124,10 +1124,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "Välj nätverksvärd",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "Visa servrar",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1163,10 +1159,6 @@
   "commands.serversConnect.label": "Anslut till server…",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "Uppdatera nätverksvärdar",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "Avbryt öppnandet av en delad mapp eller gå tillbaka",
   "@commands.shareMountBack.label": {

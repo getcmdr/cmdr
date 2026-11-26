@@ -1124,10 +1124,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "Sélectionner un hôte réseau",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "Afficher les serveurs",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1163,10 +1159,6 @@
   "commands.serversConnect.label": "Se connecter au serveur…",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "Actualiser les hôtes réseau",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "Annuler l’ouverture d’un partage ou revenir à la liste",
   "@commands.shareMountBack.label": {

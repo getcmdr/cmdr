@@ -143,7 +143,6 @@ const EXPECTED_PALETTE_IDS: readonly CommandId[] = [
   'selection.compareDirectoriesSize',
   'selection.selectFiles',
   'selection.deselectFiles',
-  'network.refresh',
   'servers.show',
   'servers.togglePin',
   'servers.disconnect',

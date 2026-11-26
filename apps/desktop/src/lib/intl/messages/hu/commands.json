@@ -1124,10 +1124,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "Hálózati gép kiválasztása",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "Szerverek megjelenítése",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1163,10 +1159,6 @@
   "commands.serversConnect.label": "Kapcsolódás szerverre…",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "Hálózati gépek frissítése",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "Megosztás megnyitásának megszakítása vagy visszalépés",
   "@commands.shareMountBack.label": {

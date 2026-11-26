@@ -398,7 +398,6 @@ export const mainWindowCommands: CommandSource[] = [
     // The only key that re-reads a directory. Scoped to the whole main window, not
     // the file list: ⌘R refreshes whatever the pane shows (`refreshPane` in
     // `pane-commands.ts` routes it), the Servers list and a failed listing included.
-    // That's also why `network.refresh` carries no ⌘R of its own: one combo, one winner.
     id: 'pane.refresh',
     nameKey: 'commands.paneRefresh.label',
     scope: 'Main window',

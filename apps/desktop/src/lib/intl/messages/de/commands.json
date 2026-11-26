@@ -1124,10 +1124,6 @@
   "@commands.selectionMcpSelectByNames.label": {
     "sourceHash": "8cfc75d"
   },
-  "commands.networkSelectHost.label": "Netzwerk-Host auswählen",
-  "@commands.networkSelectHost.label": {
-    "sourceHash": "4a9ede5"
-  },
   "commands.serversShow.label": "Server anzeigen",
   "@commands.serversShow.label": {
     "sourceHash": "092283a"
@@ -1163,10 +1159,6 @@
   "commands.serversConnect.label": "Mit Server verbinden …",
   "@commands.serversConnect.label": {
     "sourceHash": "6188f47"
-  },
-  "commands.networkRefresh.label": "Netzwerk-Hosts aktualisieren",
-  "@commands.networkRefresh.label": {
-    "sourceHash": "73966bd"
   },
   "commands.shareMountBack.label": "Öffnen einer Freigabe abbrechen oder zurückgehen",
   "@commands.shareMountBack.label": {

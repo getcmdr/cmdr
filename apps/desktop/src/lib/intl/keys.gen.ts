@@ -1242,8 +1242,6 @@ export type MessageKey =
   | 'commands.navParent.label'
   | 'commands.navRight.label'
   | 'commands.navUp.label'
-  | 'commands.networkRefresh.label'
-  | 'commands.networkSelectHost.label'
   | 'commands.operationLogDeselectAll.label'
   | 'commands.operationLogGoToItems.label'
   | 'commands.operationLogRollBack.label'

@@ -47,7 +47,7 @@ Vybrat; Jump to first/last → Skočit na…. Choosing an option is zvolit where
 
 TC cs writes Porovnat složky although its English says directories.
 
-## Host is hostitel, guest is host (`errors.listing.hostDown.*`, `servers.sheet.connectAsGuest`, `commands.networkRefresh.label`)
+## Host is hostitel, guest is host (`errors.listing.hostDown.*`, `servers.sheet.connectAsGuest`)
 
 Czech host means guest (macOS NetAuthAgent), so a network host is hostitel; the hosts list is síťoví hostitelé (Znovu
 načíst síťové hostitele, Vybrat síťového hostitele).

@@ -273,11 +273,11 @@ describe('conflict-detector', () => {
       expect(getAllConflicts()).toEqual([])
     })
 
-    it('does NOT report a conflict between a Network command and a File-list command (sibling views)', () => {
-      // Enter is bound on both network.selectHost and nav.open, but a pane shows
-      // the network browser INSTEAD of the file list, so they never coexist.
+    it('does NOT report a conflict between a Volume chooser command and a File-list command (sibling views)', () => {
+      // Enter is bound on both volume.select and nav.open, but the open chooser takes the
+      // keys over the file list, so the two never answer the same press.
       setCommands(
-        makeCommand({ id: 'network.selectHost', shortcuts: ['Enter'], scope: 'Main window/Servers' }),
+        makeCommand({ id: 'volume.select', shortcuts: ['Enter'], scope: 'Main window/Volume chooser' }),
         makeCommand({ id: 'nav.open', shortcuts: ['Enter'], scope: 'Main window/File list' }),
       )
       expect(getAllConflicts()).toEqual([])

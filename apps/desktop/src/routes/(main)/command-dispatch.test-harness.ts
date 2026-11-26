@@ -70,7 +70,6 @@ export const EXEMPT_IDS = [
   'operationLog.deselectAll',
   'operationLog.rollBack',
   'aboutThis.stopVerdict',
-  'network.selectHost',
   'share.back',
   'queue.cursorUp',
   'queue.cursorDown',
@@ -520,14 +519,7 @@ export const DELEGATE_ROWS: DelegateRow[] = [
     },
   },
 
-  // --- Network / volume ---
-  {
-    // Off the Servers list (the harness's focused pane is a folder) it re-lists nothing.
-    id: 'network.refresh',
-    expect: (e) => {
-      expect(e.refreshPane).not.toHaveBeenCalled()
-    },
-  },
+  // --- Volume ---
   {
     id: 'volume.selectByName',
     args: { pane: 'right', name: 'Macintosh HD' },

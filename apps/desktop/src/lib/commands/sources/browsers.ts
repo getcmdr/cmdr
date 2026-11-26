@@ -1,5 +1,5 @@
 /**
- * Network, share, and volume browsers (main window) command sources. Pure data (i18n message keys, not English); see
+ * Share, server, and volume browsers (main window) command sources. Pure data (i18n message keys, not English); see
  * `../command-registry.ts` for how the scope arrays are concatenated into the
  * registry and resolved into `Command`s.
  */
@@ -8,30 +8,6 @@ import { cmdOrCtrl, sameOnAll } from '../platform-shortcuts'
 import { BLOCKED_BY_DIALOGS } from '../while-dialog-open'
 
 export const browsersCommands: CommandSource[] = [
-  // ============================================================================
-  // Network browser
-  // ============================================================================
-  {
-    id: 'network.selectHost',
-    nameKey: 'commands.networkSelectHost.label',
-    scope: 'Main window/Servers',
-    showInPalette: false,
-    shortcuts: sameOnAll('Enter'),
-    whileDialogOpen: BLOCKED_BY_DIALOGS,
-    fixedKey: true,
-  },
-  {
-    // No combo of its own: ⌘R is `pane.refresh`, which re-lists the Servers list like
-    // any folder. This entry stays for the palette, where "Refresh network hosts"
-    // says what it does (it re-lists a focused Servers list, and does nothing elsewhere).
-    id: 'network.refresh',
-    nameKey: 'commands.networkRefresh.label',
-    scope: 'Main window/Servers',
-    showInPalette: true,
-    shortcuts: sameOnAll(),
-    whileDialogOpen: BLOCKED_BY_DIALOGS,
-  },
-
   // ============================================================================
   // A share's mount, on a server's share list
   // ============================================================================
