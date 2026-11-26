@@ -1148,6 +1148,14 @@
   "@commands.serversForgetSecret.label": {
     "sourceHash": "ed68566"
   },
+  "commands.serversSignInAs.label": "Bejelentkezés a szerverre másként…",
+  "@commands.serversSignInAs.label": {
+    "sourceHash": "ea3b934"
+  },
+  "commands.serversBrowseAsGuest.label": "Szerver böngészése vendégként",
+  "@commands.serversBrowseAsGuest.label": {
+    "sourceHash": "3120e52"
+  },
   "commands.serversEdit.label": "Szerver szerkesztése…",
   "@commands.serversEdit.label": {
     "sourceHash": "a3282a7"
@@ -1159,6 +1167,10 @@
   "commands.networkRefresh.label": "Hálózati gépek frissítése",
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
+  },
+  "commands.shareMountBack.label": "Megosztás megnyitásának megszakítása vagy visszalépés",
+  "@commands.shareMountBack.label": {
+    "sourceHash": "ae57399"
   },
   "commands.volumeSelect.label": "Kötet kiválasztása",
   "@commands.volumeSelect.label": {

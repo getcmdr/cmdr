@@ -1148,6 +1148,14 @@
   "@commands.serversForgetSecret.label": {
     "sourceHash": "ed68566"
   },
+  "commands.serversSignInAs.label": "Увійти на сервер як…",
+  "@commands.serversSignInAs.label": {
+    "sourceHash": "ea3b934"
+  },
+  "commands.serversBrowseAsGuest.label": "Переглядати сервер як гість",
+  "@commands.serversBrowseAsGuest.label": {
+    "sourceHash": "3120e52"
+  },
   "commands.serversEdit.label": "Змінити сервер…",
   "@commands.serversEdit.label": {
     "sourceHash": "a3282a7"
@@ -1159,6 +1167,10 @@
   "commands.networkRefresh.label": "Оновити мережеві хости",
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
+  },
+  "commands.shareMountBack.label": "Скасувати відкриття спільної папки або повернутися назад",
+  "@commands.shareMountBack.label": {
+    "sourceHash": "ae57399"
   },
   "commands.volumeSelect.label": "Вибрати том",
   "@commands.volumeSelect.label": {

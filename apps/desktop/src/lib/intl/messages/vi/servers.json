@@ -95,6 +95,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} chưa cho khách nào vào, nên không thể quay lại duyệt với tư cách khách.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "Tất cả bộ chứa",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

@@ -97,6 +97,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} heeft geen gast binnengelaten, dus je kunt niet terug naar bladeren als gast.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "Alle buckets",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

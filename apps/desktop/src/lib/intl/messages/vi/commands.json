@@ -1148,6 +1148,14 @@
   "@commands.serversForgetSecret.label": {
     "sourceHash": "ed68566"
   },
+  "commands.serversSignInAs.label": "Đăng nhập vào máy chủ với tư cách…",
+  "@commands.serversSignInAs.label": {
+    "sourceHash": "ea3b934"
+  },
+  "commands.serversBrowseAsGuest.label": "Duyệt máy chủ với tư cách khách",
+  "@commands.serversBrowseAsGuest.label": {
+    "sourceHash": "3120e52"
+  },
   "commands.serversEdit.label": "Sửa máy chủ…",
   "@commands.serversEdit.label": {
     "sourceHash": "a3282a7"
@@ -1159,6 +1167,10 @@
   "commands.networkRefresh.label": "Làm mới các máy chủ mạng",
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
+  },
+  "commands.shareMountBack.label": "Hủy hoặc quay lại khi đang mở mục chia sẻ",
+  "@commands.shareMountBack.label": {
+    "sourceHash": "ae57399"
   },
   "commands.volumeSelect.label": "Chọn ổ đĩa",
   "@commands.volumeSelect.label": {

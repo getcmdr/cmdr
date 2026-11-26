@@ -546,6 +546,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {Det finns inga delade mappar att visa här. Logga in för att se fler: välj kontot bredvid sökvägen.} other {Det finns inga delade mappar att visa här. Logga in för att se fler: klicka på kontot bredvid sökvägen.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "Bläddra som gäst",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -553,6 +557,10 @@
   "fileExplorer.network.share.signInAs": "Logga in som…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "Konto på {hostName}: {account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} delning} other {{countText} delningar}}",
   "@fileExplorer.network.share.shareCount": {
@@ -906,6 +914,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "Öppna en delad mapp först",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "Den här listan visar serverns delade mappar. Öppna en av dem för att skapa, byta namn på eller radera filer i den.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "Den här listan visar serverns delade mappar, så filer kan inte hamna här. Öppna en delad mapp och kopiera eller flytta sedan filer dit.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "En delad mapp är en plats på servern, så det finns inget att kopiera här. Öppna den delade mappen för att kopiera filer från den.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Inget att kopiera här",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr kan inte läsa filer från den här platsen för att kopiera eller flytta dem.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "Om du vill kopiera ut filer ur en säkerhetskopia använder du {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1105,6 +1137,10 @@
   "fileExplorer.columns.ext": "Tillägg",
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec"
+  },
+  "fileExplorer.columns.description": "Beskrivning",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "Storlek",
   "@fileExplorer.columns.size": {

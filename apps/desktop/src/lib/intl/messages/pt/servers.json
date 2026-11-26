@@ -96,6 +96,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} não deixou nenhum convidado entrar, então não dá para voltar a navegar como convidado.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "Todos os buckets",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

@@ -543,6 +543,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {这里没有可显示的共享。要查看更多，请登录：选择路径旁边的账户。} other {这里没有可显示的共享。要查看更多，请登录：点按路径旁边的账户。}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "以客人身份浏览",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -550,6 +554,10 @@
   "fileExplorer.network.share.signInAs": "用其他账户登录…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "{hostName} 上的账户：{account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, other {{countText} 个共享}}",
   "@fileExplorer.network.share.shareCount": {
@@ -903,6 +911,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "请先打开一个共享",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "这个列表显示的是服务器上的共享。打开其中一个，就能在里面创建、重命名或删除文件。",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "这个列表显示的是服务器上的共享，所以文件不能放在这里。请打开一个共享，再把文件拷贝或移动进去。",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "共享是服务器上的一个位置，所以这里没有可拷贝的东西。打开这个共享，就能从中拷贝文件。",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "这里没有可拷贝的内容",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr 无法从这个位置读取文件来拷贝或移动。",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "要把文件从备份里拷贝出来，请用 {copyKey}。",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1102,6 +1134,10 @@
   "fileExplorer.columns.ext": "扩展名",
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec"
+  },
+  "fileExplorer.columns.description": "描述",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "大小",
   "@fileExplorer.columns.size": {

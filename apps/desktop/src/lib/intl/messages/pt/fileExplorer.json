@@ -546,6 +546,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {Não há compartilhamentos para mostrar aqui. Para ver mais, entre: selecione a conta ao lado do caminho.} other {Não há compartilhamentos para mostrar aqui. Para ver mais, inicie a sessão: clique na conta ao lado do caminho.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "Navegar como convidado",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -553,6 +557,10 @@
   "fileExplorer.network.share.signInAs": "Iniciar sessão como…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "Conta em {hostName}: {account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} compartilhamento} many {{countText} compartilhamentos} other {{countText} compartilhamentos}}",
   "@fileExplorer.network.share.shareCount": {
@@ -906,6 +914,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "Abra um compartilhamento primeiro",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "Esta lista mostra os compartilhamentos do servidor. Abra um deles para criar, renomear ou apagar arquivos nele.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "Esta lista mostra os compartilhamentos do servidor, então os arquivos não podem vir para cá. Abra um compartilhamento e depois copie ou mova arquivos para ele.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "Um compartilhamento é um lugar no servidor, então não há nada para copiar aqui. Abra o compartilhamento para copiar arquivos dele.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Nada para copiar aqui",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "O Cmdr não consegue ler arquivos deste lugar para copiá-los ou movê-los.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "Para copiar arquivos de dentro de um backup, use {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1107,6 +1139,10 @@
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec",
     "sameAsSourceJustification": "Glossary-locked: 'Ext' kept verbatim as a terse column-header abbreviation in pt-BR (glossary 'Ext / DIR (column tags) . Ext / DIR (kept verbatim)', matching es). The column is width-measured, so the abbreviation must stay constant."
+  },
+  "fileExplorer.columns.description": "Descrição",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "Tamanho",
   "@fileExplorer.columns.size": {

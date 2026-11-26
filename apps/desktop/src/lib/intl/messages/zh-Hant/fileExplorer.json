@@ -543,6 +543,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {這裡沒有可顯示的共享資料夾。想看更多，請登入：選取路徑旁邊的帳號。} other {這裡沒有可顯示的共享資料夾。想看更多，請登入：按一下路徑旁邊的帳號。}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "以訪客身分瀏覽",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -550,6 +554,10 @@
   "fileExplorer.network.share.signInAs": "以其他身分登入⋯",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "「{hostName}」上的帳號：{account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, other {{countText} 個共享資料夾}}",
   "@fileExplorer.network.share.shareCount": {
@@ -903,6 +911,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "請先開啟共享資料夾",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "這個列表顯示的是伺服器上的共享資料夾。開啟其中一個，就能在裡面建立、重新命名或刪除檔案。",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "這個列表顯示的是伺服器上的共享資料夾，所以檔案無法放在這裡。請開啟一個共享資料夾，再把檔案複製或移動進去。",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "共享資料夾是伺服器上的一個位置，所以這裡沒有東西可以複製。開啟這個共享資料夾，就能從中複製檔案。",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "這裡沒有東西可以複製",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr 無法從這個位置讀取檔案來複製或移動。",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "要把檔案從備份裡複製出來，請用 {copyKey} 複製。",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1102,6 +1134,10 @@
   "fileExplorer.columns.ext": "副檔名",
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec"
+  },
+  "fileExplorer.columns.description": "描述",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "大小",
   "@fileExplorer.columns.size": {

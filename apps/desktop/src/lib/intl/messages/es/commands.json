@@ -1148,6 +1148,14 @@
   "@commands.serversForgetSecret.label": {
     "sourceHash": "ed68566"
   },
+  "commands.serversSignInAs.label": "Iniciar sesión en el servidor como…",
+  "@commands.serversSignInAs.label": {
+    "sourceHash": "ea3b934"
+  },
+  "commands.serversBrowseAsGuest.label": "Explorar el servidor como invitado",
+  "@commands.serversBrowseAsGuest.label": {
+    "sourceHash": "3120e52"
+  },
   "commands.serversEdit.label": "Editar el servidor…",
   "@commands.serversEdit.label": {
     "sourceHash": "a3282a7"
@@ -1159,6 +1167,10 @@
   "commands.networkRefresh.label": "Actualizar los hosts de red",
   "@commands.networkRefresh.label": {
     "sourceHash": "73966bd"
+  },
+  "commands.shareMountBack.label": "Cancelar la apertura de un recurso compartido o volver atrás",
+  "@commands.shareMountBack.label": {
+    "sourceHash": "ae57399"
   },
   "commands.volumeSelect.label": "Seleccionar volumen",
   "@commands.volumeSelect.label": {

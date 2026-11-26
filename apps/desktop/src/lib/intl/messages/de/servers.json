@@ -97,6 +97,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} hat keinen Gast eingelassen, daher kannst du nicht zum Durchsehen als Gast zurückkehren.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "Alle Buckets",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

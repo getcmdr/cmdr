@@ -546,6 +546,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {Aucun partage à afficher ici. Pour en voir plus, identifiez-vous : sélectionnez le compte à côté du chemin.} other {Aucun partage à afficher ici. Pour en voir plus, identifiez-vous : cliquez sur le compte à côté du chemin.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "Parcourir en tant qu’invité",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -553,6 +557,10 @@
   "fileExplorer.network.share.signInAs": "S’identifier en tant que…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "Compte sur {hostName} : {account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} partage} many {{countText} partages} other {{countText} partages}}",
   "@fileExplorer.network.share.shareCount": {
@@ -906,6 +914,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "Ouvrez d’abord un partage",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "Cette liste affiche les partages du serveur. Ouvrez-en un pour y créer, renommer ou supprimer des fichiers.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "Cette liste affiche les partages du serveur, les fichiers ne peuvent donc pas aller ici. Ouvrez un partage, puis copiez-y ou déplacez-y des fichiers.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "Un partage est un emplacement sur le serveur, il n’y a donc rien à copier ici. Ouvrez le partage pour en copier des fichiers.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Rien à copier ici",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr ne peut pas lire les fichiers à cet emplacement pour les copier ou les déplacer.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "Pour copier des fichiers hors d’une sauvegarde, utilisez {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1106,6 +1138,11 @@
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec",
     "sameAsSourceJustification": "Abbreviation of 'extension' (same root in French, 'extension'); 'Ext' is the standard tight-column abbreviation and is measured to size the column, so kept identical and short."
+  },
+  "fileExplorer.columns.description": "Description",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008",
+    "sameAsSourceJustification": "French writes the column header Description, as Nautilus, Thunar, Seahorse, and Double Commander fr do (pile, 2026-11-26)."
   },
   "fileExplorer.columns.size": "Taille",
   "@fileExplorer.columns.size": {

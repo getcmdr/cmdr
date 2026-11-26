@@ -95,6 +95,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} 沒有讓訪客進入過，所以無法返回以訪客身分瀏覽。",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "所有儲存貯體",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

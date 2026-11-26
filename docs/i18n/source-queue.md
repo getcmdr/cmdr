@@ -255,6 +255,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `startup-disk` has no `windows` / `other` forms for nl, pt, uk, vi, and zh, so `settings.indexing.pausedForSpaceNote`
   reused the system-drive and system-disk words `fileExplorer.dirSize.pausedForSpaceOtherDrive` ships; record them as
   rulings in a termbase pass. (nl, pt, uk, vi, zh)
+- `commands.shareMountBack.label`: "step back from opening a share" doesn't say back to where; the note says Backspace
+  returns to the share list. Suggest "Cancel opening a share, or go back to its list". (all; fr says
+  `revenir à la liste`)
 
 ## Process feedback
 
@@ -483,3 +486,6 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `i18n:apply` reading one values file keyed by locale would remove the script. The `hidden` concept matched the
   filename `.fuse_hidden*` in the Linux branch (the matcher treats `_` as a word boundary), so `fuse_hidden` went into
   its `notMatch`; a filename-shaped token (`.foo_bar*`) could be stripped like dotted names are. (all)
+- Again 13 `sync-locale-keys.ts <tag>` runs before `i18n:apply` would take the batch's new keys, and the `for` loop and
+  `W=…` variable were refused. Also, `check-locale hu` failed on a `decisions.md` budget the batch never touched (a docs
+  commit's citation repoint overran it by 3 bytes); trimmed one phrase. No script written. (all, share-list batch)

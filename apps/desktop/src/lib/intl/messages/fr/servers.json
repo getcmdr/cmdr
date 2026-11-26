@@ -96,6 +96,10 @@
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} n’a laissé entrer aucun invité, il n’y a donc pas d’accès invité auquel revenir.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "sourceHash": "e2571cd"
+  },
   "servers.hub.s3AllBuckets": "Tous les compartiments",
   "@servers.hub.s3AllBuckets": {
     "sourceHash": "2a5828a"

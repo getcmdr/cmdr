@@ -548,6 +548,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {Geen gedeelde mappen om hier te tonen. Meld je aan om meer te zien: selecteer het account naast het pad.} other {Geen gedeelde mappen om hier te tonen. Log in om meer te zien: klik op het account naast het pad.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "Blader als gast",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -555,6 +559,10 @@
   "fileExplorer.network.share.signInAs": "Log in als…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "Account op {hostName}: {account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} gedeelde map} other {{countText} gedeelde mappen}}",
   "@fileExplorer.network.share.shareCount": {
@@ -908,6 +916,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "Open eerst een gedeelde map",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "Deze lijst toont de gedeelde mappen van de server. Open er een om daarin bestanden aan te maken, te verwijderen of hun naam te wijzigen.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "Deze lijst toont de gedeelde mappen van de server, dus hier kunnen geen bestanden heen. Open een gedeelde map en kopieer of verplaats er dan bestanden naartoe.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "Een gedeelde map is een plek op de server, dus hier valt niets te kopiëren. Open de gedeelde map om er bestanden uit te kopiëren.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Hier valt niets te kopiëren",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr kan op deze plek geen bestanden lezen om ze te kopiëren of te verplaatsen.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "Om bestanden uit een back-up te kopiëren, gebruik je {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1109,6 +1141,10 @@
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec",
     "sameAsSourceJustification": "Short column header for the file extension. Dutch 'extensie' (glossary: extension -> extensie) abbreviates to 'Ext' (same first three letters); Total Commander's Dutch UI uses 'Ext' as its extension column. The tight abbreviation coincides with English."
+  },
+  "fileExplorer.columns.description": "Beschrijving",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "Grootte",
   "@fileExplorer.columns.size": {

@@ -545,6 +545,10 @@
   "@fileExplorer.network.share.parentRowName": {
     "sourceHash": "745bf49"
   },
+  "fileExplorer.network.share.emptyList": "{platform, select, windows {Тут немає спільних папок, які можна показати. Щоб побачити більше, увійдіть: виберіть обліковий запис поруч зі шляхом.} other {Тут немає спільних папок, які можна показати. Щоб побачити більше, увійдіть: клацніть обліковий запис поруч зі шляхом.}}",
+  "@fileExplorer.network.share.emptyList": {
+    "sourceHash": "6c74a05"
+  },
   "fileExplorer.network.share.useGuest": "Переглядати як гість",
   "@fileExplorer.network.share.useGuest": {
     "sourceHash": "58aa8c3"
@@ -552,6 +556,10 @@
   "fileExplorer.network.share.signInAs": "Увійти як…",
   "@fileExplorer.network.share.signInAs": {
     "sourceHash": "6a34e17"
+  },
+  "fileExplorer.network.share.accountMenuLabel": "Обліковий запис на сервері «{hostName}»: {account}",
+  "@fileExplorer.network.share.accountMenuLabel": {
+    "sourceHash": "e2b925e"
   },
   "fileExplorer.network.share.shareCount": "{count, plural, one {{countText} спільна папка} few {{countText} спільні папки} many {{countText} спільних папок} other {{countText} спільної папки}}",
   "@fileExplorer.network.share.shareCount": {
@@ -905,6 +913,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "sourceHash": "68f4b46"
   },
+  "fileExplorer.readOnly.shareListTitle": "Спочатку відкрийте спільну папку",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "sourceHash": "6346450"
+  },
+  "fileExplorer.readOnly.shareListMessage": "У цьому списку показано спільні папки сервера. Відкрийте одну з них, щоб створювати, перейменовувати чи видаляти в ній файли.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "sourceHash": "7dca150"
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "У цьому списку показано спільні папки сервера, тож сюди не можна покласти файли. Відкрийте спільну папку, а потім скопіюйте чи перемістіть файли в неї.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "sourceHash": "969502b"
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "Спільна папка — це місце на сервері, тож тут нічого копіювати. Відкрийте спільну папку, щоб скопіювати з неї файли.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "sourceHash": "0f02fa6"
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Тут нічого копіювати",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "sourceHash": "666c739"
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr не може прочитати файли в цьому місці, щоб скопіювати чи перемістити їх.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "sourceHash": "0ee4fc8"
+  },
   "fileExplorer.restic.copyOutWithKey": "Щоб скопіювати файли з резервної копії, натисніть {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "sourceHash": "d49d631"
@@ -1104,6 +1136,10 @@
   "fileExplorer.columns.ext": "Розш.",
   "@fileExplorer.columns.ext": {
     "sourceHash": "8c92eec"
+  },
+  "fileExplorer.columns.description": "Опис",
+  "@fileExplorer.columns.description": {
+    "sourceHash": "526e008"
   },
   "fileExplorer.columns.size": "Розмір",
   "@fileExplorer.columns.size": {
