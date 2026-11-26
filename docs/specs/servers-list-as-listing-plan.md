@@ -1,8 +1,8 @@
 # The Servers list becomes a real listing
 
 Follows getcmdr/cmdr#1511 (a server's share list became a real listing; that plan is in git at
-`24eb5c55b2:docs/specs/share-list-as-listing-plan.md`, and this one copies its shape). Tracking issue: to file when
-David answers § "Decisions".
+`24eb5c55b2:docs/specs/share-list-as-listing-plan.md`, and this one copies its shape). Tracking issue:
+getcmdr/cmdr#1517.
 
 **Problem.** The Servers view (the `network` volume at `smb://`) is still a hand-rolled table (`ServersHub.svelte`,
 1,031 lines, plus nine sibling modules and `NetworkMountView.svelte`), while one level down, a server's share list is

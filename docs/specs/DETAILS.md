@@ -14,6 +14,10 @@ Read this before adding, wiping, or reorganizing a spec.
 
 ## The specs
 
+- `servers-list-as-listing-plan.md`: **The Servers view is a hand-built table with shares nested under servers, so it
+  misses Full/Brief, `..` lands somewhere unexpected, and servers behind mounted shares don't show.** A flat list of
+  servers on the `network` volume at `smb://`, built from memory and disk only, rendered by the standard views like the
+  share list. Issue: [#1517](https://github.com/getcmdr/cmdr/issues/1517).
 - `app-path-plan.md`: **App paths travel through Rust as `std::path::Path`, so on Windows every remote and virtual path
   gains `\` and no local copy lands.** A typed `AppPath`/`AppPathBuf` the `Volume` trait takes, with native paths only
   at named crossings: pins first, a neutral `LocalVolume`, one trait flip, then crate-by-crate conversions in parallel.
