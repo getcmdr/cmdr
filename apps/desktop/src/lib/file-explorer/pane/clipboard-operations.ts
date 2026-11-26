@@ -18,7 +18,7 @@ import { tString } from '#lib/intl/messages.svelte.js'
 import { shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
 import type { TransferOperationType } from '../types'
 import { getCommonParentPath } from './transfer-operations'
-import { checkTransferDestinationGuard, resolveSourceVolumeId } from './transfer-entry'
+import { checkTransferDestinationGuard, checkTransferSourceGuard, resolveSourceVolumeId } from './transfer-entry'
 import { operationStartIsBlocked } from './operation-start-gate'
 import { readPressedRows } from './pressed-rows'
 import { capabilitiesFor, capabilitiesForPane } from './volume-capabilities'
@@ -242,6 +242,17 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
   }
 
   /**
+   * The one source guard (`transfer-entry.ts::checkTransferSourceGuard`): a pane that
+   * can't be a source (a server's share list) puts nothing on the clipboard, and says why.
+   */
+  function refusedAsSource(state: { volumeId: string; path: string }): boolean {
+    const source = checkTransferSourceGuard(state.volumeId, state.path)
+    if (source.ok) return false
+    addToast(source.alert.message, { level: 'info' })
+    return true
+  }
+
+  /**
    * The paths a copy or cut puts on the clipboard: the selection, else the cursor
    * row, read only while the rows are the ones the pane applied. A watcher insert
    * above them renumbers the rows, and the old numbers would put the neighbor on
@@ -373,6 +384,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
 
     const state = getClipboardPaneState()
     if (!state) return
+    if (refusedAsSource(state)) return
 
     const copyOutHint = routedCopyOutHint(state.volumeId, state.path)
     if (copyOutHint) {
@@ -418,6 +430,7 @@ export function createClipboardOperations(access: PaneAccess, dialogs: DialogSta
 
     const state = getClipboardPaneState()
     if (!state) return
+    if (refusedAsSource(state)) return
 
     const copyOutHint = routedCopyOutHint(state.volumeId, state.path)
     if (copyOutHint) {

@@ -17,7 +17,7 @@
 import { getSelectionSnapshot } from '#lib/tauri-commands/index.js'
 import { resolveSnapshotPaths, snapshotIdFromPanePath } from '#lib/search/snapshot-store.svelte.js'
 import { readPressedRows } from './pressed-rows'
-import { capabilitiesFor } from './volume-capabilities'
+import { capabilitiesForPane } from './volume-capabilities'
 import type { PaneAccess } from './pane-access'
 import type { FilePaneAPI } from './types'
 
@@ -52,7 +52,7 @@ export async function readSelectedPathsForCopy(access: PaneAccess): Promise<Sele
   const selectedIndices = paneRef.getSelectedIndices()
   if (selectedIndices.length === 0) return NO_SELECTION
 
-  if (!capabilitiesFor(access.getPaneVolumeId(focusedPane)).hasBackendListing) {
+  if (!capabilitiesForPane(access.getPaneVolumeId(focusedPane), access.getPanePath(focusedPane)).hasBackendListing) {
     return readListinglessSelection(paneRef, selectedIndices)
   }
 

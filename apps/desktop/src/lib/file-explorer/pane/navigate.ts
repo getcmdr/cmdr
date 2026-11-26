@@ -385,6 +385,10 @@ function commitVolumeSwitch(
   }
   if (options.shiftFocus) deps.setFocusedPane(pane)
   if (options.terminal) return SETTLED_NOOP
+  // A destination with no listing (the Servers hub, a snapshot) has no better path to find.
+  // ❗ For the hub that's #324: the "best path" would be the other pane's or a remembered
+  // share list, which the correction probes (a dial) and then opens in place of the hub.
+  if (!deps.locationHasListing({ volumeId, path: targetPath })) return SETTLED_NOOP
   return scheduleVolumePathCorrection(deps, pane, token, volumeId, volumePath, targetPath, options.exact === true)
 }
 

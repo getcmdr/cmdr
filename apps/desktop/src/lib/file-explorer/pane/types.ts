@@ -484,6 +484,8 @@ export interface ServersHubAPI extends BrowserAPI {
   getRowUnderCursor(): HubRow | null
   /** Selects a server by its saved id (or a host's discovery id), now or once it's listed. */
   selectServer(id: string): void
+  /** Selects the server whose share list `path` is (`smb://<server>`), now or once it's listed. */
+  selectShareListServer(path: string): void
   /** ⌃⏎: the cursor row's menu, opened from the keyboard just under the row. */
   openContextMenuAtCursor(): Promise<void>
 }

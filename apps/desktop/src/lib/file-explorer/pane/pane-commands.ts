@@ -11,7 +11,7 @@ import type { McpSelectMode, ConfirmDialogType } from '#lib/commands/index.js'
 import type { CursorItemDescription, ToolOpenAnswer, ToolOpenGate } from './entry-activation'
 import { routeTypingKey } from './type-to-jump-keys'
 import { readPressedRows } from './pressed-rows'
-import { capabilitiesFor } from './volume-capabilities'
+import { capabilitiesForPane } from './volume-capabilities'
 import { readSelectedPathsForCopy as readSelectedPathsForCopyFrom, type SelectedPathsRead } from './selected-paths-read'
 import {
   readSelectionAttachments as readSelectionAttachmentsFrom,
@@ -387,7 +387,8 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
     return {
       entries,
       cursorIndex,
-      isSnapshotPane: !capabilitiesFor(pane.getVolumeId()).hasBackendListing,
+      isSnapshotPane: !capabilitiesForPane(pane.getVolumeId(), access.getPanePath(access.getFocusedPane()))
+        .hasBackendListing,
     }
   }
 
@@ -403,7 +404,11 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
    */
   function resolveMultiRenameTarget(): MultiRenameSelection | null {
     const pane = access.getPaneRef(access.getFocusedPane())
-    if (!pane || !capabilitiesFor(pane.getVolumeId()).hasBackendListing) return null
+    if (
+      !pane ||
+      !capabilitiesForPane(pane.getVolumeId(), access.getPanePath(access.getFocusedPane())).hasBackendListing
+    )
+      return null
     const listingId = pane.getListingId()
     if (listingId === '') return null
     if (!pane.isRowStateReady()) {

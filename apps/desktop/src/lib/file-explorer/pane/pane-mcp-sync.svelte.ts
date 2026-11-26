@@ -5,7 +5,9 @@ import {
   type PaneFileEntry,
   type PaneState,
 } from '#lib/tauri-commands/index.js'
-import { type CanonicalPath, parentOf } from '#lib/path/canonical.js'
+import type { CanonicalPath } from '#lib/path/canonical.js'
+import { parentRowPath } from './has-parent'
+import { capabilitiesForPane } from './volume-capabilities'
 import type { ViewMode } from '#lib/app-status-store.js'
 import type { PaneListing, SearchResultEntry, SortColumn } from '#lib/ipc/bindings.js'
 import type { SnapshotSort } from '#lib/search/snapshot-store.svelte.js'
@@ -245,7 +247,10 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
 
     // Include ".." entry if it's in the visible range
     if (hasParent && visibleRangeStart === 0 && canonicalPath) {
-      const parentPath = parentOf(canonicalPath)
+      const parentPath = parentRowPath(
+        capabilitiesForPane(deps.getVolumeId(), deps.getCurrentPath()).kind,
+        canonicalPath,
+      )
       files.push({
         name: '..',
         path: parentPath,

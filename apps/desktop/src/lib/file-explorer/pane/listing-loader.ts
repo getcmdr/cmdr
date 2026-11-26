@@ -210,6 +210,8 @@ export interface ListingLoaderDeps {
 export interface ListingLoader {
   loadDirectory: (args: LoadDirectoryArgs) => Promise<void>
   navigateToParent: () => Promise<boolean>
+  /** Drops the listing (and any load in flight) for a view with none: see the function. */
+  leaveListing: () => void
   navigateToPath: (args: LoadDirectoryArgs) => Promise<void>
   navigateToFallback: (validPath: string | null) => void
   handleCancelLoading: () => void
@@ -430,25 +432,9 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     const thisGeneration = ++loadGeneration
     log.debug('[FilePane] loadDirectory: generation={generation}', { generation: thisGeneration })
 
-    // Cancel any abandoned listing from previous navigation
-    if (listingId) {
-      log.debug('[FilePane] loadDirectory: cancelling previous listing {listingId}', { listingId })
-      abandonListing(listingId)
-      // Evict the closed directory's per-path icons (no longer visible).
-      evictPerPathIconsForDir(loadedPath)
-      deps.setListingId('')
-      loadedPath = ''
-      deps.setLastSequence(0)
-    }
-
-    // Clean up previous event listeners
-    unlistenOpening?.()
-    unlistenStalled?.()
-    unlistenProgress?.()
-    unlistenReadComplete?.()
-    unlistenComplete?.()
-    unlistenError?.()
-    unlistenCancelled?.()
+    // Cancel any abandoned listing from previous navigation, and its event listeners
+    if (listingId) log.debug('[FilePane] loadDirectory: cancelling previous listing {listingId}', { listingId })
+    endListing()
 
     // Set loading state BEFORE starting IPC call
     // This ensures the UI shows the loading spinner immediately
@@ -944,8 +930,48 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     unlistenCancelled?.()
   }
 
+  /**
+   * The pane leaves its listing for a view that has none (a share list's `..` to the
+   * Servers hub), without starting another. ❗ A load still in flight must not land
+   * afterwards: its `onPathChange` would commit the share list again over the hub,
+   * since both are `smb://` paths on one volume and the drop-foreign-listings policy
+   * can't tell them apart.
+   */
+  function leaveListing(): void {
+    rejectPendingLoad(new NavigationSuperseded())
+    loadGeneration++
+    inFlight = null
+    endListing()
+    deps.setLoading(false)
+    deps.setStalled(null)
+    deps.setError(null)
+    deps.setFriendlyError(null)
+    deps.setTotalCount(0)
+    deps.setHiddenCount(0)
+  }
+
+  /** Abandons the pane's listing (its per-path icons evicted) and drops its event listeners. */
+  function endListing(): void {
+    const listingId = deps.getListingId()
+    if (listingId) {
+      abandonListing(listingId)
+      evictPerPathIconsForDir(loadedPath)
+      deps.setListingId('')
+      loadedPath = ''
+      deps.setLastSequence(0)
+    }
+    unlistenOpening?.()
+    unlistenStalled?.()
+    unlistenProgress?.()
+    unlistenReadComplete?.()
+    unlistenComplete?.()
+    unlistenError?.()
+    unlistenCancelled?.()
+  }
+
   return {
     loadDirectory,
+    leaveListing,
     navigateToParent,
     navigateToPath,
     navigateToFallback,

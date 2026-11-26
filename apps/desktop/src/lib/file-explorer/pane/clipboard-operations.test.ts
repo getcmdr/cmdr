@@ -1182,15 +1182,17 @@ describe('MTP clipboard-refusal equivalence', () => {
     }
   })
 
-  it('does not MTP-refuse a network paste (byte-identical: network falls through)', async () => {
-    readClipboardFilesSpy.mockResolvedValue({ paths: [], isCut: false })
-    const access = buildAccess({ volumeId: 'network', path: 'smb://host' })
+  it('refuses a share list both ways: no paste lands there, no copy or cut leaves it', async () => {
+    const ops = createClipboardOperations(buildAccess({ volumeId: 'network', path: 'smb://host' }), buildDialogs())
 
-    await createClipboardOperations(access, buildDialogs()).pasteFromClipboard(false)
+    await ops.pasteFromClipboard(false)
+    await ops.copyToClipboard()
+    await ops.cutToClipboard()
 
-    // No device toast; the gate falls through to the real clipboard read, which
-    // here finds an empty clipboard — exactly the pre-conversion behavior.
-    expect(addToastSpy).not.toHaveBeenCalledWith('Use F5 to copy files onto this device.', { level: 'info' })
-    expect(readClipboardFilesSpy).toHaveBeenCalled()
+    expect(dialogsStub.showAlert.mock.calls[0]?.[0]).toBe('Open a share first')
+    expect(readClipboardFilesSpy).not.toHaveBeenCalled()
+    expect(addToastSpy).toHaveBeenCalledWith(expect.stringContaining('A share is a place'), { level: 'info' })
+    expect(copyPathsToClipboardSpy).not.toHaveBeenCalled()
+    expect(cutPathsToClipboardSpy).not.toHaveBeenCalled()
   })
 })

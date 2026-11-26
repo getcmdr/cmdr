@@ -186,12 +186,15 @@ export async function loadPersistedState(): Promise<InitializedState> {
   const leftTabMgr = createTabManagerFromPersisted(resolvedLeftPaneTabs)
   const rightTabMgr = createTabManagerFromPersisted(resolvedRightPaneTabs)
 
-  // Apply unreachable state to tabs that timed out during volume resolution
+  // Apply unreachable state to tabs that timed out during volume resolution, and give a tab
+  // that was on a share list (restored as the hub) the server its hub lands on.
+  const landOnServerByTabId = { ...leftPaneTabs.landOnServerByTabId, ...rightPaneTabs.landOnServerByTabId }
   for (const tab of [...getAllTabs(leftTabMgr), ...getAllTabs(rightTabMgr)]) {
     const originalPath = unreachableByTabId[tab.id]
     if (originalPath) {
       tab.unreachable = { originalPath, retrying: false }
     }
+    if (tab.id in landOnServerByTabId && tab.volumeId === 'network') tab.landOnServer = landOnServerByTabId[tab.id]
   }
 
   return {

@@ -6,6 +6,7 @@
  */
 import { volumeScheme } from '#lib/volume-scheme.js'
 import { isServerPath, isServerVolumeId, isUnderServerRoot } from '#lib/servers/server-path-utils.js'
+import { isShareListLocation } from '#lib/servers/share-list-path.js'
 
 /** Why a synchronous navigation refused. `message` is the exact current string — contract (L12). */
 export interface NavigateRefusal {
@@ -50,6 +51,23 @@ export const SMB_PATH_REFUSAL: NavigateRefusal = {
   kind: 'smb-path-unsupported',
   message:
     "nav_to_path doesn't take smb:// paths. A mounted share is its own volume, so use select_volume with the name from cmdr://state volumes; for a share that isn't mounted, use select_volume Network and open the host.",
+}
+
+/**
+ * The narrowed `smb://` rule, for when a server's share list is a listing: on the
+ * `network` volume the hub (`smb://`) and a server's share list (`smb://<server>`,
+ * the pane routing's `isShareListLocation`) are places a pane can go, and a share
+ * (`smb://<server>/<share>`) keeps {@link SMB_PATH_REFUSAL}: a share is mounted, ❌ never
+ * navigated to. `null` for a path off the `smb://` namespace, which this doesn't judge.
+ *
+ * ❗ Not yet wired into `navigateToLocation` / `navigateInPlace` / MCP `nav_to_path`:
+ * both refusals stand until every entry point opens a share list as a listing (whose
+ * Enter mounts and whose sign-in refusal has a button), in the same change.
+ */
+export function shareListNavigationRefusal(path: string): NavigateRefusal | null {
+  if (!path.startsWith(NETWORK_VOLUME_PATH)) return null
+  if (path === NETWORK_VOLUME_PATH || isShareListLocation('network', path)) return null
+  return SMB_PATH_REFUSAL
 }
 
 /**

@@ -11,7 +11,7 @@ tabs.
 - **`TabBar.svelte`**: Tab bar UI (always visible, Chrome-style shrinking tabs, pins, close buttons, context menu)
 - **`tab-drag-controller.svelte.ts`**, **`tab-drop-slot.ts`**, **`TabDragOverlay.svelte`**: drag a tab to reorder it or
   move it to the other pane (controller, pure slot math, ghost + landing line)
-- **`tab-label.ts`**: `deriveTabLabel(path, volume)`, the tab title
+- **`tab-label.ts`**: `tabLabelFor(tab, volume)`, the tab title (a share list's is its server's name)
 - **`tab-analytics.ts`**: the event vocabulary. Emitted from `pane/tab-operations.ts`, ❌ never from the pure state
   manager (unit tests drive it directly).
 

@@ -22,7 +22,7 @@ import { showInFileManagerOrExplain } from '#lib/file-explorer/file-manager-reve
 import { addToast } from '#lib/ui/toast/index.js'
 import CopiedPathToastContent from '#lib/file-explorer/CopiedPathToastContent.svelte'
 import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
-import { capabilitiesFor } from '#lib/file-explorer/pane/volume-capabilities.js'
+import { capabilitiesFor, capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
 import { pathInsideArchive } from '#lib/file-explorer/pane/archive-paths.js'
 import { openInEditorOrExplain } from '#lib/file-explorer/pane/editor-open.js'
 import { openGetInfoOrExplain } from '#lib/file-explorer/pane/get-info-open.js'
@@ -162,16 +162,22 @@ export const fileHandlers = {
   },
 
   'file.rename': ({ explorerRef, dispatchArgs }) => {
+    const args = dispatchArgs as CommandArgs['file.rename'] | undefined
     // On the Servers volume, Rename is "Edit server…": the name is what a server has to
     // rename. ❗ Opened, ❌ never awaited: the sheet stays up as long as the user types.
-    if (explorerRef && getFocusedPaneVolumeId() === 'network') {
+    // ❗ Except MCP `rename` on a share list, which names a ROW to rename: Edit server
+    // would open a sheet the agent never asked for, so the rename refuses it, typed.
+    const mcpRenameOnShareList =
+      args?.mcpRequestId !== undefined &&
+      capabilitiesForPane(getFocusedPaneVolumeId(), getFocusedPanePath()).kind === 'share-list'
+    if (explorerRef && getFocusedPaneVolumeId() === 'network' && !mcpRenameOnShareList) {
       detached(editServerInView(serverInView(explorerRef)))
       return
     }
     // Arg-less from F2 / the palette (seed the current name); the MCP `rename`
     // tool passes `{ initialName, expectedName }` to seed a proposed name and pin
     // activation to the target row.
-    explorerRef?.startRename(dispatchArgs as CommandArgs['file.rename'] | undefined)
+    explorerRef?.startRename(args)
   },
 
   'file.edit': (hctx) => {

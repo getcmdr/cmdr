@@ -65,11 +65,12 @@ import { isVirtualResticPath, resticViewComponentIndex } from '../restic/path-de
 import { getShowVirtualGitPortal } from '#lib/settings/reactive-settings.svelte.js'
 import { isPlainFilesystemPath } from '#lib/path/canonical.js'
 import { hasSupportedArchiveExtension, isWritableArchiveName, pathInsideArchive } from './archive-paths'
+import { isShareListLocation } from '#lib/servers/share-list-path.js'
 
 /**
  * The closed set of volume kinds. The discriminant — every capability lookup
- * goes kind → record. No `'other'` member: the two virtual kinds plus the six
- * real kinds plus the three routed ones, nothing else.
+ * goes kind → record. No `'other'` member: the two virtual kinds, the real
+ * kinds, the three routed ones, and the share list, nothing else.
  *
  * ❗ **Nothing switches exhaustively over this union.** Every consumer is a
  * positive-list comparison (`kind === 'mtp' || kind === 'adb'`,
@@ -88,6 +89,9 @@ import { hasSupportedArchiveExtension, isWritableArchiveName, pathInsideArchive 
  * is DELIBERATELY WIDER than the tint union in `volume-tint.svelte.ts`: every
  * routed pane shows the PARENT drive's tint (it lives on that drive), so the
  * three are capability kinds only, never tint kinds.
+ *
+ * `share-list` is kind-from-path too, on the `network` volume only: `smb://<server>`
+ * is a server's share list, `smb://` the hub (`capabilitiesForPane`).
  */
 export type VolumeKind =
   | 'local' // real filesystem volume (root, attached, cloud_drive, main_volume)
@@ -98,7 +102,8 @@ export type VolumeKind =
   | 'nfs' // an NFS export Cmdr dials itself (real backend listing, nfs:// scheme, no system clipboard, no terminal)
   | 'mtp' // connected MTP storage (real backend listing, mtp:// scheme, no system clipboard)
   | 'adb' // an Android device over ADB (real backend listing, adb:// scheme, no system clipboard)
-  | 'network' // the synthetic SMB browser virtual volume (host/share list, smb:// namespace)
+  | 'network' // the Servers hub, the `network` volume at `smb://` (no listing: `NetworkMountView` renders it)
+  | 'share-list' // a server's shares, the `network` volume at `smb://<server>` (kind-from-path, read-only)
   | 'search-results' // the snapshot virtual volume (search-results:// namespace, flat result set)
   | 'archive' // a pane inside a supported archive (kind-from-path; zip is writable, see the row)
   | 'git-portal' // a pane inside one of the virtual `.git` category trees (kind-from-path, read-only)
@@ -331,6 +336,26 @@ const CAPABILITY_TABLE: Readonly<Record<VolumeKind, VolumeCapabilities>> = Objec
     renamesCanCopy: false,
     canStoreXattrs: false,
   }),
+  'share-list': Object.freeze({
+    kind: 'share-list',
+    // A server's shares on the `network` volume (`SmbServerVolume` in Rust): a real
+    // listing of one folder row per share, with a `..` back to the hub. A share is
+    // MOUNTED, never entered, written into, or copied out of, so every write and
+    // source cell is off, and each verb refuses at its own per-kind seam
+    // (`file-operation-commands.ts::readOnlyRefusal`, `transfer-entry.ts`'s two
+    // guards): `canBeSource: false` alone enforces nothing. Not indexed, polled, or
+    // tagged: there's no folder on any disk behind it.
+    hasBackendListing: true,
+    canWrite: false,
+    canBeSource: false,
+    hasParentRow: true,
+    syncsToMcp: true,
+    canBeIndexed: false,
+    pollsForDeletedFolder: false,
+    canShareLinks: false,
+    renamesCanCopy: false,
+    canStoreXattrs: false,
+  }),
   'search-results': Object.freeze({
     kind: 'search-results',
     // No folder to write into, but the rows ARE real files, so source ops work.
@@ -513,6 +538,7 @@ export function kindCanBeFavorited(kind: VolumeKind): boolean {
     case 'adb':
       return true
     case 'network':
+    case 'share-list':
     case 'search-results':
     case 'archive':
     case 'git-portal':
@@ -714,9 +740,17 @@ export function paneFolderIsPolledForDeletion(volumeId: string, path: string): b
  * The backend also confirms each boundary and this can't, so a real folder
  * named `photos.zip` or `Browse snapshots` reads as routed here: the accepted
  * lexical edge.
+ *
+ * The fourth is a server's share list: the `network` volume at `smb://<server>`
+ * (exactly one authority, no share). ❗ This is the ONE place that reads such a path
+ * as a share list (`isShareListLocation` is its rule); `smb://` stays the hub, and a
+ * share's own `smb://<server>/<share>` is no listing at all (it's mounted).
  */
 export function capabilitiesForPane(volumeId: string, path: string | undefined): VolumeCapabilities {
   if (path === undefined) return capabilitiesFor(volumeId)
+  if (volumeId === 'network') {
+    return isShareListLocation(volumeId, path) ? CAPABILITY_TABLE['share-list'] : capabilitiesFor(volumeId)
+  }
   // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- routed boundaries are folder NAMES; a drive or share root splits to a first component no boundary names
   return routedCapabilities(path.split('/')) ?? capabilitiesFor(volumeId)
 }

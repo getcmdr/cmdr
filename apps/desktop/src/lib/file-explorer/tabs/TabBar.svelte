@@ -5,7 +5,7 @@
     import Icon from '#lib/ui/Icon.svelte'
     import { tooltip } from '#lib/tooltip/tooltip.js'
     import { tString } from '#lib/intl/messages.svelte.js'
-    import { deriveTabLabel } from './tab-label'
+    import { tabLabelFor } from './tab-label'
     import { getVolumes } from '#lib/stores/volume-store.svelte.js'
     import { shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
     import { useInlineSize } from '#lib/utils/inline-size-action.js'
@@ -141,7 +141,7 @@
         {#each tabs as tab, index (tab.id)}
             {@const isActive = tab.id === activeTabId}
             {@const isAfterActive = index > 0 && tabs[index - 1].id === activeTabId}
-            {@const label = deriveTabLabel(tab.path, volumeById.get(tab.volumeId))}
+            {@const label = tabLabelFor(tab, volumeById.get(tab.volumeId))}
             <button
                 class="tab"
                 class:active={isActive}

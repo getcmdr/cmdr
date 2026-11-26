@@ -184,6 +184,21 @@ describe('capabilitiesForKind — the frozen per-kind defaults', () => {
       renamesCanCopy: false,
       canStoreXattrs: false,
     },
+    'share-list': {
+      kind: 'share-list',
+      // A server's shares, listed by the backend like folders, with a `..` back to the hub.
+      hasBackendListing: true,
+      // A share is mounted, never written into or copied out of.
+      canWrite: false,
+      canBeSource: false,
+      hasParentRow: true,
+      syncsToMcp: true,
+      canBeIndexed: false,
+      pollsForDeletedFolder: false,
+      canShareLinks: false,
+      renamesCanCopy: false,
+      canStoreXattrs: false,
+    },
     'search-results': {
       kind: 'search-results',
       hasBackendListing: false,
@@ -669,6 +684,29 @@ describe("withBackendCapabilities — the backend's answer wins over the per-kin
 })
 
 describe('capabilitiesForPane — kind-from-path resolution', () => {
+  it('routes a server on the network volume to the share-list kind, and keeps the hub the network kind', () => {
+    volumes.list = []
+    expect(capabilitiesForPane('network', 'smb://testnas').kind).toBe('share-list')
+    expect(capabilitiesForPane('network', 'smb://testnas:4450').kind).toBe('share-list')
+    expect(capabilitiesForPane('network', "smb://test_user_1's nas").kind).toBe('share-list')
+    expect(capabilitiesForPane('network', 'smb://').kind).toBe('network')
+    expect(capabilitiesForPane('network', undefined).kind).toBe('network')
+  })
+
+  it('keeps a share path off the share-list kind: a share is mounted, never listed here', () => {
+    expect(capabilitiesForPane('network', 'smb://testnas/public').kind).toBe('network')
+  })
+
+  it('reads `smb://<server>` as a share list only on the network volume', () => {
+    // A direct SMB volume's paths share the scheme; they're that volume's, ❌ never a share list.
+    volumes.list = [vol({ id: 'smb-testnas-public', fsType: 'smbfs', category: 'network' })]
+    expect(capabilitiesForPane('smb-testnas-public', 'smb://testnas').kind).toBe('smb')
+  })
+
+  it('gives a share list the frozen row, with nothing folded in', () => {
+    expect(capabilitiesForPane('network', 'smb://testnas')).toBe(capabilitiesForKind('share-list'))
+  })
+
   it('returns the writable archive row when the PATH is inside a zip', () => {
     volumes.list = [vol({ id: 'root', fsType: 'apfs', category: 'main_volume' })]
     // The volumeId is the parent drive, but the path crosses a zip — the archive
@@ -1023,7 +1061,7 @@ describe('kindCanBeFavorited — where a favorite may point', () => {
   })
 
   it('says no for the two virtual kinds and the three routed ones', () => {
-    for (const kind of ['network', 'search-results', 'archive', 'git-portal', 'restic'] as const) {
+    for (const kind of ['network', 'share-list', 'search-results', 'archive', 'git-portal', 'restic'] as const) {
       expect(kindCanBeFavorited(kind), kind).toBe(false)
     }
   })
@@ -1039,6 +1077,7 @@ describe('kindCanBeFavorited — where a favorite may point', () => {
       'mtp',
       'adb',
       'network',
+      'share-list',
       'search-results',
       'archive',
       'git-portal',

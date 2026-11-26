@@ -25,7 +25,7 @@ export function commitAhead(deps: NavigateDeps, pane: 'left' | 'right', apply: (
   const before = pointBeforeCommit(getActiveTab(deps.getTabMgr(pane)), returnPointFor(deps, pane))
   apply()
   const tab = getActiveTab(deps.getTabMgr(pane))
-  if (deps.volumeHasListing(tab.volumeId)) {
+  if (deps.locationHasListing({ volumeId: tab.volumeId, path: tab.path })) {
     deps.returnPoints.set(pane, { ...before, ahead: { volumeId: tab.volumeId, path: tab.path } })
   } else {
     deps.returnPoints.delete(pane)

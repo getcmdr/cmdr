@@ -1448,6 +1448,30 @@
   "@fileExplorer.readOnly.resticMessage": {
     "description": "Alert body under fileExplorer.readOnly.resticTitle, when the user tries to change something inside a restic backup’s snapshots. Explains that the folders there are saved past versions rather than folders on disk, and that copying files out of them works. A “snapshot” is one backup run, as restic calls it; use your language’s usual backup-software term."
   },
+  "fileExplorer.readOnly.shareListTitle": "Open a share first",
+  "@fileExplorer.readOnly.shareListTitle": {
+    "description": "Alert dialog title shown when the user tries a file action (create, rename, delete, copy, move, paste, drop) on a network server’s list of shares. The list shows the shared folders a file server (a NAS, another computer) offers; each one has to be opened (connected to) before its files can be worked with. An instruction: open one of the shares before doing that."
+  },
+  "fileExplorer.readOnly.shareListMessage": "This list shows the server’s shares. Open one to create, rename, or delete files in it.",
+  "@fileExplorer.readOnly.shareListMessage": {
+    "description": "Alert body under fileExplorer.readOnly.shareListTitle, when the user tries to create, rename, or delete something in a network server’s list of shares. Explains that the rows are the server’s shared folders, not files, and that the files are worked with inside a share once it’s open."
+  },
+  "fileExplorer.readOnly.shareListDestinationMessage": "This list shows the server’s shares, so files can’t go here. Open a share, then copy or move into it.",
+  "@fileExplorer.readOnly.shareListDestinationMessage": {
+    "description": "Alert body under fileExplorer.readOnly.shareListTitle, when the user tries to copy, move, paste, or drop files onto a network server’s list of shares (or onto one share’s row in it). Explains that the list holds shares rather than a folder to put files in, and that files go into a share after opening it."
+  },
+  "fileExplorer.readOnly.shareListSourceMessage": "A share is a place on the server, so there’s nothing here to copy. Open the share to copy files from it.",
+  "@fileExplorer.readOnly.shareListSourceMessage": {
+    "description": "Alert body under fileExplorer.readOnly.shareListTitle, when the user tries to copy, move, or drag a share out of a network server’s list of shares. Explains that a share is a shared folder on the server rather than a file to copy, and that its files can be copied once it’s open."
+  },
+  "fileExplorer.readOnly.notASourceTitle": "Nothing to copy here",
+  "@fileExplorer.readOnly.notASourceTitle": {
+    "description": "Alert dialog title shown when the user tries to copy, move, or drag files out of a place Cmdr can’t read files from for a copy. A short statement."
+  },
+  "fileExplorer.readOnly.notASourceMessage": "Cmdr can’t read files from this place to copy or move them.",
+  "@fileExplorer.readOnly.notASourceMessage": {
+    "description": "Alert body under fileExplorer.readOnly.notASourceTitle: the place shown in the pane doesn’t let Cmdr read its files for a copy or move, so the action can’t start."
+  },
   "fileExplorer.restic.copyOutWithKey": "To copy files out of a backup, use {copyKey}.",
   "@fileExplorer.restic.copyOutWithKey": {
     "description": "Info toast when the user presses the system-clipboard copy or cut shortcut (Cmd+C / Cmd+X) inside a restic backup, where Cmdr shows a backup repository’s snapshots as read-only folders. Those files live packed inside the backup and have no path the system clipboard can carry, so it points the user at the key of Cmdr’s own copy command instead. Moving out of a backup isn’t possible, so only the copy key is named. When no key runs Copy, the toast reads \"fileExplorer.restic.copyOutWithoutKey\" instead. The sibling of fileExplorer.git.copyOutWithCopyKey.",

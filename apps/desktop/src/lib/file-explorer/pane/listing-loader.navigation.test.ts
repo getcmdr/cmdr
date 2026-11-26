@@ -160,6 +160,23 @@ describe('createListingLoader — navigateToFallback / handleCancelLoading / nav
     })
   })
 
+  it('leaveListing ends the listing and lets no load still in flight land afterwards', async () => {
+    // A share list's `..` to the hub: both are `smb://` paths on one volume, so a share-list
+    // listing landing after the pane left would commit the share list again over the hub.
+    const { loader, state, spies } = makeHarness({ volumeId: 'network', volumePath: 'smb://' })
+    await loader.loadDirectory({ path: 'smb://testnas' })
+    const leftListing = state.listingId
+
+    loader.leaveListing()
+    completeCb(0)({ listingId: leftListing, totalCount: 3, volumeRoot: 'smb://' })
+    await Promise.resolve()
+
+    expect(spies.onPathChange).not.toHaveBeenCalled()
+    expect(state.listingId).toBe('')
+    expect(state.loading).toBe(false)
+    expect(h.cancelListing).toHaveBeenCalledWith(leftListing)
+  })
+
   it('handleCancelLoading is a no-op when not loading or without a listing', () => {
     const { loader, spies } = makeHarness({ loading: false, listingId: '' })
     loader.handleCancelLoading()

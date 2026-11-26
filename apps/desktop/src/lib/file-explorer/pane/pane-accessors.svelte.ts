@@ -21,6 +21,7 @@ import type { SortColumn, SortOrder } from '../types'
 import { explorerState } from './explorer-state.svelte'
 import { getActiveTab, getClosedStackSize, type TabManager } from '../tabs/tab-state-manager.svelte'
 import type { FilePaneAPI } from './types'
+import { writeTabPath } from './hub-landing.svelte'
 
 export function createPaneAccessors(paneRefs: Record<'left' | 'right', FilePaneAPI | undefined>) {
   // Live tab-manager holders live in the explorer store. These `$derived`
@@ -91,8 +92,9 @@ export function createPaneAccessors(paneRefs: Record<'left' | 'right', FilePaneA
     return explorerState.getTabMgr(pane)
   }
 
+  /** Every commit's path write, which is also where the hub landing is derived (`hub-landing.svelte.ts`). */
   function setPanePath(pane: 'left' | 'right', path: string) {
-    getActiveTab(getTabMgr(pane)).path = path
+    writeTabPath(getActiveTab(getTabMgr(pane)), path)
   }
 
   function setPaneVolumeId(pane: 'left' | 'right', volumeId: string) {

@@ -26,6 +26,7 @@
     import { getStatusTooltip } from './host-status'
     import {
         hubRowIcon,
+        isServerOfShareList,
         lastUsedSeconds,
         openMoveFor,
         type HubOpenMove,
@@ -263,15 +264,13 @@
         handleRefreshClick()
     }
 
-    /** The server an "Add" just saved: the list learns of it a moment later, so this waits for the row. */
-    let pendingSelection = $state<string | null>(null)
+    /** The row the cursor goes to once it's listed: the list may learn of it a moment later, so this waits. */
+    let pendingSelection = $state<((row: HubRow) => boolean) | null>(null)
 
     $effect(() => {
-        const id = pendingSelection
-        if (id === null) return
-        const index = items.findIndex(
-            (item) => item.kind === 'row' && (item.row.id === id || item.row.host?.id === id),
-        )
+        const wanted = pendingSelection
+        if (wanted === null) return
+        const index = items.findIndex((item) => item.kind === 'row' && wanted(item.row))
         if (index < 0) return
         pendingSelection = null
         untrack(() => {
@@ -282,8 +281,14 @@
     /** Selects the server `id` names (saved or discovery id), now or once listed: "Add"'s proof (cmdr-reports#6). */
     // noinspection JSUnusedGlobalSymbols -- used by NetworkMountView after an Add
     export function selectServer(id: string) {
-        pendingSelection = id
+        pendingSelection = (row) => row.id === id || row.host?.id === id
         void list.refreshSaved()
+    }
+
+    /** Selects the server whose share list `path` is, now or once listed: where `..` from it lands. */
+    // noinspection JSUnusedGlobalSymbols -- used by NetworkMountView with the pane's hub landing
+    export function selectShareListServer(path: string) {
+        pendingSelection = (row) => isServerOfShareList(row, path)
     }
 
     /**

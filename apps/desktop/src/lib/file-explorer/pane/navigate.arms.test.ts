@@ -436,6 +436,20 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
     expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenCalledWith(null)
   })
 
+  it('selecting Servers from a share list lands on the hub, never on a better path (#324)', () => {
+    // The other pane on a share list would be a "valid other-pane path" to the correction,
+    // which would then probe it (a dial) and move this pane onto that server's listing.
+    h = makeHarness({
+      left: { path: 'smb://testnas', volumeId: 'network' },
+      right: { path: 'smb://attic', volumeId: 'network' },
+    })
+
+    navigate({ pane: 'left', to: { selectVolume: { volumeId: 'network', path: 'smb://' } }, source: 'user' }, h.deps)
+
+    expect(h.tab('left').path).toBe('smb://')
+    expect(h.determineNavigationPath).not.toHaveBeenCalled()
+  })
+
   it('switching to a non-network volume leaves the network host alone (the pane clears it itself)', () => {
     h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
 

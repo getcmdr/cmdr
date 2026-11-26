@@ -2,6 +2,9 @@ import { getFolderName } from '#lib/file-operations/transfer/transfer-dialog-uti
 import { getDeviceDisplayPath, isDeviceScheme } from '#lib/adb/adb-path-utils.js'
 import { NETWORK_VOLUME_PATH } from '../pane/navigate-refusals'
 import { tString } from '#lib/intl/messages.svelte.js'
+import type { Location } from '#lib/tauri-commands/index.js'
+import { capabilitiesForPane } from '../pane/volume-capabilities'
+import { shareListServerLabel } from '../network/share-list-label'
 
 /**
  * Derives the user-facing label for a tab from its path.
@@ -36,4 +39,16 @@ export function deriveTabLabel(path: string, volume?: { path: string; rootLabel?
     return getFolderName(getDeviceDisplayPath(path))
   }
   return getFolderName(path)
+}
+
+/**
+ * A TAB's label: {@link deriveTabLabel}, except on a server's share list, which is
+ * called what the server is (`shareListServerLabel`), ❌ never its path's host key, which
+ * is identity only. The kind comes from the pane routing, so it needs the volume id too.
+ */
+export function tabLabelFor(tab: Location, volume?: { path: string; rootLabel?: string | null }): string {
+  if (capabilitiesForPane(tab.volumeId, tab.path).kind === 'share-list') {
+    return shareListServerLabel(tab.path) ?? tab.path
+  }
+  return deriveTabLabel(tab.path, volume)
 }

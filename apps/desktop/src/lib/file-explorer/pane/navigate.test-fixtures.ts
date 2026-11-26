@@ -168,7 +168,8 @@ export function makeHarness(opts?: HarnessOpts): Harness {
     correctionGen: { value: 0 },
     returnPoints: new Map(),
     // The two virtual volumes render without a listing, as their capability rows say.
-    volumeHasListing: (volumeId) => volumeId !== 'network' && volumeId !== 'search-results',
+    locationHasListing: ({ volumeId, path }) =>
+      (volumeId !== 'network' || path !== 'smb://') && volumeId !== 'search-results',
   }
 
   return {

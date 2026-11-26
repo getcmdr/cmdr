@@ -133,7 +133,7 @@
         type NavigateResult,
     } from './navigate'
     import type { ReturnPoint } from './return-point'
-    import { capabilitiesFor } from './volume-capabilities'
+    import { capabilitiesForPane } from './volume-capabilities'
     import { createDragDropController } from './drag-drop-controller.svelte'
     import { createPaneAccessors } from './pane-accessors.svelte'
     import { moveCursorToTarget } from './move-cursor'
@@ -418,7 +418,7 @@
         tokens: navTokens,
         correctionGen: navCorrectionGen,
         returnPoints: navReturnPoints,
-        volumeHasListing: (volumeId) => capabilitiesFor(volumeId).hasBackendListing,
+        locationHasListing: ({ volumeId, path }) => capabilitiesForPane(volumeId, path).hasBackendListing,
     }
 
     // The single nav-state persistence subscriber (A5). Created synchronously

@@ -6,7 +6,7 @@ import {
   buildTransferPropsFromCursor,
   buildTransferPropsFromSnapshot,
 } from './transfer-operations'
-import { capabilitiesFor } from './volume-capabilities'
+import { capabilitiesForPane } from './volume-capabilities'
 import { announceRowsStillSettling } from './operation-start-gate'
 import { passesHomeFolderGuard } from './home-folder-guard'
 import { ROW_SETTLE_BUDGET_MS } from './pressed-rows'
@@ -187,7 +187,7 @@ export function createTransferDialogOpener(
     // `volumeId === 'search-results'` string compare. Among kinds that reach
     // this transfer opener, search-results is the only `!hasBackendListing` one
     // (a network pane can't be a transfer source — `canBeSource: false`).
-    if (!capabilitiesFor(access.getPaneVolumeId(pane)).hasBackendListing) {
+    if (!capabilitiesForPane(access.getPaneVolumeId(pane), access.getPanePath(pane)).hasBackendListing) {
       const snapshotProps = buildSnapshotTransferProps(operationType, sourcePaneRef, pane)
       if (!snapshotProps) return false
       return showWithTrigger(snapshotProps, trigger)

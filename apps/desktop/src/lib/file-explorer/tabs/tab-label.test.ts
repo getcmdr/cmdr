@@ -1,5 +1,26 @@
-import { describe, it, expect } from 'vitest'
-import { deriveTabLabel } from './tab-label'
+import { describe, it, expect, vi } from 'vitest'
+import type { NetworkHost } from '../types'
+import { deriveTabLabel, tabLabelFor } from './tab-label'
+
+const network = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
+vi.mock('../network/network-store.svelte', () => ({ getNetworkHosts: () => network.hosts }))
+
+describe("tabLabelFor: a server's share list", () => {
+  it('is called what the server is, ❌ not its path`s host key', () => {
+    network.hosts = [{ id: 'h1', name: "Test_user_1's NAS", port: 445, source: 'discovered' }]
+    expect(tabLabelFor({ volumeId: 'network', path: "smb://test_user_1's nas" })).toBe("Test_user_1's NAS")
+  })
+
+  it('falls back to the key for a server the app doesn’t know by name', () => {
+    network.hosts = []
+    expect(tabLabelFor({ volumeId: 'network', path: 'smb://testnas:4450' })).toBe('testnas')
+  })
+
+  it('leaves the hub and every other tab to `deriveTabLabel`', () => {
+    expect(tabLabelFor({ volumeId: 'network', path: 'smb://' })).toBe('Servers')
+    expect(tabLabelFor({ volumeId: 'root', path: '/Users/test_user_1/Documents' })).toBe('Documents')
+  })
+})
 
 describe('deriveTabLabel', () => {
   /** ❗ The Servers view's path is the `smb://` sentinel, whose "basename" read "/" (QA round 2). */

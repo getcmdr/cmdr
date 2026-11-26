@@ -14,6 +14,7 @@
     import type { ServerProtocol } from '#lib/ipc/bindings.js'
     import RemoteConnectView from './RemoteConnectView.svelte'
     import { createShareMount, type ShareMountCredentials } from './share-mount.svelte'
+    import { hubLandingFor, takeHubLanding } from './hub-landing.svelte'
     import type { VolumeChangePayload } from './types'
     import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
@@ -91,6 +92,17 @@
     // Component refs for keyboard navigation
     let serversHubRef: ServersHubAPI | undefined = $state()
     let placesBrowserRef: PlacesBrowserAPI | undefined = $state()
+
+    // The server the pane came back from (its share list's `..`, or a restored share-list
+    // tab): the hub's cursor lands on its row, once (`hub-landing.svelte.ts`).
+    $effect(() => {
+        const hub = serversHubRef
+        if (!paneId || !hub || hubLandingFor(paneId) === undefined) return
+        untrack(() => {
+            const landing = takeHubLanding(paneId)
+            if (landing !== undefined) hub.selectShareListServer(landing)
+        })
+    })
 
     // Sync when parent changes the prop (for example, history navigation)
     $effect(() => {

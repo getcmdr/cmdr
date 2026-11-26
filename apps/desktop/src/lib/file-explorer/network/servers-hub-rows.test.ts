@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { buildHubRows, isNearbyOnly, openMoveFor, savedSmbHostIds } from './servers-hub-rows'
+import { buildHubRows, isNearbyOnly, isServerOfShareList, openMoveFor, savedSmbHostIds } from './servers-hub-rows'
 import type { SavedServer } from '#lib/tauri-commands/index.js'
 import type { NetworkHost, VolumeInfo } from '../types'
 import type { SignedInAs } from './signed-in-as'
@@ -106,6 +106,24 @@ function volume(id: string, connectionState: VolumeInfo['connectionState']): Vol
     connectionState,
   }
 }
+
+describe('isServerOfShareList: the row `..` from a share list lands on', () => {
+  it('finds a server mDNS is seeing by its Bonjour name, whatever the case', () => {
+    const [row] = buildHubRows({ saved: [], hosts: [host({ name: 'Attic NAS' })], volumes: [] })
+    expect(isServerOfShareList(row, 'smb://attic nas')).toBe(true)
+    expect(isServerOfShareList(row, 'smb://testnas')).toBe(false)
+  })
+
+  it('finds a saved server mDNS isn’t seeing by its address', () => {
+    const [row] = buildHubRows({ saved: [smbServer({ address: '10.0.0.4' })], hosts: [], volumes: [] })
+    expect(isServerOfShareList(row, 'smb://10.0.0.4')).toBe(true)
+  })
+
+  it('never matches a server of another protocol', () => {
+    const [row] = buildHubRows({ saved: [sftpServer()], hosts: [], volumes: [] })
+    expect(isServerOfShareList(row, 'smb://testnas.local')).toBe(false)
+  })
+})
 
 describe('buildHubRows: what appears', () => {
   it('lists one row per saved server and one per discovered host', () => {

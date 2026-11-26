@@ -373,6 +373,12 @@ fired it again, so a host row the person meant to browse mounted a share they ne
 mount's Back) bringing a fresh share list that fired the same queued share again at once. Pinned by
 `share-mount.svelte.test.ts` and `../pane/NetworkMountView.test.ts`.
 
+## `share-list-label.ts`
+
+What a person calls the server a share-list path (`smb://<key>`) names: the name of the discovery-state host whose
+`shareListPath` is that path (its Bonjour name, or the name a manual server was saved with), else the path's key. The
+tab label reads it (`../tabs/tab-label.ts::tabLabelFor`); ❌ never show the key itself, which is identity only.
+
 ## `..` on top of a server's share list
 
 `PlacesBrowser` heads its list with a `..` row, back to the Servers list, ALWAYS: `network.showShareParentRow` is about

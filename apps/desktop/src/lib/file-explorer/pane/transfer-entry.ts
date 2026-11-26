@@ -116,6 +116,17 @@ export function checkTransferDestinationGuard(
       },
     }
   }
+  // A server's share list holds shares, not a folder. ❗ The `network` kind too: a drop on a
+  // share's ROW targets `smb://<server>/<share>`, which routes there, and so does the hub.
+  if (destCaps.kind === 'share-list' || destCaps.kind === 'network') {
+    return {
+      ok: false,
+      alert: {
+        title: tString('fileExplorer.readOnly.shareListTitle'),
+        message: tString('fileExplorer.readOnly.shareListDestinationMessage'),
+      },
+    }
+  }
 
   const destVolume = getDestinationVolumeInfo(destVolumeId, volumes)
   if (destVolume?.mountIsReadOnly) {
@@ -129,6 +140,36 @@ export function checkTransferDestinationGuard(
   }
 
   return { ok: true }
+}
+
+/**
+ * The ONE source guard every way of taking rows OUT of a pane runs: the F5/F6 opener
+ * (keys, menu, MCP copy/move), ⌘C/⌘X, and a drag's start. A pane whose kind can't be a
+ * source (`canBeSource: false`, from `capabilitiesForPane`) refuses before any dialog
+ * opens or anything reaches the clipboard. Worded per kind: a server's share list (or
+ * the hub) has shares, not files, and anything else that can't export gets plain words.
+ *
+ * ❗ `canBeSource` greyed only the F-key bar until this existed: nothing else asked it.
+ */
+export function checkTransferSourceGuard(
+  sourceVolumeId: string,
+  sourcePath: string | undefined,
+): { ok: true } | { ok: false; alert: TransferGuardAlert } {
+  const caps = capabilitiesForPane(sourceVolumeId, sourcePath)
+  if (caps.canBeSource) return { ok: true }
+  const sharesNotFiles = caps.kind === 'share-list' || caps.kind === 'network'
+  return {
+    ok: false,
+    alert: sharesNotFiles
+      ? {
+          title: tString('fileExplorer.readOnly.shareListTitle'),
+          message: tString('fileExplorer.readOnly.shareListSourceMessage'),
+        }
+      : {
+          title: tString('fileExplorer.readOnly.notASourceTitle'),
+          message: tString('fileExplorer.readOnly.notASourceMessage'),
+        },
+  }
 }
 
 /**

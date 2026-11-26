@@ -11,6 +11,10 @@ import { volumeScheme } from './volume-scheme'
 import { resolveStorePath } from './settings/store-path'
 import type { Location } from './tauri-commands'
 import type { RestoredTabPath } from '#lib/ipc/bindings.js'
+import { isShareListLocation } from './servers/share-list-path'
+
+/** The Servers hub's path on the `network` volume, where a restored share-list tab lands. */
+const NETWORK_HUB_PATH = 'smb://'
 
 const STORE_NAME = 'app-status.json'
 const DEFAULT_PATH = '~'
@@ -127,6 +131,11 @@ export interface LoadedPaneTabs extends PersistedPaneTabs {
    * where their volume is yet. ❌ Never re-key one from an incomplete registry.
    */
   registryPendingTabIds: string[]
+  /**
+   * Tabs that were on a server's share list, restored as the Servers hub: the share-list
+   * path each one's hub lands its cursor on (`restoreShareListLocation`). Absent when none.
+   */
+  landOnServerByTabId?: Record<string, string>
 }
 
 /**
@@ -143,12 +152,33 @@ async function followMovedRoot(
   return { location, pending: live.kind === 'notReady' }
 }
 
-/** A stored tab's location, restored: snapshot swapped, root followed, then walked. */
+/** A restored tab's location, plus the server its Servers hub lands on when it was a share list. */
+interface RestoredLocation {
+  location: Location
+  pending: boolean
+  landOnServer?: string
+}
+
+/**
+ * A stored location on a server's share list comes back as the Servers hub, with the
+ * share-list path kept as where the hub's cursor lands. ❗ Never the share list itself:
+ * that would list the server at launch, which nobody asked for (#324, and a possible
+ * Keychain read). `null` for any other location.
+ */
+export function restoreShareListLocation(location: Location): { location: Location; landOnServer: string } | null {
+  if (!isShareListLocation(location.volumeId, location.path)) return null
+  return { location: { volumeId: 'network', path: NETWORK_HUB_PATH }, landOnServer: location.path }
+}
+
+/** A stored tab's location, restored: share list to hub, snapshot swapped, root followed, then walked. */
 async function restoreTabLocation(
   location: Location,
   pathExistsFn: (p: string) => Promise<boolean>,
   livePathFn: LivePathFn,
-): Promise<{ location: Location; pending: boolean }> {
+): Promise<RestoredLocation> {
+  // FIRST, so nothing below (`live_volume_path`, the existence walk) is ever asked about a server.
+  const shareList = restoreShareListLocation(location)
+  if (shareList) return { location: shareList.location, pending: false, landOnServer: shareList.landOnServer }
   // A stored snapshot path can't come back; it's swapped for a real folder first.
   const followed = await followMovedRoot(await restoreSnapshotLocation(location.path, location.volumeId), livePathFn)
   // Pending: keep the stored path unprobed. Walking it would probe the old root, which may
@@ -227,9 +257,14 @@ export async function loadAppStatus(pathExists: (p: string) => Promise<boolean>)
     const askCmdrRailWidth = parseRailWidth(await store.get('askCmdrRailWidth'))
     const firstRunLayoutApplied = (await store.get('firstRunLayoutApplied')) === true
 
-    // A stored snapshot path can't come back; it's swapped for a real folder first.
-    const left = await restoreSnapshotLocation(leftPath, leftVolumeId)
-    const right = await restoreSnapshotLocation(rightPath, rightVolumeId)
+    // A stored snapshot path can't come back; it's swapped for a real folder first. A share
+    // list comes back as the hub, as a tab does (these keys feed no pane: symmetry only).
+    const asStored = (path: string, volumeId: string): Location =>
+      restoreShareListLocation({ volumeId, path })?.location ?? { volumeId, path }
+    const leftStored = asStored(leftPath, leftVolumeId)
+    const rightStored = asStored(rightPath, rightVolumeId)
+    const left = await restoreSnapshotLocation(leftStored.path, leftStored.volumeId)
+    const right = await restoreSnapshotLocation(rightStored.path, rightStored.volumeId)
 
     // Resolve paths with fallback - skip for virtual 'network' volume
     const resolvedLeftPath = left.volumeId === 'network' ? left.path : await resolvePersistedPath(left.path, pathExists)
@@ -589,6 +624,13 @@ function isValidPersistedPaneTabs(raw: unknown): raw is PersistedPaneTabs {
   return obj.tabs.length > 0 && obj.tabs.every(isValidPersistedTab)
 }
 
+/** The restored tabs' hub landings, by tab id. */
+function landingsByTabId(restored: { tab: PersistedTab; landOnServer?: string }[]): Record<string, string> {
+  const byId: Record<string, string> = {}
+  for (const { tab, landOnServer } of restored) if (landOnServer !== undefined) byId[tab.id] = landOnServer
+  return byId
+}
+
 /**
  * Loads persisted tab state for a pane side.
  * Falls back to migration from old scalar keys if no tab data exists.
@@ -607,14 +649,15 @@ export async function loadPaneTabs(
       // Validate paths exist, fall back for any that don't
       const restored = await Promise.all(
         raw.tabs.map(async (tab) => {
-          const { location, pending } = await restoreTabLocation(tab, pathExistsFn, livePathFn)
-          return { tab: { ...tab, ...location }, pending }
+          const { location, pending, landOnServer } = await restoreTabLocation(tab, pathExistsFn, livePathFn)
+          return { tab: { ...tab, ...location }, pending, landOnServer }
         }),
       )
       return {
         tabs: restored.map(({ tab }) => tab),
         activeTabId: raw.activeTabId,
         registryPendingTabIds: restored.filter(({ pending }) => pending).map(({ tab }) => tab.id),
+        landOnServerByTabId: landingsByTabId(restored),
       }
     }
 
@@ -624,7 +667,7 @@ export async function loadPaneTabs(
     const volumeId = ((await store.get(`${side}VolumeId`)) as string) || DEFAULT_VOLUME_ID
     const sortBy = parseSortColumn(await store.get(`${side}SortBy`))
     const viewMode = parseViewMode(await store.get(`${side}ViewMode`))
-    const { location, pending } = await restoreTabLocation({ path, volumeId }, pathExistsFn, livePathFn)
+    const { location, pending, landOnServer } = await restoreTabLocation({ path, volumeId }, pathExistsFn, livePathFn)
 
     const tab: PersistedTab = {
       id: crypto.randomUUID(),
@@ -636,7 +679,12 @@ export async function loadPaneTabs(
       pinned: false,
     }
 
-    return { tabs: [tab], activeTabId: tab.id, registryPendingTabIds: pending ? [tab.id] : [] }
+    return {
+      tabs: [tab],
+      activeTabId: tab.id,
+      registryPendingTabIds: pending ? [tab.id] : [],
+      landOnServerByTabId: landingsByTabId([{ tab, landOnServer }]),
+    }
   } catch {
     const id = crypto.randomUUID()
     return {

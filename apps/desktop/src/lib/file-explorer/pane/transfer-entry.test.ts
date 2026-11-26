@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { checkTransferDestinationGuard, resolveSourceVolumeId } from './transfer-entry'
+import { checkTransferDestinationGuard, checkTransferSourceGuard, resolveSourceVolumeId } from './transfer-entry'
 import { searchResultsNotAFolderToast } from '#lib/search/capabilities.js'
 import type { VolumeInfo } from '../types'
 import type { PathVolumeResolution } from '#lib/tauri-commands/index.js'
@@ -154,6 +154,40 @@ describe('checkTransferDestinationGuard', () => {
     // The pane is AT `/Users/me` (which contains `foo.zip` as a row), not inside it.
     const result = checkTransferDestinationGuard('root', [ROOT], '/Users/me')
     expect(result.ok).toBe(true)
+  })
+})
+
+describe("a server's share list as a transfer end", () => {
+  const SHARES_NOT_A_FOLDER = {
+    title: 'Open a share first',
+    message: 'This list shows the server’s shares, so files can’t go here. Open a share, then copy or move into it.',
+  }
+
+  it('refuses landing anything in a share list', () => {
+    expect(checkTransferDestinationGuard('network', [ROOT], 'smb://testnas')).toEqual({
+      ok: false,
+      alert: SHARES_NOT_A_FOLDER,
+    })
+  })
+
+  it('refuses a drop onto a share ROW, whose target is the share`s own path (the `network` kind)', () => {
+    expect(checkTransferDestinationGuard('network', [ROOT], 'smb://testnas/public')).toEqual({
+      ok: false,
+      alert: SHARES_NOT_A_FOLDER,
+    })
+  })
+
+  it('refuses taking a share out, and lets every pane that can be a source through', () => {
+    expect(checkTransferSourceGuard('network', 'smb://testnas')).toEqual({
+      ok: false,
+      alert: {
+        title: 'Open a share first',
+        message:
+          'A share is a place on the server, so there’s nothing here to copy. Open the share to copy files from it.',
+      },
+    })
+    expect(checkTransferSourceGuard('root', '/Users/test_user_1').ok).toBe(true)
+    expect(checkTransferSourceGuard('root', '/Users/test_user_1/backup.tar/inner').ok).toBe(true)
   })
 })
 

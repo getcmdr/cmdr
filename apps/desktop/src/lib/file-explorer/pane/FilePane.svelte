@@ -95,6 +95,7 @@
     import { typingFilters } from './type-to-jump-keys'
     import { createSearchPaneKeys } from './search-pane-keys'
     import { computeHasParent, effectiveVolumeRootFor } from './has-parent'
+    import { NETWORK_VOLUME_PATH } from './navigate-refusals'
     import { overlayRowsToSkip } from './overlay-rows'
     import { firstSelectedIndex } from './first-selected-index'
     import { sameKindIndices, sameKindTargetFor } from './select-same-kind'
@@ -488,10 +489,11 @@
         getTotalCount: () => effectiveTotalCount,
         getHiddenCount: () => hiddenCount,
         getLoading: () => loading,
-        // A `..` out of an SMB share's top folder has no parent path, so it's no drop target.
+        // A `..` out of an SMB share's top folder, or a share list's back to the hub, is no drop target.
         getParentRow: () => ({
             hasParent,
-            parentPath: hasParent && canonicalPath && !shareParent.leadsOutHere ? parentOf(canonicalPath) : '',
+            parentPath: hasParent && canonicalPath && !shareParent.leadsOutHere && caps.kind !== 'share-list'
+                ? parentOf(canonicalPath) : '',
         }),
         getEffectiveSortBy: () => effectiveSortBy,
     })
@@ -705,7 +707,8 @@
 
     /** Which pieces of the status footer this pane renders (`pane-footer.ts`). */
     const footer = $derived(
-        paneFooterVisibility({ kind: paneViewKind, hasError: Boolean(friendlyError || error || unreachable) }),
+        paneFooterVisibility({ kind: paneViewKind, volumeKind: caps.kind,
+            hasError: Boolean(friendlyError || error || unreachable) }),
     )
 
     // Look up the live volume info (used for the share name in the reconnecting
@@ -1467,7 +1470,7 @@
      * there and an agent had no way out of a failed mount.
      */
     export function navigateToParent(): Promise<boolean> {
-        if (shareParent.leaveTopFolder()) return Promise.resolve(true)
+        if (shareParent.leaveTopFolder() || leaveShareList()) return Promise.resolve(true)
         if (isNetworkView) {
             if (networkHost.host === null) return Promise.resolve(false)
             // Clear the view first (it also drops the mount error), then the pane
@@ -1477,6 +1480,15 @@
             return Promise.resolve(true)
         }
         return loader.navigateToParent()
+    }
+
+    /** A share list's parent is the Servers hub, which lists nothing: commit `smb://` with no load (the hub lands on the server). */
+    function leaveShareList(): boolean {
+        if (caps.kind !== 'share-list') return false
+        loader.leaveListing()
+        currentPath = NETWORK_VOLUME_PATH
+        onPathChange?.(NETWORK_VOLUME_PATH)
+        return true
     }
 
     // Opening folder state (before read_dir starts - slow for network folders)
@@ -1704,7 +1716,8 @@
     })
     // `..` out of an SMB share's top folder goes to the server's shares, as Go to parent does there.
     const handleNavigate = (entry: FileEntry): Promise<void> =>
-        entry.name === '..' && shareParent.leaveTopFolder() ? Promise.resolve() : activation.handleNavigate(entry)
+        entry.name === '..' && (shareParent.leaveTopFolder() || leaveShareList())
+            ? Promise.resolve() : activation.handleNavigate(entry)
 
     // The breadcrumb's three interactions (ancestor click, right-click menu with
     // its eject item, volume switch).

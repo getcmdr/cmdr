@@ -31,6 +31,8 @@ import { readPressedRows, type PressedPane } from '../pane/pressed-rows'
 import { cancelClickToRename } from '../rename/rename-activation'
 import { renderDragImage } from './drag-image-renderer'
 import { isTouchPress } from './touch-hold'
+import { checkTransferSourceGuard } from '../pane/transfer-entry'
+import { addToast } from '#lib/ui/toast/index.js'
 
 /** Gets the drag threshold from settings (minimum distance in pixels to trigger drag) */
 export function getDragThreshold(): number {
@@ -378,6 +380,18 @@ async function resolveDragIconPath(
 }
 
 /**
+ * Why a drag can't take these rows out (`checkTransferSourceGuard`'s words), or `null`.
+ * Asked with a row's path where the context has one (the row's kind is the pane's, a
+ * row in a zip pane included); a selection drag asks the volume, which is enough for
+ * the one kind that refuses here: every path on the `network` volume is no source.
+ */
+function dragSourceRefusal(ctx: SingleFileDragContext | SelectionDragContext | PathsDragContext): string | null {
+  const rowPath = ctx.type === 'single' ? ctx.path : ctx.type === 'paths' ? ctx.paths[0] : undefined
+  const source = checkTransferSourceGuard(ctx.sourceVolumeId, rowPath)
+  return source.ok ? null : source.alert.message
+}
+
+/**
  * Starts tracking a potential drag operation with selection awareness.
  *
  * For single-file drags (no prior selection), the file is selected only when the
@@ -414,6 +428,16 @@ export function startSelectionDragTracking(
       // Threshold crossed - trigger the drag
       const ctx = activeDrag.context
       const cbs = activeDrag.callbacks
+
+      // The one source guard: a share list's rows are shares, not files to drag out. The
+      // press stays a click (its selection lands), and nothing reaches the pasteboard.
+      const refusal = dragSourceRefusal(ctx)
+      if (refusal !== null) {
+        addToast(refusal, { level: 'info' })
+        cbs.onDragCancel?.()
+        cancelDragTracking()
+        return
+      }
 
       // Stop any pending click-to-rename timer so it doesn't fire mid-drag.
       cancelClickToRename()

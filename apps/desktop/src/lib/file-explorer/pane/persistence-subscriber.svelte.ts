@@ -79,6 +79,7 @@ import type { ViewMode } from '#lib/app-status-store.js'
 import { recordVisit } from '#lib/tauri-commands/index.js'
 import type { SortColumn, SortOrder } from '../types'
 import type { LastUsedPathRecord } from './navigate'
+import { capabilitiesForPane } from './volume-capabilities'
 
 /**
  * The nav-state the subscriber reads off the store, plus the persistence hooks.
@@ -209,6 +210,9 @@ export function initPersistenceSubscriber(deps: PersistenceSubscriberDeps): Pers
 
   return {
     persistLastUsedPath: (record) => {
+      // ❌ Never a share list as `network`'s last folder: picking Servers would reopen, and
+      // list, the last server (#324). Servers always lands on the hub.
+      if (capabilitiesForPane(record.volumeId, record.path).kind === 'share-list') return
       void saveLastUsedPathForVolume(record.volumeId, record.path)
       // Feed the folder-importance visit signal from the same navigation-commit
       // point. Fire-and-forget and failure-silent (the wrapper never throws): a

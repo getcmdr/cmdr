@@ -12,6 +12,9 @@ import NetworkMountView from './NetworkMountView.svelte'
 import type { MountError, NetworkHost, ShareInfo } from '../types'
 import { MountFailure } from '../network/mount-error'
 import { renderMountError } from '../network/mount-error-messages'
+import { explorerState } from './explorer-state.svelte'
+import { createInitialTabState } from './tab-operations'
+import { createTabManager, getActiveTab } from '../tabs/tab-state-manager.svelte'
 
 const h = vi.hoisted(() => ({
   fetchShares: vi.fn(),
@@ -28,6 +31,7 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  DEFAULT_VOLUME_ID: 'root',
   mountNetworkShare: h.mountNetworkShare,
   cancelServerConnect: h.cancelServerConnect,
   newServerAttemptId: () => 'server-connect-test-attempt',
@@ -543,6 +547,34 @@ describe('NetworkMountView: back from a share list', () => {
     api.handleKeyDown(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }))
     await vi.waitFor(() => {
       expect(target.querySelector('.server-row.is-under-cursor')?.textContent).toContain('Testnas')
+    })
+    await unmount(component)
+  })
+
+  it("lands on the server the tab's hub landing names, once", async () => {
+    // What `..` from a share list (or a restored share-list tab) leaves on the tab.
+    explorerState.setTabMgr('left', createTabManager(createInitialTabState('smb://', 'network')))
+    getActiveTab(explorerState.getTabMgr('left')).landOnServer = 'smb://testnas'
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const component = mount(NetworkMountView, { target, props: { paneId: 'left', isFocused: true } })
+
+    await vi.waitFor(() => {
+      expect(target.querySelector('.server-row.is-under-cursor')?.textContent).toContain('Testnas')
+    })
+    expect(getActiveTab(explorerState.getTabMgr('left')).landOnServer).toBeUndefined()
+    await unmount(component)
+  })
+
+  it('keeps the cursor where it would be when the landing names a server it doesn’t list', async () => {
+    explorerState.setTabMgr('left', createTabManager(createInitialTabState('smb://', 'network')))
+    getActiveTab(explorerState.getTabMgr('left')).landOnServer = 'smb://gone-nas'
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const component = mount(NetworkMountView, { target, props: { paneId: 'left', isFocused: true } })
+
+    await vi.waitFor(() => {
+      expect(target.querySelector('.server-row.is-under-cursor')?.textContent).toContain('Attic')
     })
     await unmount(component)
   })

@@ -201,6 +201,15 @@ describe('persistence-subscriber', () => {
     expect(saveLastUsedPathSpy).toHaveBeenCalledWith('mtp-x:1', '/dcim')
   })
 
+  it('persistLastUsedPath never records a share list as the network volume`s last folder', () => {
+    // Picking Servers would otherwise reopen, and LIST, the last server (#324): Servers
+    // lands on the hub, always. Nor is a server a folder whose importance a visit feeds.
+    const { sub } = create()
+    sub.persistLastUsedPath({ volumeId: 'network', path: 'smb://testnas' })
+    expect(saveLastUsedPathSpy).not.toHaveBeenCalled()
+    expect(recordVisitSpy).not.toHaveBeenCalled()
+  })
+
   it('persistLastUsedPath also feeds the importance visit signal (fire-and-forget)', () => {
     const { sub } = create()
     sub.persistLastUsedPath({ volumeId: 'root', path: '/Users/me/project' })

@@ -10,11 +10,13 @@ here.
   tabs per pane
 - `TabBar.svelte`: tab bar UI (always visible, Chrome-style shrinking tabs, pin icons, close buttons, context menu)
 - `tab-drag-controller.svelte.ts`, `tab-drop-slot.ts`, `TabDragOverlay.svelte`: dragging a tab (§ Moving a tab)
-- `tab-label.ts`: `deriveTabLabel(path, volume)` (see `tab-label.test.ts`). At a volume root carrying a `rootLabel` (an
-  SMB share, whose mount dir may be a disambiguated `/Volumes/public-1`) the label is that name, the one the header
-  shows. It special-cases only the MTP scheme: an `mtp://…` path derives from the within-storage path
-  (`getMtpDisplayPath`), so the storage root shows "/" instead of the raw storage id (`65537`); normal paths and mounted
-  volume roots (`/Volumes/USB`) keep their basename
+- `tab-label.ts`: `tabLabelFor(tab, volume)` is a tab's title: a server's share list (the `share-list` kind) reads the
+  server's friendly name (`../network/share-list-label.ts`), ❌ never its path's host key; everything else goes to
+  `deriveTabLabel(path, volume)` (see `tab-label.test.ts`). At a volume root carrying a `rootLabel` (an SMB share, whose
+  mount dir may be a disambiguated `/Volumes/public-1`) the label is that name, the one the header shows. It
+  special-cases only the MTP scheme: an `mtp://…` path derives from the within-storage path (`getMtpDisplayPath`), so
+  the storage root shows "/" instead of the raw storage id (`65537`); normal paths and mounted volume roots
+  (`/Volumes/USB`) keep their basename
 - `tab-state-manager.test.ts`: unit tests for the state manager
 
 ## Key decisions

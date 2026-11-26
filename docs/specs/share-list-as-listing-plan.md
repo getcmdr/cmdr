@@ -676,6 +676,28 @@ added.
   pane whose tab starts on `network` + `smb://<fixture>` renders the share list, `..` lands on the hub with the cursor
   on that server's row, and Servers in the switcher still lands on the hub; the restore pins above are green.
 
+- **Audit, as landed** (`capabilitiesFor(` and `=== 'network'` sites that can see a share-list pane):
+  - Moved to `capabilitiesForPane`: `pane-commands.ts` (both `hasBackendListing` reads),
+    `selection-attachments-read.ts`, `selected-paths-read.ts`, `file-operation-commands.ts` (delete's snapshot branch),
+    `transfer-dialog-opener.ts`, `DualPaneExplorer`'s listing dep (now `locationHasListing(location)`, read by
+    `commitAhead` and the switch arm's correction gate).
+  - Kept volume-only, same answer on both network kinds: the terminal gates (`menu-gate`, `FunctionKeyBar`,
+    `pane-pointer`, `file.openTerminalHere`: `network` has no terminal), `about-this-opener.ts` (search-results only),
+    `coverage-cta` (not a pane), `TransferDialog`'s `renamesCanCopy` and `confirmation-skip.ts` (S3 only),
+    `clipboard-operations.ts`'s scheme family and snapshot gate (`network` is in neither), `mcp-volume-select.ts` (a
+    select always lands on the hub).
+  - Raw `'network'` checks kept: `pane-accessors` (the volume's root and name), `initialization.ts` (trusts the id),
+    `volume-selection.ts` (Servers → `smb://`), `breadcrumb-bar.ts`, `navigate-and-select.ts`, `navigate.ts`'s drop
+    prefix and `onPaneRoot`, `app-status-store.ts`'s resolve skip. Left for M5c: `FunctionKeyBar`'s `canRename` (F2 dark
+    on a share list), `file-handlers.ts::serverInView` + `servers.edit` (host from the path), `VolumeBreadcrumb` (the
+    friendly label), `pane-mirror.ts`. Left for M6: `navigate.ts` / `navigate-return.ts` `setNetworkHost`,
+    `DebugHistoryPanel`.
+  - Branch 2 verbs pinned here: F7, ⇧F4, F8, F2 (pane), MCP `mkdir` / `delete` / `rename` (typed `readOnly`), F5/F6 out
+    (MCP typed `source`), F5 in, paste in, ⌘C/⌘X out, a drop on the pane and on a share row (guard), a drag out (start
+    guard), MCP `rename` routing. Not pinned yet, all unreachable until M5c: Space's folder-size walk, About / MCP
+    `about_item` / `inspect_file` (backend gate from M4a), open in new tab / other pane (still `SMB_PATH_REFUSAL`), the
+    share-row context menu (M5b/M5c), Quick Look (Rust `supports_local_fs_access` pin from M4a).
+
 ### M5b: the three account doors (before anything that deletes the header)
 
 - **Scope**: SMB host rows in the hub get the house `Menu` (a host-keyed sibling builder in `row-menu.ts`: Open, Edit…,

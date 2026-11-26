@@ -89,8 +89,10 @@ suite:
   `sortFallbackNote`, the one null-safe header note Full and Brief share. `sort-menu-sync.svelte.ts`: the ONE deduped
   `$effect` pushing the focused pane's requested sort to View > Sort by's checkmarks. Both read the pane's
   `effectiveSortBy`, the column its rows really follow: `../DETAILS.md` § Sorting, "Requested vs effective column".
-- `pane-footer.ts`: which parts of the status footer a view kind renders. Two answers, because they differ on exactly
-  one pane: a search-results pane counts its rows like any folder but reports no free space.
+- `pane-footer.ts`: which parts of the status footer a view kind renders. Two answers, because they differ on two panes:
+  a search-results pane and a server's share list count their rows like any folder but report no free space.
+- `hub-landing.svelte.ts`: where the Servers hub's cursor lands coming back from a share list (§ "A server's share list
+  (kind-from-path)").
 - `pane-key-router.ts` / `pane-pointer.ts`: keyboard routing and mouse handling for a focused pane.
 - `entry-activation.ts`: what opening an entry does (redirect, archive Enter policy, browse, viewer, OS default app).
   `opening-toast.ts`: the two-second "{file} is opening in {app}…" toast beside every OS-default-app launch. The app
@@ -495,7 +497,9 @@ company on the snapshot pane:
   ONE volume (`snapshot-source-volume.ts`), so a figure would be computable, but the pane isn't sitting IN that volume:
   a free-space readout there answers a question nobody asked and would follow the user around their history.
   `SelectionInfo` takes this as its own `showVolumeSpace` prop rather than inferring it from a `null` space, which
-  already means "not fetched yet" and keeps the empty bar track.
+  already means "not fetched yet" and keeps the empty bar track. A server's share list renders as a `normal` view but
+  gets no space either (the `network` volume answers no space query), decided from the routed kind the input carries, ❌
+  never a `volumeId` check.
 
 **One footer height everywhere.** The band from the list's bottom edge to the function-key bar measures the same in a
 folder, a search-results pane, a disk image, the Servers hub, and a share list, so switching between them never makes it
@@ -559,7 +563,13 @@ volume-id string. The record has two halves, and which half answers is the whole
   the path first (archive by suffix, git portal by `isVirtualGitPath` gated on the live `showVirtualGitPortal` toggle,
   restic by the first `Browse snapshots` component), taking the LEFTMOST boundary when they nest, as the backend's
   `resolve` does, and otherwise defers to `capabilitiesFor`. ❌ No routed branch folds in the parent drive's published
-  capabilities: those answer for the drive, and the pane is inside something ON it.
+  capabilities: those answer for the drive, and the pane is inside something ON it. A fourth routed kind, `share-list`,
+  is checked first and only on the `network` volume (§ "A server's share list (kind-from-path)").
+- **A question about a PANE asks `capabilitiesForPane`, ❌ never `capabilitiesFor(volumeId)`**: on `network`, the
+  volume's own row is the hub's (`hasBackendListing: false`), so a share-list pane would read as a snapshot pane.
+  `capabilitiesFor` stays where the VOLUME is the question (the terminal and search gates, the transfer dialog's
+  `renamesCanCopy`, `confirmation-skip.ts`'s S3 check, MCP `select_volume`'s landing, which is always the hub) and where
+  no pane path exists.
 - **`deleted-dir-poll.ts` drops an answer about a folder the pane has since left**: a share that mounted back elsewhere
   moved the pane mid-poll, and the old path's "missing" walked it off the share.
 - **`deleted-dir-poll.ts` trusts the backend's "missing" for `/` too**: a pane on `/` that hears it twice walks up (the
@@ -2054,6 +2064,41 @@ The third routed kind, built like the portal: one `volumeId` (the drive holding 
 copy-out as the restore, no deleted-folder poll. Two differences: there's no toggle, and `..` at the view's top must
 walk back to the repo folder, so `has-parent.ts::effectiveVolumeRootFor` gives every routed kind the drive's mount as
 its root (the listing reports the view folder). Wording, the row's icon, and index progress: `../restic/DETAILS.md`.
+
+## A server's share list (kind-from-path)
+
+The `network` volume at `smb://<server>` (exactly one authority, no share) is the `share-list` kind; `smb://` stays the
+`network` kind (the Servers hub, `NetworkMountView`), and a share's own `smb://<server>/<share>` is `network` too (a
+share is mounted, never listed). The ONE routing rule is `#lib/servers/share-list-path.ts::isShareListLocation`, which
+`capabilitiesForPane` answers from; ❌ no other site reads the path as a share list. The listing is the backend's
+(`SmbServerVolume`, `src-tauri/src/network/DETAILS.md`), so the pane renders the standard list.
+
+- **The row**: a real listing with a `..`, mirrored to MCP, and nothing else: no writes, no source, no index, no poll,
+  no tags. `canBeSource: false` greys only the F-key bar, so each verb refuses at its own seam: pane-side writes in
+  `file-operation-commands.ts::readOnlyRefusal`, anything landing in it (and on a share's ROW, the `network` kind) in
+  `transfer-entry.ts::checkTransferDestinationGuard`, and anything taking rows out in the ONE source guard
+  `transfer-entry.ts::checkTransferSourceGuard`, called by the F5/F6 opener (`showTransferDialog`, MCP typed `source`),
+  ⌘C/⌘X (`clipboard-operations.ts`), and a drag's start (`../drag/drag-drop.ts`). MCP `rename` on a share list goes to
+  the pane's rename (which refuses it typed) instead of Edit server (`file-handlers.ts`).
+- **The footer**: `SelectionInfo` with no disk space (`pane-footer.ts` takes the routed kind): no server answers a space
+  query, so the usage bar would sit empty, reading "0% full".
+- **`..`**: `FilePane.navigateToParent` (and the `..` row's activation) take the share-list arm, which drops the listing
+  without a load (`listing-loader.ts::leaveListing`, so a late completion can't commit the share list back over the hub)
+  and commits `smb://`. The `..` row names the hub (`has-parent.ts::parentRowPath`, for the MCP mirror) and is no drop
+  target. ❗ `parentOf('smb://x')` is `smb:/` by the grammar's slash arithmetic: never ask it here.
+- **The hub landing is DERIVED** (`hub-landing.svelte.ts`): the one path write every commit goes through
+  (`pane-accessors.svelte.ts::setPanePath` → `writeTabPath`) notes `TabState.landOnServer` when the tab goes from a
+  share list to `smb://`, and any other path change drops it. `NetworkMountView` takes it once and calls
+  `ServersHub.selectShareListServer`, which waits for the row (`servers-hub-rows.ts::isServerOfShareList`). A restore
+  has no path to leave: `app-status-store.ts::restoreShareListLocation` brings a share-list tab back as the hub (❌
+  never the share list: nothing lists at launch, #324) and hands the landing over in `LoadedPaneTabs`'
+  `landOnServerByTabId`, which `initialization.ts` puts on the tab.
+- **Never remembered**: `persistence-subscriber.svelte.ts` records no share list as `network`'s last-used path, and a
+  volume switch to a place with no listing runs no background "better path" correction (`navigate.ts`), so picking
+  Servers always lands on the hub, never on a remembered or other-pane share list (each would be a dial).
+- **Not yet reached**: `navigate-refusals.ts::shareListNavigationRefusal` holds the narrowed `smb://` rule, unwired;
+  `nav_to_path` and in-place navigation on `network` still refuse a share list until every entry point opens one as a
+  listing in the same change.
 
 ## Enter-behavior policy (archives and bundles)
 

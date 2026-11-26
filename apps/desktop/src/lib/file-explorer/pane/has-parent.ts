@@ -1,3 +1,5 @@
+import { type CanonicalPath, parentOf } from '#lib/path/canonical.js'
+import { NETWORK_VOLUME_PATH } from './navigate-refusals'
 import type { VolumeKind } from './volume-capabilities'
 
 /**
@@ -52,6 +54,15 @@ export function computeHasParent(input: HasParentInput): boolean {
   if (input.currentPath === '/') return false
   if (input.currentPath === input.effectiveVolumeRoot) return input.topFolderLeadsOut === true
   return true
+}
+
+/**
+ * The folder a `..` row leads to. A server's share list (`smb://<server>`) leads to the
+ * Servers hub at `smb://`, which the path grammar's slash arithmetic can't produce
+ * (`parentOf('smb://testnas')` is `smb:/`, a path no volume answers).
+ */
+export function parentRowPath(kind: VolumeKind, canonicalPath: CanonicalPath): string {
+  return kind === 'share-list' ? NETWORK_VOLUME_PATH : parentOf(canonicalPath)
 }
 
 /**

@@ -76,6 +76,23 @@ export function shareListHostKey(path: string): ShareListAddress | null {
 }
 
 /**
+ * Whether a pane on `volumeId` at `path` shows a server's share list: the `network`
+ * volume at `smb://<server>`. ❗ The ONE routing rule; `capabilitiesForPane` answers its
+ * `share-list` kind from it. Ask `capabilitiesForPane` instead, except from a leaf that
+ * mustn't pull in the volume store (the restore in `app-status-store.ts`).
+ */
+export function isShareListLocation(volumeId: string, path: string): boolean {
+  return volumeId === 'network' && shareListHostKey(path) !== null
+}
+
+/** Whether two paths name one server's share list (case, an explicit `:445`, and a trailing `/` folded). */
+export function sameShareList(a: string, b: string): boolean {
+  const left = shareListHostKey(a)
+  const right = shareListHostKey(b)
+  return left !== null && right !== null && left.key === right.key && left.port === right.port
+}
+
+/**
  * An authority's key (unescaped, or the bracketed IPv6 literal) and its port text, or
  * `null` when its shape doesn't read. A key that doesn't unescape comes back `null`.
  */

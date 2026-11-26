@@ -24,6 +24,7 @@
 import type { ServerProtocol } from '#lib/ipc/bindings.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { parseServerPath } from '#lib/servers/server-path-utils.js'
+import { sameShareList, shareListPath } from '#lib/servers/share-list-path.js'
 import type { SavedPlace, SavedServer } from '#lib/tauri-commands/index.js'
 import type { ConnectionState, NetworkHost, VolumeInfo } from '../types'
 import { signedInAsOfMount, signedInAsUser, type SignedInAs } from './signed-in-as'
@@ -473,6 +474,16 @@ export function savedHostFor(row: HubRow): NetworkHost {
   const withPort = /^(.+):(\d+)$/.exec(row.address)
   const [hostname, port] = withPort ? [withPort[1], Number(withPort[2])] : [row.address, SMB_PORT]
   return { id: row.id, name: row.name, hostname, port, source: 'manual' }
+}
+
+/**
+ * Whether `row` is the SMB server whose share list `path` names: the row `..` from that
+ * share list lands the hub's cursor on. A row mDNS is seeing goes by its host, a saved
+ * one it isn't by its address, the same host each opens its share list as.
+ */
+export function isServerOfShareList(row: HubRow, path: string): boolean {
+  if (row.kind !== 'server' || row.protocol !== 'smb') return false
+  return sameShareList(shareListPath(row.host ?? savedHostFor(row)), path)
 }
 
 /** A share is a folder under its server; a server is a machine, or a service on one. */

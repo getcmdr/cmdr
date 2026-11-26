@@ -141,7 +141,7 @@ export async function answeringDialogOpen(
  */
 export function refuseOpening(
   mcpRequestId: string | undefined,
-  refusal: { kind: 'readOnly' | 'destination' | 'homeFolder'; message: string },
+  refusal: { kind: 'readOnly' | 'destination' | 'source' | 'homeFolder'; message: string },
   tellPerson: () => void,
 ): void {
   if (mcpRequestId === undefined) {

@@ -62,6 +62,7 @@ function access(pane: FilePaneAPI | undefined, volumeId = 'root'): PaneAccess {
   return {
     getPaneRef: () => pane,
     getPaneVolumeId: () => volumeId,
+    getPanePath: () => (volumeId === 'search-results' ? 'search-results://sr-1' : '/Users/test_user_1'),
     getFocusedPane: () => 'left',
     getShowHiddenFiles: () => true,
   } as unknown as PaneAccess

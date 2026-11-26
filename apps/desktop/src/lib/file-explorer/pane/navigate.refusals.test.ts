@@ -10,11 +10,37 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { navigate } from './navigate'
+import { SMB_PATH_REFUSAL, shareListNavigationRefusal } from './navigate-refusals'
 import { makeHarness, type Harness } from './navigate.test-fixtures'
 
 let h: Harness
 beforeEach(() => {
   h = makeHarness()
+})
+
+describe('shareListNavigationRefusal: the narrowed smb:// rule', () => {
+  it('lets the hub and a server’s share list through', () => {
+    expect(shareListNavigationRefusal('smb://')).toBeNull()
+    expect(shareListNavigationRefusal('smb://testnas')).toBeNull()
+    expect(shareListNavigationRefusal('smb://testnas:4450')).toBeNull()
+  })
+
+  it('keeps refusing a share, which is mounted, never navigated to', () => {
+    expect(shareListNavigationRefusal('smb://testnas/public')).toBe(SMB_PATH_REFUSAL)
+  })
+
+  it('leaves a path off the smb:// namespace to the other checks', () => {
+    expect(shareListNavigationRefusal('/Users/test_user_1')).toBeNull()
+  })
+
+  it('isn’t wired yet: `nav_to_path` still refuses a share list until every door opens one as a listing', () => {
+    h = makeHarness({ left: { path: '/Users/me', volumeId: 'root' } })
+    const result = navigate(
+      { pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://testnas' } }, source: 'mcp' },
+      h.deps,
+    )
+    expect(result).toEqual({ status: 'refused', reason: SMB_PATH_REFUSAL })
+  })
 })
 
 describe('refusal strings (L12) — byte-for-byte contract', () => {

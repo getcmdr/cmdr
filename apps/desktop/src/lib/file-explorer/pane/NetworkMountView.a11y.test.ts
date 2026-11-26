@@ -14,6 +14,7 @@ import NetworkMountView from './NetworkMountView.svelte'
 import { expectNoA11yViolations } from '#lib/test-a11y.js'
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
+  DEFAULT_VOLUME_ID: 'root',
   mountNetworkShare: vi.fn(() => Promise.resolve({ mountPath: '/Volumes/Public' })),
   noteNetworkAction: vi.fn(() => Promise.resolve()),
   setServersViewShown: vi.fn(() => Promise.resolve()),

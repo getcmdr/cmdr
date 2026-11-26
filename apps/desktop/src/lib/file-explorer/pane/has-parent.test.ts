@@ -5,7 +5,9 @@
  * guard, ⌘A in a snapshot pane silently skipped the first row.
  */
 import { describe, it, expect } from 'vitest'
-import { computeHasParent, effectiveVolumeRootFor } from './has-parent'
+import type { CanonicalPath } from '#lib/path/canonical.js'
+import { computeHasParent, effectiveVolumeRootFor, parentRowPath } from './has-parent'
+import { capabilitiesForKind } from './volume-capabilities'
 import { createSelectionState } from './selection-state.svelte'
 
 describe('computeHasParent (R3 T1)', () => {
@@ -149,5 +151,22 @@ describe('effectiveVolumeRootFor', () => {
         effectiveVolumeRoot: effectiveVolumeRootFor('restic', '/', root),
       }),
     ).toBe(true)
+  })
+})
+
+describe("a server's share list", () => {
+  it('has a `..`: the network volume is rooted at the hub, and the share list sits one step in', () => {
+    expect(
+      computeHasParent({
+        hasParentRow: capabilitiesForKind('share-list').hasParentRow,
+        currentPath: 'smb://testnas',
+        effectiveVolumeRoot: effectiveVolumeRootFor('share-list', 'smb://', 'smb://'),
+      }),
+    ).toBe(true)
+  })
+
+  it('leads its `..` to the hub, and every other kind to the folder above', () => {
+    expect(parentRowPath('share-list', 'smb://testnas' as CanonicalPath)).toBe('smb://')
+    expect(parentRowPath('local', '/Users/test_user_1/Documents' as CanonicalPath)).toBe('/Users/test_user_1')
   })
 })

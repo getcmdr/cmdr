@@ -130,6 +130,23 @@ describe('buildMcpFileList', () => {
     expect(getFileRange).toHaveBeenCalledWith('listing-1', 0, 9, true)
   })
 
+  it("names the Servers hub as a share list's parent, ❌ not the `smb:/` slash arithmetic gives", async () => {
+    const sync = createPaneMcpSync(
+      deps({
+        getHasParent: () => true,
+        getVisibleRangeStart: () => 0,
+        getVisibleRangeEnd: () => 3,
+        getVolumeId: () => 'network',
+        getCurrentPath: () => 'smb://testnas',
+        getCanonicalPath: () => 'smb://testnas' as CanonicalPath,
+      }),
+    )
+
+    const files = await sync.buildMcpFileList()
+
+    expect(files[0]).toMatchObject({ name: '..', path: 'smb://' })
+  })
+
   it('stops at the last row the backend actually has', async () => {
     // The listing shrank while a `directory-diff` was in flight, so the range
     // comes back short of what the cached `totalCount` promised.

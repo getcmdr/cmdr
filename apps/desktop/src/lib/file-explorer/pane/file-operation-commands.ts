@@ -18,10 +18,10 @@ import type { CloudOnlineOnlyExtent, DeleteSourceItem } from '#lib/file-operatio
 import type { TrashRouting } from '#lib/ipc/bindings.js'
 import { getCommonParentPath, getDestinationVolumeInfo } from './transfer-operations'
 import { createTransferDialogOpener } from './transfer-dialog-opener'
-import { capabilitiesFor, capabilitiesForPane, rowIsServedByGitPortal } from './volume-capabilities'
+import { capabilitiesForPane, rowIsServedByGitPortal } from './volume-capabilities'
 import { pathCrossesArchiveBoundary } from './archive-paths'
 import { paneOffersTrash } from './trash-availability'
-import { checkTransferDestinationGuard } from './transfer-entry'
+import { checkTransferDestinationGuard, checkTransferSourceGuard } from './transfer-entry'
 import { answeringDialogOpen, operationStartIsBlocked, refuseOpening } from './operation-start-gate'
 import { readCursorRow, readPressedRows, type PressedRows } from './pressed-rows'
 import { duplicateInPlace } from './duplicate-command'
@@ -146,6 +146,13 @@ export function createFileOperationCommands(access: PaneAccess, dialogs: DialogS
       return {
         title: tString('fileExplorer.readOnly.resticTitle'),
         message: tString('fileExplorer.readOnly.resticMessage'),
+      }
+    }
+    // A server's share list: its rows are shares, which are mounted, ❌ never written to.
+    if (paneCaps.kind === 'share-list') {
+      return {
+        title: tString('fileExplorer.readOnly.shareListTitle'),
+        message: tString('fileExplorer.readOnly.shareListMessage'),
       }
     }
 
@@ -418,6 +425,15 @@ export function createFileOperationCommands(access: PaneAccess, dialogs: DialogS
     // kind-from-path check. The F-key bar already disables F5/F6 when the OPPOSITE
     // pane is a snapshot, so the search-results branch here is a belt-and-braces
     // guard for the shortcut path.
+    // The one source guard first: a share list's rows are shares, not files to take out.
+    const source = checkTransferSourceGuard(access.getPaneVolumeId(sourcePane), access.getPanePath(sourcePane))
+    if (!source.ok) {
+      refuseOpening(args.mcpRequestId, { kind: 'source', message: source.alert.message }, () => {
+        dialogs.showAlert(source.alert.title, source.alert.message)
+      })
+      return false
+    }
+
     const guard = checkTransferDestinationGuard(destVolId, access.getVolumes(), destPath)
     if (!guard.ok) {
       const message = guard.toast ? guard.toast.message : guard.alert.message
@@ -620,7 +636,7 @@ export function createFileOperationCommands(access: PaneAccess, dialogs: DialogS
     // `dialog-state::handleTransferComplete`). Routed off `hasBackendListing`,
     // not a `volumeId === 'search-results'` string compare; search-results
     // is the only source-capable `!hasBackendListing` kind to reach here.
-    if (!capabilitiesFor(sourceVolId).hasBackendListing) {
+    if (!capabilitiesForPane(sourceVolId, access.getPanePath(sourcePane)).hasBackendListing) {
       return openDeleteFromSearchResults(sourcePane, args)
     }
 

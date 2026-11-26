@@ -18,7 +18,7 @@ import { getSelectionEntries, type AttachmentRef } from '#lib/tauri-commands/ind
 import { resolveSnapshotEntries, snapshotIdFromPanePath } from '#lib/search/snapshot-store.svelte.js'
 import { announceRowsStillSettling } from './operation-start-gate'
 import { readPressedRows } from './pressed-rows'
-import { capabilitiesFor } from './volume-capabilities'
+import { capabilitiesForPane } from './volume-capabilities'
 import type { PaneAccess } from './pane-access'
 import type { FilePaneAPI } from './types'
 
@@ -60,7 +60,8 @@ export async function readSelectionAttachments(access: PaneAccess): Promise<Sele
   const focusedPane = access.getFocusedPane()
   const paneRef = access.getPaneRef(focusedPane)
   if (!paneRef) return NOTHING
-  if (!capabilitiesFor(access.getPaneVolumeId(focusedPane)).hasBackendListing) return readSnapshotSelection(paneRef)
+  if (!capabilitiesForPane(access.getPaneVolumeId(focusedPane), access.getPanePath(focusedPane)).hasBackendListing)
+    return readSnapshotSelection(paneRef)
   if (!paneRef.isRowStateReady()) {
     announceRowsStillSettling(undefined)
     return { kind: 'changed' }
