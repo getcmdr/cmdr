@@ -667,6 +667,8 @@ macro_rules! ipc_command_manifest {
                     crate::commands::network::upgrade_to_smb_volume_with_credentials,
                     crate::commands::network::system_has_saved_smb_password,
                     crate::commands::network::upgrade_to_smb_volume_using_saved_password,
+                    crate::commands::network::system_saved_smb_account,
+                    crate::commands::network::list_shares_with_system_saved_password,
                     crate::commands::network::get_smb_direct_connection_enabled,
                     crate::commands::network::set_smb_direct_connection_enabled,
                     crate::commands::network::get_smb_share_parent,

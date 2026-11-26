@@ -580,6 +580,10 @@
     "screenshot": "server-sign-in-refused-local-network.png",
     "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
+  "servers.sheet.useMacosSavedPassword": "Use the password macOS saved",
+  "@servers.sheet.useMacosSavedPassword": {
+    "description": "A footer button on the SMB sign-in sheet, beside Cancel and Sign in. It signs in to the server with the password macOS (Finder) saved for it in the Keychain, so the person doesn't have to type it. Pressing it shows a macOS system prompt asking to allow Keychain access. Offered only when macOS saved a password for this server. Keep 'macOS' as is. VERB phrase, imperative."
+  },
   "servers.sheet.protocolLegend": "Protocol",
   "@servers.sheet.protocolLegend": {
     "description": "Accessible name of the SMB / SFTP / WebDAV picker in the add form. Screen readers only; not visible. One word, NOUN.",

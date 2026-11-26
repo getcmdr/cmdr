@@ -31,7 +31,7 @@ purpose.
 - **Never call `system_keychain_smb::read_password` at startup**: it reads `kSecClassInternetPassword` data and triggers
   the macOS SecurityAgent consent dialog (one per share = popup storm, the FDA-popup lesson). It is NOT a `SecretStore`
   backend. Consume it only from user-initiated commands (`upgrade_to_smb_volume_using_saved_password` /
-  `system_has_saved_smb_password`). `account_for_any` only probes attributes (no dialog); `read_password` reads data (a
+  `system_has_saved_smb_password`, and a share list's `network/system_saved_password/mod.rs`, gated by `PersonAsked`). `account_for_any` only probes attributes (no dialog); `read_password` reads data (a
   dialog; "Always Allow" adds Cmdr to the item ACL for silence after).
 - **Linux's `keyring-core` needs a process-wide default store**: installed lazily via a `Once` in `ensure_default_store()`,
   called from every public `KeyringStore` method. Use `set_secret`/`get_secret` (binary) over `set_password`/

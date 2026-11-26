@@ -151,6 +151,11 @@ credentials, then connected), and a sheet that closed between them would lose wh
 somewhere other than under the field it belongs to. `connect-flow.ts` decides WHEN a human is needed; the sheet decides
 how many times to ask.
 
+**A sign-in may carry an `alternative`**: a second way to answer, as a footer button with its own round (today SMB's
+"Use the password macOS saved", from `../file-explorer/network/share-list-sign-in.ts`). Its outcome lands like a typed
+round's, refusal and all, and the button goes once it ran, since what it tried had its answer (❌ no inert affordance).
+The opener passes one only when it can do something.
+
 **An attempt promises an outcome, and the sheet holds it to that.** One that throws anyway (a broken IPC bridge) is
 logged and reads as `unreachable`, so the sheet never sticks on busy behind a spinner nothing will stop. A secret write
 the Keychain refuses crosses the throw as a `KeychainFailure` (`keychain-failure.ts`), whose diagnostic keeps the

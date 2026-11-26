@@ -122,6 +122,52 @@ describe('SignInSheet: the refusal it opens with', () => {
   })
 })
 
+/** SMB's "Use the password macOS saved": a second way to answer, with a round of its own. */
+describe('SignInSheet: the alternative answer', () => {
+  const smbEndpoint = { ...endpoint, protocol: 'smb' as const, address: 'smb://testnas' }
+
+  it('runs its own round, shows its refusal like a typed one, and goes once it ran', async () => {
+    let ran = 0
+    await renderSheet({
+      mode: 'sign-in',
+      remembered: true,
+      endpoint: smbEndpoint,
+      shape: { kind: 'username_password', guestAllowed: false },
+      attempt: () => Promise.reject(new Error('the fields were not used')),
+      alternative: {
+        label: 'Use the password macOS saved',
+        attempt: () => {
+          ran++
+          return Promise.resolve({ kind: 'refused', refusal: 'authentication_rejected' })
+        },
+      },
+    })
+
+    buttonSaying('Use the password macOS saved').click()
+    await flush()
+
+    expect(ran).toBe(1)
+    expect(document.body.querySelector('#sign-in-secret-refusal')).not.toBeNull()
+    expect(
+      [...document.body.querySelectorAll('button')].some((b) => b.textContent.includes('Use the password macOS saved')),
+      '❌ no inert affordance: what it tried had its answer',
+    ).toBe(false)
+  })
+
+  it('isn’t there when the opener offers none', async () => {
+    await renderSheet({
+      mode: 'sign-in',
+      remembered: true,
+      endpoint: smbEndpoint,
+      shape: { kind: 'username_password', guestAllowed: false },
+      attempt: () => Promise.resolve({ kind: 'handed_off' }),
+    })
+    expect(
+      [...document.body.querySelectorAll('button')].some((b) => b.textContent.includes('Use the password macOS saved')),
+    ).toBe(false)
+  })
+})
+
 describe('SignInSheet: a refusal', () => {
   it('renders the sentence under the password field and leaves the focus there', async () => {
     const attempt = (submission: SignInSubmission): Promise<SignInAttemptOutcome> => {

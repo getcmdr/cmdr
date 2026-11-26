@@ -139,6 +139,8 @@ export const notInDemo = {
   upgradeToSmbVolumeWithCredentials: NETWORK,
   systemHasSavedSmbPassword: NETWORK,
   upgradeToSmbVolumeUsingSavedPassword: NETWORK,
+  systemSavedSmbAccount: NETWORK,
+  listSharesWithSystemSavedPassword: NETWORK,
   getSmbDirectConnectionEnabled: NETWORK,
   setSmbDirectConnectionEnabled: NETWORK,
   getSmbShareParent: NETWORK,

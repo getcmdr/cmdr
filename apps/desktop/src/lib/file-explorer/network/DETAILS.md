@@ -26,11 +26,11 @@ Lifecycle:
 in, as a guest where it lets one in. The Servers list never dials (Rust builds it from memory, the stores, and the mount
 table: `src-tauri/src/network/DETAILS.md`), and a server's shares are read only when a pane opens its share list. There
 is no prefetch: getcmdr/cmdr#1517 stopped it (§ "The Servers list's decisions"), because the reads below stay under the
-pane's wait reveal for reachable saved servers, and the one slow server is slow because of an `smbutil` Keychain read,
-which no background path may make. The backend has no other caller that lists unasked: `smb_client::list_shares` is
-reached through the two listing commands, both frontend-invoked by a person's door, and the share-list volume's sign-in
-ladder (`share_list_sign_in.rs`), which runs only for a pane that opened a share list (verified by reading its call
-sites, 2026-11-26). E2E builds count every call per address
+pane's wait reveal for reachable saved servers, and the one slow server is slow because of an `smbutil` read through a
+session macOS has open, which no background path may make. The backend has no other caller that lists unasked:
+`smb_client::list_shares` is reached through the two listing commands, both frontend-invoked by a person's door, and the
+share-list volume's sign-in ladder (`share_list_sign_in.rs`), which runs only for a pane that opened a share list
+(verified by reading its call sites, 2026-11-26). E2E builds count every call per address
 (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`), which `servers-list-flows.spec.ts` reads: opening Servers
 asks no server at all. Pinned too by `network-store.servers-view.test.ts`.
 
@@ -40,8 +40,8 @@ excluded as a share-cache answer). The threshold is the pane's wait reveal, 800 
 
 - Real servers, a dev log (macOS, a home LAN plus Tailscale): a Raspberry Pi saved by name (signs in with Cmdr's stored
   password) n=13, p50 88, p90 643, max 1,174 ms; a QNAP NAS saved by LAN IP n=3: 83, 87, 517; the same Pi by its IP (a
-  saved share; guest refused and no Cmdr credentials, so every read runs `smbutil view` with the macOS Keychain, about
-  1.15 s of it) n=5: 88, 1,183, 1,189, 1,418, 1,422; the NAS by its mDNS name (found) 80, 425, 450; the NAS by its
+  saved share; guest refused and no Cmdr credentials, so every read runs `smbutil view` on the open session Finder held,
+  about 1.15 s of it) n=5: 88, 1,183, 1,189, 1,418, 1,422; the NAS by its mDNS name (found) 80, 425, 450; the NAS by its
   Tailscale IP (mounted only) 452, 495, 554. Without the Pi by IP: n=16, p90 643.
 - Docker fixtures (Linux E2E lane, `servers-list-flows.spec.ts`): Guest 307, Guest by IP 517 and 586, Unicode 739 and
   740, 50 Shares 844 and 1,048 ms (n=7, p90 1,048).
@@ -117,6 +117,18 @@ on the list. A refused MOUNT lands the same way: its sheet opens over the mount'
 …", `RemoteConnectView`), and cancelling stays there with focus on its Sign in (`share-mount.svelte.ts`). Every door
 that opens the sheet over an in-pane sign-in state leaves the pane on it; doors with none (a Servers row's menu, the
 path bar's account, the palette) stay where they were.
+
+**The password macOS saved** (Finder's "Remember this password in my keychain"). When a listing the person started comes
+back `auth_required` (no password of Cmdr's own was offered), `askToSignInToList` first tries the one macOS saved, on
+its own, before the sheet asks: `listSharesWithSystemSavedPassword`, whose read raises the macOS consent dialog. That's
+why it sits behind the same gate as the sheet: only a person's action reaches it (the auto-ask, the error screen's Sign
+in), ❌ never a pane repaint, a restored tab, or a re-list nobody started. The backend asks at most once per server per
+run, a denial included, and a listing that went through becomes the server's session credential, so the re-list signs in
+with it. ❌ Not tried on `auth_failed`: that's Cmdr's own password turned down, and the person should see so. Every
+sheet round also asks `systemSavedSmbAccount` (attributes only, no prompt): the account pre-fills the username when
+nothing Cmdr remembers names one, and while the password may still be tried this run (`canTry`), the sheet offers "Use
+the password macOS saved" (the sign-in request's `alternative`, `../../servers/DETAILS.md` § "The sheet contract").
+Backend half: `src-tauri/src/network/DETAILS.md` § "The password macOS saved".
 
 `share-list-sign-in.ts`, the sheet round: every `attempt` is `listWithAccount`, which answers `handed_off` on success
 (nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on `authentication_rejected` /

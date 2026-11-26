@@ -298,6 +298,8 @@ export {
   upgradeToSmbVolumeWithCredentials,
   systemHasSavedSmbPassword,
   upgradeToSmbVolumeUsingSavedPassword,
+  systemSavedSmbAccount,
+  listSharesWithSystemSavedPassword,
   getSmbDirectConnectionEnabled,
   setSmbDirectConnectionEnabled,
   type DirectConnectionSwitch,

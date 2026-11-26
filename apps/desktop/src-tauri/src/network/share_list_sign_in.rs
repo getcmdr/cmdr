@@ -318,6 +318,76 @@ pub(crate) async fn list_for_pane(app: &tauri::AppHandle, host: &crate::network:
     .await
 }
 
+/// Lists `host`'s shares with the password macOS saved for it (`system_saved_password`), for
+/// a person who opened a share list that needs a sign-in, or pressed "Use the password macOS
+/// saved". `Ok(None)`: nothing to try. A listing that went through files the account as the
+/// server's session credential, where a sheet's answer goes, so the re-list and the mounts
+/// after it sign in with it; one the server turned down stops being offered.
+pub(crate) async fn list_with_system_saved_password(
+    app: &tauri::AppHandle,
+    asked: &crate::network::system_saved_password::PersonAsked,
+    host: &crate::network::NetworkHost,
+) -> Result<Option<ShareListResult>, ShareListError> {
+    use crate::network::smb_sign_in_diagnostics::{CredentialSource, log_sign_in_refusal};
+    use crate::network::system_saved_password::{account_for, drop_rejected, list_with, read_once};
+
+    let hostname = host
+        .hostname
+        .clone()
+        .unwrap_or_else(|| crate::network::service_name_to_hostname(&host.name));
+    let ip = host.ip_address.as_deref();
+    let typed_username = crate::network::smb_account_ladder::typed_account(&hostname, ip, host.port, |server| {
+        crate::network::manual_servers::typed_username(app, server)
+    });
+    // Asked up front only for a typed account, so its check costs no await inside `list_with`.
+    let saved_account = match typed_username {
+        Some(_) => account_for(host).await.map(|account| account.username),
+        None => None,
+    };
+    let names = names_for_sheet_answer(
+        &crate::network::share_list_volume::app_known_hosts(app),
+        &host.id,
+        &hostname,
+        ip,
+        host.port,
+    );
+    let dial = |credentials: SmbCredentials| {
+        let hostname = hostname.clone();
+        async move {
+            let offered = Some((credentials.username.as_str(), credentials.password.as_str()));
+            let result = crate::network::smb_client::list_shares(
+                &host.id,
+                &hostname,
+                ip,
+                host.port,
+                offered,
+                GuestAttempt::Skip,
+                None,
+                None,
+            )
+            .await;
+            log_sign_in_refusal(&hostname, host.port, offered, CredentialSource::Saved, &result);
+            match &result {
+                Ok(_) => {
+                    for name in &names {
+                        crate::network::keychain::remember_for_session(name, credentials.clone());
+                    }
+                }
+                Err(error) if error.wants_sign_in() => drop_rejected(host),
+                Err(_) => {}
+            }
+            result
+        }
+    };
+    list_with(
+        typed_username.as_deref(),
+        || saved_account,
+        || read_once(asked, host),
+        dial,
+    )
+    .await
+}
+
 /// Mounts `share` on `server` for a person who sent no credentials (see the module
 /// docs), under the server's discovery name `host_name` (else `server`), on `port`.
 pub(crate) async fn mount_with_session<T, M, MF>(

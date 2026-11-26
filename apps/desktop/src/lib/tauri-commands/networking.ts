@@ -16,6 +16,7 @@ import type {
   SmbFellBackToOsMount,
   SmbLinkConsent,
   SmbOsMountNoticeWithdrawn,
+  SystemSavedAccount,
   UpgradeResult,
 } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
@@ -359,6 +360,32 @@ export async function systemHasSavedSmbPassword(volumeId: string): Promise<boole
  */
 export async function upgradeToSmbVolumeUsingSavedPassword(volumeId: string): Promise<UpgradeResult> {
   return commands.upgradeToSmbVolumeUsingSavedPassword(volumeId)
+}
+
+/**
+ * The account macOS saved a password under for `host`'s server, and whether that password may
+ * still be tried this run. An attributes-only read: ❌ never a consent dialog, so the sheet may
+ * ask it whenever it opens. `null` off macOS, when nothing is saved, or when the read broke down.
+ */
+export async function systemSavedSmbAccount(host: NetworkHost): Promise<SystemSavedAccount | null> {
+  try {
+    return await commands.systemSavedSmbAccount(wireHost(host))
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Lists `host`'s shares with the password macOS saved for its server. ❗ Raises the macOS
+ * consent dialog, so call it only on a person's action: opening a share list that needs a
+ * sign-in, or "Use the password macOS saved". The backend asks at most once per server per run.
+ * @returns the listing, or `null` when there was nothing to try (none saved, denied, or asked already)
+ * @throws ShareListFailure carrying the typed `ShareListError`; `shareListErrorOf` gets it back
+ */
+export async function listSharesWithSystemSavedPassword(host: NetworkHost): Promise<ShareListResult | null> {
+  const res = await commands.listSharesWithSystemSavedPassword(wireHost(host))
+  if (res.status === 'error') throwShareListError(res.error)
+  return res.data
 }
 
 /** What switching a share's direct connection did. */

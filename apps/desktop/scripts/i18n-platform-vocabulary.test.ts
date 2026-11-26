@@ -193,6 +193,8 @@ const MAC_ONLY_PLAIN_VALUES: Readonly<Record<string, string>> = {
   'fileExplorer.pane.directConnectionBlockedAfterUpdateToast': '`localNetworkPermission`: macOS only',
   'settings.network.permissionIntroSuffix': '`localNetworkPermission`: macOS only',
   'fileExplorer.navigation.useSavedPasswordMessage': 'offered only when the macOS Keychain holds a saved password',
+  'servers.sheet.useMacosSavedPassword':
+    'offered only when the macOS Keychain holds a saved password (`system_saved_smb_account` answers nothing elsewhere)',
   'fileExplorer.quickLookHint.': '`quickLook`: the hint shows only where Quick Look exists',
   'settings.fileExplorer.suppressQuickLookHint.': '`quickLook`: the setting needs the capability',
   'viewer.binaryWarning.bodyWithKeys': '`quickLook`: picked only while `file.quickLook` has a key',

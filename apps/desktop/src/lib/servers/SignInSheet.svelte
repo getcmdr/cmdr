@@ -177,6 +177,9 @@
     const shape = $derived(request.mode === 'sign-in' ? request.shape : null)
     /** Edit mode has nothing to try: Save writes and closes. */
     const attempt = $derived(request.mode === 'edit' ? null : request.attempt)
+    /** Whether the alternative round ran, which retires its button. */
+    let alternativeRan = $state(false)
+    const alternative = $derived(request.mode === 'sign-in' && !alternativeRan ? (request.alternative ?? null) : null)
     const editedServer = $derived(request.mode === 'edit' ? request.server : null)
     /**
      * The saved entry an edit reads and writes, by id: the place it was raised on
@@ -594,13 +597,26 @@
         if (!attempt) return
         pendingSubmission = submission
         roundUsername = submission.mode === 'sign-in' ? submission.username : null
+        await round(() => attempt(submission))
+    }
+
+    /** The request's other way to answer, as a round of its own, once: what it tried had its answer. */
+    async function runAlternative() {
+        const go = alternative?.attempt
+        if (!go || busy) return
+        alternativeRan = true
+        roundUsername = null
+        await round(go)
+    }
+
+    async function round(go: () => Promise<SignInAttemptOutcome>) {
         busy = true
         refusal = null
         hinted = null
         refusalRegion = null
         let outcome: SignInAttemptOutcome = { kind: 'refused', refusal: 'unreachable' }
         try {
-            outcome = await attempt(submission)
+            outcome = await go()
         } catch (e) {
             // ❗ An attempt promises an outcome. One that throws anyway (a broken
             // IPC bridge) must not leave the sheet disabled behind a spinner
@@ -1081,6 +1097,11 @@
                  connected). -->
             <Button variant="secondary" onclick={() => void submit('save')} disabled={!canSubmit}>
                 {tString('servers.sheet.add')}
+            </Button>
+        {/if}
+        {#if step === 'form' && alternative}
+            <Button variant="secondary" onclick={() => void runAlternative()} disabled={busy}>
+                {alternative.label}
             </Button>
         {/if}
         {#if step === 'form'}

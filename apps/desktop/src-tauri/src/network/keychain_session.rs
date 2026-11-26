@@ -47,8 +47,8 @@ impl ReadOnce {
         read()
     }
 
-    /// Whether `key`'s one read was spent. Tests and logs only.
-    #[cfg(test)]
+    /// Whether `key`'s one read was spent: what decides whether a button that would read
+    /// again is offered at all (`system_saved_password::account_for`).
     pub(crate) fn is_spent(&self, key: &str) -> bool {
         self.spent.lock_ignore_poison().contains(key)
     }

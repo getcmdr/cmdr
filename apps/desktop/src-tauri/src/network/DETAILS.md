@@ -49,6 +49,7 @@ of the app build.
 - **Server identity**: `server_identity.rs`: `SmbServer` (host + port, compared with `SmbServer::is`) is the one answer to "which SMB server is this"; `same_machine` is the name equivalence under it (mDNS service name, `.local` hostname, IP, enriched from the discovery state) and only answers "which MACHINE": one machine can run several servers, so a port-blind caller is a bug. Callers that still compare machines alone, because no port exists there: the Finder system-keychain aliases, the direct-connection opt-out list (`ShareRef` has no port), the OS-mount notice ledger, and the Linux GVFS mount check. Used by the mount-path disambiguation and the already-mounted short-circuit so string-shape differences can't split one server into two.
 - **Auth** (platform-agnostic):
   - `keychain.rs`: SMB credential management. Delegates storage to `crate::secrets::store()` (see `secrets/CLAUDE.md` for backend details)
+  - `system_saved_password/`: the password macOS (Finder) saved for a server, for a share list's sign-in, read only on a person's action (§ "The password macOS saved")
 - **Dialing a saved place**: `dial_flights.rs`: one dial per place, however many callers ask (the core is `apps/desktop/src-tauri/src/saved_servers/mod.rs`, under both the `connect_saved_place` command and Ask Cmdr's `connect_volume`). A caller with no typed secret joins a dial already out; one carrying a secret waits it out, then dials its own; each caller's cancel lets only that caller go, and the dial is called off once nobody waits. Why: a saved place registers only when its dial lands, so "already registered?" can't guard the 30 s a dial is out, and two dials register two volumes. The flight dials under an attempt id of its own, so a call-off can arrive before an SFTP or S3 dial (which reads the Keychain first) has filed it: `connect_wiring::call_off_early` marks the id so the attempt registers already cancelled.
 - **Events**: `events.rs`: every `tauri_specta::Event` payload the module emits (discovery, the host context menu, `volume-connection-changed`, `volume-reconnect-requested` (Ask Cmdr handing a dropped volume to the frontend's reconnect manager), the OS-mount fallback notice) plus the wire enums only they carry, re-exported from `mod.rs`. Always compiled, because `ipc.rs`'s `collect_events!` can't cfg-gate inline and names each one on every platform.
 - **State**: `known_shares.rs`: Connection history in `known-shares.json` (usernames, last auth mode, timestamps), the saved SMB share places (rows with a share name, § "Saved SMB shares"), plus the shares switched off Cmdr's direct connection (`direct_connection_opt_outs`). `smb_saved_shares.rs` is the wiring around the share rows. `server_guid.rs` + `smb_server_guid.rs` record which server each share row is on (§ "Which server a share is on").
@@ -206,11 +207,42 @@ in place of the account's.
 ❗ **Except for a host someone typed an account for** (`manual_servers::typed_username`, set by the add or edit
 sheet or an `smb://user@host` address). The listing commands pass `smb_client::GuestAttempt::Skip` for it: no guest
 attempt, no guest listing from the cache, and no CLI fallback (which lists as guest). Without credentials the answer is
-`AuthRequired`, so the frontend goes to the Keychain and then the sheet, prefilled with that account
+`AuthRequired`, so the frontend tries the password macOS saved for that account (§ "The password macOS saved") and then the sheet, prefilled with that account
 (`get_username_hint`, where the typed account wins over the share history). The reason: on a `map to guest = bad user`
 Samba, guest "succeeds" with an almost-empty list, and the person already said they want to sign in (cmdr-reports#7).
 The match is `SmbServer::is` (the entry's port, and its machine under any name), so a Bonjour-named twin of a typed IP counts once
 discovery has paired the two.
+
+### The password macOS saved
+
+A server Finder signed in to with "Remember this password in my keychain" has an SMB internet password in the login
+keychain, which Cmdr's own store can't see (`secrets/system_keychain_smb.rs`). Share lists used to list such a server
+only by riding Finder's open session (`smbutil view -N`, § "smbutil / smbclient fallback"), so once Disconnect unmounted
+its shares the server asked for a sign-in with an empty username. `system_saved_password/` reads Finder's item for a
+share list:
+
+- **The account, attributes only** (`account_for`, the `system_saved_smb_account` command): no prompt, so every sheet
+  round asks it. It pre-fills the username, and its `can_try` says whether "Use the password macOS saved" may be
+  offered: ❗ `false` once this run asked macOS and got nothing usable, so the button is never inert.
+- **The password, a consent-dialog read** (`read_once`, through `share_list_sign_in::list_with_system_saved_password`,
+  the `list_shares_with_system_saved_password` command). ❗ **Only a person's action reaches it**: it takes a
+  `commands::network::PersonAsked`, whose field is private to that module, so only the IPC command can mint one and a
+  background thread, prefetch, upgrade sweep, or launch path has none to pass. **Decision** (David, 2026-11-27): a
+  surprise Keychain prompt off a person's action "would be awkward", so ❌ the pane listing's ladder never tries it on
+  its own: `list_directory_for_pane` also runs for a restored tab at launch. The frontend calls the command where the
+  sheet would open (the listing a person started, the error screen's Sign in, the sheet's button).
+- **Once per server per run, a denial included** (its own `ReadOnce`, keyed by `server_identity::credential_key` of the
+  discovery name); a hit stays in memory so a retry after a server that didn't answer asks nothing, and a password the
+  server turned down is dropped (`drop_rejected`) so the button stops offering it.
+- **A typed account signs in only as itself** (`list_with`): the prompt-free account check runs first, so another
+  account's saved password costs no consent dialog.
+- **A listing that went through files the account as the server's session credential** under `names_for_sheet_answer`,
+  exactly where a sheet's answer goes, so the re-list and the mounts after it sign in with it. ❌ It isn't copied into
+  Cmdr's store: nobody ticked Remember, and macOS keeps it (its "Always Allow" silences the next run's ask).
+
+Pinned by `system_saved_password/tests.rs` (the one ask, a miss remembered, another account never read). Off macOS both
+answer nothing. The Finder read in `smb_connect_directly` (the "Connect directly" upgrade) is a separate door with its
+own priming dialog.
 
 ### smbutil / smbclient fallback
 

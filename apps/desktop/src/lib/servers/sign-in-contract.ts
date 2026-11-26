@@ -202,6 +202,12 @@ export type SignInSheetRequest =
        * a person is being asked. ❗ A typed kind, ❌ never a backend sentence.
        */
       refusal?: ConnectRefusalKind
+      /**
+       * A second way to answer, beside the fields: a footer button that runs its own round
+       * (SMB's "Use the password macOS saved"). Its outcome lands like a typed round's, and the
+       * button goes once it ran: ❌ no inert affordance. Pass it only when it can do something.
+       */
+      alternative?: { label: string; attempt: () => Promise<SignInAttemptOutcome> }
     }
   /**
    * Change a saved server: the add form prefilled, plus the two switches. `placeVolumeId`

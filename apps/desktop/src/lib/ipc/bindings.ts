@@ -5305,6 +5305,40 @@ export const commands = {
   upgradeToSmbVolumeUsingSavedPassword: (volumeId: string) =>
     __TAURI_INVOKE<UpgradeResult>('upgrade_to_smb_volume_using_saved_password', { volumeId }),
   /**
+   *  The account macOS saved a password under for `host`'s server, and whether that password
+   *  may still be tried this run, for the share list's sign-in sheet: it pre-fills the
+   *  username and decides whether to offer "Use the password macOS saved". Attributes only:
+   *  ❌ never raises the consent dialog. `None` off macOS, or when nothing is saved.
+   */
+  systemSavedSmbAccount: (host: NetworkHost) =>
+    __TAURI_INVOKE<{
+      // The account macOS saved the password under. Pre-fills the sheet.
+      username: string
+      /**
+       *  ❗ `false` once this run asked macOS and got nothing usable (no password, a denial, or
+       *  one the server turned down): the button would do nothing, so it isn't offered.
+       */
+      canTry: boolean
+    } | null>('system_saved_smb_account', { host }),
+  /**
+   *  Lists `host`'s shares with the password macOS saved for its server, for a person who
+   *  opened a share list that needs a sign-in Cmdr has none of its own for, or who pressed
+   *  "Use the password macOS saved". Raises the consent dialog, at most once per server per
+   *  run. `Ok(None)`: nothing to try (none saved, denied, or already asked).
+   */
+  listSharesWithSystemSavedPassword: (host: NetworkHost) =>
+    typedError<
+      {
+        // Already filtered to disk shares only.
+        shares: ShareInfo[]
+        // What the listing attempt learned about the server's auth stance.
+        authMode: AuthMode
+        // True when this answer came from the in-memory cache rather than the wire.
+        fromCache: boolean
+      } | null,
+      ShareListError
+    >(__TAURI_INVOKE('list_shares_with_system_saved_password', { host })),
+  /**
    *  Whether the SMB share behind `volume_id` may use Cmdr's fast direct connection
    *  (the per-share switch), or `None` when there's no SMB share behind it to ask
    *  about. See `network::smb_direct_switch`.
@@ -23263,6 +23297,20 @@ export type SystemMemoryInfo = {
   appBytes: number
   // Free: free + purgeable + speculative (available for new allocations).
   freeBytes: number
+}
+
+/**
+ *  What the sign-in sheet may offer for a server: the account macOS saved, and whether the
+ *  password behind it may still be tried this run.
+ */
+export type SystemSavedAccount = {
+  // The account macOS saved the password under. Pre-fills the sheet.
+  username: string
+  /**
+   *  ❗ `false` once this run asked macOS and got nothing usable (no password, a denial, or
+   *  one the server turned down): the button would do nothing, so it isn't offered.
+   */
+  canTry: boolean
 }
 
 /**

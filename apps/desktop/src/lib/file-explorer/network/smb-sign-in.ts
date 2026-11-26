@@ -76,6 +76,10 @@ export interface SmbSignInRequest {
   guestAllowed: boolean
   /** A username an earlier attempt tried. Wins over what the store remembers. */
   initialUsername?: string
+  /** The username to pre-fill when nothing Cmdr remembers names one: the account macOS saved. */
+  fallbackUsername?: string
+  /** A second way to answer, as a footer button with its own round (`SignInSheetRequest`'s `alternative`). */
+  alternative?: { label: string; attempt: () => Promise<SignInAttemptOutcome> }
   /** Why the sheet is opening, so its first round already says so. */
   refusal?: ConnectRefusalKind
   /** One round-trip with the server, which the CALLER owns. */
@@ -94,13 +98,15 @@ export async function openSmbSignInSheet(request: SmbSignInRequest): Promise<Sig
     remembered: true,
     refusal: request.refusal,
     attempt: (submission) => request.attempt(answerFrom(submission)),
+    alternative: request.alternative,
   })
 }
 
 /**
  * The account the server already knows, in the order the SMB form has always
  * resolved it: what an earlier attempt tried, then the share's own last
- * username, then the server-level hint.
+ * username, then the server-level hint, then the caller's fallback (the
+ * account macOS saved).
  *
  * ❗ Both lookups take the server BY NAME and match on its stable identity in
  * Rust, so a hint saved under one spelling (`Testnas`) is found when the sheet
@@ -122,13 +128,13 @@ async function rememberedUsername(request: SmbSignInRequest): Promise<string | u
     }
     // A host known only by name (a mounted share's upgrade) is looked up by that name, on 445
     // unless it spells a port: the backend reads `host:port` off it.
-    return (await getUsernameHint({ id: request.host.name, port: 445, ...request.host })) ?? undefined
+    return (await getUsernameHint({ id: request.host.name, port: 445, ...request.host })) ?? request.fallbackUsername
   } catch (e) {
     log.warn('Reading the remembered username for {host} broke down: {error}', {
       host: request.host.name,
       error: e,
     })
-    return undefined
+    return request.fallbackUsername
   }
 }
 

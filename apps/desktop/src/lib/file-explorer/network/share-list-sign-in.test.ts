@@ -34,6 +34,10 @@ const h = vi.hoisted(() => ({
   getListedAccount: vi.fn((_hostId: string): unknown => undefined),
   guestListingWorked: vi.fn((_hostId: string) => false),
   shareListHost: vi.fn((_path: string): Promise<unknown> => Promise.resolve(null)),
+  systemSavedSmbAccount: vi.fn((_host: NetworkHost): Promise<{ username: string; canTry: boolean } | null> =>
+    Promise.resolve(null),
+  ),
+  listSharesWithSystemSavedPassword: vi.fn(),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
@@ -45,6 +49,8 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   getUsernameHint: vi.fn(() => Promise.resolve(null)),
   getKnownShareByName: vi.fn(() => Promise.resolve(null)),
   shareListHost: h.shareListHost,
+  systemSavedSmbAccount: h.systemSavedSmbAccount,
+  listSharesWithSystemSavedPassword: h.listSharesWithSystemSavedPassword,
 }))
 
 vi.mock('./network-store.svelte', () => ({
@@ -113,6 +119,7 @@ beforeEach(() => {
   h.getListedAccount.mockReturnValue(undefined)
   h.guestListingWorked.mockReturnValue(false)
   h.openSignInSheet.mockResolvedValue({ kind: 'cancelled' })
+  h.systemSavedSmbAccount.mockResolvedValue(null)
 })
 
 describe('askToList: the LISTING needs a sign-in', () => {
@@ -283,6 +290,83 @@ describe('askToSignInToList: the error screen’s Sign in, and the ask a refused
   it('asks nothing for a path that names no server this session knows', async () => {
     expect(await askToSignInToList('smb://gone-nas', { type: 'auth_required', message: '' })).toBeNull()
     expect(h.openSignInSheet).not.toHaveBeenCalled()
+  })
+})
+
+describe('the password macOS saved', () => {
+  const macosSaved = (canTry: boolean) => ({ username: 'test_user_1', canTry })
+
+  it('is tried on its own when a share list someone opened needs a sign-in, and the sheet never opens', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(true))
+    h.listSharesWithSystemSavedPassword.mockResolvedValue(listed('creds_required'))
+
+    const outcome = await askToSignInToList('smb://testnas', { type: 'auth_required', message: '' })
+
+    expect(outcome).toEqual({ kind: 'listed', result: listed('creds_required') })
+    expect(h.listSharesWithSystemSavedPassword).toHaveBeenCalledWith(host)
+    expect(h.openSignInSheet).not.toHaveBeenCalled()
+  })
+
+  it('is not tried when Cmdr’s own password was what got turned down', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(true))
+
+    await askToSignInToList('smb://testnas', { type: 'auth_failed', message: '' })
+
+    expect(h.listSharesWithSystemSavedPassword).not.toHaveBeenCalled()
+    expect(h.openSignInSheet).toHaveBeenCalledTimes(1)
+  })
+
+  it('is not tried again once this run asked macOS for it: the sheet asks, prefilled, with no button', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(false))
+
+    await askToSignInToList('smb://testnas', { type: 'auth_required', message: '' })
+
+    expect(h.listSharesWithSystemSavedPassword).not.toHaveBeenCalled()
+    const request = h.openSignInSheet.mock.calls[0][0] as SheetRequest & { alternative?: unknown }
+    expect(request.endpoint.username).toBe('test_user_1')
+    expect(request.alternative, '❌ no inert affordance').toBeUndefined()
+  })
+
+  it('falls to the sheet when the server turns it down', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(true))
+    h.listSharesWithSystemSavedPassword.mockRejectedValue(
+      new ShareListFailure({ type: 'auth_failed', message: 'rejected' }),
+    )
+
+    await askToSignInToList('smb://testnas', { type: 'auth_required', message: '' })
+
+    expect(h.openSignInSheet).toHaveBeenCalledTimes(1)
+  })
+
+  it('is the sheet’s “Use the password macOS saved” where it may still be tried, and its listing closes the sheet', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(true))
+    h.listSharesWithSystemSavedPassword.mockResolvedValue(listed('creds_required'))
+    h.openSignInSheet.mockImplementation(
+      async (request: { alternative?: { label: string; attempt: () => Promise<{ kind: string }> } }) => {
+        expect(request.alternative?.label).toBe('Use the password macOS saved')
+        const answer = await request.alternative?.attempt()
+        expect(answer).toEqual({ kind: 'handed_off' })
+        return { kind: 'handed_off' }
+      },
+    )
+
+    const outcome = await signInAs(server, undefined)
+
+    expect(outcome).toEqual({ kind: 'listed', result: listed('creds_required') })
+  })
+
+  it('answers the button with the fields when macOS gave nothing after all', async () => {
+    h.systemSavedSmbAccount.mockResolvedValue(macosSaved(true))
+    h.listSharesWithSystemSavedPassword.mockResolvedValue(null)
+    let answer: unknown
+    h.openSignInSheet.mockImplementation(async (request: { alternative?: { attempt: () => Promise<unknown> } }) => {
+      answer = await request.alternative?.attempt()
+      return { kind: 'cancelled' }
+    })
+
+    await signInAs(server, undefined)
+
+    expect(answer).toEqual({ kind: 'refused', refusal: 'needs_credentials' })
   })
 })
 

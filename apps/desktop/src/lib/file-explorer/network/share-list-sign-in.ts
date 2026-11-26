@@ -36,8 +36,10 @@ import type { ServerAccountAction, ServerAccountFacts } from '../navigation/row-
 import {
   isUsingCredentialFileFallback,
   listSharesWithCredentials,
+  listSharesWithSystemSavedPassword,
   saveSmbCredentials,
   setSmbAccountPreference,
+  systemSavedSmbAccount,
   updateKnownShare,
 } from '#lib/tauri-commands/index.js'
 import { addToast } from '#lib/ui/toast/index.js'
@@ -159,18 +161,35 @@ async function sheetRound(
   sheetUp = true
   try {
     let closing: ShareListSheetOutcome = { kind: 'cancelled' }
+    // Prompt-free: the account macOS saved pre-fills the username, and offers its password
+    // while this run hasn't asked macOS for it yet.
+    const saved = await systemSavedSmbAccount(server.host)
     const result = await openSmbSignInSheet({
       host: server.host,
       label: server.label,
       guestAllowed: options.guestAllowed,
       refusal: options.refusal,
       initialUsername: options.initialUsername,
+      fallbackUsername: saved?.username,
       attempt: async (answer) => {
         const attempt = await listWithAccount(server, answer, 'typed')
         if (attempt.kind === 'refused') return attempt
         closing = attempt
         return { kind: 'handed_off' }
       },
+      alternative: saved?.canTry
+        ? {
+            label: tString('servers.sheet.useMacosSavedPassword'),
+            attempt: async () => {
+              const attempt = await listWithMacosSavedPassword(server)
+              // Nothing to try after all (macOS said no): the fields are what's left.
+              if (attempt.kind === 'nothing') return { kind: 'refused', refusal: 'needs_credentials' }
+              if (attempt.kind === 'refused') return attempt
+              closing = attempt
+              return { kind: 'handed_off' }
+            },
+          }
+        : undefined,
     })
     return result.kind === 'cancelled' ? { kind: 'cancelled' } : closing
   } finally {
@@ -203,7 +222,45 @@ export async function askToList(
 export async function askToSignInToList(path: string, refusal: ShareListError): Promise<ShareListSheetOutcome | null> {
   const server = await resolveShareListServer(path)
   if (!server) return null
+  if (refusal.type === 'auth_required') {
+    const tried = await tryMacosSavedPassword(server)
+    if (tried) return tried
+  }
   return await askToList(server, { refusal: refusalForShareError(refusal), guestAllowed: false })
+}
+
+/** What a listing with the password macOS saved came to, or `nothing` when there was none to try. */
+type MacosSavedAttempt = ShareListAttempt | { kind: 'nothing' }
+
+/**
+ * One listing with the password macOS saved for the server (the backend reads it, at most once
+ * per server per run). ❗ It raises the macOS consent dialog, so only a person's action reaches
+ * here: opening a share list that needs a sign-in, or the sheet's "Use the password macOS saved".
+ * A listing that went through leaves the account as the server's session credential, backend-side.
+ */
+async function listWithMacosSavedPassword(server: ShareListServer): Promise<MacosSavedAttempt> {
+  try {
+    const result = await listSharesWithSystemSavedPassword(server.host)
+    return result ? { kind: 'listed', result } : { kind: 'nothing' }
+  } catch (e) {
+    const error = shareListErrorOf(e)
+    const refusal = refusalForShareError(error)
+    if (refusal === 'authentication_rejected' || refusal === 'needs_credentials') return { kind: 'refused', refusal }
+    return { kind: 'failed', error }
+  }
+}
+
+/**
+ * A share list a person just opened needs a sign-in and Cmdr has no password of its own for
+ * the server: try the one macOS saved, on its own, before the sheet asks. Answers the outcome
+ * when it settled the ask (listed, or a failure about the server), else `null`: nothing saved,
+ * already asked this run, or the server turned it down, so the sheet asks.
+ */
+async function tryMacosSavedPassword(server: ShareListServer): Promise<ShareListSheetOutcome | null> {
+  const saved = await systemSavedSmbAccount(server.host)
+  if (!saved?.canTry) return null
+  const attempt = await listWithMacosSavedPassword(server)
+  return attempt.kind === 'listed' || attempt.kind === 'failed' ? attempt : null
 }
 
 /**

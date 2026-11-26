@@ -4748,6 +4748,7 @@ export type MessageKey =
   | 'servers.sheet.startFolderHelp'
   | 'servers.sheet.tryNextcloudAddress'
   | 'servers.sheet.useAgent'
+  | 'servers.sheet.useMacosSavedPassword'
   | 'servers.sheet.username'
   | 'servers.sheet.usernamePlaceholder'
   | 'servers.sheet.webdavCleartext'

@@ -487,6 +487,39 @@ pub async fn upgrade_to_smb_volume_using_saved_password(volume_id: String) -> Up
     smb_connect_directly::connect_directly_with_system_saved_password(&volume_id).await
 }
 
+/// Proof that a person's action sent the call that reads the password macOS saved (the
+/// consent dialog it raises would be a surprise anywhere else). ❗ Its field is private to
+/// this module, so only the commands below can mint one: a background thread, a prefetch,
+/// an upgrade sweep, or a launch path has none to pass to
+/// `network::system_saved_password::read_once`.
+pub struct PersonAsked(());
+
+/// The account macOS saved a password under for `host`'s server, and whether that password
+/// may still be tried this run, for the share list's sign-in sheet: it pre-fills the
+/// username and decides whether to offer "Use the password macOS saved". Attributes only:
+/// ❌ never raises the consent dialog. `None` off macOS, or when nothing is saved.
+#[tauri::command]
+#[specta::specta]
+pub async fn system_saved_smb_account(
+    host: NetworkHost,
+) -> Option<crate::network::system_saved_password::SystemSavedAccount> {
+    crate::network::system_saved_password::account_for(&host).await
+}
+
+/// Lists `host`'s shares with the password macOS saved for its server, for a person who
+/// opened a share list that needs a sign-in Cmdr has none of its own for, or who pressed
+/// "Use the password macOS saved". Raises the consent dialog, at most once per server per
+/// run. `Ok(None)`: nothing to try (none saved, denied, or already asked).
+#[tauri::command]
+#[specta::specta]
+pub async fn list_shares_with_system_saved_password(
+    host: NetworkHost,
+    app_handle: tauri::AppHandle,
+) -> Result<Option<ShareListResult>, ShareListError> {
+    let asked = PersonAsked(());
+    crate::network::share_list_sign_in::list_with_system_saved_password(&app_handle, &asked, &host).await
+}
+
 // --- Disconnect Command ---
 
 /// Unmounts all SMB shares mounted from `host`, answering the mount paths that went.
