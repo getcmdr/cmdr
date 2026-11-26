@@ -21,9 +21,9 @@ export const browsersCommands: CommandSource[] = [
     fixedKey: true,
   },
   {
-    // No combo of its own: ⌘R is `pane.refresh`, which re-scans hosts when the
-    // focused pane shows the network browser. This entry stays for the palette,
-    // where "Refresh network hosts" says what it does.
+    // No combo of its own: ⌘R is `pane.refresh`, which re-lists the Servers list like
+    // any folder. This entry stays for the palette, where "Refresh network hosts"
+    // says what it does (it re-lists a focused Servers list, and does nothing elsewhere).
     id: 'network.refresh',
     nameKey: 'commands.networkRefresh.label',
     scope: 'Main window/Servers',

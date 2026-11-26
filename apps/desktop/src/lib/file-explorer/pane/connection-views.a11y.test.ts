@@ -8,8 +8,8 @@
  * costs"). Each block below keeps its view's own doc comment, props, and
  * assertions.
  *
- * `NetworkMountView` and `SearchResultsView` stay in their own files: each
- * mocks a dozen modules nothing else here touches, and folding them in would
+ * `SearchResultsView` stays in its own file: it
+ * mocks a dozen modules nothing else here touches, and folding it in would
  * hand every other block stubs it never had.
  */
 

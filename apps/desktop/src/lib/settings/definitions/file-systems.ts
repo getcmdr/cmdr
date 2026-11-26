@@ -126,8 +126,8 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
 
   // ❗ `File systems › Servers (SFTP, WebDAV)` has NO entry here, on purpose. Its
   // whole content is the trusted-host-key list, one Forget per row, and the saved
-  // servers live in the hub rather than here
-  // (`src/lib/file-explorer/network/DETAILS.md` § `ServersHub.svelte` says why a
+  // servers live in the Servers list rather than here
+  // (`src/lib/file-explorer/network/DETAILS.md` § "Acting on a Servers row" says why a
   // pane state and not a Settings list). Its sidebar row and its search hits come
   // from `sections/ServersSection.rows.ts`.
 

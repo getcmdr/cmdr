@@ -1,7 +1,7 @@
 <script lang="ts">
     /**
      * SearchResultsView renders a search-results snapshot inside a regular `FilePane`,
-     * sibling to `NetworkMountView` for the network virtual volume.
+     * the pane's one alt-view.
      *
      * The pane's `path` is `search-results://<snapshotId>`; we strip the prefix and read
      * the snapshot from `lib/search/snapshot-store.svelte.ts`. The snapshot's entries
@@ -179,7 +179,7 @@
 
     let fullListRef: ListViewAPI | undefined = $state()
 
-    // ── Exported API mirrors NetworkMountView so FilePane's branches call uniformly. ──
+    // ── Exported API FilePane's search-results branches call. ──
 
     /** Focuses the results list (the pane's keyboard home); false when no snapshot renders one. */
     export function focusList(): boolean {
