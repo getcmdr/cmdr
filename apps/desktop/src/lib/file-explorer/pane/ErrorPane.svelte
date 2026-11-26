@@ -152,11 +152,16 @@
         return true
     }
 
-    /** The sheet, for the server this share list names; a listing that landed (or failed anew) re-lists. */
+    /**
+     * The sheet, for the server this share list names; a listing that landed (or failed anew)
+     * re-lists, and a cancel lands back on Sign in (the sheet took focus into its fields as it
+     * opened, so its own restore has nowhere to go back to).
+     */
     async function signIn() {
         const refusal = friendly.shareListRefusal ?? { type: 'auth_required', message: '' }
         const outcome = await askToSignInToList(folderPath, refusal)
-        if (outcome && outcome.kind !== 'cancelled') onRetry?.()
+        if (outcome?.kind === 'cancelled') void focusSignIn()
+        else if (outcome) onRetry?.()
     }
 
     // `retryHint` alone decides this: it IS the backend's "retrying might help"

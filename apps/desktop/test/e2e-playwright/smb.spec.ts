@@ -849,7 +849,6 @@ describeSmb('SMB authentication', () => {
     await expect
       .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
       .toBeTruthy()
-    expect(await hubRowUnderCursor('left')).toBeNull()
 
     // Sign in asks again; a second "Not now" lands on Sign in again.
     await tauriPage.evaluate(`document.activeElement.click()`)
@@ -859,8 +858,18 @@ describeSmb('SMB authentication', () => {
       .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
       .toBeTruthy()
 
-    // ⌘[ goes back to the hub, with the cursor on the server.
+    // ⌘[ goes back to the hub, with the cursor on the server. Read off the DOM first: while the error screen is up,
+    // `cmdr://state` still carries the hub's rows, so the mirror alone can't tell the two apart.
     await pressKey(tauriPage, defaultKey('nav.back'))
+    await expect
+      .poll(
+        async () =>
+          tauriPage.evaluate<boolean>(
+            `!document.querySelector('.error-pane') && !!document.querySelector('.servers-hub')`,
+          ),
+        { timeout: waitBudget(15000) },
+      )
+      .toBeTruthy()
     await expect
       .poll(async () => (await hubRowUnderCursor('left'))?.startsWith('SMB Test (Auth)  protocol=smb'), {
         timeout: waitBudget(15000),

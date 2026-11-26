@@ -22,6 +22,9 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
 
 vi.hoisted(() => vi.stubGlobal('__CMDR_PLATFORM__', 'macos'))
 
+const askToSignInToList = vi.hoisted(() => vi.fn())
+vi.mock('../network/share-list-sign-in', () => ({ askToSignInToList }))
+
 const openErrorReportFor = vi.hoisted(() => vi.fn())
 vi.mock('#lib/error-reporter/error-report-flow.svelte.js', () => ({ openErrorReportFor }))
 
@@ -108,6 +111,22 @@ describe('a share list that wants an account', () => {
     const focused = document.activeElement
     expect(focused?.textContent.trim()).toBe('Sign in')
     expect(focused?.closest('[data-pane-chrome]')).not.toBeNull()
+    target.remove()
+  })
+
+  // The sheet takes focus into its fields as it opens, so its own restore has nowhere to go back to:
+  // a cancel from this screen's Sign in lands back on Sign in all the same.
+  it('lands back on Sign in when the sheet its Sign in opened is cancelled', async () => {
+    askToSignInToList.mockResolvedValue({ kind: 'cancelled' })
+    const onRetry = vi.fn()
+    const target = mountPane({ friendly, folderPath: 'smb://testnas', onRetry })
+    await tick()
+    const signIn = [...target.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Sign in')
+    signIn?.click()
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(signIn)
+    })
+    expect(onRetry).not.toHaveBeenCalled()
     target.remove()
   })
 
