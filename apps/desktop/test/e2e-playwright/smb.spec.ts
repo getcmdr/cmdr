@@ -231,11 +231,12 @@ async function cursorRowText(side: 'left' | 'right'): Promise<string | null> {
 }
 
 /**
- * A share list row's share name. The row carries the share's description as a `comment="…"` token when it has one, so
- * an agent reads both; the fixtures' shares have none, so this accepts either form.
+ * A share list row's share name. The row carries its facts as tokens after two spaces when it has any (the share's
+ * description as `comment="…"`, a saved share's `status=` and `account=`: `src/lib/file-explorer/pane/mcp-row-name.ts`),
+ * so an agent reads both; this accepts either form.
  */
 function shareNameOf(row: string): string {
-  return row.replace(/ {2}comment=".*"$/, '')
+  return row.replace(/ {2}[a-z]+=.*$/, '')
 }
 
 /**
