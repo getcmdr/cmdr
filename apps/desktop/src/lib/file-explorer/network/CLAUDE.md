@@ -8,10 +8,10 @@ Signing in is `#lib/servers`' one sheet; this module only says what to ask and w
 - `network-store.svelte.ts`: the `$state` singleton behind all network data. `lazy-trigger.ts`: the network-action hook.
 - `ServersHub.svelte` (+ `servers-hub-{rows,items,shares,keys,actions,mcp,columns}.ts`, `servers-hub-list.svelte.ts`,
   `host-status.ts`, `ServersHubRowMenu.svelte`, `ServersHubStatusBar.svelte`): the hub table on the `network` volume.
-  `PlacesBrowser.svelte` (+ `PlacesHeader.svelte`): one account's places, the listing's sign-in, and "Sign in as…".
-  `smb-sign-in.ts`: SMB's side of the sheet. `list-cursor.ts`: both lists' arrow keys, jump rule, and scrolling.
-  `mount-error-messages.ts` (+ `mount-error.ts`): a refused mount's words. `share-parent-*`: `..` out of a share's top
-  folder (DETAILS).
+  `PlacesBrowser.svelte` (+ `PlacesHeader.svelte`): renders one account's places. `share-list-sign-in.ts`: the listing's
+  sign-in and account actions. `smb-sign-in.ts`: SMB's side of the sheet. `list-cursor.ts`: both lists' arrow keys, jump
+  rule, and scrolling. `mount-error-messages.ts` (+ `mount-error.ts`): a refused mount's words. `share-parent-*`: `..`
+  out of a share's top folder (DETAILS).
 - `SmbLinkConsentDialog.svelte`: the ask before a link signs in to another server, opened from the pane's error screen
   (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link").
 - `direct-connect.ts` (+ `upgrade-messages.ts`, `LocalNetworkBlockedToastContent.svelte`): the "Connect directly"

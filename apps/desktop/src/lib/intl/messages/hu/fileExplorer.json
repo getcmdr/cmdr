@@ -621,10 +621,6 @@
   "@fileExplorer.networkMount.mountingSlow": {
     "sourceHash": "8267138"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Nem sikerült csatolni a megosztást",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "d04d142"
-  },
   "fileExplorer.networkMount.signInTitle": "Bejelentkezés „{share}” megnyitásához",
   "@fileExplorer.networkMount.signInTitle": {
     "sourceHash": "8e161f1"
@@ -632,14 +628,6 @@
   "fileExplorer.networkMount.signInMessage": "„{server}” csak bejelentkezett fiókoknak nyitja meg ezt a megosztást.",
   "@fileExplorer.networkMount.signInMessage": {
     "sourceHash": "bec2bf7"
-  },
-  "fileExplorer.networkMount.tryAgain": "Próbáld újra",
-  "@fileExplorer.networkMount.tryAgain": {
-    "sourceHash": "d8b8392"
-  },
-  "fileExplorer.networkMount.back": "Vissza",
-  "@fileExplorer.networkMount.back": {
-    "sourceHash": "76900f1"
   },
   "fileExplorer.unreachable.title": "Nem sikerült elérni: {path}",
   "@fileExplorer.unreachable.title": {

@@ -1,25 +1,17 @@
 /**
- * Behavior tests for NetworkMountView's mount-failure auth loop.
- *
- * Regression (the "Testnas dead end"): a mount that failed with an auth-class error
- * (`auth_failed` / `auth_required`, including the formerly unmapped NetAuth -6600)
- * rendered the dead-end error pane: "Try again" replayed the identical credentials and
- * nothing routed to a credential prompt. Auth-class mount errors must ASK; answering
- * retries the mount with the entered credentials and saves them on success when
- * "Remember in Keychain" is checked.
+ * Behavior tests for how NetworkMountView wires the share mount
+ * (`share-mount.svelte.ts`, whose own tests pin the flows) and the share list.
  *
  * ❗ The asking is the one sign-in sheet, so these assert the REQUEST the view makes
- * (its shape, its endpoint, and what its `attempt` calls), ❌ never a form in the pane.
+ * (its endpoint, its refusal), ❌ never a form in the pane.
  */
 
-import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, unmount, tick } from 'svelte'
-import { withPlatform } from '#lib/platform/test-platform.js'
 import NetworkMountView from './NetworkMountView.svelte'
 import type { MountError, NetworkHost, ShareInfo } from '../types'
 import { MountFailure } from '../network/mount-error'
 import { renderMountError } from '../network/mount-error-messages'
-import { WAIT_REVEAL_AFTER_MS } from '#lib/ui/wait-reveal.js'
 
 const h = vi.hoisted(() => ({
   fetchShares: vi.fn(),
@@ -118,25 +110,12 @@ function refused(error: MountError): MountFailure {
 
 const authFailed: MountError = { type: 'auth_failed', server: ADDRESS }
 const authRequired: MountError = { type: 'auth_required', server: ADDRESS, share: 'testshare' }
-const accountRefused: MountError = {
-  type: 'permission_denied',
-  server: ADDRESS,
-  share: 'testshare',
-  username: 'test_user_3',
-}
 const unreachable: MountError = { type: 'host_unreachable', server: ADDRESS }
 
 /** The sheet request under test, as much of it as these assert. */
 interface SheetRequest {
-  mode: string
-  shape: { kind: string; guestAllowed?: boolean }
-  endpoint: { address: string; host: string; username?: string }
+  endpoint: { address: string }
   refusal?: string
-  attempt: (submission: {
-    mode: 'sign-in'
-    secret: { secret: string; remember: boolean } | null
-    username: string | null
-  }) => Promise<{ kind: string; refusal?: string }>
 }
 
 /** The one request the view made of the sign-in sheet. */
@@ -177,7 +156,24 @@ async function mountViewAndActivateShare() {
   return { target, component, api }
 }
 
-describe('NetworkMountView mount-failure auth loop', () => {
+/** The buttons the pane's remote-connect view offers, by label. */
+function buttonLabels(target: HTMLElement): string[] {
+  return [...target.querySelectorAll('.remote-connect button')].map((b) => b.textContent.trim())
+}
+
+/** The remote-connect view's button labelled `label`. */
+function button(target: HTMLElement, label: string): HTMLButtonElement {
+  return must(
+    [...target.querySelectorAll<HTMLButtonElement>('.remote-connect button')].find(
+      (b) => b.textContent.trim() === label,
+    ),
+    `the ${label} button`,
+  )
+}
+
+// The flows themselves (the sheet rounds, the retries, the words, the mirror, the queue)
+// are `share-mount.svelte.test.ts`'s. These pin how the view wires them.
+describe('NetworkMountView: a mount that stopped short', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     document.body.innerHTML = ''
@@ -188,280 +184,67 @@ describe('NetworkMountView mount-failure auth loop', () => {
     h.openSignInSheet.mockResolvedValue({ kind: 'cancelled' })
   })
 
-  it('asks the sheet for this share (not the dead-end error pane) on an auth-class mount error', async () => {
+  it('asks the sheet for this share (not a dead-end pane) on an auth-class mount error', async () => {
     h.mountNetworkShare.mockRejectedValue(refused(authFailed))
     const { target, component } = await mountViewAndActivateShare()
 
     await vi.waitFor(() => {
       expect(h.openSignInSheet).toHaveBeenCalled()
     })
-
     const request = sheetRequest()
-    expect(request.mode).toBe('sign-in')
-    // ❗ No guest option: guest is what the mount just tried, and offering it
-    // again would be a button that cannot work.
-    expect(request.shape).toEqual({ kind: 'username_password', guestAllowed: false })
-    // The header names the SHARE, which is what the mount was about.
     expect(request.endpoint.address).toBe('smb://Testnas/testshare')
-    // The refusal that opened the sheet, in the app's vocabulary rather than the
-    // backend's sentence.
     expect(request.refusal).toBe('authentication_rejected')
     expect(target.querySelector('.login-container'), 'no form renders in the pane').toBeNull()
 
     await unmount(component)
   })
 
-  it('retries the mount with entered credentials and saves them on success', async () => {
-    h.mountNetworkShare
-      .mockRejectedValueOnce(refused(authFailed))
-      .mockResolvedValueOnce({ mountPath: '/Volumes/testshare', alreadyMounted: false })
-    const { component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'hunter2', remember: true },
-      username: 'test_user_3',
-    })
-
-    expect(outcome).toEqual({ kind: 'handed_off' })
-    expect(h.mountNetworkShare).toHaveBeenCalledTimes(2)
-    // The host's own name rides along, which is what the saved share is filed under.
-    expect(h.mountNetworkShare).toHaveBeenLastCalledWith(
-      ADDRESS,
-      'testshare',
-      'test_user_3',
-      'hunter2',
-      445,
-      15000,
-      'Testnas',
-      'server-connect-test-attempt',
-    )
-    // Remembered only once the mount actually went through.
-    await vi.waitFor(() => {
-      expect(h.saveSmbCredentials).toHaveBeenCalledWith('Testnas', null, 'test_user_3', 'hunter2')
-    })
-
-    await unmount(component)
-  })
-
-  it('keeps the sheet open on a second refusal, and saves nothing', async () => {
-    h.mountNetworkShare.mockRejectedValue(refused(authFailed))
-    const { component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'wrong', remember: true },
-      username: 'test_user_3',
-    })
-
-    expect(outcome).toEqual({ kind: 'refused', refusal: 'authentication_rejected' })
-    expect(h.saveSmbCredentials).not.toHaveBeenCalled()
-    expect(h.setSmbAccountPreference, 'a refused account is not the host account').not.toHaveBeenCalled()
-
-    await unmount(component)
-  })
-
-  // cmdr-reports#27: a share guests can list but not open asked for the password on every
-  // mount, because the account that got in was never made the host's account, so the next
-  // visit listed and mounted as guest again.
-  it("makes the account that got in the host's account, so the next visit signs in as it", async () => {
-    h.mountNetworkShare
-      .mockRejectedValueOnce(refused(authRequired))
-      .mockResolvedValueOnce({ mountPath: '/Volumes/testshare', alreadyMounted: false })
-    const { component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'hunter2', remember: true },
-      username: 'test_user_3',
-    })
-
-    await vi.waitFor(() => {
-      expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', 'test_user_3')
-    })
-
-    await unmount(component)
-  })
-
-  it('asks for a sign-in when the share refuses guests, saying a password is needed', async () => {
-    // ERR-SHUSC: a share guests can SEE but can't OPEN. The backend clarifies the
-    // mount's "not found" into `auth_required`, and that has to open the sheet
-    // rather than the dead-end error pane.
-    h.mountNetworkShare.mockRejectedValue(refused(authRequired))
-    const { component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-    // ❗ Nothing was offered, so it isn't a rejected password.
-    expect(sheetRequest().refusal).toBe('needs_credentials')
-
-    await unmount(component)
-  })
-
   it('waits for the sign-in calmly behind the sheet, instead of saying the mount failed', async () => {
-    // ❗ A share that wants an account is a normal step: no ❌, no "Couldn't mount
-    // share", and no Try again, since trying again without an account gets the
-    // same answer (cmdr-reports#10). The sheet stays up for this check.
+    // ❗ A share that wants an account is a normal step, not a failure: no Try again,
+    // which without an account gets the same answer (cmdr-reports#10).
     h.openSignInSheet.mockReturnValue(new Promise(() => {}))
     h.mountNetworkShare.mockRejectedValue(refused(authRequired))
     const { target, component } = await mountViewAndActivateShare()
 
-    const pane = await vi.waitFor(() => must(target.querySelector('.mount-sign-in-state'), 'the sign-in pane'))
-    expect(target.querySelector('.mount-error-state')).toBeNull()
-    expect(must(pane.querySelector('.sign-in-title'), 'the title').textContent.trim()).toBe(
-      'Sign in to open “testshare”',
-    )
-    const labels = [...pane.querySelectorAll('button')].map((b) => b.textContent.trim())
-    expect(labels).toEqual(['Sign in', 'Back'])
-
-    await unmount(component)
-  })
-
-  it('asks for a different account when the share refuses the one that signed in', async () => {
-    // The account got past sign-in; the SHARE doesn't let it in. The fix is another
-    // account, which the sheet takes, so this is its question and not the pane's.
-    h.mountNetworkShare.mockRejectedValue(refused(accountRefused))
-    const { target, component } = await mountViewAndActivateShare()
-
     await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
+      expect(target.querySelector('.remote-connect .title')?.textContent.trim()).toBe('Sign in to open “testshare”')
     })
-    expect(sheetRequest().refusal).toBe('account_not_permitted')
-    expect(target.querySelector('.mount-error-state'), 'no dead-end pane in front of the sheet').toBeNull()
-
-    await unmount(component)
-  })
-
-  it('keeps the sheet open when the share refuses the account the user just signed in with', async () => {
-    h.mountNetworkShare.mockRejectedValueOnce(refused(authRequired)).mockRejectedValueOnce(refused(accountRefused))
-    const { component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'hunter2', remember: true },
-      username: 'test_user_3',
-    })
-
-    // ❗ Not `authentication_rejected`: the password worked, so "that password didn't
-    // work" would send the user to fix the one thing that isn't wrong.
-    expect(outcome).toEqual({ kind: 'refused', refusal: 'account_not_permitted' })
-    expect(h.saveSmbCredentials, 'nothing is remembered for a mount that did not go through').not.toHaveBeenCalled()
-
-    await unmount(component)
-  })
-
-  it('hands a refusal about the SHARE back to the pane, which has the words for it', async () => {
-    // The sheet's vocabulary is about credentials. A share that went missing
-    // between the listing and the mount is the pane's error state to render, with
-    // its own Try again.
-    h.mountNetworkShare
-      .mockRejectedValueOnce(refused(authFailed))
-      .mockRejectedValueOnce(refused({ type: 'share_not_found', server: ADDRESS, share: 'testshare' }))
-    const { target, component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'hunter2', remember: false },
-      username: 'test_user_3',
-    })
-
-    expect(outcome).toEqual({ kind: 'handed_off' })
-    await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
-    })
+    expect(buttonLabels(target)).toEqual(['Sign in…', 'Go back'])
 
     await unmount(component)
   })
 
   it('words a refusal in the pane from the catalog, naming the host by its own name', async () => {
-    // ERR-SHUSC: the pane showed the backend's English `Share "data" not found on
-    // "observermch"` in an otherwise Hungarian UI. The words are the catalog's now,
-    // and the server is the host a person picked, not the address it was mounted by.
+    // ERR-SHUSC: the pane showed the backend's English sentence in an otherwise Hungarian
+    // UI. The words are the catalog's, and the server is the host a person picked.
     const notFound: MountError = { type: 'share_not_found', server: ADDRESS, share: 'testshare' }
     h.mountNetworkShare.mockRejectedValue(refused(notFound))
     const { target, component } = await mountViewAndActivateShare()
 
-    const errorPane = await vi.waitFor(() => must(target.querySelector('.mount-error-state'), 'the error pane'))
-    const message = must(errorPane.querySelector('.error-message'), 'the message').textContent
-    expect(message).toBe(renderMountError(notFound, 'Testnas'))
-    expect(message).toContain('“Testnas”')
-    expect(message).not.toContain(ADDRESS)
+    await vi.waitFor(() => {
+      expect(target.querySelector('.remote-connect .title')?.textContent).toBe(renderMountError(notFound, 'Testnas'))
+    })
+    expect(h.openSignInSheet, 'a share refusal asks for no credential').not.toHaveBeenCalled()
 
     await unmount(component)
   })
 
-  it('logs a refusal as readable text, not "[object Object]"', async () => {
-    // The log bridge renders each property with `String()`, so an object logged as-is
-    // reached the log file as `did not go through: [object Object]` (QA round 3).
-    const notFound: MountError = { type: 'share_not_found', server: ADDRESS, share: 'testshare' }
-    h.mountNetworkShare.mockRejectedValue(refused(notFound))
-    const { target, component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => must(target.querySelector('.mount-error-state'), 'the error pane'))
-    const [template, properties] = h.warn.mock.calls[0] as [string, Record<string, unknown>]
-    expect(template).toContain('{error}')
-    expect(String(properties.error)).toContain('share_not_found')
-
-    await unmount(component)
-  })
-
-  it('words a mount call that broke down without a typed refusal as the catch-all', async () => {
-    // Not a refusal at all: the IPC call itself threw. Its text is a diagnostic for
-    // the log, so the pane says the honest general thing instead of showing it.
-    h.mountNetworkShare.mockRejectedValue(new Error('IPC transport closed'))
-    const { target, component } = await mountViewAndActivateShare()
-
-    const errorPane = await vi.waitFor(() => must(target.querySelector('.mount-error-state'), 'the error pane'))
-    const message = must(errorPane.querySelector('.error-message'), 'the message').textContent
-    expect(message).toBe(
-      renderMountError({ type: 'unexpected', server: ADDRESS, share: 'testshare', detail: 'ignored' }, 'Testnas'),
-    )
-    expect(message).not.toContain('IPC transport')
-    expect(h.openSignInSheet, 'no credential answers a broken call').not.toHaveBeenCalled()
-
-    await unmount(component)
-  })
-
-  it('shows a mount the system reported but never made as the pane error, and Try again mounts again', async () => {
-    // ERR-SHUSC: macOS said the share connected and nothing got mounted. No
-    // credential answers that, so the sheet stays out of it, and the pane's
-    // Try again is a real second attempt rather than a dead end.
+  it('Try again mounts again, and the refusal goes once it went through', async () => {
     h.mountNetworkShare
       .mockRejectedValueOnce(refused({ type: 'mount_missing', server: ADDRESS, share: 'testshare' }))
       .mockResolvedValueOnce({ mountPath: '/Volumes/testshare', alreadyMounted: false })
     const { target, component } = await mountViewAndActivateShare()
 
-    const errorPane = await vi.waitFor(() => must(target.querySelector('.mount-error-state'), 'the error pane'))
-    expect(h.openSignInSheet).not.toHaveBeenCalled()
-
-    must(errorPane.querySelector<HTMLButtonElement>('.error-actions button'), 'Try again').click()
+    await vi.waitFor(() => {
+      expect(buttonLabels(target)).toContain('Try again')
+    })
+    button(target, 'Try again').click()
 
     await vi.waitFor(() => {
       expect(h.mountNetworkShare).toHaveBeenCalledTimes(2)
     })
     await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state'), 'the retry went through').toBeNull()
+      expect(target.querySelector('.remote-connect'), 'the retry went through').toBeNull()
     })
 
     await unmount(component)
@@ -474,48 +257,14 @@ describe('NetworkMountView mount-failure auth loop', () => {
     await vi.waitFor(() => {
       expect(h.openSignInSheet).toHaveBeenCalled()
     })
-
     await vi.waitFor(() => {
       expect(target.querySelector('.share-row'), 'the share list is where cancelling lands').toBeTruthy()
     })
-    expect(target.querySelector('.mount-error-state')).toBeNull()
 
     await unmount(component)
   })
 
-  it('mirrors the mount failure into the pane state MCP reads', async () => {
-    // The error pane replaces the share list, but the pane's own `path` and
-    // `files` still describe that list. Without this mirror, a failed mount
-    // reads from `cmdr://state` as a pane that simply didn't move, with the
-    // reason nowhere in the resource. The sentence is in the UI's language, so
-    // the typed reason rides beside it.
-    h.mountNetworkShare.mockRejectedValue(refused(unreachable))
-    const { target, component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
-    })
-
-    await vi.waitFor(() => {
-      expect(h.updateLeftPaneState).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mountError: {
-            share: 'testshare',
-            reason: 'host_unreachable',
-            message: renderMountError(unreachable, 'Testnas'),
-          },
-        }),
-      )
-    })
-
-    await unmount(component)
-  })
-
-  it('clears the mirror itself when the error pane goes away', async () => {
-    // A `mountError` that outlives its pane misleads a reader worse than the
-    // silence it replaced, and the view that comes next can't be relied on to
-    // clear it: `PlacesBrowser` only pushes once it has a share list, so a host
-    // that has since gone quiet pushes nothing at all.
+  it('Go back clears the MCP mirror of the refusal and shows the share list again', async () => {
     h.mountNetworkShare.mockRejectedValue(refused(unreachable))
     const { target, component } = await mountViewAndActivateShare()
 
@@ -530,30 +279,26 @@ describe('NetworkMountView mount-failure auth loop', () => {
         }),
       )
     })
-
-    must(target.querySelector<HTMLElement>('.mount-error-state'), 'the error pane')
-    const backButton = Array.from(target.querySelectorAll('button')).find((b) => b.textContent.includes('Back'))
-    must(backButton, 'the Back button').click()
+    button(target, 'Go back').click()
 
     await vi.waitFor(() => {
-      // An explicit `null`, which only this view sends: `PlacesBrowser`'s own push
-      // omits the key entirely, so this can't pass on its remount alone.
       expect(h.updateLeftPaneState).toHaveBeenCalledWith(expect.objectContaining({ mountError: null }))
     })
+    await vi.waitFor(() => {
+      expect(target.querySelector('.share-row')).toBeTruthy()
+    })
 
     await unmount(component)
   })
 
-  it('answers the keyboard in the error pane, one step back to the share list', async () => {
-    // The error pane mounts neither browser, so the delegation below it landed on
-    // nothing: every key went dead and the two buttons were the only way out. That
-    // also left the MCP `nav_to_parent` tool (a synthetic Backspace) acking `OK`
-    // while the pane sat still, with no way for an agent to leave a failed mount.
+  it('answers the keyboard in the refusal, one step back to the share list', async () => {
+    // The refusal mounts neither browser, so the delegation below it landed on nothing:
+    // every key went dead, and the MCP `nav_to_parent` tool (a synthetic Backspace) acked
+    // `OK` while the pane sat still.
     h.mountNetworkShare.mockRejectedValue(refused(unreachable))
     const { target, component, api } = await mountViewAndActivateShare()
-
     await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
+      expect(target.querySelector('.remote-connect')).toBeTruthy()
     })
 
     const event = new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true })
@@ -561,7 +306,6 @@ describe('NetworkMountView mount-failure auth loop', () => {
     await tick()
 
     expect(event.defaultPrevented, 'the key must be consumed here').toBe(true)
-    expect(target.querySelector('.mount-error-state'), 'the error pane must be gone').toBeNull()
     // ONE step: back to this host's share list, not out to the host list.
     await vi.waitFor(() => {
       expect(target.querySelector('.share-row')).toBeTruthy()
@@ -570,12 +314,12 @@ describe('NetworkMountView mount-failure auth loop', () => {
     await unmount(component)
   })
 
-  it('counts no rows while the error pane is up, so a cursor move is refused instead of faked', async () => {
+  it('counts no rows while the refusal is up, so a cursor move is refused instead of faked', async () => {
     h.mountNetworkShare.mockRejectedValue(refused(unreachable))
     const { target, component, api } = await mountViewAndActivateShare()
 
     await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
+      expect(target.querySelector('.remote-connect')).toBeTruthy()
     })
     expect(api.getItemCount()).toBe(0)
 
@@ -598,25 +342,9 @@ describe('NetworkMountView mount-failure auth loop', () => {
 
     await unmount(component)
   })
-
-  it('keeps the error pane for non-auth mount errors', async () => {
-    h.mountNetworkShare.mockRejectedValue(refused(unreachable))
-    const { target, component } = await mountViewAndActivateShare()
-
-    await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
-    })
-    expect(h.openSignInSheet, 'a non-auth failure asks for no credential').not.toHaveBeenCalled()
-
-    await unmount(component)
-  })
 })
 
-/**
- * #604: a NetFS mount can hang behind a stuck macOS sign-in helper for as long as
- * the timeout allows. The wait says what's going on, can be called off, and a
- * stuck helper is explained in the pane rather than worded as a slow server.
- */
+/** #604: the wait renders in the shared connecting view, with a Cancel that works. */
 describe('NetworkMountView: a mount that waits', () => {
   /** Settles the running mount the way the backend answers a cancel. */
   let answerMount: (error: MountError) => void = () => {}
@@ -636,168 +364,56 @@ describe('NetworkMountView: a mount that waits', () => {
     )
   })
 
-  it('offers Cancel while it waits, and Cancel calls off that mount and goes back to the share list', async () => {
-    const { target, component } = await mountViewAndActivateShare()
+  async function waitForTheWait(target: HTMLElement) {
     await vi.waitFor(
       () => {
         expect(target.querySelector('.remote-connect .content')).toBeTruthy()
       },
       { timeout: 3000 },
     )
+  }
 
-    const cancel = must(
-      [...target.querySelectorAll<HTMLButtonElement>('.remote-connect button')].find(
-        (button) => button.textContent.trim() === 'Cancel',
-      ),
-      'the Cancel button',
-    )
-    cancel.click()
+  it('offers Cancel while it waits, and Cancel calls off that mount and goes back to the share list', async () => {
+    const { target, component } = await mountViewAndActivateShare()
+    await waitForTheWait(target)
+
+    button(target, 'Cancel').click()
     expect(h.cancelServerConnect).toHaveBeenCalledWith('server-connect-test-attempt')
 
     answerMount({ type: 'cancelled', share: 'testshare' })
     await vi.waitFor(() => {
       expect(target.querySelector('.share-row')).toBeTruthy()
     })
-    expect(target.querySelector('.mount-error-state'), 'a cancel the person asked for is no failure').toBeNull()
+    expect(target.querySelector('.remote-connect'), 'a cancel the person asked for is no refusal').toBeNull()
 
     await unmount(component)
   })
 
-  it('names the share it mounts and the address it dials, in the shared connecting view', async () => {
+  it('names the share it mounts, its server, and the address it dials', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(
-      () => {
-        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-      },
-      { timeout: 3000 },
-    )
+    await waitForTheWait(target)
 
     expect(must(target.querySelector('.remote-connect .title'), 'the heading').textContent).toContain(
       'Connecting to testshare',
     )
-    expect(must(target.querySelector('.remote-connect .place-address'), 'the address').textContent).toBe(
-      `${ADDRESS}:445`,
-    )
-
-    await unmount(component)
-  })
-
-  it('names the server by the name a person knows it by, beside the share', async () => {
-    const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(
-      () => {
-        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-      },
-      { timeout: 3000 },
-    )
-
     expect(must(target.querySelector('.remote-connect .place-name'), 'the identity line').textContent).toBe(
       'testshare on Testnas',
     )
-
-    await unmount(component)
-  })
-
-  it('names the share alone for a host known only by its address, so the address shows once', async () => {
-    const ipOnly: NetworkHost = { id: 'manual-ip', name: ADDRESS, ipAddress: ADDRESS, port: 445, source: 'manual' }
-    const target = document.createElement('div')
-    document.body.appendChild(target)
-    const component = mount(NetworkMountView, {
-      target,
-      props: { paneId: 'left', isFocused: true, initialNetworkHost: ipOnly },
-    })
-    const api = component as unknown as NetworkMountViewApi
-    await vi.waitFor(() => {
-      expect(target.querySelector('.share-row')).toBeTruthy()
-    })
-    // Down from `..`, where the share list opens, to the share.
-    api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
-    api.openCursorItem()
-    await vi.waitFor(
-      () => {
-        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-      },
-      { timeout: 3000 },
-    )
-
-    expect(must(target.querySelector('.remote-connect .place-name'), 'the identity line').textContent).toBe('testshare')
     expect(must(target.querySelector('.remote-connect .place-address'), 'the address').textContent).toBe(
       `${ADDRESS}:445`,
     )
-
-    await unmount(component)
-  })
-
-  it('cancels on the back key too, since the share list is not on screen to take it', async () => {
-    const { target, component, api } = await mountViewAndActivateShare()
-    await vi.waitFor(
-      () => {
-        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-      },
-      { timeout: 3000 },
-    )
-
-    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
-    api.handleKeyDown(event)
-    expect(event.defaultPrevented).toBe(true)
-    expect(h.cancelServerConnect).toHaveBeenCalledWith('server-connect-test-attempt')
-
-    await unmount(component)
-  })
-
-  it.each([
-    ['macos', 'Still waiting for macOS to connect. You can cancel at any time.'],
-    ['windows', 'Still waiting for Windows to connect. You can cancel at any time.'],
-    ['linux', 'Still connecting to the share. You can cancel at any time.'],
-  ] as const)('says it is still waiting once the mount runs past ten seconds (%s)', async (platform, slow) => {
-    onTestFinished(withPlatform(platform))
-    const target = document.createElement('div')
-    document.body.appendChild(target)
-    const component = mount(NetworkMountView, {
-      target,
-      props: { paneId: 'left', isFocused: true, initialNetworkHost: host },
-    })
-    const api = component as unknown as NetworkMountViewApi
-    await vi.waitFor(() => {
-      expect(target.querySelector('.share-row')).toBeTruthy()
-    })
-
-    vi.useFakeTimers()
-    try {
-      api.handleKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
-      api.openCursorItem()
-      await tick()
-      // Past the wait's quiet start (`RemoteConnectView`), so the view says something.
-      vi.advanceTimersByTime(WAIT_REVEAL_AFTER_MS)
-      await tick()
-      const hint = () => must(target.querySelector('.remote-connect .hint'), 'the line under the spinner').textContent
-      expect(hint(), 'a fresh mount says only that it takes a moment').not.toContain(slow)
-      vi.advanceTimersByTime(10_000)
-      await tick()
-      expect(hint()).toContain(slow)
-    } finally {
-      vi.useRealTimers()
-    }
 
     await unmount(component)
   })
 
   it('explains a stuck sign-in helper in the pane, with the command that restarts it', async () => {
     const { target, component } = await mountViewAndActivateShare()
-    await vi.waitFor(
-      () => {
-        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
-      },
-      { timeout: 3000 },
-    )
+    await waitForTheWait(target)
 
     answerMount({ type: 'sign_in_helper_stuck', server: ADDRESS })
     await vi.waitFor(() => {
-      expect(target.querySelector('.mount-error-state')).toBeTruthy()
+      expect(target.querySelector('.remote-connect .title')?.textContent).toContain('killall NetAuthSysAgent')
     })
-    const message = must(target.querySelector('.mount-error-state .error-message'), 'the message').textContent
-    expect(message).toContain('Testnas')
-    expect(message).toContain('killall NetAuthSysAgent')
 
     await unmount(component)
   })
@@ -806,9 +422,7 @@ describe('NetworkMountView: a mount that waits', () => {
 /**
  * ❗ cmdr-reports#7: "Cmdr tried to open the share on that server." A share queued
  * to auto-mount (an `smb://host/share` address, "Copy path between panes") is a
- * one-shot for the visit it was queued with. It used to survive every later
- * visit, and each fresh share list fired it again, so opening a host row the
- * person meant to browse mounted a share they never picked.
+ * one-shot for the visit it was queued with.
  */
 describe('NetworkMountView auto-mount', () => {
   beforeEach(() => {
@@ -821,10 +435,9 @@ describe('NetworkMountView auto-mount', () => {
     h.mountNetworkShare.mockResolvedValue({ mountPath: '/Volumes/testshare', alreadyMounted: false })
   })
 
-  it('mounts a queued share once, and opening the host again later only lists its shares', async () => {
+  function mountQueued(consumed: () => void) {
     const target = document.createElement('div')
     document.body.appendChild(target)
-    const consumed = vi.fn()
     const component = mount(NetworkMountView, {
       target,
       props: {
@@ -835,7 +448,12 @@ describe('NetworkMountView auto-mount', () => {
         onAutoMountConsumed: consumed,
       },
     })
-    const api = component as unknown as NetworkMountViewApi
+    return { target, component, api: component as unknown as NetworkMountViewApi }
+  }
+
+  it('mounts a queued share once, and opening the host again later only lists its shares', async () => {
+    const consumed = vi.fn()
+    const { target, component, api } = mountQueued(consumed)
 
     await vi.waitFor(() => {
       expect(h.mountNetworkShare).toHaveBeenCalledTimes(1)
@@ -854,6 +472,37 @@ describe('NetworkMountView auto-mount', () => {
     await tick()
 
     expect(h.mountNetworkShare, 'no second mount nobody asked for').toHaveBeenCalledTimes(1)
+    await unmount(component)
+  })
+
+  it('doesn’t dial the queued share again once the person cancelled it', async () => {
+    // The wait replaces the share list, and Cancel brings a FRESH one back: a queue that
+    // was spent only on success fired again on it, so Cancel re-dialed at once.
+    let answerMount: (error: MountError) => void = () => {}
+    h.mountNetworkShare.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          answerMount = (error) => {
+            reject(refused(error))
+          }
+        }),
+    )
+    const { target, component } = mountQueued(vi.fn())
+    await vi.waitFor(
+      () => {
+        expect(target.querySelector('.remote-connect .content')).toBeTruthy()
+      },
+      { timeout: 3000 },
+    )
+
+    button(target, 'Cancel').click()
+    answerMount({ type: 'cancelled', share: 'testshare' })
+    await vi.waitFor(() => {
+      expect(target.querySelector('.share-row')).toBeTruthy()
+    })
+    await tick()
+
+    expect(h.mountNetworkShare, 'Cancel means not now').toHaveBeenCalledTimes(1)
     await unmount(component)
   })
 })

@@ -622,10 +622,6 @@
   "@fileExplorer.networkMount.mountingSlow": {
     "sourceHash": "8267138"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Freigabe ließ sich nicht einbinden",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "d04d142"
-  },
   "fileExplorer.networkMount.signInTitle": "Anmelden, um „{share}“ zu öffnen",
   "@fileExplorer.networkMount.signInTitle": {
     "sourceHash": "8e161f1"
@@ -633,14 +629,6 @@
   "fileExplorer.networkMount.signInMessage": "„{server}“ öffnet diese Freigabe nur für angemeldete Konten.",
   "@fileExplorer.networkMount.signInMessage": {
     "sourceHash": "bec2bf7"
-  },
-  "fileExplorer.networkMount.tryAgain": "Erneut versuchen",
-  "@fileExplorer.networkMount.tryAgain": {
-    "sourceHash": "d8b8392"
-  },
-  "fileExplorer.networkMount.back": "Zurück",
-  "@fileExplorer.networkMount.back": {
-    "sourceHash": "76900f1"
   },
   "fileExplorer.unreachable.title": "{path} nicht erreichbar",
   "@fileExplorer.unreachable.title": {

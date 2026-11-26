@@ -621,10 +621,6 @@
   "@fileExplorer.networkMount.mountingSlow": {
     "sourceHash": "8267138"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Sdílenou složku se nepodařilo připojit",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "d04d142"
-  },
   "fileExplorer.networkMount.signInTitle": "Pro otevření sdílené složky „{share}“ se přihlaste",
   "@fileExplorer.networkMount.signInTitle": {
     "sourceHash": "8e161f1"
@@ -632,14 +628,6 @@
   "fileExplorer.networkMount.signInMessage": "Server „{server}“ tuto sdílenou složku otevře jen přihlášeným účtům.",
   "@fileExplorer.networkMount.signInMessage": {
     "sourceHash": "bec2bf7"
-  },
-  "fileExplorer.networkMount.tryAgain": "Zkusit znovu",
-  "@fileExplorer.networkMount.tryAgain": {
-    "sourceHash": "d8b8392"
-  },
-  "fileExplorer.networkMount.back": "Zpět",
-  "@fileExplorer.networkMount.back": {
-    "sourceHash": "76900f1"
   },
   "fileExplorer.unreachable.title": "Cesta {path} je nedostupná",
   "@fileExplorer.unreachable.title": {

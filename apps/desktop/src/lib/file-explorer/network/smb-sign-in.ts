@@ -2,8 +2,8 @@
  * SMB's credential sites, on the one sign-in sheet.
  *
  * Three places ask an SMB server for a username and password: a share LISTING
- * that came back needing one (`PlacesBrowser`), a share MOUNT that was refused
- * (`NetworkMountView`), and the "Connect directly" upgrade of a share the OS
+ * that came back needing one (`share-list-sign-in.ts`), a share MOUNT that was
+ * refused (`../pane/share-mount.svelte.ts`), and the "Connect directly" upgrade of a share the OS
  * already mounted (`pane/smb-view-state.svelte.ts`). Each owns its own command;
  * all three ask the same question, so they ask it through here.
  *

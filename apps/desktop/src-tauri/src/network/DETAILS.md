@@ -187,7 +187,7 @@ Always pass the resolved IP from mDNS discovery when one is available; fall back
 
 ❗ **"Sign in as…" sets that preference too** (`set_smb_account_preference` → `manual_servers::set_account`, saving
 the host when nobody typed it in; `None` is "Browse as guest" and clears it). So does a sign-in that got a refused SHARE
-mounted (`NetworkMountView`'s `remountWith`): without it, a share guests can list but not open asked for the password
+mounted (`share-mount.svelte.ts`'s `remountWith`): without it, a share guests can list but not open asked for the password
 on every mount (cmdr-reports#27). And a listing that got no credentials signs in
 as the preferred account with the password this session already read (`account_listing_for`, over
 `keychain::cached_credentials`, ❌ never a Keychain read). Without both, the next background prefetch listed as guest
@@ -445,7 +445,7 @@ identity reads `None` still dials, under the id built from the caller's server, 
 
 Pinned by `mount_test.rs` (`a_netfs_success_with_no_mount_of_the_share_is_not_a_mount` and its siblings, over fabricated
 `statfs` rows, since NetFS can't be made to lie on demand), `linux/mount.rs::a_share_is_found_by_its_port_and_account`,
-and `NetworkMountView.test.ts` for the pane.
+and `share-mount.svelte.test.ts` for the pane.
 
 ### Linux GVFS folder names
 
@@ -1511,7 +1511,7 @@ credential's shape (`user_empty`, `user_domain=none|backslash|at`, `password_emp
 - **A trailing dot goes from the host half, before the port** (#915): the Add server sheet keeps a typed `testnas.local.:11481` as the discovery name, and `credential_key` used to trim the dot only off the whole string, so the sheet's sign-in filed `smb://testnas.local.:11481` while the upgrade and "Connect directly" filed `smb://nas:11481`. Now both key `nas:11481`. A forget also deletes the old spelling (`keychain::legacy_account_name`), so a password saved before the fix can't outlive its server.
 - **Every SMB secret Forget reads one scope** (`saved_servers::smb_hosts::smb_secret_scope`, #915): a host's listing id or a share's place id, resolved to every name the host's password can sit under (`SmbHostGroup::credential_names`: the dialed address, the discovery name, each row's server name and mount address, a discovered twin) plus the shares whose own entries go. `forget_server_secret`, `has_server_secret`, and `forget_saved_smb_host_password` all use it. Keyed by the share row's server name alone, the share's Forget missed the entries a mount or "Connect directly" filed under the dialed IP or the resolved hostname, and an SMB host's listing id answered a silent `false`.
 - **Linux `gio mount` requires GVFS**: The `gvfs-smb` package must be installed. Standard on Ubuntu/Fedora GNOME desktops. KDE desktops may need it explicitly.
-- **macOS smbutil and NetFSMountURLSync fail with loopback IP + non-standard port**: `//127.0.0.1:10480` gives "Broken pipe", but `//localhost:10480` works. `build_smbutil_url` and `NetworkMountView.svelte` both fall back to hostname when IP is `127.0.0.1` or `::1`. This matters for E2E testing against Docker containers on localhost.
+- **macOS smbutil and NetFSMountURLSync fail with loopback IP + non-standard port**: `//127.0.0.1:10480` gives "Broken pipe", but `//localhost:10480` works. `build_smbutil_url` and `share-mount.svelte.ts` both fall back to hostname when IP is `127.0.0.1` or `::1`. This matters for E2E testing against Docker containers on localhost.
 - **Mount URL must include port when non-standard**: `mount_share_sync` builds `smb://server:port/share` for non-445 ports. The port is passed as a separate parameter through `mount_share` → `mount_share_sync`, not embedded in the server string (embedding it would cause `cmdr_smb::smb_addr` to double the port: `localhost:10480:10480`). `SmbMountInfo.port` extracts the port from `statfs` mount source for upgrade paths.
 - **Manual hosts always set `hostname`**: The share listing pipeline guards on `host.hostname` being truthy. `create_network_host` always sets `hostname` (to the address, even for IPs) so manual hosts flow through the pipeline correctly.
 - **SMB upgrade waits briefly for mDNS to warm**: the browse runs only while something needs it (§ "Discovery runs only

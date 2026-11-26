@@ -622,10 +622,6 @@
   "@fileExplorer.networkMount.mountingSlow": {
     "sourceHash": "8267138"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Não foi possível montar o compartilhamento",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "d04d142"
-  },
   "fileExplorer.networkMount.signInTitle": "Iniciar sessão para abrir “{share}”",
   "@fileExplorer.networkMount.signInTitle": {
     "sourceHash": "8e161f1"
@@ -633,14 +629,6 @@
   "fileExplorer.networkMount.signInMessage": "“{server}” só abre este compartilhamento para contas com sessão iniciada.",
   "@fileExplorer.networkMount.signInMessage": {
     "sourceHash": "bec2bf7"
-  },
-  "fileExplorer.networkMount.tryAgain": "Tentar novamente",
-  "@fileExplorer.networkMount.tryAgain": {
-    "sourceHash": "d8b8392"
-  },
-  "fileExplorer.networkMount.back": "Voltar",
-  "@fileExplorer.networkMount.back": {
-    "sourceHash": "76900f1"
   },
   "fileExplorer.unreachable.title": "Não foi possível acessar {path}",
   "@fileExplorer.unreachable.title": {

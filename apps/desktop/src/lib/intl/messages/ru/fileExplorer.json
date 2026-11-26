@@ -621,10 +621,6 @@
   "@fileExplorer.networkMount.mountingSlow": {
     "sourceHash": "8267138"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Не удалось подключить общую папку",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "d04d142"
-  },
   "fileExplorer.networkMount.signInTitle": "Войдите, чтобы открыть «{share}»",
   "@fileExplorer.networkMount.signInTitle": {
     "sourceHash": "8e161f1"
@@ -632,14 +628,6 @@
   "fileExplorer.networkMount.signInMessage": "Сервер «{server}» открывает эту общую папку только после входа в учетную запись.",
   "@fileExplorer.networkMount.signInMessage": {
     "sourceHash": "bec2bf7"
-  },
-  "fileExplorer.networkMount.tryAgain": "Повторить попытку",
-  "@fileExplorer.networkMount.tryAgain": {
-    "sourceHash": "d8b8392"
-  },
-  "fileExplorer.networkMount.back": "Назад",
-  "@fileExplorer.networkMount.back": {
-    "sourceHash": "76900f1"
   },
   "fileExplorer.unreachable.title": "Папка {path} недоступна",
   "@fileExplorer.unreachable.title": {

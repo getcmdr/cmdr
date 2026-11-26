@@ -311,10 +311,15 @@ addition rather than a second component. Inside, `const host = $derived(account.
 
 Auth flow on mount:
 
+The component renders; the sign-in flows are `share-list-sign-in.ts` (below), which answers typed outcomes
+(`ShareListAttempt`, `ShareListSheetOutcome`) the component applies to its rows and states. Its tests are
+`share-list-sign-in.test.ts`; `PlacesBrowser.test.ts` keeps only the rendering and wiring.
+
 1. Check `shareStates` cache; use if loaded.
-2. If cache shows `auth_required` / `signing_required`: call `tryStoredCredentials()`, which calls `getSmbCredentials`
-   directly (no `hasSmbCredentials` pre-check, to avoid a redundant Keychain dialog). If stored creds work,
-   `authenticatedCredentials` is set and auth is transparent; otherwise `askForCredentials()` opens the sign-in sheet.
+2. If cache shows `auth_required` / `signing_required`: `tryStoredCredentials` reads the stored password with ONE
+   `getSmbCredentials` (no `hasSmbCredentials` pre-check, to avoid a redundant Keychain dialog) and lists with it. If
+   that lists shares, `authenticatedCredentials` is set and auth is transparent; otherwise `askToList` opens the sign-in
+   sheet.
 3. If cache shows another error (`host_unreachable`, `timeout`, ...): fall through to a fresh fetch (user-initiated host
    open is an implicit retry; the background prefetch may have run before the host was ready).
 4. Otherwise (no cache or loading): `fetchShares(host)`, same auth fallback.
@@ -327,10 +332,18 @@ exercising Cmdr's own creds, so `authenticatedCredentials` is null even when a w
 `PlacesBrowser` asks for a credential ONLY when the share **listing** needs one (`loadShares`, and the two "Sign in"
 buttons on its error and empty states). ❗ Cancelling goes BACK to the host list: this sheet is up because the listing
 itself can't be read, so "not now" leaves the user in a room with nothing in it. (Share-activation auth is the mount's
-question; `../pane/NetworkMountView.svelte` asks it.) Its `attempt` is `listWithCredentials`, which answers `handed_off`
-on success (nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on
-`authentication_rejected` / `needs_credentials`, and closes it onto the pane's own error state for anything else,
-because that is where the retry and a missing dependency's install command live.
+question; `../pane/share-mount.svelte.ts` asks it.) "Sign in as…" opens the same sheet with no refusal and no guest,
+prefilled with the listed account, and its cancel stays on the list.
+
+`share-list-sign-in.ts`, the sheet round: every `attempt` is `listWithAccount`, which answers `handed_off` on success
+(nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on `authentication_rejected` /
+`needs_credentials`, and closes it onto the pane's own error state for anything else, because that is where the retry
+and a missing dependency's install command live. The round answers the attempt that closed the sheet (`listed` or
+`failed`), or `cancelled`. A listing that worked leaves every record behind in one place: the share cache, the
+credential status, the listed account, the account preference (the choice sticks), the Keychain when Remember, and the
+known-shares store. "Browse as guest" (`useGuest`) clears the account preference FIRST, since the backend never lists a
+server with an account as guest. ❗ One ask at a time is the CALLER's guard (`PlacesBrowser`'s `signingIn`, which also
+stops the rows being offered past the modal): a second sheet closes the first as `cancelled`.
 
 The error state's sentence, and the servers list's tooltip for the same failure (`host-status.ts`), come from
 `share-list-error-messages.ts`: one `errors.shareList.*` key per `ShareListError` type, naming the host. ❌ Never
@@ -346,18 +359,18 @@ A "Forget saved password" button appears in the header once this session has REA
 host whose server-level password was in use offered no way to forget it. `noteCachedCredentials` sets that status from
 the backend's in-memory credential cache (`has_cached_smb_credentials`), filled by the listing's own lookup or a mount.
 ❗ It never touches the Keychain, so an unread password shows no button until something reads it. Clicking it calls
-`forgetCredentials`, which clears both. Shares sort case-insensitively. Escape/Backspace go back.
+`forgetCredentials` (through `share-list-sign-in.ts::forgetPassword`), which clears both. Shares sort
+case-insensitively. Escape/Backspace go back.
 
-The `autoMountShare` prop fires once per distinct value (tracked via `lastAutoMountAttempt`), not once per instance, so
-"Copy path between panes" can auto-mount a different share without forcing a remount when the source cursor moves to
-another share on the same host.
-
-❗ **A queued share is a one-shot for the visit it was queued with.** `../pane/NetworkMountView.svelte` owns it and
-retires it (`retireAutoMount`, which also clears the pane's copy through `onAutoMountConsumed`) whenever that visit
-ends: a mount went through, the person went back, or another host was picked. Opening a host from the servers list only
-ever lists its shares. The bug this closes (cmdr-reports#7, "Cmdr tried to open the share on that server"): the value
-outlived its visit, every new `PlacesBrowser` instance fired it again, and a host row the person meant to browse mounted
-a share they never picked.
+❗ **A queued share is a one-shot for the visit it was queued with.** `../pane/share-mount.svelte.ts` owns it
+(`pendingMount`; `NetworkMountView` adopts the pane's copy into it) and spends it the moment the loaded list hands it to
+the mount (`takePending`, which also toasts "not found" when the list lacks it). It retires it, clearing the pane's copy
+through `onAutoMountConsumed`, on every exit too: a mount went through, the person went back, or another host was
+picked. Opening a host from the servers list only ever lists its shares. The bugs this closes: cmdr-reports#7 ("Cmdr
+tried to open the share on that server"), where the value outlived its visit and every new `PlacesBrowser` instance
+fired it again, so a host row the person meant to browse mounted a share they never picked; and a Cancel (or a refused
+mount's Back) bringing a fresh share list that fired the same queued share again at once. Pinned by
+`share-mount.svelte.test.ts` and `../pane/NetworkMountView.test.ts`.
 
 ## `..` on top of a server's share list
 

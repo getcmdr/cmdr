@@ -3,7 +3,7 @@
      * The places under one account: an SMB host's shares today, a storage
      * account's buckets later. Raises the sign-in form when the listing needs one.
      */
-    import { onMount } from 'svelte'
+    import { onMount, untrack } from 'svelte'
     import { dependOn } from '#lib/utils/reactivity.js'
     import Button from '#lib/ui/Button.svelte'
     import Icon from '#lib/ui/Icon.svelte'
@@ -16,44 +16,32 @@
         getShareState,
         fetchShares,
         clearShareState,
-        setShareState,
-        setCredentialStatus,
         getCredentialStatus,
         noteCachedCredentials,
-        forgetCredentials,
         getListedAccount,
-        setListedAccount,
         guestListingWorked,
     } from './network-store.svelte'
     import PlacesHeader from './PlacesHeader.svelte'
-    import {
-        listSharesWithCredentials,
-        saveSmbCredentials,
-        getSmbCredentials,
-        isUsingCredentialFileFallback,
-        updateKnownShare,
-        setSmbAccountPreference,
-    } from '#lib/tauri-commands/index.js'
-    import { addToast } from '#lib/ui/toast/index.js'
     import { tString } from '#lib/intl/messages.svelte.js'
-    import { getNetworkTimeoutMs, getShareCacheTtlMs } from '#lib/settings/network-settings.js'
-    import { isListingAuthError, openSmbSignInSheet, refusalForShareError } from './smb-sign-in'
+    import { isListingAuthError, refusalForShareError } from './smb-sign-in'
+    import {
+        askToList,
+        forgetPassword,
+        readStoredCredentials,
+        signInAs as signInAsOnSheet,
+        tryStoredCredentials,
+        useGuest as listAsGuest,
+        type ShareListAttempt,
+        type ShareListCredentials,
+        type ShareListServer,
+        type ShareListSheetOutcome,
+    } from './share-list-sign-in'
     import type { ConnectRefusalKind } from '#lib/servers/connect-refusals.js'
-    import type { SignInAttemptOutcome } from '#lib/servers/sign-in-contract.js'
     import { handleNavigationShortcut } from '../navigation/keyboard-shortcuts'
     import { eventMatchesCommand } from '#lib/shortcuts/index.js'
     import { claimKey } from '#lib/shortcuts/claim-key.js'
     import { cursorAfterArrow, indexOfName, nameStartsWith, scrollRowIntoView } from './list-cursor'
     import { updateLeftPaneState, updateRightPaneState, type PaneState, type PaneFileEntry } from '#lib/tauri-commands/index.js'
-
-    async function notifyIfUsingFileFallback(): Promise<void> {
-        if (await isUsingCredentialFileFallback()) {
-            addToast(tString('fileExplorer.network.share.credentialsStoredLocally'), {
-                level: 'info',
-                id: 'credential-file-fallback',
-            })
-        }
-    }
 
     /** Row height for share list (matches Full list) */
     const SHARE_ROW_HEIGHT = 20
@@ -83,8 +71,15 @@
         paneId?: 'left' | 'right'
         /** Whether this pane is focused */
         isFocused?: boolean
-        /** Auto-mount this share name after loading (from smb://host/share URL) */
+        /** A share queued to mount once the list is on screen (an `smb://host/share` address, "Copy path between panes"). */
         autoMountShare?: string
+        /**
+         * Spends the queued share against the loaded list: answers the share to mount, or
+         * `null` when the list lacks it (the owner says so). ❗ A one-shot: the owner retires
+         * the queue here, so a list that comes back (after a Cancel, a refused mount) doesn't
+         * mount it again.
+         */
+        takeAutoMount?: (shares: ShareInfo[]) => ShareInfo | null
         /** Callback when user selects a share, includes credentials if auth was used */
         onShareSelect?: (share: ShareInfo, credentials: { username: string; password: string } | null) => void
         /** Callback to go back to host list */
@@ -103,6 +98,7 @@
         paneId,
         isFocused = false,
         autoMountShare,
+        takeAutoMount,
         onShareSelect,
         onBack,
         landOnShare,
@@ -115,6 +111,8 @@
     // ❗ What to CALL it in headers and toasts (a name the person gave it); `host.name`
     // stays the identity every key and lookup below uses.
     const hostLabel = $derived(account.label ?? account.host.name)
+    /** The server as `share-list-sign-in.ts` takes it. */
+    const server = $derived<ShareListServer>({ host, label: hostLabel })
 
     // Local state
     let shares = $state<ShareInfo[]>([])
@@ -157,16 +155,11 @@
     const listedAccount = $derived(getListedAccount(host.id))
 
     // Track authenticated credentials for mounting
-    let authenticatedCredentials = $state<{ username: string; password: string } | null>(null)
+    let authenticatedCredentials = $state<ShareListCredentials | null>(null)
     // Forget shows after a guest listing too, once this session read the password (cache only).
     $effect(() => {
         if (!loading) void noteCachedCredentials(host.name).catch(() => {})
     })
-
-    // Auto-mount tracking: track the last share we tried so the same prop value
-    // doesn't re-fire, but a new value (for example via "Copy path between panes"
-    // with cursor on a different share) does.
-    let lastAutoMountAttempt = $state<string | undefined>(undefined)
 
     // Container tracking for PageUp/PageDown
     let listContainer: HTMLDivElement | undefined = $state()
@@ -183,23 +176,14 @@
         void syncPaneStateToMcp()
     })
 
-    // Auto-mount a share if requested (from smb://host/share URL, or "Copy path
-    // between panes" with cursor on a share). Fires once per distinct prop value.
+    // A queued share (an smb://host/share address, or "Copy path between panes" with the
+    // cursor on a share) mounts once the list is on screen. Spending it is the owner's.
     $effect(() => {
-        const shareName = autoMountShare
-        if (!shareName || shareName === lastAutoMountAttempt || loading || sortedShares.length === 0) return
-        lastAutoMountAttempt = shareName
-
-        const match = sortedShares.find(
-            (s) => s.name.localeCompare(shareName, undefined, { sensitivity: 'base' }) === 0,
-        )
-        if (match) {
-            void activateShare(match)
-        } else {
-            addToast(tString('fileExplorer.network.share.notFound', { shareName, hostName: hostLabel }), {
-                level: 'warn',
-            })
-        }
+        if (!autoMountShare || loading || sortedShares.length === 0) return
+        untrack(() => {
+            const match = takeAutoMount?.(sortedShares) ?? null
+            if (match) void activateShare(match)
+        })
     })
 
     // The share `..` came out of: the cursor lands on it once the list is on screen, once per
@@ -230,7 +214,7 @@
         // first. The share list often loads via the system Keychain (smbutil) without
         // ever exercising our own creds, so a working password may already be saved.
         if (authMode === 'creds_required' && !authenticatedCredentials) {
-            const stored = await loadStoredCredentials()
+            const stored = await readStoredCredentials(server)
             if (stored) {
                 authenticatedCredentials = stored
             }
@@ -247,16 +231,6 @@
         // already mounted (the listing's `creds_required` says nothing about whether
         // THIS share is currently mounted).
         onShareSelect?.(share, authenticatedCredentials)
-    }
-
-    /** Reads Cmdr's stored credentials for this host, or null if none are saved. */
-    async function loadStoredCredentials(): Promise<{ username: string; password: string } | null> {
-        try {
-            const creds = await getSmbCredentials(host.name, null)
-            return { username: creds.username, password: creds.password }
-        } catch {
-            return null
-        }
     }
 
     /** Sync share list to MCP so agents see the same data as the UI. */
@@ -344,11 +318,45 @@
      * only ask when that doesn't land.
      */
     async function settleListingAuth(shareError: ShareListError) {
-        const stored = await tryStoredCredentials()
+        const stored = await tryStoredCredentials(server)
+        if (stored) {
+            authenticatedCredentials = stored.credentials
+            applyAttempt(stored.attempt)
+        }
         loading = false
-        if (stored) return
+        // Only a listing that actually brought shares counts as settled.
+        if (stored && shares.length > 0) return
         error = shareError
         await askForCredentials(refusalForShareError(shareError))
+    }
+
+    /** What a listing round came to, on screen. A refused credential changes nothing here. */
+    function applyAttempt(attempt: ShareListAttempt | ShareListSheetOutcome) {
+        if (attempt.kind === 'listed') {
+            shares = attempt.result.shares
+            authMode = attempt.result.authMode
+            error = null
+            authenticatedCredentials = attempt.credentials
+        } else if (attempt.kind === 'failed') {
+            error = attempt.error
+        }
+    }
+
+    /**
+     * Runs one sheet round with `signingIn` up, so the rows aren't offered past the modal.
+     * ❗ One ask at a time: a second sheet closes the first as `cancelled`, and its caller
+     * would read that as "the person said no" from under a sheet that's still up.
+     */
+    async function withSheet(round: () => Promise<ShareListSheetOutcome>): Promise<ShareListSheetOutcome | null> {
+        if (signingIn) return null
+        signingIn = true
+        try {
+            const outcome = await round()
+            applyAttempt(outcome)
+            return outcome
+        } finally {
+            signingIn = false
+        }
     }
 
     /**
@@ -358,157 +366,21 @@
      * because the share LISTING itself needs a sign-in, so "not now" means the
      * user has no business on this host — leaving them on a list they can't read
      * would be an empty room with no exit. (Share-activation auth is the mount's
-     * question, and `NetworkMountView` asks it.)
+     * question, and `../pane/share-mount.svelte.ts` asks it.)
      */
     async function askForCredentials(refusal: ConnectRefusalKind) {
-        // ❗ One ask at a time. A second `openSignInSheet` closes the first as
-        // `cancelled`, and this caller reads that as "the user said no" and walks
-        // back to the host list from under a sheet that is still up.
-        if (signingIn) return
-        signingIn = true
-        try {
-            const result = await openSmbSignInSheet({
-                host,
-                label: hostLabel,
-                guestAllowed: authMode === 'guest_allowed',
-                refusal,
-                attempt: (answer) => listWithCredentials(answer.username, answer.password, answer.remember, 'typed'),
-            })
-            if (result.kind === 'cancelled') onBack?.()
-        } finally {
-            signingIn = false
-        }
+        const outcome = await withSheet(() => askToList(server, { refusal, guestAllowed: authMode === 'guest_allowed' }))
+        if (outcome?.kind === 'cancelled') onBack?.()
     }
 
-    /**
-     * "Sign in as…" in the header: the same sheet, asked by the person rather than a
-     * refusal, so it opens with no refusal sentence, prefilled with the account the
-     * list is signed in as, and ❗ a cancel stays on the list (they can already see it).
-     * No guest choice: the sheet selects guest whenever it offers it, and this button
-     * is for signing in with an account.
-     */
+    /** "Sign in as…" in the header. ❗ A cancel stays on the list: the person can already see it. */
     async function signInAs() {
-        if (signingIn) return
-        signingIn = true
-        try {
-            await openSmbSignInSheet({
-                host,
-                label: hostLabel,
-                guestAllowed: false,
-                initialUsername: listedAccount?.kind === 'user' ? listedAccount.username : undefined,
-                attempt: (answer) => listWithCredentials(answer.username, answer.password, answer.remember, 'typed'),
-            })
-        } finally {
-            signingIn = false
-        }
+        await withSheet(() => signInAsOnSheet(server, listedAccount))
     }
 
     /** "Browse as guest": the way back from an account, where a guest listing worked on this server. */
     async function useGuest() {
-        // ❗ The account goes FIRST: while it's set, the backend never lists this server as guest.
-        await setSmbAccountPreference(host.name, null).catch(() => false)
-        await listWithCredentials(null, null, false, 'typed')
-    }
-
-    /** Try to use stored credentials. Returns true if shares were loaded. */
-    async function tryStoredCredentials(): Promise<boolean> {
-        const serverName = host.name
-
-        // Try to get credentials directly - don't check hasSmbCredentials first
-        // as that causes an extra Keychain dialog (each Keychain access = 1 dialog)
-        try {
-            const creds = await getSmbCredentials(serverName, null)
-            // Store credentials in memory for mounting later
-            authenticatedCredentials = { username: creds.username, password: creds.password }
-            await listWithCredentials(creds.username, creds.password, false, 'saved')
-            // `listWithCredentials` never throws; it answers an outcome. Only
-            // report success if shares were actually loaded.
-            return shares.length > 0
-        } catch {
-            // No stored credentials or retrieval failed
-            return false
-        }
-    }
-
-    /**
-     * One listing round-trip with what the user offered.
-     *
-     * ❗ Answers `handed_off` on success: nothing here connects a VOLUME, so the
-     * sheet has nothing more to say and the share list it just loaded is the
-     * result. A refusal about the credential keeps the sheet open; anything else
-     * closes it onto the pane's own error state, which has the retry.
-     */
-    async function listWithCredentials(
-        username: string | null,
-        password: string | null,
-        rememberInKeychain: boolean,
-        credentialSource: 'typed' | 'saved',
-    ): Promise<SignInAttemptOutcome> {
-        try {
-            // Clear cached state to force refetch
-            clearShareState(host.id)
-
-            const result = await listSharesWithCredentials(
-                host.id,
-                host.hostname ?? host.name,
-                host.ipAddress,
-                host.port,
-                username,
-                password,
-                credentialSource,
-                getNetworkTimeoutMs(),
-                getShareCacheTtlMs(),
-            )
-
-            shares = result.shares
-            authMode = result.authMode
-            error = null
-
-            // Update global share state so ServersHub shows correct info
-            setShareState(host.id, result)
-
-            // Update credential status, and the account the header names
-            setCredentialStatus(host.name, username ? 'has_creds' : 'no_creds')
-            setListedAccount(host.id, username !== null ? { kind: 'user', username } : { kind: 'guest' })
-            // ❗ The choice sticks: it becomes the server's account (the typed-username preference),
-            // so later listings, the background ones included, sign in as it instead of as guest.
-            void setSmbAccountPreference(host.name, username).catch(() => {})
-
-            // Store credentials for mounting (empty password is valid for SMB)
-            if (username !== null) {
-                authenticatedCredentials = { username, password: password ?? '' }
-            } else {
-                authenticatedCredentials = null
-            }
-
-            // Save credentials to Keychain if requested
-            if (rememberInKeychain && username !== null && password !== null) {
-                await saveSmbCredentials(host.name, null, username, password)
-                await notifyIfUsingFileFallback()
-            }
-
-            // Update known shares store
-            await updateKnownShare(
-                host.name,
-                '', // Server-level, not share-specific
-                username ? 'credentials' : 'guest',
-                authMode === 'guest_allowed' ? 'guest_or_credentials' : 'credentials_only',
-                username,
-            )
-            return { kind: 'handed_off' }
-        } catch (e) {
-            const shareError = shareListErrorOf(e)
-            if (shareError.type === 'auth_failed') {
-                // Mark credentials as failed
-                setCredentialStatus(host.name, 'failed')
-            }
-            const refusal = refusalForShareError(shareError)
-            if (refusal === 'authentication_rejected' || refusal === 'needs_credentials') {
-                return { kind: 'refused', refusal }
-            }
-            error = shareError
-            return { kind: 'handed_off' }
-        }
+        applyAttempt(await listAsGuest(server))
     }
 
     /** Move cursor to a specific row, `..` being row 0 (used by MCP move_cursor tool). */
@@ -633,13 +505,7 @@
     }
 
     async function handleForgetPassword() {
-        try {
-            await forgetCredentials(host.name)
-            authenticatedCredentials = null
-            addToast(tString('fileExplorer.network.forgotPassword', { hostName: hostLabel }), { level: 'success' })
-        } catch {
-            addToast(tString('fileExplorer.network.deletePasswordFailed'), { level: 'error' })
-        }
+        if (await forgetPassword(server)) authenticatedCredentials = null
     }
 
     function handleRetry() {

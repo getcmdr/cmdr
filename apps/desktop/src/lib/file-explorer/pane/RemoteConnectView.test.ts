@@ -63,6 +63,53 @@ describe('a refused guest session', () => {
   })
 })
 
+/** A share mount stopped short over its share list: both states offer the way back to it. */
+describe('a refused share mount', () => {
+  it('says the producer’s heading and line on the sign-in state, with Sign in… and Go back', async () => {
+    const signIn = vi.fn()
+    const back = vi.fn()
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(RemoteConnectView, {
+      target,
+      props: {
+        name: 'testshare',
+        state: { kind: 'signed_out', signIn, title: 'Sign in to open “testshare”', hint: 'Accounts only.', back },
+      },
+    })
+    await tick()
+
+    expect(target.querySelector('.title')?.textContent).toBe('Sign in to open “testshare”')
+    expect(target.textContent).toContain('Accounts only.')
+    const buttons = [...target.querySelectorAll('button')]
+    expect(buttons.map((b) => b.textContent.trim())).toEqual(['Sign in…', 'Go back'])
+    buttons[0].click()
+    buttons[1].click()
+    expect(signIn).toHaveBeenCalledTimes(1)
+    expect(back).toHaveBeenCalledTimes(1)
+    target.remove()
+  })
+
+  it('offers Try again and Go back on a refusal', async () => {
+    const retry = vi.fn()
+    const back = vi.fn()
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    mount(RemoteConnectView, {
+      target,
+      props: { name: 'testshare', state: { kind: 'refused', refusal: 'The share went away.', retry, back } },
+    })
+    await tick()
+
+    const buttons = [...target.querySelectorAll('button')]
+    expect(buttons.map((b) => b.textContent.trim())).toEqual(['Try again', 'Go back'])
+    buttons[1].click()
+    expect(back).toHaveBeenCalledTimes(1)
+    expect(retry).not.toHaveBeenCalled()
+    target.remove()
+  })
+})
+
 describe('the address under the name', () => {
   it('shows what the pane is trying to reach, so a person can tell a LAN address from a VPN one (ERR-VZ4CV)', async () => {
     const target = document.createElement('div')

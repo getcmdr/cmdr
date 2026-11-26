@@ -509,25 +509,6 @@ describe('PlacesBrowser listing sign-in', () => {
     return h.openSignInSheet.mock.calls[0][0] as SheetRequest
   }
 
-  it('asks the sheet for a username and a password when the LISTING needs one', async () => {
-    h.fetchShares.mockRejectedValue(new ShareListFailure({ type: 'auth_required', message: 'Authentication required' }))
-    const { target, component } = mountBrowser(vi.fn())
-
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-    const request = sheetRequest()
-    expect(request.mode).toBe('sign-in')
-    expect(request.shape).toEqual({ kind: 'username_password', guestAllowed: false })
-    // The header names the SERVER, not a share: listing auth is server-level.
-    expect(request.endpoint.address).toBe('smb://Testnas')
-    expect(request.endpoint.host).toBe('Testnas')
-    expect(request.refusal).toBe('needs_credentials')
-    expect(target.querySelector('.login-container'), 'no form renders in the pane').toBeNull()
-
-    await unmount(component)
-  })
-
   it('waits for a sign-in calmly behind the sheet, instead of saying it couldn’t connect', async () => {
     // ❗ A server that wants an account is a normal step, not a failure: no red
     // icon, no "Couldn't connect", and no Retry, since retrying without an account
@@ -558,85 +539,6 @@ describe('PlacesBrowser listing sign-in', () => {
       expect(h.openSignInSheet).toHaveBeenCalled()
     })
     expect(sheetRequest().shape).toEqual({ kind: 'username_password', guestAllowed: true })
-
-    await unmount(component)
-  })
-
-  it('lists with what the user typed, and remembers it only once the listing works', async () => {
-    h.fetchShares.mockRejectedValue(new ShareListFailure({ type: 'auth_required', message: 'Authentication required' }))
-    h.listSharesWithCredentials.mockResolvedValue({ shares: [testshare], authMode: 'creds_required', fromCache: false })
-    const { component } = mountBrowser(vi.fn())
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'hunter2', remember: true },
-      username: 'test_user_3',
-    })
-
-    expect(outcome).toEqual({ kind: 'handed_off' })
-    expect(h.listSharesWithCredentials).toHaveBeenCalledWith(
-      'testnas-id',
-      'Testnas.local',
-      '192.168.50.10',
-      445,
-      'test_user_3',
-      'hunter2',
-      'typed',
-      5000,
-      30000,
-    )
-    expect(h.saveSmbCredentials).toHaveBeenCalledWith('Testnas', null, 'test_user_3', 'hunter2')
-
-    await unmount(component)
-  })
-
-  it('keeps the sheet open on a password the server refused, with the reason it gave', async () => {
-    h.fetchShares.mockRejectedValue(new ShareListFailure({ type: 'auth_required', message: 'Authentication required' }))
-    h.listSharesWithCredentials.mockRejectedValue(
-      new ShareListFailure({ type: 'auth_failed', message: 'Invalid username or password' }),
-    )
-    const { component } = mountBrowser(vi.fn())
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    const outcome = await sheetRequest().attempt({
-      mode: 'sign-in',
-      secret: { secret: 'wrong', remember: true },
-      username: 'test_user_3',
-    })
-
-    expect(outcome).toEqual({ kind: 'refused', refusal: 'authentication_rejected' })
-    // ❗ Nothing saved: a credential is written only once it has worked.
-    expect(h.saveSmbCredentials).not.toHaveBeenCalled()
-
-    await unmount(component)
-  })
-
-  it('sends no account for guest, so the server is asked for exactly what was offered', async () => {
-    h.fetchShares.mockRejectedValue(new ShareListFailure({ type: 'auth_required', message: 'Authentication required' }))
-    h.listSharesWithCredentials.mockResolvedValue({ shares: [testshare], authMode: 'guest_allowed', fromCache: false })
-    const { component } = mountBrowser(vi.fn())
-    await vi.waitFor(() => {
-      expect(h.openSignInSheet).toHaveBeenCalled()
-    })
-
-    await sheetRequest().attempt({ mode: 'sign-in', secret: null, username: null })
-
-    expect(h.listSharesWithCredentials).toHaveBeenCalledWith(
-      'testnas-id',
-      'Testnas.local',
-      '192.168.50.10',
-      445,
-      null,
-      null,
-      'typed',
-      5000,
-      30000,
-    )
 
     await unmount(component)
   })

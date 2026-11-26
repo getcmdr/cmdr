@@ -65,20 +65,25 @@ export type RemoteConnectState =
       retry?: () => void
       disconnect?: () => void
       openSettings?: () => void
+      /** Back to the place the person came from (a refused share mount, over its share list). */
+      back?: () => void
     }
   /**
-   * The session ended because a credential is what's missing. `signIn` opens the
-   * sheet, which asks what the BACKEND said to ask.
+   * A credential is what's missing. `signIn` opens the sheet, which asks what the
+   * BACKEND said to ask.
    *
-   * ❗ The sheet opens on the user pressing this, ❌ never on its own when a
-   * session drops: a modal stealing focus during a lid-open wake is the wrong
-   * thing, and the reconnect's "silent" promise stays.
+   * ❗ For a session that DROPPED, the sheet opens on the user pressing this, ❌
+   * never on its own: a modal stealing focus during a lid-open wake is the wrong
+   * thing, and the reconnect's "silent" promise stays. A share mount the person
+   * just started is user intent, so its sheet opens over this state at once; there
+   * `title` and `hint` are the producer's finished heading and line (else "Signed
+   * out of …"), and `back` returns to the share list.
    *
    * ❗ `null` where the backend's shape is `nothing`: there is no secret a person
    * could type that would help, so the banner says what happened and offers no
    * button rather than one that can't work.
    */
-  | { kind: 'signed_out'; signIn: (() => void) | null }
+  | { kind: 'signed_out'; signIn: (() => void) | null; title?: string; hint?: string; back?: () => void }
   /**
    * A saved place the person chose not to connect (Cancel on its sign-in sheet or
    * its spinner). The view names the place and offers to connect again, and the way

@@ -193,15 +193,26 @@
             </div>
         {:else if connectState.kind === 'signed_out'}
             <span class="refusal-icon"><Icon name="lock" size={32} aria-hidden="true" /></span>
-            <h2 class="title">{tString('servers.paneState.signedOut', { name })}</h2>
-            {#if connectState.signIn}
+            <h2 class="title">{connectState.title ?? tString('servers.paneState.signedOut', { name })}</h2>
+            {#if connectState.hint}
+                <p class="hint">{connectState.hint}</p>
+            {/if}
+            {#if connectState.signIn || connectState.back}
                 <div class="actions">
-                    <Button variant="primary" size="mini" onclick={connectState.signIn}>
-                        {tString('servers.paneState.signIn')}
-                    </Button>
+                    {#if connectState.signIn}
+                        <Button variant="primary" size="mini" onclick={connectState.signIn}>
+                            {tString('servers.paneState.signIn')}
+                        </Button>
+                    {/if}
+                    {#if connectState.back}
+                        <Button variant="secondary" size="mini" onclick={connectState.back}>
+                            {tString('servers.paneState.goBack')}
+                        </Button>
+                    {/if}
                 </div>
-            {:else}
-                <!-- ❌ No button: the backend's shape says there is no secret a
+            {/if}
+            {#if !connectState.signIn}
+                <!-- ❌ No sign-in button: the backend's shape says there is no secret a
                      person could type that would bring this session back. -->
                 <p class="hint">{tString('servers.paneState.signedOutNothingToAsk')}</p>
             {/if}
@@ -248,7 +259,7 @@
             <h2 class="title">{connectState.refusal}</h2>
             <!-- ❗ The row is absent, not empty, when nothing can be offered: a
                  refusal with no move left says its sentence and stops there. -->
-            {#if connectState.retry || connectState.openSettings || connectState.disconnect}
+            {#if connectState.retry || connectState.openSettings || connectState.disconnect || connectState.back}
                 <div class="actions">
                     {#if connectState.retry}
                         <Button variant="primary" size="mini" onclick={connectState.retry}>
@@ -263,6 +274,11 @@
                     {#if connectState.disconnect}
                         <Button variant="secondary" size="mini" onclick={connectState.disconnect}>
                             {tString('servers.paneState.disconnect')}
+                        </Button>
+                    {/if}
+                    {#if connectState.back}
+                        <Button variant="secondary" size="mini" onclick={connectState.back}>
+                            {tString('servers.paneState.goBack')}
                         </Button>
                     {/if}
                 </div>

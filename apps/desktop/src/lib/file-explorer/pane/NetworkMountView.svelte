@@ -1,19 +1,8 @@
 <script lang="ts">
-    import { tick } from 'svelte'
+    import { tick, untrack } from 'svelte'
     import { openAddServerSheet } from '#lib/servers/open-sign-in.js'
     import { focusHome } from '#lib/ui/focus-restore.js'
-    import type { MountError, NetworkHost, PlacesAccount, ShareInfo } from '../types'
-    import {
-        cancelServerConnect,
-        mountNetworkShare,
-        newServerAttemptId,
-        resolvePathVolume,
-        saveSmbCredentials,
-        setSmbAccountPreference,
-        updateLeftPaneState,
-        updateRightPaneState,
-    } from '#lib/tauri-commands/index.js'
-    import { getMountTimeoutMs } from '#lib/settings/network-settings.js'
+    import type { NetworkHost, PlacesAccount, ShareInfo } from '../types'
     import { getVolumes } from '#lib/stores/volume-store.svelte.js'
     import { pathForPickedVolume } from '../navigation/picked-volume-path'
     import { getAppLogger } from '#lib/logging/logger.js'
@@ -22,30 +11,13 @@
     import type { HubRow } from '../network/servers-hub-rows'
     import PlacesBrowser from '../network/PlacesBrowser.svelte'
     import { holdDiscoveryForServersView } from '../network/network-store.svelte'
-    import { isMountSignInQuestion, openSmbSignInSheet, refusalForMountError } from '../network/smb-sign-in'
-    import { asMountError } from '../network/mount-error'
-    import { renderMountError } from '../network/mount-error-messages'
-    import type { SignInAttemptOutcome } from '#lib/servers/sign-in-contract.js'
     import type { ServerProtocol } from '#lib/ipc/bindings.js'
-    import Button from '#lib/ui/Button.svelte'
-    import Icon from '#lib/ui/Icon.svelte'
     import RemoteConnectView from './RemoteConnectView.svelte'
-    import type { RemoteConnectState } from './remote-connect-state'
-    import { tString } from '#lib/intl/messages.svelte.js'
-    import { eventMatchesCommand } from '#lib/shortcuts/index.js'
-    import { claimKey } from '#lib/shortcuts/claim-key.js'
+    import { createShareMount, type ShareMountCredentials } from './share-mount.svelte'
     import type { VolumeChangePayload } from './types'
     import type { ShareParentLanding } from '../network/share-parent-row.svelte'
 
     const log = getAppLogger('fileExplorer')
-
-    /**
-     * The hub row's own name, for the `volumeName` this pane pushes to MCP: the switcher's label,
-     * in the UI language. Display only: `tools/actions/nav.rs` waits on the pushed volume id.
-     */
-    function serversVolumeName(): string {
-        return tString('fileExplorer.navigation.networkVolume')
-    }
 
     interface Props {
         paneId?: 'left' | 'right'
@@ -59,9 +31,9 @@
          */
         initialAutoMountShare?: string | undefined
         /**
-         * The queued share is spent: the visit it was queued with ended (a mount
-         * went through, or the person left the host). The parent clears its copy,
-         * so the same share name can be queued again later.
+         * The queued share is spent: it was handed to a mount, or the visit it was
+         * queued with ended. The parent clears its copy, so the same share name can be
+         * queued again later.
          */
         onAutoMountConsumed?: () => void
         /**
@@ -98,68 +70,19 @@
         currentNetworkHost ? { protocol: 'smb', host: currentNetworkHost, label: currentHostLabel } : null,
     )
 
-    /**
-     * The share to mount as soon as this visit's share list is ready.
-     *
-     * ❗ **A one-shot for the host it was queued with**, ❌ never a standing
-     * wish. `PlacesBrowser` fires it once per INSTANCE, and a new instance
-     * mounts on every host visit, so a value that outlived its visit mounted a
-     * share nobody picked each time the person opened that host again, and
-     * toasted "not found" on every other host (cmdr-reports#7: "Cmdr tried to
-     * open the share on that server"). `retireAutoMount` ends it on every exit.
-     */
-    let autoMountShare = $state<string | undefined>(initialAutoMountShare)
-    /** The parent's value this view last adopted, so the same one isn't adopted twice. */
-    let adoptedAutoMount: string | undefined = initialAutoMountShare
-
-    /**
-     * The running mount: the share, the server's friendly name (`null` when the host
-     * has none but its address), and the `host:port` it dials, for the connecting
-     * view. `null` when none runs. Its own copy, ❌ not derived from
-     * `lastMountAttempt`, `currentNetworkHost`, and `currentHostLabel`: a mount that
-     * went through clears them before it lands on the share, and the wait is still
-     * on screen then.
-     */
-    let mounting = $state<{ share: string; server: string | null; address: string } | null>(null)
-    let mountError = $state<MountError | null>(null)
-
-    /**
-     * How long a mount runs before the pane says it's still waiting. Matches the
-     * backend's `netfs_wedge::SUSPECT_AFTER`: a healthy mount takes a second or two.
-     */
-    const MOUNT_SLOW_AFTER_MS = 10_000
-    /** The running mount's id, which Cancel calls it off by. `null` when none runs. */
-    let mountAttemptId: string | null = null
-    /** Whether the person pressed Cancel on the running mount, so its `cancelled` answer goes back quietly. */
-    let mountCancelRequested = false
-    /** Set once the running mount outlasted `MOUNT_SLOW_AFTER_MS`. */
-    let mountingSlow = $state(false)
-
-    /** The running mount as the ONE remote-wait state every pane renders. */
-    const mountConnectState = $derived<RemoteConnectState>({
-        kind: 'connecting',
-        cancel: cancelMount,
-        hint: mountingSlow ? tString('fileExplorer.networkMount.mountingSlow') : undefined,
+    /** Mounting a share: the wait, the sign-in a refusal asks for, the refusal, and the queued share. */
+    const shareMount = createShareMount({
+        getPaneId: () => paneId,
+        getServer: () => (currentNetworkHost ? { host: currentNetworkHost, label: currentHostLabel } : null),
+        onMounted: () => {
+            // Propagated up too, so the parent doesn't hold onto a stale host: otherwise the
+            // next visit to Network would open this host's share list instead of the hub.
+            currentNetworkHost = null
+            onNetworkHostChange?.(null)
+        },
+        onVolumeChange: (change) => onVolumeChange?.(change),
+        onPendingConsumed: () => onAutoMountConsumed?.(),
     })
-
-    // Track last mount attempt for retry
-    let lastMountAttempt = $state<{
-        share: ShareInfo
-        credentials: { username: string; password: string } | null
-    } | null>(null)
-
-    /**
-     * True while the sign-in sheet is up over this pane. The error pane behind it
-     * still holds the mount that didn't go through, which is what the MCP mirror
-     * reads and what cancelling lands back on.
-     */
-    let signingIn = $state(false)
-
-    // ❗ Credential-class mount failures ASK (the one sign-in sheet) instead of
-    // dead-ending in the error pane: "Try again" there replayed the identical
-    // credentials, which is the "Testnas dead end". That covers a signed-in
-    // account the share turned away too, since another account is the fix.
-    // `isMountSignInQuestion` and the refusal vocabulary live in `../network/smb-sign-in`.
 
     // Hosts arrive and leave live while this view is on screen: the backend browses mDNS
     // exactly as long as some Servers view holds it. The release is the effect's cleanup.
@@ -169,83 +92,25 @@
     let serversHubRef: ServersHubAPI | undefined = $state()
     let placesBrowserRef: PlacesBrowserAPI | undefined = $state()
 
-    // Whether the last state we pushed carried a `mountError`, so the clear below
-    // fires exactly once. Deliberately not `$state`: writing it inside the effect
-    // that reads it would re-run the effect forever.
-    let mirroredMountError = false
-
-    /**
-     * Mirrors a mount that didn't go through into `cmdr://state` — the error pane and
-     * the login form an auth failure routes to alike.
-     *
-     * Without it a failed mount is invisible there: the pane's `path` and `files`
-     * still describe the share list either view replaced, so a reader sees a pane
-     * that simply didn't move and no reason anywhere in the resource.
-     *
-     * The clear is explicit, ❌ not left to whichever view comes next. `PlacesBrowser`
-     * only pushes once it has a share list, so a host that has since gone quiet
-     * pushes nothing at all — and a `mountError` outliving its pane misleads a reader
-     * worse than the silence it replaced.
-     */
-    $effect(() => {
-        if (!paneId) return
-        const error = mountError
-        const share = lastMountAttempt?.share.name
-        if (!error || share === undefined) {
-            if (!mirroredMountError) return
-            mirroredMountError = false
-        } else {
-            mirroredMountError = true
-        }
-        const update = paneId === 'left' ? updateLeftPaneState : updateRightPaneState
-        void update({
-            path: currentNetworkHost ? `smb://${currentNetworkHost.ipAddress ?? currentNetworkHost.name}/` : 'smb://',
-            volumeId: 'network',
-            volumeName: currentNetworkHost ? `${serversVolumeName()} > ${currentNetworkHost.name}` : serversVolumeName(),
-            files: [],
-            cursorIndex: 0,
-            viewMode: 'full',
-            mountError:
-                error && share !== undefined
-                    ? { share, reason: error.type, message: renderMountError(error, currentNetworkHost?.name) }
-                    : null,
-        }).catch(() => {
-            // MCP mirroring is optional; a failed push must not touch the UI.
-        })
-    })
-
     // Sync when parent changes the prop (for example, history navigation)
     $effect(() => {
         currentNetworkHost = initialNetworkHost
     })
 
-    // Push a new auto-mount target down into PlacesBrowser. Used by "Copy path
-    // between panes" with cursor on a share. ❗ Compared with what was last
-    // ADOPTED, ❌ not with the local value: a retired target is `undefined` here
-    // while the parent may still hold the name, and re-adopting it is the
-    // stale auto-mount this exists to prevent.
+    // The parent's queued share ("Copy path between panes" with the cursor on a share).
     $effect(() => {
-        if (initialAutoMountShare && initialAutoMountShare !== adoptedAutoMount) {
-            adoptedAutoMount = initialAutoMountShare
-            autoMountShare = initialAutoMountShare
-        } else if (!initialAutoMountShare) {
-            adoptedAutoMount = undefined
-        }
+        const queued = initialAutoMountShare
+        untrack(() => {
+            shareMount.adoptQueued(queued)
+        })
     })
-
-    /** Ends the queued auto-mount, here and in the parent. See `autoMountShare`. */
-    function retireAutoMount() {
-        if (autoMountShare === undefined && adoptedAutoMount === undefined) return
-        autoMountShare = undefined
-        onAutoMountConsumed?.()
-    }
 
     /**
      * A host picked from the servers list: its shares, ❌ never a share mounted
      * on the person's behalf. They picked a HOST.
      */
     function handleNetworkHostSelect(host: NetworkHost, label?: string) {
-        retireAutoMount()
+        shareMount.retirePending()
         currentHostLabel = label
         currentNetworkHost = host
         onNetworkHostChange?.(host)
@@ -279,11 +144,11 @@
         await openAddServerSheet({
             protocol,
             onSmbHandOff: (handOff) => {
-                retireAutoMount()
+                shareMount.retirePending()
                 currentNetworkHost = handOff.host
                 onNetworkHostChange?.(handOff.host)
                 // The one share the ADDRESS named, for this visit only.
-                if (handOff.sharePath) autoMountShare = handOff.sharePath
+                if (handOff.sharePath) shareMount.queue(handOff.sharePath)
             },
             // The hub's own pane goes to the place it just added, the way picking
             // its row would take it there.
@@ -307,285 +172,28 @@
      */
     function handleShareViaHost(host: NetworkHost, { share, label }: { share: string; label: string }) {
         handleNetworkHostSelect(host, label)
-        autoMountShare = share
+        shareMount.queue(share)
+    }
+
+    /** Enter on a share: mount it, with the account the listing signed in as when it has one. */
+    function handleShareSelect(share: ShareInfo, credentials: ShareMountCredentials | null) {
+        void shareMount.mount(share, credentials)
     }
 
     function handleNetworkBack() {
         const cameFrom = currentNetworkHost
-        retireAutoMount()
+        shareMount.retirePending()
         currentNetworkHost = null
-        mountError = null
-        lastMountAttempt = null
+        shareMount.reset()
         onNetworkHostChange?.(null)
         // The cursor goes back to the host the person came from, by its identity (a saved
         // row carries the host's id, a discovered one its `host`), ❌ not the first row.
         if (cameFrom) void tick().then(() => serversHubRef?.selectServer(cameFrom.id))
     }
 
-    function handleMountErrorBack() {
-        mountError = null
-        // Stay on the share list (currentNetworkHost remains set)
-    }
-
-    /** Resolves the server address for mounting, preferring IP but falling back to hostname for loopback. */
-    /** Returns the hostname or IP to connect to (without port; port is passed separately). */
-    function resolveServerAddress(networkHost: NetworkHost): string {
-        const ip = networkHost.ipAddress
-        const isLoopback = ip === '127.0.0.1' || ip === '::1'
-        return (isLoopback ? networkHost.hostname : ip) ?? networkHost.hostname ?? networkHost.name
-    }
-
-    /**
-     * Mounts `share` and takes the pane to it. Answers the failure rather than
-     * throwing, so a caller inside the sign-in sheet can offer a retry and a
-     * caller outside it can render the error pane.
-     */
-    async function mountShare(
-        share: ShareInfo,
-        credentials: { username: string; password: string } | null,
-    ): Promise<MountError | null> {
-        if (!currentNetworkHost) return null
-
-        // Store for retry
-        lastMountAttempt = { share, credentials }
-
-        mountError = null
-        const server = resolveServerAddress(currentNetworkHost)
-        mounting = {
-            share: share.name,
-            server: friendlyServerName(currentNetworkHost, currentHostLabel, server),
-            address: dialedAddress(server, currentNetworkHost.port),
-        }
-        const { attemptId, finish } = startMountAttempt()
-
-        try {
-            // Use provided credentials if available
-            // The host's own name rides along: a mount that goes through is saved
-            // as a share place under the host the person knows (the Servers list).
-            const result = await mountNetworkShare(
-                server,
-                share.name,
-                credentials?.username ?? null,
-                credentials?.password ?? null,
-                currentNetworkHost.port,
-                getMountTimeoutMs(),
-                currentNetworkHost.name,
-                attemptId,
-            )
-
-            // Navigate to the mounted share
-            // Clear current network host first (also propagate up so the parent
-            // pane's state doesn't hold onto a stale host; otherwise the next
-            // time the user switches back to Network, PlacesBrowser for the old
-            // host would render instead of the ServersHub list).
-            currentNetworkHost = null
-            lastMountAttempt = null
-            retireAutoMount()
-            onNetworkHostChange?.(null)
-
-            // The mount path is typically /Volumes/<ShareName>
-            await landOnMount(result.mountPath)
-            return null
-        } catch (e) {
-            const refusal = asMountError(e)
-            // The person called it off: back to the share list, ❌ no error pane. A cancel
-            // after a long wait on a server that answers comes back `sign_in_helper_stuck`
-            // instead, and that one the pane explains.
-            if (mountCancelRequested && refusal?.type === 'cancelled') return null
-            // A value that isn't a typed refusal means the IPC call itself broke down,
-            // which the catch-all words honestly; its text goes to the log below.
-            mountError = refusal ?? { type: 'unexpected', server, share: share.name, detail: String(e) }
-            // WARN, not ERROR: the pane below renders this failure with a retry, so
-            // it's an outcome the person is looking at, not a defect to report. At
-            // error level every unreachable NAS captured a backtrace and a state
-            // snapshot into the error-report bundle.
-            log.warn('Mount of {share} on {host} did not go through: {error}', {
-                share: share.name,
-                host: currentNetworkHost?.name ?? 'unknown host',
-                // Pre-stringified: the log bridge renders a property with `String()`.
-                error: JSON.stringify(mountError),
-            })
-            return mountError
-        } finally {
-            finish()
-            mounting = null
-        }
-    }
-
-    /** `host:port` the way the other connecting views show it (`serverAddressOf`), an IPv6 host bracketed. */
-    function dialedAddress(server: string, port: number): string {
-        return `${server.includes(':') ? `[${server}]` : server}:${String(port)}`
-    }
-
-    /**
-     * What the person calls the host (the hub's label, else its name), or `null` when
-     * that's only its address: the dialed `host:port` shows under it, and one address
-     * twice says nothing.
-     */
-    function friendlyServerName(networkHost: NetworkHost, label: string | undefined, dialed: string): string | null {
-        const friendly = label ?? networkHost.name
-        const isAddress = [dialed, networkHost.ipAddress].some((a) => a?.toLowerCase() === friendly.toLowerCase())
-        return isAddress ? null : friendly
-    }
-
-    /** Takes the pane to the share mounted at `mountPath`. */
-    async function landOnMount(mountPath: string) {
-        // Find the actual volume for the mounted path
-        // This ensures proper breadcrumb display and volume context
-        // (No need to refresh volume list; the mount event triggers a volumes-changed broadcast)
-        const { volume: mountedVolume } = await resolvePathVolume(mountPath)
-
-        if (mountedVolume) {
-            // Use the real volume ID and path from the system
-            onVolumeChange?.({ volumeId: mountedVolume.id, volumePath: mountedVolume.path, targetPath: mountPath })
-        } else {
-            // Fallback: use mount path as both volume path and target
-            // This can happen if the volume list hasn't refreshed yet
-            onVolumeChange?.({ volumeId: mountPath, volumePath: mountPath, targetPath: mountPath })
-        }
-    }
-
-    /**
-     * Files a new mount as the running one: its id for Cancel, and the timer that
-     * says it's still waiting. `finish` undoes both once the mount answers.
-     */
-    function startMountAttempt(): { attemptId: string; finish: () => void } {
-        const attemptId = newServerAttemptId()
-        mountAttemptId = attemptId
-        mountCancelRequested = false
-        mountingSlow = false
-        const slowTimer = setTimeout(() => {
-            if (mountAttemptId === attemptId) mountingSlow = true
-        }, MOUNT_SLOW_AFTER_MS)
-        const finish = () => {
-            clearTimeout(slowTimer)
-            if (mountAttemptId === attemptId) mountAttemptId = null
-            mountingSlow = false
-        }
-        return { attemptId, finish }
-    }
-
-    /**
-     * Calls off the running mount. The backend stops WAITING and answers; the NetFS
-     * call itself can't be taken back (`src-tauri/src/network/netfs_wedge.rs`).
-     */
-    function cancelMount() {
-        if (!mountAttemptId) return
-        mountCancelRequested = true
-        void cancelServerConnect(mountAttemptId).catch((e: unknown) => {
-            log.warn('Calling off the mount did not go through: {error}', { error: e })
-        })
-    }
-
-    /** Mounts a share the user picked, and asks for a credential if that is what's missing. */
-    async function handleShareSelect(share: ShareInfo, credentials: { username: string; password: string } | null) {
-        const error = await mountShare(share, credentials)
-        if (error && isMountSignInQuestion(error)) await askForMountCredentials(share, error)
-    }
-
-    /**
-     * Hands a mount's credential question to the one sign-in sheet, retrying the
-     * mount inside it for as long as the user keeps answering.
-     *
-     * ❗ Cancelling goes back to the SHARE LIST (`handleMountErrorBack`), which is
-     * where the user was: they picked a share, and the one they wanted is still on
-     * screen behind the sheet.
-     */
-    async function askForMountCredentials(share: ShareInfo, firstError: MountError) {
-        const host = currentNetworkHost
-        // ❗ One ask at a time. A second `openSignInSheet` closes the first as
-        // `cancelled`, and this caller reads that as "the user said no" and clears
-        // the failure behind a sheet that is still up.
-        if (!host || signingIn) return
-        signingIn = true
-        try {
-            const result = await openSmbSignInSheet({
-                host,
-                label: currentHostLabel,
-                shareName: share.name,
-                // ❗ No guest option: an unauthenticated mount is exactly what just
-                // came back refused, so offering it again would be inert.
-                guestAllowed: false,
-                initialUsername: lastMountAttempt?.credentials?.username,
-                refusal: refusalForMountError(firstError),
-                attempt: (answer) => remountWith(share, host.name, answer),
-            })
-            if (result.kind === 'cancelled') handleMountErrorBack()
-        } finally {
-            signingIn = false
-        }
-    }
-
-    /**
-     * One mount round-trip with what the user offered, remembering the credential
-     * ❗ only once the mount has actually gone through.
-     */
-    async function remountWith(
-        share: ShareInfo,
-        hostName: string,
-        answer: { username: string | null; password: string | null; remember: boolean },
-    ): Promise<SignInAttemptOutcome> {
-        const credentials = answer.username === null ? null : { username: answer.username, password: answer.password ?? '' }
-        const error = await mountShare(share, credentials)
-        if (!error) {
-            // ❗ The account that got in becomes the host's account, as "Sign in as…" does, so
-            // the next visit lists and mounts as it. Without this, a share guests can list but
-            // not open asked for the password on every mount (cmdr-reports#27).
-            if (credentials) void setSmbAccountPreference(hostName, credentials.username).catch(() => {})
-            if (credentials && answer.remember && answer.password !== null) {
-                try {
-                    await saveSmbCredentials(hostName, null, credentials.username, answer.password)
-                } catch (e) {
-                    log.warn('Mount succeeded but saving credentials failed: {error}', { error: e })
-                }
-            }
-            return { kind: 'handed_off' }
-        }
-        // ❗ Only a refusal another credential can answer keeps the sheet open.
-        // Anything else is about the SHARE or the server, and the pane's error
-        // state is what has the words and the retry.
-        if (!isMountSignInQuestion(error)) return { kind: 'handed_off' }
-        return { kind: 'refused', refusal: refusalForMountError(error) }
-    }
-
-    /** The calm sign-in pane's button: asks again, for the share that wanted an account. */
-    function handleMountSignIn() {
-        if (lastMountAttempt && mountError) void askForMountCredentials(lastMountAttempt.share, mountError)
-    }
-
-    function handleMountRetry() {
-        if (lastMountAttempt) {
-            void handleShareSelect(lastMountAttempt.share, lastMountAttempt.credentials)
-        }
-    }
-
     export function handleKeyDown(e: KeyboardEvent) {
-        // The sign-in sheet is modal and owns the keyboard while it is up.
-        if (signingIn) return
-        if (mounting) {
-            // Neither browser is mounted while a mount runs; `share.back` is Cancel.
-            if (eventMatchesCommand(e, 'share.back')) {
-                claimKey(e)
-                cancelMount()
-            }
-            return
-        }
-        if (mountError) {
-            // The error pane replaced the share list, so neither browser is mounted and
-            // the delegation below would land on nothing: without this branch the whole
-            // keyboard went dead and the two buttons were the only way out.
-            // `share.back` (Escape / Backspace / ⌘↑) does what "Back" does.
-            //
-            // `stopPropagation` keeps it to ONE step: `⌘↑` is also `nav.parent` in the
-            // document dispatch map, which would step out of the host as well and skip
-            // the share list entirely (the same hazard `pane-key-router.ts`'s
-            // `handleOpenOrParentKey` stops for).
-            if (eventMatchesCommand(e, 'share.back')) {
-                claimKey(e)
-                handleMountErrorBack()
-            }
-            return
-        }
+        // A mount running, its refusal, or its sign-in sheet owns the keyboard.
+        if (shareMount.handleKeyDown(e)) return
         if (currentNetworkHost) {
             placesBrowserRef?.handleKeyDown(e)
         } else {
@@ -603,19 +211,19 @@
     }
 
     /**
-     * Rows the cursor can sit on right now. `0` while a mount runs or its failure is
+     * Rows the cursor can sit on right now. `0` while a mount runs or its refusal is
      * on screen: neither browser is mounted then, so a cursor move would land nowhere
      * and the MCP tool would report a move that never happened.
      */
     export function getItemCount(): number {
-        if (mounting || mountError) return 0
+        if (shareMount.view) return 0
         if (currentNetworkHost) return placesBrowserRef?.getItemCount() ?? 0
         return serversHubRef?.getItemCount() ?? 0
     }
 
     /** Type-to-jump in whichever browser is up; answers the name it landed on, or `null`. */
     export function jumpToPrefix(prefix: string): string | null {
-        if (mounting || mountError) return null
+        if (shareMount.view) return null
         return (currentNetworkHost ? placesBrowserRef : serversHubRef)?.jumpToPrefix(prefix) ?? null
     }
 
@@ -630,11 +238,11 @@
     /**
      * Returns what's under the cursor in the network browser stack:
      * a host (server list), a share (share list), or `null` (connect row,
-     * login form, mounting state, mount error, empty list).
+     * login form, mounting state, mount refusal, empty list).
      */
     // noinspection JSUnusedGlobalSymbols -- used by FilePane.getNetworkCursorEntry
     export function getNetworkCursorEntry(): NetworkCursorEntry | null {
-        if (mounting || mountError) return null
+        if (shareMount.view) return null
         if (currentNetworkHost) {
             const share = placesBrowserRef?.getShareUnderCursor() ?? null
             return share ? { kind: 'share', share } : null
@@ -669,59 +277,35 @@
 
     export function setNetworkHost(host: NetworkHost | null) {
         if (host?.id !== currentNetworkHost?.id) {
-            retireAutoMount()
+            shareMount.retirePending()
             currentHostLabel = undefined
         }
         currentNetworkHost = host
-        mountError = null
-        lastMountAttempt = null
+        shareMount.reset()
     }
 </script>
 
-{#if mounting}
-    <!-- ❗ The shared remote-wait view, ❌ not a one-off spinner: its Cancel calls off
-         the mount, which can hang behind a stuck macOS sign-in helper for as long
-         as the timeout allows (#604). -->
-    <RemoteConnectView
-        name={mounting.share}
-        server={mounting.server}
-        address={mounting.address}
-        state={mountConnectState}
-    />
-{:else if mountError?.type === 'auth_required'}
-    <!-- ❗ A share that wants an account is a normal step, not a failure: no ❌, no
-         "Couldn't mount share", and no Try again, which without an account gets
-         the same answer (cmdr-reports#10). The sheet sits on top of this. -->
-    <div class="mount-sign-in-state">
-        <div class="sign-in-icon"><Icon name="lock" size={32} aria-hidden="true" /></div>
-        <div class="sign-in-title">{tString('fileExplorer.networkMount.signInTitle', { share: mountError.share })}</div>
-        <div class="sign-in-message">
-            {tString('fileExplorer.networkMount.signInMessage', {
-                server: currentHostLabel ?? currentNetworkHost?.name ?? mountError.server,
-            })}
-        </div>
-        <div class="error-actions">
-            <Button variant="primary" onclick={handleMountSignIn}>{tString('fileExplorer.network.signIn')}</Button>
-            <Button variant="secondary" onclick={handleMountErrorBack}>{tString('fileExplorer.networkMount.back')}</Button>
-        </div>
-    </div>
-{:else if mountError}
-    <div class="mount-error-state">
-        <div class="error-icon">&#x274C;</div>
-        <div class="error-title">{tString('fileExplorer.networkMount.mountFailedTitle')}</div>
-        <div class="error-message">{renderMountError(mountError, currentNetworkHost?.name)}</div>
-        <div class="error-actions">
-            <Button variant="secondary" onclick={handleMountRetry}>{tString('fileExplorer.networkMount.tryAgain')}</Button>
-            <Button variant="secondary" onclick={handleMountErrorBack}>{tString('fileExplorer.networkMount.back')}</Button>
-        </div>
-    </div>
+{#if shareMount.view}
+    <!-- ❗ The shared remote-connect view, ❌ not a one-off pane: its Cancel calls off
+         the mount, which can hang behind a stuck macOS sign-in helper for as long as
+         the timeout allows (#604). Keyed on the wait, so a retry's wait starts with the
+         view's own quiet reveal again, as a fresh one does. -->
+    {#key shareMount.view.state.kind === 'connecting'}
+        <RemoteConnectView
+            name={shareMount.view.name}
+            server={shareMount.view.server}
+            address={shareMount.view.address}
+            state={shareMount.view.state}
+        />
+    {/key}
 {:else if currentAccount}
     <PlacesBrowser
         bind:this={placesBrowserRef}
         account={currentAccount}
         {paneId}
         {isFocused}
-        {autoMountShare}
+        autoMountShare={shareMount.pendingMount}
+        takeAutoMount={shareMount.takePending}
         onShareSelect={handleShareSelect}
         onBack={handleNetworkBack}
         landOnShare={shareLanding?.hostId === currentAccount.host.id ? shareLanding.shareName : undefined}
@@ -738,49 +322,3 @@
         onConnectToServer={(protocol?: ServerProtocol) => void openAddServer(protocol)}
     />
 {/if}
-
-<style>
-    .mount-error-state,
-    .mount-sign-in-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        padding: var(--spacing-xl);
-        gap: var(--spacing-md);
-        color: var(--color-text-secondary);
-    }
-
-    .mount-error-state .error-icon {
-        font-size: 32px;
-    }
-
-    .mount-sign-in-state .sign-in-icon {
-        display: inline-flex;
-        color: var(--color-text-tertiary);
-    }
-
-    .mount-error-state .error-title,
-    .mount-sign-in-state .sign-in-title {
-        font-size: var(--font-size-lg);
-        font-weight: 500;
-        color: var(--color-text-primary);
-    }
-
-    .mount-error-state .error-message,
-    .mount-sign-in-state .sign-in-message {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-tertiary);
-        text-align: center;
-        height: auto;
-        padding: 0;
-    }
-
-    .mount-error-state .error-actions,
-    .mount-sign-in-state .error-actions {
-        display: flex;
-        gap: var(--spacing-sm);
-        margin-top: var(--spacing-sm);
-    }
-</style>

@@ -142,6 +142,9 @@ suite:
   missing from the list answers YES on purpose: a refused trash is honest and reversible, a permanent delete isn't. A
   caller with its own reason to force permanence (an online-only cloud file) folds it in on top.
 - `network-host-state.svelte.ts`: the open Network host, its queued auto-mount share, and the share `..` came out of.
+- `share-mount.svelte.ts`: mounting a share from a server's share list (the wait, Cancel, the sign-in a refused mount
+  asks for, the refusal, its MCP mirror, and the queued share as a one-shot `pendingMount`), rendered by
+  `NetworkMountView` through `RemoteConnectView` (§ "The connect views").
 - `share-parent-pane.svelte.ts`: `..` out of an SMB share's top folder, the pane's side (whether the row shows, Go to
   parent and the row's Enter leaving for the server's shares). `../network/DETAILS.md` § "`..` out of a share's top
   folder".
@@ -1344,14 +1347,14 @@ registration.
 `PaneState.typeToJump` whenever the buffer or indicator is live, so MCP-driven E2E can assert without DOM poking. See
 `apps/desktop/src-tauri/src/ui_state/DETAILS.md` § State stores.
 
-`NetworkMountView` mirrors a mount that didn't go through the same way, as `PaneState.mountError`
+`share-mount.svelte.ts` mirrors a mount that didn't go through the same way, as `PaneState.mountError`
 (`{ share, reason, message }`: the typed `MountError` tag beside the sentence the pane shows, which is in the UI's
-language) — the "Couldn't mount share" pane and the login form an auth-class failure routes to alike. Without it a
-failed mount is invisible from `cmdr://state`: the pane's `path` and `files` still describe the share list either view
-replaced, so a reader sees a pane that simply didn't move. The clear is an explicit push of its own rather than
-something the next view is trusted to do: `PlacesBrowser` only pushes once it has a share list, so a host that went
-quiet between the failure and Back pushes nothing at all, and a `mountError` outliving its pane misleads a reader worse
-than the silence the mirror replaced. `NetworkMountView.test.ts` holds that line.
+language): the `refused` state and the sign-in state an auth-class failure routes to alike. Without it a failed mount is
+invisible from `cmdr://state`: the pane's `path` and `files` still describe the share list either view replaced, so a
+reader sees a pane that simply didn't move. The clear is an explicit push of its own rather than something the next view
+is trusted to do: `PlacesBrowser` only pushes once it has a share list, so a host that went quiet between the failure
+and Back pushes nothing at all, and a `mountError` outliving its pane misleads a reader worse than the silence the
+mirror replaced. `share-mount.svelte.test.ts` holds that line.
 
 **The `navigate()` transaction (`navigate.ts`).** Every coordinator-level pane navigation goes through one
 `navigate(intent, deps)` entry. `DualPaneExplorer` builds the `NavigateDeps` (store getters/mutators + the FilePane
@@ -2406,10 +2409,14 @@ The producers:
   per-status booleans: a status without its own arm used to render a plain listing over a dead session.
 - `device-connect.svelte.ts` owns `waiting_for_device` and a phone's `connecting` / `refused`. Its sentences come from
   `#lib/adb/adb-connect-errors.ts`, so the view stays generic and the words stay Android's.
-- `NetworkMountView.svelte` renders a share mount's wait as `connecting`, passing the view's optional `server` (the
-  share's server by its friendly name, so the identity line reads "testshare on Testnas"), with a `hint` once it runs
-  past 10 s (`../network/DETAILS.md` § "A mount that waits"). Its failures stay its own error pane: they're
-  `MountError`s with their own words and retry, ❌ not a `refused` state.
+- `share-mount.svelte.ts` (rendered by `NetworkMountView.svelte`) owns a share mount's states: its wait as `connecting`,
+  passing the view's optional `server` (the share's server by its friendly name, so the identity line reads "testshare
+  on Testnas"), with a `hint` once it runs past 10 s (`../network/DETAILS.md` § "A mount that waits"); an
+  `auth_required` refusal as `signed_out` with the producer's own `title` and `hint` ("Sign in to open …", ❌ not
+  "Signed out of …": nothing dropped) and a `back`, with the sheet opened over it at once since the person just started
+  the mount; and every other `MountError` as `refused` with the `renderMountError` sentence, `retry`, and `back`. `back`
+  (both arms, "Go back") returns to the share list. The view is keyed on "is it a wait", so a Try again's wait starts
+  quiet again like a fresh one.
 
 **A wait starts quiet.** Until `WAIT_REVEAL_AFTER_MS` (800 ms, `#lib/ui/wait-reveal.ts`, the one reveal a slow folder's
 loading view shares), a `connecting` or `waiting_for_device` state renders the view's live region and nothing in it, so

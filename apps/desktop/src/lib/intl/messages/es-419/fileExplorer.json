@@ -151,10 +151,6 @@
   "@fileExplorer.network.reconnect.willTryMore": {
     "sourceHash": "afff898"
   },
-  "fileExplorer.networkMount.mountFailedTitle": "No se pudo montar el recurso compartido",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "sourceHash": "57250cc"
-  },
   "fileExplorer.unreachable.title": "No se pudo acceder a {path}",
   "@fileExplorer.unreachable.title": {
     "sourceHash": "92c7617"

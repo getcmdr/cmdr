@@ -1008,12 +1008,6 @@
     "screenshot": "servers-hub.png",
     "screenshotNote": "Shown while mounting a network share, in the network flow that starts at the servers list pictured here."
   },
-  "fileExplorer.networkMount.mountFailedTitle": "Couldn’t mount share",
-  "@fileExplorer.networkMount.mountFailedTitle": {
-    "description": "Error title shown when mounting a network share failed.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown while mounting a network share, in the network flow that starts at the servers list pictured here."
-  },
   "fileExplorer.networkMount.signInTitle": "Sign in to open “{share}”",
   "@fileExplorer.networkMount.signInTitle": {
     "description": "Title of the calm, non-error screen shown while a shared folder on a network server (SMB) waits for someone to sign in before it opens. A sign-in sheet sits on top of it. This is a normal step, not a failure, so keep it neutral: no apology, no \"couldn't\".",
@@ -1029,18 +1023,6 @@
     "placeholders": {
       "server": "the display name of the server"
     },
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown while mounting a network share, in the network flow that starts at the servers list pictured here."
-  },
-  "fileExplorer.networkMount.tryAgain": "Try again",
-  "@fileExplorer.networkMount.tryAgain": {
-    "description": "Button to retry mounting a network share after a failure.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Shown while mounting a network share, in the network flow that starts at the servers list pictured here."
-  },
-  "fileExplorer.networkMount.back": "Back",
-  "@fileExplorer.networkMount.back": {
-    "description": "Button that returns from the mount-error screen to the share list.",
     "screenshot": "servers-hub.png",
     "screenshotNote": "Shown while mounting a network share, in the network flow that starts at the servers list pictured here."
   },
