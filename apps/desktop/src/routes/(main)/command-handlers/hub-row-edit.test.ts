@@ -37,7 +37,6 @@ function hctx(row: HubRow | null, placesHost: NetworkHost | null = null) {
   const explorerRef = {
     getFocusedPaneHubRow: vi.fn(() => row),
     getFocusedPaneNetworkHost: vi.fn(() => placesHost),
-    getFocusedPaneServerRow: vi.fn(() => null),
     startRename: vi.fn(),
     getFileAndPathUnderCursor: vi.fn(() => ({ path: '/Users/me/a.txt', filename: 'a.txt' })),
   }

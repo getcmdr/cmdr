@@ -534,10 +534,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "No se ha podido desconectar: {message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Credenciales guardadas localmente (el Administrador de credenciales no está disponible)} linuxKde {Credenciales guardadas localmente (la cartera de KDE no está disponible)} other {Credenciales guardadas localmente (no se ha detectado ningún llavero del sistema)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

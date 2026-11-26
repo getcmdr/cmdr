@@ -1,6 +1,5 @@
-//! The small context menus: breadcrumb, `..` parent row, function key bar, tab, a servers hub
-//! host, the viewer's text, a file list header's date Sort by, and a queue row. (A volume switcher
-//! row's, a favorite's, and a servers-hub place's actions are the in-app `Menu`'s, not a popup:
+//! The small context menus: breadcrumb, `..` parent row, function key bar, tab, the viewer's text, a file list header's date Sort by, and a queue row. (A volume switcher
+//! row's, a favorite's, and a servers-hub row's actions are the in-app `Menu`'s, not a popup:
 //! `apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`.)
 
 use cmdr_sort::SortColumn;
@@ -9,8 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::{ContextItem, ContextLabel, ContextRow, Shortcut, command, plain};
 use crate::ids::{
     COPY_CURRENT_DIR_PATH_ID, EJECT_ALL_VOLUMES_ID, EJECT_VOLUME_ID, FAVORITES_ADD_CONTEXT_ID,
-    FUNCTION_KEY_BAR_HIDE_ID, NETWORK_HOST_DISCONNECT_ID, NETWORK_HOST_EDIT_ID, NETWORK_HOST_FORGET_SECRET_ID,
-    NETWORK_HOST_FORGET_SERVER_ID, TAB_CLOSE_ID, TAB_CLOSE_OTHERS_ID, TAB_PIN_ID, VIEWER_CONTEXT_COPY_ID,
+    FUNCTION_KEY_BAR_HIDE_ID, TAB_CLOSE_ID, TAB_CLOSE_OTHERS_ID, TAB_PIN_ID, VIEWER_CONTEXT_COPY_ID,
     VIEWER_CONTEXT_SELECT_ALL_ID,
 };
 use crate::labels::{LabelText, pin_tab_label};
@@ -114,46 +112,6 @@ pub fn tab_menu(is_pinned: bool, can_close: bool, has_other_unpinned_tabs: bool)
         ),
         plain(TAB_CLOSE_ID, ContextLabel::key("menu.tab.closeTab"), can_close),
     ]
-}
-
-/// What a servers hub SMB host is, for its menu.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct NetworkHostFacts {
-    /// Typed in by the user, so "Forget server" can drop it.
-    pub is_manual: bool,
-    /// Saved, so "Edit" has something to edit.
-    pub is_saved: bool,
-    /// A password is stored for it.
-    pub has_credentials: bool,
-    /// A share from it is mounted right now.
-    pub has_mounts: bool,
-}
-
-/// A host's menu, in one group, in the order the switcher row's menu uses (edit, disconnect,
-/// forget the password, forget the server).
-///
-/// ❗ Only what does something: Disconnect only while a share from this host is mounted (an item
-/// that answers "no mounted shares" is an inert affordance), Edit only for a saved host, Forget
-/// server only for a typed-in one, Forget saved password only when one is stored.
-pub fn network_host_menu(facts: NetworkHostFacts) -> Vec<ContextRow> {
-    [
-        (facts.is_saved, NETWORK_HOST_EDIT_ID, "menu.network.edit"),
-        (facts.has_mounts, NETWORK_HOST_DISCONNECT_ID, "menu.network.disconnect"),
-        (
-            facts.has_credentials,
-            NETWORK_HOST_FORGET_SECRET_ID,
-            "menu.network.forgetSavedPassword",
-        ),
-        (
-            facts.is_manual,
-            NETWORK_HOST_FORGET_SERVER_ID,
-            "menu.network.forgetServer",
-        ),
-    ]
-    .into_iter()
-    .filter(|(offered, ..)| *offered)
-    .map(|(_, id, key)| plain(id, ContextLabel::key(key), true))
-    .collect()
 }
 
 /// The viewer's Copy accelerator, shared by its bar's Edit > Copy and its text menu, in Tauri's

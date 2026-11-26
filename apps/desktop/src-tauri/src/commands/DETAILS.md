@@ -270,7 +270,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   `viewer_get_lines` runs through `get_lines_within`, which flips the fetch's cancel flag when its deadline fires
   (`apps/desktop/src-tauri/src/file_viewer/DETAILS.md` § Tauri commands).
 - **`menu.rs`**: the context-menu popups (file / breadcrumb / parent row / tab / a file list header's date Sort by /
-  network host / function key bar / the viewer's text / a queue row), plus `update_menu_context`, and their in-page twin in
+  function key bar / the viewer's text / a queue row), plus `update_menu_context`, and their in-page twin in
   `menu_in_page.rs`, `open_context_menu_in_page` + `pick_context_menu_item` (Windows), which stash through the same helpers
   (`apps/desktop/src-tauri/src/menu/DETAILS.md` § Right-click menus a page draws).
 - **`menu_state.rs`**: the pushes that keep the menu BAR in step with the frontend: the view-mode + hidden-files +

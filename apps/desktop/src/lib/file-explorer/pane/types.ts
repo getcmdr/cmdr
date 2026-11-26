@@ -424,9 +424,11 @@ export interface VolumeBreadcrumbAPI {
   toggleVolumeChooser(): void
   openVolumeChooser(): void
   toggleFavoritesMenu(): void
-  /** Whether EITHER menu is up, which is what suppresses the panes' keys behind it. */
+  /** Whether ANY header menu is up, which is what suppresses the panes' keys behind it. */
   isHeaderMenuOpen(): boolean
   closeHeaderMenu(): void
+  /** A share list's account menu opened or closed (`ShareListAccountChip.svelte`): the header's third menu. */
+  noteAccountMenu(change: { open: boolean; close: () => void }): void
 }
 
 /**

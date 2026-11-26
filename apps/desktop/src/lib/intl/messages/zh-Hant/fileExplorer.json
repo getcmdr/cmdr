@@ -531,10 +531,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "無法中斷連線：{message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {登入資訊已儲存在本機（無法使用認證管理員）} linuxKde {登入資訊已儲存在本機（無法使用 KDE 錢包）} other {登入資訊已儲存在本機（沒有偵測到系統鑰匙圈）}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

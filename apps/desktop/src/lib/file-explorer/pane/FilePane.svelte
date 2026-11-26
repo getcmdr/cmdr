@@ -42,6 +42,7 @@
     import { createBreadcrumbFit } from '../navigation/breadcrumb-fit-observer.svelte'
     import { enrichBreadcrumbSegments } from '../navigation/breadcrumb-navigation'
     import RepoChip from '../git/RepoChip.svelte'
+    import ShareListAccountChip from '../network/ShareListAccountChip.svelte'
     import { createGitBrowserSync } from './git-browser-sync.svelte'
     import { createListingLoader } from './listing-loader'
     import { createListingPresentation } from './listing-presentation.svelte'
@@ -2248,6 +2249,9 @@
                     use:tooltip={tString('fileExplorer.breadcrumb.navigateTooltip', { path: seg.displayPath })}
                     onclick={() => { breadcrumb.handleSegmentClick(seg.target as string); }}
                 >{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</button>{:else}<span class:git-portal={seg.gitPortal} use:tooltip={shown === seg.text ? '' : seg.text}>{#if shown === seg.text}{seg.text}{:else}<span aria-hidden="true">{shown}</span><span class="sr-only">{seg.text}</span>{/if}</span>{/if}{/each}</span>
+        {#if caps.kind === 'share-list'}
+            <ShareListAccountChip path={currentPath} onListed={() => void navigateToPath(currentPath)} onOpenChange={(change: { open: boolean; close: () => void }) => { volumeBreadcrumbRef?.noteAccountMenu(change) }} />
+        {/if}
         {#if gitBrowser.showRepoChip && gitBrowser.gitRepoInfo}
             <RepoChip info={gitBrowser.gitRepoInfo} />
         {/if}

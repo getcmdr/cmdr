@@ -20,7 +20,7 @@ use crate::volume_broadcast::VolumeContextActionKind;
 use crate::window_events::{ViewerEditActionKind, ViewerHistoryDirection};
 
 use cmdr_menu::click::{BarClick, bar_click};
-use cmdr_menu::context::click::{ContextClick, NetworkHostAction, VolumeAction, context_click};
+use cmdr_menu::context::click::{ContextClick, VolumeAction, context_click};
 use cmdr_menu::spec::{Pane, Platform};
 
 use super::{
@@ -775,16 +775,6 @@ fn dispatch_context_click(app: &AppHandle<tauri::Wry>, click: ContextClick, sour
             }
             .emit_to(app, "main");
         }
-        ContextClick::NetworkHost(action) => {
-            let ctx = menu_state.network_host_context.lock_ignore_poison();
-            let _ = crate::network::NetworkHostContextAction {
-                action: network_host_action_kind(action),
-                row_id: ctx.row_id.clone(),
-                host_id: ctx.host_id.clone(),
-                host_name: ctx.host_name.clone(),
-            }
-            .emit_to(app, "main");
-        }
         // `show_viewer_context_menu` focused the viewer before the popup, so the focused one is
         // the one it was popped over.
         ContextClick::ViewerText(action) => {
@@ -817,17 +807,6 @@ fn volume_action_kind(action: VolumeAction) -> VolumeContextActionKind {
     }
 }
 
-/// The frontend's host action for a servers hub host item.
-fn network_host_action_kind(action: NetworkHostAction) -> crate::network::NetworkHostContextActionKind {
-    use crate::network::NetworkHostContextActionKind as Kind;
-    match action {
-        NetworkHostAction::ForgetServer => Kind::ForgetServer,
-        NetworkHostAction::ForgetSecret => Kind::ForgetSecret,
-        NetworkHostAction::Disconnect => Kind::Disconnect,
-        NetworkHostAction::Edit => Kind::Edit,
-    }
-}
-
 #[cfg(test)]
 mod context_click_wire_tests {
     use super::*;
@@ -839,17 +818,6 @@ mod context_click_wire_tests {
         for action in [VolumeAction::Eject, VolumeAction::EjectAll] {
             assert_eq!(
                 serde_json::to_value(volume_action_kind(action)).expect("serializes"),
-                action.wire()
-            );
-        }
-        for action in [
-            NetworkHostAction::ForgetServer,
-            NetworkHostAction::ForgetSecret,
-            NetworkHostAction::Disconnect,
-            NetworkHostAction::Edit,
-        ] {
-            assert_eq!(
-                serde_json::to_value(network_host_action_kind(action)).expect("serializes"),
                 action.wire()
             );
         }

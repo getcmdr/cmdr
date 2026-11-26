@@ -533,10 +533,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "Не вдалося відʼєднатися: {message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Облікові дані збережено локально (Диспетчер облікових даних недоступний)} linuxKde {Облікові дані збережено локально (торбинка KDE недоступна)} other {Облікові дані збережено локально (системну вʼязку ключів не виявлено)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

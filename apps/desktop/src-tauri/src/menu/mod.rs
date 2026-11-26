@@ -3,7 +3,7 @@
 //! ## File layout
 //!
 //! - `mod.rs` (this file): shared types (`MenuState`, `MenuItems`, `MenuItemEntry`, `MenuContext`,
-//!   `NetworkHostMenuContext`).
+//!   `VolumeRowMenuContext`).
 //! - The bar as data lives in `cmdr-menu` (`crates/cmdr-menu/CLAUDE.md`): the item ids and the
 //!   command map (glob-re-exported here), `MENU_BAR` and its vocabulary (reachable here as
 //!   `menu_bar` / `menu_spec`), the enabled-state fold, and what a click asks for.
@@ -267,15 +267,6 @@ pub struct MenuContext {
     pub listing_id: String,
 }
 
-/// Context for the network host context menu (stored so on_menu_event can emit it).
-#[derive(Clone, Default)]
-pub struct NetworkHostMenuContext {
-    /// The servers hub row the menu was opened on. See [`crate::network::NetworkHostContextAction::row_id`].
-    pub row_id: String,
-    pub host_id: String,
-    pub host_name: String,
-}
-
 /// The breadcrumb menu's Eject target (stored so on_menu_event can emit it): the volume's id +
 /// name. Populated by `show_breadcrumb_context_menu`.
 #[derive(Clone, Default)]
@@ -458,8 +449,6 @@ pub struct MenuState<R: Runtime> {
     /// effective column. `None` is a search pane in its ranked order, and the state before the
     /// frontend's first push. Its only writer is `update_sort_menu`; `sort_checks.rs` applies it.
     pub requested_sort: Mutex<Option<RequestedSort>>,
-    /// Context for the most recent network host context menu (host_id + host_name)
-    pub network_host_context: Mutex<NetworkHostMenuContext>,
     /// Context for the most recent breadcrumb / volume / favorite row context menu.
     /// Holds the target id + name for the picked action (eject, favorite rename / remove).
     /// Cleared (volume_id empty) when a breadcrumb menu was built without an ejectable target.
@@ -561,7 +550,6 @@ impl<R: Runtime> Default for MenuState<R> {
             display_accelerators: Mutex::new(HashMap::new()),
             sort_submenu: Mutex::new(None),
             requested_sort: Mutex::new(None),
-            network_host_context: Mutex::new(NetworkHostMenuContext::default()),
             volume_row_context: Mutex::new(VolumeRowMenuContext::default()),
             #[cfg(target_os = "macos")]
             main_menu: Mutex::new(None),

@@ -17,7 +17,6 @@ import {
   onNetworkDiscoveryStateChanged,
   listSharesOnHost,
   prefetchShares as prefetchSharesCmd,
-  getSmbCredentials,
   hasCachedSmbCredentials,
   deleteSmbCredentials,
   setServersViewShown,
@@ -503,24 +502,6 @@ export function getCredentialStatus(serverName: string): CredentialStatus {
 export function setCredentialStatus(serverName: string, status: CredentialStatus): void {
   const key = serverName.toLowerCase()
   credentialStatuses.set(key, status)
-}
-
-/**
- * Check if credentials exist for a host (async, updates status).
- * Call this on mount to populate credential status.
- */
-export async function checkCredentialsForHost(serverName: string): Promise<void> {
-  const key = serverName.toLowerCase()
-
-  // Don't re-check if already known
-  if (credentialStatuses.has(key)) return
-
-  try {
-    await getSmbCredentials(serverName, null)
-    credentialStatuses.set(key, 'has_creds')
-  } catch {
-    credentialStatuses.set(key, 'no_creds')
-  }
 }
 
 /**

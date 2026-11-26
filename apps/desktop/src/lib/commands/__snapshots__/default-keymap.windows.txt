@@ -162,6 +162,8 @@ servers.show
 servers.togglePin	
 servers.disconnect	
 servers.forgetSecret	
+servers.signInAs	
+servers.browseAsGuest	
 servers.toggleShareParentRow	
 servers.connect	Ctrl+K
 servers.edit	Ctrl+E

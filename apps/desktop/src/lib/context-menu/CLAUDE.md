@@ -1,8 +1,8 @@
 # In-page right-click menus
 
 Where `convention('contextMenus')` is `inPage` (Windows, D5 in `docs/specs/windows-port-plan.md`), every right-click
-menu is drawn in the page by `#lib/ui/ContextMenu.svelte`: the nine `show_*` menus and the text fields' edit menu. macOS
-and Linux keep native popups.
+menu is drawn in the page by `#lib/ui/ContextMenu.svelte`: the eight `show_*` menus and the text fields' edit menu.
+macOS and Linux keep native popups.
 
 ## Module map
 

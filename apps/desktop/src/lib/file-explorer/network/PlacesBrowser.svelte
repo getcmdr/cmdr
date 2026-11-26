@@ -27,6 +27,7 @@
     import {
         askToList,
         forgetPassword,
+        isShareListSheetUp,
         readStoredCredentials,
         signInAs as signInAsOnSheet,
         tryStoredCredentials,
@@ -144,13 +145,6 @@
         if (share) void activateShare(share)
     }
 
-    /**
-     * True while the sign-in sheet is up for this host. The pane behind it keeps
-     * whatever it was showing; this only stops the cursor exports from offering
-     * rows nobody can reach past a modal.
-     */
-    let signingIn = $state(false)
-
     /** The account the list is signed in as, off the listings themselves (`getListedAccount`). */
     const listedAccount = $derived(getListedAccount(host.id))
 
@@ -168,6 +162,19 @@
     // Load shares on mount
     onMount(async () => {
         await loadShares()
+    })
+
+    // Another door's listing (the hub's row menu, the palette, the path bar's account) landed
+    // for this server: the list follows it, as the header's own buttons make it.
+    $effect(() => {
+        const state = getShareState(host.id)
+        if (state?.status !== 'loaded') return
+        untrack(() => {
+            if (loading) return
+            shares = state.result.shares
+            authMode = state.result.authMode
+            error = null
+        })
     })
 
     // Sync share list to MCP when shares or cursor change
@@ -343,20 +350,16 @@
     }
 
     /**
-     * Runs one sheet round with `signingIn` up, so the rows aren't offered past the modal.
-     * ❗ One ask at a time: a second sheet closes the first as `cancelled`, and its caller
-     * would read that as "the person said no" from under a sheet that's still up.
+     * Runs one sheet round and shows what it came to. `null` when another round's sheet is
+     * up: the module asks one at a time (`share-list-sign-in.ts`), and while it's up the
+     * rows aren't offered past the modal (`isShareListSheetUp`).
      */
-    async function withSheet(round: () => Promise<ShareListSheetOutcome>): Promise<ShareListSheetOutcome | null> {
-        if (signingIn) return null
-        signingIn = true
-        try {
-            const outcome = await round()
-            applyAttempt(outcome)
-            return outcome
-        } finally {
-            signingIn = false
-        }
+    async function withSheet(
+        round: () => Promise<ShareListSheetOutcome | null>,
+    ): Promise<ShareListSheetOutcome | null> {
+        const outcome = await round()
+        if (outcome) applyAttempt(outcome)
+        return outcome
     }
 
     /**
@@ -411,7 +414,7 @@
     /** The rows on offer (`..` and the shares); `0` while the sign-in sheet is up or the host listed nothing. */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by MCP move_cursor's range check
     export function getItemCount(): number {
-        return signingIn || sortedShares.length === 0 ? 0 : rowCount
+        return isShareListSheetUp() || sortedShares.length === 0 ? 0 : rowCount
     }
 
     /**
@@ -422,7 +425,7 @@
      */
     // noinspection JSUnusedGlobalSymbols -- used dynamically by NetworkMountView
     export function getShareUnderCursor(): ShareInfo | null {
-        if (signingIn) return null
+        if (isShareListSheetUp()) return null
         return shareAt(cursorIndex)
     }
 
@@ -461,7 +464,7 @@
      */
     export function handleKeyDown(e: KeyboardEvent): void {
         // The sign-in sheet is modal and owns the keyboard while it is up.
-        if (signingIn) return
+        if (isShareListSheetUp()) return
 
         if (sortedShares.length === 0) return
 

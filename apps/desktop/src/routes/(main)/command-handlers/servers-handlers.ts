@@ -1,19 +1,25 @@
 /**
- * The servers family: showing the hub, and the three actions that mirror a server
- * row's context menu for people who reach for the keyboard.
+ * The servers family: showing the hub, and the actions that mirror a server row's
+ * context menu for people who reach for the keyboard.
  *
- * ❗ **All three action arms go through `runServerRowAction`**, the same function
- * the native menu's answer lands in. One place names what "disconnect" costs, so
- * a menu item and a palette command can't drift on the confirmation or the toast.
+ * ❗ **Every action arm goes through the function its row menu runs**: a place's
+ * through `runServerRowAction`, an SMB server's account actions through
+ * `runServerAccountAction`, and its Disconnect through `disconnectSmbHost`. One
+ * place names what each costs, so a menu item and a palette command can't drift on
+ * the confirmation or the toast.
  *
  * Which server they act on is `serverCommandTarget`'s call: the hub's cursor row
- * wherever there is one, the focused pane's own volume otherwise. A command that
- * finds neither says nothing — the palette lists every command whatever the pane
- * is on, and a toast for "you weren't pointing at a server" is noise.
+ * wherever there is one, else the server whose share list the pane shows, else the
+ * focused pane's own volume. A command that finds none says nothing — the palette
+ * lists every command whatever the pane is on, and a toast for "you weren't
+ * pointing at a server" is noise.
  */
 import { runServerRowAction } from '#lib/file-explorer/navigation/server-row-actions.js'
 import { openAddServerSheet } from '#lib/servers/open-sign-in.js'
-import { editServerInView } from '#lib/file-explorer/network/servers-hub-actions.js'
+import { disconnectSmbHost, editServerInView } from '#lib/file-explorer/network/servers-hub-actions.js'
+import { runServerAccountAction } from '#lib/file-explorer/network/share-list-sign-in.js'
+import type { ServerAccountAction } from '#lib/file-explorer/navigation/row-menu.js'
+import type { NetworkHost } from '#lib/file-explorer/types.js'
 import { isSmbShareVolume, toggleShareParentRow } from '#lib/file-explorer/network/share-parent-row.svelte.js'
 import { serverCommandTarget, type ServerCommandTarget } from '#lib/servers/server-command-target.js'
 import { getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
@@ -26,13 +32,37 @@ import type { CommandHandlerRecord } from './types'
 
 const log = getAppLogger('servers')
 
+/**
+ * The server whose share list the focused pane shows, or `null`. The ONE read of it the
+ * servers commands make, so Edit and the target below can't disagree on it.
+ */
+function shareListHost(explorerRef: ExplorerAPI | undefined): NetworkHost | null {
+  return explorerRef?.getFocusedPaneNetworkHost() ?? null
+}
+
 /** The server the user is pointing at, or `null`. */
 function target(explorerRef: ExplorerAPI | undefined): ServerCommandTarget | null {
   const volumeId = getFocusedPaneVolumeId()
   return serverCommandTarget({
-    cursorRow: explorerRef?.getFocusedPaneServerRow() ?? null,
+    cursorRow: explorerRef?.getFocusedPaneHubRow() ?? null,
+    shareListHost: shareListHost(explorerRef),
     paneVolume: getVolumes().find((volume) => volume.id === volumeId) ?? null,
   })
+}
+
+/** A place target, for the commands only a place has (the pin). */
+type PlaceTarget = Extract<ServerCommandTarget, { kind: 'place' }>
+
+/**
+ * An SMB server's account action from the palette, run where its row menu runs it. One
+ * that lists from a hub row opens the server's share list, as the row menu's does; on the
+ * share list itself the list follows the listing.
+ */
+async function runAccountAction(explorerRef: ExplorerAPI | undefined, action: ServerAccountAction): Promise<void> {
+  const server = target(explorerRef)
+  if (server?.kind !== 'smb-server') return
+  const { listed } = await runServerAccountAction(action, { host: server.host, label: server.name })
+  if (listed && server.row) explorerRef?.openSmbHandOffInFocusedPane({ host: server.host, sharePath: null })
 }
 
 /**
@@ -42,7 +72,7 @@ function target(explorerRef: ExplorerAPI | undefined): ServerCommandTarget | nul
  * pin), so the saved list answers. A store that doesn't answer reads as unpinned,
  * which makes the command a pin rather than a silent no-op.
  */
-async function isPinned(server: ServerCommandTarget): Promise<boolean> {
+async function isPinned(server: PlaceTarget): Promise<boolean> {
   if (server.pinned !== null) return server.pinned
   try {
     const saved = await listSavedServers()
@@ -59,8 +89,9 @@ export const serversHandlers = {
   },
 
   'servers.togglePin': async ({ explorerRef }) => {
+    // An SMB server has no switcher row to pin.
     const server = target(explorerRef)
-    if (!server) return
+    if (server?.kind !== 'place') return
     const pinned = await isPinned(server)
     await runServerRowAction({
       action: pinned ? 'unpin' : 'pin',
@@ -72,13 +103,33 @@ export const serversHandlers = {
   'servers.disconnect': async ({ explorerRef }) => {
     const server = target(explorerRef)
     if (!server) return
+    if (server.kind === 'smb-server') {
+      await disconnectSmbHost(server.host, server.name)
+      return
+    }
     await runServerRowAction({ action: 'disconnect', volumeId: server.volumeId, volumeName: server.name })
   },
 
   'servers.forgetSecret': async ({ explorerRef }) => {
     const server = target(explorerRef)
     if (!server) return
+    if (server.kind === 'smb-server') {
+      await runServerAccountAction('forget-secret', { host: server.host, label: server.name })
+      return
+    }
     await runServerRowAction({ action: 'forget-secret', volumeId: server.volumeId, volumeName: server.name })
+  },
+
+  // An SMB server's account, the items its row menu and the share list's account menu carry.
+  // ❗ They await the sheet, unlike `servers.edit`: a listing that lands has to open the
+  // share list. ❗ So they run detached, or the dispatch would hold the pipeline while the
+  // person types.
+  'servers.signInAs': ({ explorerRef }) => {
+    detached(runAccountAction(explorerRef, 'sign-in-as'))
+  },
+
+  'servers.browseAsGuest': ({ explorerRef }) => {
+    detached(runAccountAction(explorerRef, 'browse-as-guest'))
   },
 
   // The focused pane's SMB share, the switch its row menu carries. The palette offers it only
@@ -98,16 +149,11 @@ export const serversHandlers = {
     // at a host, which has no place for the other commands to act on but does have a
     // name to edit.
     if (explorerRef && getFocusedPaneVolumeId() === 'network') {
-      detached(
-        editServerInView({
-          row: explorerRef.getFocusedPaneHubRow(),
-          host: explorerRef.getFocusedPaneNetworkHost(),
-        }),
-      )
+      detached(editServerInView({ row: explorerRef.getFocusedPaneHubRow(), host: shareListHost(explorerRef) }))
       return
     }
     const server = target(explorerRef)
-    if (!server) return
+    if (server?.kind !== 'place') return
     detached(runServerRowAction({ action: 'edit', volumeId: server.volumeId, volumeName: server.name }))
   },
 

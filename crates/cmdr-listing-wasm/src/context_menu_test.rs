@@ -159,7 +159,7 @@ fn a_pick_goes_to_the_window_its_menu_answers_to() {
 #[test]
 fn every_popup_opens_and_every_pick_matches_the_bindings() {
     let menu = DemoMenu::new();
-    let opens: [(&str, Value, &str); 9] = [
+    let opens: [(&str, Value, &str); 8] = [
         ("show_file_context_menu", file_args(), "file_copy"),
         (
             "show_breadcrumb_context_menu",
@@ -191,11 +191,6 @@ fn every_popup_opens_and_every_pick_matches_the_bindings() {
             "show_queue_row_context_menu",
             json!({ "entries": [{ "kind": "check", "action": "select", "enabled": true, "checked": false }] }),
             "queue_row_select",
-        ),
-        (
-            "show_network_host_context_menu",
-            json!({ "rowId": "r1", "host": { "id": "h1", "name": "nas" }, "isManual": true, "isSaved": true, "hasCredentials": true, "anchor": null }),
-            "network_host_forget_secret",
         ),
     ];
     let commands: BTreeSet<&str> = opens.iter().map(|(command, ..)| *command).collect();

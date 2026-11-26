@@ -726,6 +726,60 @@ describeSmb('SMB authentication', () => {
       .toMatch(new RegExp(`^SMB Test \\(Auth\\) {2}protocol=smb .*account=${SMB_AUTH_USERNAME}( |$)`))
   })
 
+  /**
+   * The hub row's menu is one of the account's three doors (with the path bar's account and the palette), all running
+   * the one sign-in module. A Sign in as… that lists opens the server's share list, as activating the row does.
+   */
+  test('Sign in as… from a server row’s menu signs in and opens its share list', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    const sheet = '[data-dialog-id="server-sign-in"]'
+
+    await mcpSelectVolume('left', 'Servers')
+    await expect.poll(async () => hostExistsInPane('SMB Test (Auth)'), { timeout: waitBudget(30000) }).toBeTruthy()
+    // The cursor on it opens its group, so its row is on screen to right-click.
+    await mcpCall('move_cursor', { pane: 'left', filename: 'SMB Test (Auth)' })
+    await expect
+      .poll(
+        async () =>
+          tauriPage.evaluate<boolean>(`(function () {
+            var row = [...document.querySelectorAll('[data-hub-row]')].find(function (el) {
+              return el.textContent.includes('SMB Test (Auth)');
+            });
+            if (!row) return false;
+            var box = row.getBoundingClientRect();
+            row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: box.left + 20, clientY: box.top + 5 }));
+            return true;
+          })()`),
+        { timeout: waitBudget(15000) },
+      )
+      .toBeTruthy()
+
+    // The item by its value (`row:<rowId>:account:sign-in-as`), ❌ not its words.
+    const signInRow = `document.querySelector('[data-menu] [data-menu-row$=":account:sign-in-as"]')`
+    await expect
+      .poll(async () => tauriPage.evaluate<boolean>(`${signInRow} !== null`), { timeout: waitBudget(15000) })
+      .toBeTruthy()
+    await tauriPage.evaluate(`${signInRow}.click()`)
+    await expect.poll(async () => tauriPage.isVisible(sheet), { timeout: waitBudget(15000) }).toBeTruthy()
+
+    // Typed, not remembered: nothing reaches the Keychain.
+    await tauriPage.evaluate(`(function () {
+      function type(selector, value) {
+        var input = document.querySelector(selector);
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      type('${sheet} #sign-in-username', ${JSON.stringify(SMB_AUTH_USERNAME)});
+      type('${sheet} #sign-in-secret', ${JSON.stringify(SMB_AUTH_PASSWORD)});
+    })()`)
+    await tauriPage.click(`${sheet} .modal-footer button:last-of-type`)
+
+    await expect.poll(async () => !(await tauriPage.isVisible(sheet)), { timeout: waitBudget(30000) }).toBeTruthy()
+    await expect
+      .poll(async () => shareExistsInPane('left', SMB_AUTH_SHARE), { timeout: waitBudget(30000) })
+      .toBeTruthy()
+  })
+
   test('listing shares with valid credentials returns private share', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
 

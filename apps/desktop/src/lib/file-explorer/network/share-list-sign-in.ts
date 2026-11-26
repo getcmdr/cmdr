@@ -7,10 +7,14 @@
  * ❌ none of them touches a view. Where cancelling lands is the CALLER's call, because it
  * differs per site: a refused listing goes back to the Servers list, "Sign in as…" stays.
  *
- * ❗ **One ask at a time is the caller's guard.** A second `openSignInSheet` closes the first
- * as `cancelled`, and a caller reading that as "the person said no" walks away from under a
- * sheet that's still up. The share list holds that flag anyway (it stops offering rows
- * while the sheet is up), so it's the one that checks it.
+ * ❗ **One ask at a time, guarded HERE** (`sheetRound`), since three doors (the hub's row
+ * menu, the path bar's account, the palette) and the share list itself all open the sheet:
+ * a second `openSignInSheet` closes the first as `cancelled`, and a caller reading that as
+ * "the person said no" walks away from under a sheet that's still up. A round asked for
+ * while one is up answers `null` and asks nothing.
+ *
+ * Every door to an account action runs `runServerAccountAction`, so the three can't drift
+ * on what an action does or how it says it went.
  *
  * Mount credentials are the mount's question, ❌ not this module's: `../pane/share-mount.svelte.ts`.
  */
@@ -20,10 +24,14 @@ import { shareListErrorOf } from './share-list-error'
 import {
   clearShareState,
   forgetCredentials,
+  getListedAccount,
+  guestListingWorked,
   setCredentialStatus,
   setListedAccount,
   setShareState,
 } from './network-store.svelte'
+import { renderShareListError } from './share-list-error-messages'
+import type { ServerAccountAction, ServerAccountFacts } from '../navigation/row-menu'
 import {
   getSmbCredentials,
   isUsingCredentialFileFallback,
@@ -174,6 +182,14 @@ export async function tryStoredCredentials(
   return { credentials, attempt }
 }
 
+/** Whether a listing's sign-in sheet is up (`sheetRound`), so a list stops offering rows behind it. */
+let sheetUp = false
+
+/** Whether a share list's sign-in sheet is up right now. Read when asked, ❌ not reactive. */
+export function isShareListSheetUp(): boolean {
+  return sheetUp
+}
+
 /**
  * Runs one sheet round whose every attempt is a listing, and answers the attempt that
  * closed it. A refused attempt keeps the sheet open; a listing that worked or a failure
@@ -183,32 +199,38 @@ export async function tryStoredCredentials(
 async function sheetRound(
   server: ShareListServer,
   options: { guestAllowed: boolean; refusal?: ConnectRefusalKind; initialUsername?: string },
-): Promise<ShareListSheetOutcome> {
-  let closing: ShareListSheetOutcome = { kind: 'cancelled' }
-  const result = await openSmbSignInSheet({
-    host: server.host,
-    label: server.label,
-    guestAllowed: options.guestAllowed,
-    refusal: options.refusal,
-    initialUsername: options.initialUsername,
-    attempt: async (answer) => {
-      const attempt = await listWithAccount(server, answer, 'typed')
-      if (attempt.kind === 'refused') return attempt
-      closing = attempt
-      return { kind: 'handed_off' }
-    },
-  })
-  return result.kind === 'cancelled' ? { kind: 'cancelled' } : closing
+): Promise<ShareListSheetOutcome | null> {
+  if (sheetUp) return null
+  sheetUp = true
+  try {
+    let closing: ShareListSheetOutcome = { kind: 'cancelled' }
+    const result = await openSmbSignInSheet({
+      host: server.host,
+      label: server.label,
+      guestAllowed: options.guestAllowed,
+      refusal: options.refusal,
+      initialUsername: options.initialUsername,
+      attempt: async (answer) => {
+        const attempt = await listWithAccount(server, answer, 'typed')
+        if (attempt.kind === 'refused') return attempt
+        closing = attempt
+        return { kind: 'handed_off' }
+      },
+    })
+    return result.kind === 'cancelled' ? { kind: 'cancelled' } : closing
+  } finally {
+    sheetUp = false
+  }
 }
 
 /**
  * The LISTING needs a sign-in: the sheet, opening with the refusal that asked.
- * `guestAllowed` per the listing's `authMode`.
+ * `guestAllowed` per the listing's `authMode`. `null` when another round's sheet is up.
  */
 export async function askToList(
   server: ShareListServer,
   options: { refusal: ConnectRefusalKind; guestAllowed: boolean },
-): Promise<ShareListSheetOutcome> {
+): Promise<ShareListSheetOutcome | null> {
   return await sheetRound(server, options)
 }
 
@@ -216,11 +238,12 @@ export async function askToList(
  * "Sign in as…": the same sheet, asked by the person rather than a refusal, so it opens
  * with no refusal sentence, prefilled with the account the list is signed in as. No guest
  * choice: the sheet selects guest whenever it offers it, and this is for an account.
+ * `null` when another round's sheet is up.
  */
 export async function signInAs(
   server: ShareListServer,
   listedAccount: SignedInAs | undefined,
-): Promise<ShareListSheetOutcome> {
+): Promise<ShareListSheetOutcome | null> {
   return await sheetRound(server, {
     guestAllowed: false,
     initialUsername: listedAccount?.kind === 'user' ? listedAccount.username : undefined,
@@ -234,14 +257,82 @@ export async function useGuest(server: ShareListServer): Promise<ShareListAttemp
   return await listWithAccount(server, { username: null, password: null, remember: false }, 'typed')
 }
 
-/** "Forget saved password", with the toast that says how it went. Answers whether it went through. */
+/**
+ * "Forget saved password", with the toast that says how it went. Answers whether none is
+ * stored now: forgotten, or there was none to forget.
+ *
+ * ❗ Offered unconditionally, ❌ never gated on "is one stored?", which costs a Keychain read
+ * (`../navigation/row-menu.ts`). So this is where "was there one?" gets answered: the store's
+ * typed `not_found` says no, and the person hears so.
+ */
 export async function forgetPassword(server: ShareListServer): Promise<boolean> {
   try {
     await forgetCredentials(server.host.name)
     addToast(tString('fileExplorer.network.forgotPassword', { hostName: server.label }), { level: 'success' })
     return true
-  } catch {
+  } catch (e) {
+    if (isNothingStored(e)) {
+      setCredentialStatus(server.host.name, 'no_creds')
+      addToast(tString('fileExplorer.navigation.forgetSecretNoneToast', { name: server.label }), { level: 'info' })
+      return true
+    }
     addToast(tString('fileExplorer.network.deletePasswordFailed'), { level: 'error' })
     return false
   }
+}
+
+/** The credential store's typed "nothing under that name" (`KeychainError::NotFound`, its `type` tag). */
+function isNothingStored(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && (e as { type?: unknown }).type === 'not_found'
+}
+
+/**
+ * What the account doors read to decide their items, off what this session already knows
+ * (the listings' own answers), ❌ never a Keychain read.
+ */
+export function serverAccountFacts(host: NetworkHost): ServerAccountFacts {
+  return { listedAccount: getListedAccount(host.id), guestListingWorked: guestListingWorked(host.id) }
+}
+
+/**
+ * Runs an account action picked at any door: the hub's row menu, the path bar's account
+ * menu, or the palette. Answers whether a listing landed, so a door that isn't on the share
+ * list (a hub row) opens it, the way activating the row does. A refusal about the server is
+ * toasted in the share list's own words; a cancelled sheet, or one already up, says nothing.
+ *
+ * ❗ "Browse as guest" runs only where a guest listing worked: it drops the account FIRST, so
+ * a server that turns the guest away would leave the person with neither. Every door hides it
+ * then (`row-menu.ts::serverAccountEntries`); a rebound palette key gets a sentence.
+ */
+export async function runServerAccountAction(
+  action: ServerAccountAction,
+  server: ShareListServer,
+): Promise<{ listed: boolean }> {
+  const facts = serverAccountFacts(server.host)
+  switch (action) {
+    case 'sign-in-as':
+      return answered(server, await signInAs(server, facts.listedAccount))
+    case 'browse-as-guest':
+      if (!facts.guestListingWorked) {
+        addToast(tString('servers.hub.browseAsGuestUnavailable', { name: server.label }), { level: 'info' })
+        return { listed: false }
+      }
+      return answered(server, await useGuest(server))
+    case 'forget-secret':
+      await forgetPassword(server)
+      return { listed: false }
+  }
+}
+
+/** What a door says about an account action's listing. A refused guest is a server that wants an account. */
+function answered(
+  server: ShareListServer,
+  attempt: ShareListAttempt | ShareListSheetOutcome | null,
+): { listed: boolean } {
+  if (attempt?.kind === 'failed') {
+    addToast(renderShareListError(attempt.error, server.label), { level: 'error' })
+  } else if (attempt?.kind === 'refused') {
+    addToast(tString('servers.hub.browseAsGuestUnavailable', { name: server.label }), { level: 'info' })
+  }
+  return { listed: attempt?.kind === 'listed' }
 }

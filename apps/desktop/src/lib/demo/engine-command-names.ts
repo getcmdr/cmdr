@@ -195,5 +195,4 @@ export const MENU_ENGINE_COMMANDS = [
   'show_function_key_bar_context_menu',
   'show_viewer_context_menu',
   'show_queue_row_context_menu',
-  'show_network_host_context_menu',
 ] as const

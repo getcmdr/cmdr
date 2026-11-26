@@ -155,6 +155,7 @@ export const notInDemo = {
   ejectAllOnDisk: NETWORK,
   setSmbAccountPreference: NETWORK,
   disconnectNetworkHost: NETWORK,
+  smbHostHasMounts: NETWORK,
   noteNetworkAction: NETWORK,
   setNetworkEnabled: NETWORK,
   approveSftpHostKey: NETWORK,

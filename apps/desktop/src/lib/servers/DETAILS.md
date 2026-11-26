@@ -652,20 +652,29 @@ nothing but shape.
 
 ## Which server a command acts on
 
-`server-command-target.ts` is a pure resolver over two readings of "the server in view":
+`server-command-target.ts` is a pure resolver over three readings of "the server in view", answering a discriminated
+target: a `place` (reached by its `volumeId`) or an `smb-server` (reached by its host: it has no volume, and ❌ never a
+fake `volumeId`).
 
-1. **The hub's cursor row** (`ExplorerAPI.getFocusedPaneServerRow()`, which reaches through `NetworkCursorEntry`'s
-   `server` arm). A row with a `volumeId` wins outright.
-2. **The focused pane's own volume**, for a pane standing INSIDE a server, filtered through `isServerPlaceRow` so a
+1. **The hub's cursor row** (`ExplorerAPI.getFocusedPaneHubRow()`, an SMB host's included). A row with a `volumeId` wins
+   outright as a place; an SMB server row is an `smb-server` (a saved host mDNS isn't seeing stands for the host its
+   address makes, `savedHostFor`).
+2. **The server whose share list the pane shows** (`getFocusedPaneNetworkHost()`, read in ONE place in the handlers,
+   `shareListHost`), an `smb-server`.
+3. **The focused pane's own volume**, for a pane standing INSIDE a server, filtered through `isServerPlaceRow` so a
    mounted SMB share, the synthetic hub row, and a local disk all answer `null`.
 
 Two details are load-bearing:
 
-- **An SMB host row stops the search** rather than falling through to reading 2. Its places are its saved shares, each a
-  row of its own, so the host itself has nothing for `disconnectPlace` or `setPlacePinned` to act on, and quietly acting
-  on the pane's volume instead would move a server the user isn't pointing at. A saved SHARE row has a `volumeId`, so it
-  wins like a one-place row: the pin moves, and Disconnect answers `false` (a share's session is a mount, which
-  `disconnectPlace` doesn't speak; Eject in the switcher is its detach).
+- **Any other row with no `volumeId` (an S3 account) stops the search** rather than falling through: the user is
+  pointing at that server, and quietly acting on the pane's volume instead would move a server they aren't pointing at.
+  A saved SHARE row has a `volumeId`, so it wins like a one-place row: the pin moves, and Disconnect answers `false` (a
+  share's session is a mount, which `disconnectPlace` doesn't speak; Eject in the switcher is its detach).
+- **An `smb-server` target takes only what an SMB server has**: Disconnect (unmounts its shares,
+  `servers-hub-actions.ts::disconnectSmbHost`), Forget saved password, Sign in as…, and Browse as guest (all through
+  `share-list-sign-in.ts::runServerAccountAction`, the hub row menu's and the path bar account menu's runner). The pin
+  and the share-parent switch skip it (a host has neither). A Sign in as… or Browse as guest that lists from a HUB row
+  opens the server's share list; on the share list itself the list follows the listing.
 - **A target resolved from the pane's volume reports `pinned: null`**, because a `VolumeInfo` carries no pin (the pin is
   the switcher's cap, decided in Rust, and deliberately off the wire). `servers.togglePin` reads `listSavedServers()`
   for that case; a store that doesn't answer reads as unpinned, which makes the command a pin rather than a no-op.
@@ -679,9 +688,9 @@ merge. Off that volume they keep their file-list meaning. ❗ Every case answers
 share, a host only mDNS sees) and "Add server…" under the cursor each get a one-line info toast, ❌ never silence. That
 is also why the F-key bar's F2 button is enabled there (`FunctionKeyBar.svelte`'s `canRename`).
 
-The handlers themselves (`src/routes/(main)/command-handlers/servers-handlers.ts`) then route through
-`../file-explorer/navigation/server-row-actions.ts::runServerRowAction`, the same function the native menu's answer
-lands in, so a menu item and a palette command can't drift on a confirmation or a toast.
+The handlers themselves (`src/routes/(main)/command-handlers/servers-handlers.ts`) then route a place through
+`../file-explorer/navigation/server-row-actions.ts::runServerRowAction` and an SMB server through the functions its row
+menu runs, so a menu item and a palette command can't drift on a confirmation or a toast.
 
 ## Deliberately not built
 

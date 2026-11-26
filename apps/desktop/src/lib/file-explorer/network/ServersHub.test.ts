@@ -32,7 +32,8 @@ const h = vi.hoisted(() => ({
   listSavedServers: vi.fn(),
   forgetSavedServer: vi.fn(() => Promise.resolve()),
   addToast: vi.fn(() => 'id'),
-  showNetworkHostContextMenu: vi.fn(() => Promise.resolve()),
+  smbHostHasMounts: vi.fn(() => Promise.resolve(false)),
+  getSmbCredentials: vi.fn(() => Promise.reject(new Error('not read in these tests'))),
   /** Every command the document dispatcher resolved a key to, in order. */
   dispatched: [] as string[],
   setSetting: vi.fn(),
@@ -101,7 +102,7 @@ vi.mock('./network-store.svelte', async () => {
     clearShareState: h.clearShareState,
     fetchShares: h.fetchShares,
     getCredentialStatus: () => 'unknown',
-    checkCredentialsForHost: vi.fn(() => Promise.resolve()),
+    guestListingWorked: () => false,
     forgetCredentials: vi.fn(() => Promise.resolve()),
     setCredentialStatus: vi.fn(),
     getListedAccount: () => undefined,
@@ -139,8 +140,8 @@ vi.mock('#lib/stores/volume-busy-store.svelte.js', () => ({ isVolumeBusy: () => 
 vi.mock('#lib/tauri-commands/index.js', () => ({
   updateLeftPaneState: vi.fn(() => Promise.resolve()),
   updateRightPaneState: vi.fn(() => Promise.resolve()),
-  showNetworkHostContextMenu: h.showNetworkHostContextMenu,
-  onNetworkHostContextAction: vi.fn(() => Promise.resolve(() => {})),
+  smbHostHasMounts: h.smbHostHasMounts,
+  getSmbCredentials: h.getSmbCredentials,
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   listSavedServers: h.listSavedServers,
 }))
@@ -551,22 +552,41 @@ describe('ServersHub keyboard context menu', () => {
     await cleanup()
   })
 
-  it('raises an SMB host’s menu for the row under the cursor, placed at the row', async () => {
+  /**
+   * The house `Menu`, ❌ no native popup, with the host's account items. ❗ Opening it reads
+   * no password (the old native menu read the Keychain on every right-click of a host whose
+   * status was unknown): it asks only the mount table whether Disconnect does anything.
+   */
+  it('opens an SMB host’s menu for the row under the cursor, reading no password', async () => {
     const { target, api, cleanup } = mountBehindBothHandlers()
     await settle()
     api.setCursorIndex(api.findItemIndex('Attic'))
 
     target.querySelector('.row-list')?.dispatchEvent(ctrlEnter())
     await vi.waitFor(() => {
-      expect(h.showNetworkHostContextMenu).toHaveBeenCalledOnce()
+      expect(document.querySelector('[data-menu]')).not.toBeNull()
     })
 
-    const args = h.showNetworkHostContextMenu.mock.calls[0] as unknown[]
-    expect(args[0]).toBe('h2')
-    // An anchor, not `null`: a keypress has no pointer for macOS to use.
-    const anchor = args[5] as { x: unknown; y: unknown } | null
-    expect(typeof anchor?.x).toBe('number')
-    expect(typeof anchor?.y).toBe('number')
+    const labels = [...document.querySelectorAll('[data-menu] [data-menu-row]')].map((el) => el.textContent.trim())
+    expect(labels).toEqual(['Open', 'Sign in as…', 'Forget saved password'])
+    expect(h.smbHostHasMounts).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'h2' }))
+    expect(h.getSmbCredentials).not.toHaveBeenCalled()
+    await cleanup()
+  })
+
+  it('offers a host’s Disconnect while a share from it is mounted', async () => {
+    h.smbHostHasMounts.mockResolvedValueOnce(true)
+    const { target, api, cleanup } = mountBehindBothHandlers()
+    await settle()
+    api.setCursorIndex(api.findItemIndex('Attic'))
+
+    target.querySelector('.row-list')?.dispatchEvent(ctrlEnter())
+    await vi.waitFor(() => {
+      expect(document.querySelector('[data-menu]')).not.toBeNull()
+    })
+
+    const labels = [...document.querySelectorAll('[data-menu] [data-menu-row]')].map((el) => el.textContent.trim())
+    expect(labels).toContain('Disconnect')
     await cleanup()
   })
 
@@ -614,7 +634,6 @@ describe('ServersHub keyboard context menu', () => {
     await settle()
     api.setCursorIndex(api.getItemCount() - 1)
     await api.openContextMenuAtCursor()
-    expect(h.showNetworkHostContextMenu).not.toHaveBeenCalled()
     expect(document.querySelector('[data-menu]')).toBeNull()
     await cleanup()
   })

@@ -616,7 +616,7 @@ pub async fn upgrade_to_smb_volume_using_saved_password(volume_id: String) -> Up
 /// port would take another server's mounts on the same machine.
 #[tauri::command]
 #[specta::specta]
-pub async fn disconnect_network_host(host: NetworkHost) -> Result<Vec<String>, String> {
+pub async fn disconnect_network_host(host: NetworkHost) -> Vec<String> {
     use cmdr_fs::deadline::blocking_with_timeout;
     use std::time::Duration;
 
@@ -626,12 +626,21 @@ pub async fn disconnect_network_host(host: NetworkHost) -> Result<Vec<String>, S
     smb_client::invalidate_cache(&host.id);
 
     let targets = crate::network::server_identity::smb_servers_of(&host);
-    let result = blocking_with_timeout(Duration::from_secs(15), vec![], move || {
+    blocking_with_timeout(Duration::from_secs(15), vec![], move || {
         os_mount::unmount_smb_shares_from_host(&targets)
     })
-    .await;
+    .await
+}
 
-    Ok(result)
+/// Whether a share from `host` is mounted, found the way [`disconnect_network_host`] finds what
+/// to unmount: the kernel's mount table snapshot (`statfs`-free, so it can't stall), matched by
+/// every name the host dials on its port. What the servers hub's row menu asks before it offers
+/// Disconnect, so the item never answers "no mounted shares". Reads no password.
+#[tauri::command]
+#[specta::specta]
+pub fn smb_host_has_mounts(host: NetworkHost) -> bool {
+    use crate::network::server_identity::{smb_mounts_from, smb_servers_of};
+    !smb_mounts_from(&smb_servers_of(&host)).is_empty()
 }
 
 /// Disconnects a single SMB volume by tearing down its OS mount.

@@ -1,5 +1,5 @@
 /**
- * What a hub row's F8, right-click, and row-menu picks do, and what the SMB host menu answers.
+ * What a hub row's F8, right-click, and row-menu picks do, an SMB host's included.
  *
  * A factory rather than lines in `ServersHub.svelte`, so the component stays the
  * table, the cursor, and the keys. These are the parts that ask a question,
@@ -21,14 +21,8 @@ import {
   listSavedServers,
   forgetServer,
   forgetServerSecret,
-  showNetworkHostContextMenu,
 } from '#lib/tauri-commands/index.js'
-import {
-  checkCredentialsForHost,
-  forgetCredentials,
-  getCredentialStatus,
-  setCredentialStatus,
-} from './network-store.svelte'
+import { getCredentialStatus, setCredentialStatus } from './network-store.svelte'
 import {
   forgetSavedServer,
   forgetServerQuestion,
@@ -39,20 +33,23 @@ import {
   EMPTY_ROW_MENU,
   runRowFix,
   runVolumeRowAction,
+  smbHostRowMenu,
   volumeRowMenu,
   type RowMenu,
-  type RowMenuEntry,
   type RowToggleKind,
+  type ServerRowMenu,
+  type ServerRowMenuEntry,
 } from '../navigation/row-menu'
+import { runServerAccountAction, serverAccountFacts } from './share-list-sign-in'
 import { isVolumeBusy } from '#lib/stores/volume-busy-store.svelte.js'
 import { confirmDialog, confirmWithCheckbox } from '#lib/utils/confirm-dialog.js'
 import { openEditServerSheet } from '#lib/servers/open-sign-in.js'
 import { addToast } from '#lib/ui/toast/index.js'
 import { tString } from '#lib/intl/messages.svelte.js'
-import { buildHubRows, type HubRow } from './servers-hub-rows'
+import { buildHubRows, savedHostFor, type HubRow } from './servers-hub-rows'
 import type { NetworkHost, VolumeInfo } from '../types'
-import type { NetworkHostContextActionKind } from '#lib/ipc/bindings.js'
 import type { MenuAnchor } from '#lib/tauri-commands/file-actions.js'
+import type { VolumeContextActionKind } from '#lib/ipc/bindings.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 
 const log = getAppLogger('servers')
@@ -69,32 +66,19 @@ export interface HubActionDeps {
   openRow: (row: HubRow) => void
 }
 
-/**
- * What the native SMB-host menu answered.
- *
- * ❗ `action` is the typed wire enum, ❌ never a free string: `forget-secret` is
- * spelled the same here as on a server ROW (`VolumeContextActionKind`), so one
- * act has one name on both sides of the app.
- */
-export interface HostContextActionPayload {
-  action: NetworkHostContextActionKind
-  /** The hub row the menu was raised on: what the answer acts on. */
-  rowId: string
-  hostId: string
-  hostName: string
+/** What a row's menu learned when it opened, beyond what the row and the stores say live. */
+export interface RowMenuOpenFacts {
+  /** A share from the row's SMB host is mounted (asked once per open: `smbHostHasMounts`). */
+  hasMounts: boolean
 }
 
 export interface HubActions {
-  /** F8, and the host menu's "Forget server". */
+  /** F8, and the row menu's "Forget server". */
   forget: (row: HubRow) => Promise<void>
-  /** A one-place row's in-app menu, or `null` for an SMB host (which keeps its native one). */
-  rowMenu: (row: HubRow) => RowMenu | null
-  /** A pick from a one-place row's menu. */
-  runRowEntry: (row: HubRow, entry: RowMenuEntry) => Promise<void>
-  /** Right-click (or ⌃⏎, with an `anchor`) on an SMB host row: its native host menu. */
-  openHostMenu: (row: HubRow, anchor?: MenuAnchor | null) => Promise<void>
-  /** What the native SMB-host menu answered. */
-  runHostAction: (payload: HostContextActionPayload) => Promise<void>
+  /** A row's menu, or `null` for a row with none. Read live, so it follows the stores. */
+  rowMenu: (row: HubRow, opened: RowMenuOpenFacts) => ServerRowMenu | null
+  /** A pick from a row's menu. */
+  runRowEntry: (row: HubRow, entry: ServerRowMenuEntry) => Promise<void>
   /** The row with this id as the list holds it NOW, or `null` once it left. */
   rowById: (id: string) => HubRow | null
 }
@@ -104,8 +88,8 @@ export interface HubActions {
  * off a `.svelte` instance resolves to `any` under the plain-TypeScript lint service.
  */
 export interface HubRowMenuAPI {
-  /** Opens `row`'s menu: the in-app one at `point`, or an SMB host's native one at `anchor` (`null`: the pointer). */
-  open: (row: HubRow, point: MenuAnchor, anchor: MenuAnchor | null) => Promise<void>
+  /** Opens `row`'s menu at `point`: the pointer for a right-click, just under the row for ⌃⏎. */
+  open: (row: HubRow, point: MenuAnchor) => Promise<void>
 }
 
 /** Edit's "nothing to edit here" hints share one toast `id`, so a key pressed again replaces it rather than stacking copies. */
@@ -117,7 +101,7 @@ const EDIT_HINT = { level: 'info', id: 'servers-edit-hint' } as const
  * to rename or edit.
  *
  * A one-place server goes through the row menu's own Edit, which re-reads the saved list; an SMB host opens on the
- * entry its row carries, as its native menu's Edit does. ❗ A row with nothing saved to edit (a share, a host only
+ * entry its row carries, as its row menu's Edit does. ❗ A row with nothing saved to edit (a share, a host only
  * mDNS knows) says why, ❌ never does nothing: a key that silently did nothing reads as a broken key.
  */
 export async function editHubRow(row: HubRow): Promise<void> {
@@ -292,15 +276,19 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   }
 
   /**
-   * A one-place row's right-click menu: the servers list from `row-menu.ts`, the
-   * same one the switcher row's submenu shows, so the two surfaces can't drift.
-   * Read live, so a transfer starting under the open menu greys its Disconnect.
-   * `null` for an SMB host, which keeps its own native host menu
-   * ([`openHostMenu`]).
+   * A row's right-click (and ⌃⏎) menu, from `row-menu.ts`: a one-place row's is the
+   * same list the switcher row's submenu shows, an SMB host's is the host builder
+   * (`smbHostRowMenu`), so no two surfaces can drift. Read live, so a transfer starting
+   * under the open menu greys its Disconnect, and a listing that lands under it moves
+   * its account items.
    */
-  function rowMenu(row: HubRow): RowMenu | null {
+  function rowMenu(row: HubRow, opened: RowMenuOpenFacts): ServerRowMenu | null {
     // An S3 place is a server place like any one-place row, so it gets that menu below.
     if (row.kind === 'place' && row.protocol === 'smb') return shareMenu(row)
+    const host = smbHostOf(row)
+    if (host) {
+      return smbHostRowMenu({ ...serverAccountFacts(host), isSaved: row.saved !== null, hasMounts: opened.hasMounts })
+    }
     if (!row.volumeId) return null
     const volume = volumeForRow(row)
     return volumeRowMenu(volume, {
@@ -353,10 +341,13 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   }
 
   /**
-   * A pick from a one-place row's menu. Open takes the hub's own Enter path, so
-   * it moves THIS pane; everything else runs where the switcher's runs.
+   * A pick from a row's menu. Open takes the hub's own Enter path, so it moves THIS
+   * pane; an SMB host's actions run here, keyed by the row (it has no volume); an
+   * account action runs where every door's does, and one that listed opens the
+   * server's share list, the way activating the row does; everything else runs where
+   * the switcher's runs.
    */
-  async function runRowEntry(row: HubRow, entry: RowMenuEntry): Promise<void> {
+  async function runRowEntry(row: HubRow, entry: ServerRowMenuEntry): Promise<void> {
     if (entry.type === 'toggle') {
       await flipToggle[entry.toggle](row)
       return
@@ -365,12 +356,25 @@ export function createHubActions(deps: HubActionDeps): HubActions {
       await runRowFix({ volume: volumeForRow(row), fix: entry.fix })
       return
     }
+    // A share-list row's verbs: no hub row offers them.
+    if (entry.type === 'share') return
+    const host = smbHostOf(row)
+    if (entry.type === 'account') {
+      if (!host) return
+      const { listed } = await runServerAccountAction(entry.account, { host, label: row.name })
+      if (listed) deps.openRow(row)
+      return
+    }
     if (entry.action === 'open') {
       deps.openRow(row)
       return
     }
     if (row.kind === 'place' && row.protocol === 'smb' && entry.action === 'forget-server') {
       await forgetShare(row)
+      return
+    }
+    if (host) {
+      await runHostAction(row, host, entry.action)
       return
     }
     await runVolumeRowAction({ volume: volumeForRow(row), action: entry.action })
@@ -387,30 +391,6 @@ export function createHubActions(deps: HubActionDeps): HubActions {
     'auto-reconnect': async (row) => {
       if (row.volumeId && row.saved) await setServerAutoReconnect(row.volumeId, !placeAutoReconnect(row))
     },
-  }
-
-  /**
-   * An SMB host's right-click: its native host menu, raised for THIS row (its id
-   * goes out with the menu and comes back with the answer). `anchor` places a
-   * keyboard-opened one.
-   */
-  async function openHostMenu(row: HubRow, anchor: MenuAnchor | null = null): Promise<void> {
-    const host = row.host
-    if (!host) return
-    // ❗ Asked here rather than on Rust's popup path, where "is a secret stored?"
-    // would put a Keychain read in front of the menu appearing.
-    if (getCredentialStatus(host.name) === 'unknown') {
-      await checkCredentialsForHost(host.name)
-    }
-    await showNetworkHostContextMenu(
-      row.id,
-      host,
-      host.source === 'manual',
-      // A SAVED host has a name to edit; one mDNS merely sees does not.
-      row.saved !== null,
-      getCredentialStatus(host.name) === 'has_creds',
-      anchor,
-    )
   }
 
   /**
@@ -436,62 +416,25 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   }
 
   /**
-   * Actions dispatched from the native SMB-host context menu.
-   *
-   * ❗ **Every answer acts on the row the menu was raised on**, found by its
-   * exact id (`payload.rowId`), ❌ never by the host, a name, or an address. Two
-   * rows can stand on one discovered host, and a lookup by host picks whichever
-   * comes first: "Edit server…" on the second row once saved into the first. A
-   * row that left the list while the menu was up gets nothing.
+   * An SMB host row's own actions. ❗ They act on THIS row, the one the menu was raised
+   * on (`ServersHubRowMenu` holds it by its exact id), ❌ never one found by its host, a
+   * name, or an address: two rows can stand on one discovered host, and a lookup by host
+   * once saved an "Edit server…" on the second row into the first.
    */
-  async function runHostAction(payload: HostContextActionPayload): Promise<void> {
-    const row = deps.getRows().find((r) => r.id === payload.rowId)
-    if (!row) {
-      log.info('The host menu answered for a row the list no longer has; nothing to do')
-      return
-    }
-    switch (payload.action) {
+  async function runHostAction(row: HubRow, host: NetworkHost, action: VolumeContextActionKind): Promise<void> {
+    switch (action) {
       case 'forget-server':
         await forget(row)
-        return
-      case 'forget-secret':
-        if (row.host) await forgetHostSecret(row.host.name, row.name)
         return
       case 'edit':
         if (row.saved) await openEditServerSheet(row.saved)
         return
       case 'disconnect':
-        if (row.host) await disconnectHost(row.host, row.name)
+        await disconnectSmbHost(host, row.name)
         return
-    }
-  }
-
-  /** `hostName` keys the Keychain; `label` is what the row calls the host, for the toast. */
-  async function forgetHostSecret(hostName: string, label: string): Promise<void> {
-    try {
-      await forgetCredentials(hostName)
-      addToast(tString('fileExplorer.network.forgotPassword', { hostName: label }), { level: 'success' })
-    } catch {
-      addToast(tString('fileExplorer.network.deletePasswordFailed'), { level: 'error' })
-    }
-  }
-
-  /**
-   * An SMB host's Disconnect UNMOUNTS its shares; it does not drop a session the
-   * way a place's does. Zero unmounted is a normal answer, not a fault.
-   */
-  async function disconnectHost(host: NetworkHost, label: string): Promise<void> {
-    try {
-      const unmounted = await disconnectNetworkHost(host)
-      if (unmounted.length > 0) {
-        addToast(tString('fileExplorer.network.browser.disconnected', { hostName: label }), {
-          level: 'success',
-        })
-      } else {
-        addToast(tString('fileExplorer.network.browser.noMountedShares', { hostName: label }))
-      }
-    } catch (e) {
-      addToast(tString('fileExplorer.network.browser.disconnectFailed', { message: String(e) }), { level: 'error' })
+      default:
+        // The host menu offers nothing else (`smbHostRowMenu`).
+        return
     }
   }
 
@@ -499,5 +442,34 @@ export function createHubActions(deps: HubActionDeps): HubActions {
     return deps.getRows().find((row) => row.id === id) ?? null
   }
 
-  return { forget, rowMenu, runRowEntry, openHostMenu, runHostAction, rowById }
+  return { forget, rowMenu, runRowEntry, rowById }
+}
+
+/**
+ * The SMB server a hub row stands for, or `null` for any other row: a saved host mDNS isn't
+ * seeing stands for the host its address makes (`savedHostFor`), as its share list does.
+ */
+export function smbHostOf(row: HubRow): NetworkHost | null {
+  if (row.kind !== 'server' || row.protocol !== 'smb') return null
+  return row.host ?? savedHostFor(row)
+}
+
+/**
+ * An SMB server's Disconnect, from its hub row or the palette: it UNMOUNTS the server's
+ * shares, ❌ not a session the way a place's does. Zero unmounted is a normal answer, not a
+ * fault. The backend never refuses (it answers what it unmounted), so anything thrown is the
+ * IPC transport: logged, and worded as a sentence, ❌ never `String(e)`.
+ */
+export async function disconnectSmbHost(host: NetworkHost, label: string): Promise<void> {
+  try {
+    const unmounted = await disconnectNetworkHost(host)
+    if (unmounted.length > 0) {
+      addToast(tString('fileExplorer.network.browser.disconnected', { hostName: label }), { level: 'success' })
+    } else {
+      addToast(tString('fileExplorer.network.browser.noMountedShares', { hostName: label }))
+    }
+  } catch (e) {
+    log.warn('Disconnecting the SMB server {host} broke down: {error}', { host: host.name, error: e })
+    addToast(tString('fileExplorer.navigation.disconnectRefusedToast', { name: label }), { level: 'error' })
+  }
 }

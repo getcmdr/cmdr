@@ -19,7 +19,7 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
 ## File layout
 
 - `mod.rs`: shared types (`MenuState`, `MenuItems`, `MenuItemEntry`, `MenuContext`,
-  `NetworkHostMenuContext`), re-exports of the public API exposed by the submodules below, plus a glob re-export of
+  `VolumeRowMenuContext`), re-exports of the public API exposed by the submodules below, plus a glob re-export of
   `cmdr_menu::ids` so the menu IDs and mapping functions stay reachable at `crate::menu::…`, and `cmdr_menu::bar` /
   `cmdr_menu::spec` under their old names `menu_bar` / `menu_spec`.
 - **The bar as data is `cmdr-menu`** (`crates/cmdr-menu/CLAUDE.md`): the item ids and command map (`ids.rs`),
@@ -397,10 +397,10 @@ On Windows the right-click menus move into the page too (D5; the `contextMenus` 
 platform, and calls `open_context_menu_in_page` (`apps/desktop/src-tauri/src/commands/menu_in_page.rs`) instead of the `show_*` command:
 each `show_*` wrapper forks in `popContextMenu`, and the window draws and picks (`apps/desktop/src/lib/context-menu/DETAILS.md`).
 
-- **One request, nine menus**: `InPageContextMenuRequest` is tagged by `menu` (`file`, `breadcrumb`, `parentRow`, `tab`,
-  `dateSort`, `functionKeyBar`, `viewer`, `queueRow`, `networkHost`), each variant carrying its `show_*` command's own
+- **One request, eight menus**: `InPageContextMenuRequest` is tagged by `menu` (`file`, `breadcrumb`, `parentRow`, `tab`,
+  `dateSort`, `functionKeyBar`, `viewer`, `queueRow`), each variant carrying its `show_*` command's own
   arguments. The in-page path stashes the same `MenuState` facts through the same helpers the native path uses
-  (`stash_file_context`, `breadcrumb_rows`, `parent_row_rows`, `network_host_rows` in `commands/menu.rs`), BEFORE the
+  (`stash_file_context`, `breadcrumb_rows`, `parent_row_rows` in `commands/menu.rs`), BEFORE the
   rows go out, so a pick finds them exactly as a native pick does. The file menu's "same kind" label is the caller's
   live value, as the native command's.
 - **The answer** is `InPageContextMenu { token, rows, anchor }`: `cmdr_menu::page::context::page_rows_with` over the

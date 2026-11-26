@@ -338,14 +338,9 @@ export interface ExplorerAPI {
   /** An SMB add's hand-off: the saved host's share list in the focused pane, mounting the share it named. */
   openSmbHandOffInFocusedPane: (handOff: SmbHandOff) => void
   /**
-   * The hub row under the focused pane's cursor, or `null` when that pane isn't
-   * on the hub. What the servers commands aim at before they fall back to the
-   * pane's own volume.
-   */
-  getFocusedPaneServerRow: () => HubRow | null
-  /**
    * Any hub row under the focused pane's cursor, an SMB host's included, or `null`
-   * off the hub. Edit and Rename there are "Edit server…" (`editHubRow`).
+   * off the hub. What the servers commands aim at (`serverCommandTarget`), and what
+   * Edit and Rename there edit (`editHubRow`).
    */
   getFocusedPaneHubRow: () => HubRow | null
   /** The host whose share list the focused pane shows, or `null`. */

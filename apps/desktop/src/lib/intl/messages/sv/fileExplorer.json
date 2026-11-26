@@ -534,10 +534,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "Det gick inte att koppla från: {message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Inloggningsuppgifter sparade lokalt (Autentiseringshanteraren är inte tillgänglig)} linuxKde {Inloggningsuppgifter sparade lokalt (KDE:s plånbok är inte tillgänglig)} other {Inloggningsuppgifter sparade lokalt (ingen systemnyckelring upptäcktes)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

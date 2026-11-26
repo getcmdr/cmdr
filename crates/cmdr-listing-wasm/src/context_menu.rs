@@ -22,8 +22,8 @@ use cmdr_menu::context::click::{ContextClick, context_click};
 use cmdr_menu::context::file::{FileMenuFacts, PaneFacts, TargetFacts, file_menu};
 use cmdr_menu::context::image_index::ImageIndexMenuState;
 use cmdr_menu::context::popups::{
-    BreadcrumbVolume, DetachWord, NetworkHostFacts, PaneSide, QueueRowMenuEntry, breadcrumb_menu, date_sort_menu,
-    function_key_bar_menu, network_host_menu, parent_row_menu, queue_row_menu, tab_menu, viewer_text_menu,
+    BreadcrumbVolume, DetachWord, PaneSide, QueueRowMenuEntry, breadcrumb_menu, date_sort_menu, function_key_bar_menu,
+    parent_row_menu, queue_row_menu, tab_menu, viewer_text_menu,
 };
 use cmdr_menu::labels::SameKindTarget;
 use cmdr_menu::page::context::page_rows;
@@ -42,11 +42,10 @@ pub const POPUP_COMMANDS: &[&str] = &[
     "show_function_key_bar_context_menu",
     "show_viewer_context_menu",
     "show_queue_row_context_menu",
-    "show_network_host_context_menu",
 ];
 
 /// What the desktop's `MenuState` stashes for a pick: the right-clicked row's path, the eject
-/// target, the host row, plus the one fact the demo needs and a native menu doesn't (the window
+/// target, plus the one fact the demo needs and a native menu doesn't (the window
 /// the popup went up over, where a viewer's pick goes back to).
 #[derive(Default)]
 pub(crate) struct ContextModel {
@@ -54,9 +53,6 @@ pub(crate) struct ContextModel {
     path: String,
     volume_id: String,
     volume_name: String,
-    host_row_id: String,
-    host_id: String,
-    host_name: String,
     /// The window label the last popup went up over.
     window: String,
     /// The ids the last popup offered enabled: a pick of anything else does nothing, as a greyed
@@ -161,23 +157,6 @@ struct QueueRowArgs {
     shortcuts: ContextMenuShortcuts,
 }
 
-#[derive(Deserialize)]
-struct HostArgs {
-    id: String,
-    name: String,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct NetworkHostArgs {
-    row_id: String,
-    host: HostArgs,
-    is_manual: bool,
-    is_saved: bool,
-    has_credentials: bool,
-    anchor: Option<Anchor>,
-}
-
 impl DemoMenu {
     /// Whether [`DemoMenu::popup`] answers `command`.
     pub fn opens_popup(command: &str) -> bool {
@@ -260,19 +239,6 @@ impl DemoMenu {
                 let a: QueueRowArgs = parse(command, args)?;
                 (queue_row_menu(&a.entries), a.shortcuts, None)
             }
-            "show_network_host_context_menu" => {
-                let a: NetworkHostArgs = parse(command, args)?;
-                let rows = network_host_menu(NetworkHostFacts {
-                    is_manual: a.is_manual,
-                    is_saved: a.is_saved,
-                    has_credentials: a.has_credentials,
-                    has_mounts: false,
-                });
-                c.host_row_id = a.row_id;
-                c.host_id = a.host.id;
-                c.host_name = a.host.name;
-                (rows, shortcutless, a.anchor)
-            }
             other => return Err(Value::String(format!("the demo's menus don't open `{other}`"))),
         };
         c.window = window.to_string();
@@ -327,15 +293,6 @@ impl DemoMenu {
             ContextClick::Volume(action) => to_main(
                 "volume-context-action",
                 json!({ "action": action.wire(), "volumeId": c.volume_id, "volumeName": c.volume_name }),
-            ),
-            ContextClick::NetworkHost(action) => to_main(
-                "network-host-context-action",
-                json!({
-                    "action": action.wire(),
-                    "rowId": c.host_row_id,
-                    "hostId": c.host_id,
-                    "hostName": c.host_name,
-                }),
             ),
             ContextClick::ViewerText(action) => Click::Emit {
                 event: "viewer-context-menu-action".to_string(),

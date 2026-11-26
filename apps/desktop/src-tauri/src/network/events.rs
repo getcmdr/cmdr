@@ -46,47 +46,6 @@ pub struct NetworkDiscoveryStateChanged {
     pub state: DiscoveryState,
 }
 
-/// What the user picked in an SMB host's context menu.
-///
-/// ❗ A typed enum, ❌ never a free string: the frontend branches on every one of
-/// these, and a misspelling would go to the one place a compiler never looks.
-///
-/// ❗ `ForgetSecret` is spelled the way
-/// [`crate::volume_broadcast::VolumeContextActionKind`] spells the same act on a
-/// server ROW. One act, one name on both sides: two spellings for "stop
-/// remembering this password" is how a handler ends up wired to one of them and
-/// silently missing the other.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "kebab-case")]
-pub enum NetworkHostContextActionKind {
-    /// Drop a manually-added host. ❗ A discovered one has nothing to forget.
-    ForgetServer,
-    /// Stop remembering this host's credential, keeping the host.
-    ForgetSecret,
-    /// Unmount every share mounted from this host.
-    Disconnect,
-    /// Open the edit sheet on a SAVED host (its name, for now).
-    Edit,
-}
-
-/// Typed `network-host-context-action` Tauri event. Emitted to the `main` window
-/// when the user picks an action from a network host's native context menu.
-/// Window-scoped, so it's emitted via `Event::emit_to` from `menu::menu_handlers`.
-#[derive(Clone, Serialize, Deserialize, specta::Type, Event)]
-#[serde(rename_all = "camelCase")]
-pub struct NetworkHostContextAction {
-    /// Which item was picked.
-    pub action: NetworkHostContextActionKind,
-    /// The servers hub row the menu was opened on, exactly as the hub keys it.
-    /// ❗ What every answer acts on: two rows can share one discovered host (a
-    /// saved host and the share history of the same machine), so the host id
-    /// alone can't say which row was right-clicked.
-    pub row_id: String,
-    /// The discovered host behind that row, which Disconnect unmounts from.
-    pub host_id: String,
-    pub host_name: String,
-}
-
 /// How a connecting volume's session looks to the frontend, as carried by
 /// `volume-connection-changed`.
 ///

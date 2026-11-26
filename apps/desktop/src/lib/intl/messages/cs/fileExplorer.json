@@ -533,10 +533,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "Odpojení se nepodařilo: {message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Přihlašovací údaje jsou uložené místně (Správce přihlašovacích údajů není dostupný)} linuxKde {Přihlašovací údaje jsou uložené místně (úschovna KDE není dostupná)} other {Přihlašovací údaje jsou uložené místně (systémový svazek klíčů nebyl nalezen)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

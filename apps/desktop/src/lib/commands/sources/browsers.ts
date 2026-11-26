@@ -98,6 +98,24 @@ export const browsersCommands: CommandSource[] = [
     whileDialogOpen: BLOCKED_BY_DIALOGS,
   },
   {
+    // An SMB server's account, as its hub row menu and its share list's account menu offer
+    // it: the hub's cursor row, else the server whose share list is up.
+    id: 'servers.signInAs',
+    nameKey: 'commands.serversSignInAs.label',
+    scope: 'Main window',
+    showInPalette: true,
+    shortcuts: sameOnAll(),
+    whileDialogOpen: BLOCKED_BY_DIALOGS,
+  },
+  {
+    id: 'servers.browseAsGuest',
+    nameKey: 'commands.serversBrowseAsGuest.label',
+    scope: 'Main window',
+    showInPalette: true,
+    shortcuts: sameOnAll(),
+    whileDialogOpen: BLOCKED_BY_DIALOGS,
+  },
+  {
     // The focused pane's SMB share's "Show “..” in the top folder" (#1238), the same switch
     // its row menu in the volume switcher carries. Offered only on an SMB share.
     id: 'servers.toggleShareParentRow',

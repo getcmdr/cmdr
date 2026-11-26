@@ -60,7 +60,6 @@ vi.mock('./network-store.svelte', () => ({
   setCredentialStatus: vi.fn(),
   fetchShares: vi.fn(() => Promise.resolve()),
   getCredentialStatus: () => 'unknown',
-  checkCredentialsForHost: vi.fn(() => Promise.resolve()),
   forgetCredentials: vi.fn(() => Promise.resolve()),
 }))
 
@@ -74,8 +73,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => ({
   setServersViewShown: vi.fn(() => Promise.resolve()),
   updateLeftPaneState: vi.fn(() => Promise.resolve()),
   updateRightPaneState: vi.fn(() => Promise.resolve()),
-  showNetworkHostContextMenu: vi.fn(() => Promise.resolve()),
-  onNetworkHostContextAction: vi.fn(() => Promise.resolve(() => {})),
+  smbHostHasMounts: vi.fn(() => Promise.resolve(false)),
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   getUsernameHint: vi.fn(() => Promise.resolve(null)),
   getKnownShareByName: vi.fn(() => Promise.resolve(null)),
@@ -275,8 +273,6 @@ describe('ServersHubRowMenu a11y', () => {
       ],
     }),
     runRowEntry: () => Promise.resolve(),
-    openHostMenu: () => Promise.resolve(),
-    runHostAction: () => Promise.resolve(),
     rowById: () => row,
   }
 
@@ -285,7 +281,7 @@ describe('ServersHubRowMenu a11y', () => {
     document.body.appendChild(target)
     const instance = mount(ServersHubRowMenu, { target, props: { actions } }) as unknown as HubRowMenuAPI
     flushSync()
-    void instance.open(row, { x: 10, y: 10 }, null)
+    void instance.open(row, { x: 10, y: 10 })
     // The surface portals itself into `document.body`, which lands a beat after the open.
     await vi.waitFor(() => {
       expect(document.querySelector('[data-menu]')).not.toBeNull()

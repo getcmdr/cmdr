@@ -56,9 +56,8 @@ three listing commands, all frontend-invoked (verified by reading its call sites
 
 Key exported functions: `getNetworkHosts()` (sorted copy), `fetchShares(host)` (explicit, throws on error),
 `refreshSharesIfStale(host)`, `refreshAllStaleShares()` (call on entering network view),
-`checkCredentialsForHost(serverName)` (one-time Keychain probe, idempotent), `forgetCredentials(serverName)`,
-`setCredentialStatus` / `getCredentialStatus` (in-memory only), `setShareState` / `clearShareState`,
-`getDiscoveryState()`, `isHostResolving(hostId)`, `getShareState(hostId)`, `getShareCount(hostId)`,
+`forgetCredentials(serverName)`, `setCredentialStatus` / `getCredentialStatus` (in-memory only), `setShareState` /
+`clearShareState`, `getDiscoveryState()`, `isHostResolving(hostId)`, `getShareState(hostId)`, `getShareCount(hostId)`,
 `isListingShares(hostId)`, `isShareDataStale(hostId)`.
 
 ## `ServersHub.svelte`
@@ -254,10 +253,10 @@ unit-tested:
   `+ Add server…` at `smb://add`. A saved server's unsaved share carries `status="not_connected"` and
   `kind=unsaved_share` at `smb://<address>/<name>`, its More row is `More shares on <server>…  kind=more_shares` at
   `smb://<address>` (English, like the group's name). `hubItemMcpName` is the name `findItemIndex` matches.
-- **`servers-hub-actions.ts`**: F8, the two row menus, and the SMB host menu's answers, behind live getters (❌ never
-  snapshots: the rows change under a menu that is still open). ❗ A one-place row and an SMB host take different paths
-  at every branch, which is why they live in one unit: a one-place row is a PLACE the servers family speaks for, an SMB
-  host is a manual-server entry whose "disconnect" unmounts shares rather than dropping a session.
+- **`servers-hub-actions.ts`**: F8 and the row menus (an SMB host's included), behind live getters (❌ never snapshots:
+  the rows change under a menu that is still open). ❗ A one-place row and an SMB host take different paths at every
+  branch, which is why they live in one unit: a one-place row is a PLACE the servers family speaks for, an SMB host is a
+  manual-server entry whose "disconnect" unmounts shares rather than dropping a session.
 - **`../navigation/servers-hub-rows` consumers**: `../pane/types.ts`'s `NetworkCursorEntry` gains a `server` arm, which
   is how the palette's server commands reach the row under the cursor (`#lib/servers/server-command-target.ts` owns the
   rule: the hub IS a pane, so "the focused pane's volume" would answer the synthetic hub row). The `host` arm carries
@@ -279,18 +278,22 @@ saved shares; nothing unmounted), a saved share through `forgetServer` on its id
 like a one-place row, an S3 account as every place under it (§ "The pure modules beside it"), and a host only mDNS knows
 about gets the "Can't remove discovered hosts" toast. A share row's right-click is an in-app menu too: Open, the pin,
 and Forget share. Right-click on a one-place row opens the house `Menu` at the pointer, holding the same list the
-switcher row's → submenu shows (`../navigation/row-menu.ts`; Open moves THIS pane, like Enter); an SMB host keeps its
-own native host menu (`show_network_host_context_menu`, one group, only what does something: Edit for a saved host,
-Disconnect while a share from it is mounted, Forget saved password when one is stored, Forget server for a typed-in
-one), whose actions arrive on the `network-host-context-action` event. Cursor auto-clamps when a row disappears.
+switcher row's → submenu shows (`../navigation/row-menu.ts`; Open moves THIS pane, like Enter). An SMB host's is the
+same house `Menu`, from `row-menu.ts::smbHostRowMenu`: Open, Edit… for a saved host, Disconnect while a share from it is
+mounted (the one fact the menu asks on open, `smb_host_has_mounts` over the kernel's mount table), the server's account
+items (Sign in as…, Browse as guest where a guest listing worked, Forget saved password), and Forget server for a saved
+one. ❗ Opening it reads no password: the account items come from what this session's listings said, and Forget saved
+password is offered unconditionally, answering "there was none" itself (`share-list-sign-in.ts::forgetPassword`). An
+account action runs `runServerAccountAction`, the one runner the path bar's account menu and the palette share, and a
+Sign in as… or Browse as guest that lists opens the server's share list, as activating the row does. Cursor auto-clamps
+when a row disappears.
 
 `⌃⏎` (`file.contextMenu`) opens the cursor row's menu from the keyboard, the same menu a right-click opens, placed just
-under the row by `../pane/context-menu-anchor.ts` (the native host menu takes that point as its `anchor`; a right-click
-sends none and macOS uses the pointer). The "Add server…" row has none. A host's places list has no row menu yet, so
-`⌃⏎` there does nothing.
+under the row by `../pane/context-menu-anchor.ts`; a right-click opens it at the pointer. The "Add server…" row has
+none. A host's places list has no row menu yet, so `⌃⏎` there does nothing.
 
-❗ **Every row action carries the row's own id, end to end.** The native menu sends `rowId` out and gets it back on the
-answer, `runHostAction` finds the row by that exact id (a row gone meanwhile gets nothing), and the backend's
+❗ **Every row action carries the row's own id, end to end.** `ServersHubRowMenu` holds the row by its exact id and
+reads it live (a row gone meanwhile gets nothing), `runRowEntry` acts on that row, and the backend's
 `forgetSavedSmbHost` / `updateSavedSmbHost` take that id alone and find the host in the same listing. ❌ Never resolve
 "which row" from a host id, name, or address at action time: two rows can stand on one discovered host, and a lookup by
 host picked the first, so "Edit server…" on the second row saved into the first (QA 2026-09-25).
@@ -343,8 +346,22 @@ and a missing dependency's install command live. The round answers the attempt t
 `failed`), or `cancelled`. A listing that worked leaves every record behind in one place: the share cache, the
 credential status, the listed account, the account preference (the choice sticks), the Keychain when Remember, and the
 known-shares store. "Browse as guest" (`useGuest`) clears the account preference FIRST, since the backend never lists a
-server with an account as guest. ❗ One ask at a time is the CALLER's guard (`PlacesBrowser`'s `signingIn`, which also
-stops the rows being offered past the modal): a second sheet closes the first as `cancelled`.
+server with an account as guest. ❗ One ask at a time is the MODULE's guard (`sheetRound`): four places open the sheet
+(the share list itself, the hub's row menu, the path bar's account menu, the palette), and a second sheet would close
+the first as `cancelled`, read as "the person said no" from under a sheet that's still up. A round asked for while one
+is up answers `null` and asks nothing; `isShareListSheetUp()` is what stops a list offering rows past the modal.
+
+**The account doors** (Sign in as…, Browse as guest, Forget saved password) are one action vocabulary
+(`../navigation/row-menu.ts`'s `ServerAccountAction`, built by ONE `serverAccountEntries(facts)`) with one runner,
+`runServerAccountAction`, behind every door: the hub's SMB host row menu, the path bar's account menu on a share list
+(`ShareListAccountChip.svelte`, a member of the chip's ONE `openMenu`), the share-row menu (`shareRowMenu`), and the
+palette (`servers.signInAs`, `servers.browseAsGuest`, `servers.forgetSecret`). The facts are `serverAccountFacts(host)`:
+the listed account and whether a guest listing worked, both this session's own answers, ❌ never a Keychain read. Browse
+as guest shows only while signed in as a user on a server a guest listing worked on, and the runner refuses it otherwise
+(a rebound palette key gets a sentence), because it drops the account FIRST. Forget saved password shows
+unconditionally, in every door: a delete raises no prompt, and the store's typed `not_found` words "there was none". A
+door that isn't on the share list opens it once an action listed (the hub row: as activating it; the palette from a hub
+row: `openSmbHandOffInFocusedPane`); `PlacesBrowser` follows a listing another door landed through the share cache.
 
 The error state's sentence, and the servers list's tooltip for the same failure (`host-status.ts`), come from
 `share-list-error-messages.ts`: one `errors.shareList.*` key per `ShareListError` type, naming the host. ❌ Never

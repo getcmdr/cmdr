@@ -198,6 +198,10 @@ describe("FilePane on a server's share list", () => {
     expect(getTarget().querySelector('[role="listbox"]')).toBeTruthy()
     expect(getTarget().textContent).toContain('..')
     expect(getTarget().querySelector('.server-row'), 'the hub isn’t up').toBeNull()
+    // The path bar carries the server's account door (no listing said who yet, so it offers Sign in as…).
+    const account = getTarget().querySelector('[data-pane-chrome] button.share-list-account')
+    expect(account?.textContent.trim()).toBe('Sign in as…')
+    expect(account?.getAttribute('aria-label')).toBe('Account on Testnas: Sign in as…')
     // The footer counts the shares and says nothing about disk space, which no server answers.
     expect(getTarget().querySelector('[role="meter"]')).toBeNull()
 

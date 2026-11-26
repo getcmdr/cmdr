@@ -12,8 +12,8 @@ use cmdr_menu::spec::Platform;
 use tauri::{AppHandle, Manager, Window};
 
 use super::menu::{
-    MenuAnchor, PaneContextMenuFacts, breadcrumb_rows, focus_for_context_menu, image_index_menu_state,
-    network_host_rows, pane_facts, parent_row_rows, stash_file_context,
+    MenuAnchor, PaneContextMenuFacts, breadcrumb_rows, focus_for_context_menu, image_index_menu_state, pane_facts,
+    parent_row_rows, stash_file_context,
 };
 use crate::menu::{MenuState, SameKindTarget};
 
@@ -67,15 +67,6 @@ pub enum InPageContextMenuRequest {
     QueueRow {
         entries: Vec<crate::menu::QueueRowMenuEntry>,
         shortcuts: ContextMenuShortcuts,
-    },
-    /// `show_network_host_context_menu`'s.
-    NetworkHost {
-        row_id: String,
-        host: crate::network::NetworkHost,
-        is_manual: bool,
-        is_saved: bool,
-        has_credentials: bool,
-        anchor: Option<MenuAnchor>,
     },
 }
 
@@ -174,18 +165,6 @@ pub async fn open_context_menu_in_page(
             (viewer_text_menu(has_selection, Platform::current()), none(), None)
         }
         InPageContextMenuRequest::QueueRow { entries, shortcuts } => (queue_row_menu(&entries), shortcuts, None),
-        InPageContextMenuRequest::NetworkHost {
-            row_id,
-            host,
-            is_manual,
-            is_saved,
-            has_credentials,
-            anchor,
-        } => (
-            network_host_rows(&state, row_id, host, is_manual, is_saved, has_credentials),
-            none(),
-            anchor,
-        ),
     };
     // The window the menu opens over is the one a pick acts in, as the native path makes it.
     focus_for_context_menu(&window);

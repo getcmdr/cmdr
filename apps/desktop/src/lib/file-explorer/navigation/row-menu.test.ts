@@ -35,7 +35,11 @@ vi.mock('#lib/logging/logger.js', () => ({
 
 import {
   EMPTY_ROW_MENU,
+  accountMenu,
   favoriteRowMenu,
+  serverAccountEntries,
+  shareRowMenu,
+  smbHostRowMenu,
   rowMenuItems,
   rowMenuSections,
   runRowFix,
@@ -43,6 +47,8 @@ import {
   volumeRowMenu,
   type RowMenu,
   type RowMenuEntry,
+  type ServerAccountFacts,
+  type ServerRowMenu,
 } from './row-menu'
 import type { VolumeInfo } from '../types'
 import { addToast } from '#lib/ui/toast/index.js'
@@ -399,6 +405,108 @@ describe('rowMenuSections', () => {
     ])
     // A top-level list splits into sections, never rules inside one.
     expect(sections.flatMap((section) => section.items).some((item) => item.separatorBefore)).toBe(false)
+  })
+})
+
+/** An SMB server row's menu as entry names, so an assertion reads like the menu. */
+function namesOf(menu: ServerRowMenu): string[] {
+  return menu.actions.map((entry) => {
+    if (entry.type === 'action') return entry.action
+    if (entry.type === 'account') return `account:${entry.account}`
+    return `share:${entry.share}`
+  })
+}
+
+const signedOut: ServerAccountFacts = { listedAccount: undefined, guestListingWorked: false }
+const asUserWithGuest: ServerAccountFacts = {
+  listedAccount: { kind: 'user', username: 'test_user_1' },
+  guestListingWorked: true,
+}
+
+/**
+ * An SMB server's account items: ONE list, which the hub's host row, the path bar's account
+ * menu, and the share-row menu all show, so the three doors can't drift.
+ */
+describe('serverAccountEntries', () => {
+  it('offers Sign in as… and Forget saved password, the latter whatever is stored (no Keychain read to decide)', () => {
+    expect(serverAccountEntries(signedOut).map((entry) => entry.account)).toEqual(['sign-in-as', 'forget-secret'])
+  })
+
+  it('adds Browse as guest only while signed in as a user on a server a guest listing worked on', () => {
+    expect(serverAccountEntries(asUserWithGuest).map((entry) => entry.account)).toEqual([
+      'sign-in-as',
+      'browse-as-guest',
+      'forget-secret',
+    ])
+    const asGuest = { listedAccount: { kind: 'guest' as const }, guestListingWorked: true }
+    expect(serverAccountEntries(asGuest).map((entry) => entry.account)).not.toContain('browse-as-guest')
+    const noGuest = { ...asUserWithGuest, guestListingWorked: false }
+    expect(serverAccountEntries(noGuest).map((entry) => entry.account)).not.toContain('browse-as-guest')
+  })
+
+  it('words them as the share list’s header did', () => {
+    expect(serverAccountEntries(asUserWithGuest).map((entry) => entry.label)).toEqual([
+      'Sign in as…',
+      'Browse as guest',
+      'Forget saved password',
+    ])
+  })
+})
+
+describe('smbHostRowMenu', () => {
+  it('offers Open, Edit, Disconnect, the account items, and Forget server on a saved host with a mount', () => {
+    expect(namesOf(smbHostRowMenu({ ...asUserWithGuest, isSaved: true, hasMounts: true }))).toEqual([
+      'open',
+      'edit',
+      'disconnect',
+      'account:sign-in-as',
+      'account:browse-as-guest',
+      'account:forget-secret',
+      'forget-server',
+    ])
+  })
+
+  /** ❗ Only what does something: no Disconnect with nothing mounted, no Edit or Forget server unsaved, no pin ever. */
+  it('drops what would do nothing', () => {
+    expect(namesOf(smbHostRowMenu({ ...signedOut, isSaved: false, hasMounts: false }))).toEqual([
+      'open',
+      'account:sign-in-as',
+      'account:forget-secret',
+    ])
+  })
+
+  it('keys every item by the hub row, since a host has no volume', () => {
+    const sections = rowMenuSections(
+      'manual-nas',
+      smbHostRowMenu({ ...signedOut, isSaved: true, hasMounts: false }),
+      (e) => e,
+    )
+    expect(sections.flatMap((section) => section.items.map((item) => item.value))).toEqual([
+      'row:manual-nas:open',
+      'row:manual-nas:edit',
+      'row:manual-nas:account:sign-in-as',
+      'row:manual-nas:account:forget-secret',
+      'row:manual-nas:forget-server',
+    ])
+  })
+})
+
+describe('shareRowMenu', () => {
+  /** ❌ Never the standard file menu: Copy, Delete, Rename, and the rest are all wrong for a share. */
+  it('offers Open, Copy path, then its server’s account items', () => {
+    expect(namesOf(shareRowMenu(asUserWithGuest))).toEqual([
+      'share:open-share',
+      'share:copy-path',
+      'account:sign-in-as',
+      'account:browse-as-guest',
+      'account:forget-secret',
+    ])
+  })
+})
+
+describe('accountMenu', () => {
+  it('is the account items alone, the same list as every other door’s', () => {
+    expect(accountMenu(asUserWithGuest).actions).toEqual(serverAccountEntries(asUserWithGuest))
   })
 })
 

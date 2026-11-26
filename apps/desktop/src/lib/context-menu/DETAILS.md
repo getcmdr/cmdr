@@ -6,13 +6,12 @@ menus a page draws". This module is the window's glue between them.
 
 ## The `show_*` menus
 
-- **Where the fork lives**: each of the nine wrappers (`showFileContextMenu`, `showBreadcrumbContextMenu`,
+- **Where the fork lives**: each of the eight wrappers (`showFileContextMenu`, `showBreadcrumbContextMenu`,
   `showParentRowContextMenu`, `showTabContextMenu`, `showDateSortMenu`, `showFunctionKeyBarContextMenu`,
-  `showViewerContextMenu`, `showQueueRowContextMenu`, `showNetworkHostContextMenu`) calls
-  `popContextMenu(request, native)`. On `native` it runs the `show_*` command; on `inPage` it asks
-  `open_context_menu_in_page` with the same arguments and hands the answer to the window's drawer
-  (`registerContextMenuDrawer`, which `InPageContextMenus` registers). No caller changed: each still names its menu's
-  facts and, for a keyboard-opened menu, an anchor.
+  `showViewerContextMenu`, `showQueueRowContextMenu`) calls `popContextMenu(request, native)`. On `native` it runs the
+  `show_*` command; on `inPage` it asks `open_context_menu_in_page` with the same arguments and hands the answer to the
+  window's drawer (`registerContextMenuDrawer`, which `InPageContextMenus` registers). No caller changed: each still
+  names its menu's facts and, for a keyboard-opened menu, an anchor.
 - Decision/Why: the wrappers, ❌ not the call sites. Nine call sites (and the search dialog, the search-results pane,
   the servers hub) would each grow the same branch, and one forgotten branch would pop a native menu on Windows.
 - **Where it opens**: the answer's `anchor` when the caller named one (Shift+F10 or the Menu key on a file row,

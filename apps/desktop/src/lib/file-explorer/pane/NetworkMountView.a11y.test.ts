@@ -21,8 +21,6 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   resolvePathVolume: vi.fn(() => Promise.resolve({ volume: null })),
   updateLeftPaneState: vi.fn(() => Promise.resolve()),
   updateRightPaneState: vi.fn(() => Promise.resolve()),
-  showNetworkHostContextMenu: vi.fn(() => Promise.resolve()),
-  onNetworkHostContextAction: vi.fn(() => Promise.resolve(() => {})),
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   listSharesWithCredentials: vi.fn(() => Promise.resolve([])),
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
@@ -68,7 +66,6 @@ vi.mock('../network/network-store.svelte', () => ({
   setCredentialStatus: vi.fn(),
   fetchShares: vi.fn(() => Promise.resolve()),
   getCredentialStatus: () => 'unknown',
-  checkCredentialsForHost: vi.fn(() => Promise.resolve()),
   forgetCredentials: vi.fn(() => Promise.resolve()),
 }))
 

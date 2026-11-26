@@ -140,11 +140,10 @@ the one submenu that had been made data. Now `context_test.rs` snapshots every m
   own separators, since only the host knows whether it shows. The demo has no OS and leaves every slot out. Drive's and
   iCloud's items are still single-sourced here (`DRIVE_ITEMS`, `EVICTION_ITEMS`).
 - **Picks**: `context_click` reads the id. A plain command is `Command` (the bar's unified lane); the rest act on what
-  the popup went up over (a path, a volume, a host row), which the host stashed at popup time, or on what the id itself
-  carries (a tab action, a date-sort pane). A slot's rows (`open-with:…`, `tag-color:…`, `share-service:…`,
-  `fp-action:…`) are the host's and never classify here. The lanes' wire words (`VolumeAction::wire`,
-  `NetworkHostAction::wire`) are the frontend's event enums' kebab-case, pinned by the desktop's
-  `context_click_wire_tests`.
+  the popup went up over (a path, a volume), which the host stashed at popup time, or on what the id itself carries (a
+  tab action, a date-sort pane). A slot's rows (`open-with:…`, `tag-color:…`, `share-service:…`, `fp-action:…`) are the
+  host's and never classify here. The lanes' wire words (`VolumeAction::wire`) are the frontend's event enums'
+  kebab-case, pinned by the desktop's `context_click_wire_tests`.
 - **Typed IPC shared with the desktop**: `ContextMenuShortcuts`, `QueueRowMenuEntry` / `QueueRowMenuAction`, `PaneSide`,
   and `ViewerEditActionKind` live here with `specta` derives (the app's exact `specta`, like `RequestedSort`), and the
   desktop re-exports them, so `bindings.ts` names one type each.

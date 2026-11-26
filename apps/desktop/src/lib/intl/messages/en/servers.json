@@ -116,6 +116,13 @@
       "name": "the server name, like Testnas"
     }
   },
+  "servers.hub.browseAsGuestUnavailable": "{name} hasn’t let a guest in, so there’s no guest view to go back to.",
+  "@servers.hub.browseAsGuestUnavailable": {
+    "description": "Info toast after \"Browse as guest\" on an SMB server (a computer sharing folders over the network) that hasn't let anyone in without an account since Cmdr started, or turned the guest away just now. {name} is the server's name.",
+    "placeholders": {
+      "name": "the server name, like Testnas"
+    }
+  },
   "servers.hub.s3AllBuckets": "All buckets",
   "@servers.hub.s3AllBuckets": {
     "description": "Name of a row in the Servers list, indented right under an S3 storage account’s row (which shows the account’s name): opening it shows every bucket that account can see. The other rows under the account are single buckets, shown by their own names. “Bucket” is the S3 term for a top-level storage container; use the term the providers’ consoles use in your language. Short, NOUN phrase, sentence case."

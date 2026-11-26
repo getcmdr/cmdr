@@ -1276,21 +1276,10 @@
     }
 
     /**
-     * The hub row under the focused pane's cursor, or `null` when that pane isn't
-     * on the hub (or the cursor is on "Add server…").
-     *
-     * ❗ What the servers commands aim at. The hub IS a pane, so a command that
-     * read "the focused pane's volume" would act on the synthetic hub row rather
-     * than the server the user is looking at.
-     */
-    export function getFocusedPaneServerRow(): HubRow | null {
-        const entry = getPaneRef(explorerState.getFocusedPane())?.getNetworkCursorEntry() ?? null
-        return entry?.kind === 'server' ? entry.row : null
-    }
-
-    /**
      * ANY hub row under the focused pane's cursor, an SMB host's included, or `null`
-     * off the hub (and on "Add server…"). What Edit and Rename act on there.
+     * off the hub (and on "Add server…"). What the servers commands aim at (the hub IS
+     * a pane, so "the focused pane's volume" would answer the synthetic hub row), and
+     * what Edit and Rename act on there.
      */
     export function getFocusedPaneHubRow(): HubRow | null {
         const entry = getPaneRef(explorerState.getFocusedPane())?.getNetworkCursorEntry() ?? null

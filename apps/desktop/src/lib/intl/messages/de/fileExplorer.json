@@ -534,10 +534,6 @@
   "@fileExplorer.network.browser.noMountedShares": {
     "sourceHash": "913c7e6"
   },
-  "fileExplorer.network.browser.disconnectFailed": "Trennen nicht möglich: {message}",
-  "@fileExplorer.network.browser.disconnectFailed": {
-    "sourceHash": "e394098"
-  },
   "fileExplorer.network.share.credentialsStoredLocally": "{platform, select, windows {Anmeldedaten lokal gespeichert (Anmeldeinformationsverwaltung nicht verfügbar)} linuxKde {Anmeldedaten lokal gespeichert (KDE-Passwortspeicher nicht verfügbar)} other {Anmeldedaten lokal gespeichert (kein System-Schlüsselbund erkannt)}}",
   "@fileExplorer.network.share.credentialsStoredLocally": {
     "sourceHash": "438153a"

@@ -16,12 +16,19 @@ const forgetSavedSmbHost = vi.fn((_id: string) => Promise.resolve(true))
 const forgetServer = vi.fn((_volumeId: string) => Promise.resolve(true))
 const forgetServerSecret = vi.fn((_volumeId: string) => Promise.resolve(true))
 const disconnectNetworkHost = vi.fn(() => Promise.resolve(['/Volumes/Public']))
-const showNetworkHostContextMenu = vi.fn(() => Promise.resolve())
 const forgetSavedServer = vi.fn(() => Promise.resolve())
 const setServerAutoReconnect = vi.fn((_volumeId: string, _on: boolean) => Promise.resolve())
 const runVolumeRowAction = vi.fn((_payload: unknown) => Promise.resolve())
 const openRow = vi.fn()
-const forgetCredentials = vi.fn(() => Promise.resolve())
+const runServerAccountAction = vi.fn((_action: string, _server: unknown) => Promise.resolve({ listed: false }))
+/** What this session's listings said about a host, as the account items read it. */
+let accountFacts: {
+  listedAccount: { kind: 'user'; username: string } | { kind: 'guest' } | undefined
+  guestListingWorked: boolean
+} = {
+  listedAccount: undefined,
+  guestListingWorked: false,
+}
 const addToast = vi.fn()
 const confirmDialog = vi.fn(() => Promise.resolve(true))
 const confirmWithCheckbox = vi.fn((_question: unknown) => Promise.resolve({ confirmed: true, checked: true }))
@@ -40,15 +47,16 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   forgetServer: (volumeId: string) => forgetServer(volumeId),
   forgetServerSecret: (volumeId: string) => forgetServerSecret(volumeId),
   disconnectNetworkHost: (...args: unknown[]) => disconnectNetworkHost(...(args as [])),
-  showNetworkHostContextMenu: (...args: unknown[]) => showNetworkHostContextMenu(...(args as [])),
 }))
 vi.mock('./network-store.svelte', () => ({
   getCredentialStatus: () => credentialStatus,
-  checkCredentialsForHost: vi.fn(() => Promise.resolve()),
-  forgetCredentials: (...args: unknown[]) => forgetCredentials(...(args as [])),
   setCredentialStatus: (...args: unknown[]) => {
     setCredentialStatus(...(args as []))
   },
+}))
+vi.mock('./share-list-sign-in', () => ({
+  runServerAccountAction: (action: string, server: unknown) => runServerAccountAction(action, server),
+  serverAccountFacts: () => accountFacts,
 }))
 vi.mock('../navigation/server-row-actions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../navigation/server-row-actions')>()),
@@ -76,7 +84,8 @@ vi.mock('#lib/utils/confirm-dialog.js', () => ({
 
 import { createHubActions, editHubRow, editServerInView } from './servers-hub-actions'
 import type { HubRow } from './servers-hub-rows'
-import type { NetworkHostContextActionKind, VolumeContextActionKind } from '#lib/ipc/bindings.js'
+import type { VolumeContextActionKind } from '#lib/ipc/bindings.js'
+import type { ServerRowMenuEntry } from '../navigation/row-menu'
 
 const host: NetworkHost = { id: 'h1', name: 'Attic NAS', ipAddress: '10.0.0.4', port: 445, source: 'manual' }
 
@@ -210,7 +219,20 @@ beforeEach(() => {
   confirmDialog.mockResolvedValue(true)
   confirmWithCheckbox.mockResolvedValue({ confirmed: true, checked: true })
   credentialStatus = 'has_creds'
+  accountFacts = { listedAccount: undefined, guestListingWorked: false }
 })
+
+/** What a row menu learned on open: nothing mounted, unless a test says so. */
+const nothingMounted = { hasMounts: false }
+
+/** A menu entry's name, so an assertion reads like the menu. */
+function keyOf(entry: ServerRowMenuEntry): string {
+  if (entry.type === 'action') return entry.action
+  if (entry.type === 'fix') return entry.fix
+  if (entry.type === 'toggle') return entry.toggle
+  if (entry.type === 'account') return `account:${entry.account}`
+  return `share:${entry.share}`
+}
 
 describe('forget', () => {
   it('sends a one-place server to the servers family, so the hub asks what the switcher asks', async () => {
@@ -327,14 +349,10 @@ describe('forget', () => {
 
 describe('rowMenu', () => {
   /** The menu's entries as their action names, so an assertion reads like the menu. */
-  function actionsOf(row: HubRow, volumes: VolumeInfo[] = []): string[] {
-    const menu = actions(volumes).rowMenu(row)
+  function actionsOf(row: HubRow, volumes: VolumeInfo[] = [], opened = nothingMounted): string[] {
+    const menu = actions(volumes).rowMenu(row, opened)
     if (!menu) return []
-    return [
-      ...menu.actions.map((e) => e.action),
-      ...menu.fixes.map((e) => e.fix),
-      ...menu.settings.map((e) => e.toggle),
-    ]
+    return [...menu.actions, ...menu.fixes, ...menu.settings].map(keyOf)
   }
 
   it('gives a one-place row the servers list, the same one the switcher row’s submenu shows', () => {
@@ -349,7 +367,7 @@ describe('rowMenu', () => {
       'forget-server',
       'auto-reconnect',
     ])
-    const toggle = actions([liveVolume]).rowMenu(placeRow)?.settings[0]
+    const toggle = actions([liveVolume]).rowMenu(placeRow, nothingMounted)?.settings[0]
     expect(toggle).toMatchObject({ toggle: 'auto-reconnect', checked: true })
   })
 
@@ -365,8 +383,36 @@ describe('rowMenu', () => {
     ])
   })
 
-  it('has no in-app menu for an SMB host: that one keeps its own native host menu', () => {
-    expect(actions().rowMenu(savedHostRow)).toBeNull()
+  it('gives a saved SMB host Open, Edit, its account items, and Forget server, with no pin', () => {
+    expect(actionsOf(savedHostRow)).toEqual([
+      'open',
+      'edit',
+      'account:sign-in-as',
+      'account:forget-secret',
+      'forget-server',
+    ])
+  })
+
+  it('offers an SMB host’s Disconnect only while a share from it is mounted', () => {
+    expect(actionsOf(savedHostRow, [], { hasMounts: true })).toContain('disconnect')
+    expect(actionsOf(savedHostRow)).not.toContain('disconnect')
+  })
+
+  it('offers Browse as guest only while signed in as a user on a server a guest listing worked on', () => {
+    accountFacts = { listedAccount: { kind: 'user', username: 'test_user_1' }, guestListingWorked: true }
+    expect(actionsOf(savedHostRow)).toContain('account:browse-as-guest')
+    accountFacts = { listedAccount: { kind: 'guest' }, guestListingWorked: true }
+    expect(actionsOf(savedHostRow)).not.toContain('account:browse-as-guest')
+  })
+
+  it('gives a host only mDNS knows about no Edit and no Forget server: nothing of the user’s is saved', () => {
+    expect(actionsOf(nearbyOnlyRow)).toEqual(['open', 'account:sign-in-as', 'account:forget-secret'])
+  })
+
+  /** ❗ Opening the menu reads no password: Forget saved password is offered whatever is stored. */
+  it('offers Forget saved password with nothing known to be stored, at no Keychain read', () => {
+    credentialStatus = 'unknown'
+    expect(actionsOf(savedHostRow)).toContain('account:forget-secret')
   })
 })
 
@@ -397,80 +443,70 @@ describe('runRowEntry', () => {
   })
 })
 
-describe('openHostMenu', () => {
-  it('raises the SMB host menu for a host row, naming the row it was raised on', async () => {
-    await actions().openHostMenu(savedHostRow)
-    expect(showNetworkHostContextMenu).toHaveBeenCalledWith('manual-10-0-0-4-445', host, true, true, true, null)
-  })
+describe('an SMB host row’s actions', () => {
+  const entry = (action: VolumeContextActionKind) =>
+    ({ type: 'action', action, label: action, icon: 'pencil' }) as const
+  const account = (kind: 'sign-in-as' | 'browse-as-guest' | 'forget-secret') =>
+    ({ type: 'account', account: kind, label: kind, icon: 'user' }) as const
 
-  it('offers no Edit for a host only mDNS knows about, which has nowhere to keep a name', async () => {
-    await actions().openHostMenu(nearbyOnlyRow)
-    expect(showNetworkHostContextMenu).toHaveBeenCalledWith('h2', nearbyOnlyRow.host, false, false, true, null)
-  })
-
-  it('opens where the keyboard says when there is no pointer to use', async () => {
-    await actions().openHostMenu(savedHostRow, { x: 40, y: 120 })
-    expect(showNetworkHostContextMenu).toHaveBeenCalledWith('manual-10-0-0-4-445', host, true, true, true, {
-      x: 40,
-      y: 120,
-    })
-  })
-})
-
-describe('runHostAction', () => {
-  // ❗ Typed, so a spelling that drifts from the Rust enum is a compile error
-  // rather than a silently-dead menu item.
-  const payload = (action: NetworkHostContextActionKind, rowId = savedHostRow.id) => ({
-    action,
-    rowId,
-    hostId: 'h1',
-    hostName: 'Attic NAS',
-  })
-
-  it('routes the host menu’s Forget back through the same branch F8 takes', async () => {
-    await actions().runHostAction(payload('forget-server'))
+  it('routes Forget server through the same branch F8 takes', async () => {
+    await actions().runRowEntry(savedHostRow, entry('forget-server'))
     expect(forgetSavedSmbHost).toHaveBeenCalledWith('manual-10-0-0-4-445')
   })
 
   it('opens the edit sheet on the saved host the menu was raised for', async () => {
-    await actions().runHostAction(payload('edit'))
+    await actions().runRowEntry(savedHostRow, entry('edit'))
     expect(openEditServerSheet).toHaveBeenCalledWith(savedHostRow.saved)
   })
 
-  it('forgets the host’s stored password without touching the host itself', async () => {
-    await actions().runHostAction(payload('forget-secret'))
-    expect(forgetCredentials).toHaveBeenCalledWith('Attic NAS')
-    expect(forgetSavedSmbHost).not.toHaveBeenCalled()
-  })
-
   it('unmounts an SMB host’s shares, which is what its Disconnect means', async () => {
-    await actions().runHostAction(payload('disconnect'))
+    await actions().runRowEntry(savedHostRow, entry('disconnect'))
     // ❗ The whole host: its mounts are found by where it dials, every name on ITS port.
     expect(disconnectNetworkHost).toHaveBeenCalledWith(host)
     expect(addToast).toHaveBeenCalledWith('Disconnected from Attic NAS', { level: 'success' })
+    expect(runVolumeRowAction).not.toHaveBeenCalled()
   })
 
   it('treats nothing-to-unmount as a normal answer, not a fault', async () => {
     disconnectNetworkHost.mockResolvedValueOnce([])
-    await actions().runHostAction(payload('disconnect'))
+    await actions().runRowEntry(savedHostRow, entry('disconnect'))
     expect(addToast).toHaveBeenCalledWith('No mounted shares from Attic NAS')
   })
 
-  it('does nothing for a row that is gone by the time the menu answers', async () => {
-    for (const action of ['disconnect', 'edit', 'forget-server', 'forget-secret'] as const) {
-      await actions().runHostAction(payload(action, 'gone'))
-    }
-    expect(disconnectNetworkHost).not.toHaveBeenCalled()
-    expect(openEditServerSheet).not.toHaveBeenCalled()
-    expect(forgetSavedSmbHost).not.toHaveBeenCalled()
-    expect(forgetCredentials).not.toHaveBeenCalled()
+  /** ❌ Never the thrown text: anything thrown is the IPC transport, which a person must not be handed. */
+  it('words a Disconnect that broke down as a sentence about the server', async () => {
+    disconnectNetworkHost.mockRejectedValueOnce(new Error('ipc channel closed'))
+    await actions().runRowEntry(savedHostRow, entry('disconnect'))
+    expect(addToast).toHaveBeenCalledExactlyOnceWith('Cmdr couldn’t disconnect from Attic NAS.', { level: 'error' })
+  })
+
+  it('runs an account item through the one runner every door shares, for this row’s host and name', async () => {
+    await actions().runRowEntry(savedHostRow, account('forget-secret'))
+    expect(runServerAccountAction).toHaveBeenCalledExactlyOnceWith('forget-secret', { host, label: 'Attic NAS' })
+    expect(openRow).not.toHaveBeenCalled()
+  })
+
+  /** A Sign in as… from the row is the person pointing at the server, so #324 holds: it opens, as Enter does. */
+  it('opens the server’s share list once an account item listed it', async () => {
+    runServerAccountAction.mockResolvedValueOnce({ listed: true })
+    await actions().runRowEntry(savedHostRow, account('sign-in-as'))
+    expect(openRow).toHaveBeenCalledExactlyOnceWith(savedHostRow)
+  })
+
+  it('signs in to a saved host mDNS isn’t seeing as the host its address makes', async () => {
+    const unseen: HubRow = { ...savedHostRow, host: null }
+    await actions().runRowEntry(unseen, account('sign-in-as'))
+    expect(runServerAccountAction).toHaveBeenCalledWith('sign-in-as', {
+      host: { id: 'manual-10-0-0-4-445', name: 'Attic NAS', hostname: '10.0.0.4', port: 445, source: 'manual' },
+      label: 'Attic NAS',
+    })
   })
 
   /**
    * ❗ **Two rows can stand on one discovered host**: a saved host and a second
    * saved row for the same machine (QA 2026-09-25: "Edit server…" on the SECOND
-   * row saved its name into the FIRST). The answer names the row, so it lands on
-   * the row it was raised on, whichever row comes first in the list.
+   * row saved its name into the FIRST). A pick acts on the row it was picked on,
+   * whichever row comes first in the list.
    */
   describe('when two rows share one host', () => {
     const twinRow: HubRow = {
@@ -488,17 +524,17 @@ describe('runHostAction', () => {
       })
 
     it('edits the row the menu was raised on', async () => {
-      await withTwin().runHostAction(payload('edit', twinRow.id))
+      await withTwin().runRowEntry(twinRow, entry('edit'))
       expect(openEditServerSheet).toHaveBeenCalledWith(twinRow.saved)
     })
 
     it('names the host in its toasts the way its row does', async () => {
-      await withTwin().runHostAction(payload('disconnect', twinRow.id))
+      await withTwin().runRowEntry(twinRow, entry('disconnect'))
       expect(addToast).toHaveBeenCalledWith('Disconnected from localhost:11482', { level: 'success' })
     })
 
     it('forgets the row the menu was raised on, and never its twin', async () => {
-      await withTwin().runHostAction(payload('forget-server', twinRow.id))
+      await withTwin().runRowEntry(twinRow, entry('forget-server'))
       expect(forgetSavedSmbHost).toHaveBeenCalledExactlyOnceWith(twinRow.id)
     })
   })
@@ -519,13 +555,13 @@ describe('a saved share', () => {
   })
 
   it('offers Open, the pin, and Forget share, and no Disconnect: a share’s session is its mount', () => {
-    const menu = actions().rowMenu(shareRow)
-    expect(menu?.actions.map((entry) => entry.action)).toEqual(['open', 'unpin', 'forget-server'])
+    const menu = actions().rowMenu(shareRow, nothingMounted)
+    expect(menu?.actions.map(keyOf)).toEqual(['open', 'unpin', 'forget-server'])
     expect(menu?.actions[2].label).toBe('Forget share')
   })
 
   it('opens a share the way Enter does, and forgets it through its own question', async () => {
-    const menu = actions().rowMenu(shareRow)
+    const menu = actions().rowMenu(shareRow, nothingMounted)
     if (!menu) throw new Error('a share has a menu')
     await actions().runRowEntry(shareRow, menu.actions[0])
     expect(openRow).toHaveBeenCalledWith(shareRow)
@@ -691,7 +727,10 @@ describe('an S3 account and its places', () => {
 
   it('shows and flips the bucket’s OWN "Reconnect automatically", ❌ not the account’s', async () => {
     const quietBucket: HubRow = { ...bucketRow, place: { ...s3Place('photos'), autoReconnect: false } }
-    expect(actions().rowMenu(quietBucket)?.settings[0]).toMatchObject({ toggle: 'auto-reconnect', checked: false })
+    expect(actions().rowMenu(quietBucket, nothingMounted)?.settings[0]).toMatchObject({
+      toggle: 'auto-reconnect',
+      checked: false,
+    })
     await actions().runRowEntry(quietBucket, {
       type: 'toggle',
       toggle: 'auto-reconnect',
@@ -702,8 +741,8 @@ describe('an S3 account and its places', () => {
   })
 
   it('gives a bucket the server-place menu, ❌ not a share’s', () => {
-    const menu = actions().rowMenu(bucketRow)
-    const picks = menu?.actions.map((entry) => entry.action) ?? []
+    const menu = actions().rowMenu(bucketRow, nothingMounted)
+    const picks = menu?.actions.map(keyOf) ?? []
     expect(picks).toContain('edit')
     expect(menu?.actions.some((entry) => entry.label === 'Forget share')).toBe(false)
   })

@@ -5,9 +5,10 @@
      * which is `VolumeChooserMenu.svelte` (the house `Menu`, portaled).
      *
      * ❗ It hosts TWO menus off the same chip — the switcher and the favorites menu
-     * (`FavoritesMenu.svelte`, ⌃D) — and holds the ONE `openMenu` that says which. Each
+     * (`FavoritesMenu.svelte`, ⌃D) — and holds the ONE `openMenu` that says which, with a
+     * share list's account menu after the path as its third member (`noteAccountMenu`). Each
      * reports through `onOpenChange`, so whichever opens (a command, a click, a swap from
-     * inside the other) closes the other from one place.
+     * inside another) closes the others from one place.
      *
      * Presentational: it reads the volume list from the shared `volume-store.svelte.ts` and
      * fetches nothing of its own except the containing volume behind the checkmark.
@@ -60,6 +61,9 @@
 
     const { paneId, volumeId, currentPath, containingVolumeId, onVolumeChange, onSwitchPane }: Props = $props()
 
+    /** The header's menus: the switcher, the favorites menu, and a share list's account menu. */
+    type HeaderMenu = 'volumes' | 'favorites' | 'account'
+
     const volumes = $derived(getVolumes())
 
     let chipEl: HTMLButtonElement | undefined = $state()
@@ -76,18 +80,32 @@
      * reports through `onOpenChange`, so ONE place answers it however the menu came up: a
      * command, a click on the chip, or a swap from inside the other one.
      */
-    let openMenu = $state<'volumes' | 'favorites' | null>(null)
+    let openMenu = $state<HeaderMenu | null>(null)
+    /** Whether a menu hanging off the chip itself is up (the account menu has its own button). */
+    const chipMenuOpen = $derived(openMenu === 'volumes' || openMenu === 'favorites')
+    /** Closes a share list's account menu (`ShareListAccountChip.svelte`), which reports in through `noteAccountMenu`. */
+    let closeAccountMenu: (() => void) | null = null
 
-    function handleMenuOpenChange(which: 'volumes' | 'favorites', open: boolean): void {
+    function handleMenuOpenChange(which: HeaderMenu, open: boolean): void {
         if (open) {
             openMenu = which
-            // Close the other one AFTER claiming the slot: its own close notification then
-            // sees a slot that isn't its own and leaves it alone.
-            if (which === 'volumes') favoritesMenu?.close()
-            else chooser?.close()
+            // Close the others AFTER claiming the slot: their own close notifications then
+            // see a slot that isn't theirs and leave it alone.
+            if (which !== 'favorites') favoritesMenu?.close()
+            if (which !== 'volumes') chooser?.close()
+            if (which !== 'account') closeAccountMenu?.()
         } else if (openMenu === which) {
             openMenu = null
         }
+    }
+
+    /**
+     * A share list's account menu, the third member of the ONE `openMenu`. It lives after the
+     * path (the pane renders it), so it reports in here rather than hanging off the chip.
+     */
+    export function noteAccountMenu(change: { open: boolean; close: () => void }): void {
+        closeAccountMenu = change.close
+        handleMenuOpenChange('account', change.open)
     }
 
 
@@ -155,13 +173,14 @@
     export function toggleFavoritesMenu() {
         favoritesMenu?.toggle('command')
     }
-    /** Whether EITHER menu is up: what suppresses the panes' keys behind it. */
+    /** Whether ANY header menu is up: what suppresses the panes' keys behind it. */
     export function isHeaderMenuOpen(): boolean {
         return openMenu !== null
     }
     export function closeHeaderMenu() {
         chooser?.close()
         favoritesMenu?.close()
+        closeAccountMenu?.()
     }
 
     /** The favorites menu takes the header: ⌃D typed inside the open switcher. */
@@ -204,10 +223,10 @@
     <button
         type="button"
         class="volume-name borderless-control"
-        class:is-open={openMenu !== null}
+        class:is-open={chipMenuOpen}
         bind:this={chipEl}
         aria-haspopup="menu"
-        aria-expanded={openMenu !== null}
+        aria-expanded={chipMenuOpen}
         aria-label={tString('fileExplorer.navigation.volumeChooserButtonLabel', { name: currentVolumeName })}
         use:tooltip={currentVolumeFsLabel ?? ''}
         onclick={toggleVolumeChooser}

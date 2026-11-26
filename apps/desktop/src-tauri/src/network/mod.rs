@@ -141,9 +141,8 @@ pub use discovery_cache::{
 };
 pub(crate) use discovery_cache::{on_host_found, on_host_lost};
 pub use events::{
-    NetworkDiscoveryStateChanged, NetworkHostContextAction, NetworkHostContextActionKind, NetworkHostFound,
-    NetworkHostLost, NetworkHostResolved, SmbFellBackToOsMount, SmbOsMountNoticeWithdrawn, VolumeConnection,
-    VolumeConnectionChanged, VolumeReconnectRequested,
+    NetworkDiscoveryStateChanged, NetworkHostFound, NetworkHostLost, NetworkHostResolved, SmbFellBackToOsMount,
+    SmbOsMountNoticeWithdrawn, VolumeConnection, VolumeConnectionChanged, VolumeReconnectRequested,
 };
 pub use smb_client::{ShareListError, ShareListResult};
 

@@ -72,8 +72,8 @@ use crate::mtp::{
     MtpPtpcameradSuppressed, MtpStorageRemoved,
 };
 use crate::network::{
-    NetworkDiscoveryStateChanged, NetworkHostContextAction, NetworkHostFound, NetworkHostLost, NetworkHostResolved,
-    SmbFellBackToOsMount, SmbOsMountNoticeWithdrawn, VolumeConnectionChanged, VolumeReconnectRequested,
+    NetworkDiscoveryStateChanged, NetworkHostFound, NetworkHostLost, NetworkHostResolved, SmbFellBackToOsMount,
+    SmbOsMountNoticeWithdrawn, VolumeConnectionChanged, VolumeReconnectRequested,
 };
 use crate::operations_host::{VolumesBusyChanged, wire};
 use crate::reveal::{RevealDelivered, RevealNotShown, RevealTabsDropped};
@@ -297,7 +297,6 @@ macro_rules! ipc_command_manifest {
                     // `file_actions::copy_to_clipboard`.
                     crate::commands::menu::show_tab_context_menu,
                     crate::commands::menu::show_date_sort_menu,
-                    crate::commands::menu::show_network_host_context_menu,
                     crate::commands::menu::show_function_key_bar_context_menu,
                     crate::commands::menu::show_viewer_context_menu,
                     crate::commands::menu::show_queue_row_context_menu,
@@ -696,6 +695,7 @@ macro_rules! ipc_command_manifest {
                 typed: [
                     crate::commands::network::set_smb_account_preference,
                     crate::commands::network::disconnect_network_host,
+                    crate::commands::network::smb_host_has_mounts,
                     crate::commands::network::note_network_action,
                     crate::commands::network::set_servers_view_shown,
                     crate::commands::network::set_network_enabled,
@@ -1203,13 +1203,11 @@ pub fn builder() -> Builder<tauri::Wry> {
             // Network + git (network/, file_system/git/, menu/menu_handlers.rs).
             // Host-found / host-resolved flatten the bare
             // `NetworkHost`; `git-state-changed` pins its wire name via `event_name`
-            // (the `…Payload` suffix wouldn't kebab-case to it); `network-host-context-action`
-            // is window-scoped (`emit_to`).
+            // (the `…Payload` suffix wouldn't kebab-case to it).
             NetworkHostFound,
             NetworkHostLost,
             NetworkHostResolved,
             NetworkDiscoveryStateChanged,
-            NetworkHostContextAction,
             GitStateChangedPayload, // event_name = "git-state-changed"
             // AI + system/misc events.
             // AI lifecycle (ai/manager.rs, ai/download.rs). The payloadless ones

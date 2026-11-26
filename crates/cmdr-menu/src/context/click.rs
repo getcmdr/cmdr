@@ -11,8 +11,7 @@ use super::popups::{PaneSide, QueueRowMenuAction, date_sort_pick};
 use crate::ids::{
     CommandScope, EJECT_ALL_VOLUMES_ID, EJECT_VOLUME_ID, FAVORITES_ADD_CONTEXT_ID, FUNCTION_KEY_BAR_HIDE_ID,
     MEDIA_INDEX_ADD_FOLDER_ID, MEDIA_INDEX_EXCLUDE_FOLDER_ID, MEDIA_INDEX_INCLUDE_FOLDER_ID,
-    MEDIA_INDEX_REMOVE_FOLDER_ID, NETWORK_HOST_DISCONNECT_ID, NETWORK_HOST_EDIT_ID, NETWORK_HOST_FORGET_SECRET_ID,
-    NETWORK_HOST_FORGET_SERVER_ID, SHOW_SEARCH_RESULT_IN_FOLDER_ID, TAB_CLOSE_ID, TAB_CLOSE_OTHERS_ID, TAB_PIN_ID,
+    MEDIA_INDEX_REMOVE_FOLDER_ID, SHOW_SEARCH_RESULT_IN_FOLDER_ID, TAB_CLOSE_ID, TAB_CLOSE_OTHERS_ID, TAB_PIN_ID,
     TELL_ME_ABOUT_CONTEXT_ID, VIEWER_CONTEXT_COPY_ID, VIEWER_CONTEXT_SELECT_ALL_ID, menu_id_to_command,
 };
 
@@ -45,29 +44,8 @@ impl VolumeAction {
     }
 }
 
-/// A servers hub host item.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NetworkHostAction {
-    ForgetServer,
-    ForgetSecret,
-    Disconnect,
-    Edit,
-}
-
-impl NetworkHostAction {
-    /// The frontend's word for it (`NetworkHostContextActionKind`).
-    pub const fn wire(self) -> &'static str {
-        match self {
-            Self::ForgetServer => "forget-server",
-            Self::ForgetSecret => "forget-secret",
-            Self::Disconnect => "disconnect",
-            Self::Edit => "edit",
-        }
-    }
-}
-
 /// What a pick asks for. Every lane but [`ContextClick::Command`] acts on what the popup was
-/// opened over (a path, a volume, a host, a tab, a pane), which the host stashed at popup time.
+/// opened over (a path, a volume, a tab, a pane), which the host stashed at popup time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContextClick {
     /// `execute-command` with `command_id`, to the main window. A `FileScoped` one runs only while
@@ -98,8 +76,6 @@ pub enum ContextClick {
     HideFunctionKeyBar,
     /// `volume-context-action` on the stashed volume.
     Volume(VolumeAction),
-    /// `network-host-context-action` on the stashed host row.
-    NetworkHost(NetworkHostAction),
     /// `viewer-context-menu-action`, to the viewer the menu was popped over.
     ViewerText(ViewerEditActionKind),
     /// `queue-row-context-action`, to the `queue` window, which knows the row.
@@ -124,10 +100,6 @@ pub fn context_click(menu_id: &str) -> Option<ContextClick> {
         FUNCTION_KEY_BAR_HIDE_ID => ContextClick::HideFunctionKeyBar,
         EJECT_VOLUME_ID => ContextClick::Volume(VolumeAction::Eject),
         EJECT_ALL_VOLUMES_ID => ContextClick::Volume(VolumeAction::EjectAll),
-        NETWORK_HOST_FORGET_SERVER_ID => ContextClick::NetworkHost(NetworkHostAction::ForgetServer),
-        NETWORK_HOST_FORGET_SECRET_ID => ContextClick::NetworkHost(NetworkHostAction::ForgetSecret),
-        NETWORK_HOST_DISCONNECT_ID => ContextClick::NetworkHost(NetworkHostAction::Disconnect),
-        NETWORK_HOST_EDIT_ID => ContextClick::NetworkHost(NetworkHostAction::Edit),
         VIEWER_CONTEXT_COPY_ID => ContextClick::ViewerText(ViewerEditActionKind::Copy),
         VIEWER_CONTEXT_SELECT_ALL_ID => ContextClick::ViewerText(ViewerEditActionKind::SelectAll),
         TELL_ME_ABOUT_CONTEXT_ID => ContextClick::RowCommand {

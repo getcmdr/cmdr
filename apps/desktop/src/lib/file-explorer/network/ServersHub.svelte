@@ -8,7 +8,7 @@
      * live next door (`servers-hub-rows.ts`, `servers-hub-items.ts`,
      * `servers-hub-mcp.ts`); this file is the table, the cursor, and the keys.
      */
-    import { onMount, onDestroy, untrack } from 'svelte'
+    import { onMount, untrack } from 'svelte'
     import { asset } from '$app/paths'
     import { dependOn } from '#lib/utils/reactivity.js'
     import Button from '#lib/ui/Button.svelte'
@@ -48,7 +48,7 @@
     import { rowAnchorIn } from '../pane/context-menu-anchor'
     import type { NetworkHost } from '../types'
     import type { ServerProtocol } from '#lib/ipc/bindings.js'
-    import { updateLeftPaneState, updateRightPaneState, onNetworkHostContextAction } from '#lib/tauri-commands/index.js'
+    import { updateLeftPaneState, updateRightPaneState } from '#lib/tauri-commands/index.js'
     import { getNetworkEnabled } from '#lib/settings/reactive-settings.svelte.js'
     import { formatInteger } from '#lib/intl/number-format.js'
     import { openSettingsWindow, settingAnchorId } from '#lib/settings/settings-window.js'
@@ -109,7 +109,7 @@
     const discoveryEnabled = $derived(getNetworkEnabled())
 
     /**
-     * F8, the row menus, and the SMB host menu's answers. Live getters, ❌ never
+     * F8 and the row menus, an SMB host's included. Live getters, ❌ never
      * snapshots: the rows change under a menu that is still open.
      */
     const actions = createHubActions({
@@ -128,7 +128,7 @@
     export async function openContextMenuAtCursor(): Promise<void> {
         const row = rowUnderCursor()
         const anchor = rowAnchorIn(listContainer ?? null, `[data-hub-row="${String(cursorIndex)}"]`)
-        if (row) await rowMenu?.open(row, anchor ?? { x: 0, y: 0 }, anchor)
+        if (row) await rowMenu?.open(row, anchor ?? { x: 0, y: 0 })
     }
 
     let cursorIndex = $state(0)
@@ -137,7 +137,6 @@
     const columns = $derived(hubColumnsAt(hubWidth))
     let listContainer: HTMLDivElement | undefined = $state()
     let containerHeight = $state(0)
-    let unlistenContextAction: (() => void) | undefined
 
     /**
      * Re-reads the saved list whenever the volume list changes.
@@ -156,16 +155,6 @@
         // discovery is already running or the setting is off.
         triggerNetworkDiscovery()
         refreshAllStaleShares()
-
-        void onNetworkHostContextAction((payload) => {
-            void actions.runHostAction(payload)
-        }).then((fn) => {
-            unlistenContextAction = fn
-        })
-    })
-
-    onDestroy(() => {
-        unlistenContextAction?.()
     })
 
     // Re-sync MCP state when the items or the cursor change.
@@ -654,7 +643,7 @@
                 }}
                 oncontextmenu={(e: MouseEvent) => {
                     e.preventDefault()
-                    void rowMenu?.open(row, { x: e.clientX, y: e.clientY }, null)
+                    void rowMenu?.open(row, { x: e.clientX, y: e.clientY })
                 }}
                 onkeydown={() => {}}
             >

@@ -10,7 +10,6 @@ import type {
   CredentialSource,
   DirectConnectionSwitch,
   MountResult,
-  NetworkHostContextAction,
   ShareParent as ShareParentWire,
   SignInShape,
   SignedInReply,
@@ -21,7 +20,6 @@ import type {
   UpgradeResult,
 } from '#lib/ipc/bindings.js'
 import { throwIpcError } from './ipc-types'
-import type { MenuAnchor } from './file-actions'
 import { throwAddServerError } from '#lib/servers/add-server-error.js'
 import type {
   AuthOptions,
@@ -31,7 +29,6 @@ import type {
   NetworkHost,
   ShareListResult,
 } from '../file-explorer/types'
-import { popContextMenu } from './in-page-menus'
 
 export type { SignInShape }
 
@@ -690,52 +687,6 @@ export async function setNetworkEnabled(enabled: boolean): Promise<void> {
 // ============================================================================
 
 /**
- * Shows a servers hub row's SMB host menu, native or in-page by the platform (`popContextMenu`).
- * It offers only what does something: "Edit server…" for a saved host, "Disconnect"
- * while a share from it is mounted, "Forget saved password" when one is stored, and
- * "Forget server" for a typed-in host. The host goes whole: its mounts are found by
- * where it dials.
- *
- * ❗ `rowId` is the hub row it was raised on, and the answer carries it back
- * (`NetworkHostContextAction.rowId`): the row, not the host, is what the answer
- * acts on. `anchor` places a keyboard-opened menu; `null` uses the pointer.
- */
-export async function showNetworkHostContextMenu(
-  rowId: string,
-  host: NetworkHost,
-  isManual: boolean,
-  isSaved: boolean,
-  hasCredentials: boolean,
-  anchor: MenuAnchor | null = null,
-): Promise<void> {
-  const wireHost = {
-    id: host.id,
-    name: host.name,
-    hostname: host.hostname ?? null,
-    ipAddress: host.ipAddress ?? null,
-    port: host.port,
-    source: host.source,
-  }
-  await popContextMenu(
-    { menu: 'networkHost', rowId, host: wireHost, isManual, isSaved, hasCredentials, anchor },
-    async () => {
-      const res = await commands.showNetworkHostContextMenu(rowId, wireHost, isManual, isSaved, hasCredentials, anchor)
-      if (res.status === 'error') throwIpcError(res.error)
-    },
-  )
-}
-
-/**
- * Listens for the network host context menu action event emitted by `on_menu_event` in Rust.
- * The event fires asynchronously after `popup()` returns.
- */
-export function onNetworkHostContextAction(handler: (payload: NetworkHostContextAction) => void): Promise<UnlistenFn> {
-  return events.networkHostContextAction.listen((event) => {
-    handler(event.payload)
-  })
-}
-
-/**
  * Subscribes to the notice that a share Cmdr tried to take over is staying on the
  * macOS kernel mount (slower, and outside Cmdr's control).
  *
@@ -763,20 +714,33 @@ export function onSmbOsMountNoticeWithdrawn(
   })
 }
 
-/**
- * Unmounts all SMB shares mounted from `host`, answering the mount paths that went.
- * ❗ The whole host: its mounts are found by where it dials (hostname, IP, each on
- * its port), never by a display name.
- */
-export async function disconnectNetworkHost(host: NetworkHost): Promise<string[]> {
-  const res = await commands.disconnectNetworkHost({
+/** A `NetworkHost` as the IPC commands take it. */
+function wireHost(host: NetworkHost) {
+  return {
     id: host.id,
     name: host.name,
     hostname: host.hostname ?? null,
     ipAddress: host.ipAddress ?? null,
     port: host.port,
     source: host.source,
-  })
-  if (res.status === 'error') throwIpcError(res.error)
-  return res.data
+  }
+}
+
+/**
+ * Unmounts all SMB shares mounted from `host`, answering the mount paths that went.
+ * ❗ The whole host: its mounts are found by where it dials (hostname, IP, each on
+ * its port), never by a display name. The backend never refuses: a host with nothing
+ * mounted answers an empty list.
+ */
+export async function disconnectNetworkHost(host: NetworkHost): Promise<string[]> {
+  return commands.disconnectNetworkHost(wireHost(host))
+}
+
+/**
+ * Whether a share from `host` is mounted, found the way `disconnectNetworkHost` finds what
+ * to unmount: the kernel's mount table, matched by where the host dials. What a row menu's
+ * Disconnect asks before it's offered. Reads no password.
+ */
+export async function smbHostHasMounts(host: NetworkHost): Promise<boolean> {
+  return commands.smbHostHasMounts(wireHost(host))
 }

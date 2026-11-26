@@ -18,8 +18,8 @@ use crate::menu::{
 use cmdr_menu::context::ContextRow;
 use cmdr_menu::context::file::{FileMenuFacts, PaneFacts, TargetFacts};
 use cmdr_menu::context::popups::{
-    BreadcrumbVolume, NetworkHostFacts, breadcrumb_menu, date_sort_menu, function_key_bar_menu, network_host_menu,
-    parent_row_menu, queue_row_menu, tab_menu, viewer_text_menu,
+    BreadcrumbVolume, breadcrumb_menu, date_sort_menu, function_key_bar_menu, parent_row_menu, queue_row_menu,
+    tab_menu, viewer_text_menu,
 };
 use cmdr_menu::spec::Platform;
 use tauri::menu::ContextMenu;
@@ -487,38 +487,6 @@ pub fn show_queue_row_context_menu(
     popup_context_menu(&menu, window, None)
 }
 
-/// Shows a native context menu for a servers hub row's SMB host (fire-and-forget).
-/// The selected action is delivered asynchronously via a `network-host-context-action` Tauri event
-/// from `on_menu_event`, carrying `row_id` back so the answer acts on the row it was opened on.
-///
-/// Takes the whole `host`, because Disconnect is offered only while a share from it
-/// is mounted, which is a question about where it dials (every name, on its port):
-/// `server_identity::smb_mounts_from` over the kernel's mount table snapshot, which
-/// can't stall the menu. `anchor` is where a KEYBOARD-opened menu (`⌃⏎`) pops up;
-/// `None` uses the pointer.
-#[tauri::command]
-#[specta::specta]
-#[allow(
-    clippy::too_many_arguments,
-    reason = "one flat IPC call, each argument a fact the menu reads"
-)]
-pub fn show_network_host_context_menu(
-    window: Window<tauri::Wry>,
-    row_id: String,
-    host: crate::network::NetworkHost,
-    is_manual: bool,
-    is_saved: bool,
-    has_credentials: bool,
-    anchor: Option<MenuAnchor>,
-) -> Result<(), String> {
-    let app = window.app_handle().clone();
-    let state = app.state::<MenuState<tauri::Wry>>();
-    crate::menu::page_context::note_native_popup(&state);
-    let rows = network_host_rows(&state, row_id, host, is_manual, is_saved, has_credentials);
-    let menu = build_popup(&app, &rows, &ContextMenuShortcuts::default()).map_err(|e| e.to_string())?;
-    popup_context_menu(&menu, window, anchor)
-}
-
 /// Hands the viewer bar's Edit > Copy or Select all to the native responder chain, for a view
 /// whose selection only that chain reaches: the PDF embed. WebKit's PDF view keeps its text and
 /// selection inside the embed, out of the page's DOM, and answers only the `copy:` /
@@ -594,32 +562,4 @@ pub(super) fn parent_row_rows<R: Runtime>(state: &MenuState<R>, parent_path: Str
     context.path = parent_path;
     context.filename = "..".to_string();
     parent_row_menu()
-}
-
-/// A servers hub host's menu, with the row and host stashed so `on_menu_event` names them in the
-/// event it emits. Disconnect is offered only while a share from the host is mounted, which is a
-/// question about where it dials (every name, on its port): `server_identity::smb_mounts_from`
-/// over the kernel's mount table snapshot, which can't stall the menu.
-pub(super) fn network_host_rows<R: Runtime>(
-    state: &MenuState<R>,
-    row_id: String,
-    host: crate::network::NetworkHost,
-    is_manual: bool,
-    is_saved: bool,
-    has_credentials: bool,
-) -> Vec<ContextRow> {
-    use crate::network::server_identity::{smb_mounts_from, smb_servers_of};
-
-    let has_mounts = !smb_mounts_from(&smb_servers_of(&host)).is_empty();
-    let rows = network_host_menu(NetworkHostFacts {
-        is_manual,
-        is_saved,
-        has_credentials,
-        has_mounts,
-    });
-    let mut ctx = state.network_host_context.lock_ignore_poison();
-    ctx.row_id = row_id;
-    ctx.host_id = host.id;
-    ctx.host_name = host.name;
-    rows
 }

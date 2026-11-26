@@ -24,8 +24,9 @@ The family-grouped handler modules behind the dispatch core (`../command-dispatc
   press). `detached.ts` absorbs it into a debug line; `file-handlers.detached.test.ts` pins it.
 - **Grouped ids share ONE body, no copy-paste** (`applyZoomPreset`, `withEntryUnderCursor`, `copyPathAndAnnounce`,
   `copySelectionOr`).
-- **The `servers.*` row actions (pin, disconnect, forget, edit) go through `runServerRowAction`**, the native row menu's
-  own path, so menu and palette can't drift on a confirmation or a toast. Which server they act on is
+- **The `servers.*` row actions go through what their row menu runs**: a place's through `runServerRowAction`, an SMB
+  server's account actions through `runServerAccountAction` and its Disconnect through `disconnectSmbHost`, so menu and
+  palette can't drift on a confirmation or a toast. Which server they act on is
   `#lib/servers/server-command-target.ts`'s call, ❌ never `getFocusedPaneVolumeId()` alone: the hub IS a pane, so that
   reading answers the synthetic hub row (`#lib/servers/DETAILS.md` § Which server a command acts on). Finding no server
   says NOTHING: the palette lists every command whatever the pane is on. ❗ `servers.edit` and `servers.connect` open

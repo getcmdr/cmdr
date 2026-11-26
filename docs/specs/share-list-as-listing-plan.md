@@ -738,6 +738,23 @@ added.
   share-list pane, neither), a test that opening the row menu reads no Keychain, E2E for Sign in as from the row menu.
 - **DONE**: no native network-host menu left; all three doors run the same functions; no right-click reads a password.
 
+- **As landed** (for M5c):
+  - The runner is `share-list-sign-in.ts::runServerAccountAction(action, server)` → `{ listed }`; the one-ask guard is
+    `sheetRound`'s (`askToList` / `signInAs` answer `null` while a sheet is up; `isShareListSheetUp()`). Facts:
+    `serverAccountFacts(host)`.
+  - Builders in `row-menu.ts`: `serverAccountEntries`, `smbHostRowMenu`, `shareRowMenu` (built, not wired: M5c adds its
+    runner, Open mounts, Copy path copies `smb://<server>/<share>`), `accountMenu`. Entries: `RowAccountEntry`,
+    `RowShareEntry` in a `ServerRowMenu`; section helpers take a row key.
+  - Hub Disconnect visibility asks a new `smb_host_has_mounts(host)` on open; `disconnect_network_host` is infallible.
+  - The path-bar chip is `network/ShareListAccountChip.svelte`, rendered by FilePane on `caps.kind === 'share-list'`,
+    re-listing through `navigateToPath(currentPath)` once an action listed; `VolumeBreadcrumb.noteAccountMenu` makes it
+    the third `openMenu` member. It reads the host from the path via `share-list-label.ts::shareListServerOf`.
+  - The palette target is a union (`place` | `smb-server`); the share-list host is read in ONE place,
+    `servers-handlers.ts::shareListHost` (still `getFocusedPaneNetworkHost`; M5c/M6 switch it to the path). From a share
+    list, a listed palette action relies on the list following the share cache (`PlacesBrowser`'s bridge effect); once
+    the share list is a listing, M5c must re-list the pane there.
+  - `checkCredentialsForHost` is gone; the frontend `getSmbCredentials` wrapper stays for `PlacesBrowser`/the mount.
+
 ### M5c: every door opens the share list as a listing
 
 - **Scope**: EVERY entry point that opens a server's shares switches to `shareListPath` in this one milestone: the hub

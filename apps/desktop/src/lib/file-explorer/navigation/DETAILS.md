@@ -512,6 +512,14 @@ list can't disagree on where the rule goes.
   persist, so no checkbox. "Saved" and the switch's value come from `listSavedPlaces()`, read when the switcher opens
   (the hub has its saved list already, and re-reads it on the `volumes-changed` a flip emits).
 - **A favorite**: `Rename`, `Set shortcut key…`, `Remove from favorites` (§ "The favorites menu").
+- **An SMB server's rows** (`ServerRowMenu`, whose actions group also holds `RowAccountEntry` and `RowShareEntry`): the
+  hub's host row (`smbHostRowMenu`: Open, Edit… when saved, Disconnect while a share is mounted, the account items,
+  Forget server when saved, ❌ no pin), a share-list row (`shareRowMenu`: Open, which mounts, Copy path, the account
+  items), and the path bar's account menu (`accountMenu`). The account items are ONE builder, `serverAccountEntries`, as
+  a TS kind (`ServerAccountAction`), ❌ not members of the Rust `VolumeContextActionKind`: no native menu draws them,
+  and a host has no volume. The section helpers take a ROW KEY (a volume's id, or the hub row's `rowId` for a host), so
+  every item value stays unique (`row:<rowKey>:account:sign-in-as`). Their runner is
+  `../network/share-list-sign-in.ts::runServerAccountAction` (`../network/DETAILS.md` § the account doors).
 
 **Both doors, one list.** → (or a hover) opens the submenu, and a right-click on the row opens the same one: the
 primitive does it (`#lib/ui/DETAILS.md` § Menu), so none of these rows raises a native popup. Picks carry the typed

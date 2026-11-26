@@ -2632,31 +2632,6 @@ export const commands = {
     } | null,
   ) => typedError<null, string>(__TAURI_INVOKE('show_date_sort_menu', { pane, requested, anchor })),
   /**
-   *  Shows a native context menu for a servers hub row's SMB host (fire-and-forget).
-   *  The selected action is delivered asynchronously via a `network-host-context-action` Tauri event
-   *  from `on_menu_event`, carrying `row_id` back so the answer acts on the row it was opened on.
-   *
-   *  Takes the whole `host`, because Disconnect is offered only while a share from it
-   *  is mounted, which is a question about where it dials (every name, on its port):
-   *  `server_identity::smb_mounts_from` over the kernel's mount table snapshot, which
-   *  can't stall the menu. `anchor` is where a KEYBOARD-opened menu (`⌃⏎`) pops up;
-   *  `None` uses the pointer.
-   */
-  showNetworkHostContextMenu: (
-    rowId: string,
-    host: NetworkHost,
-    isManual: boolean,
-    isSaved: boolean,
-    hasCredentials: boolean,
-    anchor: {
-      x: number
-      y: number
-    } | null,
-  ) =>
-    typedError<null, string>(
-      __TAURI_INVOKE('show_network_host_context_menu', { rowId, host, isManual, isSaved, hasCredentials, anchor }),
-    ),
-  /**
    *  Shows the function key bar's context menu (fire-and-forget): a single "Hide
    *  function key bar" item. The click is delivered asynchronously via the
    *  `function-key-bar-hide-requested` event from `on_menu_event`, same shape as
@@ -5505,8 +5480,14 @@ export const commands = {
    *  ITS port. A display label matched nothing `statfs` says, and a name without the
    *  port would take another server's mounts on the same machine.
    */
-  disconnectNetworkHost: (host: NetworkHost) =>
-    typedError<string[], string>(__TAURI_INVOKE('disconnect_network_host', { host })),
+  disconnectNetworkHost: (host: NetworkHost) => __TAURI_INVOKE<string[]>('disconnect_network_host', { host }),
+  /**
+   *  Whether a share from `host` is mounted, found the way [`disconnect_network_host`] finds what
+   *  to unmount: the kernel's mount table snapshot (`statfs`-free, so it can't stall), matched by
+   *  every name the host dials on its port. What the servers hub's row menu asks before it offers
+   *  Disconnect, so the item never answers "no mounted shares". Reads no password.
+   */
+  smbHostHasMounts: (host: NetworkHost) => __TAURI_INVOKE<boolean>('smb_host_has_mounts', { host }),
   /**
    *  The user took a network action: opened the Servers view, "Connect to server…", or
    *  upgraded a mounted share to direct smb2. Brings back the manual servers (a
@@ -6525,7 +6506,6 @@ export const events = {
   mutationSettled: makeEvent<MutationSettled>('mutation-settled'),
   nativeDragDrop: makeEvent<NativeDragDrop>('native-drag-drop'),
   networkDiscoveryStateChanged: makeEvent<NetworkDiscoveryStateChanged>('network-discovery-state-changed'),
-  networkHostContextAction: makeEvent<NetworkHostContextAction>('network-host-context-action'),
   networkHostFound: makeEvent<NetworkHostFound>('network-host-found'),
   networkHostLost: makeEvent<NetworkHostLost>('network-host-lost'),
   networkHostResolved: makeEvent<NetworkHostResolved>('network-host-resolved'),
@@ -12478,16 +12458,6 @@ export type InPageContextMenuRequest =
   | { menu: 'viewer'; hasSelection: boolean }
   // `show_queue_row_context_menu`'s.
   | { menu: 'queueRow'; entries: QueueRowMenuEntry[]; shortcuts: ContextMenuShortcuts }
-  // `show_network_host_context_menu`'s.
-  | {
-      menu: 'networkHost'
-      rowId: string
-      host: NetworkHost
-      isManual: boolean
-      isSaved: boolean
-      hasCredentials: boolean
-      anchor: MenuAnchor | null
-    }
 
 /**
  *  A full-scan aggregation pass finished and the UI can dismiss the progress
@@ -16458,48 +16428,6 @@ export type NetworkHost = {
   // How this host was added to the list.
   source?: HostSource
 }
-
-/**
- *  Typed `network-host-context-action` Tauri event. Emitted to the `main` window
- *  when the user picks an action from a network host's native context menu.
- *  Window-scoped, so it's emitted via `Event::emit_to` from `menu::menu_handlers`.
- */
-export type NetworkHostContextAction = {
-  // Which item was picked.
-  action: NetworkHostContextActionKind
-  /**
-   *  The servers hub row the menu was opened on, exactly as the hub keys it.
-   *  ❗ What every answer acts on: two rows can share one discovered host (a
-   *  saved host and the share history of the same machine), so the host id
-   *  alone can't say which row was right-clicked.
-   */
-  rowId: string
-  // The discovered host behind that row, which Disconnect unmounts from.
-  hostId: string
-  hostName: string
-}
-
-/**
- *  What the user picked in an SMB host's context menu.
- *
- *  ❗ A typed enum, ❌ never a free string: the frontend branches on every one of
- *  these, and a misspelling would go to the one place a compiler never looks.
- *
- *  ❗ `ForgetSecret` is spelled the way
- *  [`crate::volume_broadcast::VolumeContextActionKind`] spells the same act on a
- *  server ROW. One act, one name on both sides: two spellings for "stop
- *  remembering this password" is how a handler ends up wired to one of them and
- *  silently missing the other.
- */
-export type NetworkHostContextActionKind =
-  // Drop a manually-added host. ❗ A discovered one has nothing to forget.
-  | 'forget-server'
-  // Stop remembering this host's credential, keeping the host.
-  | 'forget-secret'
-  // Unmount every share mounted from this host.
-  | 'disconnect'
-  // Open the edit sheet on a SAVED host (its name, for now).
-  | 'edit'
 
 /**
  *  Typed `network-host-found` Tauri event. The payload is the bare `NetworkHost`

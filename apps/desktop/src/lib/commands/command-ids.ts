@@ -335,6 +335,8 @@ export const COMMAND_IDS = [
   'servers.togglePin',
   'servers.disconnect',
   'servers.forgetSecret',
+  'servers.signInAs',
+  'servers.browseAsGuest',
   'servers.toggleShareParentRow',
   'servers.edit',
   'servers.connect',

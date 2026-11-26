@@ -11,8 +11,10 @@ import { ShareListFailure } from './share-list-error'
 import {
   askToList,
   forgetPassword,
+  isShareListSheetUp,
   listWithAccount,
   readStoredCredentials,
+  runServerAccountAction,
   signInAs,
   tryStoredCredentials,
   useGuest,
@@ -33,6 +35,8 @@ const h = vi.hoisted(() => ({
   setListedAccount: vi.fn(),
   forgetCredentials: vi.fn(() => Promise.resolve()),
   addToast: vi.fn(() => 'id'),
+  getListedAccount: vi.fn((_hostId: string): unknown => undefined),
+  guestListingWorked: vi.fn((_hostId: string) => false),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
@@ -52,6 +56,8 @@ vi.mock('./network-store.svelte', () => ({
   setCredentialStatus: h.setCredentialStatus,
   setListedAccount: h.setListedAccount,
   forgetCredentials: h.forgetCredentials,
+  getListedAccount: h.getListedAccount,
+  guestListingWorked: h.guestListingWorked,
 }))
 
 vi.mock('#lib/ui/toast/index.js', () => ({ addToast: h.addToast }))
@@ -106,6 +112,8 @@ function sheetAnswering(submission: Parameters<SheetRequest['attempt']>[0]) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  h.getListedAccount.mockReturnValue(undefined)
+  h.guestListingWorked.mockReturnValue(false)
   h.getSmbCredentials.mockRejectedValue(new Error('not found'))
   h.openSignInSheet.mockResolvedValue({ kind: 'cancelled' })
 })
@@ -328,5 +336,99 @@ describe('the account actions', () => {
     h.forgetCredentials.mockRejectedValueOnce(new Error('keychain locked'))
     expect(await forgetPassword(server)).toBe(false)
     expect(h.addToast).toHaveBeenCalledWith(expect.any(String), { level: 'error' })
+  })
+})
+
+describe('one ask at a time', () => {
+  it('asks nothing while a sheet is up, answering null, and asks again once it closes', async () => {
+    let close: (answer: { kind: string }) => void = () => {}
+    h.openSignInSheet.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          close = resolve
+        }),
+    )
+    const first = askToList(server, { refusal: 'needs_credentials', guestAllowed: false })
+    await vi.waitFor(() => {
+      expect(h.openSignInSheet).toHaveBeenCalledOnce()
+    })
+    expect(isShareListSheetUp()).toBe(true)
+
+    // ❗ A second sheet would close the first as `cancelled`, read as "the person said no".
+    expect(await signInAs(server, undefined)).toBeNull()
+    expect(await askToList(server, { refusal: 'needs_credentials', guestAllowed: false })).toBeNull()
+    expect(h.openSignInSheet).toHaveBeenCalledOnce()
+
+    close({ kind: 'cancelled' })
+    expect(await first).toEqual({ kind: 'cancelled' })
+    expect(isShareListSheetUp()).toBe(false)
+    await signInAs(server, undefined)
+    expect(h.openSignInSheet).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('Forget saved password, when there was none', () => {
+  /** Offered unconditionally (no Keychain read to decide), so the store's typed `not_found` answers. */
+  it('says there was none, by the server’s label, and counts it as none stored', async () => {
+    h.forgetCredentials.mockRejectedValueOnce(Object.assign(new Error('Credentials not found'), { type: 'not_found' }))
+    expect(await forgetPassword(server)).toBe(true)
+    expect(h.addToast).toHaveBeenCalledExactlyOnceWith('There was no saved password for My NAS.', { level: 'info' })
+    expect(h.setCredentialStatus).toHaveBeenCalledWith('Testnas', 'no_creds')
+  })
+})
+
+describe('runServerAccountAction: every door’s one runner', () => {
+  it('Sign in as… prefills the account the server’s listings signed in as, and says it listed', async () => {
+    h.getListedAccount.mockReturnValue({ kind: 'user', username: 'testuser' })
+    h.listSharesWithCredentials.mockResolvedValue(listed('creds_required'))
+    sheetAnswering({ mode: 'sign-in', secret: { secret: 'hunter2', remember: false }, username: 'testuser' })
+
+    expect(await runServerAccountAction('sign-in-as', server)).toEqual({ listed: true })
+    expect(sheetRequest().endpoint.username).toBe('testuser')
+    expect(h.getListedAccount).toHaveBeenCalledWith('testnas-id')
+  })
+
+  it('says nothing and lists nothing when the person cancels', async () => {
+    expect(await runServerAccountAction('sign-in-as', server)).toEqual({ listed: false })
+    expect(h.addToast).not.toHaveBeenCalled()
+  })
+
+  it('words a refusal about the SERVER in the share list’s own words', async () => {
+    h.listSharesWithCredentials.mockRejectedValue(new ShareListFailure({ type: 'host_unreachable', message: '' }))
+    sheetAnswering({ mode: 'sign-in', secret: { secret: 'hunter2', remember: false }, username: 'testuser' })
+
+    expect(await runServerAccountAction('sign-in-as', server)).toEqual({ listed: false })
+    expect(h.addToast).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('My NAS'), { level: 'error' })
+  })
+
+  it('Browse as guest lists as guest where a guest listing worked', async () => {
+    h.guestListingWorked.mockReturnValue(true)
+    h.listSharesWithCredentials.mockResolvedValue(listed('guest_allowed'))
+
+    expect(await runServerAccountAction('browse-as-guest', server)).toEqual({ listed: true })
+    expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', null)
+  })
+
+  /** ❗ It drops the account FIRST, so where no guest got in it never starts, and says why. */
+  it('Browse as guest keeps the account, and says why, where no guest listing worked', async () => {
+    expect(await runServerAccountAction('browse-as-guest', server)).toEqual({ listed: false })
+    expect(h.setSmbAccountPreference).not.toHaveBeenCalled()
+    expect(h.listSharesWithCredentials).not.toHaveBeenCalled()
+    expect(h.addToast).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('My NAS'), { level: 'info' })
+  })
+
+  it('Forget saved password forgets, with no listing to open', async () => {
+    expect(await runServerAccountAction('forget-secret', server)).toEqual({ listed: false })
+    expect(h.forgetCredentials).toHaveBeenCalledWith('Testnas')
+  })
+
+  /** ❗ No door reads the Keychain to decide anything: the facts are this session's listings. */
+  it('reads no password for any action', async () => {
+    h.guestListingWorked.mockReturnValue(true)
+    h.listSharesWithCredentials.mockResolvedValue(listed('guest_allowed'))
+    for (const action of ['sign-in-as', 'browse-as-guest', 'forget-secret'] as const) {
+      await runServerAccountAction(action, server)
+    }
+    expect(h.getSmbCredentials).not.toHaveBeenCalled()
   })
 })

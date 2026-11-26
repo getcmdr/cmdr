@@ -44,6 +44,7 @@ import { detachAllOnDisk, runDetach } from './detach-volume'
 import { isServerPlaceRow, runServerRowAction } from './server-row-actions'
 import { volumeScheme } from '#lib/volume-scheme.js'
 import type { VolumeInfo } from '../types'
+import type { SignedInAs } from '../network/signed-in-as'
 
 /** A per-row switch the submenu carries as a checkbox row. */
 export type RowToggleKind = 'direct-connection' | 'share-parent-row' | 'auto-reconnect'
@@ -84,15 +85,55 @@ export interface RowToggleEntry {
   tooltip?: string
 }
 
-/** One row of a row's menu: an action to run, a fix to apply, or a switch to flip. */
+/**
+ * An SMB server's account action: what the hub's host row, the path bar's account menu, the
+ * share-row menu, and the palette all offer, run by ONE function
+ * (`../network/share-list-sign-in.ts::runServerAccountAction`). A TS kind, ❌ not members of
+ * the Rust `VolumeContextActionKind`: no native menu draws these, and an SMB server has no
+ * volume for that vocabulary to act on.
+ */
+export type ServerAccountAction = 'sign-in-as' | 'browse-as-guest' | 'forget-secret'
+
+/** An account action on the row's SMB server. */
+export interface RowAccountEntry {
+  type: 'account'
+  account: ServerAccountAction
+  label: string
+  icon: IconName
+}
+
+/** A share-list row's own verbs: Open (mounts the share) and Copy path. */
+export type ShareRowAction = 'open-share' | 'copy-path'
+
+/** A verb on a share-list row's share. */
+export interface RowShareEntry {
+  type: 'share'
+  share: ShareRowAction
+  label: string
+  icon: IconName
+}
+
+/** One row of a volume row's menu: an action to run, a fix to apply, or a switch to flip. */
 export type RowMenuEntry = RowActionEntry | RowFixEntry | RowToggleEntry
 
-/** A row's menu in its three named groups (the header says why this order). */
-export interface RowMenu {
-  actions: RowActionEntry[]
+/**
+ * One row of a menu on an SMB server's rows (the hub's host and share rows, a share-list row,
+ * the path bar's account): a volume row's entries, plus the account actions and a share's verbs.
+ */
+export type ServerRowMenuEntry = RowMenuEntry | RowAccountEntry | RowShareEntry
+
+/**
+ * A row's menu in its three named groups (the header says why this order). `A` is what the
+ * actions group holds: a volume row's actions, or (`ServerRowMenu`) an SMB server row's.
+ */
+export interface RowMenu<A extends ActionsGroupEntry = RowActionEntry> {
+  actions: A[]
   fixes: RowFixEntry[]
   settings: RowToggleEntry[]
 }
+
+/** An SMB server row's menu, whose actions group also holds account actions and a share's verbs. */
+export type ServerRowMenu = RowMenu<ActionsGroupEntry>
 
 /** A row that offers nothing. Spread it and replace a group, ❌ never push into one: the arrays are shared. */
 export const EMPTY_ROW_MENU: RowMenu = { actions: [], fixes: [], settings: [] }
@@ -102,10 +143,16 @@ export const EMPTY_ROW_MENU: RowMenu = { actions: [], fixes: [], settings: [] }
  * share a block (both are things to do), and the settings sit below a rule. Empty blocks
  * drop out, so a lone block draws no rule.
  */
-function ruledBlocks(menu: RowMenu): RowMenuEntry[][] {
-  const blocks: RowMenuEntry[][] = [[...menu.actions, ...menu.fixes], menu.settings]
+function ruledBlocks<A extends ActionsGroupEntry>(menu: RowMenu<A>): EntryOf<A>[][] {
+  const blocks: EntryOf<A>[][] = [[...menu.actions, ...menu.fixes], menu.settings]
   return blocks.filter((block) => block.length > 0)
 }
+
+/** What a menu's actions group can hold. */
+type ActionsGroupEntry = RowActionEntry | RowAccountEntry | RowShareEntry
+
+/** Any entry of a menu whose actions group holds `A`. */
+type EntryOf<A extends ActionsGroupEntry> = A | RowFixEntry | RowToggleEntry
 
 /** What the row's own fields can't say, read by the surface from its stores. */
 export interface VolumeRowFacts {
@@ -325,20 +372,108 @@ export function favoriteRowMenu(): RowMenu {
   }
 }
 
-/** The entry's name within its row: the action, or the fix or toggle behind its prefix. */
-function entryKey(entry: RowMenuEntry): string {
+/** What the account items read, off what this session already knows: ❌ never a Keychain read. */
+export interface ServerAccountFacts {
+  /** The account the server's share list last signed in as, `undefined` when no listing said. */
+  listedAccount: SignedInAs | undefined
+  /** A guest listing of the server worked this session, so there's a guest to go back to. */
+  guestListingWorked: boolean
+}
+
+function accountEntry(account: ServerAccountAction, labelKey: MessageKey, icon: IconName): RowAccountEntry {
+  return { type: 'account', account, label: tString(labelKey), icon }
+}
+
+/**
+ * An SMB server's account items, the ONE list every door to them shows (the hub's host row,
+ * the path bar's account menu, the share-row menu): Sign in as…, Browse as guest (only while
+ * the list is signed in as a user and a guest listing worked, so there's a guest to go back
+ * to), and Forget saved password.
+ *
+ * ❗ Forget saved password is offered unconditionally, ❌ never gated on "is one stored?", the
+ * same rule as `serverActions`: answering costs a Keychain read, so the action answers instead
+ * (`share-list-sign-in.ts::forgetPassword` words a "there was none").
+ */
+export function serverAccountEntries(facts: ServerAccountFacts): RowAccountEntry[] {
+  const entries = [accountEntry('sign-in-as', 'fileExplorer.network.share.signInAs', 'user')]
+  if (facts.listedAccount?.kind === 'user' && facts.guestListingWorked) {
+    entries.push(accountEntry('browse-as-guest', 'fileExplorer.network.share.useGuest', 'eye'))
+  }
+  entries.push(accountEntry('forget-secret', 'menu.network.forgetSavedPassword', 'key'))
+  return entries
+}
+
+/** What an SMB host row's menu reads beyond its account facts. */
+export interface SmbHostRowFacts extends ServerAccountFacts {
+  /** A saved server entry backs the row, so Edit and Forget server have a subject. */
+  isSaved: boolean
+  /**
+   * A share from this server is mounted (the kernel's mount table, asked when the menu opens),
+   * so Disconnect does something. ❌ Never offered without: "no mounted shares" is an inert item.
+   */
+  hasMounts: boolean
+}
+
+/**
+ * An SMB host row's menu in the servers hub: Open, Edit… (when saved), Disconnect (while a
+ * share is mounted), the account items, then Forget server (when saved). ❌ No pin: an SMB
+ * host has no switcher row to pin. Its actions run through the hub
+ * (`../network/servers-hub-actions.ts`), keyed by the hub row, ❌ never a `volumeId`: a host has
+ * none.
+ */
+export function smbHostRowMenu(facts: SmbHostRowFacts): ServerRowMenu {
+  const actions: ActionsGroupEntry[] = [action('open', 'menu.network.open', 'arrow-right')]
+  if (facts.isSaved) actions.push(action('edit', 'menu.network.edit', 'pencil'))
+  if (facts.hasMounts) actions.push(action('disconnect', 'menu.network.disconnect', 'unplug'))
+  actions.push(...serverAccountEntries(facts))
+  if (facts.isSaved) actions.push(action('forget-server', 'menu.network.forgetServer', 'trash-2'))
+  return { ...EMPTY_ROW_MENU, actions }
+}
+
+/**
+ * A share-list row's menu: Open (mounts the share), Copy path, then its server's account
+ * items. ❌ Never the standard file menu: Copy, Delete, Rename, and the rest are all wrong
+ * for a share, which is mounted, ❌ never browsed as a folder.
+ */
+export function shareRowMenu(facts: ServerAccountFacts): ServerRowMenu {
+  const share = (verb: ShareRowAction, labelKey: MessageKey, icon: IconName): RowShareEntry => ({
+    type: 'share',
+    share: verb,
+    label: tString(labelKey),
+    icon,
+  })
+  return {
+    ...EMPTY_ROW_MENU,
+    actions: [
+      share('open-share', 'menu.network.open', 'arrow-right'),
+      share('copy-path', 'menu.edit.copyPath', 'copy'),
+      ...serverAccountEntries(facts),
+    ],
+  }
+}
+
+/** The path bar's account menu on a share list: the server's account items, nothing else. */
+export function accountMenu(facts: ServerAccountFacts): ServerRowMenu {
+  return { ...EMPTY_ROW_MENU, actions: serverAccountEntries(facts) }
+}
+
+/** The entry's name within its row: the action, or the fix, toggle, account, or share verb behind its prefix. */
+function entryKey(entry: ServerRowMenuEntry): string {
   if (entry.type === 'action') return entry.action
   if (entry.type === 'fix') return `fix:${entry.fix}`
+  if (entry.type === 'account') return `account:${entry.account}`
+  if (entry.type === 'share') return `share:${entry.share}`
   return `toggle:${entry.toggle}`
 }
 
 /**
  * One entry as a house `Menu` row. Its value is unique across the whole menu
- * (`row:<volumeId>:<entry>`, since every row's submenu shares one value space), and
- * `wrap(entry)` is the payload a pick hands back.
+ * (`row:<rowKey>:<entry>`, since every row's submenu shares one value space), and
+ * `wrap(entry)` is the payload a pick hands back. `rowKey` names the row: a volume's id,
+ * or a hub row's `rowId` for a row with no volume (an SMB host).
  */
-function entryItem<T>(volumeId: string, entry: RowMenuEntry, wrap: (entry: RowMenuEntry) => T): MenuItem<T> {
-  const common = { value: `row:${volumeId}:${entryKey(entry)}`, label: entry.label, data: wrap(entry) }
+function entryItem<E extends ServerRowMenuEntry, T>(rowKey: string, entry: E, wrap: (entry: E) => T): MenuItem<T> {
+  const common = { value: `row:${rowKey}:${entryKey(entry)}`, label: entry.label, data: wrap(entry) }
   if (entry.type === 'action') {
     return {
       ...common,
@@ -348,8 +483,10 @@ function entryItem<T>(volumeId: string, entry: RowMenuEntry, wrap: (entry: RowMe
       tooltip: entry.tooltip,
     }
   }
+  if (entry.type === 'toggle')
+    return { ...common, check: { kind: 'toggle', checked: entry.checked }, tooltip: entry.tooltip }
   if (entry.type === 'fix') return { ...common, icon: { lucide: entry.icon }, tooltip: entry.tooltip }
-  return { ...common, check: { kind: 'toggle', checked: entry.checked }, tooltip: entry.tooltip }
+  return { ...common, icon: { lucide: entry.icon } }
 }
 
 /**
@@ -357,14 +494,14 @@ function entryItem<T>(volumeId: string, entry: RowMenuEntry, wrap: (entry: RowMe
  * with a rule above each block after the first (`ruledBlocks`). `undefined` for a row with
  * nothing to offer, so it draws no submenu arrow.
  */
-export function rowMenuItems<T>(
-  volumeId: string,
-  menu: RowMenu,
-  wrap: (entry: RowMenuEntry) => T,
+export function rowMenuItems<A extends ActionsGroupEntry, T>(
+  rowKey: string,
+  menu: RowMenu<A>,
+  wrap: (entry: EntryOf<A>) => T,
 ): MenuItem<T>[] | undefined {
   const items = ruledBlocks(menu).flatMap((group, groupIndex) =>
     group.map((entry, index) => ({
-      ...entryItem(volumeId, entry, wrap),
+      ...entryItem(rowKey, entry, wrap),
       separatorBefore: groupIndex > 0 && index === 0,
     })),
   )
@@ -372,18 +509,18 @@ export function rowMenuItems<T>(
 }
 
 /**
- * A row's menu as a TOP-LEVEL menu (the servers hub's right-click): a section per ruled
- * block, which the primitive separates, since a top-level list draws no rules inside a
- * section.
+ * A row's menu as a TOP-LEVEL menu (the servers hub's right-click, the path bar's account
+ * menu): a section per ruled block, which the primitive separates, since a top-level list
+ * draws no rules inside a section.
  */
-export function rowMenuSections<T>(
-  volumeId: string,
-  menu: RowMenu,
-  wrap: (entry: RowMenuEntry) => T,
+export function rowMenuSections<A extends ActionsGroupEntry, T>(
+  rowKey: string,
+  menu: RowMenu<A>,
+  wrap: (entry: EntryOf<A>) => T,
 ): MenuSection<T>[] {
   return ruledBlocks(menu).map((group, index) => ({
     id: `group-${String(index)}`,
-    items: group.map((entry) => entryItem(volumeId, entry, wrap)),
+    items: group.map((entry) => entryItem(rowKey, entry, wrap)),
   }))
 }
 

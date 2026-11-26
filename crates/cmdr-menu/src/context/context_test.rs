@@ -5,15 +5,14 @@
 //! back; the rows are the menu, so a snapshot of them pins what the user sees. `render` writes one
 //! line per row, so a change shows up here as a diff to review.
 
-use super::click::{ContextClick, NetworkHostAction, ViewerEditActionKind, VolumeAction, context_click};
+use super::click::{ContextClick, ViewerEditActionKind, VolumeAction, context_click};
 use super::file::{
     FILENAME_MAX_CHARS, FileMenuFacts, PaneFacts, SELECTION_ROWS, SelectionRow, TargetFacts, file_menu, header_label,
 };
 use super::image_index::ImageIndexMenuState;
 use super::popups::{
-    BreadcrumbVolume, DetachWord, NetworkHostFacts, PaneSide, QueueRowMenuAction, QueueRowMenuEntry, breadcrumb_menu,
-    date_sort_menu, date_sort_pick, function_key_bar_menu, network_host_menu, parent_row_menu, queue_row_menu,
-    tab_menu, viewer_text_menu,
+    BreadcrumbVolume, DetachWord, PaneSide, QueueRowMenuAction, QueueRowMenuEntry, breadcrumb_menu, date_sort_menu,
+    date_sort_pick, function_key_bar_menu, parent_row_menu, queue_row_menu, tab_menu, viewer_text_menu,
 };
 use super::{ContextLabel, ContextMenuShortcuts, ContextRow, Shortcut, Slot, truncate_for_menu_label};
 use crate::ids::{
@@ -336,12 +335,6 @@ fn every_menu() -> Vec<Vec<ContextRow>> {
         offer_eject_all: true,
     })));
     menus.push(tab_menu(false, true, true));
-    menus.push(network_host_menu(NetworkHostFacts {
-        is_manual: true,
-        is_saved: true,
-        has_credentials: true,
-        has_mounts: true,
-    }));
     for pane in [PaneSide::Left, PaneSide::Right] {
         menus.push(date_sort_menu(pane, None));
     }
@@ -445,10 +438,6 @@ fn the_special_lanes_read_off_their_ids() {
     assert_eq!(
         context_click("eject_all_volumes"),
         Some(ContextClick::Volume(VolumeAction::EjectAll))
-    );
-    assert_eq!(
-        context_click("network_host_forget_secret"),
-        Some(ContextClick::NetworkHost(NetworkHostAction::ForgetSecret))
     );
     assert_eq!(
         context_click("viewer_context_copy"),
@@ -617,40 +606,6 @@ item viewer_context_select_all menu.select.all [Ctrl+A]
         render(&function_key_bar_menu()),
         "item function_key_bar_hide menu.context.hideFunctionKeyBar\n"
     );
-}
-
-/// ❗ An SMB host's menu offers only what does something, in one group: no Disconnect with nothing
-/// mounted (QA round 2).
-#[test]
-fn a_host_menu_offers_only_what_does_something() {
-    let ids = |facts| {
-        let mut ids = Vec::new();
-        item_ids(&network_host_menu(facts), &mut ids);
-        ids
-    };
-    assert_eq!(
-        ids(NetworkHostFacts {
-            is_manual: true,
-            is_saved: true,
-            ..NetworkHostFacts::default()
-        }),
-        ["network_host_edit", "network_host_forget_server"]
-    );
-    assert_eq!(
-        ids(NetworkHostFacts {
-            is_manual: true,
-            is_saved: true,
-            has_credentials: true,
-            has_mounts: true,
-        }),
-        [
-            "network_host_edit",
-            "network_host_disconnect",
-            "network_host_forget_secret",
-            "network_host_forget_server"
-        ]
-    );
-    assert!(ids(NetworkHostFacts::default()).is_empty());
 }
 
 #[test]

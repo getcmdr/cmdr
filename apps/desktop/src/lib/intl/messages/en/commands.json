@@ -1386,6 +1386,16 @@
     "description": "Command name that removes the server’s remembered password from the system’s password store (the Keychain on macOS, Credential Manager on Windows, the keyring on Linux), keeping the server itself saved. VERB phrase, imperative. Appears in the command palette.",
     "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
+  "commands.serversSignInAs.label": "Sign in to server as…",
+  "@commands.serversSignInAs.label": {
+    "description": "Command name that opens the sign-in form to list an SMB server's shared folders as another account, for example to see more than a guest can. Acts on the server under the cursor in the Servers list, or the server whose shared folders the pane shows. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it. Appears in the command palette.",
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
+  },
+  "commands.serversBrowseAsGuest.label": "Browse server as guest",
+  "@commands.serversBrowseAsGuest.label": {
+    "description": "Command name that lists an SMB server's shared folders as a guest again, and stops using the account for that server. Only does something on a server that already let a guest in. Same meaning as fileExplorer.network.share.useGuest. VERB phrase, imperative. Appears in the command palette.",
+    "screenshot": "settings-keyboard-shortcuts-page-7.png"
+  },
   "commands.serversEdit.label": "Edit server…",
   "@commands.serversEdit.label": {
     "description": "Command name that opens the form for changing a saved server’s address, account, or options. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it. Appears in the command palette and in Settings under Keyboard shortcuts.",
