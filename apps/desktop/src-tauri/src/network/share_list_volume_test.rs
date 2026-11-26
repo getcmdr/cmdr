@@ -25,6 +25,10 @@ struct FakeShares {
     cache: HashMap<String, ShareListResult>,
     dials: Mutex<Vec<(String, Freshness)>>,
     cache_reads: Mutex<usize>,
+    /// What the Servers list's rows are built from; a test swaps it to change them.
+    servers: Mutex<ServerSources>,
+    /// How many times a listing said the rows may have changed.
+    rows_changes: Mutex<usize>,
 }
 
 impl FakeShares {
@@ -36,6 +40,14 @@ impl FakeShares {
 impl ServerShares for FakeShares {
     fn known_hosts(&self) -> KnownHosts {
         self.hosts.clone()
+    }
+
+    fn server_sources(&self) -> ServerSources {
+        self.servers.lock_ignore_poison().clone()
+    }
+
+    fn rows_may_have_changed(&self) {
+        *self.rows_changes.lock_ignore_poison() += 1;
     }
 
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult> {
@@ -200,15 +212,144 @@ async fn a_read_that_is_no_pane_answers_from_the_cache() {
     assert!(shares.dials().is_empty());
 }
 
-/// The hub never lists here: the frontend draws it.
+/// A saved SFTP server and a host mDNS found: the Servers list's two kinds of row.
+fn servers() -> ServerSources {
+    use crate::saved_servers::{SavedPlace, SavedServer, ServerNameSource};
+    use cmdr_fs::server_meta::ServerProtocol;
+    let sftp_id = "sftp-testhost-22-test_user_1".to_string();
+    let app_root = "sftp://test_user_1@testhost:22".to_string();
+    ServerSources {
+        saved: vec![SavedServer {
+            id: sftp_id.clone(),
+            protocol: ServerProtocol::Sftp,
+            display_name: "Testhost".to_string(),
+            name_source: ServerNameSource::User,
+            address: "testhost:22".to_string(),
+            username: Some("test_user_1".to_string()),
+            pinned: false,
+            last_connected_at: Some("2026-09-01T10:00:00Z".to_string()),
+            auto_reconnect: Some(true),
+            places: vec![SavedPlace {
+                volume_id: sftp_id,
+                name: "Testhost".to_string(),
+                pinned: false,
+                connected: false,
+                app_root,
+                username: Some("test_user_1".to_string()),
+                auto_reconnect: Some(true),
+            }],
+            awaiting_first_connect: false,
+            saved_from_mount: false,
+        }],
+        hosts: vec![host("Testnas", 445)],
+        ..ServerSources::default()
+    }
+}
+
+fn with_servers(shares: FakeShares, sources: ServerSources) -> FakeShares {
+    *shares.servers.lock_ignore_poison() = sources;
+    shares
+}
+
+/// `(name, path, is_directory, icon_id)` per entry.
+fn server_rows_of(entries: &[FileEntry]) -> Vec<(String, String, bool, String)> {
+    entries
+        .iter()
+        .map(|entry| {
+            (
+                entry.name.clone(),
+                entry.path.clone(),
+                entry.is_directory,
+                entry.icon_id.clone(),
+            )
+        })
+        .collect()
+}
+
+/// ❗ `smb://` lists every known server as a folder, the same for EVERY reader (a pane,
+/// ⌘R, Ask Cmdr's `list_dir`): the rows come from memory, the stores, and the mount
+/// table, so there's nothing to gate. ❌ No dial and ❌ no Keychain read for any of them
+/// (#324): the share cache and the one call that dials stay untouched.
 #[tokio::test]
-async fn the_hub_is_no_directory_here() {
+async fn the_servers_list_is_every_known_server_as_a_folder_for_every_reader() {
+    let (volume, shares) = volume(with_servers(testnas(), servers()));
+    let hub = app("smb://");
+
+    let pane = volume.list_directory_for_pane(&hub, None, None).await.expect("lists");
+    let refresh = volume.list_directory_for_refresh(&hub).await.expect("lists");
+    let other = volume.list_directory(&hub, None).await.expect("lists");
+
+    let expected = vec![
+        (
+            "Testhost".to_string(),
+            "sftp://test_user_1@testhost:22".to_string(),
+            true,
+            crate::network::servers_listing::SERVER_ICON_ID.to_string(),
+        ),
+        (
+            "Testnas".to_string(),
+            "smb://testnas".to_string(),
+            true,
+            crate::network::servers_listing::SMB_SERVER_ICON_ID.to_string(),
+        ),
+    ];
+    assert_eq!(server_rows_of(&pane), expected);
+    assert_eq!(server_rows_of(&refresh), expected);
+    assert_eq!(server_rows_of(&other), expected);
+    assert!(shares.dials().is_empty(), "listing servers dials none of them");
+    assert_eq!(*shares.cache_reads.lock_ignore_poison(), 0, "nor reads a share cache");
+}
+
+/// Each row carries its server's facts for the cells, and its last use as the date.
+#[tokio::test]
+async fn a_server_row_carries_its_facts_and_its_last_use() {
+    use cmdr_fs::server_meta::{ServerProtocol, ServerStatus};
+    let (volume, _) = volume(with_servers(testnas(), servers()));
+
+    let entries = volume.list_directory(&app("smb://"), None).await.expect("lists");
+
+    let sftp = &entries[0];
+    let meta = sftp.server_meta.as_ref().expect("a server row carries its facts");
+    assert_eq!(meta.protocol, ServerProtocol::Sftp);
+    assert_eq!(meta.row_id, "sftp-testhost-22-test_user_1");
+    assert_eq!(meta.status, ServerStatus::Saved);
+    // 2026-09-01T10:00:00Z.
+    assert_eq!(sftp.modified_at, Some(1_788_256_800));
+    let nearby = entries[1].server_meta.as_ref().expect("facts");
+    assert_eq!(nearby.status, ServerStatus::FoundNearby);
+    assert_eq!(entries[1].modified_at, None, "never used: no date");
+}
+
+/// ❗ A row's path answers `get_metadata` with that row, whatever scheme it's on (a
+/// one-place server's row sits at its place), from memory: ❌ never a dial.
+#[tokio::test]
+async fn metadata_on_a_server_rows_path_is_that_row() {
+    let (volume, shares) = volume(with_servers(testnas(), servers()));
+
+    let sftp = volume
+        .get_metadata(&app("sftp://test_user_1@testhost:22"))
+        .await
+        .expect("a row's path is a folder");
+    let smb = volume.get_metadata(&app("smb://testnas")).await.expect("a server");
+
+    assert_eq!(sftp.name, "Testhost");
+    assert!(sftp.is_directory && sftp.server_meta.is_some());
+    assert_eq!(smb.name, "Testnas");
+    assert!(smb.server_meta.is_some(), "a server's share-list path is its row");
+    assert!(shares.dials().is_empty());
+}
+
+/// A share list's account changing changes its server's row, so the volume says so.
+#[tokio::test]
+async fn a_share_list_listing_says_the_servers_rows_may_have_changed() {
     let (volume, shares) = volume(testnas());
 
-    let listed = volume.list_directory_for_pane(&app("smb://"), None, None).await;
+    volume
+        .list_directory_for_pane(&app("smb://testnas"), None, None)
+        .await
+        .expect("lists");
 
-    assert!(matches!(listed, Err(VolumeError::NotADirectory(_))), "got {listed:?}");
-    assert!(shares.dials().is_empty());
+    assert_eq!(*shares.rows_changes.lock_ignore_poison(), 1);
 }
 
 /// A share is mounted, ❌ never listed as a path on this volume.
@@ -441,6 +582,48 @@ async fn the_engine_lists_a_share_list_as_folder_rows() {
     assert_eq!(shares.dials().len(), 1, "the pane's open dials once");
 }
 
+/// ❗ The engine serves the Servers list with no Servers-specific code: a pane's open on
+/// `smb://` completes with every server as a folder row (one at another scheme's path
+/// included), and a host appearing reaches the open listing through the re-list, with
+/// ❌ no dial and ❌ no Keychain read on either path (#324).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_engine_lists_the_servers_list_and_a_host_found_relists_it() {
+    use crate::network::servers_relist::{AppServersList, ServersList};
+    let (volume, shares) = volume(with_servers(testnas(), servers()));
+    let shares = Arc::clone(&shares);
+    let volume_id = cmdr_fs::testing::unique_test_id("servers-engine");
+    get_volume_manager().register(&volume_id, Arc::new(volume));
+    let list = AppServersList {
+        volume_id: volume_id.clone(),
+    };
+    let listing_id = uuid::Uuid::new_v4().to_string();
+    assert!(!list.is_shown(), "no pane shows it yet");
+
+    let read = read_to_end(
+        crate::listing_host::listings(),
+        &request(&listing_id, &volume_id, "smb:///"),
+    )
+    .await;
+    let opened = listed_rows(&ListingId::new(listing_id.clone()));
+    let shown = list.is_shown();
+    shares.servers.lock_ignore_poison().hosts.push(host("Attic", 445));
+    list.relist();
+    let relisted = listed_rows(&ListingId::new(listing_id.clone()));
+    crate::listing_host::listings().end(&ListingId::new(listing_id));
+    let shown_after_close = list.is_shown();
+    get_volume_manager().unregister(&volume_id);
+
+    read.expect("the pane's open completes");
+    let names = |rows: &[(String, bool)]| rows.iter().map(|(name, _)| name.clone()).collect::<Vec<_>>();
+    assert_eq!(names(&opened), ["Testhost", "Testnas"]);
+    assert!(shown, "the open listing shows the Servers list");
+    assert_eq!(names(&relisted), ["Attic", "Testhost", "Testnas"]);
+    assert!(relisted.iter().all(|(_, is_dir)| *is_dir));
+    assert!(!shown_after_close);
+    assert!(shares.dials().is_empty(), "neither the open nor the re-list dials");
+    assert_eq!(*shares.cache_reads.lock_ignore_poison(), 0);
+}
+
 /// ❗ #324 and the Keychain-once rule: the unforced refresh a delete or trash sends to
 /// BOTH panes never dials a share list (a dial can read the stored password), while a
 /// forced one (⌘R, MCP `refresh`) still re-reads past the cache.
@@ -530,6 +713,10 @@ async fn smb_integration_a_share_list_of_the_fixture_lists_through_the_engine() 
                 )],
                 ..KnownHosts::default()
             }
+        }
+
+        fn server_sources(&self) -> ServerSources {
+            ServerSources::default()
         }
 
         fn cached(&self, _host: &NetworkHost) -> Option<ShareListResult> {

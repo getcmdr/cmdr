@@ -288,6 +288,8 @@ mod collation_test;
 #[cfg(test)]
 mod compare_test;
 #[cfg(test)]
+mod cross_scheme_rows_test;
+#[cfg(test)]
 mod diff_emitter_test;
 #[cfg(test)]
 mod diff_test;

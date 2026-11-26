@@ -30,14 +30,9 @@ pub mod s3_volume_wiring;
 pub mod saved_server_fields;
 pub mod server_guid;
 // The Servers list's rows, merged from memory, the stores, and the mount table: never a dial.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "the `network` volume lists these once `smb://` becomes a listing"
-    )
-)]
 pub(crate) mod servers_listing;
+// Keeps the Servers list current: one re-list per quiet burst of input changes, never a poll.
+pub(crate) mod servers_relist;
 
 // The durable trusted-SSH-host-key store, which answers the `HostKeys` seam.
 // Not SMB's business, but it lives here for the same reason `credential_store`

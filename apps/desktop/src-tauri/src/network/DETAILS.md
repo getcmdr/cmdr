@@ -404,8 +404,8 @@ macOS and Windows `lifecycle::handle_volume_mounted`, Linux's mount-table watche
   mDNS service name in `statfs` is no hostname, so it's keyed by its `.local` one (`service_name_to_hostname`), which
   the Servers list pairs with the discovered host of that name.
 - **Unnamed and marked `savedFromMount`**: the label is the address, which a Bonjour name and a typed name outrank. A
-  server saved by IP stays a row of its own beside the Bonjour host at that IP (an address is the person's pick, §
-  "Decisions", 5 of the Servers plan; `servers_listing.rs`'s module doc). Like a host saved
+  server saved by IP is one Servers row with the Bonjour host at exactly that address and port, named after it, while
+  the row still opens the saved address (§ "The Servers list's rows"). Like a host saved
   without contact, it stays out of `load_manual_servers`' discovery injection, so it never reads "Found nearby" off its
   own manual host, and the hub's prefetch skips it (`savedSmbHostIds`): nothing lists its shares unasked (#324), a
   Tailscale address included. A mount through Cmdr (`note_first_connect`), a person's own add of the address, or an
@@ -1095,7 +1095,7 @@ fallback"), so ❗ a new route that switches a share off goes through `set_direc
 ## A server's share list is a listing on the `network` volume
 
 `share_list_volume.rs::SmbServerVolume` is registered as `network` at startup (`lib.rs`), rooted at `smb://` (the
-app-path grammar spells it `smb:///`). The hub at `smb://` answers `NotADirectory` (the frontend draws it); a server's
+app-path grammar spells it `smb:///`). `smb://` lists the Servers list (§ "The Servers list's rows"); a server's
 share list at `smb://<key>[:<port>]` lists one folder `FileEntry` per share, `smb://<key>/<share>`, carrying the
 server's description as `cmdr_fs::share_meta::ShareMeta`; a path at or inside a share answers `NotConnected` (a share
 is mounted, ❌ never entered here). Every door in the frontend opens one by path (`apps/desktop/src/lib/file-explorer/pane/DETAILS.md` § "A server's share list (kind-from-path)"); design history: getcmdr/cmdr#1511.
@@ -1154,8 +1154,10 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `SignedInAs` shape), read from the volume's per-host memory (`SmbServerVolume::listed_account`); a cached list
   doesn't say, and a refusal clears it.
 - **The path**: the frontend writes it (`apps/desktop/src/lib/servers/share-list-path.ts`, which says why the key is a
-  Bonjour name or a typed address and ❌ never an IP); `share_list_path.rs` is the one Rust reader. Both read
-  `share-list-path-cases.json`, so the escaping and the case, NFC, and port folding can't drift.
+  Bonjour name or a typed address and ❌ never an IP); `share_list_path.rs` is the one Rust reader, and its
+  `share_list_path` writes a Servers row's path to the frontend's bytes (JavaScript's lowercasing, final sigma and all,
+  ❌ no NFC fold, which only the reader does). Both languages read `share-list-path-cases.json`, so the escaping and
+  the case, NFC, and port folding can't drift.
 - **Resolution** (`share_list_path::resolve`, memory only): fresh discovery first, a discovered host before a manual
   one (the hub's pick, so the pane lists under the host id the hub's prefetch caches under), then the manual store (a
   launch where discovery hasn't loaded it), then a server an SMB share is mounted from (`KnownHosts::mounted`, made by
@@ -1185,23 +1187,51 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
 `servers_listing.rs::server_rows` decides the Servers list (`smb://` on the `network` volume): one flat row per saved
 server, then one per host only mDNS knows. It's a pure fold over `ServerRowInputs` (the saved listing, `fresh_discovered_hosts`,
 the volume list's connection states, the kernel's SMB mount table, and a snapshot of the accounts share lists signed
-in as), so ❌ nothing in it dials, reads the Keychain, or `statfs`es a mount; a test injects every input. Nothing lists
-`smb://` through it yet: the frontend's hub still runs its own merge (`servers-hub-rows.ts`), and the two stay in step
-until the volume lists these rows (plan: `docs/specs/servers-list-as-listing-plan.md`).
+in as), so ❌ nothing in it dials, reads the Keychain, or `statfs`es a mount; a test injects every input. The pane
+doesn't show these rows yet: the frontend's hub still runs its own merge (`servers-hub-rows.ts`) until the switch
+(plan: `docs/specs/servers-list-as-listing-plan.md`).
 
+- **The volume lists them** (`SmbServerVolume`, `smb://`): one directory `FileEntry` per row (`server_entry`), with
+  `server_meta`, the reserved icon id, and the last use as `modified_at`, for EVERY reader (pane, ⌘R, Ask Cmdr's
+  `list_dir`, `get_metadata` on a row's path): memory, the stores, and the mount table only
+  (`ServerShares::server_sources`), so #324 has nothing to gate. The listed accounts are a snapshot taken under the
+  lock and released before anything else is read. Pinned by
+  `the_servers_list_is_every_known_server_as_a_folder_for_every_reader` (no dial, no share-cache read).
+- **Live, with no poll** (`servers_relist.rs`): `network-host-found` / `-lost` / `-resolved`, `volumes-changed` (every
+  mount, unmount, saved-store write, and remembered mounted server republishes it), and a share list's listing (its
+  account) each ask for a re-list; requests debounce for `QUIET` (150 ms, trailing edge, one per burst), and the
+  quiet one hands the fresh rows to the panes as `DirectoryChange::Replaced`, which the engine diffs by path. ❗ With
+  no listing open on `smb://` a request schedules nothing, and the quiet one checks again before building rows.
+  **Gotcha**: it listens by each typed event's `NAME` with an untyped listener, ❌ never `Event::listen_any`, which
+  deserializes the payload: `VolumesChanged` doesn't round-trip, and the panic on the runtime worker hung every MCP
+  call after it (Linux E2E, 2026-11-26).
+  Pinned by `servers_relist_test.rs` and `the_engine_lists_the_servers_list_and_a_host_found_relists_it`.
+- **Rows on other schemes**: a one-place server's row sits at its place (`sftp://…`), outside `smb://`. The engine
+  keys, finds, and diffs rows by path and never checks a row's path against the listed one (pinned in
+  `crates/cmdr-listing/src/cross_scheme_rows_test.rs`, 2026-11-26).
 - **What a row carries**: its name, `cmdr_fs::server_meta::ServerMeta` (facts, no words: the row's own id, protocol,
   address, `ServerStatus`, account, saved, the one place a one-place server opens, its pin), the last-used time, a
   reserved icon id (`network:server-smb` for SMB, `network:server` for the rest, drawn by the frontend, ❌ no OS icon
-  fetch), and `ServerOpens`, where Enter leads: an SMB server's share-list address (`ShareListAddress::of_host`, the
-  host's Bonjour name or the typed address, the same key `..` from that share list lands on), a one-place server's
-  place, or an S3 account's root (its id, plus the root's app root when the root is saved).
-- **Ids AND targets are unique, first writer wins**: the saved listing unions several stores, so one server can
-  arrive twice, and the listing engine keys entries by path, which comes from `ServerOpens`. Pinned by
-  `never_emits_two_rows_under_one_id_whatever_the_sources_repeat` and `never_emits_two_rows_that_lead_to_one_place`.
+  fetch), `ServerOpens`, where Enter leads (an SMB server's share-list address, `ShareListAddress::of_host`; a
+  one-place server's place; an S3 account's root, its id plus the root's app root when the root is saved), and its
+  `path`: the share-list path as the frontend writes it (`share_list_path`, so `..` from that share list selects the
+  row by it), the place's app root, or the account's root (an unsaved root's is the root a bucket's app root sits
+  under, the text a saved root's has).
+- **Ids, targets, AND paths are unique, first writer wins**: the saved listing unions several stores, so one server
+  can arrive twice, and the listing engine keys entries by path. Pinned by
+  `never_emits_two_rows_under_one_id_whatever_the_sources_repeat`, `never_emits_two_rows_that_lead_to_one_place`, and
+  `never_emits_two_rows_at_one_path`.
 - **The merge** (a saved SMB host claims every discovered host matching its id, address, or label, a discovered one
   speaks for the row; the name ranks a person's name, then the Bonjour name, then the stand-in) compares lowercase
   strings, ❌ not `server_identity`: it pairs a saved LABEL with a Bonjour name, which no address-and-port identity
   answers. **Decision**: kept the hub's semantics, so every ported regression anchor holds unchanged.
+- **A server saved by IP merges with its Bonjour twin** (David, 2026-11-26): a DISCOVERED host whose resolved IP and
+  port equal the saved address (`bonjour_twins`) is claimed too, so "Naspolya" at `192.168.1.111` is one row. ❗ The
+  twin lends only its name and "found nearby"; the row keeps the saved server's id, account, and share list at the
+  saved address. **Why**: the claimed host used to be what a row opened and signed in to, and an auth server added
+  by IP then signed in to the discovered `SMB Test (Auth)` (the E2E leak `servers-list-flows.spec.ts` avoids). Plain
+  address-and-port equality, ❌ never a GUID; another address of the machine (Tailscale) stays its own row. The
+  hub's TS merge doesn't do this; it shows two rows until the switch.
 - **Status**: a one-place server's (and an S3 account's most urgent place's) off the volume list's `ConnectionState`;
   an SMB server is `Connected` while a share from it is in the mount table (Cmdr's mount or the OS's), by
   `server_identity::mount_is_from` (address AND port, discovery pairing names with IPs), which wins over "Not connected

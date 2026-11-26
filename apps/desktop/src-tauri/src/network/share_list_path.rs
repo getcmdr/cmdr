@@ -39,6 +39,35 @@ impl ShareListAddress {
     }
 }
 
+/// The path of `host`'s share list, byte for byte what the frontend's writer
+/// (`share-list-path.ts::shareListPath`) writes: the key lowercased the way JavaScript
+/// lowercases (`str::to_lowercase`, final sigma and all, ❌ no NFC fold, which only the
+/// reader does), an IPv6 literal in brackets, every other `%`, `/`, `\`, `:`, `[`, and
+/// `]` as `%XX`, and the port only off 445.
+pub(crate) fn share_list_path(host: &NetworkHost) -> String {
+    let name = match host.source {
+        HostSource::Manual => host.hostname.as_deref().unwrap_or(&host.name),
+        HostSource::Discovered => &host.name,
+    };
+    let key = name.to_lowercase();
+    let authority = if is_ipv6_like(&key) {
+        format!("[{key}]")
+    } else {
+        key.chars().fold(String::with_capacity(key.len()), |mut out, c| {
+            if matches!(c, '%' | '/' | '\\' | ':' | '[' | ']') {
+                out.push_str(&format!("%{:02X}", u32::from(c)));
+            } else {
+                out.push(c);
+            }
+            out
+        })
+    };
+    match host.port {
+        SMB_PORT => format!("{SCHEME}{authority}"),
+        port => format!("{SCHEME}{authority}:{port}"),
+    }
+}
+
 /// Where a path on the `network` volume points.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum NetworkPath {

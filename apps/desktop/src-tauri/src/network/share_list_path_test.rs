@@ -65,6 +65,22 @@ fn every_written_path_reads_back_as_its_server() {
     }
 }
 
+/// ❗ The Rust writer writes every path the frontend's writer does, byte for byte: a
+/// Servers row's path is what `..` from its share list selects the row by.
+#[test]
+fn the_rust_writer_writes_what_the_frontend_writer_writes() {
+    for case in cases().hosts {
+        assert_eq!(share_list_path(&case.host), case.path, "{}", case.why);
+    }
+}
+
+/// JavaScript writes a word-final `Σ` as `ς`, and so does the Rust writer: the path is
+/// the frontend's to the byte, while the reader folds both to one key.
+#[test]
+fn the_writer_lowercases_a_final_sigma_the_way_javascript_does() {
+    assert_eq!(share_list_path(&discovered("ΑΘΗΝΑΣ", 445)), "smb://αθηνας");
+}
+
 #[test]
 fn other_spellings_of_a_server_fold_to_its_key() {
     for case in cases().spellings {

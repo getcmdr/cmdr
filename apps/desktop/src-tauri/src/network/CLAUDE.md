@@ -11,7 +11,7 @@ upgrade), SFTP, WebDAV, S3, and NFS (host keys, a saved-server store each, ❗ o
 PLACE for S3 and NFS, a `*_volume_wiring.rs` that dials and registers), and their shared seams (`connect_wiring.rs`,
 `server_list_file.rs`, `saved_server_fields.rs`, `one_shot_credentials.rs`, `credential_store.rs`). Every typed event:
 `events.rs`. Share lists: `share_list_volume.rs` (❗ only a pane's open dials, #324); Servers rows:
-`servers_listing.rs`.
+`servers_listing.rs`, live via `servers_relist.rs`.
 
 ## Must-knows
 

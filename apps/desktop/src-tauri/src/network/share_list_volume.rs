@@ -1,8 +1,12 @@
-//! The `network` volume: the Servers hub at `smb://` and, under it, each server's share
+//! The `network` volume: the Servers list at `smb://` and, under it, each server's share
 //! list at `smb://<server>`, one folder per share.
 //!
-//! The hub itself never lists here (the frontend draws it), so `smb://` answers
-//! `NotADirectory`. A share list resolves its server from the path
+//! `smb://` lists one folder per server (`servers_listing.rs`), the same for every reader:
+//! its rows come from memory, the stores, and the mount table, so ❌ nothing there dials
+//! or reads the Keychain. A row sits at the path it leads to: an SMB server's share-list
+//! path, a one-place server's place (another scheme), an S3 account's root. It stays
+//! current with no poll: `servers_relist.rs` re-lists it on every input change while a
+//! pane shows it. A share list resolves its server from the path
 //! (`share_list_path.rs`) and lists its shares as folder entries, each carrying the
 //! server's description of it as [`ShareMeta`]. A share is MOUNTED, ❌ never entered
 //! here: a path inside one answers `NotConnected`.
@@ -37,6 +41,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::ignore_poison::IgnorePoison;
 use crate::network::NetworkHost;
+use crate::network::servers_listing::{ServerRow, ServerSources, server_entry};
 use crate::network::share_list_path::{KnownHosts, NetworkPath, ShareListAddress, resolve};
 pub(crate) use crate::network::share_list_sign_in::{Listed, ShareListAccount};
 
@@ -64,6 +69,15 @@ pub(crate) enum Freshness {
 pub(crate) trait ServerShares: Send + Sync {
     /// The servers a share-list path may name. Memory and the manual store only.
     fn known_hosts(&self) -> KnownHosts;
+
+    /// What the Servers list's rows are built from: the saved stores, discovery's fresh
+    /// hosts, the volume list's states, and the kernel's mount table. ❌ Never a dial,
+    /// ❌ never the Keychain, ❌ never a `statfs` per mount.
+    fn server_sources(&self) -> ServerSources;
+
+    /// A share list's listing changed what its server's row says (the account it signed
+    /// in as): the Servers list re-lists if a pane shows it.
+    fn rows_may_have_changed(&self) {}
 
     /// What the share cache holds for `host`, by the cache rule a listing with no
     /// credentials follows. ❌ Never a dial, ❌ never the Keychain.
@@ -134,7 +148,30 @@ impl SmbServerVolume {
             }
         }
         drop(listed_as);
+        self.shares.rows_may_have_changed();
         result.map_err(|error| listing_refusal(host, error))
+    }
+
+    /// The Servers list's rows, now. The listed accounts are a snapshot: the lock is
+    /// held for the clone only, ❌ never across a read of the sources.
+    fn server_rows(&self) -> Vec<ServerRow> {
+        let listed_as = self.listed_as.lock_ignore_poison().clone();
+        self.shares.server_sources().rows(&listed_as)
+    }
+
+    /// The Servers list as the folder entries `smb://` lists. Memory only.
+    pub(crate) fn server_entries(&self) -> Vec<FileEntry> {
+        self.server_rows().into_iter().map(server_entry).collect()
+    }
+
+    /// The Servers row at `path`, whatever scheme the row's path is on.
+    fn server_entry_at(&self, path: &AppPath) -> Option<FileEntry> {
+        self.server_rows()
+            .into_iter()
+            .find(|row| {
+                AppPathBuf::parse(&row.path, PathFlavor::Posix).is_ok_and(|row_path| row_path.as_str() == path.as_str())
+            })
+            .map(server_entry)
     }
 
     /// The server a share list's `path` names, or `NotFound` when nothing known goes by it.
@@ -145,7 +182,8 @@ impl SmbServerVolume {
     async fn list(&self, path: &AppPath, reader: Reader) -> Result<Vec<FileEntry>, VolumeError> {
         let address = match NetworkPath::of(path.as_str()) {
             NetworkPath::ShareList(address) => address,
-            NetworkPath::Hub => return Err(VolumeError::NotADirectory(path.as_str().to_string())),
+            // Memory only, so every reader gets it (#324 has nothing to gate here).
+            NetworkPath::Hub => return Ok(self.server_entries()),
             NetworkPath::InShare(_) => return Err(VolumeError::NotConnected(path.as_str().to_string())),
             NetworkPath::Elsewhere => return Err(VolumeError::NotFound(path.as_str().to_string())),
         };
@@ -185,10 +223,15 @@ impl SmbServerVolume {
                 true,
                 false,
             )),
-            NetworkPath::ShareList(address) => {
-                let host = self.server_named(path, &address)?;
-                Ok(FileEntry::new(host.name, text.to_string(), true, false))
-            }
+            // A server's share list is its Servers row; one nothing lists any more (a
+            // host whose row went) still resolves as a folder by its name.
+            NetworkPath::ShareList(address) => match self.server_entry_at(path) {
+                Some(row) => Ok(row),
+                None => {
+                    let host = self.server_named(path, &address)?;
+                    Ok(FileEntry::new(host.name, text.to_string(), true, false))
+                }
+            },
             NetworkPath::InShare(at) => {
                 // A share's row, from the cache its share list read. Inside a share is
                 // the mount's to answer.
@@ -205,7 +248,10 @@ impl SmbServerVolume {
                     .map(|listed| share_entry(&at.share_list, listed))
                     .ok_or_else(not_connected)
             }
-            NetworkPath::Elsewhere => Err(VolumeError::NotFound(text.to_string())),
+            // A one-place server's row sits at its place, on another scheme.
+            NetworkPath::Elsewhere => self
+                .server_entry_at(path)
+                .ok_or_else(|| VolumeError::NotFound(text.to_string())),
         }
     }
 }
@@ -269,6 +315,8 @@ impl Volume for SmbServerVolume {
     /// the unforced `refresh_listing` a delete or trash sends to both panes skips the
     /// re-read, which would dial the server and could read the stored password (#324).
     /// A share a server's admin adds shows on ⌘R (a forced refresh) or the next open.
+    /// The Servers list is kept current by its own re-list (`servers_relist.rs`), so
+    /// the answer holds there too.
     fn listing_watch_coverage(&self, _path: &AppPath) -> WatchCoverage {
         WatchCoverage::EveryWriter
     }
@@ -341,6 +389,37 @@ impl ServerShares for AppServerShares {
         app_known_hosts(&self.app)
     }
 
+    fn server_sources(&self) -> ServerSources {
+        let hosts = crate::network::fresh_discovered_hosts();
+        let saved = crate::saved_servers::listing(
+            crate::network::manual_servers::all(&self.app),
+            crate::network::known_shares::get_all_known_shares(),
+            &hosts,
+        );
+        // Each saved place's standing in the registry, the switcher's own read.
+        let volume_states = crate::server_volumes::server_places()
+            .into_iter()
+            .map(|place| (place.id, place.state))
+            .collect();
+        // The kernel's mount-table snapshot: no call per mount, so a dead share can't
+        // stall the Servers list.
+        let smb_mounts = crate::volumes::smb_mounts()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(_, mount)| mount)
+            .collect();
+        ServerSources {
+            saved,
+            hosts,
+            volume_states,
+            smb_mounts,
+        }
+    }
+
+    fn rows_may_have_changed(&self) {
+        crate::network::servers_relist::request();
+    }
+
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult> {
         let hostname = Self::hostname_of(host);
         let guest = crate::network::smb_account_ladder::guest_attempt_for(
@@ -376,12 +455,14 @@ pub(crate) fn listed_account(volume_id: &str, path: &AppPath) -> Option<ShareLis
     volume.as_any().downcast_ref::<SmbServerVolume>()?.listed_account(path)
 }
 
-/// Registers the `network` volume. Once, at startup: it lists nothing until a pane opens
-/// a share list, so registering costs no dial.
+/// Registers the `network` volume and subscribes its Servers list's re-list. Once, at
+/// startup: it dials nothing until a pane opens a share list, and the re-list does
+/// nothing until a pane shows the Servers list.
 pub(crate) fn register(app: &tauri::AppHandle) {
     let shares = Arc::new(AppServerShares { app: app.clone() });
     crate::file_system::volume::manager::get_volume_manager()
         .register(NETWORK_VOLUME_ID, Arc::new(SmbServerVolume::new(shares)));
+    crate::network::servers_relist::subscribe(app);
 }
 
 #[cfg(test)]

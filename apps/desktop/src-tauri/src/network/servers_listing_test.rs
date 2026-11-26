@@ -272,21 +272,84 @@ fn matches_a_server_saved_off_a_bonjour_mount_to_the_discovered_host() {
     assert!(rows[0].meta.saved);
 }
 
-/// ❗ A mount by IP is the person's pick of address (§ "Decisions", 5): its server stays a
-/// row of its own beside the Bonjour host at that IP, which the row neither opens nor signs
-/// in to. Both read connected.
+fn bonjour_testnas_at(ip: &str, port: u16) -> NetworkHost {
+    NetworkHost {
+        hostname: Some("testnas.local".to_string()),
+        ip_address: Some(ip.to_string()),
+        port,
+        ..host("bonjour-testnas", "Testnas")
+    }
+}
+
+/// ❗ A server saved by IP and the Bonjour host discovery resolved to exactly that address
+/// and port are one row under the Bonjour name ("Naspolya" at `192.168.1.111`, David's
+/// call after the mounted-servers work). The row stays the SAVED server's: its id, and the
+/// share list at the address the person picked, so signing in on it never signs in to the
+/// discovered host's own share list.
 #[test]
-fn keeps_a_server_saved_by_ip_apart_from_the_bonjour_host_at_that_ip() {
-    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
-        .hosts(vec![NetworkHost {
-            hostname: Some("testnas.local".to_string()),
-            ip_address: Some("10.0.0.4".to_string()),
-            ..host("bonjour-testnas", "Testnas")
-        }])
+fn merges_a_server_saved_by_ip_with_the_bonjour_host_at_that_address() {
+    let saved = from_mount("10.0.0.4", 445);
+    let rows = Inputs::saved(vec![saved.clone()])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 445)])
         .mount("10.0.0.4", 445)
         .rows();
+    assert_eq!(names(&rows), ["Testnas"]);
+    let row = &rows[0];
+    assert!(row.meta.saved);
+    assert_eq!(row.meta.row_id, saved.id);
+    assert_eq!(row.meta.status, ServerStatus::Connected);
+    assert_eq!(row.meta.address, "10.0.0.4");
+    assert_eq!(
+        row.opens,
+        ServerOpens::ShareList(ShareListAddress {
+            key: "10.0.0.4".to_string(),
+            port: 445,
+        })
+    );
+    assert_eq!(row.path, "smb://10.0.0.4");
+}
+
+/// Merged and unmounted, the row reads "Found nearby": mDNS is seeing that machine.
+#[test]
+fn a_server_saved_by_ip_reads_found_nearby_while_mdns_sees_that_address() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 445)])
+        .rows();
+    assert_eq!(rows[0].meta.status, ServerStatus::FoundNearby);
+}
+
+/// A name the person gave the server wins over the Bonjour name, merged or not.
+#[test]
+fn a_server_saved_by_ip_keeps_a_name_the_person_chose() {
+    let named = SavedServer {
+        name_source: ServerNameSource::User,
+        ..smb("manual-10-0-0-4-445", "Attic NAS", "10.0.0.4")
+    };
+    let rows = Inputs::saved(vec![named])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 445)])
+        .rows();
+    assert_eq!(names(&rows), ["Attic NAS"]);
+}
+
+/// ❗ The port is part of the address: a host on another port at that IP is another
+/// server (the Docker fixtures run ten on one address).
+#[test]
+fn keeps_a_server_saved_by_ip_apart_from_a_host_on_another_port_there() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 10480)])
+        .rows();
     assert_eq!(names(&rows), ["10.0.0.4", "Testnas"]);
-    assert!(rows.iter().all(|row| row.meta.status == ServerStatus::Connected));
+}
+
+/// ❗ Only the exact address merges: the same NAS by its Tailscale address stays a row of
+/// its own (two addresses are two servers, § "Decisions", 5), ❌ never paired by GUID.
+#[test]
+fn keeps_a_server_saved_by_another_address_of_that_machine_apart() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445), from_mount("100.64.0.10", 445)])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 445)])
+        .rows();
+    assert_eq!(names(&rows), ["Testnas", "100.64.0.10"]);
+    assert_eq!(named(&rows, "100.64.0.10").path, "smb://100.64.0.10");
 }
 
 /// ❗ Servers behind mounted shares (§ "Decisions", 4 and 5 of the Servers plan): one NAS
@@ -648,6 +711,41 @@ fn opens_a_saved_server_mdns_isnt_seeing_by_its_address_on_the_port_it_names() {
             port: 445,
         })
     );
+}
+
+/// ❗ A row's path is where its entry sits in the `smb://` listing, which keys entries by
+/// path: an SMB server's share-list path as the frontend writes it (so `..` from that
+/// share list selects the row by it), a one-place server's place, an S3 account's root.
+#[test]
+fn a_rows_path_is_where_it_leads() {
+    let rows = Inputs::saved(vec![
+        sftp_server(),
+        smb("manual-localhost-11482", "Both box", "localhost:11482"),
+        s3_account(vec![bucket(Some("photos"))]),
+    ])
+    .hosts(vec![host("h1", "Attic NAS")])
+    .rows();
+    assert_eq!(named(&rows, "Testnas").path, "sftp://test_user_1@testnas.local:22");
+    assert_eq!(named(&rows, "Both box").path, "smb://localhost:11482");
+    assert_eq!(named(&rows, "Attic NAS").path, "smb://attic nas");
+    // An account whose root isn't saved: the root its buckets sit under.
+    assert_eq!(
+        named(&rows, "AKIAEXAMPLE@127.0.0.1").path,
+        "s3://AKIAEXAMPLE@127.0.0.1:14480/"
+    );
+}
+
+/// ❗ No two rows share a path, whatever the sources repeat.
+#[test]
+fn never_emits_two_rows_at_one_path() {
+    let rows = Inputs::saved(vec![smb("manual-a", "First", "Testnas"), sftp_server()])
+        .hosts(vec![host("h1", "Testnas"), host("h2", "TESTNAS")])
+        .rows();
+    let mut paths: Vec<&str> = rows.iter().map(|row| row.path.as_str()).collect();
+    let count = paths.len();
+    paths.sort_unstable();
+    paths.dedup();
+    assert_eq!(paths.len(), count);
 }
 
 // --- The account a row is signed in as ----------------------------------------------

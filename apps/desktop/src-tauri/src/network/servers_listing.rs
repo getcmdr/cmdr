@@ -17,10 +17,13 @@
 //! list under both spellings. That match compares lowercase strings on purpose: it pairs
 //! a saved LABEL with a Bonjour name, which no address-and-port identity can answer.
 //!
-//! ❗ A server saved by IP is NOT claimed by the Bonjour host discovery resolved to that
-//! IP: an address is the person's pick (§ "Decisions", 5 of the Servers plan), and the
-//! claimed host is what the row opens, signs in to, and prefetches (the E2E suite's
-//! auth-by-IP server keeps the discovered `SMB Test (Auth)` untouched that way).
+//! ❗ A server saved by IP and the Bonjour host discovery resolved to exactly that address
+//! and port are ONE row under the Bonjour name (`bonjour_twins`), but the row stays the
+//! saved server's: its id, and the share list at the address the person picked. The twin
+//! lends only its name and its "found nearby", so signing in on the row never signs in
+//! to the discovered host (the E2E suite's auth-by-IP server keeps the discovered
+//! `SMB Test (Auth)` untouched that way). Another address of that machine (Tailscale) is
+//! another row.
 //!
 //! ❌ Never merge two rows by server GUID: Samba derives its GUID from the NetBIOS name,
 //! so it proves a name, not a machine (#1518). Two addresses of one NAS are two rows.
@@ -31,10 +34,12 @@ use cmdr_fs::server_meta::{ServerMeta, ServerProtocol, ServerStatus, ShareListAc
 use cmdr_fs::volume::ConnectionState;
 
 use crate::network::server_identity::{SmbServer, mount_is_from, smb_servers_of};
-use crate::network::share_list_path::ShareListAddress;
+use crate::network::share_list_path::{ShareListAddress, share_list_path};
 use crate::network::{HostSource, NetworkHost};
 use crate::saved_servers::{SavedPlace, SavedServer, ServerNameSource};
 use crate::volumes::SmbMountInfo;
+use cmdr_fs::app_path::{AppPathBuf, PathFlavor};
+use cmdr_fs::entry::FileEntry;
 
 /// SMB's own port, which an address leaves unsaid.
 const SMB_PORT: u16 = 445;
@@ -61,6 +66,47 @@ pub(crate) struct ServerRowInputs<'a> {
     pub listed_as: &'a HashMap<String, ShareListAccount>,
 }
 
+/// [`ServerRowInputs`]' sources, owned, as the `network` volume reads them per listing
+/// (the listed accounts aside, which the volume keeps itself). Memory, the stores, and
+/// the mount table only.
+#[derive(Default, Clone)]
+pub(crate) struct ServerSources {
+    pub saved: Vec<SavedServer>,
+    pub hosts: Vec<NetworkHost>,
+    pub volume_states: HashMap<String, ConnectionState>,
+    pub smb_mounts: Vec<SmbMountInfo>,
+}
+
+impl ServerSources {
+    /// The rows these sources make, with `listed_as` the accounts share lists signed in as.
+    pub(crate) fn rows(&self, listed_as: &HashMap<String, ShareListAccount>) -> Vec<ServerRow> {
+        server_rows(&ServerRowInputs {
+            saved: &self.saved,
+            hosts: &self.hosts,
+            volume_states: &self.volume_states,
+            smb_mounts: &self.smb_mounts,
+            listed_as,
+        })
+    }
+}
+
+/// A row as the folder entry the `smb://` listing holds: a directory (a file's Enter is
+/// the OS opener, which would hand `sftp://…` to Launch Services), its facts in
+/// `server_meta`, its reserved icon id, and its last use as the date.
+pub(crate) fn server_entry(row: ServerRow) -> FileEntry {
+    let modified_at = row
+        .last_connected_at
+        .as_deref()
+        .and_then(crate::timestamps::parse_rfc3339)
+        .and_then(|at| u64::try_from(at.as_second()).ok());
+    FileEntry {
+        icon_id: row.icon_id.to_string(),
+        modified_at,
+        server_meta: Some(row.meta),
+        ..FileEntry::new(row.name, row.path, true, false)
+    }
+}
+
 /// One row of the Servers list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ServerRow {
@@ -72,8 +118,12 @@ pub(crate) struct ServerRow {
     pub last_connected_at: Option<String>,
     /// [`SMB_SERVER_ICON_ID`] or [`SERVER_ICON_ID`].
     pub icon_id: &'static str,
-    /// Where Enter on the row leads, which is also what its path is built from.
+    /// Where Enter on the row leads.
     pub opens: ServerOpens,
+    /// The row's path in the `smb://` listing, which keys entries by it: an SMB
+    /// server's share-list path as the frontend writes it (`share_list_path`), a
+    /// one-place server's app root, an S3 account's root. Unique per row.
+    pub path: String,
 }
 
 /// Where a row leads. ❗ Two rows never lead to one place ([`server_rows`] keeps the
@@ -121,20 +171,26 @@ pub(crate) fn server_rows(inputs: &ServerRowInputs<'_>) -> Vec<ServerRow> {
     let mut claimed: HashSet<&str> = HashSet::new();
     let mut taken_ids: HashSet<String> = HashSet::new();
     let mut taken_targets: HashSet<String> = HashSet::new();
+    let mut taken_paths: HashSet<String> = HashSet::new();
     let mut rows = Vec::new();
     let mut add = |row: ServerRow| {
-        if taken_ids.contains(&row.meta.row_id) || taken_targets.contains(&row.opens.key()) {
+        if taken_ids.contains(&row.meta.row_id)
+            || taken_targets.contains(&row.opens.key())
+            || taken_paths.contains(&row.path)
+        {
             return;
         }
         taken_ids.insert(row.meta.row_id.clone());
         taken_targets.insert(row.opens.key());
+        taken_paths.insert(row.path.clone());
         rows.push(row);
     };
 
     for server in inputs.saved {
         let hosts = matching_hosts(server, inputs.hosts);
-        claimed.extend(hosts.iter().map(|host| host.id.as_str()));
-        if let Some(row) = saved_row(server, &hosts, inputs) {
+        let twins = bonjour_twins(server, inputs.hosts, &hosts);
+        claimed.extend(hosts.iter().chain(&twins).map(|host| host.id.as_str()));
+        if let Some(row) = saved_row(server, &hosts, &twins, inputs) {
             add(row);
         }
     }
@@ -175,6 +231,36 @@ fn matching_hosts<'a>(server: &SavedServer, hosts: &'a [NetworkHost]) -> Vec<&'a
         .collect()
 }
 
+/// The DISCOVERED hosts mDNS resolved to exactly this saved SMB server's address and port,
+/// beyond the ones [`matching_hosts`] already matched: a server saved by IP and the
+/// Bonjour host at that IP are one machine at one address, so they're one row.
+///
+/// ❗ They only lend the row their name and their "found nearby": the row still opens,
+/// signs in to, and acts on the SAVED server at the address the person picked. An auth
+/// server saved by IP that opened its Bonjour twin's share list signed in to that host
+/// instead (the E2E suite's `authServerIp` leak). ❗ Plain address-and-port equality,
+/// ❌ never a GUID, and the port too: one IP can serve several SMB servers.
+fn bonjour_twins<'a>(
+    server: &SavedServer,
+    hosts: &'a [NetworkHost],
+    matched: &[&'a NetworkHost],
+) -> Vec<&'a NetworkHost> {
+    if server.protocol != ServerProtocol::Smb {
+        return Vec::new();
+    }
+    let dials = SmbServer::from_name(&server.address);
+    hosts
+        .iter()
+        .filter(|host| host.source == HostSource::Discovered && host.port == dials.port())
+        .filter(|host| {
+            host.ip_address
+                .as_deref()
+                .is_some_and(|ip| ip.eq_ignore_ascii_case(dials.host()))
+        })
+        .filter(|host| !matched.iter().any(|matched| matched.id == host.id))
+        .collect()
+}
+
 /// Which matching host the row speaks for. A DISCOVERED host wins: its name is the
 /// Bonjour name a person recognizes, where a manual host is named after the address
 /// they typed.
@@ -186,8 +272,16 @@ fn primary_host<'a>(hosts: &[&'a NetworkHost]) -> Option<&'a NetworkHost> {
         .copied()
 }
 
-fn saved_row(server: &SavedServer, hosts: &[&NetworkHost], inputs: &ServerRowInputs<'_>) -> Option<ServerRow> {
+fn saved_row(
+    server: &SavedServer,
+    hosts: &[&NetworkHost],
+    twins: &[&NetworkHost],
+    inputs: &ServerRowInputs<'_>,
+) -> Option<ServerRow> {
     let host = primary_host(hosts);
+    // Everything that is this machine, a Bonjour twin at the saved address included: what
+    // the row is named after and how live it reads. What it OPENS is `host`'s.
+    let machine: Vec<&NetworkHost> = hosts.iter().chain(twins).copied().collect();
     let many = has_many_places(server.protocol);
     let place: Option<&SavedPlace> = server.places.first();
     let account = match server.protocol {
@@ -199,36 +293,49 @@ fn saved_row(server: &SavedServer, hosts: &[&NetworkHost], inputs: &ServerRowInp
         ServerProtocol::S3 => user(server.username.as_deref()),
         ServerProtocol::Sftp | ServerProtocol::Webdav | ServerProtocol::Nfs => None,
     };
-    let opens = match server.protocol {
-        ServerProtocol::Smb => ServerOpens::ShareList(ShareListAddress::of_host(
-            &host.cloned().unwrap_or_else(|| saved_host(server)),
-        )),
-        ServerProtocol::S3 => ServerOpens::S3Account {
-            root_volume_id: server.id.clone(),
-            root_app_root: server
+    let (opens, path) = match server.protocol {
+        ServerProtocol::Smb => {
+            let opened = host.cloned().unwrap_or_else(|| saved_host(server));
+            (
+                ServerOpens::ShareList(ShareListAddress::of_host(&opened)),
+                share_list_path(&opened),
+            )
+        }
+        ServerProtocol::S3 => {
+            let root_app_root = server
                 .places
                 .iter()
                 .find(|place| place.volume_id == server.id)
-                .map(|root| root.app_root.clone()),
-        },
+                .map(|root| root.app_root.clone());
+            let Some(path) = root_app_root.clone().or_else(|| account_root_of(server)) else {
+                log::warn!(target: "network", "a saved S3 account has no place to read its root off; leaving it off the Servers list");
+                return None;
+            };
+            let opens = ServerOpens::S3Account {
+                root_volume_id: server.id.clone(),
+                root_app_root,
+            };
+            (opens, path)
+        }
         ServerProtocol::Sftp | ServerProtocol::Webdav | ServerProtocol::Nfs => {
             let Some(place) = place else {
                 log::warn!(target: "network", "a saved one-place server has no place to open; leaving it off the Servers list");
                 return None;
             };
-            ServerOpens::Place {
+            let opens = ServerOpens::Place {
                 volume_id: place.volume_id.clone(),
                 app_root: place.app_root.clone(),
-            }
+            };
+            (opens, place.app_root.clone())
         }
     };
     Some(ServerRow {
-        name: display_name(server, host),
+        name: display_name(server, primary_host(&machine)),
         meta: ServerMeta {
             row_id: server.id.clone(),
             protocol: server.protocol,
             address: host.and_then(host_address).unwrap_or_else(|| server.address.clone()),
-            status: saved_status(server, hosts, host, inputs),
+            status: saved_status(server, &machine, primary_host(&machine), inputs),
             account,
             saved: true,
             // A many-place server's places are its own; the row opens none of them.
@@ -238,7 +345,17 @@ fn saved_row(server: &SavedServer, hosts: &[&NetworkHost], inputs: &ServerRowInp
         last_connected_at: server.last_connected_at.clone(),
         icon_id: icon_for(server.protocol),
         opens,
+        path,
     })
+}
+
+/// The root an S3 account's buckets sit under (`s3://<key>@<host>:<port>/`), read off a
+/// saved place's app root: the path an account whose root isn't saved lists at. The
+/// same text a saved root's app root has, so saving the root later keeps the row's path.
+fn account_root_of(server: &SavedServer) -> Option<String> {
+    let place = server.places.first()?;
+    let app_root = AppPathBuf::parse(&place.app_root, PathFlavor::Posix).ok()?;
+    Some(app_root.root().as_str().to_string())
 }
 
 fn nearby_row(host: &NetworkHost, inputs: &ServerRowInputs<'_>) -> ServerRow {
@@ -262,6 +379,7 @@ fn nearby_row(host: &NetworkHost, inputs: &ServerRowInputs<'_>) -> ServerRow {
         last_connected_at: None,
         icon_id: SMB_SERVER_ICON_ID,
         opens: ServerOpens::ShareList(ShareListAddress::of_host(host)),
+        path: share_list_path(host),
     }
 }
 
