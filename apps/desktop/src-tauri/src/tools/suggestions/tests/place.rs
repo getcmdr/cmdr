@@ -140,6 +140,33 @@ fn a_destination_on_a_live_volume_stages_where_it_was_named() {
 
 // ── A place that can't ────────────────────────────────────────────────────────
 
+/// ❗ #1518: a Samba GUID is the NetBIOS name (here `raspberrypi`), so a live box with
+/// the sleeping one's name and share name is no sibling: the place refuses, ❌ never
+/// re-addressed onto the wrong box.
+#[test]
+fn a_name_derived_guid_never_re_addresses_a_place() {
+    const SAMBA_BOX: &str = "70736172-6562-7272-7970-690000000000";
+    let mut facts = local_facts();
+    for (id, mount, live) in [("ts", "testshare", false), ("lan", "testshare-1", true)] {
+        facts.volumes.push(share(
+            id,
+            mount,
+            live,
+            (SAMBA_BOX, GuidProof::Authenticated),
+            "testshare",
+            "test_user_3",
+        ));
+    }
+    let call = move_into(json!({ "volumeId": "ts", "path": "/Volumes/testshare/documents" }));
+
+    let (_, field, miss) = location_miss(&call, &facts);
+    assert_eq!(
+        (field, miss.miss),
+        (PlaceField::Destination, MissToken::VolumeNotConnected)
+    );
+    assert_eq!(miss.same_share_as.as_deref(), Some(&[][..]));
+}
+
 /// The whole call refuses, the group before it included, so nothing waits on the user that
 /// approval would only refuse.
 #[test]

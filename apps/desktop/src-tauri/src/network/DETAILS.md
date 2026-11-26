@@ -856,11 +856,19 @@ the migration, and what Forget does). What the code has to defend:
 
 One NAS reached by its LAN IP and by Tailscale mounts as two volumes with two ids. The only proof they're one share is
 the GUID the server answers NEGOTIATE with, paired with the share name (the GUID names the BOX, so it never groups
-alone). `server_guid.rs` holds it as `ServerGuid`, which can't be all zeros (smb2 fills `Guid::ZERO` before a negotiate
-lands); `smb_server_guid.rs` records it, as a saved row's `serverGuid` (`docs/specs/saved-smb-shares.md` § The store),
+alone), and only when the server MINTED that GUID. `server_guid.rs` holds it as `ServerGuid`, which can't be all zeros
+(smb2 fills `Guid::ZERO` before a negotiate lands); `smb_server_guid.rs` records it, as a saved row's `serverGuid` (`docs/specs/saved-smb-shares.md` § The store),
 with how it was learned beside it as `serverGuidProof` (`GuidProof`: `authenticated` or `unauthenticated`). Ask Cmdr's
 tools read both to treat the two ids as one (`../location/same_share.rs`): any GUID makes a `sameShareAs` hint, and only
 an `authenticated` one on BOTH rows lets one id answer for the other.
+
+- ❗ **A Samba GUID proves only a name** (#1518). Samba doesn't mint one: it copies its lowercased NetBIOS name into the
+  16 bytes, NUL-padded (a QNAP named `naspolya` negotiates `7073616e-6c6f-6179-0000-000000000000`, little-endian ASCII;
+  verified from the dev log, 2026-11-26). So two Pis named `raspberrypi`, each with a `public` share, answer one GUID.
+  `ServerGuid::origin()` reads the shape off the bytes (`GuidOrigin::NameDerived`: printable ASCII, then only NULs),
+  and `share_identity.rs::same_share` takes only a `Minted` GUID as proof, so a Samba NAS by LAN and by Tailscale is two
+  shares to Ask Cmdr: no `sameShareAs`, no redirect, signed in or not. The GUID is still recorded as is (its origin is
+  derived, never stored). `GuidProof` is orthogonal: a signed-in Samba session still proves only a name.
 
 - **The proof that won is the one recorded** (`known_shares::record_guid_in`): a fill by the probe or a guest session
   records `unauthenticated`; a session signed in as the ROW'S OWN account records `authenticated`, whether it
@@ -891,8 +899,9 @@ an `authenticated` one on BOTH rows lets one id answer for the other.
 - ❌ **Never from a tool handler**: a model's read must not dial a host. Nothing under `agent/`, `mcp/`, or `location/`
   names the recorder or the probe (`smb_server_guid_test.rs::no_tool_handler_reaches_the_probe`).
 - The Docker SMB fixtures answer distinct GUIDs per container (verified on smb2 0.35.0 with the `guest` and `auth`
-  fixtures, `smb_integration_probe_reads_the_server_guid_without_credentials`, 2026-10-26): each image's Samba mints its
-  own on first start, so a two-server test over them is sound.
+  fixtures, `smb_integration_probe_reads_the_server_guid_without_credentials`, 2026-10-26) only because their hostnames
+  (so their NetBIOS names) differ: each GUID is that name, so it's `NameDerived` and never pairs two shares. A test that
+  needs a proven pair uses a minted GUID in a unit fixture.
 
 ## Telling the user about a kernel-mount fallback
 

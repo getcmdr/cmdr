@@ -12,6 +12,9 @@ const BOX: &str = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 const OTHER_BOX: &str = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0";
 const ZERO: &str = "00000000-0000-0000-0000-000000000000";
 
+/// A Samba box named `raspberrypi`: its GUID is that name, NUL-padded (#1518).
+const SAMBA_BOX: &str = "70736172-6562-7272-7970-690000000000";
+
 fn share(id: &str, root: &str, live: bool, identity: ShareIdentity) -> VolumeFact {
     VolumeFact {
         id: id.to_string(),
@@ -141,6 +144,31 @@ fn the_same_share_under_two_accounts_is_grouped_but_never_redirected() {
     assert_eq!(facts.same_share_as("ts"), ["lan"]);
     assert_eq!(facts.readers(&asked).len(), 1, "only the volume asked reads");
     assert_eq!(facts.preferred_member("ts").map(|v| v.id.as_str()), Some("ts"));
+}
+
+/// ❗ #1518: Samba's GUID is its NetBIOS name, so two Pis both named `raspberrypi`
+/// with a `public` share answer one GUID. It proves a name, ❌ not a box: no group,
+/// no redirect, no stand-in, even with both signed in as one account.
+#[test]
+fn a_name_derived_guid_never_makes_two_shares_one() {
+    let facts = facts(vec![
+        share("ts", "/Volumes/public", false, test_user_3(Some(SAMBA_BOX), "public")),
+        share("lan", "/Volumes/public-1", true, test_user_3(Some(SAMBA_BOX), "public")),
+    ]);
+    let asked = papers_on(&facts, "ts", "/Volumes/public");
+
+    assert!(facts.same_share_as("ts").is_empty());
+    assert!(facts.same_share_as("lan").is_empty());
+    assert_eq!(facts.readers(&asked).len(), 1, "only the volume asked reads");
+    assert_eq!(facts.preferred_member("ts").map(|v| v.id.as_str()), Some("ts"));
+    assert_eq!(facts.redirect_group_ids("ts"), ["ts"]);
+    assert_eq!(
+        facts.connect_target("ts", |_| None).map(|v| v.id.as_str()),
+        Some("ts"),
+        "the serving sibling doesn't stand in"
+    );
+    let miss = crate::location::miss::volume_not_connected(&facts, &asked);
+    assert_eq!(miss.same_share_as, Some(Vec::new()));
 }
 
 /// A not-connected miss names its proven siblings: here another account's, which

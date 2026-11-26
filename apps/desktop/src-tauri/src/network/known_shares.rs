@@ -75,7 +75,8 @@ pub struct KnownNetworkShare {
     pub pinned: bool,
     /// Share rows: the GUID the share's server answered NEGOTIATE with, in
     /// `crate::network::server_guid::ServerGuid`'s text form: the proof two rows (one NAS by its LAN
-    /// and its Tailscale address) are one server. Written only through
+    /// and its Tailscale address) are one server, when the server minted it (a Samba one is its
+    /// NetBIOS name and proves nothing, `GuidOrigin`). Written only through
     /// [`record_server_guid`], never by a row an add or a mount files.
     #[serde(default)]
     pub server_guid: Option<String>,

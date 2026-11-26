@@ -323,8 +323,12 @@ fn scored_result_flags_stale_when_score_predates_recompute() {
 /// The two NAS ids as one proven share: one server GUID, one share name, and the
 /// account named `username` on the LAN member.
 fn one_share(lan_username: &str) -> VolumeFacts {
+    one_guid("6ba7b810-9dad-11d1-80b4-00c04fd430c8", lan_username)
+}
+
+/// [`one_share`]'s two NAS ids, both answering `guid`.
+fn one_guid(guid: &str, lan_username: &str) -> VolumeFacts {
     use crate::location::share_identity::ShareIdentity;
-    const BOX: &str = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
     let mut facts = facts();
     for v in &mut facts.volumes {
         let username = match v.id.as_str() {
@@ -333,7 +337,7 @@ fn one_share(lan_username: &str) -> VolumeFacts {
             _ => continue,
         };
         v.share = Some(ShareIdentity::new(
-            Some((BOX, crate::network::server_guid::GuidProof::Authenticated)),
+            Some((guid, crate::network::server_guid::GuidProof::Authenticated)),
             "testshare",
             Some(username),
         ));
@@ -406,6 +410,27 @@ fn a_share_opened_as_another_account_keeps_its_own_rows() {
 
     assert_eq!(locations(&result), [loc(TAILSCALE, "/Volumes/testshare/photos")]);
     assert!(result["folders"][0].get("via").is_none());
+}
+
+/// ❗ #1518: a Samba GUID is the NetBIOS name (here `raspberrypi`), so two boxes with
+/// one name share it. Each keeps its own rows, and neither names the other.
+#[test]
+fn shares_on_a_name_derived_guid_keep_their_own_rows() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    write_db(
+        dir.path(),
+        TAILSCALE,
+        &[("/photos", scored_signals(PathClass::UserContent, NOW))],
+        NOW,
+    );
+    let facts = one_guid("70736172-6562-7272-7970-690000000000", "test_user_3");
+
+    let result = important_folders_on(dir.path(), &facts, &json!({}), NOW).expect("answers");
+
+    assert_eq!(locations(&result), [loc(TAILSCALE, "/Volumes/testshare/photos")]);
+    assert!(result["folders"][0].get("via").is_none());
+    let overview = result["volumes"].as_array().expect("volumes");
+    assert!(overview.iter().all(|v| v.get("sameShareAs").is_none()), "{overview:?}");
 }
 
 /// An importance store with no rows and no full pass yet: the scheduler opened it

@@ -7,7 +7,9 @@
 //!
 //! - **Same share** (`sameShareAs`): both record the same server GUID (non-zero:
 //!   `ServerGuid` can't hold the all-zero one) AND the same share name, ignoring
-//!   case. The GUID names the BOX, so it never groups alone. ❌ No fuzzy "possibly
+//!   case. The GUID names the BOX, so it never groups alone, and only a GUID the
+//!   server minted counts: a Samba one is its NetBIOS name (`GuidOrigin`, #1518).
+//!   ❌ No fuzzy "possibly
 //!   the same": an unproven pair isn't grouped.
 //! - **Redirectable**: the same share, signed in as the same account, with BOTH
 //!   GUIDs recorded by a session that signed in (`GuidProof::Authenticated`).

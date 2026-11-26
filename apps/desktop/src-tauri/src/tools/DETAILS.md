@@ -1244,7 +1244,8 @@ Tailscale is two volumes, two indexes, and two importance stores (transcript 179
 unindexed live share). Two rules, both proof-based:
 
 - **Same share**: both record the same server GUID AND the same share name, ignoring case. The GUID names the BOX, so it
-  never groups alone, and an all-zero GUID is no GUID (`apps/desktop/src-tauri/src/network/server_guid.rs`). Where the GUIDs come from, and why a
+  never groups alone, an all-zero GUID is no GUID, and a Samba GUID (its NetBIOS name, `GuidOrigin::NameDerived`) proves
+only a name, so it never groups either (`apps/desktop/src-tauri/src/network/server_guid.rs`). Where the GUIDs come from, and why a
   probe's only fills: `apps/desktop/src-tauri/src/network/DETAILS.md` § "Which server a share is on". ❌ No fuzzy "possibly the same". It shows as
   `sameShareAs: [volumeId]` on `list_volumes` rows, `important_folders`' overview, and not-connected misses.
 - **Redirectable**: the same share AND the same account (a guest is no account) AND both GUIDs recorded by a session

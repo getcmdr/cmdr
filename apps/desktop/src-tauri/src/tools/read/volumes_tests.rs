@@ -309,3 +309,34 @@ fn rows_of_one_proven_share_name_each_other() {
     assert_eq!(out["volumes"][1]["sameShareAs"], serde_json::json!([LAN]));
     assert!(out["volumes"][2].get("sameShareAs").is_none());
 }
+
+/// ❗ #1518: a Samba GUID is the NetBIOS name (here `raspberrypi`), so two boxes with
+/// one name and one share name answer it alike. It names no sibling.
+#[test]
+fn rows_sharing_a_name_derived_guid_name_no_sibling() {
+    use crate::location::share_identity::ShareIdentity;
+    let identity = || {
+        Some(ShareIdentity::new(
+            Some((
+                "70736172-6562-7272-7970-690000000000",
+                crate::network::server_guid::GuidProof::Authenticated,
+            )),
+            "testshare",
+            None,
+        ))
+    };
+    let mut ts = fact(TAILSCALE, VolumeKind::Smb, "/Volumes/testshare", false);
+    ts.share = identity();
+    let mut lan = fact(LAN, VolumeKind::Smb, "/Volumes/testshare-1", true);
+    lan.share = identity();
+    let out = wire(&map(
+        &[
+            summary(LAN, VolumeKind::Smb, Some("off"), Some("direct")),
+            summary(TAILSCALE, VolumeKind::Smb, Some("off"), Some("saved")),
+        ],
+        &facts(vec![lan, ts]),
+    ));
+
+    assert!(out["volumes"][0].get("sameShareAs").is_none());
+    assert!(out["volumes"][1].get("sameShareAs").is_none());
+}

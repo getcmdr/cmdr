@@ -3,7 +3,7 @@
 //! (`resolve.rs`) and the grouping reads the facts: in either of those two it
 //! would weld them into a cycle.
 
-use crate::network::server_guid::{GuidProof, ServerGuid};
+use crate::network::server_guid::{GuidOrigin, GuidProof, ServerGuid};
 
 /// What proves which share a volume is.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,11 +27,15 @@ impl ShareIdentity {
         }
     }
 
-    /// Proven the same share: one server GUID, one share name. A hint whichever
-    /// way each GUID was learned.
+    /// Proven the same share: one server GUID the server minted, one share name. A
+    /// hint whichever way each GUID was learned. ❗ A Samba GUID is the NetBIOS name
+    /// (`GuidOrigin::NameDerived`), so two boxes named alike would match: it proves
+    /// nothing here, signed in or not (#1518).
     pub(crate) fn same_share(&self, other: &Self) -> bool {
-        matches!((&self.server_guid, &other.server_guid), (Some((a, _)), Some((b, _))) if a == b)
-            && self.share_name == other.share_name
+        matches!(
+            (&self.server_guid, &other.server_guid),
+            (Some((a, _)), Some((b, _))) if a == b && a.origin() == GuidOrigin::Minted
+        ) && self.share_name == other.share_name
     }
 
     /// The same share, opened as the same account, with BOTH GUIDs recorded by a
