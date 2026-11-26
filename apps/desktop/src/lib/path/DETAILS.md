@@ -75,7 +75,10 @@ Choices the grammar makes, each pinned by a row in `crates/cmdr-fs/src/volume/pa
 - **`.` and `..` resolve lexically, clamped at the root**, as `remote_paths.rs` does on the Rust side. No `stat`.
 - **`//?/` and `//./` are refused**: they're Win32's device namespaces, not shares.
 - **A scheme URL keeps plain slash arithmetic.** Where its root sits is its volume's business, so the grammar answers
-  `null` for its root, root-ness, and segments.
+  `null` for its root, root-ness, and segments. One floor: `parentOrRoot` never cuts into the authority, so
+  `s3://k@host:443/bucket` → `s3://k@host:443/` (the backend's spelling of an authority root), which is its own parent.
+  Below it the arithmetic gave `s3://k@host:443`, then `s3:/`, which the backend refuses as "a path with no root"
+  (David's QA, 2026-11-26: `..` from an S3 account's bucket list). A bare `smb://` is its own parent.
 
 ## Showing and typing a path
 

@@ -49,6 +49,17 @@ describe('breadcrumbDisplayPath', () => {
     vi.clearAllMocks()
   })
 
+  it("reads a server place's root as its root, its spelling without the root's `/` included", () => {
+    const root = 's3://test_key_1@s3.example.com:443/'
+    const input = { userHomePath: '/Users/test_user_1', isSearchResultsView: false, searchLabel: undefined }
+    const at = (currentPath: string) =>
+      breadcrumbDisplayPath({ ...input, currentPath, volumeId: 's3-x', volumePath: root })
+    expect(at(root)).toBe('/')
+    // The bucket list's `..` once landed here, and the bar read `s3:/s3.example.com:443`.
+    expect(at('s3://test_key_1@s3.example.com:443')).toBe('/')
+    expect(at(`${root}bucket_1`)).toBe('bucket_1')
+  })
+
   it('reads a drive or share volume like Explorer, from its root down, on Windows', () => {
     onTestFinished(withPlatform('windows'))
     const input = { userHomePath: 'C:/Users/test_user_1', isSearchResultsView: false, searchLabel: undefined }

@@ -54,7 +54,8 @@ describe('parentOf', () => {
 
   it('handles virtual-volume URLs by slash arithmetic', () => {
     expect(parentOf(toCanonical('mtp://dev/65537/Music', HOME))).toBe('mtp://dev/65537')
-    expect(parentOf(toCanonical('adb://R58M12345/sdcard', HOME))).toBe('adb://R58M12345')
+    // Floored at the authority's root, the way the backend spells a scheme root (`adb://R58M12345/`).
+    expect(parentOf(toCanonical('adb://R58M12345/sdcard', HOME))).toBe('adb://R58M12345/')
   })
 })
 

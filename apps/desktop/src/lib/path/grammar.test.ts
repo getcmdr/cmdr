@@ -192,6 +192,19 @@ describe('parentOrRoot and lastName', () => {
     ['//server/share/x', 'windows', '//server/share/', 'x'],
     ['//server/share', 'windows', '//server/share/', ''],
     ['C:/Users', 'posix', 'C:', 'Users'],
+    // A scheme URL's root is its authority with its `/`, and its own parent: `..` from an S3
+    // account's bucket list read `s3:/`, a path no volume answers.
+    ['s3://test_key_1@s3.example.com:443/bucket_1', 'posix', 's3://test_key_1@s3.example.com:443/', 'bucket_1'],
+    ['s3://test_key_1@s3.example.com:443/', 'posix', 's3://test_key_1@s3.example.com:443/', ''],
+    [
+      's3://test_key_1@s3.example.com:443',
+      'posix',
+      's3://test_key_1@s3.example.com:443/',
+      'test_key_1@s3.example.com:443',
+    ],
+    ['sftp://test_user_1@testnas.local:22/srv', 'posix', 'sftp://test_user_1@testnas.local:22/', 'srv'],
+    ['smb://testnas', 'posix', 'smb://testnas/', 'testnas'],
+    ['smb://', 'posix', 'smb://', ''],
   ] as const)('%s (%s): parent %s, name %s', (path, flavor, parent, name) => {
     expect(parentOrRoot(path, flavor)).toBe(parent)
     expect(lastName(path, flavor)).toBe(name)

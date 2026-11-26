@@ -87,9 +87,11 @@ function volumeDisplayPath(input: BreadcrumbDisplayPathInput): string {
   if (scheme === 'mtp') return getMtpDisplayPath(currentPath)
   if (scheme === 'adb') return getAdbDisplayPath(currentPath)
 
-  // For non-root volumes, strip the volume path prefix (`/Volumes/X/sub` reads `/sub`).
+  // For non-root volumes, strip the volume path prefix (`/Volumes/X/sub` reads `/sub`). A
+  // server's root spelled without its `/` (`s3://k@host:443`) is still that root.
   if (volumePath !== '/') {
     const prefix = volumePrefix(volumePath)
+    if (`${currentPath}/` === prefix) return '/'
     return currentPath.startsWith(prefix) ? currentPath.slice(prefix.length) || '/' : currentPath
   }
 

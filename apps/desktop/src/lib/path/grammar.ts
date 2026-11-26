@@ -150,7 +150,9 @@ export function volumePrefix(volumePath: string, flavor: PathFlavor = hostPathFl
  * The folder holding `path`, a root being its own (`/` → `/`, `C:/` → `C:/`): what a caller
  * holding a plain string asks where `parentOf` needs the `CanonicalPath` brand. A drive or
  * share path goes through the grammar; everything else is the slash arithmetic it always
- * was, byte for byte (`/x` → `/`, and a text with no `/` → `/`).
+ * was, byte for byte (`/x` → `/`, and a text with no `/` → `/`), floored at a scheme URL's
+ * root (`s3://k@h:443/b` → `s3://k@h:443/`, and that root is its own parent): below it, the
+ * arithmetic made `s3:/`, a path no volume answers. A bare scheme (`smb://`) is its own too.
  */
 export function parentOrRoot(path: string, flavor: PathFlavor = hostPathFlavor()): string {
   const parsed = parsePath(path, flavor)
@@ -158,6 +160,12 @@ export function parentOrRoot(path: string, flavor: PathFlavor = hostPathFlavor()
     return parentInVolume(path, flavor) ?? parsed.root
   }
   const i = path.lastIndexOf('/')
+  const scheme = SCHEME.exec(path)
+  if (scheme) {
+    if (scheme[0].length === path.length) return path
+    const floor = schemeRoot(path, scheme[0].length)
+    return i < floor.length ? floor : path.slice(0, i)
+  }
   return i <= 0 ? '/' : path.slice(0, i)
 }
 
