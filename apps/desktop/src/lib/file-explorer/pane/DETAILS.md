@@ -89,9 +89,10 @@ suite:
   `effectiveSortBy`, the column its rows really follow: `../DETAILS.md` § Sorting, "Requested vs effective column".
 - `pane-footer.ts`: which parts of the status footer a view kind renders. Two answers, because they differ on two panes:
   a search-results pane and a server's share list count their rows like any folder but report no free space.
-- `restored-landing.svelte.ts`: which Servers row a restored share-list tab lands on (§ "A server's share list
-  (kind-from-path)"). `servers-list-pane.svelte.ts`: the Servers list's discovery hold and a just-added server's
-  selection.
+- `restored-landing.svelte.ts`: a tab's one-shot landing, the row its next listing of one folder selects by path: a
+  restored share-list tab's server row (§ "A server's share list (kind-from-path)"), and the row `..` out of a server's
+  top folder came from on another volume (§ "`..` out of a server's top folder"). `servers-list-pane.svelte.ts`: the
+  Servers list's discovery hold and a just-added server's selection.
 - `pane-key-router.ts` / `pane-pointer.ts`: keyboard routing and mouse handling for a focused pane.
 - `entry-activation.ts`: what opening an entry does (redirect, archive Enter policy, browse, viewer, OS default app).
   `opening-toast.ts`: the two-second "{file} is opening in {app}…" toast beside every OS-default-app launch. The app
@@ -157,9 +158,8 @@ suite:
 - `share-mount.svelte.ts`: mounting a share from a server's share list (the wait, Cancel, the sign-in a refused mount
   asks for, the refusal, and its `mountErrorInfo` for the MCP mirror), rendered by FilePane through `RemoteConnectView`
   (§ "The connect views").
-- `share-parent-pane.svelte.ts`: `..` out of an SMB share's top folder, the pane's side (whether the row shows, Go to
-  parent and the row's Enter leaving for the server's shares). `../network/DETAILS.md` § "`..` out of a share's top
-  folder".
+- `top-folder-parent-pane.svelte.ts`: `..` out of every server's top folder, the pane's ONE seam (whether the row shows,
+  where Go to parent and the row's Enter lead). § "`..` out of a server's top folder".
 - `context-menu-anchor.ts`: where a keyboard-opened context menu pops (cursor row, else the scroll surface), as a pure
   rect → point function plus a DOM reader over it. § Keyboard context menu.
 - `rename-move-dialog.ts`: a rename chain's one Move dialog for a rename that copies on S3, held until the editor closes
@@ -733,9 +733,10 @@ There's no Search-specific capabilities shim — `lib/search/capabilities.ts` ke
   moves these numbers fires the `listing-index-sizes-changed` ticks that re-push (throttled to one push per 5 s in
   `FilePane.applyIndexSizes`, since each push re-reads and ships the visible range). The rendering side:
   `src-tauri/src/tools/resources/DETAILS.md` § "Directory sizes say how much they're worth".
-- **`has-parent.ts`**: `computeHasParent` folds ONLY the snapshot rule via `hasParentRow`; the two PATH comparisons
-  (`=== '/'`, `=== root`) stay. At the root, `topFolderLeadsOut` (an SMB share whose `..` opens its server's shares) is
-  the one way a volume's top folder gets a `..` row.
+- **`has-parent.ts`**: `computeHasParent` folds the snapshot rule via `hasParentRow`, then reads Rust's `atVolumeTop`
+  (the listing's own "this is the volume's root"), falling back to the `=== root` compare only until a listing of the
+  folder said (or on a routed pane, whose container top has a `..` back out). `topFolderLeadsOut` (a server's top folder
+  whose `..` leads out) is the one way a volume's top folder gets a `..` row.
 - **FilePane alt-view chain** (`FilePane.svelte`): the kind-structural view selection resolves through a `paneViewKind`
   derived discriminant (`'search-results' | 'normal'`) off `caps.kind`. The `{#if}` chain branches on `paneViewKind` for
   the one alt-view (`SearchResultsView`; the Servers list and a share list are listings) and the SelectionInfo footer
@@ -2077,6 +2078,31 @@ copy-out as the restore, no deleted-folder poll. Two differences: there's no tog
 walk back to the repo folder, so `has-parent.ts::effectiveVolumeRootFor` gives every routed kind the drive's mount as
 its root (the listing reports the view folder). Wording, the row's icon, and index progress: `../restic/DETAILS.md`.
 
+## `..` out of a server's top folder
+
+Every server kind's top folder leads up to where the person found it, through ONE seam,
+`top-folder-parent-pane.svelte.ts`: a share list → the Servers list on its row, an SMB share → its share list on the
+share (`../network/DETAILS.md` § "`..` out of a share's top folder"), an SFTP, WebDAV, or NFS place and an S3 account's
+root → the Servers list on its row, and an S3 bucket opened as its own place → its account's bucket list on the bucket.
+
+- **Rust says where, on every listing** (`listing-complete`'s `topFolderParent` and `atVolumeTop`, and `listing-error`'s
+  `topFolderParent` for the error screen; `src-tauri/src/network/DETAILS.md` § "`..` out of every server's top folder").
+  ❌ No `if s3` / `if sftp` in the pane: the one kind-shaped answer is Rust's `switch`. A share leaves through its share
+  list's door (the arrival lands on the share by name and raises the hint), every other `..` by path: in place
+  (`loadDirectory` with `selectPath`), or onto another volume (`onVolumeChange`, exact, with the row queued as the tab's
+  landing in `restored-landing.svelte.ts`, which the new volume's first listing of that folder takes).
+- **The switches**: a share list's `..` always shows; a share's follows its own switch over
+  `network.showShareParentRow`; every other one `network.showServerParentRow` (Settings > File systems > Servers). Off,
+  the top folder is a root: no `..` row, and Go to parent does nothing.
+- **The answer is per folder**: `listing-loader.ts` notes it BEFORE the rows land (so the row is in their first frame
+  and no index shifts), and a listing of another folder says nothing about the current one.
+- **The `..` row leading out is no folder**: no drop target, no file menu, and the MCP mirror names where it leads
+  (`has-parent.ts::parentRowPath`). ❗ `parentOf('smb://x')` is `smb://x/`, its own root (`#lib/path` floors a scheme
+  URL at its authority): never ask the grammar where a server's `..` goes.
+- **The error screen's way up**: its "Go to parent folder" button follows the same `navigateToParent`, so a refused top
+  folder (a bucket the key may not list, a share list that refused) still leads up. Regression anchor: David's QA,
+  2026-11-26, a refused bucket's screen had only Back and Home.
+
 ## A server's share list (kind-from-path)
 
 The `network` volume at `smb://<server>` (exactly one authority, no share) is the `share-list` kind; `smb://` stays the
@@ -2096,16 +2122,15 @@ pane renders the standard list.
   refuses it typed) instead of Edit server (`file-handlers.ts`).
 - **The footer**: `SelectionInfo` with no disk space (`pane-footer.ts` takes the routed kind): no server answers a space
   query, so the usage bar would sit empty, reading "0% full".
-- **`..`**: `FilePane.navigateToParent` (and the `..` row's activation) take the share-list arm, which loads `smb://`
-  with the cursor on that server's row, found BY PATH (`selectPath`, Rust's `find_path_index`: the row reads the
-  server's friendly name, its path is the share list's). The `..` row names the Servers list
-  (`has-parent.ts::parentRowPath`, for the MCP mirror) and is no drop target. ❗ `parentOf('smb://x')` is `smb:/` by the
-  grammar's slash arithmetic: never ask it here.
+- **`..`**: the share list's listing says it leads to `smb://` with the cursor on that server's row, found BY PATH
+  (`selectPath`, Rust's `find_path_index`: the row reads the server's friendly name, its path is the share list's), and
+  `FilePane.navigateToParent` (and the `..` row's activation) follow it in place (§ "`..` out of a server's top
+  folder").
 - **A restored share-list tab lands on its server**: `app-status-store.ts::restoreShareListLocation` brings it back as
   the Servers list (❌ never the share list: nothing lists at launch, #324) and hands the share-list path over in
-  `LoadedPaneTabs`' `landOnServerByTabId`; `initialization.ts` puts it on the tab, and the pane's first listing of
-  `smb://` selects that row by path (`restored-landing.svelte.ts`). History Back from a share list restores the cursor
-  like any folder's.
+  `LoadedPaneTabs`' `landOnServerByTabId`; `initialization.ts` puts it on the tab as its landing, and the pane's first
+  listing of `smb://` selects that row by path (`restored-landing.svelte.ts`). History Back from a share list restores
+  the cursor like any folder's.
 - **Never remembered**: `persistence-subscriber.svelte.ts` records no share list as `network`'s last-used path, and a
   switch to the Servers list is always `exact` (`navigate.ts::switchVolumeArm`), so the background "better path"
   correction never trades it for a remembered or other-pane share list (each would be a dial). ❗ It used to ride on "no

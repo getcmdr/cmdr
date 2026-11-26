@@ -55,6 +55,7 @@ import {
 import { sweepListingTags } from './tag-sweep'
 import { resolveValidPath } from '../navigation/path-resolution'
 import { noteShareParent } from '../network/share-parent-row.svelte'
+import type { ListingTop } from './top-folder-parent-pane.svelte'
 import { noteShareListAccount } from '../network/share-list-label'
 import { restoredCursorIndex } from '../navigation/history-cursor'
 import type { HistoryCursor } from '../navigation/navigation-history'
@@ -156,6 +157,11 @@ export interface ListingLoaderDeps {
   setLoadingPhase: (phase: ListingPhase | null) => void
   setFinalizingCount: (count: number | undefined) => void
   setVolumeRootFromEvent: (root: string | undefined) => void
+  /**
+   * What a listing (or a failed one) said about its folder's way up: whether it's the volume's
+   * top, and where `..` leads out of it (`top-folder-parent-pane.svelte.ts`).
+   */
+  noteListingTop: (top: ListingTop) => void
 
   // Shared FilePane state the loader pokes (RAW setters — NOT the FilePaneAPI
   // `setCursorIndex`, which scrolls / ticks / syncs MCP; the loader does its own).
@@ -521,6 +527,8 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
         }),
         onListingError((payload) => {
           if (isEventForCurrentLoad(payload.listingId, captured, loadGeneration)) {
+            // The error screen's way up: a failed server top folder still says where `..` leads.
+            deps.noteListingTop({ path: loadPath, parent: payload.topFolderParent })
             // One line per failed listing, with the typed reason, so a log says why.
             const reason = payload.error?.reason
             log.debug('Listing {listingId} on {volumeId} ended in error: {reason}', {
@@ -718,6 +726,12 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     // the row is in the rows' first frame (no late insert shifting every index by one) and
     // the cursor below counts it. It also replaces a `null` asked before the mount was up.
     if (payload.shareParent) noteShareParent(load.volumeId, shareParentFromWire(payload.shareParent))
+    // With it, Rust's "top of the volume" and where `..` leads out of it: `hasParent` reads both.
+    deps.noteListingTop({
+      path: payload.storedPath ?? load.path,
+      atVolumeTop: payload.atVolumeTop,
+      parent: payload.topFolderParent,
+    })
     // A server's share list says who it signed in as, for the path bar's account.
     if (payload.shareListAccount) noteShareListAccount(load.path, payload.shareListAccount)
     deps.setTotalCount(payload.totalCount)
@@ -825,10 +839,9 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
   }
 
   async function navigateToParent(): Promise<boolean> {
-    const currentPath = deps.getCurrentPath()
-    if (currentPath === '/' || currentPath === deps.getVolumePath()) {
-      return false // Already at root
-    }
+    // At the volume's root (Rust's answer, `has-parent.ts`): ❌ never a compare of the path with
+    // the volume's, whose spellings drift (`s3://k@h:443` beside `s3://k@h:443/`).
+    if (!deps.getHasParent()) return false
     const canonical = deps.getCanonicalPath()
     if (!canonical) return false // userHomePath not resolved yet
     const currentFolderName = basenameOf(canonical)

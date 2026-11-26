@@ -48,6 +48,13 @@
          */
         canGoBack?: boolean
         onGoBack?: () => void
+        /**
+         * Whether the folder that failed has a way up: a folder above it, or where `..` leads
+         * out of a server's top folder (a refused bucket's account, the Servers list). Its `..`
+         * row is gone with the listing, so this button is the one in its place.
+         */
+        canGoUp?: boolean
+        onGoUp?: () => void
         onGoHome?: () => void
         /** Asks the person about the sign-in `friendly.linkConsent` names. */
         onReviewLinkConsent?: () => void
@@ -62,6 +69,8 @@
         onRetry,
         canGoBack = false,
         onGoBack,
+        canGoUp = false,
+        onGoUp,
         onGoHome,
         onReviewLinkConsent,
         isFocused = false,
@@ -256,6 +265,12 @@
                 <Button onclick={() => void openSettingsToSmbEncryption()}
                     >{tString('fileExplorer.errorPane.openSmbEncryptionSetting')}</Button
                 >
+            {/if}
+
+            {#if canGoUp}
+                <Button onclick={() => onGoUp?.()} keyHint={{ commandId: 'nav.parent' }}>
+                    {tString('fileExplorer.errorPane.goUp')}
+                </Button>
             {/if}
 
             {#if canGoBack}

@@ -1,10 +1,7 @@
 /**
- * The searchable non-setting rows of `ServersSection.svelte`.
- *
- * ❗ The page has no CONTROL at all: its whole content is the trusted host keys
- * and certificates, one Forget per row. So the first row is also what puts the
- * page in the sidebar (`anchorsSection`). ❌ Never give the page a `hidden` registry entry to do that
- * instead: it would be a `SettingsValues` key nothing reads.
+ * The searchable non-setting rows of `ServersSection.svelte`: the trusted host keys,
+ * certificates, and link sign-ins, one Forget per row. The page's one setting
+ * (`network.showServerParentRow`) is what puts it in the sidebar.
  */
 
 import type { SearchableRow } from '../types'
@@ -19,7 +16,6 @@ export const serversRows: SearchableRow[] = [
     cardKey: 'settings.servers.card.trustedHostKeys',
     keywordsKey: 'settings.network.trustedHostKeys.keywords',
     terms: ['sftp', 'webdav', 'ssh'],
-    anchorsSection: { after: 'SMB/Network shares' },
   },
   {
     // The trusted certificates card: the server certificates (a NAS's self-signed

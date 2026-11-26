@@ -91,6 +91,7 @@ function volumeDisplayPath(input: BreadcrumbDisplayPathInput): string {
   // server's root spelled without its `/` (`s3://k@host:443`) is still that root.
   if (volumePath !== '/') {
     const prefix = volumePrefix(volumePath)
+    // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- the `/` closing a scheme URL's authority, ❌ no local root
     if (`${currentPath}/` === prefix) return '/'
     return currentPath.startsWith(prefix) ? currentPath.slice(prefix.length) || '/' : currentPath
   }

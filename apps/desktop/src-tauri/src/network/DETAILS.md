@@ -33,6 +33,7 @@ of the app build.
   - `smb_connect_directly.rs`: the manual "Connect directly" upgrade, with Cmdr's stored credentials, the sign-in sheet's, or Finder's saved password. Behind the three `upgrade_to_smb_volume*` commands, the MCP `upgrade_smb_to_direct` tool, and the indexer's `ensure_direct_smb`. Owns `UpgradeResult` (§ "Connect directly answers a gone volume").
   - `smb_direct_switch.rs`: the per-share "Use Cmdr's fast direct connection" switch, read and set by volume id for the volume switcher. Behind `get_smb_direct_connection_enabled` / `set_smb_direct_connection_enabled`. Owns `DirectConnectionSwitch` (§ "The per-share direct-connection switch").
   - `smb_share_parent.rs`: "Show “..” in the top folder", where `..` out of a share leads and its per-share override, by volume id. Behind `get_smb_share_parent` / `set_smb_share_parent_row` (§ "Show “..” in the top folder"). Its pure rule and the share key (`ShareRef`, `names_share`) sit in the leaf `share_choices.rs`, shared with `known_shares`.
+  - `top_folder_parent.rs`: where `..` leads out of every server's top folder (a share list, a share, a place, a bucket), on every listing's `listing-complete` and `listing-error` (§ "`..` out of every server's top folder").
 - **Mounting** (`os_mount/`, a platform seam: `os_mount/platform/mod.rs` pins each arm's fns; `MountResult` and `MountError` are defined once in `os_mount/mod.rs`):
   - `os_mount/platform/macos/mount.rs`: macOS `NetFSMountURLSync` for native `/Volumes/` mounts, each success confirmed against `statfs` (§ "A reported mount counts once it's there"); also `unmount_smb_shares_from_host` (iterates `/Volumes/`, matches via `statfs`, unmounts via `diskutil`)
   - `os_mount/platform/linux/mount.rs`: Linux `gio mount` for GVFS-based user-space mounts, confirmed the same way
@@ -1343,6 +1344,27 @@ answers by volume id, reading the share mounted at the volume's root off the ker
   `the_host_is_the_saved_server_when_the_mount_is_spelled_by_another_address`,
   `the_upgrade_signs_in_as_the_saved_server_whatever_address_the_mount_has`, and `known_shares_test.rs`'s
   `a_mount_spelled_by_its_ipv6_address_finds_the_saved_share_it_filed`.
+
+## `..` out of every server's top folder
+
+`top_folder_parent.rs` answers where `..` leads from a folder whose `..` isn't the folder above it, for every server
+kind: a share list → the Servers list on its row (`share_list_volume::servers_row_path`, by identity), a share → its
+share list (the section above), and a saved place (SFTP, WebDAV, NFS, an S3 account root) → the Servers list on its
+row, or, for an S3 bucket saved as its own place, → its account's bucket list on the bucket while the account root is
+saved (else the account's row, where Enter saves the root). The frontend's one seam that reads it:
+`apps/desktop/src/lib/file-explorer/pane/DETAILS.md` § "`..` out of a server's top folder".
+
+- **Read off the Servers list's own rows**, ❌ never a scheme sniffed off a path: a row holds its places
+  (`ServerRow::places`, empty for SMB, whose shares answer through their mounts). A new protocol gets its `..` by being
+  listed. A volume no row holds (an unsaved place) answers `None`: no `..`.
+- **Every listing carries it, and says whether it's the volume's top** (`ListingCompleteEvent::at_volume_top`,
+  `top_folder_parent`), so the pane never string-compares its path with `volume_root`, whose spellings drift
+  (`s3://k@h:443` beside `s3://k@h:443/` made `..` on the bucket list land on `s3:/`, David's QA 2026-11-26). A failed
+  listing carries it too (`ListingErrorEvent::top_folder_parent`): a refused top folder's error screen has no listing to
+  carry its way up.
+- **`switch` says which setting shows it** (`ParentRowSwitch`): a share list always, a share by its own switch over
+  `network.showShareParentRow`, everything else `network.showServerParentRow`. The frontend reads the settings.
+- ❗ Memory, the stores, and the mount table only, like `smb_share_parent`: it runs on a listing's way out.
 
 ## A pane on an OS-mounted share tries the direct connection
 

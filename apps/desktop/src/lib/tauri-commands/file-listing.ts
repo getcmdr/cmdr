@@ -33,6 +33,8 @@ import type {
   ListingReadCompleteEvent,
   ListingRespelledEvent,
   ListingStalledEvent,
+  ParentRowSwitch,
+  TopFolderParent,
 } from '#lib/ipc/bindings.js'
 import type { TimedOut } from './ipc-types'
 import { throwIpcError } from './ipc-types'
@@ -49,6 +51,8 @@ export type {
   ListingErrorEvent,
   ListingCancelledEvent,
   ListingRespelledEvent,
+  ParentRowSwitch,
+  TopFolderParent,
 }
 
 /**

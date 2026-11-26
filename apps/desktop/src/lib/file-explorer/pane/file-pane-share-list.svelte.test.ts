@@ -207,10 +207,13 @@ describe("FilePane on a server's share list", () => {
 
     // The backend listing ran on the share list's own path, and its rows render.
     expect(listDirectoryStartMock.mock.calls[0][1]).toBe('smb://testnas')
+    // Rust says where the share list's `..` leads: the Servers list, on this server's row.
     events.recorder?.fireListingEvent('listing-complete', {
       listingId: lastListingId(),
       totalCount: SHARES.length,
       volumeRoot: 'smb://',
+      atVolumeTop: false,
+      topFolderParent: { volumeId: 'network', path: 'smb://', selectPath: 'smb://testnas', switch: 'always' },
     })
     await waitForUpdates(100)
     // The standard list, with its column header and the `..` row at index 0 (jsdom lays
@@ -233,7 +236,7 @@ describe("FilePane on a server's share list", () => {
       'Description',
     )
 
-    // ❗ `smb://`, ❌ never the TS grammar's `parentOf('smb://testnas')` (`smb:/`). The Servers
+    // ❗ `smb://`, as the listing said, ❌ never the TS grammar's `parentOf`. The Servers
     // row reads "Testnas" while its path is the share list's, so the landing goes BY PATH.
     findPathIndexMock.mockResolvedValue(1)
     await expect(pane.navigateToParent()).resolves.toBe(true)

@@ -238,6 +238,10 @@
     "sourceHash": "f735c5c",
     "sameAsSourceJustification": "'Open' is the Dutch bare-stem imperative (macOS 'Open ${target}'); '{systemSettings}' is an OS-localized placeholder kept literal. Native Dutch, identical by coincidence."
   },
+  "fileExplorer.errorPane.goUp": "Go to parent folder",
+  "@fileExplorer.errorPane.goUp": {
+    "sourceHash": "7d4c500"
+  },
   "fileExplorer.errorPane.goBack": "Ga terug",
   "@fileExplorer.errorPane.goBack": {
     "sourceHash": "6aadac2"

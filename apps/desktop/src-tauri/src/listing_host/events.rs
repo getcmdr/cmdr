@@ -30,6 +30,7 @@ use cmdr_listing::{DirectoryDiffBatch, SortColumn};
 
 use crate::network::share_list_volume::ShareListAccount;
 use crate::network::smb_share_parent::ShareParent;
+use crate::network::top_folder_parent::TopFolderParent;
 
 // ============================================================================
 // Wire payloads
@@ -77,6 +78,14 @@ pub struct ListingCompleteEvent {
     /// top-folder listing refreshes the answer: one asked before the share's mount was
     /// up never sticks (`network/smb_share_parent.rs`).
     pub share_parent: Option<ShareParent>,
+    /// Whether the listed folder is its volume's root (`listed_path == volume_root`, in the
+    /// backend's own spelling): the pane's `..` question, ❌ never a string compare of the
+    /// pane's path with `volume_root`, whose spellings drift (`s3://k@h:443` beside
+    /// `s3://k@h:443/`).
+    pub at_volume_top: bool,
+    /// Where `..` leads when it isn't the folder above: out of a server's top folder (a share
+    /// list, a share, a place, a bucket; `network/top_folder_parent.rs`). `None` elsewhere.
+    pub top_folder_parent: Option<TopFolderParent>,
     /// Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
     /// for the pane's "as `<account>`"; `None` for every other listing, and for a share list
     /// answered from the cache, which doesn't say. Memory only, read on the way out.
@@ -95,6 +104,9 @@ pub struct ListingErrorEvent {
     /// Typed, word-free classification when available. `None` for internal errors
     /// (task panics). The FE renders all copy from this.
     pub error: Option<ListingError>,
+    /// Where `..` leads from the folder that failed, when it's a server's top folder
+    /// (`network/top_folder_parent.rs`): the error screen's way up, with no listing to carry it.
+    pub top_folder_parent: Option<TopFolderParent>,
 }
 
 /// Cancelled event payload
@@ -169,7 +181,7 @@ pub(crate) trait ListingWire: Send + Sync {
     fn emit_progress(&self, listing_id: &str, loaded_count: usize, phase: Option<ListingPhase>);
     fn emit_read_complete(&self, listing_id: &str, total_count: usize);
     fn emit_complete(&self, event: ListingCompleteEvent);
-    fn emit_error(&self, listing_id: &str, message: String, error: Option<ListingError>);
+    fn emit_error(&self, event: ListingErrorEvent);
     fn emit_cancelled(&self, listing_id: &str);
     fn emit_diff(&self, listing_id: &str, batches: Vec<DirectoryDiffBatch>);
     fn emit_respelled(&self, listing_id: &str, path: &AppPath);
@@ -212,18 +224,13 @@ impl ListingWire for tauri::AppHandle {
         let _ = event.emit(self);
     }
 
-    fn emit_error(&self, listing_id: &str, message: String, error: Option<ListingError>) {
+    fn emit_error(&self, event: ListingErrorEvent) {
         // PII-free analytics: a listing failed with a categorized error. Only the
         // category enum crosses; never the path, message, or any provider detail.
-        if let Some(category) = error_analytics_category(error.as_ref()) {
+        if let Some(category) = error_analytics_category(event.error.as_ref()) {
             crate::analytics::events::capture("error_encountered", serde_json::json!({ "category": category }));
         }
-        let _ = ListingErrorEvent {
-            listing_id: listing_id.to_string(),
-            message,
-            error,
-        }
-        .emit(self);
+        let _ = event.emit(self);
     }
 
     fn emit_cancelled(&self, listing_id: &str) {
@@ -292,6 +299,18 @@ pub(crate) trait ListingEndEffects: Send + Sync {
     /// top folder. ❗ Memory and the cached mount table only: it runs on the listing's
     /// way out.
     fn share_parent(&self, volume_id: &str) -> Option<ShareParent>;
+    /// Where `..` leads from `path` on `volume_id` when it isn't the folder above
+    /// (`network::top_folder_parent::top_folder_parent_of`), `share` being what
+    /// [`Self::share_parent`] said. ❗ Memory, the stores, and the mount table only.
+    fn top_folder_parent(
+        &self,
+        volume_id: &str,
+        path: &AppPath,
+        at_volume_top: bool,
+        share: Option<&ShareParent>,
+    ) -> Option<TopFolderParent>;
+    /// The root of the volume `volume_id`, for a failed listing that carries none. Memory only.
+    fn volume_root(&self, volume_id: &str) -> Option<AppPathBuf>;
     /// The account the share list at `path` on `volume_id` signed in as, or `None` when
     /// it's no share list. ❗ Memory only: it runs on every listing's way out.
     fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount>;
@@ -333,6 +352,21 @@ impl ListingEndEffects for AppListingEndEffects {
 
     fn share_parent(&self, volume_id: &str) -> Option<ShareParent> {
         crate::network::smb_share_parent::share_parent_of(volume_id)
+    }
+
+    fn top_folder_parent(
+        &self,
+        volume_id: &str,
+        path: &AppPath,
+        at_volume_top: bool,
+        share: Option<&ShareParent>,
+    ) -> Option<TopFolderParent> {
+        crate::network::top_folder_parent::top_folder_parent_of(volume_id, path.as_str(), at_volume_top, share)
+    }
+
+    fn volume_root(&self, volume_id: &str) -> Option<AppPathBuf> {
+        let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id)?;
+        Some(volume.root().to_owned())
     }
 
     fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount> {
@@ -379,13 +413,25 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             let message = listing_error.raw_detail.clone();
             self.effects
                 .record_recent_error(listing_id, end.volume_id, end.listed_path, &message, &listing_error);
-            self.wire.emit_error(listing_id, message, Some(listing_error));
+            let top_folder_parent = self
+                .effects
+                .top_folder_parent(end.volume_id, end.listed_path, true, None);
+            self.wire.emit_error(ListingErrorEvent {
+                listing_id: listing_id.to_string(),
+                message,
+                error: Some(listing_error),
+                top_folder_parent,
+            });
             return;
         }
+        let at_volume_top = end.listed_path == end.volume_root;
         // Asked only for the top folder: that's the one folder whose `..` it decides.
-        let share_parent = (end.listed_path == end.volume_root)
+        let share_parent = at_volume_top
             .then(|| self.effects.share_parent(end.volume_id))
             .flatten();
+        let top_folder_parent =
+            self.effects
+                .top_folder_parent(end.volume_id, end.listed_path, at_volume_top, share_parent.as_ref());
         self.wire.emit_complete(ListingCompleteEvent {
             listing_id: listing_id.to_string(),
             total_count: end.total_count,
@@ -394,6 +440,8 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             stored_path: end.stored_path.map(AppPathBuf::into_string),
             effective_sort_by: end.effective_sort_by,
             share_parent,
+            at_volume_top,
+            top_folder_parent,
             share_list_account: self.effects.share_list_account(end.volume_id, end.listed_path),
         });
     }
@@ -446,7 +494,18 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             listing_error.category,
             e.errno_field(),
         );
-        self.wire.emit_error(listing_id, message, Some(listing_error));
+        // The error screen's way up: a failed server top folder has no listing to carry it.
+        let at_volume_top = self.effects.volume_root(volume_id).is_some_and(|root| *root == *path);
+        let share_parent = at_volume_top.then(|| self.effects.share_parent(volume_id)).flatten();
+        let top_folder_parent = self
+            .effects
+            .top_folder_parent(volume_id, path, at_volume_top, share_parent.as_ref());
+        self.wire.emit_error(ListingErrorEvent {
+            listing_id: listing_id.to_string(),
+            message,
+            error: Some(listing_error),
+            top_folder_parent,
+        });
     }
 }
 
@@ -558,6 +617,8 @@ pub(crate) struct WireCollector {
     pub progress: std::sync::Mutex<Vec<(usize, Option<ListingPhase>)>>,
     /// Every `listing-complete`, whole.
     pub completes: std::sync::Mutex<Vec<ListingCompleteEvent>>,
+    /// Per error, the way up it carried.
+    pub error_parents: std::sync::Mutex<Vec<Option<TopFolderParent>>>,
     /// Every event's kind (`"opening"`, `"error"`, …), in emit order.
     pub sequence: std::sync::Mutex<Vec<&'static str>>,
 }
@@ -597,13 +658,16 @@ impl ListingWire for std::sync::Arc<WireCollector> {
         self.note("complete");
         self.completes.lock_ignore_poison().push(event);
     }
-    fn emit_error(&self, listing_id: &str, message: String, error: Option<ListingError>) {
+    fn emit_error(&self, event: ListingErrorEvent) {
         use cmdr_fs::ignore_poison::IgnorePoison;
         self.note("error");
-        self.errors.lock_ignore_poison().push((listing_id.to_string(), message));
+        self.errors
+            .lock_ignore_poison()
+            .push((event.listing_id.clone(), event.message));
         self.classified
             .lock_ignore_poison()
-            .push((listing_id.to_string(), error));
+            .push((event.listing_id.clone(), event.error));
+        self.error_parents.lock_ignore_poison().push(event.top_folder_parent);
     }
     fn emit_cancelled(&self, _listing_id: &str) {
         self.note("cancelled");

@@ -17,6 +17,7 @@
         type ListingIndexSizesChanged,
         type Location,
         type MenuAnchor,
+        type TopFolderParent,
         updateMenuContext,
         updateServicesSelection,
     } from '#lib/tauri-commands/index.js'
@@ -97,8 +98,7 @@
     import { createCursorNavKeys } from './cursor-nav-keys'
     import { typingFilters } from './type-to-jump-keys'
     import { createSearchPaneKeys } from './search-pane-keys'
-    import { computeHasParent, effectiveVolumeRootFor } from './has-parent'
-    import { NETWORK_VOLUME_PATH } from './navigate-refusals'
+    import { computeHasParent, effectiveVolumeRootFor, isRoutedKind } from './has-parent'
     import { overlayRowsToSkip } from './overlay-rows'
     import { firstSelectedIndex } from './first-selected-index'
     import { sameKindIndices, sameKindTargetFor } from './select-same-kind'
@@ -137,10 +137,10 @@
     import { resolveInitialPathAction, shouldReloadAfterReachable } from './path-sync'
     import { createHiddenFilesResync } from './hidden-files-resync'
     import { countFolderOnSpace as countFolderOnSpaceAt } from './folder-size-count'
-    import { createShareParentPane } from './share-parent-pane.svelte'
+    import { createTopFolderParentPane } from './top-folder-parent-pane.svelte'
     import { createShareListPane } from './share-list-pane.svelte'
     import { createServersListPane } from './servers-list-pane.svelte'
-    import { takeRestoredLanding } from './restored-landing.svelte'
+    import { queueLanding, takeLanding } from './restored-landing.svelte'
     import { createMtpDisconnectWatch } from './mtp-disconnect-watch.svelte'
     import { createSnapshotSelectionSync } from './snapshot-selection-sync.svelte'
     import { createHistoryCursorSync } from './history-cursor-sync.svelte'
@@ -448,6 +448,9 @@
         setVolumeRootFromEvent: (root) => {
             volumeRootFromEvent = root
         },
+        noteListingTop: (top) => {
+            topParent.note(top)
+        },
         getCursorIndex: () => cursorIndex,
         getCursorName: () => selectionInfo.entry?.name,
         setCursorIndexRaw: (index) => {
@@ -500,11 +503,10 @@
         getTotalCount: () => effectiveTotalCount,
         getHiddenCount: () => hiddenCount,
         getLoading: () => loading,
-        // A `..` out of an SMB share's top folder, or a share list's back to the Servers list, is no drop target.
+        // A `..` out of a server's top folder (a share, a place, a bucket, a share list) is no drop target.
         getParentRow: () => ({
             hasParent,
-            parentPath: hasParent && canonicalPath && !shareParent.leadsOutHere && caps.kind !== 'share-list'
-                ? parentOf(canonicalPath) : '',
+            parentPath: hasParent && canonicalPath && !topParent.leadsOutHere ? parentOf(canonicalPath) : '',
         }),
         getEffectiveSortBy: () => effectiveSortBy,
         getVolumeId: () => volumeId,
@@ -839,12 +841,31 @@
         serversList.selectRowWhenListed(rowId)
     }
 
-    // `..` in an SMB share's top folder opens the server's share list (`share-parent-pane.svelte.ts`).
-    const shareParent = createShareParentPane({
+    // `..` out of a server's top folder: a share list's to the Servers list, a share's to its share
+    // list, a place's to the Servers list, a bucket's to its account (`top-folder-parent-pane.svelte.ts`).
+    const topParent = createTopFolderParentPane({
         getVolume: () => currentVolumeInfo,
-        getIsAtTopFolder: () => currentPath === effectiveVolumeRoot,
+        getCurrentPath: () => currentPath,
         openServer: (host, arrival) => { shareList.openServer(host, arrival) },
+        goTo: (parent) => { goToTopFolderParent(parent) },
     })
+
+    /**
+     * Opens where `..` leads out of a server's top folder, the cursor on the row it came from:
+     * in place on this volume (a share list's Servers list), else on another (a place's Servers
+     * list, a bucket's account), whose first listing takes the landing (`restored-landing.svelte.ts`).
+     */
+    function goToTopFolderParent(parent: TopFolderParent): void {
+        const selectPath = parent.selectPath ?? undefined
+        if (parent.volumeId === volumeId) {
+            currentPath = parent.path
+            void loader.loadDirectory({ path: parent.path, selectPath })
+            return
+        }
+        if (selectPath) queueLanding(paneId, { path: parent.path, selectPath })
+        const volume = getStoreVolumes().find((candidate) => candidate.id === parent.volumeId)
+        onVolumeChange?.({ volumeId: parent.volumeId, volumePath: volume?.path ?? parent.path, targetPath: parent.path, exact: true })
+    }
 
     // noinspection JSUnusedGlobalSymbols -- Used dynamically
     export function toggleVolumeChooser() {
@@ -1434,26 +1455,14 @@
     /**
      * Navigates up and selects the folder we came from. Returns false if already at root.
      *
-     * A share's top folder goes up to its server's share list, and a share list up to the
-     * Servers list; the Servers list is the volume's root (nothing above it, so `false`).
+     * A server's top folder goes up to where the server was opened (`top-folder-parent-pane.svelte.ts`):
+     * a share to its share list, a share list or a place to the Servers list, a bucket to its account.
+     * Also from the error screen, whose failed listing still said. The Servers list is the volume's
+     * root (nothing above it, so `false`).
      */
     export function navigateToParent(): Promise<boolean> {
-        if (shareParent.leaveTopFolder() || leaveShareList()) return Promise.resolve(true)
+        if (topParent.leave()) return Promise.resolve(true)
         return loader.navigateToParent()
-    }
-
-    /**
-     * A share list's parent is the Servers list (`smb://`, ❗ never the TS grammar's
-     * `parentOf`, which reads `smb:/`), landing on the server's row by the share list's path:
-     * the row's name is the server's friendly name, its path is the share list's. Also from
-     * the share list's error screen, where no listing is live.
-     */
-    function leaveShareList(): boolean {
-        if (caps.kind !== 'share-list') return false
-        const sharelistPath = currentPath
-        currentPath = NETWORK_VOLUME_PATH
-        void loader.loadDirectory({ path: NETWORK_VOLUME_PATH, selectPath: sharelistPath })
-        return true
     }
 
     // Opening folder state (before read_dir starts - slow for network folders)
@@ -1492,6 +1501,7 @@
         getSnapshotSort: () => searchSnapshot?.sort ?? null,
         getEffectiveSortBy,
         getHasParent: () => hasParent,
+        getParentLeadsTo: () => topParent.leadsTo,
         getVisibleRangeStart: () => visibleRangeStart,
         getVisibleRangeEnd: () => visibleRangeEnd,
         getCanonicalPath: () => canonicalPath,
@@ -1580,7 +1590,10 @@
             hasParentRow: caps.hasParentRow,
             currentPath,
             effectiveVolumeRoot,
-            topFolderLeadsOut: shareParent.topFolderLeadsOut,
+            // Rust's "top of the volume", ❌ never a path compare (server roots' spellings drift);
+            // a routed pane's container top has a `..` back out, so its compare stands.
+            atVolumeTop: isRoutedKind(caps.kind) ? undefined : topParent.atVolumeTop,
+            topFolderLeadsOut: topParent.leadsOutHere,
         }),
     )
 
@@ -1663,7 +1676,7 @@
     // share list's rows and the Servers list's get their own menu (the `RowMenuHostAPI` beside the path), ❌ never the file menu.
     const handleContextMenu: typeof pointer.handleContextMenu = (entry, anchor) => {
         if (caps.kind === 'share-list' || caps.kind === 'network') { void rowMenuHostRef?.openRowMenu(entry, anchor); return Promise.resolve() }
-        return entry.name === '..' && shareParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
+        return entry.name === '..' && topParent.leadsOutHere ? Promise.resolve() : pointer.handleContextMenu(entry, anchor)
     }
 
     // Opening an entry (Enter, ⌘↓, double-click, or a popup choice): the redirect
@@ -1685,10 +1698,10 @@
         },
         onGoToLocation: (location) => onGoToLocation?.(location),
     })
-    // `..` out of an SMB share's top folder goes to the server's shares, as Go to parent does
-    // there; a share on a server's share list mounts.
+    // `..` out of a server's top folder goes where Go to parent does there; a share on a
+    // server's share list mounts.
     const handleNavigate = (entry: FileEntry): Promise<void> =>
-        (entry.name === '..' && (shareParent.leaveTopFolder() || leaveShareList())) || shareList.openShare(entry)
+        (entry.name === '..' && topParent.leave()) || shareList.openShare(entry)
             ? Promise.resolve() : activation.handleNavigate(entry)
 
     // The breadcrumb's three interactions (ancestor click, right-click menu with
@@ -1936,7 +1949,8 @@
                     newPath: action.path,
                 })
                 currentPath = action.path
-                void loader.loadDirectory({ path: action.path })
+                // `..` out of a server's top folder onto this volume lands on the row it came from.
+                void loader.loadDirectory({ path: action.path, selectPath: takeLanding(paneId, action.path) })
                 break
             case 'sync-path':
                 currentPath = action.path
@@ -2123,7 +2137,7 @@
         } else if (!isSearchResultsView) {
             log.debug('[FilePane] onMount: triggering loadDirectory for paneId={paneId}', { paneId })
             // A restored share-list tab comes back as the Servers list, on that server's row.
-            void loader.loadDirectory({ path: currentPath, selectPath: caps.kind === 'network' ? takeRestoredLanding(paneId) : undefined })
+            void loader.loadDirectory({ path: currentPath, selectPath: takeLanding(paneId, currentPath) })
         } else {
             log.debug('[FilePane] onMount: SKIPPING loadDirectory for paneId={paneId}', { paneId })
             // Clear the initial `loading = true` for the search-results pane: it doesn't go through
@@ -2316,6 +2330,8 @@
                 onRetry={() => navigateToPath(currentPath)}
                 {canGoBack}
                 onGoBack={() => onGoBack?.()}
+                canGoUp={hasParent}
+                onGoUp={() => void navigateToParent()}
                 onGoHome={() => onOpenHome?.()}
                 onReviewLinkConsent={() => {
                     linkConsentPair = friendlyError?.linkConsent ?? null

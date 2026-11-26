@@ -67,6 +67,8 @@ export type {
   ListingRespelledEvent,
   ListingErrorEvent,
   ListingCancelledEvent,
+  ParentRowSwitch,
+  TopFolderParent,
 } from './file-listing'
 // A listing read that found its listing gone, for the pane that shows it to re-list.
 export { onListingGone, ListingLookupFailure, asListingLookupError } from './listing-gone'

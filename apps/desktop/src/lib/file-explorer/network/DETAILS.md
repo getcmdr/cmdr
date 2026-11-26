@@ -291,10 +291,10 @@ show the key itself, which is identity only.
 
 The share list's `..` is the standard parent row (`computeHasParent`: the volume's root is `smb://`), so every index
 counts it like any list's. Enter, `⌘↑`, and Backspace on it, or on the error screen where there's no row, load the
-Servers list (`FilePane`'s `leaveShareList`, ❗ `smb://`, never the TS grammar's `parentOf`, which reads `smb:/`) with
-the cursor on that server's row, found BY PATH (`LoadDirectoryArgs.selectPath`, Rust's `find_path_index`): the row reads
-the server's friendly name, its path is the share list's. A path no row has (a Bonjour twin's share list, whose server
-is saved by IP and listed under the IP's path) lands on the row that stands for the host it resolves to, by identity
+Servers list (the listing says so, `../pane/DETAILS.md` § "`..` out of a server's top folder") with the cursor on that
+server's row, found BY PATH (`LoadDirectoryArgs.selectPath`, Rust's `find_path_index`): the row reads the server's
+friendly name, its path is the share list's. A path no row has (a Bonjour twin's share list, whose server is saved by IP
+and listed under the IP's path) lands on the row that stands for the host it resolves to, by identity
 (`src-tauri/src/network/DETAILS.md` § "The Servers list's rows"). A restored share-list tab comes back as the Servers
 list on that row the same way (`../pane/restored-landing.svelte.ts`), with nothing listed at launch. History Back
 restores the cursor like any folder's. Escape doesn't: on a file list it never means "parent". It names the Servers list
@@ -318,11 +318,11 @@ Every SMB share, Cmdr-mounted or OS-mounted; SMB only.
   `listing-complete`). ❗ `noteShareParent` never lets a `null` replace an answer (a share's volume id names that share
   for good, so a later `null` only means it was asked too early again), and any answer replaces a `null`. Regression
   anchor for #1238's missing `..` on a saved share the pane landed on before its mount was up.
-- **The pane side is `../pane/share-parent-pane.svelte.ts`**: it adds the `..` row through `has-parent.ts`'s
-  `topFolderLeadsOut`, and leaves for the server's share-list path (`share-list-pane.svelte.ts::openServer`), so the
-  history entry holds the path and Back returns to the share. ❗ That `..` row has no parent path, so it's no drop
-  target and opens no context menu: its `entry.path` would otherwise be the mount's parent on the boot disk
-  (`/Volumes`).
+- **The pane side is `../pane/top-folder-parent-pane.svelte.ts`**, every server kind's one seam: it adds the `..` row
+  through `has-parent.ts`'s `topFolderLeadsOut`, and a share leaves for the server's share-list path
+  (`share-list-pane.svelte.ts::openServer`), so the history entry holds the path and Back returns to the share. ❗ That
+  `..` row has no parent path, so it's no drop target and opens no context menu: its `entry.path` would otherwise be the
+  mount's parent on the boot disk (`/Volumes`).
 - **Opening the share list is the person opening the host** (#324 holds): it lists, and ❌ never mounts anything. The
   host comes from discovery when it knows the server, else one made from the mount's server the way Add server makes
   one.

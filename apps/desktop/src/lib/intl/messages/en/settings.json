@@ -1655,6 +1655,18 @@
   "@settings.network.showShareParentRow.keywords": {
     "description": "Search keywords for the “Show “..” in each share’s top folder” setting (settings.network.showShareParentRow.label) in Settings > File systems > SMB/Network shares. What it does: in a network share’s top folder, a “..” row leads to the server’s other shares. Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
+  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "@settings.network.showServerParentRow.label": {
+    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SFTP, WebDAV, NFS, and S3 server (and in an S3 bucket’s top folder); opening it goes back to where the server was opened from: the Servers list, or for a bucket, its account’s bucket list. Keep “..” exactly as written: it’s the parent-folder row the file list shows. In Settings > File systems > Servers (SFTP, WebDAV), Behavior card."
+  },
+  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "@settings.network.showServerParentRow.description": {
+    "description": "Help text under the “Show “..” in each server’s top folder” switch (settings.network.showServerParentRow.label). “..” is the parent-folder row; keep it as written. “The Servers list” is the list of saved servers in the pane (the volume switcher’s “Servers” row). An S3 bucket is a storage container in an object-storage account (Amazon S3, Backblaze B2, and similar)."
+  },
+  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "@settings.network.showServerParentRow.keywords": {
+    "description": "Search keywords for the “Show “..” in each server’s top folder” setting (settings.network.showServerParentRow.label) in Settings > File systems > Servers (SFTP, WebDAV). What it does: in a server’s top folder, a “..” row leads back to the Servers list (or a bucket’s account). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+  },
   "settings.network.shareCacheDuration.label": "Share cache duration",
   "@settings.network.shareCacheDuration.label": {
     "description": "Label for the picker controlling how long the list of a server's shares is cached. In Settings > File systems > SMB/Network shares.",

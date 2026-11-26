@@ -185,6 +185,7 @@ export function makeHarness(over: Partial<PaneState> = {}) {
     setVolumeRootFromEvent: (r) => {
       state.volumeRootFromEvent = r
     },
+    noteListingTop: () => {},
     getCursorIndex: () => state.cursorIndex,
     getCursorName: () => state.cursorName,
     takeHistoryCursor: (path) => {

@@ -639,11 +639,12 @@ empty-card bug for non-registry and mirrored rows.
 **Decision / why: a non-setting row is a `SearchableRow`, never a setting.** See § "Searchable rows" below; a card that
 renders one puts its id in the card's `anyVisible(...)` guard exactly like a setting's.
 
-**Decision / why: a page with no control is anchored by one of its ROWS.** `File systems > Servers (SFTP, WebDAV)`
-renders one list (the trusted SSH host keys, a Forget button per row) and no setting at all, so nothing in the registry
-would put it in the sidebar. The row that describes that list says `anchorsSection` instead, and `buildSectionTree`
-creates the node for it. See § "Searchable rows" below for the field. ❌ Don't reach for it when the page HAS a control:
-that control's `section` already carries the page, and a second source of the node is how two disagree.
+**Decision / why: a page with no control is anchored by one of its ROWS.** A page that renders only lists (a Forget
+button per row) and no setting at all has nothing in the registry to put it in the sidebar. The row that describes such
+a list says `anchorsSection` instead, and `buildSectionTree` creates the node for it. No page needs it today:
+`File systems > Servers (SFTP, WebDAV)`, the one that did, carries `network.showServerParentRow`. See § "Searchable
+rows" below for the field. ❌ Don't reach for it when the page HAS a control: that control's `section` already carries
+the page, and a second source of the node is how two disagree.
 
 **Decision / why: "subsection" stays the level-2 nav term.** The card axis is named `cardKey` (not `subsection`),
 because `subsection` already means the level-2 nav entry (`SettingsSection.subsections`, the page you click). The
@@ -694,9 +695,8 @@ A `SearchableRow` (`types.ts`) gives such a row a searchable identity without mo
   action rows has no setting to create its node, so one of its rows opts in with
   `anchorsSection: { after: '<sibling subsection>' }` and `buildSectionTree` creates the node, still pushing nothing
   into `section.settings`. `after` exists because sibling order is otherwise registry order and an anchored page has no
-  registry position; an `after` naming no sibling puts the page last. `Servers (SFTP, WebDAV)` is the only user.
-  `searchable-rows.test.ts` fails if an anchoring row names a page that DOES carry a setting, or if the sibling order
-  drifts.
+  registry position; an `after` naming no sibling puts the page last. No page uses it today. `searchable-rows.test.ts`
+  fails if an anchoring row names a page that DOES carry a setting, or if the sibling order drifts.
 
 **Decision / why not a hidden setting.** The predecessor was `indexing.indexSize`: a `hidden: true` registry entry with
 its own `SettingsValues` key, `type: 'boolean'`, `default: false`, that nothing ever read or wrote, modeled only because

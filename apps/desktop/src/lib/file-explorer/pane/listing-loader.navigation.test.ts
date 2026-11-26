@@ -264,20 +264,20 @@ describe('createListingLoader — navigateToFallback / handleCancelLoading / nav
     expect((error as Error).message).toBe('Permission denied')
   })
 
-  it('navigateToParent returns false at the volume root', async () => {
+  it('navigateToParent returns false at the volume root (no `..`: `has-parent.ts` read the listing)', async () => {
     const { loader } = makeHarness({ currentPath: '/', volumePath: '/' })
     await expect(loader.navigateToParent()).resolves.toBe(false)
     expect(h.listDirectoryStart).not.toHaveBeenCalled()
   })
 
   it('navigateToParent returns false when the canonical path is unresolved', async () => {
-    const { loader } = makeHarness({ currentPath: '/a/b', canonicalPath: null })
+    const { loader } = makeHarness({ currentPath: '/a/b', canonicalPath: null, hasParent: true })
     await expect(loader.navigateToParent()).resolves.toBe(false)
     expect(h.listDirectoryStart).not.toHaveBeenCalled()
   })
 
   it('navigateToParent loads the parent and selects the child folder', async () => {
-    const { loader, state } = makeHarness({ currentPath: '/a/b', canonicalPath: '/a/b' })
+    const { loader, state } = makeHarness({ currentPath: '/a/b', canonicalPath: '/a/b', hasParent: true })
     await expect(loader.navigateToParent()).resolves.toBe(true)
     expect(state.currentPath).toBe('/a')
     expect(h.listDirectoryStart).toHaveBeenCalled()

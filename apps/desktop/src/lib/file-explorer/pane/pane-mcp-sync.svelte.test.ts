@@ -70,6 +70,7 @@ function deps(overrides: Partial<PaneMcpSyncDeps> = {}): PaneMcpSyncDeps {
     getSnapshotEntries: () => null,
     getSnapshotSort: () => null,
     getHasParent: () => false,
+    getParentLeadsTo: () => null,
     getVisibleRangeStart: () => TOTAL_COUNT - 100,
     getVisibleRangeEnd: () => TOTAL_COUNT,
     getCanonicalPath: () => '/big' as CanonicalPath,
@@ -130,10 +131,11 @@ describe('buildMcpFileList', () => {
     expect(getFileRange).toHaveBeenCalledWith('listing-1', 0, 9, true)
   })
 
-  it("names the Servers list as a share list's parent, ❌ not the `smb:/` slash arithmetic gives", async () => {
+  it('names where `..` leads out of a server’s top folder: a share list’s Servers list', async () => {
     const sync = createPaneMcpSync(
       deps({
         getHasParent: () => true,
+        getParentLeadsTo: () => 'smb://',
         getVisibleRangeStart: () => 0,
         getVisibleRangeEnd: () => 3,
         getVolumeId: () => 'network',

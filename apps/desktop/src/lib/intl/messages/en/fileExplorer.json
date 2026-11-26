@@ -386,6 +386,10 @@
     },
     "screenshot": "error-message-example.png"
   },
+  "fileExplorer.errorPane.goUp": "Go to parent folder",
+  "@fileExplorer.errorPane.goUp": {
+    "description": "Button on the folder error screen that opens the folder one level up (for a server’s top folder: where the server was opened from, such as the Servers list or an S3 account’s bucket list). Shown when there is a level above. Same words as the “Go to parent folder” command (commands.navParent.label). Keep it short: it sits in a row next to other buttons and carries a keyboard-shortcut badge."
+  },
   "fileExplorer.errorPane.goBack": "Go back",
   "@fileExplorer.errorPane.goBack": {
     "description": "Button on the folder error screen that returns to the previously visited folder. Only shown when there is somewhere to go back to. Keep it short: it sits in a row next to other buttons and carries a keyboard-shortcut badge.",

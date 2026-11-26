@@ -165,8 +165,38 @@ describe("a server's share list", () => {
     ).toBe(true)
   })
 
-  it('leads its `..` to the Servers list, and every other kind to the folder above', () => {
-    expect(parentRowPath('share-list', 'smb://testnas' as CanonicalPath)).toBe('smb://')
-    expect(parentRowPath('local', '/Users/test_user_1/Documents' as CanonicalPath)).toBe('/Users/test_user_1')
+  it('leads its `..` where it leads out (the Servers list), and every other folder to the one above', () => {
+    expect(parentRowPath('smb://', 'smb://testnas' as CanonicalPath)).toBe('smb://')
+    expect(parentRowPath(null, '/Users/test_user_1/Documents' as CanonicalPath)).toBe('/Users/test_user_1')
+  })
+})
+
+describe('computeHasParent: Rust says where the volume’s top is', () => {
+  const root = 's3://test_key_1@s3.example.com:443/'
+
+  // David's QA (2026-11-26): `..` on an S3 account's bucket list landed on `s3:/`, because the
+  // pane's `s3://…:443` and the root's `s3://…:443/` read as two folders.
+  it('has no `..` at a server root spelled without its `/`, once the listing says it’s the top', () => {
+    const at = { hasParentRow: true, currentPath: 's3://test_key_1@s3.example.com:443', effectiveVolumeRoot: root }
+    expect(computeHasParent(at)).toBe(true)
+    expect(computeHasParent({ ...at, atVolumeTop: true })).toBe(false)
+  })
+
+  it('has a `..` in a folder the listing says is below the top, whatever the spellings', () => {
+    expect(
+      computeHasParent({ hasParentRow: true, currentPath: root, effectiveVolumeRoot: root, atVolumeTop: false }),
+    ).toBe(true)
+  })
+
+  it('has a `..` at a server’s top folder whose `..` leads out (the Servers list, a bucket’s account)', () => {
+    expect(
+      computeHasParent({
+        hasParentRow: true,
+        currentPath: root,
+        effectiveVolumeRoot: root,
+        atVolumeTop: true,
+        topFolderLeadsOut: true,
+      }),
+    ).toBe(true)
   })
 })

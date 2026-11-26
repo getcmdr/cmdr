@@ -180,6 +180,30 @@ describe('ErrorPane action row', () => {
     await tick()
     expect(with_.textContent).toContain('Go back')
   })
+
+  // David's QA (2026-11-26): a bucket the key may not list showed only Back and Home, so its
+  // refusal screen had no way up to the bucket list.
+  it('offers Go to parent folder where the folder has a way up, and runs it', async () => {
+    const friendly: FriendlyError = {
+      ...base,
+      category: 'needs_action',
+      retryHint: false,
+      listingReason: 'objectStoreRefused',
+    }
+
+    const without = mountPane({ friendly, canGoUp: false })
+    await tick()
+    expect(buttonTexts(without).some((t) => t.startsWith('Go to parent folder'))).toBe(false)
+
+    const onGoUp = vi.fn()
+    const with_ = mountPane({ friendly, canGoUp: true, onGoUp })
+    await tick()
+    const button = [...with_.querySelectorAll('button')].find((b) =>
+      b.textContent.trim().startsWith('Go to parent folder'),
+    )
+    button?.click()
+    expect(onGoUp).toHaveBeenCalledOnce()
+  })
 })
 
 describe('ErrorPane Send error report…', () => {

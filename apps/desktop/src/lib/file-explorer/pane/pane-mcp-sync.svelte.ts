@@ -7,7 +7,6 @@ import {
 } from '#lib/tauri-commands/index.js'
 import type { CanonicalPath } from '#lib/path/canonical.js'
 import { parentRowPath } from './has-parent'
-import { capabilitiesForPane } from './volume-capabilities'
 import type { ViewMode } from '#lib/app-status-store.js'
 import type { MountErrorInfo, PaneListing, SearchResultEntry, SortColumn } from '#lib/ipc/bindings.js'
 import type { SnapshotSort } from '#lib/search/snapshot-store.svelte.js'
@@ -87,6 +86,8 @@ export interface PaneMcpSyncDeps {
    */
   getSnapshotSort: () => SnapshotSort | null
   getHasParent: () => boolean
+  /** Where the `..` row leads out of a server's top folder (`top-folder-parent-pane.svelte.ts`), or `null`. */
+  getParentLeadsTo: () => string | null
   getVisibleRangeStart: () => number
   getVisibleRangeEnd: () => number
   getCanonicalPath: () => CanonicalPath | null
@@ -270,10 +271,7 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
 
     // Include ".." entry if it's in the visible range
     if (hasParent && visibleRangeStart === 0 && canonicalPath) {
-      const parentPath = parentRowPath(
-        capabilitiesForPane(deps.getVolumeId(), deps.getCurrentPath()).kind,
-        canonicalPath,
-      )
+      const parentPath = parentRowPath(deps.getParentLeadsTo(), canonicalPath)
       files.push({
         name: '..',
         path: parentPath,

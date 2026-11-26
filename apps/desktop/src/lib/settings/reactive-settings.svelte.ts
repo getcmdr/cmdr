@@ -50,6 +50,7 @@ let briefColumnWidthMode = $state<BriefColumnWidthMode>('paneWidth')
 let briefColumnWidthMaxPx = $state<number>(400)
 let networkEnabled = $state<boolean>(true)
 let showShareParentRow = $state<boolean>(true)
+let showServerParentRow = $state<boolean>(true)
 let switcherFavoritesExpanded = $state<boolean>(false)
 let typeToJumpResetDelay = $state<number>(1000)
 let quickFilterTypingWindow = $state<number>(1500)
@@ -116,6 +117,7 @@ async function runInit(options?: { restrictedWindow?: boolean }): Promise<void> 
     briefColumnWidthMaxPx = getSetting('listing.briefColumnWidthMaxPx')
     networkEnabled = getSetting('network.enabled')
     showShareParentRow = getSetting('network.showShareParentRow')
+    showServerParentRow = getSetting('network.showServerParentRow')
     switcherFavoritesExpanded = getSetting('behavior.switcherFavoritesExpanded')
     typeToJumpResetDelay = getSetting('fileExplorer.typeToJump.resetDelay')
     quickFilterTypingWindow = getSetting('fileExplorer.quickFilter.typingWindow')
@@ -217,6 +219,9 @@ function applySettingChange(id: string, value: unknown): void {
       break
     case 'network.showShareParentRow':
       showShareParentRow = value as boolean
+      break
+    case 'network.showServerParentRow':
+      showServerParentRow = value as boolean
       break
     case 'behavior.switcherFavoritesExpanded':
       switcherFavoritesExpanded = value as boolean
@@ -410,6 +415,11 @@ export function getNetworkEnabled(): boolean {
 /** The default for `..` in an SMB share's top folder; a share's own override wins (`network/share-parent-row.svelte.ts`). */
 export function getShowShareParentRow(): boolean {
   return showShareParentRow
+}
+
+/** Whether `..` in a server's top folder (SFTP, WebDAV, NFS, S3) leads to where it was found (`pane/top-folder-parent-pane.svelte.ts`). */
+export function getShowServerParentRow(): boolean {
+  return showServerParentRow
 }
 
 /** Whether the volume switcher's favorites section was last left open (one value for both panes). */

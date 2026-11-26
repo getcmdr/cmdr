@@ -604,6 +604,13 @@ pub(crate) fn servers_row_path(path: &str) -> Option<String> {
         .servers_row_path(path)
 }
 
+/// The Servers list's rows now ([`SmbServerVolume::server_rows`]), or `None` before the
+/// `network` volume is registered. Memory, the stores, and the mount table only.
+pub(crate) fn server_rows_now() -> Option<Vec<ServerRow>> {
+    let volume = crate::file_system::volume::manager::get_volume_manager().get(NETWORK_VOLUME_ID)?;
+    Some(volume.as_any().downcast_ref::<SmbServerVolume>()?.server_rows())
+}
+
 /// The saved server whose Servers row opens the share list at `path`, by its id, or `None`
 /// (no share list, or a server nobody saved). Memory, the stores, and the mount table only.
 pub(crate) fn saved_server_of_share_list(app: &tauri::AppHandle, path: &str) -> Option<String> {

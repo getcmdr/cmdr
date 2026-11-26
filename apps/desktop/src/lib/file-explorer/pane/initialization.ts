@@ -194,7 +194,9 @@ export async function loadPersistedState(): Promise<InitializedState> {
     if (originalPath) {
       tab.unreachable = { originalPath, retrying: false }
     }
-    if (tab.id in landOnServerByTabId && tab.volumeId === 'network') tab.landOnServer = landOnServerByTabId[tab.id]
+    if (tab.id in landOnServerByTabId && tab.volumeId === 'network') {
+      tab.landOn = { path: tab.path, selectPath: landOnServerByTabId[tab.id] }
+    }
   }
 
   return {

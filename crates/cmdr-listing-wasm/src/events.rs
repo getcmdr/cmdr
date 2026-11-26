@@ -74,6 +74,11 @@ pub(crate) struct ListingCompleteEvent<'a> {
     /// page's one volume is no share. `()` stands for the desktop's `ShareParent`, which
     /// is app-only, and serializes as the same `null`.
     pub(crate) share_parent: Option<()>,
+    /// Whether the listed folder is the volume's root, as the desktop's event says it.
+    pub(crate) at_volume_top: bool,
+    /// Where `..` leads out of a server's top folder: always `null` here, since the page's
+    /// one volume is no server. `()` stands for the desktop's `TopFolderParent`.
+    pub(crate) top_folder_parent: Option<()>,
     /// The account a server's share list was listed as: always `null` here, since the page
     /// lists no server. `()` stands for the desktop's `ShareListAccount`, which is app-only.
     pub(crate) share_list_account: Option<()>,
@@ -85,6 +90,8 @@ pub(crate) struct ListingErrorEvent<'a> {
     pub(crate) listing_id: &'a str,
     pub(crate) message: String,
     pub(crate) error: Option<ListingError>,
+    /// The desktop's `TopFolderParent` on a failed listing: always `null` here.
+    pub(crate) top_folder_parent: Option<()>,
 }
 
 #[derive(Serialize)]
@@ -128,6 +135,7 @@ impl DemoEvents {
                 listing_id,
                 message: error.to_string(),
                 error: Some(listing_error),
+                top_folder_parent: None,
             },
         );
     }
@@ -190,6 +198,7 @@ impl ListingEvents for DemoEvents {
                 effective_sort_by,
             } => {
                 let listed_path = stored_path.as_deref().unwrap_or(&path);
+                let at_volume_top = *listed_path == *volume_root;
                 if empty_at_volume_root
                     && let Some(listing_error) = listing_error_for_restricted_empty_root_at(&volume_id, listed_path)
                 {
@@ -201,6 +210,7 @@ impl ListingEvents for DemoEvents {
                             listing_id,
                             message,
                             error,
+                            top_folder_parent: None,
                         },
                     );
                     return;
@@ -215,6 +225,8 @@ impl ListingEvents for DemoEvents {
                         stored_path: stored_path.map(AppPathBuf::into_string),
                         effective_sort_by,
                         share_parent: None,
+                        at_volume_top,
+                        top_folder_parent: None,
                         share_list_account: None,
                     },
                 );

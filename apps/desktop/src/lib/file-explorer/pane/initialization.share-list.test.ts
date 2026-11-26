@@ -72,9 +72,9 @@ describe('loadPersistedState: a tab that was on a share list', () => {
     expect(getActiveTab(state.leftTabMgr)).toMatchObject({
       volumeId: 'network',
       path: 'smb://',
-      landOnServer: 'smb://testnas',
+      landOn: { path: 'smb://', selectPath: 'smb://testnas' },
     })
-    const byId = Object.fromEntries(getAllTabs(state.leftTabMgr).map((t) => [t.id, t.landOnServer]))
+    const byId = Object.fromEntries(getAllTabs(state.leftTabMgr).map((t) => [t.id, t.landOn?.selectPath]))
     expect(byId).toEqual({ nas: 'smb://testnas', attic: 'smb://attic', home: undefined })
     // Nothing asked which volume holds a server: `network` is trusted as stored.
     expect(commands.resolvePathVolume).not.toHaveBeenCalledWith('smb://')

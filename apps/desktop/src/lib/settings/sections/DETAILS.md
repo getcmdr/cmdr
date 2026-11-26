@@ -202,14 +202,15 @@ sections compose).
   `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page. The info block's own
   heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via `anyVisible(shouldShow, ...)`
   (same pattern as FSW above).
-- **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV)`: a "Trusted host keys" `SectionCard` listing
+- **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV)`: a Behavior card with its one setting
+  (`network.showServerParentRow`, `..` in a server's top folder), then a "Trusted host keys" `SectionCard` listing
   `listTrustedSftpHostKeys()`, a row per key (host with port, algorithm, fingerprint, the date it was trusted) with a
   confirmed Forget, and a "Trusted certificates" card the same shape over `listTrustedWebdavCertificates()`, and an "SMB
   link sign-ins" card over `listSmbLinkConsents()` (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link") (a
-  certificate pin per host and port, the SHA-256). ❗ The page has NO setting: saved servers live in the Servers list,
-  so its sidebar row and each card's `shouldShow` gate come from the rows in `ServersSection.rows.ts` (`../DETAILS.md` §
-  Searchable rows). The list is `null` until the read answers, so the empty sentence can't flash in front of someone who
-  has keys; a read that throws lands on the same sentence rather than an eternal blank.
+  certificate pin per host and port, the SHA-256). Saved servers live in the Servers list, not here; the list cards'
+  `shouldShow` gates come from the rows in `ServersSection.rows.ts` (`../DETAILS.md` § Searchable rows), and its one
+  setting puts the page in the sidebar. The list is `null` until the read answers, so the empty sentence can't flash in
+  front of someone who has keys; a read that throws lands on the same sentence rather than an eternal blank.
 - **`MtpSection.svelte`**: `File systems > MTP (Android/Kindle/cameras)`: one unlabeled `SectionCard`, gated via
   `anyVisible(shouldShow, ...)`
 - **`AdbSection.svelte`**: `File systems > Android (ADB)`: one unlabeled `SectionCard` holding the

@@ -11,7 +11,8 @@ manager. Signing in is `#lib/servers`' one sheet; this module only says what to 
   `ServersListRowMenu.svelte`. `share-list-sign-in.ts`: a share list's sign-in and every door's account actions.
   `ShareListAccountChip.svelte`: the path bar's account and a share row's menu. `share-list-label.ts`: a share-list
   path's friendly name. `smb-sign-in.ts`: SMB's side of the sheet. `mount-error-messages.ts` (+ `mount-error.ts`): a
-  refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
+  refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS; the pane's side is
+  `../pane/top-folder-parent-pane.svelte.ts`).
 - `SmbLinkConsentDialog.svelte`: the ask before a link signs in to another server, opened from the pane's error screen
   (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link").
 - `direct-connect.ts` (+ `upgrade-messages.ts`, `LocalNetworkBlockedToastContent.svelte`): the "Connect directly"

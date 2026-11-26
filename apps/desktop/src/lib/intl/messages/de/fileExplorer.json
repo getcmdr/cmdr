@@ -237,6 +237,10 @@
   "@fileExplorer.errorPane.openSystemSettings": {
     "sourceHash": "f735c5c"
   },
+  "fileExplorer.errorPane.goUp": "Go to parent folder",
+  "@fileExplorer.errorPane.goUp": {
+    "sourceHash": "7d4c500"
+  },
   "fileExplorer.errorPane.goBack": "Zurück",
   "@fileExplorer.errorPane.goBack": {
     "sourceHash": "6aadac2"

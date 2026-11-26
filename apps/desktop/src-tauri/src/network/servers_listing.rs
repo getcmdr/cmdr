@@ -163,6 +163,11 @@ pub(crate) struct ServerRow {
     /// for any other protocol. A share list listed under any of them is THIS server's, by
     /// identity: what Forget clears and where `..` from a twin's share list lands.
     pub hosts: Vec<String>,
+    /// The volume ids of every saved place this server holds: a one-place server's place,
+    /// an S3 account's root and buckets. Empty for an SMB server, whose shares are no
+    /// places here (a share's `..` is its mount's, `smb_share_parent.rs`). What `..` out of
+    /// a place's top folder finds its server by (`top_folder_parent.rs`).
+    pub places: Vec<String>,
 }
 
 /// Where a row leads. ❗ Two rows never lead to one place ([`server_rows`] keeps the
@@ -404,6 +409,10 @@ fn saved_row(
         opens,
         path,
         hosts: host_ids,
+        places: match server.protocol {
+            ServerProtocol::Smb => Vec::new(),
+            _ => server.places.iter().map(|place| place.volume_id.clone()).collect(),
+        },
     })
 }
 
@@ -439,6 +448,7 @@ fn nearby_row(host: &NetworkHost, inputs: &ServerRowInputs<'_>) -> ServerRow {
         opens: ServerOpens::ShareList(ShareListAddress::of_host(host)),
         path: share_list_path(host),
         hosts: vec![host.id.clone()],
+        places: Vec::new(),
     }
 }
 

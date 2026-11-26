@@ -611,6 +611,8 @@ export interface SettingsValues {
   'network.requireSmbEncryption': boolean
   /** `..` in an SMB share's top folder opens the server's shares (each share can override it). */
   'network.showShareParentRow': boolean
+  /** `..` in a server's top folder (SFTP, WebDAV, NFS, an S3 account or bucket) opens where it was found. */
+  'network.showServerParentRow': boolean
   'network.shareCacheDuration': number
   /** Milliseconds; edited in seconds. */
   'network.timeout': number

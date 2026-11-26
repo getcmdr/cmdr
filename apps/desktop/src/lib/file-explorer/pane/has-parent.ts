@@ -1,5 +1,4 @@
 import { type CanonicalPath, parentOf } from '#lib/path/canonical.js'
-import { NETWORK_VOLUME_PATH } from './navigate-refusals'
 import type { VolumeKind } from './volume-capabilities'
 
 /**
@@ -30,9 +29,15 @@ export interface HasParentInput {
   /** The effective volume root (resolved from the listing event or the prop). */
   effectiveVolumeRoot: string
   /**
-   * Whether the volume's top folder has a `..` leading out of the volume: an SMB share
-   * whose "Show “..” in the top folder" is on, where `..` opens the server's shares
-   * (#1238, `../network/share-parent-row.svelte.ts`). Omitted: a root has no `..`.
+   * Rust's answer to "is the current folder its volume's root" (`listing-complete`'s
+   * `atVolumeTop`), which wins over the path compare: a server root's spellings drift
+   * (`s3://k@h:443` beside `s3://k@h:443/`). `undefined` until a listing of the folder said.
+   */
+  atVolumeTop?: boolean
+  /**
+   * Whether the current folder's `..` leads out of its volume and its switch shows it: a
+   * server's top folder (an SMB share, an SFTP place, a bucket) or a share list
+   * (`top-folder-parent-pane.svelte.ts`). Omitted: a root has no `..`.
    */
   topFolderLeadsOut?: boolean
 }
@@ -52,17 +57,17 @@ export interface HasParentInput {
 export function computeHasParent(input: HasParentInput): boolean {
   if (!input.hasParentRow) return false
   if (input.currentPath === '/') return false
-  if (input.currentPath === input.effectiveVolumeRoot) return input.topFolderLeadsOut === true
-  return true
+  if (input.topFolderLeadsOut === true) return true
+  return !(input.atVolumeTop ?? input.currentPath === input.effectiveVolumeRoot)
 }
 
 /**
- * The folder a `..` row leads to. A server's share list (`smb://<server>`) leads to the
- * Servers list at `smb://`, which the path grammar's slash arithmetic can't produce
- * (`parentOf('smb://testnas')` is `smb:/`, a path no volume answers).
+ * The folder a `..` row leads to: where it leads out of a server's top folder (`leadsTo`:
+ * a share list's Servers list at `smb://`, a share's share list, a bucket's account), else
+ * the folder above.
  */
-export function parentRowPath(kind: VolumeKind, canonicalPath: CanonicalPath): string {
-  return kind === 'share-list' ? NETWORK_VOLUME_PATH : parentOf(canonicalPath)
+export function parentRowPath(leadsTo: string | null, canonicalPath: CanonicalPath): string {
+  return leadsTo ?? parentOf(canonicalPath)
 }
 
 /**
@@ -80,6 +85,14 @@ export function effectiveVolumeRootFor(
   volumePath: string,
   volumeRootFromEvent: string | undefined,
 ): string {
-  const routed = kind === 'archive' || kind === 'git-portal' || kind === 'restic'
-  return routed ? volumePath : (volumeRootFromEvent ?? volumePath)
+  return isRoutedKind(kind) ? volumePath : (volumeRootFromEvent ?? volumePath)
+}
+
+/**
+ * Whether `kind` is a ROUTED pane: one sitting on its parent drive while a container lists
+ * (a `.zip`, a repo's snapshots, a `.git`). Its listing's "top of the volume" is the
+ * container's, whose top folder has a `..` back out, so `computeHasParent` ignores it there.
+ */
+export function isRoutedKind(kind: VolumeKind): boolean {
+  return kind === 'archive' || kind === 'git-portal' || kind === 'restic'
 }

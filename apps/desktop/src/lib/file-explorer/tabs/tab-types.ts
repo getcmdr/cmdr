@@ -26,11 +26,11 @@ export interface TabState extends Location {
   /** Set when the tab's volume resolution timed out at startup */
   unreachable: UnreachableState | null
   /**
-   * The share-list path (`smb://<server>`) whose Servers row the tab's first listing of
-   * `smb://` puts its cursor on, once: set by a restore that brought a share-list tab back
-   * as the Servers list. Never persisted. `pane/restored-landing.svelte.ts`.
+   * The row (by its path) the tab's next listing of `path` puts its cursor on, once: a
+   * restored share-list tab's server row on the Servers list, or the row `..` out of a
+   * server's top folder came from. Never persisted. `pane/restored-landing.svelte.ts`.
    */
-  landOnServer?: string
+  landOn?: { path: string; selectPath: string }
 }
 
 /**

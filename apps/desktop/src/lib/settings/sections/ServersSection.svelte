@@ -1,20 +1,24 @@
 <script lang="ts">
     /**
-     * `File systems > Servers (SFTP, WebDAV)`: three cards, the SSH host keys and
-     * the server certificates this Mac has trusted, and the other servers a person
-     * let SMB links sign in to, each with a Forget button.
+     * `File systems > Servers (SFTP, WebDAV)`: the Behavior card (`..` in a server's top
+     * folder), then three cards: the SSH host keys and the server certificates this Mac
+     * has trusted, and the other servers a person let SMB links sign in to, each with a
+     * Forget button.
      *
      * ❗ **Saved servers are NOT here.** They live in the Servers list (the switcher's
      * "Servers" row), a pane state so a person can navigate, sort, and act
      * on them the way they do files. This page keeps only what the Servers list can't show.
      *
-     * ❗ The page has no CONTROL of its own, so its sidebar row and its "host
-     * key" and "certificate" search hits come from the `SearchableRow`s in
-     * `ServersSection.rows.ts`, never a registry entry.
+     * Its one setting (`network.showServerParentRow`) puts the page in the sidebar; its
+     * "host key" and "certificate" search hits come from the `SearchableRow`s in
+     * `ServersSection.rows.ts`.
      */
     import { onMount } from 'svelte'
     import SettingsSection from '../components/SettingsSection.svelte'
     import SectionCard from '#lib/ui/SectionCard.svelte'
+    import SettingRow from '../components/SettingRow.svelte'
+    import SettingSwitch from '../components/SettingSwitch.svelte'
+    import { getSettingDefinition } from '#lib/settings/index.js'
     import Button from '#lib/ui/Button.svelte'
     import DateLabel from '#lib/ui/DateLabel.svelte'
     import { tString } from '#lib/intl/messages.svelte.js'
@@ -40,6 +44,8 @@
     const log = getAppLogger('settings')
 
     const shouldShow = $derived(createShouldShow(searchQuery))
+
+    const serverParentRowDef = getSettingDefinition('network.showServerParentRow') ?? { label: '', description: '' }
 
     // `null` until the store has answered, so the empty sentence never flashes in
     // front of someone who does have trusted keys.
@@ -159,6 +165,18 @@
 </script>
 
 <SettingsSection title={tString('settings.section.servers')}>
+    {#if shouldShow('network.showServerParentRow')}
+        <SectionCard label={tString('settings.network.card.behavior')}>
+            <SettingRow
+                id="network.showServerParentRow"
+                label={serverParentRowDef.label}
+                description={serverParentRowDef.description}
+                {searchQuery}
+            >
+                <SettingSwitch id="network.showServerParentRow" />
+            </SettingRow>
+        </SectionCard>
+    {/if}
     {#if shouldShow('row:network.trustedHostKeys')}
         <SectionCard label={tString('settings.servers.card.trustedHostKeys')}>
             <p class="card-description">{tString('settings.servers.trustedHostKeys.description')}</p>

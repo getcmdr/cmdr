@@ -105,6 +105,8 @@ fn every_event_matches_the_generated_bindings() {
         stored_path: None,
         effective_sort_by: SortColumn::Name,
         share_parent: None,
+        at_volume_top: true,
+        top_folder_parent: None,
         share_list_account: None,
     };
     assert_matches("listing-complete", complete);
@@ -112,6 +114,7 @@ fn every_event_matches_the_generated_bindings() {
         listing_id,
         message: String::new(),
         error: None,
+        top_folder_parent: None,
     };
     assert_matches("listing-error", error);
     let diff = DirectoryDiff {

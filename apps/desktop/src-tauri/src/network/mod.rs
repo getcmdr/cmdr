@@ -131,6 +131,8 @@ pub(crate) mod share_list_sign_in;
 pub(crate) mod share_list_volume;
 // The password macOS saved for a server, read only on a person's action, once per run.
 pub(crate) mod system_saved_password;
+// Where `..` leads out of a server's top folder: a share list, a share, a place, a bucket.
+pub(crate) mod top_folder_parent;
 
 // The "we're stuck on the kernel mount" notice's once-per-server ledger. Lives
 // beside `smb_upgrade` (its only caller) rather than inside it, so the ledger is

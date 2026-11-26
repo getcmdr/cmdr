@@ -22,6 +22,7 @@ use tokio_util::sync::CancellationToken;
 use crate::listing_host::events::{ListingEndEffects, TauriListingEvents, WireCollector, error_analytics_category};
 use crate::network::share_list_volume::ShareListAccount;
 use crate::network::smb_share_parent::ShareParent;
+use crate::network::top_folder_parent::{ParentRowSwitch, TopFolderParent};
 use crate::network::{HostSource, NetworkHost};
 use crate::test_support::{TestDir, wait_until_async};
 use cmdr_fs::entry::FileEntry;
@@ -52,6 +53,11 @@ struct RecordingEffects {
     /// What `share_list_account` answers, and the listings it was asked about.
     share_list_account: Option<ShareListAccount>,
     share_list_account_asks: std::sync::Mutex<Vec<(String, AppPathBuf)>>,
+    /// What `top_folder_parent` answers, and what it was asked: the path and whether it's the top.
+    top_folder_parent: Option<TopFolderParent>,
+    top_folder_parent_asks: std::sync::Mutex<Vec<(AppPathBuf, bool)>>,
+    /// What `volume_root` answers, for a failed listing.
+    volume_root: Option<AppPathBuf>,
 }
 
 impl RecordingEffects {
@@ -95,6 +101,23 @@ impl ListingEndEffects for Arc<RecordingEffects> {
     fn share_parent(&self, volume_id: &str) -> Option<ShareParent> {
         self.share_parent_asks.lock_ignore_poison().push(volume_id.to_string());
         self.share_parent.clone()
+    }
+
+    fn top_folder_parent(
+        &self,
+        _volume_id: &str,
+        path: &AppPath,
+        at_volume_top: bool,
+        _share: Option<&ShareParent>,
+    ) -> Option<TopFolderParent> {
+        self.top_folder_parent_asks
+            .lock_ignore_poison()
+            .push((path.to_owned(), at_volume_top));
+        self.top_folder_parent.clone()
+    }
+
+    fn volume_root(&self, _volume_id: &str) -> Option<AppPathBuf> {
+        self.volume_root.clone()
     }
 
     fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount> {
@@ -340,6 +363,78 @@ async fn a_listing_below_a_shares_top_folder_carries_no_share_parent() {
     assert_eq!(completes.len(), 1);
     assert!(completes[0].share_parent.is_none());
     assert!(app.effects.share_parent_asks.lock_ignore_poison().is_empty());
+}
+
+fn servers_list_on(row: &str) -> TopFolderParent {
+    TopFolderParent {
+        volume_id: "network".to_string(),
+        path: "smb://".to_string(),
+        select_path: Some(row.to_string()),
+        switch: ParentRowSwitch::Server,
+    }
+}
+
+/// The pane's `..` reads Rust's own "this is the volume's top", ❌ never a compare of its
+/// path with `volume_root`: `s3://k@h:443` and `s3://k@h:443/` are one root.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_listing_says_whether_it_is_its_volumes_top_and_where_dot_dot_leads_from_there() {
+    let volume = share_with_a_folder("reaction-place-top");
+    let app = App::with_effects(
+        &volume,
+        RecordingEffects {
+            top_folder_parent: Some(servers_list_on("sftp://test_user_1@testnas.local:22/")),
+            ..RecordingEffects::default()
+        },
+    );
+    app.run(&volume.0, app_path!("/"), app.state()).await;
+    app.run(&volume.0, app_path!("/photos"), app.state()).await;
+
+    let completes = app.wire.completes.lock_ignore_poison();
+    assert!(completes[0].at_volume_top);
+    assert_eq!(
+        completes[0].top_folder_parent,
+        Some(servers_list_on("sftp://test_user_1@testnas.local:22/"))
+    );
+    assert!(!completes[1].at_volume_top);
+    assert_eq!(
+        *app.effects.top_folder_parent_asks.lock_ignore_poison(),
+        [
+            (app_path!("/").to_owned(), true),
+            (app_path!("/photos").to_owned(), false)
+        ]
+    );
+}
+
+/// A refused top folder (a bucket the key may not list) has no listing to carry its `..`,
+/// so its error does: the error screen's way up (David's QA, 2026-11-26).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_failed_listing_of_a_servers_top_folder_carries_its_way_up() {
+    let volume = refused_with(
+        "reaction-refused-top",
+        VolumeError::PermissionDenied {
+            path: "/".to_string(),
+            raw_os_error: Some(libc::EACCES),
+        },
+    );
+    let app = App::with_effects(
+        &volume,
+        RecordingEffects {
+            top_folder_parent: Some(servers_list_on("s3://test_key_1@s3.example.com:443/")),
+            volume_root: Some(app_path!("/").to_owned()),
+            ..RecordingEffects::default()
+        },
+    );
+    let ended = app.run(&volume.0, app_path!("/"), app.state()).await;
+
+    assert_eq!(ended.events, ["opening", "error"]);
+    assert_eq!(
+        *app.wire.error_parents.lock_ignore_poison(),
+        [Some(servers_list_on("s3://test_key_1@s3.example.com:443/"))]
+    );
+    assert_eq!(
+        *app.effects.top_folder_parent_asks.lock_ignore_poison(),
+        [(app_path!("/").to_owned(), true)]
+    );
 }
 
 /// A share list's listing carries the account it signed in as (the pane's "as

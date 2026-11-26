@@ -798,22 +798,18 @@ function fileSystemsSubsections(): string[] {
 
 describe('File systems > Servers (SFTP, WebDAV)', () => {
   /**
-   * ❗ The page carries no control at all: its content is the trusted-host-key
-   * list. An anchoring `SearchableRow` is what puts it in the sidebar, and
-   * `section.settings` stays empty because a row is not a setting.
+   * The page's one control is `..` in a server's top folder; the rest is the
+   * trusted-host-key, certificate, and link lists, which are rows, not settings.
    */
-  it('reaches the sidebar through an anchoring row, not a setting', () => {
-    // ❌ No registry entry lives on this page: the deleted `network.trustedHostKeys`
-    // was a `SettingsValues` key nothing read, which is what the row shape replaces.
-    expect(settingsRegistry.filter((setting) => setting.section[1] === 'Servers (SFTP, WebDAV)')).toEqual([])
+  it('reaches the sidebar through its one setting, right after SMB', () => {
+    expect(
+      settingsRegistry
+        .filter((setting) => setting.section[1] === 'Servers (SFTP, WebDAV)')
+        .map((setting) => setting.id),
+    ).toEqual(['network.showServerParentRow'])
 
-    expect(fileSystemsSubsections()).toContain('Servers (SFTP, WebDAV)')
-
-    const tree = buildSectionTree()
-    const servers = tree
-      .find((section) => section.name === 'File systems')
-      ?.subsections.find((section) => section.name === 'Servers (SFTP, WebDAV)')
-    expect(servers?.settings).toEqual([])
+    const subsections = fileSystemsSubsections()
+    expect(subsections.indexOf('Servers (SFTP, WebDAV)')).toBe(subsections.indexOf('SMB/Network shares') + 1)
   })
 
   it('is a search hit, so looking for a host key opens the page', () => {

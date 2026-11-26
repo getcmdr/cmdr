@@ -13715,6 +13715,18 @@ export type ListingCompleteEvent = {
    */
   shareParent: ShareParent | null
   /**
+   *  Whether the listed folder is its volume's root (`listed_path == volume_root`, in the
+   *  backend's own spelling): the pane's `..` question, ❌ never a string compare of the
+   *  pane's path with `volume_root`, whose spellings drift (`s3://k@h:443` beside
+   *  `s3://k@h:443/`).
+   */
+  atVolumeTop: boolean
+  /**
+   *  Where `..` leads when it isn't the folder above: out of a server's top folder (a share
+   *  list, a share, a place, a bucket; `network/top_folder_parent.rs`). `None` elsewhere.
+   */
+  topFolderParent: TopFolderParent | null
+  /**
    *  Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
    *  for the pane's "as `<account>`"; `None` for every other listing, and for a share list
    *  answered from the cache, which doesn't say. Memory only, read on the way out.
@@ -13773,6 +13785,11 @@ export type ListingErrorEvent = {
    *  (task panics). The FE renders all copy from this.
    */
   error: ListingError | null
+  /**
+   *  Where `..` leads from the folder that failed, when it's a server's top folder
+   *  (`network/top_folder_parent.rs`): the error screen's way up, with no listing to carry it.
+   */
+  topFolderParent: TopFolderParent | null
 }
 
 /**
@@ -17640,6 +17657,18 @@ export type PaneState = {
    */
   listing?: PaneListing
 }
+
+// The switch that shows a [`TopFolderParent`]'s `..`.
+export type ParentRowSwitch =
+  // Always shown: a share list's `..` to the Servers list.
+  | 'always'
+  /**
+   *  The SMB share's own choice over `network.showShareParentRow` (the listing's
+   *  `share_parent` carries it).
+   */
+  | 'share'
+  // `network.showServerParentRow`: a server's place, an S3 account's root, a bucket.
+  | 'server'
 
 // Parsed search scope: which subtrees to include and which directory names/paths to exclude.
 export type ParsedScope = {
@@ -23703,6 +23732,28 @@ export type ToolSubject =
   | { kind: 'unknownTool'; name: string }
   // A known tool whose arguments don't carry what it needs.
   | { kind: 'unparsed' }
+
+// Where `..` leads out of a server's top folder.
+export type TopFolderParent = {
+  /**
+   *  The volume `..` opens: `network` for the Servers list and a share list, an S3
+   *  account's root place for a bucket.
+   */
+  volumeId: string
+  /**
+   *  The folder it opens there, as the frontend spells it (`smb://`, `smb://testnas`,
+   *  `s3://<key id>@<host>:<port>/`).
+   */
+  path: string
+  /**
+   *  The row the cursor lands on there, by its path: the server's Servers row, the
+   *  bucket. `None` for a share, which lands on its name through the share list's
+   *  arrival.
+   */
+  selectPath: string | null
+  // Which switch shows this `..`.
+  switch: ParentRowSwitch
+}
 
 /**
  *  The top-level items an operation landed nothing for, split the way the

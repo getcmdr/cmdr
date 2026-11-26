@@ -3189,6 +3189,7 @@
     "network.firstTriggerDone": false,
     "network.requireSmbEncryption": false,
     "network.shareCacheDuration": 30000,
+    "network.showServerParentRow": true,
     "network.showShareParentRow": true,
     "network.smbConcurrency": 10,
     "network.timeout": 15000,
