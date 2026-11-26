@@ -7,7 +7,8 @@
  * - a segment click navigating to that ancestor without surfacing a rejection,
  * - the context menu passing eject info only for an ejectable volume,
  * - the volume switch: the new path is committed and loaded, disk-space watching
- *   follows the NEW volume, network and device-only MTP targets skip the load,
+ *   follows the NEW volume, the Servers list loads like any listing, a
+ *   device-only MTP target skips the load,
  *   and a disk image gets no space poll at all.
  */
 import { describe, it, expect, vi, beforeEach, onTestFinished, type Mock } from 'vitest'
@@ -290,9 +291,17 @@ describe('createBreadcrumbHandlers', () => {
       expect(calls.loadDirectory).toHaveBeenCalledWith('/Volumes/Ext/photos')
     })
 
-    it('skips the load for the network volume', () => {
-      createBreadcrumbHandlers(deps).handleVolumeChange({ volumeId: 'network', volumePath: '/', targetPath: '/' })
-      expect(calls.loadDirectory).not.toHaveBeenCalled()
+    // Regression: picking Servers in the switcher from a share list left the share's rows
+    // under the Servers columns. The pane commits `smb://` itself, so `path-sync.ts` sees
+    // no change and nothing else loads it.
+    it('loads the Servers list, a listing like any other', () => {
+      createBreadcrumbHandlers(deps).handleVolumeChange({
+        volumeId: 'network',
+        volumePath: 'smb://',
+        targetPath: 'smb://',
+      })
+      expect(calls.setCurrentPath).toHaveBeenCalledWith('smb://')
+      expect(calls.loadDirectory).toHaveBeenCalledWith('smb://')
     })
 
     it('skips the load for a device-only MTP target, which needs connecting first', () => {

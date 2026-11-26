@@ -116,16 +116,19 @@ suite:
   `snapshot-selection-sync`, so a snapshot restore runs after that remap in the same flush. The model and the leak it
   guards against: `../navigation/DETAILS.md` § "Cursor memory per entry".
 - `path-sync.ts` / `hidden-files-resync.ts`: the prop-driven reload truth table, and the cursor follow after the
-  hidden-files toggle. ❗ A pane view with no listing (search results, a phone being opened, the network view) still
-  COMMITS the new path (`sync-path`): skipping it on the network view left a pane that came from a share on that share's
-  path, and its header read "Servers ▸ /Volumes/public". The resync first tells the backend the setting
-  (`setListingIncludeHidden`), which picks the row space of the pane's `directory-diff`s and which changes reach it at
-  all (`crates/cmdr-listing/DETAILS.md` § "Diffs speak the pane's rows"). It runs whenever a listing lands, not only on
-  a toggle, and spans three IPC round trips, so it can be OVERTAKEN: by a navigation (which ends the old listing in the
-  same tick it clears the pane's id) or by a newer resync. An overtaken run stops at its next await and writes nothing,
-  and a read that rejects once overtaken is the expected gone-listing refusal (`ListingLookupError::Gone`), swallowed.
-  ❗ Overtaken is read off the pane's current listing id plus a per-pane run counter (`createHiddenFilesResync`), ❌
-  never off the rejection's message; a failure on the listing the pane still shows keeps rejecting.
+  hidden-files toggle. ❗ A pane view with no listing (search results, a phone being opened) still COMMITS the new path
+  (`sync-path`): skipping the commit left a pane that came from a share on that share's path, and its header read
+  "Servers ▸ /Volumes/public". ❗ A switcher pick commits its path itself (`breadcrumb-bar.ts::handleVolumeChange`), so
+  the effect sees no change and that handler's load is the only one: it skips only a device-only phone. The Servers list
+  is a listing and loads there; skipping it left a share's rows under the Servers columns (QA 2026-11-26). The resync
+  first tells the backend the setting (`setListingIncludeHidden`), which picks the row space of the pane's
+  `directory-diff`s and which changes reach it at all (`crates/cmdr-listing/DETAILS.md` § "Diffs speak the pane's
+  rows"). It runs whenever a listing lands, not only on a toggle, and spans three IPC round trips, so it can be
+  OVERTAKEN: by a navigation (which ends the old listing in the same tick it clears the pane's id) or by a newer resync.
+  An overtaken run stops at its next await and writes nothing, and a read that rejects once overtaken is the expected
+  gone-listing refusal (`ListingLookupError::Gone`), swallowed. ❗ Overtaken is read off the pane's current listing id
+  plus a per-pane run counter (`createHiddenFilesResync`), ❌ never off the rejection's message; a failure on the
+  listing the pane still shows keeps rejecting.
 - `entries-snapshot.ts`: the Selection dialog's entry list and the operation's selected-names snapshot. Both adapt a
   search snapshot's rows; the Selection list keeps the search engine's BASENAME in `name` (a mask like `*.txt` has to
   mean the filename), unlike `SearchResultsView`'s own adapter, which synthesizes the `~`-shortened full path for the

@@ -154,12 +154,14 @@ export function createBreadcrumbHandlers(deps: BreadcrumbHandlerDeps): Breadcrum
     deps.setCurrentPath(targetPath)
     deps.onVolumeChange(change)
 
-    // Don't load directory for network views (they handle their own data)
-    // or device-only MTP views (they need connection first via auto-connect effect)
-    // But DO load for connected MTP views (storage-specific volume ID contains ":")
+    // ❗ The pane committed `targetPath` above, so `path-sync.ts` sees no change and this is
+    // the only load. The Servers list (`smb://`) is a listing too: skipping it left the
+    // previous share's rows under the Servers columns. A device-only MTP view skips it (it
+    // connects first, via the auto-connect effect); a connected one (storage-specific
+    // volume ID, with ":") loads. The disk space follows the pane's volume on its own
+    // (`volume-space.svelte.ts`).
     const isDeviceOnlyMtp = volumeScheme(newVolumeId) === 'mtp' && !newVolumeId.includes(':')
-    // The disk space follows the pane's volume on its own (`volume-space.svelte.ts`).
-    if (newVolumeId !== 'network' && !isDeviceOnlyMtp) {
+    if (!isDeviceOnlyMtp) {
       deps.loadDirectory(targetPath)
     }
   }
