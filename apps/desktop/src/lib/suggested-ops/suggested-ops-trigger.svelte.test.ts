@@ -26,6 +26,8 @@ const approveServerMock = vi.fn<(payload: { groupId: number; revision: number })
 
 /** The subscriber the store installs while the dialog is open. */
 let emit: ((payload: SuggestionsChanged) => void) | null = null
+/** The write-settled subscriber the store installs while the dialog is open. */
+let settle: (() => void) | null = null
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
   listSuggestedOps: () => listMock(),
@@ -41,6 +43,12 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
     emit = cb
     return Promise.resolve(() => {
       emit = null
+    })
+  },
+  onWriteSettled: (cb: () => void) => {
+    settle = cb
+    return Promise.resolve(() => {
+      settle = null
     })
   },
 }))
@@ -1098,6 +1106,85 @@ describe('a file that’s gone', () => {
       revision: 1,
       selection: { mode: 'allExcept', opIds: [3] },
     })
+  })
+
+  /** From now on, the disk says every file is gone: another approval renamed them meanwhile. */
+  function allGoneFromNow() {
+    factsMock.mockImplementation(({ offset, limit }) =>
+      Promise.resolve({
+        kind: 'facts',
+        facts: Array.from({ length: limit }, (_, i) => ({ opId: offset + i, state: { kind: 'missing' } })),
+      }),
+    )
+  }
+
+  /** Regression anchor for #1524 (ERR-BD64C): a group whose files an earlier approval in the
+   *  same open dialog renamed kept its open-time "present" facts, so after its own approval was
+   *  given back ("couldn't read any of these files") every row still read ticked, sized, and dated. */
+  it('reads gone once a refused approval gives the group back, not as it was when the dialog opened', async () => {
+    await openSuggestedOps()
+    const first = opAt(BIG, 0)
+    if (!first) throw new Error('row 0 is held')
+    expect(isOpMissing(BIG, first)).toBe(false)
+    allGoneFromNow()
+    approveMock.mockResolvedValueOnce({ kind: 'nothingToRun' })
+
+    await approveGroup(BIG)
+
+    expect(isOpMissing(BIG, first)).toBe(true)
+    expect(isOpSelected(BIG, first)).toBe(false)
+    expect(reviewOf(BIG)?.liveFacts.get(0)).toEqual({ kind: 'missing' })
+  })
+
+  it('reads gone once another write settles while the dialog is open', async () => {
+    await openSuggestedOps()
+    const first = opAt(BIG, 0)
+    if (!first) throw new Error('row 0 is held')
+    allGoneFromNow()
+
+    settle?.()
+    await vi.waitFor(() => {
+      expect(isOpMissing(BIG, first)).toBe(true)
+    })
+  })
+
+  it('keeps the last answer on screen while it asks again, so a row never blinks to its snapshot', async () => {
+    await openSuggestedOps()
+    let answer: ((value: unknown) => void) | null = null
+    factsMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    )
+
+    settle?.()
+
+    expect(reviewOf(BIG)?.liveFacts.get(0)).toEqual({ kind: 'present', size: 2048, modified: 1_790_000_000 })
+    answer?.({ kind: 'facts', facts: [] })
+  })
+
+  it('drops an answer that a newer check overtook', async () => {
+    await openSuggestedOps()
+    let staleAnswer: ((value: unknown) => void) | null = null
+    factsMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          staleAnswer = resolve
+        }),
+    )
+    settle?.() // asks, and the answer hangs
+    allGoneFromNow()
+    await refreshSuggestions() // asks again, and hears "gone"
+    const first = opAt(BIG, 0)
+    if (!first) throw new Error('row 0 is held')
+    expect(isOpMissing(BIG, first)).toBe(true)
+
+    staleAnswer?.({ kind: 'facts', facts: [{ opId: 0, state: { kind: 'present', size: 1, modified: 1 } }] })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(isOpMissing(BIG, first)).toBe(true)
   })
 
   it('marks a row whose new name is already taken where it lands (#774)', async () => {

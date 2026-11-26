@@ -27,6 +27,7 @@ import {
   approveSuggestedServer,
   listSuggestedOps,
   onSuggestionsChanged,
+  onWriteSettled,
   pageSuggestedOps,
   rejectSuggestedGroup,
   liveSuggestedOpFacts,
@@ -185,8 +186,10 @@ function readLiveFacts(ask: SuggestedOpRowAsk): Promise<SuggestedOpLiveFactsAnsw
   return source ? source.liveFacts(ask) : liveSuggestedOpFacts(ask.groupId, ask.offset, ask.limit)
 }
 
-/** Op ids whose live facts were already asked for, per group. Not state: nothing renders it,
- *  it only keeps a scroll from asking twice. */
+/** Op ids whose live facts were already asked for, per group, in the current round. Not state:
+ *  nothing renders it, it only keeps a scroll from asking twice. Dropping a group's set starts a
+ *  new round (`recheckLiveFacts`), and the set's identity is the round: an answer whose set was
+ *  dropped while it was in flight is stale and goes unread. */
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only; nothing renders from it
 const factsRequested = new Map<number, Set<number>>()
 
@@ -324,6 +327,8 @@ export function toggleAllOps(groupId: number): void {
 
 /** Live only while the dialog is open: the badge owns the session-long subscription. */
 let unlistenChanges: UnlistenFn | null = null
+/** Live only while the dialog is open: any write that settles may have moved a drawn file. */
+let unlistenSettles: UnlistenFn | null = null
 
 /**
  * Closes the dialog. The last review's state stays put until the next open drops it:
@@ -335,6 +340,8 @@ export function closeSuggestedOps(): void {
   suggestedOpsState.open = false
   unlistenChanges?.()
   unlistenChanges = null
+  unlistenSettles?.()
+  unlistenSettles = null
 }
 
 /** Every review, refusal, and notice the last open left behind. Only while nothing renders them. */
@@ -368,14 +375,25 @@ export async function openSuggestedOps(): Promise<void> {
  * means "the thing you are reading moved".
  */
 async function subscribeWhileOpen(): Promise<void> {
-  if (unlistenChanges) return
-  try {
-    unlistenChanges = await listenForChanges()
-  } catch (e) {
-    // The dialog opens either way. Losing the subscription costs the live notice, not the
-    // review: every refresh still compares each group's op count, so a change that alters it
-    // is still announced.
-    log.warn("Couldn't subscribe to suggestion changes: {error}", { error: e })
+  if (!unlistenChanges) {
+    try {
+      unlistenChanges = await listenForChanges()
+    } catch (e) {
+      // The dialog opens either way. Losing the subscription costs the live notice, not the
+      // review: every refresh still compares each group's op count, so a change that alters it
+      // is still announced.
+      log.warn("Couldn't subscribe to suggestion changes: {error}", { error: e })
+    }
+  }
+  if (!unlistenSettles) {
+    try {
+      // An approved group runs in the queue AFTER its claim's announcement, so only the write's
+      // settle says its files really moved. Any write counts: a pane rename moves a file too.
+      unlistenSettles = await onWriteSettled(() => void recheckLiveFacts())
+    } catch (e) {
+      // Losing it costs freshness between decisions; every refresh still re-checks.
+      log.warn("Couldn't subscribe to write settles: {error}", { error: e })
+    }
   }
 }
 
@@ -403,6 +421,7 @@ export async function refreshSuggestions(): Promise<void> {
   suggestedOpsState.loading = true
   suggestedOpsState.loadError = false
   const fresh: number[] = []
+  const held: number[] = []
   const gone: number[] = []
   try {
     suggestedOpsState.sweeps = await listSuggestedOps()
@@ -416,9 +435,12 @@ export async function refreshSuggestions(): Promise<void> {
         created.seenRevision = group.revision
         suggestedOpsState.reviews.set(group.groupId, created)
         fresh.push(group.groupId)
-      } else if (review.seenRevision !== null && review.seenRevision !== group.revision) {
-        // The group moved since the rows on screen were read: announce it, never swap.
-        review.changedUnderReview = true
+      } else {
+        held.push(group.groupId)
+        if (review.seenRevision !== null && review.seenRevision !== group.revision) {
+          // The group moved since the rows on screen were read: announce it, never swap.
+          review.changedUnderReview = true
+        }
       }
     }
     for (const groupId of suggestedOpsState.reviews.keys()) {
@@ -435,8 +457,25 @@ export async function refreshSuggestions(): Promise<void> {
     // A re-read that landed during the tick may have brought one back: it keeps its review.
     for (const groupId of gone) if (!groupById(groupId)) dropReview(groupId)
   }
-  // Every list shows right away, so each new group reads its first page now, side by side.
-  await Promise.all(fresh.map((groupId) => ensureOpWindow(groupId, 0)))
+  // Every list shows right away, so each new group reads its first page now, side by side. A
+  // group already on screen re-checks its drawn rows: whatever moved the pending set (an
+  // approval, a refusal that gave a group back) may have moved its files too (#1524).
+  await Promise.all([
+    ...fresh.map((groupId) => ensureOpWindow(groupId, 0)),
+    recheckLiveFacts(held.filter((groupId) => reviewOf(groupId) !== undefined)),
+  ])
+}
+
+/**
+ * Ask the disk again about every drawn row of these groups (default: every group under review),
+ * because something may have moved their files since they were last asked.
+ *
+ * The last answer stays on screen until the new one lands, so a row never blinks back to its
+ * snapshot, and an answer to an older round that lands late is dropped (`factsRequested`).
+ */
+export async function recheckLiveFacts(groupIds: number[] = [...suggestedOpsState.reviews.keys()]): Promise<void> {
+  for (const groupId of groupIds) factsRequested.delete(groupId)
+  await Promise.all(groupIds.map((groupId) => ensureLiveFacts(groupId)))
 }
 
 function dropReview(groupId: number): void {
@@ -542,9 +581,10 @@ function windowHolds(held: OpWindow | null, start: number, end: number): boolean
 /**
  * Check the drawn rows on disk: size and modified time now, or that the file is gone.
  *
- * Only the rows on screen, only once each: a 60,000-op group shown whole still costs one stat
- * per row the user actually scrolls past. One call covers the span of drawn rows not yet asked
- * about.
+ * Only the rows on screen, only once each per round: a 60,000-op group shown whole still costs
+ * one stat per row the user actually scrolls past. One call covers the span of drawn rows not
+ * yet asked about. A held answer is not an excuse to skip a row: `recheckLiveFacts` starts a
+ * new round exactly when the held one may be stale.
  *
  * Every answer short of a fact leaves rows on their creation snapshot, which the dialog labels
  * as such. A source that can't be asked at all (not connected, gone) is recorded once on the
@@ -566,7 +606,9 @@ export async function ensureLiveFacts(groupId: number): Promise<void> {
   for (const opId of span.opIds) asked.add(opId)
   try {
     const answer = await readLiveFacts({ groupId, offset: span.offset, limit: span.opIds.length })
-    if (reviewOf(groupId) !== review) return
+    // The group was answered, the dialog closed, or a newer round asked again meanwhile: this
+    // answer may predate a move, so the newer round's is the one to show.
+    if (reviewOf(groupId) !== review || factsRequested.get(groupId) !== asked) return
     if (takeLiveAnswer(review, held, answer)) return
   } catch (e) {
     log.warn("Couldn't check the suggested files on disk: {error}", { error: e })
@@ -586,7 +628,7 @@ function unaskedSpan(
   let last = -1
   for (let index = from; index < to; index++) {
     const opId = held.ops[index - held.offset].opId
-    if (asked.has(opId) || review.liveFacts.has(opId)) continue
+    if (asked.has(opId)) continue
     if (first < 0) first = index
     last = index
   }

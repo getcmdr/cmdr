@@ -30,7 +30,8 @@ and per-op selection. Backend: `apps/desktop/src-tauri/src/commands/agent/sugges
   a permanent delete) names THAT action everywhere (`shownVerb`), and approve sends the `runsAs` it showed back.
 - **Each group loads a WINDOW at a time** (`OP_WINDOW_SIZE`), sized by `COUNT(*)`, through `ColumnList`'s windowed
   source. A group of 60,000 is legitimate: ❌ nothing loads a group to show it, "Show all" included.
-- **A gone file is never ticked** (`review.missing`), counted, or sent on.
+- **A gone file is never ticked** (`review.missing`), counted, or sent on. Facts go stale: each refresh and
+  `write-settled` re-asks (`recheckLiveFacts`, #1524).
 - **A row never loses its op while it tears down**: `ColumnList` holds each cell's own row (`heldRowOf`), so `getRow`
   answers `undefined` honestly. Regression anchor: `SuggestedOpsDialog.rows-vanish.test.ts`.
 - **Selection is the user's hand flips over a base** (`OpSelection`): the stored ticks (`fromStored`, where a review

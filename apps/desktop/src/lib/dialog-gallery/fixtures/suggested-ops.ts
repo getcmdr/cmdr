@@ -4,9 +4,9 @@
  * Each state is a BUILDER, not a literal: a patch carries live `SvelteMap` / `SvelteSet`
  * reviews the dialog mutates as the reviewer ticks boxes and shows more rows, so every opening
  * starts from a fresh copy. The reviews arrive with their windows and live facts already held,
- * so every row state renders without a backend, and nothing here is ever re-read
- * (`ensureLiveFacts` skips ops it already holds). Rows past the held window (the 60,000-file
- * group) page in through the patch's `rowSource`, answered from the same fixture.
+ * so every row state renders without a backend. A re-check (`ensureLiveFacts` asks once per
+ * round) and the rows past the held window (the 60,000-file group) go through the patch's
+ * `rowSource`, answered from the same fixture, so a re-read changes nothing.
  *
  * Raw copy on purpose: dev-only, outside the i18n-enforced areas.
  */

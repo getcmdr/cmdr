@@ -137,10 +137,19 @@ page is in flight per group; a scroll made meanwhile is turned away, so a page t
 `opAt` answers `null` rather than a neighbouring row. Opening the dialog reads every group's first page side by side
 (`Promise.all`), so seven groups cost one round trip of latency, not seven.
 
-**Live facts** are read for the drawn rows only, once per op (`ensureLiveFacts` →
+**Live facts** are read for the drawn rows only, once per op per ROUND (`ensureLiveFacts` →
 `liveSuggestedOpFacts(groupId, offset, limit)`, one call per contiguous span of rows not yet asked about): one bounded
 stat per row the user actually sees, through the backend's shared stat budget. A page that lands after the list drew its
-rows still gets them (the review remembers its last `range`). The answer is typed:
+rows still gets them (the review remembers its last `range`).
+
+A new round (`recheckLiveFacts`) starts whenever the held answers may be stale: on every `refreshSuggestions` (an
+approval, a refusal that gave a group back, any `suggestions-changed`), and on every `write-settled` while the dialog is
+open, since an approved group's files only move when its queued write runs, after the claim announced itself, and a pane
+rename moves files too. The last answer stays on screen until the new one lands (no blink back to the snapshot label),
+and an answer from an older round that lands late is dropped: `factsRequested`'s per-group set IS the round. Gotcha/Why
+(#1524, ERR-BD64C): facts were asked once per dialog open, so a group whose files an earlier approval in the same open
+dialog had renamed kept reading ticked, sized, and dated, even under its own "couldn't read any of these files" refusal.
+The answer is typed:
 
 - **A source that can't be asked at all** (`sourceNotConnected`, `sourceGone`) sets the review's `sourceUnreachable`:
   the group stops asking, and one line above the list says why its sizes and dates are from suggestion time, rather than
@@ -253,12 +262,12 @@ Debug > Soft dialogs opens the dialog store-seeded (`dialog-gallery/fixtures/sto
 the patch sets `open`, `sweeps`, and pre-filled `reviews` (windows and live facts), so every row state shows without a
 backend. The invoices move files three of its five under new names, so a move's `old → new` rows show beside ones that
 keep their name. "Server cards" shows an SFTP add at a new address and a NAS host's edit with its shares line; "Server
-cards given back" shows the same two refused. Seeded live facts are never re-read (`ensureLiveFacts` skips ops it
-already holds). Rows past a seeded window (the 60,000-file "Raw camera files") page through the patch's `rowSource`
-(`suggestedOpsState.rowSource`, `null` in the app), which answers `page` and `liveFacts` from the fixture: the real
-store has no fixture group and answers a total of 0, which emptied the list on the first scroll past row 200 (regression
-test in `dialog-gallery/fixtures.test.ts`). Approve and Reject reach the real store, which has no such group, so the
-dialog re-reads and shows what's really waiting; the row says so.
+cards given back" shows the same two refused. Seeded live facts show at once; the first drawn range re-asks them through
+the `rowSource`, which answers the same facts, so nothing changes. Rows past a seeded window (the 60,000-file "Raw
+camera files") page through the patch's `rowSource` (`suggestedOpsState.rowSource`, `null` in the app), which answers
+`page` and `liveFacts` from the fixture: the real store has no fixture group and answers a total of 0, which emptied the
+list on the first scroll past row 200 (regression test in `dialog-gallery/fixtures.test.ts`). Approve and Reject reach
+the real store, which has no such group, so the dialog re-reads and shows what's really waiting; the row says so.
 
 ## A server card
 
