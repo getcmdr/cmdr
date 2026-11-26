@@ -3,6 +3,11 @@
  * Fast directory loads never replace useful rows with a transient loading frame;
  * a load that lasts 100 ms earns the normal loading screen, whose face then waits
  * for the shared reveal (`#lib/ui/wait-reveal.ts`).
+ *
+ * ❗ Only rows of the pane's OWN volume paint: a listing from a volume the pane has
+ * left (settled or live) shows as no rows, and a load after a volume switch shows the
+ * loading screen at once. A Servers pick that started no load once kept a share's rows
+ * under the Servers columns (QA 2026-11-26).
  */
 
 import type { SortColumn } from '../types'
@@ -19,7 +24,13 @@ export interface ListingPresentationDeps {
   getParentRow: () => ParentRow
   /** The column the CURRENT listing is ordered by, set at `listing-complete` while loading still runs. */
   getEffectiveSortBy: () => SortColumn | null
+  /** The pane's volume, which moves the moment a switch commits. */
+  getVolumeId: () => string
+  /** The volume `getListingId()`'s listing was listed on. */
+  getListingVolumeId: () => string
 }
+
+const NO_PARENT: ParentRow = { hasParent: false, parentPath: '' }
 
 /** Whether a list starts with the synthetic `..` row, and where that row points. */
 export interface ParentRow {
@@ -50,7 +61,7 @@ export interface ListingPresentation {
   readonly showLoading: boolean
   /**
    * How far into the load the loading screen mounted: the grace period, or `0` at startup
-   * (no settled rows to keep). `LoadingIcon` counts it so its face still appears
+   * or after a volume switch (no settled rows to keep). `LoadingIcon` counts it so its face still appears
    * `WAIT_REVEAL_AFTER_MS` after the load began (`#lib/ui/wait-reveal.ts`).
    */
   readonly loadingShownAfterMs: number
@@ -60,10 +71,21 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
   let settledListingId = $state('')
   let settledTotalCount = $state(0)
   let settledHiddenCount = $state(0)
-  let settledParentRow = $state<ParentRow>({ hasParent: false, parentPath: '' })
+  let settledParentRow = $state<ParentRow>(NO_PARENT)
   let settledEffectiveSortBy = $state<SortColumn | null>(null)
+  let settledVolumeId = $state('')
   let showLoading = $state(deps.getLoading())
   let loadingShownAfterMs = $state(0)
+
+  /** Whether the settled rows are the pane's to keep showing: there are some, from its own volume. */
+  function hasOwnSettledRows(): boolean {
+    return settledListingId !== '' && settledVolumeId === deps.getVolumeId()
+  }
+
+  /** Whether the list shows rows at all: the settled ones while loading, the live ones after, either only on the pane's volume. */
+  function showsRows(): boolean {
+    return deps.getLoading() ? hasOwnSettledRows() : deps.getListingVolumeId() === deps.getVolumeId()
+  }
 
   $effect(() => {
     const loading = deps.getLoading()
@@ -77,10 +99,11 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
         settledHiddenCount = deps.getHiddenCount()
         settledParentRow = deps.getParentRow()
         settledEffectiveSortBy = deps.getEffectiveSortBy()
+        settledVolumeId = deps.getListingVolumeId()
       }
       showLoading = false
-    } else if (!settledListingId) {
-      // Startup has no useful rows to preserve.
+    } else if (!hasOwnSettledRows()) {
+      // Startup, or a switch to another volume: no useful rows to preserve.
       loadingShownAfterMs = 0
       showLoading = true
     } else {
@@ -98,15 +121,19 @@ export function createListingPresentation(deps: ListingPresentationDeps): Listin
 
   return {
     get listingId() {
+      if (!showsRows()) return ''
       return deps.getLoading() ? settledListingId : deps.getListingId()
     },
     get totalCount() {
+      if (!showsRows()) return 0
       return deps.getLoading() ? settledTotalCount : deps.getTotalCount()
     },
     get hiddenCount() {
+      if (!showsRows()) return 0
       return deps.getLoading() ? settledHiddenCount : deps.getHiddenCount()
     },
     get parentRow() {
+      if (!showsRows()) return NO_PARENT
       return deps.getLoading() ? settledParentRow : deps.getParentRow()
     },
     get effectiveSortBy() {

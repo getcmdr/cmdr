@@ -18,6 +18,10 @@ describe('createListingPresentation', () => {
     loading: boolean
     parentRow?: { hasParent: boolean; parentPath: string }
     effectiveSortBy?: SortColumn | null
+    /** The pane's volume. */
+    volumeId?: string
+    /** The volume `listingId` was listed on. */
+    listingVolumeId?: string
   }
 
   function create(initial: State) {
@@ -26,6 +30,8 @@ describe('createListingPresentation', () => {
     let loading = $state(initial.loading)
     let parentRow = $state(initial.parentRow ?? { hasParent: false, parentPath: '' })
     let effectiveSortBy = $state(initial.effectiveSortBy ?? null)
+    let volumeId = $state(initial.volumeId ?? 'root')
+    let listingVolumeId = $state(initial.listingVolumeId ?? initial.volumeId ?? 'root')
     let presentation!: ReturnType<typeof createListingPresentation>
 
     dispose = $effect.root(() => {
@@ -36,6 +42,8 @@ describe('createListingPresentation', () => {
         getLoading: () => loading,
         getParentRow: () => parentRow,
         getEffectiveSortBy: () => effectiveSortBy,
+        getVolumeId: () => volumeId,
+        getListingVolumeId: () => listingVolumeId,
       })
     })
     flushSync()
@@ -45,6 +53,8 @@ describe('createListingPresentation', () => {
       set: (next: Partial<State>) => {
         if (next.parentRow !== undefined) parentRow = next.parentRow
         if (next.effectiveSortBy !== undefined) effectiveSortBy = next.effectiveSortBy
+        if (next.volumeId !== undefined) volumeId = next.volumeId
+        if (next.listingVolumeId !== undefined) listingVolumeId = next.listingVolumeId
         if (next.listingId !== undefined) listingId = next.listingId
         if (next.totalCount !== undefined) totalCount = next.totalCount
         if (next.loading !== undefined) loading = next.loading
@@ -139,6 +149,33 @@ describe('createListingPresentation', () => {
 
     set({ effectiveSortBy: 'added' })
     expect(presentation.effectiveSortBy).toBe('added')
+  })
+
+  // Regression: a Servers pick that started no load kept a share's rows under the
+  // Servers columns. Rows from another volume are never the pane's, whatever the path does.
+  it('never paints a listing from a volume the pane has left', () => {
+    const { presentation, set } = create({ listingId: 'share', totalCount: 9, loading: false, volumeId: 'smb-nas' })
+
+    set({ volumeId: 'network' })
+
+    expect(presentation.listingId).toBe('')
+    expect(presentation.totalCount).toBe(0)
+    expect(presentation.parentRow.hasParent).toBe(false)
+  })
+
+  it('shows the loading screen at once, not the old rows, while a switch to another volume loads', () => {
+    const { presentation, set } = create({ listingId: 'share', totalCount: 9, loading: false, volumeId: 'smb-nas' })
+
+    set({ volumeId: 'network', listingId: 'servers', listingVolumeId: 'network', loading: true })
+
+    expect(presentation.listingId).toBe('')
+    expect(presentation.totalCount).toBe(0)
+    expect(presentation.showLoading).toBe(true)
+    expect(presentation.loadingShownAfterMs).toBe(0)
+
+    set({ totalCount: 3, loading: false })
+    expect(presentation.listingId).toBe('servers')
+    expect(presentation.totalCount).toBe(3)
   })
 
   it('reveals loading after 100 ms and cancels the timer when the load settles', () => {

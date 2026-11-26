@@ -279,6 +279,8 @@
     // slots are written primarily by the listing loader (`listing-loader.ts`,
     // via injected setters) but read by many non-loader concerns, so they stay here.
     let listingId = $state('')
+    /** The volume `listingId` was listed on: `listing-presentation.svelte.ts` paints no rows from another. */
+    let listingVolumeId = $state('')
     let totalCount = $state(0)
     // Hidden items an empty pane hides, for its empty state; zero whenever it shows rows or hidden files.
     let hiddenCount = $state(0)
@@ -394,6 +396,8 @@
             rowState.reset()
             operationSelectedNames = null
             listingId = id
+            // Set as a listing starts or is adopted, both after the pane's volume moved.
+            listingVolumeId = id ? volumeId : ''
         },
         getLoading: () => loading,
         setLoading: (value) => {
@@ -499,6 +503,8 @@
                 ? parentOf(canonicalPath) : '',
         }),
         getEffectiveSortBy: () => effectiveSortBy,
+        getVolumeId: () => volumeId,
+        getListingVolumeId: () => listingVolumeId,
     })
     /** A load past the grace period: the list's rows give way to `LoadingIcon`, its header stays. */
     const showLoadingView = $derived(loading && listingPresentation.showLoading)

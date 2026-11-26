@@ -1520,7 +1520,10 @@ so its column header never blinks out on a slow volume (a GCS bucket, a busy sha
 while `FilePane.isLoading()` keeps keyboard and command paths blocked. Once the listing lands, Brief and Full fetch the
 new visible range and atomically replace the old rows rather than clearing first. Startup shows the loading view
 immediately because there is no settled listing to preserve, header included; the list hides its "empty folder" text
-while the overlay is up. An error or a stalled listing still takes the whole content area. Pinned in
+while the overlay is up. ❗ Rows paint only on the volume they were listed on (`FilePane`'s `listingVolumeId`, set with
+the listing id): a load after a volume switch covers at once like startup, and a listing the pane's volume has moved off
+(settled or live) shows no rows. A Servers pick that started no load once left a share's rows under the Servers columns
+(QA 2026-11-26). An error or a stalled listing still takes the whole content area. Pinned in
 `file-pane-loading-header.svelte.test.ts`. The timer and snapshot contract are pinned in
 `listing-presentation.svelte.test.ts`; the atomic swap and a late old-range response are pinned in
 `../views/full-list-cache.test.ts`.
