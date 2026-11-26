@@ -641,8 +641,9 @@ describeSmb('SMB share browsing', () => {
     } finally {
       await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
       unmountGuestShareFrom(address)
+      // ❗ A HOST's Forget: `forget_server` forgets a saved place and leaves a host saved.
       await tauriPage.evaluate(
-        `window.__TAURI_INTERNALS__.invoke('forget_server', { id: ${JSON.stringify(added.host.id)} })`,
+        `window.__TAURI_INTERNALS__.invoke('forget_saved_smb_host', { id: ${JSON.stringify(added.host.id)} })`,
       )
     }
   })
@@ -822,6 +823,11 @@ describeSmb('SMB cross-storage copy', () => {
 // which is the command the sign-in sheet's own attempt runs. The sheet itself is
 // covered by the unit tests, which can drive its `attempt` directly; here the
 // fixture's value is the real Samba round-trip.
+//
+// ❗ The first two need `SMB Test (Auth)` signed in to by nobody this app
+// session: a sign-in sticks (the session credential, the account the server is
+// used with, the listing it bought). A spec elsewhere signs in on the auth
+// server added by IP (`authServerIp`) and forgets that host after.
 
 describeSmb('SMB authentication', () => {
   test('opening the auth host asks for a sign-in, and cancelling stays on its Sign in until ⌘[ goes back', async ({

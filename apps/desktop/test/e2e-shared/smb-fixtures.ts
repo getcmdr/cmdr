@@ -407,8 +407,21 @@ export function setupSmb(): void {
  * or `null` off Linux or when the container's name doesn't resolve to one.
  */
 export function guestServerIp(): string | null {
+  return ipv4Of(SMB_GUEST_HOST)
+}
+
+/**
+ * Linux: the auth server's IPv4 address. A server added by it is a host of its own (its own id, share list, account,
+ * and Forget), so a spec can sign in on it and forget it without touching the discovered `SMB Test (Auth)`, whose
+ * first-sign-in flows `smb.spec.ts` pins on a host nobody signed in to this session.
+ */
+export function authServerIp(): string | null {
+  return ipv4Of(SMB_AUTH_HOST)
+}
+
+function ipv4Of(host: string): string | null {
   if (!IS_LINUX) return null
-  const resolved = execSync(`getent ahostsv4 '${SMB_GUEST_HOST}'`, { encoding: 'utf-8', timeout: 10_000 })
+  const resolved = execSync(`getent ahostsv4 '${host}'`, { encoding: 'utf-8', timeout: 10_000 })
   return /^(\d+\.\d+\.\d+\.\d+)\s/m.exec(resolved)?.[1] ?? null
 }
 

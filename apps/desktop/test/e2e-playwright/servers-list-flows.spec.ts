@@ -32,6 +32,7 @@ import {
   SHEET,
 } from './server-ops-helpers.js'
 import {
+  authServerIp,
   guestServerIp,
   SMB_AUTH_PASSWORD,
   SMB_AUTH_SHARE,
@@ -147,6 +148,37 @@ async function openSmbServer(side: Side, name: string): Promise<PaneView> {
 async function goUpFromShareList(side: Side): Promise<void> {
   await mcpCall('move_cursor', { pane: side, index: 0 })
   await mcpCall('open_under_cursor', {})
+}
+
+// ── SMB servers added by IP ──────────────────────────────────────────────────
+
+/** Saves the SMB server at `address` under `name`, the way "Connect to server…" does, answering its host. */
+async function addSmbServerByIp(
+  tauriPage: PageLike,
+  address: string,
+  name: string,
+  { checkReachability = false }: { checkReachability?: boolean } = {},
+): Promise<{ host: { id: string } }> {
+  return tauriPage.evaluate<{ host: { id: string } }>(
+    `window.__TAURI_INTERNALS__.invoke('connect_to_server', ${JSON.stringify({
+      address: `smb://${address}`,
+      name,
+      username: null,
+      checkReachability,
+    })})`,
+  )
+}
+
+/**
+ * Forgets the saved SMB host `id` as the row's Forget does (`forget_saved_smb_host`): its manual entry, the account
+ * it's used with, its sign-in history, and the session credential a sign-in on it filed. ❌ Not `forget_server`, which
+ * forgets a saved PLACE and answers `false` for a host, leaving it saved for every later spec.
+ */
+async function forgetSmbHost(tauriPage: PageLike, id: string): Promise<void> {
+  const forgotten = await tauriPage.evaluate<boolean>(
+    `window.__TAURI_INTERNALS__.invoke('forget_saved_smb_host', { id: ${JSON.stringify(id)} })`,
+  )
+  expect(forgotten, `the saved SMB host ${id} is forgotten`).toBe(true)
 }
 
 // ── Forget's confirmation ────────────────────────────────────────────────────
@@ -350,14 +382,7 @@ describeSmb('Servers list survives: SMB servers', () => {
     test.skip(address === null, 'needs the guest server’s IP (Linux Docker)')
     if (address === null) return
     const name = 'SMB Test by IP (flows)'
-    const added = await tauriPage.evaluate<{ host: { id: string } }>(
-      `window.__TAURI_INTERNALS__.invoke('connect_to_server', ${JSON.stringify({
-        address: `smb://${address}`,
-        name,
-        username: null,
-        checkReachability: false,
-      })})`,
-    )
+    const added = await addSmbServerByIp(tauriPage, address, name)
     try {
       await openServersList('left')
       await awaitServerListed('left', name)
@@ -369,9 +394,7 @@ describeSmb('Servers list survives: SMB servers', () => {
       await expect.poll(async () => serverUnderCursor('left'), { timeout: waitBudget(15000) }).toBe(name)
     } finally {
       await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
-      await tauriPage.evaluate(
-        `window.__TAURI_INTERNALS__.invoke('forget_server', { id: ${JSON.stringify(added.host.id)} })`,
-      )
+      await forgetSmbHost(tauriPage, added.host.id)
     }
   })
 
@@ -391,7 +414,23 @@ describeSmb('Servers list survives: SMB servers', () => {
   })
 
   test('SMB: the row menu’s Sign in as… signs in and opens the server’s share list', async ({ tauriPage }) => {
-    const server = 'SMB Test (Auth)'
+    // ❗ The auth server added by IP under a name of its own, ❌ never the discovered `SMB Test (Auth)`: a sign-in
+    // outlives the test (the session credential, the account the server is used with, the listing it bought), and
+    // `smb.spec.ts`'s first-sign-in flows need that host signed in to by nobody. This host's Forget takes it all.
+    const address = authServerIp()
+    test.skip(address === null, 'needs the auth server’s IP (Linux Docker)')
+    if (address === null) return
+    const server = 'SMB Test auth by IP (flows)'
+    const added = await addSmbServerByIp(tauriPage, address, server)
+    try {
+      await signInFromRowMenu(tauriPage, server)
+    } finally {
+      await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
+      await forgetSmbHost(tauriPage, added.host.id)
+    }
+  })
+
+  async function signInFromRowMenu(tauriPage: PageLike, server: string): Promise<void> {
     await openServersList('left')
     await awaitServerListed('left', server)
     await cursorOnServer(tauriPage, 'left', server)
@@ -428,7 +467,7 @@ describeSmb('Servers list survives: SMB servers', () => {
         { timeout: waitBudget(30000) },
       )
       .toBeTruthy()
-  })
+  }
 
   /**
    * #324's baseline: what opening the Servers list asks of the servers on it, read off the backend's share-listing
@@ -446,15 +485,8 @@ describeSmb('Servers list survives: SMB servers', () => {
         `window.__TAURI_INTERNALS__.invoke('share_listing_asks', { address: ${JSON.stringify(host)} })`,
       )
     const name = 'SMB Test saved (asks)'
-    const added = await tauriPage.evaluate<{ host: { id: string } }>(
-      `window.__TAURI_INTERNALS__.invoke('connect_to_server', ${JSON.stringify({
-        address: `smb://${address}`,
-        name,
-        username: null,
-        // ❗ Reached: a server saved without contact (`awaitingFirstConnect`) is nobody's to list until it connects (#777).
-        checkReachability: true,
-      })})`,
-    )
+    // ❗ Reached: a server saved without contact (`awaitingFirstConnect`) is nobody's to list until it connects (#777).
+    const added = await addSmbServerByIp(tauriPage, address, name, { checkReachability: true })
     try {
       await tauriPage.evaluate(`window.__TAURI_INTERNALS__.invoke('reset_share_listing_asks')`)
       await openServersList('left')
@@ -469,9 +501,7 @@ describeSmb('Servers list survives: SMB servers', () => {
       expect((await asks('SMB Test (Unicode)')).asked).toBe(0)
     } finally {
       await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
-      await tauriPage.evaluate(
-        `window.__TAURI_INTERNALS__.invoke('forget_server', { id: ${JSON.stringify(added.host.id)} })`,
-      )
+      await forgetSmbHost(tauriPage, added.host.id)
     }
   })
 })
