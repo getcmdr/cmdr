@@ -905,12 +905,14 @@ component-resident writers (`moveCursor`, `restoreCursorByFilename`); those call
 
 **`refreshPane` is the one refresh, and it forces.** ⌘R (`pane.refresh`) and the MCP `refresh` tool both land in
 `pane-commands.ts::refreshPane()`. It routes on the view: the network browser has no listing, so there it re-scans hosts
-(`paneRef.refreshNetworkHosts()`); everywhere else it calls `refreshListing(listingId, true)` and then `refreshView()`.
-The `true` matters — unforced, the backend answers a watcher-backed listing straight out of the cache, which is honest
-on MTP and a lie on SMB (another machine's writes never reached the watcher). The post-write top-ups
-(`transfer-pane-effects.ts`, the rename flows, `NewFolderDialog`) stay unforced on purpose: they fire after every
-transfer, and a forced re-read of a 1k-entry MTP folder costs ~17 s. Rationale lives with `refresh_listing` in
-`src-tauri/src/commands/file_system/listing.rs`.
+(`paneRef.refreshNetworkHosts()`); a pane whose listing failed (`getErrorState() === 'listing-failed'`, any kind, a
+share list's sign-in and refusal screens included) holds no listing id, so there ⌘R re-navigates to the same path, as
+`ErrorPane`'s Try again does (the `unreachable` banner keeps its own retry); everywhere else it calls
+`refreshListing(listingId, true)` and then `refreshView()`. The `true` matters — unforced, the backend answers a
+watcher-backed listing straight out of the cache, which is honest on MTP and a lie on SMB (another machine's writes
+never reached the watcher). The post-write top-ups (`transfer-pane-effects.ts`, the rename flows, `NewFolderDialog`)
+stay unforced on purpose: they fire after every transfer, and a forced re-read of a 1k-entry MTP folder costs ~17 s.
+Rationale lives with `refresh_listing` in `src-tauri/src/commands/file_system/listing.rs`.
 
 Same-folder copies top up both pane listings: the focused source pane needs the duplicate's row for inline rename, even
 when its watcher has not delivered the write. Cross-folder copies top up only the destination.

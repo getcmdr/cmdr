@@ -507,7 +507,7 @@
 
 
     import type { ErrorPaneAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
-    import type { StartRenameOptions } from './types'
+    import type { PaneErrorState, StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
 
@@ -1886,17 +1886,13 @@
     }
 
     /**
-     * Reactive: true when this pane is showing a full-pane error state — either
-     * a `FriendlyError` (listing failed for an existing path) or the
-     * `unreachable` banner (volume couldn't be resolved at startup, or SMB
-     * reconnect gave up). Used by Quick Look's error-state hook in
-     * DualPaneExplorer to close the panel when the focused pane goes into a
-     * state where its `getPathUnderCursor()` would no longer return a
-     * meaningful path.
+     * Reactive: the full-pane error this pane shows (`PaneErrorState`), `unreachable` first
+     * as the markup checks it first. Quick Look closes on any (`getPathUnderCursor()` means
+     * nothing there), and ⌘R retries a `listing-failed` one (`pane-commands.ts::refreshPane`).
      */
-    // noinspection JSUnusedGlobalSymbols -- consumed by DualPaneExplorer's Quick Look effect
-    export function isInErrorState(): boolean {
-        return friendlyError !== null || unreachable !== null
+    export function getErrorState(): PaneErrorState | null {
+        if (unreachable !== null) return 'unreachable'
+        return friendlyError !== null ? 'listing-failed' : null
     }
 
     // A listing landed or includeHidden changed: cancel rename, re-sync count + cursor (`hidden-files-resync.ts`).

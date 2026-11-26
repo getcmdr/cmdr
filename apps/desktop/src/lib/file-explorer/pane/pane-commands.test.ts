@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { PaneAccess } from './pane-access'
-import type { FilePaneAPI } from './types'
+import type { FilePaneAPI, PaneErrorState } from './types'
 import type { FileEntry } from '../types'
 import type { SelectionAction } from '../../../routes/(main)/explorer-api'
 
@@ -54,6 +54,8 @@ function buildPaneRef(
     isRenaming: boolean
     isJumpActive: boolean
     isInNetworkView: boolean
+    errorState: PaneErrorState | null
+    currentPath: string
     volumeId: string
     filenameUnderCursor: string | undefined
     pathUnderCursor: string | undefined
@@ -74,6 +76,8 @@ function buildPaneRef(
     hasParentEntry: () => overrides.hasParent ?? false,
     isRenaming: () => overrides.isRenaming ?? false,
     isInNetworkView: () => overrides.isInNetworkView ?? false,
+    getErrorState: () => overrides.errorState ?? null,
+    getCurrentPath: () => overrides.currentPath ?? '/listing',
     getVolumeId: () => overrides.volumeId ?? 'root',
     getFilenameUnderCursor: () => ('filenameUnderCursor' in overrides ? overrides.filenameUnderCursor : 'file.txt'),
     getPathUnderCursor: () => overrides.pathUnderCursor,
@@ -726,6 +730,25 @@ describe('delegating commands', () => {
     const cmds = create(buildAccess({ paneRefs: { left: ref } }))
     await cmds.refreshPane()
     expect(ref.refreshNetworkHosts).toHaveBeenCalledOnce()
+    expect(refreshListingSpy).not.toHaveBeenCalled()
+  })
+
+  it('refreshPane on a failed listing retries the navigation, as its Try again does', async () => {
+    // A failed listing (a share list's sign-in or refusal screen included) drops its
+    // listing id, so a forced re-read had nothing to re-read and ⌘R did nothing at all.
+    const ref = buildPaneRef({ listingId: '', errorState: 'listing-failed', currentPath: 'smb://testnas.local' })
+    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
+    await cmds.refreshPane()
+    expect(ref.navigateToPath).toHaveBeenCalledExactlyOnceWith('smb://testnas.local')
+    expect(refreshListingSpy).not.toHaveBeenCalled()
+  })
+
+  it('refreshPane leaves the unreachable banner to its own retry', async () => {
+    // That banner's Try again re-resolves the volume (`edge-flow`), which a re-navigation can't.
+    const ref = buildPaneRef({ listingId: '', errorState: 'unreachable' })
+    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
+    await cmds.refreshPane()
+    expect(ref.navigateToPath).not.toHaveBeenCalled()
     expect(refreshListingSpy).not.toHaveBeenCalled()
   })
 

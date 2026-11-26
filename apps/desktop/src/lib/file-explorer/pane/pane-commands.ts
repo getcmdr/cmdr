@@ -497,7 +497,8 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
    * failure so the adapter reports the real outcome).
    *
    * The network browser has no listing to re-read, so there the refresh is a host
-   * re-scan instead. Everywhere else the re-read is the point: the whole reason a
+   * re-scan instead, and a failed listing has none either, so there it's a retry.
+   * Everywhere else the re-read is the point: the whole reason a
    * caller refreshes is "I think the cache is stale", and a bare `refreshView()`
    * only re-renders the same stale cache. Hence `force: true`, which also bypasses
    * the backend's watcher short-circuit — see `refresh_listing` in
@@ -509,6 +510,13 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
     if (!paneRef) throw new Error('The focused pane is unavailable')
     if (paneRef.isInNetworkView()) {
       paneRef.refreshNetworkHosts()
+      return
+    }
+    // A failed listing holds no listing id (`listing-loader.ts::resetLoadingState`), so there's
+    // nothing to re-read: ⌘R does what the screen's Try again does. That covers any kind, a
+    // share list's sign-in and refusal screens included.
+    if (paneRef.getErrorState() === 'listing-failed') {
+      await paneRef.navigateToPath(paneRef.getCurrentPath())
       return
     }
     const listingId = paneRef.getListingId()

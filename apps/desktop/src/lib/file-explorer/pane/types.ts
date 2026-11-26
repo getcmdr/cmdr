@@ -382,11 +382,19 @@ export interface FilePaneAPI {
 
   /** Debug only: inject a FriendlyError into this pane's error state. */
   injectError(friendly: FriendlyError): void
-  /** Reactive: true when the pane is rendering a full-pane error (FriendlyError or `unreachable` banner). */
-  isInErrorState(): boolean
+  /** Reactive: the full-pane error the pane renders, or `null` when it shows none. */
+  getErrorState(): PaneErrorState | null
   /** Native drag auto-scroll: scrolls one animation frame when the pointer is in this pane's edge band. */
   autoScrollDuringDrag(position: DragAutoScrollPointer, elapsedMs: number): DragAutoScrollFrameResult
 }
+
+/**
+ * A full-pane error, by which retry fits it. `listing-failed`: the listing failed (`ErrorPane`,
+ * a share list's sign-in and refusal screens included), and re-navigating to the same path is
+ * its Try again. `unreachable`: the volume didn't resolve (`VolumeUnreachableBanner`), retried
+ * through the edge flow.
+ */
+export type PaneErrorState = 'listing-failed' | 'unreachable'
 
 /** Typed interface for `ErrorPane`'s exported methods used by FilePane. */
 export interface ErrorPaneAPI {

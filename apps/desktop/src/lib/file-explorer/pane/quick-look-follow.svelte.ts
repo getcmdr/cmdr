@@ -105,11 +105,11 @@ export function initQuickLookFollow(deps: QuickLookFollowDeps): QuickLookFollow 
   $effect(() => {
     if (!quickLookState.isOpen) return
     const paneRef = deps.getPaneRef(deps.getFocusedPane())
-    // `isInErrorState` reads two `$state` fields under the hood
+    // `getErrorState` reads two `$state` fields under the hood
     // (`friendlyError`, `unreachable`), so Svelte tracks them through this
     // call and we re-run when either flips. Don't bother destructuring —
     // the call site is the dependency.
-    if (paneRef?.isInErrorState()) {
+    if (paneRef?.getErrorState()) {
       closeFromPaneError()
     }
   })
