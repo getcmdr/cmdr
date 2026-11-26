@@ -212,8 +212,6 @@ export interface ListingLoaderDeps {
 export interface ListingLoader {
   loadDirectory: (args: LoadDirectoryArgs) => Promise<void>
   navigateToParent: () => Promise<boolean>
-  /** Drops the listing (and any load in flight) for a view with none: see the function. */
-  leaveListing: () => void
   navigateToPath: (args: LoadDirectoryArgs) => Promise<void>
   navigateToFallback: (validPath: string | null) => void
   handleCancelLoading: () => void
@@ -943,25 +941,6 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     unlistenCancelled?.()
   }
 
-  /**
-   * The pane leaves its listing for a view that has none, without starting another. ❗ A
-   * load still in flight must not land afterwards: its `onPathChange` would commit its path
-   * again over the new view, since on the `network` volume both are `smb://` paths and the
-   * drop-foreign-listings policy can't tell them apart.
-   */
-  function leaveListing(): void {
-    rejectPendingLoad(new NavigationSuperseded())
-    loadGeneration++
-    inFlight = null
-    endListing()
-    deps.setLoading(false)
-    deps.setStalled(null)
-    deps.setError(null)
-    deps.setFriendlyError(null)
-    deps.setTotalCount(0)
-    deps.setHiddenCount(0)
-  }
-
   /** Abandons the pane's listing (its per-path icons evicted) and drops its event listeners. */
   function endListing(): void {
     const listingId = deps.getListingId()
@@ -983,7 +962,6 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
 
   return {
     loadDirectory,
-    leaveListing,
     navigateToParent,
     navigateToPath,
     navigateToFallback,

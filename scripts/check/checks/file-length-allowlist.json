@@ -75,7 +75,7 @@
     },
     "apps/desktop/src/lib/file-explorer/pane/listing-loader.ts": {
       "lines": 985,
-      "reason": "TODO: the `onListingError` handler inside `loadDirectory` (the MTP fallback, the archive-password prompt, the not-connected refusal, and the deleted-path existence probe plus walk-up, about 110 lines) is one decision, what a failed listing turns into, and reads only the load's captured `volumeId` / `loadPath` plus a handful of deps. Move it to `listing-error-outcome.ts` as a function taking those, beside `listing-loader.outcomes.test.ts`, which already tests exactly that branch. Bumped for `leaveListing` (it drops the listing with no load after it, so a late completion can't commit the old path back over the new view), which shares `endListing` with `loadDirectory`'s own teardown: the split above is the way back under."
+      "reason": "TODO: the `onListingError` handler inside `loadDirectory` (the MTP fallback, the archive-password prompt, the not-connected refusal, and the deleted-path existence probe plus walk-up, about 110 lines) is one decision, what a failed listing turns into, and reads only the load's captured `volumeId` / `loadPath` plus a handful of deps. Move it to `listing-error-outcome.ts` as a function taking those, beside `listing-loader.outcomes.test.ts`, which already tests exactly that branch."
     },
     "apps/desktop/src/lib/file-explorer/views/BriefList.svelte": {
       "lines": 1384,
