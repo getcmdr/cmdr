@@ -146,6 +146,16 @@ impl SmbServerVolume {
             NetworkPath::InShare(_) => return Err(VolumeError::NotConnected(path.as_str().to_string())),
             NetworkPath::Elsewhere => return Err(VolumeError::NotFound(path.as_str().to_string())),
         };
+        // The i18n capture's seam: a person's listing refused as the test said, with no lookup or dial.
+        #[cfg(feature = "playwright-e2e")]
+        if !matches!(reader, Reader::Other)
+            && let Some(error) = crate::commands::e2e::stubbed_share_list_refusal()
+        {
+            return Err(VolumeError::ShareListRefused(Box::new(ShareListRefusal {
+                server: address.key,
+                error,
+            })));
+        }
         let host = self.server_named(path, &address)?;
         let listed = match reader {
             Reader::Other => self

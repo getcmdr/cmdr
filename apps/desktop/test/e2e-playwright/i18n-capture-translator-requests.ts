@@ -95,9 +95,15 @@ const NEARBY_HOST = {
 export async function captureNetworkSurfaces(main: TauriPage, report: Report, failed: string[]): Promise<void> {
   await ensureAppReady(main)
   await initMcpClient(main)
-  const restore = await stubIpcAnswer(main, 'list_shares_on_host', {
-    err: { type: 'auth_required', message: 'Scripted guest refusal' },
-  })
+  const guestRefusal = { err: { type: 'auth_required', message: 'Scripted guest refusal' } }
+  // The hub's own read of a host's shares, and the share list's listing (`share_list_listing`,
+  // `commands/e2e.rs`), which refuses before any lookup or dial: the host is frontend-only.
+  const restoreHub = await stubIpcAnswer(main, 'list_shares_on_host', guestRefusal)
+  const restoreListing = await stubIpcAnswer(main, 'share_list_listing', guestRefusal)
+  const restore = async () => {
+    await restoreHub()
+    await restoreListing()
+  }
   try {
     await mcpSelectVolume('left', 'Servers')
     await main.waitForSelector('.servers-hub .add-row', waitBudget(15000))

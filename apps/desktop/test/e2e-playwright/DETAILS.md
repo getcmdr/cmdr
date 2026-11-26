@@ -482,7 +482,10 @@ the capture walks, one test per step.
 - **A surface whose trigger is a backend state no fixture produces stubs that one IPC answer**
   (`i18n-capture-ipc-stub.ts`: a server wanting an account, Finder's Automation refusal, an S3 price, a slot with no
   provider). A webview can't replace Tauri's `invoke`, so the `playwright-e2e` backend holds the stub, and the
-  frontend's real code renders the answer. Restore from a `finally`: the app is shared.
+  frontend's real code renders the answer. Restore from a `finally`: the app is shared. A server's share list is a
+  backend listing, no IPC call of its own, so its stub is the pseudo-command `share_list_listing`
+  (`src-tauri/src/commands/e2e.rs`): the `network` volume refuses a person's listing with it before any host lookup or
+  dial.
 - **A step leaves the shared app as it found it**: overlays and windows closed, toasts dismissed, synthetic events
   ended, stubs restored, and the favorite, preset, and policy it added removed. The spec's `afterEach` drains operations
   and restores the fixture tree. Checked by running `archive-editing.spec.ts` straight after it on the same app

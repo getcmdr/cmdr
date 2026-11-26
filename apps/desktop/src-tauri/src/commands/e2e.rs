@@ -329,6 +329,26 @@ pub fn set_test_ipc_answer(command: String, answer: Option<serde_json::Value>, i
     }
 }
 
+/// The pseudo-command a test stubs (through [`set_test_ipc_answer`]) to make every server's share
+/// list refuse a person's listing with that `ShareListError`, before any host lookup or dial: a
+/// server wanting an account is a state no fixture outside the SMB Docker stack can produce.
+#[cfg(feature = "playwright-e2e")]
+pub const SHARE_LIST_LISTING_STUB: &str = "share_list_listing";
+
+/// The share-list refusal a test stubbed under [`SHARE_LIST_LISTING_STUB`], if any.
+#[cfg(feature = "playwright-e2e")]
+pub fn stubbed_share_list_refusal() -> Option<cmdr_fs::share_list::ShareListError> {
+    use crate::ignore_poison::IgnorePoison;
+    let stubbed = STUBBED_IPC_ANSWERS
+        .lock_ignore_poison()
+        .get(SHARE_LIST_LISTING_STUB)
+        .cloned()?;
+    let value = match stubbed {
+        Ok(value) | Err(value) => value,
+    };
+    serde_json::from_value(value).ok()
+}
+
 /// Wraps the app's invoke handler so a stubbed command answers from [`set_test_ipc_answer`].
 #[cfg(feature = "playwright-e2e")]
 pub fn answering_stubbed_ipc<R: tauri::Runtime>(
