@@ -2759,6 +2759,8 @@ export type MessageKey =
   | 'fileExplorer.readOnly.renameMessage'
   | 'fileExplorer.readOnly.resticMessage'
   | 'fileExplorer.readOnly.resticTitle'
+  | 'fileExplorer.readOnly.serversListSourceMessage'
+  | 'fileExplorer.readOnly.serversListTitle'
   | 'fileExplorer.readOnly.shareListDestinationMessage'
   | 'fileExplorer.readOnly.shareListMessage'
   | 'fileExplorer.readOnly.shareListSourceMessage'

@@ -189,6 +189,17 @@ describe("a server's share list as a transfer end", () => {
     expect(checkTransferSourceGuard('root', '/Users/test_user_1').ok).toBe(true)
     expect(checkTransferSourceGuard('root', '/Users/test_user_1/backup.tar/inner').ok).toBe(true)
   })
+
+  it('refuses taking a server off the Servers list in its own words, ❌ not a share’s', () => {
+    expect(checkTransferSourceGuard('network', 'smb://')).toEqual({
+      ok: false,
+      alert: {
+        title: 'Open a server first',
+        message:
+          'A server is a place on the network, so there’s nothing here to copy. Open the server, then one of its shares, to copy files from it.',
+      },
+    })
+  })
 })
 
 describe('resolveSourceVolumeId', () => {

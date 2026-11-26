@@ -2082,8 +2082,9 @@ pane renders the standard list.
   `file-operation-commands.ts::readOnlyRefusal`, anything landing in it (and on a share's ROW, the `network` kind) in
   `transfer-entry.ts::checkTransferDestinationGuard`, and anything taking rows out in the ONE source guard
   `transfer-entry.ts::checkTransferSourceGuard`, called by the F5/F6 opener (`showTransferDialog`, MCP typed `source`),
-  ⌘C/⌘X (`clipboard-operations.ts`), and a drag's start (`../drag/drag-drop.ts`). MCP `rename` on a share list goes to
-  the pane's rename (which refuses it typed) instead of Edit server (`file-handlers.ts`).
+  ⌘C/⌘X (`clipboard-operations.ts`), and a drag's start (`../drag/drag-drop.ts`), worded per kind (the Servers list says
+  servers, a share list says shares: `notASourceAlert`). MCP `rename` on a share list goes to the pane's rename (which
+  refuses it typed) instead of Edit server (`file-handlers.ts`).
 - **The footer**: `SelectionInfo` with no disk space (`pane-footer.ts` takes the routed kind): no server answers a space
   query, so the usage bar would sit empty, reading "0% full".
 - **`..`**: `FilePane.navigateToParent` (and the `..` row's activation) take the share-list arm, which loads `smb://`

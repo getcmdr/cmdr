@@ -732,6 +732,7 @@
             getEntryAt: cache.getEntryAt,
             pressedPane,
             volumeId,
+            currentPath,
             includeHidden,
             usingStaticEntries,
             isRenaming: renameState?.active ?? false,

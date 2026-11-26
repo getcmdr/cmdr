@@ -52,7 +52,14 @@ describe("a drag out of a server's share list", () => {
     const onDragStart = vi.fn()
     startSelectionDragTracking(
       new MouseEvent('mousedown', { clientX: 0, clientY: 0 }),
-      { type: 'single', path: 'smb://testnas/public', iconId: 'dir', index: 1, sourceVolumeId: 'network' },
+      {
+        type: 'single',
+        path: 'smb://testnas/public',
+        iconId: 'dir',
+        index: 1,
+        sourceVolumeId: 'network',
+        sourcePath: 'smb://testnas',
+      },
       { onDragCancel, onDragStart },
     )
 
@@ -64,6 +71,30 @@ describe("a drag out of a server's share list", () => {
     expect(onDragCancel).toHaveBeenCalledOnce()
     expect(toasts).toEqual([
       'A share is a place on the server, so there’s nothing here to copy. Open the share to copy files from it.',
+    ])
+  })
+
+  it('refuses a Servers row in the Servers list’s words, though the row’s own path is a share list', async () => {
+    const onDragCancel = vi.fn()
+    startSelectionDragTracking(
+      new MouseEvent('mousedown', { clientX: 0, clientY: 0 }),
+      {
+        type: 'single',
+        path: 'smb://testnas',
+        iconId: 'dir',
+        index: 0,
+        sourceVolumeId: 'network',
+        sourcePath: 'smb://',
+      },
+      { onDragCancel },
+    )
+
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 40, clientY: 0 }))
+    await settle()
+
+    expect(dragged).toEqual([])
+    expect(toasts).toEqual([
+      'A server is a place on the network, so there’s nothing here to copy. Open the server, then one of its shares, to copy files from it.',
     ])
   })
 })

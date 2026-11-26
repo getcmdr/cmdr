@@ -48,6 +48,8 @@ export interface RowMouseDownInput {
   /** The host pane, read LIVE when a selection drag starts (`readPressedRows`). */
   pressedPane: PressedPane
   volumeId: string
+  /** The pane's own path, for the drag's source guard. */
+  currentPath: string
   includeHidden: boolean
   /** True on a search-results pane: no backend listing to resolve indices against. */
   usingStaticEntries: boolean
@@ -71,7 +73,7 @@ function collectFileInfos(
 }
 
 export function planRowMouseDown(input: RowMouseDownInput): RowMouseDownPlan {
-  const { event, index, selectedIndices, getEntryAt, volumeId } = input
+  const { event, index, selectedIndices, getEntryAt, volumeId, currentPath } = input
 
   if (event.button !== 0) return { kind: 'ignore' }
 
@@ -98,6 +100,7 @@ export function planRowMouseDown(input: RowMouseDownInput): RowMouseDownPlan {
         iconId: entry.iconId,
         index,
         sourceVolumeId: volumeId,
+        sourcePath: currentPath,
         fileInfo,
       },
     }
@@ -120,7 +123,7 @@ export function planRowMouseDown(input: RowMouseDownInput): RowMouseDownPlan {
       kind: 'drag',
       startClickToRename,
       selectNow: true,
-      context: { type: 'paths', paths, sourceVolumeId: volumeId, iconId, fileInfos },
+      context: { type: 'paths', paths, sourceVolumeId: volumeId, sourcePath: currentPath, iconId, fileInfos },
     }
   }
 
@@ -133,6 +136,7 @@ export function planRowMouseDown(input: RowMouseDownInput): RowMouseDownPlan {
       pane: input.pressedPane,
       includeHidden: input.includeHidden,
       sourceVolumeId: volumeId,
+      sourcePath: currentPath,
       iconId,
       fileInfos,
     },

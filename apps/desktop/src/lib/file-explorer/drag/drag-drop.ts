@@ -68,6 +68,8 @@ interface SingleFileDragContext {
   index: number
   /** Volume id of the pane this drag originates from (for the self-drag identity). */
   sourceVolumeId: SourceVolumeId
+  /** That pane's own path: what the source guard asks about, as F5 and ⌘C do. */
+  sourcePath: string
   /** File info for the drag image renderer */
   fileInfo?: DragFileInfo
 }
@@ -84,6 +86,8 @@ interface SelectionDragContext {
   includeHidden: boolean
   /** Volume id of the pane this drag originates from (for the self-drag identity). */
   sourceVolumeId: SourceVolumeId
+  /** That pane's own path: what the source guard asks about, as F5 and ⌘C do. */
+  sourcePath: string
   /** Icon ID to use for the drag preview (first selected file) */
   iconId: string
   /** File info for the drag image renderer (first N files of selection) */
@@ -100,6 +104,8 @@ interface PathsDragContext {
   paths: string[]
   /** Volume id of the pane this drag originates from (for the self-drag identity). */
   sourceVolumeId: SourceVolumeId
+  /** That pane's own path: what the source guard asks about, as F5 and ⌘C do. */
+  sourcePath: string
   /** Icon ID to use for the drag preview (first file in `paths`). */
   iconId: string
   /** File info for the drag image renderer (first N files). */
@@ -381,13 +387,12 @@ async function resolveDragIconPath(
 
 /**
  * Why a drag can't take these rows out (`checkTransferSourceGuard`'s words), or `null`.
- * Asked with a row's path where the context has one (the row's kind is the pane's, a
- * row in a zip pane included); a selection drag asks the volume, which is enough for
- * the one kind that refuses here: every path on the `network` volume is no source.
+ * Asked about the PANE (`sourcePath`), as F5 and ⌘C are, ❌ never a row's path: on the
+ * `network` volume a Servers row's path is a share list and a share row's reads as the
+ * `network` kind, so a row's path would word each refusal as the other list's.
  */
 function dragSourceRefusal(ctx: SingleFileDragContext | SelectionDragContext | PathsDragContext): string | null {
-  const rowPath = ctx.type === 'single' ? ctx.path : ctx.type === 'paths' ? ctx.paths[0] : undefined
-  const source = checkTransferSourceGuard(ctx.sourceVolumeId, rowPath)
+  const source = checkTransferSourceGuard(ctx.sourceVolumeId, ctx.sourcePath)
   return source.ok ? null : source.alert.message
 }
 

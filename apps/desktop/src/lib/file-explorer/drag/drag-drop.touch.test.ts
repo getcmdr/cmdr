@@ -43,7 +43,7 @@ function track(press: MouseEvent) {
   const onDragCancel = vi.fn()
   startSelectionDragTracking(
     press,
-    { type: 'single', path: PATH, iconId: 'ext:md', index: 1, sourceVolumeId: 'root' },
+    { type: 'single', path: PATH, iconId: 'ext:md', index: 1, sourceVolumeId: 'root', sourcePath: '/' },
     { onDragCancel },
   )
   return { onDragCancel }

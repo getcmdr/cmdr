@@ -58,6 +58,7 @@ function dragSelection(pane: ReturnType<typeof createMovedPane>) {
     pane,
     includeHidden: false,
     sourceVolumeId: 'root',
+    sourcePath: '/Users/test_user_1',
     iconId: 'ext:txt',
   })
   document.dispatchEvent(new MouseEvent('mousemove', { clientX: 50, clientY: 0 }))

@@ -677,7 +677,15 @@
             const fileInfo: DragFileInfo = { name: entry.name, isDirectory: entry.isDirectory, iconId: entry.iconId }
             startSelectionDragTracking(
                 event,
-                { type: 'single', path: entry.path, iconId: entry.iconId, index, sourceVolumeId: volumeId, fileInfo },
+                {
+                    type: 'single',
+                    path: entry.path,
+                    iconId: entry.iconId,
+                    index,
+                    sourceVolumeId: volumeId,
+                    sourcePath: currentPath,
+                    fileInfo,
+                },
                 {
                     onDragStart: () => {
                         onSelect(rowSelectPayload(event, index))
@@ -713,6 +721,7 @@
                     pane: pressedPane,
                     includeHidden,
                     sourceVolumeId: volumeId,
+                    sourcePath: currentPath,
                     iconId,
                     fileInfos,
                 },

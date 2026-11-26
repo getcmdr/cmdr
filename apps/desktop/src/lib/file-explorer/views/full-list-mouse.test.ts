@@ -54,6 +54,7 @@ function plan(overrides: Partial<RowMouseDownInput> = {}) {
     getEntryAt: (index) => ROWS[index],
     pressedPane: PANE,
     volumeId: 'root',
+    currentPath: '/dir',
     includeHidden: false,
     usingStaticEntries: false,
     isRenaming: false,
@@ -113,6 +114,7 @@ describe('with nothing selected', () => {
         iconId: 'icon-b.txt',
         index: 2,
         sourceVolumeId: 'root',
+        sourcePath: '/dir',
         fileInfo: { name: 'b.txt', isDirectory: false, iconId: 'icon-b.txt' },
       },
     })
@@ -133,6 +135,7 @@ describe('with a selection', () => {
         pane: PANE,
         includeHidden: false,
         sourceVolumeId: 'root',
+        sourcePath: '/dir',
         // The preview icon comes from the FIRST selected row, not the pressed one.
         iconId: 'icon-a.txt',
         fileInfos: [
@@ -164,6 +167,7 @@ describe('with a selection', () => {
         type: 'paths',
         paths: ['/dir/a.txt', '/dir/b.txt'],
         sourceVolumeId: 'root',
+        sourcePath: '/dir',
         iconId: 'icon-a.txt',
         fileInfos: [
           { name: 'a.txt', isDirectory: false, iconId: 'icon-a.txt' },

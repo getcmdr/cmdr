@@ -18,7 +18,7 @@ import { DEFAULT_VOLUME_ID } from '#lib/tauri-commands/index.js'
 import { searchResultsNotAFolderToast } from '#lib/search/capabilities.js'
 import { findVolumeIdForPath } from '../drag/drop-operation'
 import { getCommonParentPath, getDestinationVolumeInfo } from './transfer-operations'
-import { capabilitiesForPane } from './volume-capabilities'
+import { capabilitiesForPane, type VolumeKind } from './volume-capabilities'
 import { tString } from '#lib/intl/messages.svelte.js'
 import type { PathVolumeResolution } from '#lib/tauri-commands/index.js'
 import type { VolumeInfo } from '../types'
@@ -146,8 +146,9 @@ export function checkTransferDestinationGuard(
  * The ONE source guard every way of taking rows OUT of a pane runs: the F5/F6 opener
  * (keys, menu, MCP copy/move), ⌘C/⌘X, and a drag's start. A pane whose kind can't be a
  * source (`canBeSource: false`, from `capabilitiesForPane`) refuses before any dialog
- * opens or anything reaches the clipboard. Worded per kind: a server's share list (or
- * the hub) has shares, not files, and anything else that can't export gets plain words.
+ * opens or anything reaches the clipboard. Worded per kind: the Servers list has servers
+ * and a server's share list has shares, neither files, and anything else that can't
+ * export gets plain words.
  *
  * ❗ `canBeSource` greyed only the F-key bar until this existed: nothing else asked it.
  */
@@ -157,18 +158,27 @@ export function checkTransferSourceGuard(
 ): { ok: true } | { ok: false; alert: TransferGuardAlert } {
   const caps = capabilitiesForPane(sourceVolumeId, sourcePath)
   if (caps.canBeSource) return { ok: true }
-  const sharesNotFiles = caps.kind === 'share-list' || caps.kind === 'network'
+  return { ok: false, alert: notASourceAlert(caps.kind) }
+}
+
+/** Why a pane of `kind` gives nothing to copy, in its own words. */
+function notASourceAlert(kind: VolumeKind): TransferGuardAlert {
+  // A pane stands on the `network` volume's root or on a share list, so `network` is the Servers list here.
+  if (kind === 'network') {
+    return {
+      title: tString('fileExplorer.readOnly.serversListTitle'),
+      message: tString('fileExplorer.readOnly.serversListSourceMessage'),
+    }
+  }
+  if (kind === 'share-list') {
+    return {
+      title: tString('fileExplorer.readOnly.shareListTitle'),
+      message: tString('fileExplorer.readOnly.shareListSourceMessage'),
+    }
+  }
   return {
-    ok: false,
-    alert: sharesNotFiles
-      ? {
-          title: tString('fileExplorer.readOnly.shareListTitle'),
-          message: tString('fileExplorer.readOnly.shareListSourceMessage'),
-        }
-      : {
-          title: tString('fileExplorer.readOnly.notASourceTitle'),
-          message: tString('fileExplorer.readOnly.notASourceMessage'),
-        },
+    title: tString('fileExplorer.readOnly.notASourceTitle'),
+    message: tString('fileExplorer.readOnly.notASourceMessage'),
   }
 }
 

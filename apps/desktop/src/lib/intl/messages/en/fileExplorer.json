@@ -1369,6 +1369,14 @@
   "@fileExplorer.readOnly.shareListSourceMessage": {
     "description": "Alert body under fileExplorer.readOnly.shareListTitle, when the user tries to copy, move, or drag a share out of a network server’s list of shares. Explains that a share is a shared folder on the server rather than a file to copy, and that its files can be copied once it’s open."
   },
+  "fileExplorer.readOnly.serversListTitle": "Open a server first",
+  "@fileExplorer.readOnly.serversListTitle": {
+    "description": "Alert dialog title shown when the user tries to copy, move, or drag a row out of the Servers list (the list of file servers Cmdr knows: NAS boxes, other computers, cloud storage accounts). Each row is a server, not a file; its files are reached by opening the server and then one of its shares or places. An instruction: open a server before doing that."
+  },
+  "fileExplorer.readOnly.serversListSourceMessage": "A server is a place on the network, so there’s nothing here to copy. Open the server, then one of its shares, to copy files from it.",
+  "@fileExplorer.readOnly.serversListSourceMessage": {
+    "description": "Alert body under fileExplorer.readOnly.serversListTitle, when the user tries to copy, move, or drag a server out of the Servers list. Explains that a server is a machine or account on the network rather than a file to copy, and that files can be copied once the server and one of its shared folders (shares) are open."
+  },
   "fileExplorer.readOnly.notASourceTitle": "Nothing to copy here",
   "@fileExplorer.readOnly.notASourceTitle": {
     "description": "Alert dialog title shown when the user tries to copy, move, or drag files out of a place Cmdr can’t read files from for a copy. A short statement."
