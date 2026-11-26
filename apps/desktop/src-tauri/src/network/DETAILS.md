@@ -1115,8 +1115,13 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `share-list-path-cases.json`, so the escaping and the case, NFC, and port folding can't drift.
 - **Resolution** (`share_list_path::resolve`, memory only): fresh discovery first, a discovered host before a manual
   one (the hub's pick, so the pane lists under the host id the hub's prefetch caches under), then the manual store (a
-  launch where discovery hasn't loaded it), then a host only the display cache lists, ❗ with its IP dropped: that
-  pairing is stale, and an IP DHCP handed to another machine must not get the dial.
+  launch where discovery hasn't loaded it), then a server an SMB share is mounted from (`KnownHosts::mounted`, made by
+  `smb_share_parent::mounted_hosts` off the kernel's mount-table snapshot, the same host `..` out of that share opens),
+  then a host only the display cache lists, ❗ with its IP dropped: that pairing is stale, and an IP DHCP handed to
+  another machine must not get the dial.
+- **Gotcha**: without the mounted tier, `..` out of a share macOS mounted by an address nothing else knows (a Tailscale
+  IP) opened `smb://<ip>` and read "Path not found" (QA 2026-11-26). Every kind of server `..` can lead to is pinned to
+  resolve: `every_kind_of_server_dot_dot_leads_to_is_one_its_share_list_resolves`, plus the SMB E2E's mount by IP.
 - **What it isn't**: `BackendKind::ShareList`, read-only, unwatched (no watch arms; the coverage answer above is
   about writers), not indexable, no export, and
   `supports_local_fs_access` is `false` (the trait default `true` would hand `smb://<server>/<share>` to Quick Look and

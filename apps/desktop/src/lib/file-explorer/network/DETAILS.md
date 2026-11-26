@@ -379,9 +379,14 @@ meant to browse mounted a share they never picked. Pinned by `../pane/share-list
 
 ## `share-list-label.ts`
 
-What a person calls the server a share-list path (`smb://<key>`) names: the name of the discovery-state host whose
-`shareListPath` is that path (its Bonjour name, or the name a manual server was saved with), else the path's key. The
-tab label reads it (`../tabs/tab-label.ts::tabLabelFor`); ❌ never show the key itself, which is identity only.
+Which server a share-list path (`smb://<key>`) names, and what a person calls it. The server is the discovery-state host
+whose `shareListPath` is that path, ❗ first, since the backend resolves to it and caches shares and sign-in under its
+id; else the server a known share's `..` leads to (`share-parent-row.svelte.ts::shareParentServers`). That second source
+is the only frontend record of a server nothing but a mount knows (a share macOS mounted by a Tailscale IP): without it,
+its share list opened with no host to mount from or sign in to. The label is a discovered host's Bonjour name, a manual
+host's name from `..` (the name the person typed, since discovery names a manual host after its address), else the
+path's key. The tab label, the path bar, and the error screen read it (`../tabs/tab-label.ts::tabLabelFor`); ❌ never
+show the key itself, which is identity only.
 
 ## `..` on top of a server's share list
 

@@ -200,6 +200,10 @@ pub(crate) struct KnownHosts {
     /// The manual servers' store, as discovery would list them, for a launch where
     /// discovery hasn't loaded them yet.
     pub saved: Vec<NetworkHost>,
+    /// A host for each server an SMB share is mounted from, made the way `..` out of the
+    /// share makes one (`smb_share_parent::mounted_hosts`): a share macOS mounted by an
+    /// address nothing else knows (a Tailscale IP) still has a share list to go up to.
+    pub mounted: Vec<NetworkHost>,
     /// Every host discovery ever listed, stale ones included (`cached_discovered_hosts`).
     pub cached: Vec<NetworkHost>,
 }
@@ -211,6 +215,7 @@ impl KnownHosts {
         self.fresh
             .iter()
             .chain(&self.saved)
+            .chain(&self.mounted)
             .chain(&self.cached)
             .find(|host| host.id == id)
     }
@@ -219,7 +224,9 @@ impl KnownHosts {
 /// The server `address` names among `hosts`, or `None` when nothing known goes by it.
 ///
 /// Fresh evidence first, a discovered host before a manual one (the hub's own pick, so
-/// the pane lists under the host id the hub caches under); then the manual store. A host
+/// the pane lists under the host id the hub caches under); then the manual store; then a
+/// server a share is mounted from, which is all that knows a share macOS mounted by an
+/// address Cmdr never saw (`..` out of that share leads here). A host
 /// only the display cache still lists comes last, and ❗ with its IP dropped: its name ↔
 /// address pairing is stale (`network/CLAUDE.md`, identity reads fresh evidence only), so
 /// the dial resolves its `.local` name afresh rather than trusting an address that may be
@@ -230,7 +237,7 @@ pub(crate) fn resolve(address: &ShareListAddress, hosts: &KnownHosts) -> Option<
     if let Some(host) = fresh(HostSource::Discovered).or_else(|| fresh(HostSource::Manual)) {
         return Some(host.clone());
     }
-    if let Some(host) = hosts.saved.iter().find(named) {
+    if let Some(host) = hosts.saved.iter().chain(&hosts.mounted).find(named) {
         return Some(host.clone());
     }
     hosts.cached.iter().find(named).map(|stale| NetworkHost {

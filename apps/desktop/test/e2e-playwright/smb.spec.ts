@@ -21,6 +21,7 @@ import {
   setupSmb,
   teardownSmb,
   guestMountPoint,
+  mountGuestShareByIp,
   requireGuestMount,
   requireGuestSuite,
   SMB_E2E_SUITE_DIR,
@@ -572,6 +573,60 @@ describeSmb('SMB share browsing', () => {
     expect((await paneRows('left')).volumeId).toBe('network')
     // The hint names where `..` went, once the cursor is on the share.
     await expectAndDismissToast(tauriPage, 'took you to', { timeout: waitBudget(10000) })
+  })
+
+  test('`..` out of a share mounted by an IP nothing knows opens that server’s share list on the share', async ({
+    tauriPage,
+  }) => {
+    // QA 2026-11-26: a share macOS mounted by a Tailscale IP went up to "Path not found: smb://<ip>/", since no
+    // discovered or saved host goes by that IP. The share list resolves the server off the mount itself.
+    await ensureAppReady(tauriPage)
+    await mcpCall('set_setting', { id: 'behavior.shareParentRowHintSeen', value: true })
+    const byIp = mountGuestShareByIp()
+    test.skip(byIp === null, 'needs a Linux GVFS mount by the guest server’s IP')
+    if (byIp === null) return
+    try {
+      // The share is a volume of its own once the mount table shows it, which is what puts `..` out of it.
+      await expect
+        .poll(async () => (await mcpReadResource('cmdr://state')).includes(`mountPath: "${byIp.mountPoint}"`), {
+          timeout: waitBudget(30000),
+        })
+        .toBeTruthy()
+      await mcpNavToPath('left', byIp.mountPoint)
+      await expect
+        .poll(
+          async () => {
+            const pane = await paneRows('left')
+            return pane.volumeId !== 'network' && pane.volumeId !== 'root' && pane.rows[0] === '..'
+          },
+          { timeout: waitBudget(30000) },
+        )
+        .toBeTruthy()
+
+      await mcpCall('move_cursor', { pane: 'left', index: 0 })
+      await mcpCall('open_under_cursor', {})
+
+      await expect
+        .poll(
+          async () => {
+            const pane = await paneRows('left')
+            return pane.volumeId === 'network' && pane.rows[0] === '..'
+              ? shareNameOf(pane.rows[pane.cursorIndex] ?? '')
+              : null
+          },
+          { timeout: waitBudget(30000) },
+        )
+        .toBe(SMB_GUEST_SHARE)
+      expect((await paneRows('left')).path).toBe(`smb://${byIp.address}`)
+
+      // And up once more, to the Servers list.
+      await mcpCall('move_cursor', { pane: 'left', index: 0 })
+      await mcpCall('open_under_cursor', {})
+      await expect.poll(async () => (await paneRows('left')).path, { timeout: waitBudget(15000) }).toBe('smb://')
+    } finally {
+      await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
+      byIp.unmount()
+    }
   })
 
   test('Copy path between panes with the cursor on a share mounts it in the other pane, once', async ({

@@ -324,6 +324,8 @@ pub(crate) fn app_known_hosts(app: &tauri::AppHandle) -> KnownHosts {
             .iter()
             .map(|entry| create_network_host(&entry.address, entry.port))
             .collect(),
+        // The kernel's mount-table snapshot: no call per mount, nothing on the network.
+        mounted: crate::network::smb_share_parent::mounted_hosts(&crate::volumes::smb_mounts().unwrap_or_default()),
         cached: crate::network::cached_discovered_hosts(),
     }
 }

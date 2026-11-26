@@ -199,3 +199,99 @@ fn a_volume_whose_mount_isnt_up_yet_has_no_parent_yet() {
     let asked = asked.into_inner().expect("the volume's root is read");
     assert!(asked.contains("share_parent_unmounted"), "read at {asked}");
 }
+
+/// What the share list resolves `..`'s host to, the way the app knows its servers:
+/// discovery's `fresh` hosts, the manual store, and the SMB mounts the kernel lists.
+fn resolved_share_list(
+    info: &SmbMountInfo,
+    fresh: Vec<NetworkHost>,
+    saved: Vec<NetworkHost>,
+) -> (NetworkHost, Option<NetworkHost>) {
+    use crate::network::share_list_path::{KnownHosts, ShareListAddress, resolve};
+    let host = host_for_mount(info, &fresh);
+    let known = KnownHosts {
+        fresh,
+        saved,
+        mounted: mounted_hosts(&[("/Volumes/share".to_string(), info.clone())]),
+        cached: Vec::new(),
+    };
+    let found = resolve(&ShareListAddress::of_host(&host), &known);
+    (host, found)
+}
+
+fn on_port(mut info: SmbMountInfo, port: u16) -> SmbMountInfo {
+    info.port = port;
+    info
+}
+
+/// ❗ `..` out of a share opens the share list of the host it names, so every kind of
+/// server a share can be mounted from must be one that share list resolves, under the
+/// same host. A share macOS mounted by a Tailscale IP nothing else knows read "Path not
+/// found: smb://100.127.48.122/" (QA, 2026-11-26).
+#[test]
+fn every_kind_of_server_dot_dot_leads_to_is_one_its_share_list_resolves() {
+    use crate::network::manual_servers::create_network_host;
+    let bonjour = host(
+        "testnas",
+        "Testnas",
+        Some("testnas.local"),
+        Some("198.51.100.7"),
+        HostSource::Discovered,
+    );
+    let typed_ip = create_network_host("198.51.100.8", 445);
+    let typed_name = create_network_host("nas.example.test", 445);
+    let typed_port = create_network_host("198.51.100.10", 11480);
+
+    let cases: Vec<(&str, SmbMountInfo, Vec<NetworkHost>, Vec<NetworkHost>)> = vec![
+        (
+            "a Bonjour server, mounted by its IP",
+            mount("198.51.100.7", "media"),
+            vec![bonjour.clone()],
+            vec![],
+        ),
+        (
+            "a manual server by IP, before discovery loads it",
+            mount("198.51.100.8", "media"),
+            vec![],
+            vec![typed_ip.clone()],
+        ),
+        (
+            "a manual server by IP, pinned in discovery",
+            mount("198.51.100.8", "media"),
+            vec![typed_ip.clone()],
+            vec![typed_ip],
+        ),
+        (
+            "a manual server by hostname",
+            mount("nas.example.test", "media"),
+            vec![],
+            vec![typed_name],
+        ),
+        (
+            "a manual server on a custom port",
+            on_port(mount("198.51.100.10", "media"), 11480),
+            vec![],
+            vec![typed_port],
+        ),
+        // The Bonjour name discovery sees is the same box on its LAN address, which only
+        // its GUID could tell: the Tailscale IP is a server of its own.
+        (
+            "a Tailscale IP nothing else knows",
+            mount("100.64.0.9", "media"),
+            vec![bonjour],
+            vec![],
+        ),
+        (
+            "an unknown server on a custom port",
+            on_port(mount("198.51.100.9", "media"), 11481),
+            vec![],
+            vec![],
+        ),
+    ];
+    for (why, info, fresh, saved) in cases {
+        let (host, found) = resolved_share_list(&info, fresh, saved);
+        let found = found.unwrap_or_else(|| panic!("{why}: its share list resolves nothing"));
+        assert_eq!(found.id, host.id, "{why}: resolves to the host `..` opened");
+        assert_eq!(found.port, info.port, "{why}: on the mount's port");
+    }
+}

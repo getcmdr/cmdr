@@ -120,6 +120,14 @@ fn host_for_mount(info: &SmbMountInfo, hosts: &[NetworkHost]) -> NetworkHost {
         .unwrap_or_else(|| made_host(info))
 }
 
+/// A host for each SMB mount in `mounts`, made the way [`host_for_mount`] makes one for a
+/// server discovery doesn't know, so the share list `..` opens for such a server resolves
+/// (`share_list_path::KnownHosts::mounted`). Duplicates (several shares of one server) are
+/// harmless: resolution takes the first.
+pub(crate) fn mounted_hosts(mounts: &[(String, SmbMountInfo)]) -> Vec<NetworkHost> {
+    mounts.iter().map(|(_, info)| made_host(info)).collect()
+}
+
 /// A host for a mount discovery doesn't know: dialable by the address the mount's
 /// server resolves to, or, for an mDNS service name nothing has resolved yet, by its
 /// `.local` hostname.

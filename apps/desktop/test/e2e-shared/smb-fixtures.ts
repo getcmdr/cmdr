@@ -402,6 +402,28 @@ export function setupSmb(): void {
 }
 
 /** Full SMB test teardown: unmount shares (containers left running for reuse). */
+/**
+ * Linux: mounts the guest share a second time, by the guest server's IP, the way macOS mounts a share someone typed an
+ * address for (a Tailscale IP): a server no discovered or saved host goes by. Answers the IP and the mount point, and
+ * `unmount` to undo it; `null` off Linux, or when the container's name doesn't resolve to an IPv4 address.
+ */
+export function mountGuestShareByIp(): { address: string; mountPoint: string; unmount: () => void } | null {
+  if (!IS_LINUX) return null
+  const resolved = execSync(`getent ahostsv4 '${SMB_GUEST_HOST}'`, { encoding: 'utf-8', timeout: 10_000 })
+  const address = /^(\d+\.\d+\.\d+\.\d+)\s/m.exec(resolved)?.[1]
+  if (!address) return null
+  const url = `smb://${address}/${SMB_GUEST_SHARE}`
+  const mountPoint = `/run/user/${LINUX_UID}/gvfs/smb-share:server=${address},share=${SMB_GUEST_SHARE}`
+  if (!fs.existsSync(mountPoint)) execSync(`gio mount --anonymous '${url}'`, { encoding: 'utf-8', timeout: 30_000 })
+  return {
+    address,
+    mountPoint,
+    unmount: () => {
+      execSync(`gio mount -u '${url}'`, { encoding: 'utf-8', timeout: 30_000 })
+    },
+  }
+}
+
 export function teardownSmb(): void {
   unmountSmbShares()
 }

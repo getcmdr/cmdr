@@ -15,7 +15,7 @@ import { getShowShareParentRow } from '#lib/settings/reactive-settings.svelte.js
 import { getSetting, setSetting } from '#lib/settings/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { volumeKindOf } from '../pane/volume-capabilities'
-import type { VolumeInfo } from '../types'
+import type { NetworkHost, VolumeInfo } from '../types'
 import { effectiveShow, overrideAfter } from './share-parent-rule'
 
 const log = getAppLogger('network')
@@ -51,6 +51,18 @@ export async function loadShareParent(volumeId: string): Promise<ShareParent | n
     log.warn('Reading where “..” leads out of {volumeId} broke down: {error}', { volumeId, error: e })
     return parents.get(volumeId) ?? null
   }
+}
+
+/**
+ * Every server a known share's `..` leads to, and what to call it. The one record the
+ * frontend has of a server only a mount knows (a share macOS mounted by an address
+ * discovery never saw), so its share list can name it, mount from it, and sign in to it
+ * (`share-list-label.ts`). Reactive.
+ */
+export function shareParentServers(): { host: NetworkHost; label: string }[] {
+  const servers: { host: NetworkHost; label: string }[] = []
+  for (const parent of parents.values()) if (parent) servers.push({ host: parent.host, label: parent.serverLabel })
+  return servers
 }
 
 /** What's known about the share behind `volumeId`, or `undefined` until it's been asked. Reactive. */

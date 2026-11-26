@@ -24,6 +24,7 @@ const h = vi.hoisted(() => ({
   openSignInSheet: vi.fn(),
   warn: vi.fn(),
   hosts: [] as NetworkHost[],
+  listSavedServers: vi.fn((): Promise<unknown[]> => Promise.resolve([])),
 }))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
@@ -43,7 +44,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   updateRightPaneState: vi.fn(() => Promise.resolve()),
   disconnectNetworkHost: vi.fn(() => Promise.resolve()),
   connectToServer: vi.fn(() => Promise.resolve()),
-  listSavedServers: vi.fn(() => Promise.resolve([])),
+  listSavedServers: h.listSavedServers,
   notifyDialogOpened: vi.fn(() => Promise.resolve()),
   notifyDialogClosed: vi.fn(() => Promise.resolve()),
 }))
@@ -153,6 +154,40 @@ describe('NetworkMountView: back from a share list', () => {
     })
     expect(getActiveTab(explorerState.getTabMgr('left')).landOnServer).toBeUndefined()
     await unmount(component)
+  })
+
+  /** A server the person has a share of lists as a saved row merged with its nearby host. */
+  it('lands on a saved server that discovery also sees', async () => {
+    h.listSavedServers.mockImplementation(() =>
+      Promise.resolve([
+        {
+          id: 'manual-testnas-445',
+          protocol: 'smb',
+          displayName: 'Testnas',
+          nameSource: 'fallback',
+          address: 'Testnas',
+          username: null,
+          pinned: false,
+          lastConnectedAt: null,
+          autoReconnect: null,
+          places: [],
+          awaitingFirstConnect: false,
+        },
+      ]),
+    )
+    try {
+      explorerState.setTabMgr('left', createTabManager(createInitialTabState('smb://', 'network')))
+      getActiveTab(explorerState.getTabMgr('left')).landOnServer = 'smb://testnas'
+      const target = document.createElement('div')
+      document.body.appendChild(target)
+      const component = mount(NetworkMountView, { target, props: { paneId: 'left', isFocused: true } })
+      await vi.waitFor(() => {
+        expect(target.querySelector('.server-row.is-under-cursor')?.textContent).toContain('Testnas')
+      })
+      await unmount(component)
+    } finally {
+      h.listSavedServers.mockImplementation(() => Promise.resolve([]))
+    }
   })
 
   it('keeps the cursor where it would be when the landing names a server it doesn’t list', async () => {
