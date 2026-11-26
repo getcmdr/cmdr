@@ -26,7 +26,7 @@ use crate::network::keychain::SmbCredentials;
 use crate::network::os_mount::MountError;
 use crate::network::smb_client::GuestAttempt;
 
-/// The account a share list was listed as, for the pane's "as <account>".
+/// The account a share list was listed as, for the pane's "as `<account>`".
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ShareListAccount {

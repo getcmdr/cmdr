@@ -220,6 +220,7 @@ var rustEmbeddedInputs = []string{
 	"apps/desktop/src/lib/logging/bridge-redaction-cases.json",
 	"apps/desktop/src/lib/logging/log-markers.json",
 	"apps/desktop/src/lib/platform/conventions-on.json",
+	"apps/desktop/src/lib/servers/share-list-path-cases.json",
 	"apps/desktop/src/lib/settings/types.ts",
 	"apps/desktop/src/lib/units/drive-figure-cases.json",
 	"apps/desktop/src/lib/units/free-percent-cases.json",

@@ -132,7 +132,7 @@ struct ListedHost<'a> {
 }
 
 /// [`list_shares_on_host`]'s body: the cache, else a dial signed in by
-/// [`account_listing_for`]'s ladder (❌ never a Keychain read), with a refusal logged for
+/// [`crate::network::smb_account_ladder::account_listing_for`]'s ladder (❌ never a Keychain read), with a refusal logged for
 /// the sign-in diagnostics. A pane's share list climbs its own ladder instead
 /// (`network::share_list_sign_in::list_for_pane`).
 async fn list_host_shares(

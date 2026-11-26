@@ -306,6 +306,8 @@ var rustTestScopeRules = []rustScopeRule{
 		Why: "the manifest reader's tests and the plugin mirror test read the release writer's output (`cmdr-update-manifest/src/tests.rs`, `updater/manifest.rs`)"},
 	{Glob: "apps/desktop/src/lib/platform/conventions-on.json", Effect: scopeReaders, Readers: []string{"cmdr"},
 		Why: "the platform conventions test pins the frontend's copy of the cross-target table (`platform/conventions.rs`)"},
+	{Glob: "apps/desktop/src/lib/servers/share-list-path-cases.json", Effect: scopeReaders, Readers: []string{"cmdr"},
+		Why: "the share-list path tests embed the shared path-grammar cases (`network/share_list_path_test.rs`)"},
 	{Glob: "apps/desktop/src/lib/settings/types.ts", Effect: scopeReaders, Readers: []string{"cmdr"},
 		Why: "the error report's triage-settings test checks every listed key is a setting id (`error_reporter/triage_settings.rs`)"},
 	{Glob: "apps/desktop/src/lib/units/drive-figure-cases.json", Effect: scopeReaders, Readers: []string{"cmdr"},

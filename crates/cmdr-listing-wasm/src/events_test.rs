@@ -105,6 +105,7 @@ fn every_event_matches_the_generated_bindings() {
         stored_path: None,
         effective_sort_by: SortColumn::Name,
         share_parent: None,
+        share_list_account: None,
     };
     assert_matches("listing-complete", complete);
     let error = ListingErrorEvent {

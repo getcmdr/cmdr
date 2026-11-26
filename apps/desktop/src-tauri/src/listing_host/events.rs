@@ -78,7 +78,7 @@ pub struct ListingCompleteEvent {
     /// up never sticks (`network/smb_share_parent.rs`).
     pub share_parent: Option<ShareParent>,
     /// Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
-    /// for the pane's "as <account>"; `None` for every other listing, and for a share list
+    /// for the pane's "as `<account>`"; `None` for every other listing, and for a share list
     /// answered from the cache, which doesn't say. Memory only, read on the way out.
     pub share_list_account: Option<ShareListAccount>,
 }

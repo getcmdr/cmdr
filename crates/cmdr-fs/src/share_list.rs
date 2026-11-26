@@ -63,7 +63,7 @@ pub enum ShareListError {
         /// Diagnostic detail, for logs.
         message: String,
     },
-    /// Cmdr requires encryption ([`crate::SmbEncryption`]) and this connection can't have it:
+    /// Cmdr requires encryption (`SmbEncryption`, in `cmdr-smb`) and this connection can't have it:
     /// the server agreed on no cipher, or it answered with a guest session, which has no keys.
     /// ❌ Never a fallback to another client: the CLI fallback ignores the requirement.
     EncryptionRequired {

@@ -74,6 +74,9 @@ pub(crate) struct ListingCompleteEvent<'a> {
     /// page's one volume is no share. `()` stands for the desktop's `ShareParent`, which
     /// is app-only, and serializes as the same `null`.
     pub(crate) share_parent: Option<()>,
+    /// The account a server's share list was listed as: always `null` here, since the page
+    /// lists no server. `()` stands for the desktop's `ShareListAccount`, which is app-only.
+    pub(crate) share_list_account: Option<()>,
 }
 
 #[derive(Serialize)]
@@ -212,6 +215,7 @@ impl ListingEvents for DemoEvents {
                         stored_path: stored_path.map(AppPathBuf::into_string),
                         effective_sort_by,
                         share_parent: None,
+                        share_list_account: None,
                     },
                 );
             }
