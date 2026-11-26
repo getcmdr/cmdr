@@ -425,6 +425,14 @@ as proof of one machine; it's derived from the NetBIOS name). The stacked-folder
 server icon are approved. Where each answer lands: 1 → branch 13, M7, M8; 7 → M1 measures, M8 acts; ⌘R and #1518 → M2,
 with two follow-up questions in § "Questions".
 
+**Decision 7 resolved (lead, 2026-11-26, after the measurement): stop the prefetch, (a).** Saved servers read in p90 643
+ms (Pi by name) and 517 ms (NAS by LAN IP), under the 800 ms loading-view delay. The one slow server (a Pi by IP, p90
+1,422 ms) is slow only because guests are refused and the read falls back to `smbutil` plus a Keychain read; a
+background prefetch may not read the Keychain (the "never from a background path" invariant), so a prefetch couldn't
+speed it up anyway. Numbers: `apps/desktop/src/lib/file-explorer/network/DETAILS.md`. Lead defaults on § "Questions": ⌘R
+on an unchanged share list shows nothing extra (like a folder); a Samba name-derived GUID no longer proves one machine
+(done in M2).
+
 1. **Where "+ Add server…" lives.** (a) F7 on the Servers list (the F-key bar reads "F7 Add server", since F7 means "new
    item here" everywhere), plus ⌘K from anywhere (exists), plus the empty list saying "Press F7 to add a server"; (b)
    keep a last pseudo-row (sort, filter, and type-to-jump would move or hide it, so the views need a special row); (c) a
