@@ -152,7 +152,8 @@ also sees stays among the saved ones with its "Found nearby" status.
   view (`nearbyRevealed`) and ❌ doesn't record a choice; `selectServer` goes the same way.
 - **A group that collapses over the cursor** (the other pane's hub toggled it, `set_setting` did) puts the cursor on the
   header: `servers-hub-keys.ts::cursorAcrossRebuild` treats the hidden row as one that left.
-- **The status bar still counts every server**, hidden ones included; the header says how many of those are nearby.
+- **The status bar still counts every server**, hidden ones included; the header says how many of those are nearby. Its
+  height, top edge included, is every pane footer's (`../pane/DETAILS.md`, "One footer height everywhere").
 - **Discovery off** empties the discovery list, so there is no group and the "discovery is off" line stands where it
   would be. **Searching** shows its line under an open group or when nothing was found yet; a collapsed group shows a
   spinner on its header instead.

@@ -491,11 +491,21 @@ company on the snapshot pane:
 
 - `selectionInfo` — the counts and the selection summary. A search-results pane gets them: "how many hits, and how big
   are the ones I picked" is the question a search exists to answer, and until it did, the pane's footer was blank.
-- `volumeSpace` — the free-space text plus the 3px usage bar above it. The snapshot pane gets neither. Its rows all live
-  on ONE volume (`snapshot-source-volume.ts`), so a figure would be computable, but the pane isn't sitting IN that
-  volume: a free-space readout there answers a question nobody asked and would follow the user around their history.
+- `volumeSpace` — the free-space text plus the usage bar above it. The snapshot pane gets neither. Its rows all live on
+  ONE volume (`snapshot-source-volume.ts`), so a figure would be computable, but the pane isn't sitting IN that volume:
+  a free-space readout there answers a question nobody asked and would follow the user around their history.
   `SelectionInfo` takes this as its own `showVolumeSpace` prop rather than inferring it from a `null` space, which
   already means "not fetched yet" and keeps the empty bar track.
+
+**One footer height everywhere.** The band from the list's bottom edge to the function-key bar measures the same in a
+folder, a search-results pane, a disk image, the Servers hub, and a share list, so switching between them never makes it
+jump. Two shared pieces carry it: the `--pane-footer-*` tokens in `app.css` (the band body's block padding, font size,
+and min height, read by `SelectionInfo` and `ServersHubStatusBar`; horizontal insets stay per component) and the
+`.pane-footer-edge` class in `app-file-list.css` (the 2px top edge). The edge renders whenever the footer does: the
+usage bar fills it with its track where a total exists, and anywhere else it stays a plain border-colored rule with no
+role, so it can't read as "0% full". The min height is the text's own line box, so an empty readout (an empty folder
+with no space figure) keeps the height too. Pinned by `pane-footer-band.test.ts` (the sources read the shared metrics);
+the heights themselves were measured in the running app.
 
 The snapshot pane also passes `totalMatches` (the snapshot's `totalCount`). When the search found MORE than the pane
 holds — the 10,000-row cap, or a walk still filling it — the no-selection line reads "No selection, 10,000 of 34,512

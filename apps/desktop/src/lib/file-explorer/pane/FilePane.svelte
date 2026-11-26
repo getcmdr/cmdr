@@ -2481,15 +2481,18 @@
              exists. Storage with no ceiling (`usageBar === null`) shows the used
              figure in `SelectionInfo` below and no bar at all: an empty track
              would read as "0% full", which is a claim nothing supports. A `null`
-             `volumeSpace` is the not-yet-fetched state and keeps the empty track. -->
-        {#if footer.volumeSpace && !isDiskImageVolume && (!diskSpace.volumeSpace || usageBar)}
+             `volumeSpace` is the not-yet-fetched state and keeps the empty track.
+             Where no bar renders, the edge stays as a plain rule (decoration, no
+             role), so every pane's footer is one height (`app.css` `--pane-footer-*`). -->
+        {@const showsUsageBar = footer.volumeSpace && !isDiskImageVolume && (!diskSpace.volumeSpace || usageBar)}
         <div
-            class="disk-usage-bar-wrapper"
+            class="pane-footer-edge"
             data-pane-footer
-            use:tooltip={diskSpace.volumeSpace
+            use:tooltip={showsUsageBar && diskSpace.volumeSpace
                 ? { text: formatBarTooltip(diskSpace.volumeSpace, getFileSizeFormat(), mtpSpaceHint) }
                 : ''}
         >
+            {#if showsUsageBar}
             <div
                 class="disk-usage-bar"
                 role="meter"
@@ -2507,8 +2510,8 @@
                     ></div>
                 {/if}
             </div>
+            {/if}
         </div>
-        {/if}
         <SelectionInfo
             viewMode={isSearchResultsView ? 'full' : viewMode}
             volumeId={searchSnapshot?.volumeId ?? volumeId}
@@ -2590,12 +2593,10 @@
         align-items: center;
     }
 
-    .disk-usage-bar-wrapper {
-        flex-shrink: 0;
-    }
-
+    /* The bar fills the footer's top edge (`.pane-footer-edge`, `app-file-list.css`), its
+       track color over the edge's plain rule. */
     .disk-usage-bar {
-        height: 2px;
+        height: 100%;
         background-color: var(--color-disk-track);
     }
 

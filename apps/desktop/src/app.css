@@ -474,6 +474,18 @@
      `FullListHeader`). */
   --spacing-scrollbar-width: 0px;
 
+  /* The pane footer band, from the list's bottom edge to the function-key bar: a 2px top
+     edge (a folder's usage track, else a plain rule), then one line of status text. Every
+     footer (`SelectionInfo`, the Servers hub's status bar) takes its vertical metrics from
+     here, so switching panes never makes the footer jump. The min height is the text's own
+     line box, so an empty readout keeps the band's height. Pinned by `pane-footer-band.test.ts`. */
+  --pane-footer-edge-height: 2px;
+  --pane-footer-padding-block: var(--spacing-sm);
+  --pane-footer-font-size: calc(var(--font-size-sm) * 0.95);
+  --pane-footer-min-height: calc(
+    2 * var(--pane-footer-padding-block) + var(--pane-footer-font-size) * var(--font-line-height-normal)
+  );
+
   /* === Typography ===
    * Sizes are in rem so they scale with `html` font-size, which itself follows
    * `--font-scale` (system Accessibility × user setting). At scale 1, the
