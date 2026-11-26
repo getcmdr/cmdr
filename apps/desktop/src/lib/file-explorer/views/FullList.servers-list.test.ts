@@ -21,7 +21,8 @@ vi.mock('#lib/settings/reactive-settings.svelte.js', async () => ({
   getNetworkEnabled: () => true,
 }))
 
-import { listWordsFor } from '../pane/list-kind-words'
+import { listWordsFor, trailingRowFor } from '../pane/list-kind-words'
+import { expectNoA11yViolations } from '#lib/test-a11y.js'
 
 beforeEach(() => {
   _setMeasureForTests((text) => text.length * 7)
@@ -98,5 +99,19 @@ describe('FullList on the Servers list', () => {
     expect(name).toContain('SMB · 192.168.1.111 · as test_user_1')
     expect(name).toContain('(Last used)')
     expect(rows[2].getAttribute('aria-label')).toContain('Found nearby')
+  })
+
+  it('has no a11y violations, the status dots and the trailing "Add server…" row included', async () => {
+    const list = await mountFullList({
+      entries: [
+        server('Naspolya', 'smb://naspolya', 'network:server-smb', { status: 'connected' }, 1_790_000_000),
+        server('Found box', 'smb://found-box', 'network:server-smb', { status: 'found_nearby', saved: false }),
+      ],
+      viewport: { clientHeight: 400, clientWidth: 900, offsetWidth: 900 },
+      props: { listWords: listWordsFor('network'), trailingRow: trailingRowFor('network') },
+    })
+
+    expect(list.target.textContent).toContain('Add server')
+    await expectNoA11yViolations(list.target)
   })
 })
