@@ -159,6 +159,34 @@ describe('computeFullListColumnWidths', () => {
     expect(capped.ext).toBeGreaterThan(normal.ext)
   })
 
+  describe('an Ext column that carries prose (a share list’s descriptions)', () => {
+    const share = (description: string) => entry({ name: 'media', isDirectory: true, shareMeta: { description } })
+
+    it('fits a description in full, past the extension cap', () => {
+      _setMeasureForTests(fakeMeasure)
+      const w = computeFullListColumnWidths({
+        ...baseArgs,
+        extProse: true,
+        entries: [share('Container station'), share('System default share')],
+      })
+      // The longest description (20 chars × 7) plus the 2 px pad: no truncation.
+      expect(w.ext).toBe('System default share'.length * 7 + 2)
+    })
+
+    it('still caps a pathological description at a sentence’s width', () => {
+      _setMeasureForTests(fakeMeasure)
+      const w = computeFullListColumnWidths({ ...baseArgs, extProse: true, entries: [share('x'.repeat(200))] })
+      expect(w.ext).toBe('description'.repeat(3).length * 7 + 2)
+    })
+
+    it('leaves a folder’s Ext column exactly as it was', () => {
+      _setMeasureForTests(fakeMeasure)
+      // Without the prose flag, a description is capped like any extension (today's layout).
+      const w = computeFullListColumnWidths({ ...baseArgs, entries: [share('System default share')] })
+      expect(w.ext).toBe('extensionxx'.length * 7 + 2)
+    })
+  })
+
   it('reserves no Ext width when showExtensionInName is on', () => {
     _setMeasureForTests(fakeMeasure)
     // A long extension would normally widen the Ext column; with the full name

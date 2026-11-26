@@ -8,6 +8,13 @@
 export interface ListWords {
   /** The Ext column's header. */
   extHeader?: string
+  /**
+   * The Ext column carries prose (a share's description) rather than an extension, so Full
+   * measures it up to a sentence's width (`PROSE_CAP_SAMPLE`) instead of an extension's.
+   */
+  extIsProse?: boolean
+  /** No row carries a date, so Full shows no date column (`fitFullListColumns`'s `hasDates`). */
+  rowsHaveNoDates?: boolean
   /** What the `..` row says in place of "Parent folder". */
   parentRowName?: string
   /** What an empty list says in place of "Empty folder". */

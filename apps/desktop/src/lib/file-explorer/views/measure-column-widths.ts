@@ -118,6 +118,14 @@ const MIN_DATE_WIDTH = 70
  */
 const EXT_CAP_SAMPLE = 'extensionxx'
 
+/**
+ * The Ext cap when the column carries prose (`ListWords.extIsProse`: a share's
+ * description). About 33 characters: room for real descriptions ("System default
+ * share", "Naspolya main share") in full, while a run-on one still ellipsizes
+ * rather than squeezing Name. Measured like `EXT_CAP_SAMPLE`, so it scales too.
+ */
+const PROSE_CAP_SAMPLE = 'description'.repeat(3)
+
 let measureWidthCached: ((text: string) => number) | null = null
 let measureUnavailable = false
 let cachedScale = 0
@@ -338,6 +346,8 @@ export function computeFullListColumnWidths(args: {
   showExtensionInName?: boolean
   /** The Ext header's words when the pane's kind names it otherwise (`ListWords.extHeader`). */
   extHeader?: string
+  /** The Ext cells carry prose (`ListWords.extIsProse`), capped at `PROSE_CAP_SAMPLE`. Defaults to extensions. */
+  extProse?: boolean
 }): ColumnWidths {
   const {
     entries,
@@ -354,6 +364,7 @@ export function computeFullListColumnWidths(args: {
     isRestricted,
     showExtensionInName = false,
     extHeader,
+    extProse = false,
   } = args
 
   const measure = getMeasure()
@@ -386,8 +397,8 @@ export function computeFullListColumnWidths(args: {
   // Cap on per-row Ext text width so a single pathological extension can't
   // push the rest of the row off-screen. Compared against the row's text-only
   // measurement (no chrome), so the header bound (`measure('Ext') + chrome`)
-  // can still win when no real extension is wider.
-  const extCap = measure(EXT_CAP_SAMPLE)
+  // can still win when no real extension is wider. Prose gets a sentence's width.
+  const extCap = measure(extProse ? PROSE_CAP_SAMPLE : EXT_CAP_SAMPLE)
 
   // Per-row icons in the size column live to the right of the text; count the
   // widest icon suffix we've seen so we can add it to the data width.

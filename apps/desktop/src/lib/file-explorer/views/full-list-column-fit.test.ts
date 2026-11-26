@@ -52,4 +52,18 @@ describe('fitFullListColumns', () => {
   it('keeps the full layout while the pane is unmeasured', () => {
     expect(fit(0)).toEqual({ showDate: true, showExt: true })
   })
+
+  describe('a list whose rows carry no dates', () => {
+    it('never shows the date column, even in a wide pane', () => {
+      expect(fit(800, { hasDates: false })).toEqual({ showDate: false, showExt: true })
+      expect(fit(0, { hasDates: false })).toEqual({ showDate: false, showExt: true })
+    })
+
+    it('spends the date’s width on Ext before dropping it', () => {
+      // chrome 24 + icon 16 + ext 40 + size 70 + three 8 px gaps = 174, plus Name's minimum.
+      const extFits = 174 + FULL_NAME_MIN_WIDTH
+      expect(fit(extFits, { hasDates: false }).showExt).toBe(true)
+      expect(fit(extFits - 1, { hasDates: false }).showExt).toBe(false)
+    })
+  })
 })

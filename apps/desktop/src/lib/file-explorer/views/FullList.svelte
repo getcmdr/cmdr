@@ -466,6 +466,7 @@
             gitWidth: gitColumnVisible ? GIT_COLUMN_WIDTH : 0,
             widths: fitWidths,
             scale: getEffectiveScale(),
+            hasDates: listWords?.rowsHaveNoDates !== true,
         }),
     )
     const showDateColumn = $derived(columnFit.showDate)
@@ -568,6 +569,7 @@
             isRestricted,
             showExtensionInName,
             extHeader: listWords?.extHeader,
+            extProse: listWords?.extIsProse,
         })
         // Which rows are on screen and how they're measured: while this stays put, only in-place
         // data changed (index sizes, the hourglass), and `holdSizeColumnWidth` keeps Size from
@@ -586,6 +588,7 @@
             dateFallbackNote,
             showSizeMismatchWarning,
             showExtensionInName,
+            listWords?.extIsProse === true,
             spacePause !== undefined,
             scale,
         ].join('|')

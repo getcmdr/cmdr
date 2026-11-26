@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { fileEntry, mountFullList } from './test-full-list'
+import { dirEntry, fileEntry, mountFullList } from './test-full-list'
 import { _setMeasureForTests } from './measure-column-widths'
 
 vi.mock('#lib/tauri-commands/index.js', async () => (await import('./test-file-list-mocks')).tauriCommandsMock())
@@ -98,6 +98,27 @@ describe('FullList in a narrow pane', () => {
     const narrow = await mountAt(240)
     await narrow.settle(() => narrow.target.querySelectorAll('.col-date').length === 0, 'the date column to drop')
     expect(narrow.rows()[0].getAttribute('aria-label')).toBe(wideName)
+  })
+
+  // A server's share list: its kind's words say the Ext column carries prose and the rows have
+  // no dates, so the description gets its width and the always-empty date track goes.
+  it('gives a share list’s descriptions their width and drops its empty date column', async () => {
+    const description = 'System default share'
+    const list = await mountFullList({
+      entries: [
+        dirEntry({ name: 'media', path: 'smb://testnas/media', shareMeta: { description }, modifiedAt: undefined }),
+      ],
+      viewport: { clientHeight: 400, clientWidth: 800, offsetWidth: 800 },
+      props: { listWords: { extHeader: 'Description', extIsProse: true, rowsHaveNoDates: true } },
+    })
+    expect(list.rowNames()).toEqual(['media'])
+    expect(list.target.querySelector('.col-ext')?.textContent?.trim()).toBe(description)
+    expect(list.target.querySelectorAll('.col-date').length).toBe(0)
+    expect(list.target.querySelector('.header-date')).toBeNull()
+    expect(headerSortLabels(list.target)).toEqual(['Name', 'Description', 'Size'])
+    // icon 1fr ext size, the Ext track wide enough for the whole description (7 px per char + 2 px pad).
+    const [, , ext] = rowTemplate(list.target).split(/\s+/)
+    expect(ext).toBe(`${String(description.length * 7 + 2)}px`)
   })
 
   it('brings the columns back when the pane widens', async () => {

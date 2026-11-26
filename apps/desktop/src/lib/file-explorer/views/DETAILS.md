@@ -573,6 +573,10 @@ splitter counts, not just the window) and the measured `columnWidths`: a column 
 `FULL_NAME_MIN_WIDTH` (120 px, about 18 characters) × the text scale. **Why**: at the 950 px minimum window with the
 splitter at its 25 % limit (~240 px pane), `icon 1fr ext size date` left Name 0 px wide.
 
+- A list whose kind says its rows carry no dates (`ListWords.rowsHaveNoDates`, a share list) passes `hasDates: false`:
+  the date never shows, and Ext fits against Name alone. A kind whose Ext holds prose (`ListWords.extIsProse`) gets the
+  measurer's `extProse`, capping Ext at `PROSE_CAP_SAMPLE` instead of `EXT_CAP_SAMPLE`. Both default off, so a folder's
+  layout is untouched (pinned in `measure-column-widths.test.ts` and `FullList.narrow-pane.test.ts`).
 - A dropped Ext behaves exactly like `showExtensionInName`: `FullList`'s `extInName` (setting OR narrow) drives the
   cells, the grid template, the header's split Name/Ext triggers, the rename span, and the row name's restic host. A
   dropped date drops its cells and its header cell and chevron (the date sorts stay in the header's right-click popup),

@@ -2127,7 +2127,10 @@ Decisions (David, 2026-11-25), each with its why:
   list used to be its own hand-rolled list (cursor, `..`, landing, MCP push, header buttons) that drifted from the file
   list; a kind check inside a view would start that drift again.
 - **The description is the Ext track, headed "Description"**, measured like any Ext cell (restic's precedent): one cell
-  rule and no new column machinery. Size and date stay as for any folder.
+  rule and no new column machinery. Two kind words size it for prose: `extIsProse` lifts its cap from an extension's
+  (~11 characters) to a sentence's (~33, `PROSE_CAP_SAMPLE`), so "System default share" shows in full, and
+  `rowsHaveNoDates` drops the always-empty date track (`fitFullListColumns`'s `hasDates`), handing its room to Name and
+  Description. Size stays (`<dir>` on every row): the fit keeps Size on every list, and no seam hides it.
 - **Escape doesn't leave a share list**: on a file list Escape never means "parent", so the share list follows the list.
   Backspace, `⌘↑`, and `..` leave it. `share.back` (Escape, Backspace, `⌘↑`) lives on only for the mount controller's
   wait and refusal, off the palette.
