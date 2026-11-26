@@ -43,7 +43,8 @@ describe('the return point', () => {
 
   it('is forgotten when the destination shows without a listing', () => {
     const h = makeHarness({ left: { volumeId: 'root', path: '/Users/me' } })
-    selectVolume(h, 'network', 'smb://')
+    // The search-results snapshot: rendered from its own rows, never listed.
+    selectVolume(h, 'search-results', 'search-results://snapshot-1')
     expect(returnPointFor(h.deps, 'left')).toBeNull()
   })
 

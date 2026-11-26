@@ -453,7 +453,10 @@ function switchVolumeArm(deps: NavigateDeps, intent: NavigateIntent, volumeId: s
     terminal: source === 'fallback' || source === 'cancel',
     pushHistory: intent.pushHistory,
     fromCancel: source === 'cancel',
-    exact: intent.exact,
+    // ❗ The Servers list is where every door to it lands, from every door (#324): a "better
+    // path" there (the other pane's, the remembered one) is a server's share list, and
+    // listing that dials a server nobody opened.
+    exact: intent.exact === true || isServersList(volumeId, path),
   })
   return { status: 'started', settled: SETTLED_NOOP, corrected }
 }
@@ -470,16 +473,19 @@ function switchVolumeArm(deps: NavigateDeps, intent: NavigateIntent, volumeId: s
  * promise. There is no cross-volume branch here: a `{ location }` whose volume
  * differs from the pane's took the switch arm instead.
  */
+/** Whether `volumeId` at `path` is the Servers list: the `network` volume's root. */
+function isServersList(volumeId: string, path: string): boolean {
+  return volumeId === 'network' && path === NETWORK_VOLUME_PATH
+}
+
 function navigateInPlace(deps: NavigateDeps, intent: NavigateIntent, path: string): NavigateResult {
   const { pane } = intent
   const currentVolumeId = deps.getPaneVolumeId(pane)
   const currentVolumeName = deps.getPaneVolumeName(pane)
 
-  // On the network volume `smb://` takes the switch arm, `exact` so no correction trades the
-  // Servers list for a better path (#324); a share list lists in place; anything else refuses.
-  if (currentVolumeId === 'network' && path === NETWORK_VOLUME_PATH) {
-    return switchVolumeArm(deps, { ...intent, exact: true }, currentVolumeId, path)
-  }
+  // On the network volume `smb://` takes the switch arm (which lands it exactly: see
+  // `switchVolumeArm`); a share list lists in place; anything else refuses.
+  if (isServersList(currentVolumeId, path)) return switchVolumeArm(deps, intent, currentVolumeId, path)
   if (currentVolumeId === 'network' && !isShareListLocation(currentVolumeId, path)) {
     return { status: 'refused', reason: onNetworkRefusal(currentVolumeName ?? currentVolumeId) }
   }

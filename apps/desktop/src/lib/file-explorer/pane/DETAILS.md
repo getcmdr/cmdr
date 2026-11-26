@@ -2098,8 +2098,10 @@ pane renders the standard list.
   `smb://` selects that row by path (`restored-landing.svelte.ts`). History Back from a share list restores the cursor
   like any folder's.
 - **Never remembered**: `persistence-subscriber.svelte.ts` records no share list as `network`'s last-used path, and a
-  volume switch to a place with no listing runs no background "better path" correction (`navigate.ts`), so picking
-  Servers always lands on the Servers list, never on a remembered or other-pane share list (each would be a dial).
+  switch to the Servers list is always `exact` (`navigate.ts::switchVolumeArm`), so the background "better path"
+  correction never trades it for a remembered or other-pane share list (each would be a dial). ❗ It used to ride on "no
+  listing, no correction", which stopped holding once the Servers list became a listing. Pinned by
+  `navigate.arms.test.ts` ("selecting Servers from a share list…").
 - **Every door is a path**: the Servers rows, the add-server hand-off, the mirror, `..` out of a share's top folder,
   go-to-path, MCP `nav_to_path`, and history all send the pane to `smb://<server>`. A door that has more to say queues
   the pane's ARRIVAL first (`share-list-arrival.svelte.ts`: a share to mount, the share `..` came out of), kept per pane

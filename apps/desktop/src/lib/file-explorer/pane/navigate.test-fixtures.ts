@@ -8,7 +8,7 @@
  * `navigate.arms.test.ts`, and `navigate.refusals.test.ts`, the same way
  * `drag-drop-controller.test-fixtures.ts` backs its siblings.
  */
-import { vi } from 'vitest'
+import { vi, type Mock } from 'vitest'
 import type { NavigateDeps, PersistEvent, LastUsedPathRecord } from './navigate'
 import { createTabManager, getActiveTab, type TabManager } from '../tabs/tab-state-manager.svelte'
 import { createInitialTabState } from './tab-operations'
@@ -60,7 +60,7 @@ export interface Harness {
   persistEvents: PersistEvent[]
   lastUsedRecords: LastUsedPathRecord[]
   paneState: Record<'left' | 'right', { paneRef?: ReturnType<typeof makePaneRefStub> }>
-  determineNavigationPath: ReturnType<typeof vi.fn>
+  determineNavigationPath: Mock<(args: DetermineNavigationPathArgs) => Promise<string>>
   setFocusedPane: ReturnType<typeof vi.fn>
   addToast: ReturnType<typeof vi.fn>
 }
@@ -139,7 +139,7 @@ export function makeHarness(opts?: HarnessOpts): Harness {
   const lastUsedRecords: LastUsedPathRecord[] = []
 
   const determineNavigationPath = vi
-    .fn()
+    .fn<(args: DetermineNavigationPathArgs) => Promise<string>>()
     .mockImplementation((args: DetermineNavigationPathArgs) => Promise.resolve(args.targetPath))
   const setFocusedPane = vi.fn()
   const addToast = vi.fn()
@@ -165,9 +165,9 @@ export function makeHarness(opts?: HarnessOpts): Harness {
     tokens: new Map(),
     correctionGen: { value: 0 },
     returnPoints: new Map(),
-    // The two virtual volumes render without a listing, as their capability rows say.
-    locationHasListing: ({ volumeId, path }) =>
-      (volumeId !== 'network' || path !== 'smb://') && volumeId !== 'search-results',
+    // As the capability rows say: the search-results snapshot renders without a listing, and
+    // the Servers list (`network` at `smb://`) is a real listing like any folder.
+    locationHasListing: ({ volumeId }) => volumeId !== 'search-results',
   }
 
   return {

@@ -9,6 +9,7 @@ import { mount, tick, unmount } from 'svelte'
 import ServersListRowMenu from './ServersListRowMenu.svelte'
 import { dirEntry } from '../views/test-full-list'
 import type { FileEntry } from '../types'
+import type { MenuAnchor } from '#lib/tauri-commands/index.js'
 
 const h = vi.hoisted(() => ({ smbHostHasMounts: vi.fn(() => Promise.resolve(false)) }))
 
@@ -41,13 +42,26 @@ const testnas: FileEntry = dirEntry({
   },
 })
 
+/** What the pane calls on the mounted host. */
+interface RowMenuHost {
+  openRowMenu: (target: FileEntry, anchor: MenuAnchor | null) => Promise<void>
+}
+
 function mountMenu() {
   const target = document.createElement('div')
   document.body.appendChild(target)
   const onOpenChange = vi.fn()
   const onOpenRow = vi.fn()
-  const component = mount(ServersListRowMenu, { target, props: { onOpenChange, onOpenRow } })
-  return { component, onOpenChange, onOpenRow, done: () => unmount(component) }
+  const mounted = mount(ServersListRowMenu, { target, props: { onOpenChange, onOpenRow } })
+  const component = mounted as unknown as RowMenuHost
+  return {
+    component,
+    onOpenChange,
+    onOpenRow,
+    done: () => {
+      void unmount(mounted)
+    },
+  }
 }
 
 /** The open menu's rows by their `data-menu-row` value. */

@@ -427,7 +427,7 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
     expect(h.paneState.left.paneRef?.navigateToPath).not.toHaveBeenCalled()
   })
 
-  it('selecting Servers from a share list lands on the Servers list, never on a better path (#324)', () => {
+  it('selecting Servers from a share list lands on the Servers list, never on a better path (#324)', async () => {
     // The other pane on a share list would be a "valid other-pane path" to the correction,
     // which would then probe it (a dial) and move this pane onto that server's listing.
     h = makeHarness({
@@ -435,9 +435,18 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
       right: { path: 'smb://attic', volumeId: 'network' },
     })
 
-    navigate({ pane: 'left', to: { selectVolume: { volumeId: 'network', path: 'smb://' } }, source: 'user' }, h.deps)
+    // As the real correction answers: the other pane's path on the same volume, unless `exact`.
+    h.determineNavigationPath.mockImplementation((args: { exact?: boolean; targetPath: string }) =>
+      Promise.resolve(args.exact ? args.targetPath : 'smb://attic'),
+    )
+    const result = navigate(
+      { pane: 'left', to: { selectVolume: { volumeId: 'network', path: 'smb://' } }, source: 'user' },
+      h.deps,
+    )
+    if (result.status === 'started') await result.corrected
 
     expect(h.tab('left').path).toBe('smb://')
-    expect(h.determineNavigationPath).not.toHaveBeenCalled()
+    // Asked as `exact`, so it answers the Servers list itself and probes nothing.
+    for (const [args] of h.determineNavigationPath.mock.calls) expect(args).toMatchObject({ exact: true })
   })
 })
