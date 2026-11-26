@@ -85,11 +85,24 @@ fn build_smbutil_url(hostname: &str, ip_address: Option<&str>, port: u16) -> Str
         Some(ip) => ip,
         None => hostname,
     };
+    let host = bracketed_if_ipv6(host);
 
     if port == 445 {
         format!("//{}", host)
     } else {
         format!("//{}:{}", host, port)
+    }
+}
+
+/// An IPv6 literal (zone id and all) in brackets, so `smbutil` can't read its last group
+/// as the port; any other host as given.
+fn bracketed_if_ipv6(host: &str) -> std::borrow::Cow<'_, str> {
+    let bare = host.strip_prefix('[').and_then(|s| s.strip_suffix(']')).unwrap_or(host);
+    let address = bare.split_once('%').map_or(bare, |(address, _zone)| address);
+    if address.parse::<std::net::Ipv6Addr>().is_ok() {
+        std::borrow::Cow::Owned(format!("[{bare}]"))
+    } else {
+        std::borrow::Cow::Borrowed(host)
     }
 }
 
@@ -178,6 +191,25 @@ mod url_tests {
     fn build_smbutil_url_uses_hostname_when_no_ip() {
         let url = build_smbutil_url("mynas.local", None, 445);
         assert_eq!(url, "//mynas.local");
+    }
+
+    /// Regression: an unbracketed `//fd00::1` made `smbutil` read the address's last group
+    /// as a port. A mount macOS resolved to an IPv6 ULA hands us exactly that.
+    #[test]
+    fn build_smbutil_url_brackets_ipv6() {
+        assert_eq!(build_smbutil_url("testnas.local", Some("fd00::1"), 445), "//[fd00::1]");
+        assert_eq!(
+            build_smbutil_url("testnas.local", Some("fd00::1"), 9445),
+            "//[fd00::1]:9445"
+        );
+        assert_eq!(build_smbutil_url("fd00::1", None, 445), "//[fd00::1]");
+        // Already bracketed by the caller: don't double-wrap.
+        assert_eq!(build_smbutil_url("[fd00::1]", None, 9445), "//[fd00::1]:9445");
+        // A zone id stays inside the brackets.
+        assert_eq!(
+            build_smbutil_url("testnas.local", Some("fe80::1%en0"), 445),
+            "//[fe80::1%en0]"
+        );
     }
 
     #[test]
