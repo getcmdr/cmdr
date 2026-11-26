@@ -15,9 +15,14 @@ import { explorerState } from './explorer-state.svelte'
 import { createInitialTabState } from './tab-operations'
 import { createTabManager, getActiveTab } from '../tabs/tab-state-manager.svelte'
 import { writeTabPath } from './hub-landing.svelte'
+import { registerFocusHome } from '#lib/ui/focus-restore.js'
+import { focusActivePane } from './active-pane-focus'
+import { MountFailure } from '../network/mount-error'
 
 const events = vi.hoisted(() => ({ recorder: null as ListenRecorder | null }))
 const listDirectoryStartMock = vi.hoisted(() => vi.fn())
+const mountNetworkShareMock = vi.hoisted(() => vi.fn())
+const cancelServerConnectMock = vi.hoisted(() => vi.fn())
 const net = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
 
 /** The fixture server's shares, as the backend lists them: one folder row per share. */
@@ -46,6 +51,9 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('#lib/tauri-commands/index.js')>()),
     listDirectoryStart: listDirectoryStartMock,
+    mountNetworkShare: mountNetworkShareMock,
+    cancelServerConnect: cancelServerConnectMock,
+    newServerAttemptId: () => 'server-connect-test-attempt',
     cancelListing: vi.fn().mockResolvedValue(undefined),
     listDirectoryEnd: vi.fn().mockResolvedValue(undefined),
     onListingGone: vi.fn(() => () => {}),
@@ -67,9 +75,10 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => {
       selectedSize: null,
       selectedPhysicalSize: null,
     }),
+    // The hidden-files resync answers the listing's own count: the shares hide no rows.
     setListingIncludeHidden: vi
       .fn()
-      .mockResolvedValue({ sequence: 0, totalCount: 0, newCursorIndex: null, newSelectedIndices: null }),
+      .mockResolvedValue({ sequence: 0, totalCount: SHARES.length, newCursorIndex: null, newSelectedIndices: null }),
     getSyncStatus: vi.fn().mockResolvedValue({ data: {}, timedOut: false }),
     onMediaEnrichProgress: vi.fn().mockResolvedValue(() => {}),
     onMediaEnrichTerminal: vi.fn().mockResolvedValue(() => {}),
@@ -277,6 +286,110 @@ describe("FilePane on a server's share list", () => {
     expect([...(errorPane?.querySelectorAll('button') ?? [])].map((b) => b.textContent.trim())).toContain('Sign in')
     // A sign-in class offers no Try again: without an account, the server answers the same.
     expect(errorPane?.textContent).not.toContain('Try again')
+    await unmount(component)
+  })
+
+  /**
+   * Keyboard only, the way `DualPaneExplorer` wires it: the explorer container is the focus
+   * home (its refocus is `focusActivePane`) and forwards the keys that bubble to it to the pane.
+   * Keys go to `document.activeElement`, so a focus left on `<body>` reaches no pane, as in the app.
+   *
+   * ❗ A component pin, ❌ not an E2E one: the E2E guest share is pre-mounted, so its mount answers
+   * at once and there's no wait to Escape out of.
+   */
+  it('Enter on a share starts the mount, Escape cancels it, and the arrows move the cursor again', async () => {
+    net.hosts = [ATTIC, TESTNAS]
+    listDirectoryStartMock.mockImplementation((_v, _p, _h, _sb, _so, listingId: string) =>
+      Promise.resolve({ listingId, status: { status: 'loading' } }),
+    )
+    let refuseMount: (error: unknown) => void = () => {}
+    mountNetworkShareMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          refuseMount = reject
+        }),
+    )
+    // The backend answers a cancel by ending the mount as `cancelled`.
+    cancelServerConnectMock.mockImplementation(() => {
+      refuseMount(new MountFailure({ type: 'cancelled', share: 'public' }))
+      return Promise.resolve(true)
+    })
+    explorerState.setTabMgr('left', createTabManager(createInitialTabState('smb://testnas', 'network')))
+
+    const explorer = getTarget()
+    explorer.tabIndex = -1
+    const component = mount(FilePane, {
+      target: explorer,
+      props: {
+        paneId: 'left',
+        initialPath: 'smb://testnas',
+        volumeId: 'network',
+        volumePath: 'smb://',
+        isFocused: true,
+        showHiddenFiles: true,
+        viewMode: 'full',
+      },
+    })
+    const pane = component as unknown as FilePaneAPI
+    const unregisterHome = registerFocusHome({
+      root: () => explorer,
+      refocus: () => {
+        focusActivePane({ getPaneRef: () => pane, getFocusedPane: () => 'left', getContainerElement: () => explorer })
+      },
+    })
+    const forward = (e: KeyboardEvent) => {
+      pane.handleKeyDown(e)
+    }
+    explorer.addEventListener('keydown', forward)
+    const press = async (key: string) => {
+      const target = document.activeElement ?? document.body
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+      await waitForUpdates()
+    }
+    const listbox = () => explorer.querySelector<HTMLElement>('[role="listbox"]')
+
+    await waitForUpdates()
+    events.recorder?.fireListingEvent('listing-complete', {
+      listingId: lastListingId(),
+      totalCount: SHARES.length,
+      volumeRoot: 'smb://',
+    })
+    await waitForUpdates(100)
+    expect(pane.focusList()).toBe(true)
+    expect(document.activeElement).toBe(listbox())
+
+    await vi.waitFor(() => {
+      expect(pane.getEffectiveTotalCount(), 'the two shares and `..`').toBe(SHARES.length + 1)
+    })
+    // `..` is row 0, so ↓ lands on `public`, and Enter mounts it.
+    await press('ArrowDown')
+    expect(pane.getCursorIndex()).toBe(1)
+    await press('Enter')
+    await vi.waitFor(() => {
+      expect(mountNetworkShareMock).toHaveBeenCalledOnce()
+    })
+    expect(mountNetworkShareMock.mock.calls[0][1]).toBe('public')
+    // The wait replaced the list, and focus went home to the explorer rather than `<body>`.
+    expect(explorer.querySelector('.remote-connect')).toBeTruthy()
+    expect(listbox()).toBeNull()
+    expect(document.activeElement).toBe(explorer)
+
+    await press('Escape')
+    expect(cancelServerConnectMock).toHaveBeenCalledWith('server-connect-test-attempt')
+    await vi.waitFor(() => {
+      expect(listbox()).toBeTruthy()
+    })
+    expect(explorer.querySelector('.remote-connect')).toBeNull()
+    // Focus came back to the share list, so the arrows reach it.
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(listbox())
+    })
+    const before = pane.getCursorIndex()
+    await press(before === 0 ? 'ArrowDown' : 'ArrowUp')
+    expect(pane.getCursorIndex()).toBe(before === 0 ? 1 : before - 1)
+
+    explorer.removeEventListener('keydown', forward)
+    unregisterHome()
     await unmount(component)
   })
 })

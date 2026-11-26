@@ -53,6 +53,7 @@ import {
   dismissOverlay,
   dispatchMenuCommand,
   ensureAppReady,
+  focusPane,
   pressKey,
   escapeOverlayUntilGone,
   expectAndDismissToast,
@@ -209,6 +210,22 @@ async function paneRows(side: 'left' | 'right'): Promise<PaneRows> {
     cursorIndex: Number(/^ {2}cursor:\n {4}index: (\d+)$/m.exec(section)?.[1] ?? '-1'),
     rows,
   }
+}
+
+/**
+ * The text of the row the cursor is on, found by its `i:<n>` index. ❗ Not `rows[cursorIndex]`: the mirror lists a
+ * window of rows around the visible range, so past the first screen the array position isn't the row's index.
+ */
+async function cursorRowText(side: 'left' | 'right'): Promise<string | null> {
+  const { cursorIndex } = await paneRows(side)
+  const state = await mcpReadResource('cmdr://state')
+  const start = state.indexOf(`\n${side}:\n`)
+  if (start === -1 || cursorIndex < 0) return null
+  const body = state.slice(start + side.length + 2)
+  const end = /\n\S/.exec(body)
+  const section = end ? body.slice(0, end.index) : body
+  const row = new RegExp(`^ {4}- "i:${String(cursorIndex)} [dfl] (.*)"$`, 'm').exec(section)
+  return row ? row[1].replace(/( \[(cur|sel)\])+$/, '') : null
 }
 
 /**
@@ -895,6 +912,62 @@ describeSmb('SMB 50-share server', () => {
         timeout: waitBudget(30000),
       })
       .toBeTruthy()
+  })
+
+  test('typing a share’s letters on its share list moves the cursor to that share', async ({ tauriPage }) => {
+    await ensureAppReady(tauriPage)
+    // Typing filters by default; this pins Jump, through the path the Settings toggle takes.
+    await mcpCall('set_setting', { id: 'fileExplorer.typeToJump.mode', value: 'jump' })
+    try {
+      await mcpSelectVolume('left', 'Servers')
+      await expect
+        .poll(async () => hostExistsInPane('SMB Test (50 Shares)'), { timeout: waitBudget(30000) })
+        .toBeTruthy()
+      await mcpCall('move_cursor', { pane: 'left', filename: 'SMB Test (50 Shares)' })
+      await mcpCall('open_under_cursor', {})
+      await expect
+        .poll(async () => (await sharesInPane('left'))?.length ?? 0, { timeout: waitBudget(30000) })
+        .toBeGreaterThanOrEqual(50)
+
+      // The fixture's names are smb2's, so pick the target from the list: the last share whose typed letters
+      // (letters and digits; anything else isn't a jump key) match no other share's name, so only it can win.
+      const shares = (await sharesInPane('left')) ?? []
+      const typed = (name: string) =>
+        name
+          .toLowerCase()
+          .match(/[\p{L}\p{N}]/gu)
+          ?.join('') ?? ''
+      const isSubsequence = (needle: string, hay: string) => {
+        let at = 0
+        for (const c of hay) if (c === needle[at]) at++
+        return at === needle.length
+      }
+      const target = [...shares]
+        .reverse()
+        .find(
+          (name) =>
+            typed(name) !== '' &&
+            shares.every((other) => other === name || !isSubsequence(typed(name), other.toLowerCase())),
+        )
+      expect(target, `a share only its own letters match, among ${shares.join(', ')}`).toBeDefined()
+      const targetName = target ?? ''
+      expect(shares.indexOf(targetName), 'a share the cursor has to travel to').toBeGreaterThan(0)
+
+      await focusPane(tauriPage, 0)
+      for (const char of typed(targetName)) await pressKey(tauriPage, char)
+
+      await expect
+        .poll(async () => shareNameOf((await cursorRowText('left')) ?? ''), { timeout: waitBudget(5000) })
+        .toBe(targetName)
+      // Still the share list: the letters jumped, they didn't open or filter anything.
+      const pane = await paneRows('left')
+      expect(pane.volumeId).toBe('network')
+      expect(pane.path).toBe('smb://smb test (50 shares)')
+      // Escape clears the buffer and leaves the share list where it is.
+      await pressKey(tauriPage, 'Escape')
+    } finally {
+      await mcpCall('set_setting', { id: 'fileExplorer.typeToJump.mode', value: 'filter' })
+    }
   })
 })
 
