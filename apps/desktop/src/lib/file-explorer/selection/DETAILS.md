@@ -194,6 +194,13 @@ Props: `file: FileEntry`, `syncStatus?: SyncStatus` (picks the sync badge's imag
   ("Symlink, Synced, report.md, …"; WCAG 1.1.1). The file-kind icon and the image-index badge stay unnamed: the first is
   #437's job, the second's tooltip is a sentence too long to repeat on every row.
 - Reactivity: subscribes to `$iconCacheVersion`, re-renders when the cache is populated.
+- **Stacked ids** (`#lib/stacked-icons.ts::stackedIconBase`): a server's share (`network:share`) draws its base `dir`
+  icon twice at 80%, the back copy top-right and the front bottom-left, so it reads as "folders" in the platform's own
+  folder style (Windows' and Linux's too: it's their `dir` icon). Every rule here (cache lookup, gold recolor,
+  cold-cache fallback) runs on the BASE id, and a stacked row never asks for a Finder custom icon. `prefetchIcons` swaps
+  the base in, so the OS is never asked for `network:share`. The lookup is its own module because dozens of view tests
+  mock `#lib/icon-cache.js` wholesale. Pinned by `FileIcon.stacked.test.ts`; the Debug "Graphics" catalog's Row icons
+  section shows it.
 
 ### Cmdr-gold folder recolor scope
 

@@ -68,6 +68,7 @@
         | 'components-transfer-tree'
         | 'graphics'
         | 'graphics-icons'
+        | 'graphics-row-icons'
         | 'graphics-spinners'
         | 'graphics-status-badges'
         | 'graphics-illustrations'
@@ -132,6 +133,7 @@
             label: 'Graphics',
             children: [
                 { id: 'graphics-icons', label: 'Icons' },
+                { id: 'graphics-row-icons', label: 'Row icons' },
                 { id: 'graphics-spinners', label: 'Spinners' },
                 { id: 'graphics-status-badges', label: 'Status badges' },
                 { id: 'graphics-illustrations', label: 'Illustrations' },

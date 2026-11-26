@@ -20,6 +20,15 @@
       "files": ["apps/desktop/src-tauri/src/menu/provider_logos/macdroid.svg"]
     },
     {
+      "name": "with icons",
+      "author": "Evergrow",
+      "license": "MIT",
+      "license_url": "https://github.com/withevergrow/withicons/blob/main/LICENSE",
+      "url": "https://github.com/withevergrow/withicons",
+      "changes": "The `withicons:monitor` icon's outline, redrawn as a Svelte component with its screen filled in `currentColor` at reduced opacity, and given an attribution comment.",
+      "files": ["apps/desktop/src/lib/ui/icons/MonitorFilledIcon.svelte"]
+    },
+    {
       "name": "selfh.st icons",
       "author": "selfh.st",
       "license": "CC-BY-4.0",

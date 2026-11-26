@@ -147,6 +147,8 @@ async fn a_pane_lists_a_servers_shares_as_folders() {
         })
     );
     assert_eq!(entries[1].share_meta, Some(ShareMeta { description: None }));
+    // A share draws as stacked folders, ❌ not the plain `dir` folder.
+    assert!(entries.iter().all(|entry| entry.icon_id == SHARE_ICON_ID));
     assert_eq!(shares.dials(), vec![("id-testnas".to_string(), Freshness::Cached)]);
 }
 
@@ -344,6 +346,7 @@ async fn metadata_never_dials() {
 
     assert!(hub.is_directory && server.is_directory && cached_share.is_directory);
     assert_eq!(server.name, "Testnas");
+    assert_eq!(cached_share.icon_id, SHARE_ICON_ID);
     assert_eq!(
         cached_share.share_meta,
         Some(ShareMeta {

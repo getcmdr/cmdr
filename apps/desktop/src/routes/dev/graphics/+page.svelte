@@ -1,6 +1,7 @@
 <script lang="ts">
     import CatalogPage from '../CatalogPage.svelte'
     import IconsSection from './sections/IconsSection.svelte'
+    import RowIconsSection from './sections/RowIconsSection.svelte'
     import SpinnersSection from './sections/SpinnersSection.svelte'
     import StatusBadgesSection from './sections/StatusBadgesSection.svelte'
     import IllustrationsSection from './sections/IllustrationsSection.svelte'
@@ -21,7 +22,7 @@
     const { targetAnchor = null, onSectionInView }: Props = $props()
 
     /** Ordered sub-ids matching the sidebar order. */
-    const SUB_IDS = ['icons', 'spinners', 'status-badges', 'illustrations', 'animations', 'drive-indexing'] as const
+    const SUB_IDS = ['icons', 'row-icons', 'spinners', 'status-badges', 'illustrations', 'animations', 'drive-indexing'] as const
 </script>
 
 <!-- Renders in dev, and ALSO in E2E builds (`__CMDR_E2E_BUILD__`, a Vite define true only
@@ -42,6 +43,7 @@
         {/snippet}
 
         <IconsSection />
+        <RowIconsSection />
         <SpinnersSection />
         <StatusBadgesSection />
         <IllustrationsSection />

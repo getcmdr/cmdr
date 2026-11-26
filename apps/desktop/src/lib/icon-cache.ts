@@ -14,6 +14,7 @@ import {
   type CustomFolderIconId,
 } from './tauri-commands'
 import { getAppLogger } from '#lib/logging/logger.js'
+import { stackedIconBase } from './stacked-icons'
 
 const log = getAppLogger('icon-cache')
 
@@ -277,7 +278,8 @@ function applyIconsToCache(icons: Record<string, string>, epoch: number): boolea
  * @param useAppIconsForDocuments - Whether to use app icons as fallback for documents
  */
 export async function prefetchIcons(iconIds: string[], useAppIconsForDocuments: boolean): Promise<void> {
-  const uncached = iconIds.filter((id) => !memoryCache.has(id))
+  // A stacked id is drawn from its base's pixels, so the base is what the OS gets asked for.
+  const uncached = iconIds.map((id) => stackedIconBase(id) ?? id).filter((id) => !memoryCache.has(id))
   if (uncached.length === 0) return
 
   // Cancel any pending retry: a new fetch supersedes it

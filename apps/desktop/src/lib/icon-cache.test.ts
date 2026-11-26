@@ -192,6 +192,31 @@ describe('evictPerPathIconsForDir', () => {
   })
 })
 
+describe('prefetchIcons: stacked ids', () => {
+  beforeEach(() => {
+    _resetIconCacheForTests()
+    localStorage.clear()
+    vi.mocked(getIcons).mockReset()
+  })
+
+  it('asks the OS for a share’s base folder icon, never for the share id itself', async () => {
+    vi.mocked(getIcons).mockResolvedValue({ data: { dir: 'dir-url' }, timedOut: false })
+
+    await prefetchIcons(['network:share', 'network:share'], false)
+
+    expect(getIcons).toHaveBeenCalledWith(['dir'], false)
+    expect(getCachedIcon('dir')).toBe('dir-url')
+  })
+
+  it('asks for nothing once the base folder icon is cached', async () => {
+    _applyIconsToCacheForTests({ dir: 'dir-url' })
+
+    await prefetchIcons(['network:share'], false)
+
+    expect(getIcons).not.toHaveBeenCalled()
+  })
+})
+
 describe('prefetchCustomFolderIcons', () => {
   beforeEach(() => {
     _resetIconCacheForTests()

@@ -18,6 +18,12 @@
       "version": "",
       "license": "CC-BY-4.0",
       "url": "https://github.com/selfhst/icons"
+    },
+    {
+      "name": "with icons",
+      "version": "",
+      "license": "MIT",
+      "url": "https://github.com/withevergrow/withicons"
     }
   ],
   "rust": [

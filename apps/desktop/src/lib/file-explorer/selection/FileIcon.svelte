@@ -8,6 +8,7 @@
         iconCacheVersion,
         isAccentTintedCustomFolder,
     } from '#lib/icon-cache.js'
+    import { stackedIconBase } from '#lib/stacked-icons.js'
     import { getIsCmdrGold } from '#lib/settings/reactive-settings.svelte.js'
     import { dependOn } from '#lib/utils/reactivity.js'
     import Icon from '#lib/ui/Icon.svelte'
@@ -42,6 +43,11 @@
     // Subscribe to cache version - this makes getIconUrl reactive
     const _cacheVersion = $derived($iconCacheVersion)
 
+    // A stacked id (a server's share) draws its base's OS icon twice, so everything below
+    // (cache lookup, gold tint, cold-cache fallback) works on the base id.
+    const stackedBase = $derived(stackedIconBase(file.iconId))
+    const baseIconId = $derived(stackedBase ?? file.iconId)
+
     // A folder the user assigned a Finder custom icon to still carries the generic
     // `dir` iconId (the backend defers that `getxattr` off the bulk-listing hot
     // path), so its icon lands in the cache keyed by PATH instead. Ask for it
@@ -51,7 +57,7 @@
     // their link-badged glyph.
     const customFolderIconUrl = $derived.by((): string | undefined => {
         dependOn(_cacheVersion) // Track cache version for reactivity
-        if (!file.isDirectory || file.isSymlink) return undefined
+        if (!file.isDirectory || file.isSymlink || stackedBase) return undefined
         return getCachedCustomFolderIcon(file.path)
     })
 
@@ -60,7 +66,7 @@
     // propagate through it and the generic icon would never swap in.
     const iconUrl = $derived.by((): string | undefined => {
         dependOn(_cacheVersion) // Track cache version for reactivity
-        return customFolderIconUrl ?? getCachedIcon(file.iconId)
+        return customFolderIconUrl ?? getCachedIcon(baseIconId)
     })
 
     // Which icon ids get the Cmdr-gold recolor filter. All are folders macOS
@@ -78,9 +84,9 @@
     // would destroy). Custom-icon folders are decided per folder below.
     const tintsStandardFolders = convention('standardFolderIcons') === 'accentTinted'
     const isFolderIcon = $derived(
-        file.iconId === 'dir' ||
-            file.iconId === 'symlink-dir' ||
-            (tintsStandardFolders && file.iconId.startsWith('special:')),
+        baseIconId === 'dir' ||
+            baseIconId === 'symlink-dir' ||
+            (tintsStandardFolders && baseIconId.startsWith('special:')),
     )
     // A custom-icon folder keeps the `dir` iconId, so `isFolderIcon` is true for it
     // too. Its icon gets the filter only when it's a macOS Customize Folder symbol or
@@ -102,7 +108,7 @@
     )
     const displayedIconUrl = $derived.by((): string | undefined => {
         dependOn(_cacheVersion) // Track cache version for reactivity
-        return goldFolderEmoji ? getCachedIcon(file.iconId) : iconUrl
+        return goldFolderEmoji ? getCachedIcon(baseIconId) : iconUrl
     })
 
     // Git portal icons resolve in the frontend via Lucide instead of going
@@ -140,6 +146,21 @@
         <span class="restic-icon">
             <Icon name="history" size={16} />
         </span>
+    {:else if stackedBase}
+        <!-- The base OS icon twice, shrunk, the back copy up and to the right: "folders".
+             Decorative like every row icon (the name says what it is). A cold cache draws the
+             bundled default the same way until the live icon lands. -->
+        {@const layerUrl =
+            displayedIconUrl ?? asset(isFolderIcon ? 'icons/default-folder.png' : 'icons/default-file.png')}
+        <img class="icon stacked-back" class:gold-folder={recolorToGold} src={layerUrl} alt="" width="16" height="16" />
+        <img
+            class="icon stacked-front"
+            class:gold-folder={recolorToGold}
+            src={layerUrl}
+            alt=""
+            width="16"
+            height="16"
+        />
     {:else if displayedIconUrl}
         <img class="icon" class:gold-folder={recolorToGold} src={displayedIconUrl} alt="" width="16" height="16" />
     {:else}
@@ -215,6 +236,33 @@
 
     .gold-folder {
         filter: grayscale(1) sepia(1) hue-rotate(3deg) saturate(2.5) brightness(0.95);
+    }
+
+    /* A stacked icon (a server's share): two copies at 80%, the back one in the top-right
+       corner, the front one in the bottom-left, so the back peeks out up and to the right.
+       Percentages, so it follows `--spacing-icon-size` and `--font-scale`. */
+    .stacked-back,
+    .stacked-front {
+        position: absolute;
+        width: 80%;
+        height: 80%;
+    }
+
+    /* The back copy a shade darker, so the two read as two folders, ❌ not one merged shape.
+       Under gold it keeps the gold filter, darkened the same. */
+    .stacked-back {
+        top: 0;
+        right: 0;
+        filter: brightness(0.8);
+    }
+
+    .stacked-back.gold-folder {
+        filter: grayscale(1) sepia(1) hue-rotate(3deg) saturate(2.5) brightness(0.76);
+    }
+
+    .stacked-front {
+        bottom: 0;
+        left: 0;
     }
 
     /* The emoji layer of a gold emoji folder, placed and sized like macOS draws it on the

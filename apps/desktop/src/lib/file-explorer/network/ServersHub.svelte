@@ -628,6 +628,7 @@
                 </div>
             {:else}
             {@const row = item.row}
+            {@const glyph = hubRowIcon(row)}
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
             <div
                 class="server-row"
@@ -648,7 +649,9 @@
                 onkeydown={() => {}}
             >
                 <span class="col-name" class:is-place={row.kind === 'place'}>
-                    <span class="row-icon"><Icon name={hubRowIcon(row)} size={16} aria-hidden="true" /></span>
+                    <span class="row-icon" class:is-machine={glyph === 'monitor-filled'}
+                        ><Icon name={glyph} size={16} aria-hidden="true" /></span
+                    >
                     <!-- The tooltip sits on the span that clips: an overflow check on the cell never fires. -->
                     <span class="name-text" use:tooltip={{ text: row.name + accountSuffix(row), overflowOnly: true }}
                         >{row.name}{#if row.account !== null}<span class="row-account">{accountSuffix(row)}</span
@@ -930,6 +933,11 @@
        its base size and pushed Type, Address, and Status right on every share row. */
     .col-name.is-place .row-icon {
         margin-left: var(--spacing-xl);
+    }
+
+    /* An SMB server's filled monitor, in the accent like macOS tints a server's icon. */
+    .row-icon.is-machine {
+        color: var(--color-server-icon);
     }
 
     /* The name and its account clip as one, with an ellipsis, short of the Type column. */

@@ -89,6 +89,15 @@ var nonTextScenarios = []nonTextScenario{
 		Gated:     []rowContrastTier{tierDefault, tierIncrease},
 		Threshold: 4.5,
 	},
+	// An SMB server row's filled monitor in the servers hub (`ServersHub.svelte`): the
+	// glyph's edge carries its shape, so it clears 3:1 on the pane under every accent. Rows
+	// sit on the pane's own surface; only the header row is `--color-bg-secondary`.
+	{
+		Selector: "servers hub SMB server glyph",
+		MarkVar:  "color-server-icon",
+		Surfaces: []string{"color-bg-primary"},
+		Gated:    []rowContrastTier{tierDefault, tierIncrease},
+	},
 	// The unfocused pane's band, at half the accent: faint on purpose.
 	{
 		Selector: "unfocused pane's tab accent band",

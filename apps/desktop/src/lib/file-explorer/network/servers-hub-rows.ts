@@ -486,10 +486,13 @@ export function isServerOfShareList(row: HubRow, path: string): boolean {
   return sameShareList(shareListPath(row.host ?? savedHostFor(row)), path)
 }
 
-/** A share is a folder under its server; a server is a machine, or a service on one. */
-export function hubRowIcon(row: HubRow): 'folder' | 'monitor' | 'server' {
+/**
+ * A share is a folder under its server; an SMB server is a machine (a monitor with a filled
+ * screen, as macOS draws one), any other server a service on one.
+ */
+export function hubRowIcon(row: HubRow): 'folder' | 'monitor-filled' | 'server' {
   if (row.kind === 'place') return 'folder'
-  return row.protocol === 'smb' ? 'monitor' : 'server'
+  return row.protocol === 'smb' ? 'monitor-filled' : 'server'
 }
 
 /** `Last used`, as the seconds-based `DateLabel` takes it, or `null` for never. */

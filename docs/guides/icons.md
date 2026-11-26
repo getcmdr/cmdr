@@ -100,6 +100,16 @@ The glyph inherits `currentColor`. To color an icon, set `color` on the wrapping
 A custom glyph Lucide doesn't ship (for example `eject`) lives as a small `.svelte` component in `lib/ui/icons/` (a bare
 `<svg {...rest}>`) and registers the same way, so it's interchangeable with Lucide glyphs at the call site.
 
+A custom glyph copied or adapted from another icon set (for example `monitor-filled`, from MIT-licensed
+`withicons:monitor`) names its source and license in its doc comment and gets a credit in
+`scripts/check/checks/third-party-vendored.json` in the same commit; `pnpm check third-party-notices` then regenerates
+`THIRD-PARTY-NOTICES.md` and the Acknowledgements list. Check the set's license first (icones.js.org shows it per
+collection).
+
+A row icon that isn't a glyph (the OS's own folder and file pictures in a file list) goes through `FileIcon.svelte` by
+`iconId`, not `Icon`: `apps/desktop/src-tauri/src/icons/CLAUDE.md`. The Debug "Graphics" catalog's **Row icons** section
+shows the composed ones (a share's stacked folder, the SMB server glyph).
+
 If Lucide lacks what you need and there's no custom glyph, install another Iconify set (for example
 `pnpm add -D @iconify-json/mdi`) and import it into the registry from `~icons/mdi/{icon-name}`. Prefer one set per
 context.

@@ -16,7 +16,7 @@ a base64 WebP data URL. By tier:
 | B | `special:{name}` | the finite special system folders | the folder's REAL path (8 MB thread) |
 | C | `path:{dir}` / `pkg:{dir}` | per-path icons (volumes, packages, custom-icon folders) | the real path (8 MB thread) |
 | C | `path:{file}` | Windows files with their own icon (`.exe`, `.lnk`, `.ico`, …) | the real file (8 MB thread) |
-| n/a | `git:{branch,tag,commit,fork}` | git-portal virtual entries | rendered by the FE via Lucide, never here |
+| n/a | `git:*`, `restic:snapshots`, `network:share` | virtual rows | drawn by the FE (`FileIcon.svelte`), never here |
 
 Full details: `DETAILS.md`.
 

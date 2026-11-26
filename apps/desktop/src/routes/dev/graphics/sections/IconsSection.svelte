@@ -60,7 +60,9 @@
         mail: 'The email row of the onboarding open-beta checklist.',
         menu: "The main-menu button off macOS: GNOME's main menu, and the stand-in for a menu bar the user hid.",
         'messages-square': 'Opens the Ask Cmdr sessions panel (past chats) from the rail header.',
-        monitor: 'System theme-mode toggle option, and the host marker in the network browser.',
+        monitor: 'System theme-mode toggle option.',
+        'monitor-filled':
+            'Row icon for an SMB server in the servers hub, in the accent color (`--color-server-icon`): a monitor with a filled screen, like macOS draws one.',
         moon: 'Dark theme-mode toggle option.',
         'more-horizontal': 'Row actions menu trigger in the search and selection results.',
         paperclip: 'The "ask about selection" attach button in the Ask Cmdr composer, and its drag-to-attach drop hint.',

@@ -67,6 +67,12 @@ server the user saved, then the hosts mDNS is seeing that they didn't, folded in
 with an "Add server…" pseudo-row at the bottom (keyboard navigable, "+" icon, italic), firing `onConnectToServer`.
 Keyboard nav via `handleNavigationShortcut` (`../navigation/keyboard-shortcuts`); Left/Right jump to first/last.
 
+Row icons come from `servers-hub-rows.ts::hubRowIcon`: an SMB server is `monitor-filled` (a monitor with a filled
+screen, the way macOS draws one) in `--color-server-icon` (the accent, darkened in light mode to clear 3:1; gated by
+`scripts/check-a11y-contrast`), any other server the Lucide `server`, a share a `folder`. All decorative: the name
+beside them says what the row is. On a server's share list, each share draws as the platform folder stacked
+(`../selection/DETAILS.md`, the `FileIcon.svelte` section).
+
 ❗ **The hub lists nothing until its first read of the saved list answers** (`servers-hub-list.svelte.ts`). Which
 servers are saved decides where every row goes, so listing the discovered hosts first would put them all in the nearby
 group, open it, and leave the cursor on a row that then moves. A read that breaks counts as answered, with none saved.

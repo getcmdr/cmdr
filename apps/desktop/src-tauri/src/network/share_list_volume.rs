@@ -210,10 +210,16 @@ impl SmbServerVolume {
     }
 }
 
+/// The icon id a share's row carries. The frontend draws it as the platform's own
+/// folder icon twice, stacked (`stacked-icons.ts::stackedIconBase`), so it reads as
+/// "shares" on every OS and never needs an OS fetch of its own.
+pub(crate) const SHARE_ICON_ID: &str = "network:share";
+
 /// A share's folder row on its server's share list at `share_list` (either spelling,
 /// with or without the scheme root's trailing `/`): `smb://<key>/<share>`.
 fn share_entry(share_list: &str, share: &cmdr_smb::ShareInfo) -> FileEntry {
     FileEntry {
+        icon_id: SHARE_ICON_ID.to_string(),
         share_meta: Some(ShareMeta {
             description: share.comment.clone().filter(|comment| !comment.trim().is_empty()),
         }),

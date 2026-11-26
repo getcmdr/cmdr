@@ -7,7 +7,14 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { buildHubRows, isNearbyOnly, isServerOfShareList, openMoveFor, savedSmbHostIds } from './servers-hub-rows'
+import {
+  buildHubRows,
+  hubRowIcon,
+  isNearbyOnly,
+  isServerOfShareList,
+  openMoveFor,
+  savedSmbHostIds,
+} from './servers-hub-rows'
 import type { SavedServer } from '#lib/tauri-commands/index.js'
 import type { NetworkHost, VolumeInfo } from '../types'
 import type { SignedInAs } from './signed-in-as'
@@ -166,6 +173,17 @@ describe('buildHubRows: what appears', () => {
       volumes: [],
     })
     expect(rows).toHaveLength(2)
+  })
+})
+
+describe('hubRowIcon', () => {
+  it('draws an SMB server as a filled monitor and any other server as a server', () => {
+    const rows = buildHubRows({
+      saved: [sftpServer()],
+      hosts: [host({ id: 'h9', name: 'Someone else' })],
+      volumes: [],
+    })
+    expect(rows.map(hubRowIcon)).toEqual(['server', 'monitor-filled'])
   })
 })
 
