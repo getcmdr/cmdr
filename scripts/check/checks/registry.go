@@ -2061,7 +2061,10 @@ var AllChecks = []CheckDefinition{
 			// `TestVendoredCreditsCoverOnlyFilesTheNoticesCheckFingerprints` fails on a
 			// credited file outside these globs.
 			runnerDataInputs("third-party-vendored.json"),
-			[]string{"apps/desktop/src-tauri/src/menu/provider_logos/**"},
+			[]string{
+				"apps/desktop/src-tauri/src/menu/provider_logos/**",
+				"apps/desktop/src/lib/ui/icons/MonitorFilledIcon.svelte",
+			},
 		),
 		Run: RunThirdPartyNotices,
 	},

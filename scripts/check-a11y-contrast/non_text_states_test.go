@@ -26,7 +26,23 @@ func nonTextFixture(fieldBorder string) *VarTable {
 	vt.Dark["color-text-primary"] = "#e8e8e8"
 	vt.Light["color-accent-selection"] = "#b08505"
 	vt.Dark["color-accent-selection"] = "#836403"
+	vt.Light["color-server-icon"] = "var(--color-accent-pop)"
+	vt.Dark["color-server-icon"] = "var(--color-accent)"
 	return vt
+}
+
+// TestAnalyzeNonTextStatesFlagsARawAccentServerGlyphInLightMode: raw gold is
+// under 3:1 on white, which is why light mode draws the servers hub's SMB
+// glyph in `--color-accent-pop`.
+func TestAnalyzeNonTextStatesFlagsARawAccentServerGlyphInLightMode(t *testing.T) {
+	vt := nonTextFixture("#858585")
+	vt.Light["color-server-icon"] = "var(--color-accent)"
+	for _, f := range failingNonText(gatedNonText(vt)) {
+		if f.Mode == ModeLight && f.Selector == "servers hub SMB server glyph on color-bg-primary" {
+			return
+		}
+	}
+	t.Error("a raw-accent server glyph passed the 3:1 gate on a white pane")
 }
 
 // TestTextSelectionFillHexMatchesTheAppsValues pins the Go mirror to what
