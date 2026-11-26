@@ -21,7 +21,8 @@ import {
   setupSmb,
   teardownSmb,
   guestMountPoint,
-  mountGuestShareByIp,
+  guestServerIp,
+  unmountGuestShareFrom,
   requireGuestMount,
   requireGuestSuite,
   SMB_E2E_SUITE_DIR,
@@ -575,37 +576,47 @@ describeSmb('SMB share browsing', () => {
     await expectAndDismissToast(tauriPage, 'took you to', { timeout: waitBudget(10000) })
   })
 
-  test('`..` out of a share mounted by an IP nothing knows opens that server’s share list on the share', async ({
+  test('a server added by IP: `..` goes up to its share list on the share, and again to its row', async ({
     tauriPage,
   }) => {
-    // QA 2026-11-26: a share macOS mounted by a Tailscale IP went up to "Path not found: smb://<ip>/", since no
-    // discovered or saved host goes by that IP. The share list resolves the server off the mount itself.
+    // QA 2026-11-26: a NAS reached by a Tailscale IP went up from a share to "Path not found: smb://<ip>/". The
+    // mounted-only kind (macOS mounted it, Cmdr saved nothing) is pinned in Rust
+    // (`every_kind_of_server_dot_dot_leads_to_is_one_its_share_list_resolves`): GVFS mounts Cmdr didn't make aren't
+    // volumes here. This is the kind a person adds.
     await ensureAppReady(tauriPage)
     await mcpCall('set_setting', { id: 'behavior.shareParentRowHintSeen', value: true })
-    const byIp = mountGuestShareByIp()
-    test.skip(byIp === null, 'needs a Linux GVFS mount by the guest server’s IP')
-    if (byIp === null) return
+    const address = guestServerIp()
+    test.skip(address === null, 'needs the guest server’s IP (Linux Docker)')
+    if (address === null) return
+    const name = 'SMB Test by IP'
+    const added = await tauriPage.evaluate<{ host: { id: string } }>(
+      `window.__TAURI_INTERNALS__.invoke('connect_to_server', ${JSON.stringify({
+        address: `smb://${address}`,
+        name,
+        username: null,
+        checkReachability: true,
+      })})`,
+    )
     try {
-      // The share is a volume of its own once the mount table shows it, which is what puts `..` out of it.
-      await expect
-        .poll(async () => (await mcpReadResource('cmdr://state')).includes(`mountPath: "${byIp.mountPoint}"`), {
-          timeout: waitBudget(30000),
-        })
-        .toBeTruthy()
-      await mcpNavToPath('left', byIp.mountPoint)
+      await mcpSelectVolume('left', 'Servers')
+      await expect.poll(async () => hostExistsInPane(name), { timeout: waitBudget(15000) }).toBeTruthy()
+      await openHost('left', name, SMB_GUEST_SHARE)
+      expect((await paneRows('left')).path).toBe(`smb://${address}`)
+      await mcpCall('move_cursor', { pane: 'left', filename: SMB_GUEST_SHARE })
+      await mcpCall('open_under_cursor', {})
       await expect
         .poll(
           async () => {
             const pane = await paneRows('left')
-            return pane.volumeId !== 'network' && pane.volumeId !== 'root' && pane.rows[0] === '..'
+            return pane.volumeId !== 'network' && pane.rows[0] === '..'
           },
           { timeout: waitBudget(30000) },
         )
         .toBeTruthy()
 
+      // Up out of the share: its server's share list, the cursor on the share.
       await mcpCall('move_cursor', { pane: 'left', index: 0 })
       await mcpCall('open_under_cursor', {})
-
       await expect
         .poll(
           async () => {
@@ -617,15 +628,22 @@ describeSmb('SMB share browsing', () => {
           { timeout: waitBudget(30000) },
         )
         .toBe(SMB_GUEST_SHARE)
-      expect((await paneRows('left')).path).toBe(`smb://${byIp.address}`)
+      expect((await paneRows('left')).path).toBe(`smb://${address}`)
 
-      // And up once more, to the Servers list.
+      // Up out of the share list: the Servers list, the cursor on the server.
       await mcpCall('move_cursor', { pane: 'left', index: 0 })
       await mcpCall('open_under_cursor', {})
-      await expect.poll(async () => (await paneRows('left')).path, { timeout: waitBudget(15000) }).toBe('smb://')
+      await expect
+        .poll(async () => (await hubRowUnderCursor('left'))?.startsWith(`${name}  protocol=smb`), {
+          timeout: waitBudget(15000),
+        })
+        .toBeTruthy()
     } finally {
       await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
-      byIp.unmount()
+      unmountGuestShareFrom(address)
+      await tauriPage.evaluate(
+        `window.__TAURI_INTERNALS__.invoke('forget_server', { id: ${JSON.stringify(added.host.id)} })`,
+      )
     }
   })
 
