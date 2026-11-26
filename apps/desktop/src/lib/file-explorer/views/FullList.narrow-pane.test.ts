@@ -112,7 +112,7 @@ describe('FullList in a narrow pane', () => {
       props: { listWords: { extHeader: 'Description', extIsProse: true, rowsHaveNoDates: true } },
     })
     expect(list.rowNames()).toEqual(['media'])
-    expect(list.target.querySelector('.col-ext')?.textContent?.trim()).toBe(description)
+    expect(list.target.querySelector('.col-ext')?.textContent.trim()).toBe(description)
     expect(list.target.querySelectorAll('.col-date').length).toBe(0)
     expect(list.target.querySelector('.header-date')).toBeNull()
     expect(headerSortLabels(list.target)).toEqual(['Name', 'Description', 'Size'])
