@@ -6,7 +6,7 @@
  */
 
 import { isShareListLocation, sameShareList, shareListHostKey, shareListPath } from '#lib/servers/share-list-path.js'
-import { getNetworkHosts, setListedAccount } from './network-store.svelte'
+import { fetchShares, getNetworkHosts, setListedAccount } from './network-store.svelte'
 import type { ShareListAccount } from '#lib/ipc/bindings.js'
 import type { ShareListServer } from './share-list-sign-in'
 import type { NetworkHost } from '../types'
@@ -44,6 +44,17 @@ export function shareListHostAt(volumeId: string, path: string): NetworkHost | n
 export function noteShareListAccount(path: string, account: ShareListAccount): void {
   const host = shareListHost(path)
   if (host) setListedAccount(host.id, account)
+}
+
+/**
+ * A share list landed at `path`: the hub's record of that server's shares (its row's share
+ * count, a saved server's share rows) reads the share cache the listing just filled, the
+ * way an earlier visit to the hub left it. ❗ A cache read, ❌ never a second sign-in: the
+ * backend answers from the cache the pane's listing primed, by the same host id.
+ */
+export function noteShareListListed(path: string): void {
+  const host = shareListHost(path)
+  if (host) void fetchShares(host).catch(() => {})
 }
 
 /** The discovery state's host whose share-list path is `path`, the same key the path was written from. */

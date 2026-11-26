@@ -103,16 +103,23 @@ export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
       return
     }
 
-    const entry = sourceFocused ? sourcePaneRef.getCursorEntry() : null
-
-    // A server's share list: the same list, mounting the share under the cursor.
+    // A server's share list: the same list, mounting the share under the cursor. The row is
+    // RE-READ (`refreshCursorEntry`): the displayed copy runs a debounce behind a cursor move,
+    // so a move then a copy at once would name `..` and mount nothing.
     if (sourceKind === 'share-list') {
       const host = shareListHostAt(sourceVolumeId, sourcePath)
-      const share = entry && entry.name !== '..' ? entry.name : undefined
-      if (host) openShareList(target, host, share)
-      else mirrorLocalStateToPane(target, sourceVolumeId, sourcePath)
+      if (!host) {
+        mirrorLocalStateToPane(target, sourceVolumeId, sourcePath)
+        return
+      }
+      const read = sourceFocused ? sourcePaneRef.refreshCursorEntry() : Promise.resolve(null)
+      void read.then((entry) => {
+        openShareList(target, host, entry && entry.name !== '..' ? entry.name : undefined)
+      })
       return
     }
+
+    const entry = sourceFocused ? sourcePaneRef.getCursorEntry() : null
 
     // Normal listing on the source: cursor-on-folder refines the path.
     const destPath = entry && entry.isDirectory && entry.name !== '..' ? entry.path : sourcePath

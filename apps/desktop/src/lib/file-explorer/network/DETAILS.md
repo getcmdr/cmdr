@@ -349,8 +349,11 @@ FIRST. Forget saved password shows unconditionally, in every door: a delete rais
 `not_found` words "there was none". A door that isn't on the share list opens it once an action listed (the hub row: as
 activating it; the palette from a hub row: `openSmbHandOffInFocusedPane`); a door on the share list re-lists it.
 
-**Who it signed in as**: a share list's `listing-complete` carries `shareListAccount`, noted into the store by
-`share-list-label.ts::noteShareListAccount`, so the path bar's account and the hub's row say the same thing.
+**Who it signed in as, and what it holds**: a share list's `listing-complete` carries `shareListAccount`, noted into the
+store by `share-list-label.ts::noteShareListAccount`, so the path bar's account and the hub's row say the same thing. A
+landed share list also refreshes the hub's record of the server's shares (`noteShareListListed`: `fetchShares`, which
+the backend answers from the share cache the pane's listing just filled, by the same host id), so the hub row's
+`shares=` count and a saved server's share rows follow a visit the way they did when the hub listed it itself.
 
 The error state's sentence, and the servers list's tooltip for the same failure (`host-status.ts`), come from
 `share-list-error-messages.ts`: one `errors.shareList.*` key per `ShareListError` type, naming the host. ❌ Never

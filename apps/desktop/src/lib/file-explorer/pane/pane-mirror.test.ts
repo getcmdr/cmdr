@@ -19,6 +19,7 @@ const testnas: NetworkHost = {
 function makePaneRef(overrides: Record<string, unknown> = {}) {
   return {
     getCursorEntry: vi.fn(() => null),
+    refreshCursorEntry: vi.fn(() => Promise.resolve(null)),
     getNetworkCursorEntry: vi.fn(() => null),
     openShareList: vi.fn(),
     ...overrides,
@@ -170,10 +171,14 @@ describe('createPaneMirror', () => {
     })
   })
 
-  it('opens the same share list from a share list, mounting the share under the cursor once it lands', () => {
+  it('opens the same share list from a share list, mounting the share under the cursor once it lands', async () => {
     net.hosts = [testnas]
+    // The displayed copy still names `..` a debounce behind the move; the fresh read names the share.
     const left = makePaneRef({
-      getCursorEntry: vi.fn(() => ({ isDirectory: true, name: 'public', path: 'smb://testnas/public' }) as never),
+      getCursorEntry: vi.fn(() => ({ isDirectory: true, name: '..', path: 'smb://' }) as never),
+      refreshCursorEntry: vi.fn(() =>
+        Promise.resolve({ isDirectory: true, name: 'public', path: 'smb://testnas/public' } as never),
+      ),
     })
     const right = makePaneRef()
     const { mirror, navigate } = setup({
@@ -186,14 +191,16 @@ describe('createPaneMirror', () => {
     mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
 
     // ❌ Never the share's `smb://` path: a share is mounted, not navigated to.
-    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: 'public' })
+    await vi.waitFor(() => {
+      expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: 'public' })
+    })
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('opens the share list alone with the cursor on `..`', () => {
+  it('opens the share list alone with the cursor on `..`', async () => {
     net.hosts = [testnas]
     const left = makePaneRef({
-      getCursorEntry: vi.fn(() => ({ isDirectory: true, name: '..', path: 'smb://' }) as never),
+      refreshCursorEntry: vi.fn(() => Promise.resolve({ isDirectory: true, name: '..', path: 'smb://' } as never)),
     })
     const right = makePaneRef()
     const { mirror } = setup({
@@ -205,6 +212,8 @@ describe('createPaneMirror', () => {
 
     mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
 
-    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: undefined })
+    await vi.waitFor(() => {
+      expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: undefined })
+    })
   })
 })

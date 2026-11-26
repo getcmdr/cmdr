@@ -23,7 +23,7 @@ import { untrack } from 'svelte'
 import { addToast } from '#lib/ui/toast/index.js'
 import { tString } from '#lib/intl/messages.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
-import { shareListServerLabel, shareListServerOf } from '../network/share-list-label'
+import { noteShareListListed, shareListServerLabel, shareListServerOf } from '../network/share-list-label'
 import { askToSignInToList } from '../network/share-list-sign-in'
 import { showShareParentHintOnce } from '../network/share-parent-hint'
 import { createShareMount, type ShareMount } from './share-mount.svelte'
@@ -120,7 +120,7 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
 
   async function askOnce(path: string, refusal: NonNullable<FriendlyError['shareListRefusal']>): Promise<void> {
     const outcome = await askToSignInToList(path, refusal)
-    if (deps.getCurrentPath() !== path) return
+    if (!sameShareList(deps.getCurrentPath(), path)) return
     // ❗ Cancelling goes back to Servers: this sheet opened because the LIST needs a sign-in,
     // so "not now" means the person has no business here.
     if (outcome?.kind === 'cancelled') deps.leave()
@@ -146,7 +146,7 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
       log.warn('Finding {share} in the share list did not go through: {error}', { share: shareName, error })
       return null
     })
-    if (deps.getCurrentPath() !== path) return
+    if (!sameShareList(deps.getCurrentPath(), path)) return
     if (arrival.land) {
       // `..` is row 0, so a share's row is one below its index in the listing.
       if (row) deps.moveCursorTo(row.index + 1)
@@ -190,7 +190,9 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
       queueShareListArrival(pane, { ...keep, path, asked: false })
     },
     landed: (path) => {
-      if (isShareListLocation(deps.getVolumeId(), path) && !deps.getListingFailed()) void arrive(path)
+      if (!isShareListLocation(deps.getVolumeId(), path) || deps.getListingFailed()) return
+      noteShareListListed(path)
+      void arrive(path)
     },
   }
 }

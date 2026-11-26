@@ -2106,9 +2106,11 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   the pane's ARRIVAL first (`share-list-arrival.svelte.ts`: a share to mount, the share `..` came out of), kept per pane
   because a pinned tab opens the list in a new pane component, spent once the list lands, and dropped the moment the
   pane is anywhere but where it was queued from or for (cmdr-reports#7). ❌ No door threads a host or a share through
-  the navigation. The hub commits through the switch arm (`onVolumeChange`, `exact`), so the initial-path effect asks
-  the NEW path's kind (`path-sync.ts`: the hub syncs, a share list loads), and a switch off a share list to the hub ends
-  its listing (`leaveListing`).
+  the navigation. A landing is matched by `sameShareList`, ❌ never byte-for-byte: Rust spells the root `smb://<key>/`.
+  The mirror (`pane-mirror.ts`) RE-READS the source's cursor row before naming the share: the displayed copy runs a
+  debounce behind a move. The hub commits through the switch arm (`onVolumeChange`, `exact`), so the initial-path effect
+  asks the NEW path's kind (`path-sync.ts`: the hub syncs, a share list loads), and a switch off a share list to the hub
+  ends its listing (`leaveListing`).
 - **Enter mounts** (`share-list-pane.svelte.ts::openShare`, ahead of `entry-activation.ts` in `handleNavigate` and the
   tool open): the share-mount controller, with no credential of the frontend's own (the backend signs in with the
   server's session credential). Its states render through the ONE `RemoteConnectView`, in FRONT of the error and list

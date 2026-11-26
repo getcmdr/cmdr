@@ -10,6 +10,7 @@ import type { FileEntry, FriendlyError, NetworkHost } from '../types'
 
 const h = vi.hoisted(() => ({
   mountNetworkShare: vi.fn(),
+  fetchShares: vi.fn(() => Promise.resolve()),
   findFileIndex: vi.fn(),
   getFileAt: vi.fn(),
   askToSignInToList: vi.fn(),
@@ -28,7 +29,11 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   saveSmbCredentials: vi.fn(() => Promise.resolve()),
   setSmbAccountPreference: vi.fn(() => Promise.resolve(true)),
 }))
-vi.mock('../network/network-store.svelte', () => ({ getNetworkHosts: () => h.hosts, setListedAccount: vi.fn() }))
+vi.mock('../network/network-store.svelte', () => ({
+  getNetworkHosts: () => h.hosts,
+  setListedAccount: vi.fn(),
+  fetchShares: h.fetchShares,
+}))
 vi.mock('../network/share-list-sign-in', () => ({ askToSignInToList: h.askToSignInToList }))
 vi.mock('../network/share-parent-hint', () => ({ showShareParentHintOnce: h.showShareParentHintOnce }))
 vi.mock('#lib/ui/toast/index.js', () => ({ addToast: h.addToast }))
@@ -162,6 +167,23 @@ describe('a door’s arrival', () => {
     pane.landed('smb://testnas')
     await Promise.resolve()
     expect(h.mountNetworkShare).toHaveBeenCalledOnce()
+  })
+
+  it('mounts it when the listing lands under Rust’s spelling of the same share list (a trailing `/`)', async () => {
+    // Regression anchor: the landed path was compared byte-for-byte with the pane's, so
+    // "Copy path between panes" spent the queued share and mounted nothing.
+    const { pane } = create()
+    queueShareListArrival('left', { path: 'smb://testnas', origin: '/Users/test_user_1', mount: 'public' })
+    pane.landed('smb://testnas/')
+    await vi.waitFor(() => {
+      expect(h.mountNetworkShare).toHaveBeenCalledOnce()
+    })
+  })
+
+  it('refreshes the hub’s record of the server’s shares from the cache the listing filled', () => {
+    const { pane } = create()
+    pane.landed('smb://testnas')
+    expect(h.fetchShares).toHaveBeenCalledWith(testnas)
   })
 
   it('says the share wasn’t found on a list that lacks it, and mounts nothing', async () => {
