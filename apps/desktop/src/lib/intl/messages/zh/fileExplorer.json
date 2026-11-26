@@ -503,6 +503,18 @@
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "4411547"
   },
+  "fileExplorer.network.browser.removeMountedHostConfirm": "{platform, select, windows {{hostName} 还有一些已连接的共享，所以 Cmdr 会马上再次列出它。要断开这些共享的连接并忘记 {hostName} 吗？} other {{hostName} 还有一些已装载的共享，所以 Cmdr 会马上再次列出它。要卸载这些共享并忘记 {hostName} 吗？}}",
+  "@fileExplorer.network.browser.removeMountedHostConfirm": {
+    "sourceHash": "18d3f8c"
+  },
+  "fileExplorer.network.browser.disconnectAndForgetButton": "{platform, select, windows {断开连接并忘记} other {卸载并忘记}}",
+  "@fileExplorer.network.browser.disconnectAndForgetButton": {
+    "sourceHash": "8e17a3c"
+  },
+  "fileExplorer.network.browser.hostStillMounted": "{platform, select, windows {{hostName} 还有一些已连接的共享，所以 Cmdr 保留了它。请关掉正在使用这些共享的东西，然后再试一次。} other {{hostName} 还有一些已装载的共享，所以 Cmdr 保留了它。请关掉正在使用这些共享的东西，然后再试一次。}}",
+  "@fileExplorer.network.browser.hostStillMounted": {
+    "sourceHash": "cffde55"
+  },
   "fileExplorer.network.forgotPassword": "已清除 {hostName} 保存的密码",
   "@fileExplorer.network.forgotPassword": {
     "sourceHash": "6b53741"

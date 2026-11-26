@@ -506,6 +506,18 @@
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "4411547"
   },
+  "fileExplorer.network.browser.removeMountedHostConfirm": "{platform, select, windows {Einige Freigaben von {hostName} sind noch verbunden, daher würde Cmdr den Server sofort wieder in die Liste aufnehmen. Verbindung zu den Freigaben trennen und {hostName} vergessen?} other {Einige Freigaben von {hostName} sind noch eingebunden, daher würde Cmdr den Server sofort wieder in die Liste aufnehmen. Freigaben aushängen und {hostName} vergessen?}}",
+  "@fileExplorer.network.browser.removeMountedHostConfirm": {
+    "sourceHash": "18d3f8c"
+  },
+  "fileExplorer.network.browser.disconnectAndForgetButton": "{platform, select, windows {Trennen und vergessen} other {Aushängen und vergessen}}",
+  "@fileExplorer.network.browser.disconnectAndForgetButton": {
+    "sourceHash": "8e17a3c"
+  },
+  "fileExplorer.network.browser.hostStillMounted": "{platform, select, windows {Einige Freigaben von {hostName} sind noch verbunden, daher hat Cmdr den Server behalten. Schließe, was darauf zugreift, und versuche es erneut.} other {Einige Freigaben von {hostName} sind noch eingebunden, daher hat Cmdr den Server behalten. Schließe, was darauf zugreift, und versuche es erneut.}}",
+  "@fileExplorer.network.browser.hostStillMounted": {
+    "sourceHash": "cffde55"
+  },
   "fileExplorer.network.forgotPassword": "Gespeichertes Passwort für {hostName} vergessen",
   "@fileExplorer.network.forgotPassword": {
     "sourceHash": "6b53741"

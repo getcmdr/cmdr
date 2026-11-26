@@ -506,6 +506,18 @@
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "4411547"
   },
+  "fileExplorer.network.browser.removeMountedHostConfirm": "{platform, select, windows {Certains partages de {hostName} sont encore connectés, donc Cmdr remettrait aussitôt ce serveur dans la liste. Déconnecter ces partages et oublier {hostName} ?} other {Certains partages de {hostName} sont encore montés, donc Cmdr remettrait aussitôt ce serveur dans la liste. Démonter ces partages et oublier {hostName} ?}}",
+  "@fileExplorer.network.browser.removeMountedHostConfirm": {
+    "sourceHash": "18d3f8c"
+  },
+  "fileExplorer.network.browser.disconnectAndForgetButton": "{platform, select, windows {Déconnecter et oublier} other {Démonter et oublier}}",
+  "@fileExplorer.network.browser.disconnectAndForgetButton": {
+    "sourceHash": "8e17a3c"
+  },
+  "fileExplorer.network.browser.hostStillMounted": "{platform, select, windows {Certains partages de {hostName} sont encore connectés, donc Cmdr a gardé ce serveur. Fermez ce qui les utilise, puis réessayez.} other {Certains partages de {hostName} sont encore montés, donc Cmdr a gardé ce serveur. Fermez ce qui les utilise, puis réessayez.}}",
+  "@fileExplorer.network.browser.hostStillMounted": {
+    "sourceHash": "cffde55"
+  },
   "fileExplorer.network.forgotPassword": "Mot de passe enregistré oublié pour {hostName}",
   "@fileExplorer.network.forgotPassword": {
     "sourceHash": "6b53741"

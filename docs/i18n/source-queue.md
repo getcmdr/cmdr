@@ -258,6 +258,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `commands.shareMountBack.label`: "step back from opening a share" doesn't say back to where; the note says Backspace
   returns to the share list. Suggest "Cancel opening a share, or go back to its list". (all; fr says
   `revenir à la liste`)
+- The `list` concept also matches the VERB ("Cmdr would list it again", `removeMountedHostConfirm`), but only hu, nl,
+  vi, and zh rulings carry a verb form; cs, de, fr, ru, sv, and uk had to reword to "put back in the list". Add verb
+  forms or a verb-sense split. (cs, de, fr, ru, sv, uk)
 
 ## Process feedback
 
@@ -489,3 +492,5 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
 - Again 13 `sync-locale-keys.ts <tag>` runs before `i18n:apply` would take the batch's new keys, and the `for` loop and
   `W=…` variable were refused. Also, `check-locale hu` failed on a `decisions.md` budget the batch never touched (a docs
   commit's citation repoint overran it by 3 bytes); trimmed one phrase. No script written. (all, share-list batch)
+- Three per-OS keys into 13 locales took 13 Write calls for `values.json` and 13 chained `i18n:apply` calls (the
+  multi-locale `check-locale` worked in one call). No script written. (all, mounted-host forget batch)

@@ -505,6 +505,18 @@
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "4411547"
   },
+  "fileExplorer.network.browser.removeMountedHostConfirm": "{platform, select, windows {Деякі спільні папки сервера «{hostName}» досі підʼєднані, тож Cmdr одразу знову додав би цей сервер до списку. Відʼєднати їх і забути сервер «{hostName}»?} other {Деякі спільні папки сервера «{hostName}» досі змонтовані, тож Cmdr одразу знову додав би цей сервер до списку. Відмонтувати їх і забути сервер «{hostName}»?}}",
+  "@fileExplorer.network.browser.removeMountedHostConfirm": {
+    "sourceHash": "18d3f8c"
+  },
+  "fileExplorer.network.browser.disconnectAndForgetButton": "{platform, select, windows {Відʼєднати й забути} other {Відмонтувати й забути}}",
+  "@fileExplorer.network.browser.disconnectAndForgetButton": {
+    "sourceHash": "8e17a3c"
+  },
+  "fileExplorer.network.browser.hostStillMounted": "{platform, select, windows {Деякі спільні папки сервера «{hostName}» досі підʼєднані, тож Cmdr залишив цей сервер. Закрийте те, що їх використовує, а тоді спробуйте ще раз.} other {Деякі спільні папки сервера «{hostName}» досі змонтовані, тож Cmdr залишив цей сервер. Закрийте те, що їх використовує, а тоді спробуйте ще раз.}}",
+  "@fileExplorer.network.browser.hostStillMounted": {
+    "sourceHash": "cffde55"
+  },
   "fileExplorer.network.forgotPassword": "Збережений пароль для сервера «{hostName}» забуто",
   "@fileExplorer.network.forgotPassword": {
     "sourceHash": "6b53741"

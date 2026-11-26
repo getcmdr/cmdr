@@ -506,6 +506,18 @@
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "4411547"
   },
+  "fileExplorer.network.browser.removeMountedHostConfirm": "{platform, select, windows {Några delade mappar på {hostName} är fortfarande anslutna, så Cmdr skulle lista servern igen direkt. Koppla från dem och glöm {hostName}?} other {Några delade mappar på {hostName} är fortfarande monterade, så Cmdr skulle lista servern igen direkt. Avmontera dem och glöm {hostName}?}}",
+  "@fileExplorer.network.browser.removeMountedHostConfirm": {
+    "sourceHash": "18d3f8c"
+  },
+  "fileExplorer.network.browser.disconnectAndForgetButton": "{platform, select, windows {Koppla från och glöm} other {Avmontera och glöm}}",
+  "@fileExplorer.network.browser.disconnectAndForgetButton": {
+    "sourceHash": "8e17a3c"
+  },
+  "fileExplorer.network.browser.hostStillMounted": "{platform, select, windows {Några delade mappar på {hostName} är fortfarande anslutna, så Cmdr behöll servern. Stäng det som använder dem och försök sedan igen.} other {Några delade mappar på {hostName} är fortfarande monterade, så Cmdr behöll servern. Stäng det som använder dem och försök sedan igen.}}",
+  "@fileExplorer.network.browser.hostStillMounted": {
+    "sourceHash": "cffde55"
+  },
   "fileExplorer.network.forgotPassword": "Glömde det sparade lösenordet för {hostName}",
   "@fileExplorer.network.forgotPassword": {
     "sourceHash": "6b53741"
