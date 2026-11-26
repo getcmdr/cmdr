@@ -299,6 +299,12 @@ export const commands = {
          */
         resticMeta: ResticSnapshotMeta | null
         /**
+         *  What a share row on a server's share list (`smb://<server>`) says about its
+         *  share: the server's description of it, shown as the server set it. `None` on
+         *  every other entry.
+         */
+        shareMeta: ShareMeta | null
+        /**
          *  `true` for a file whose bytes sit in a cold storage class and can't be
          *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
          *  Archive, from the listing's `StorageClass`. The pane shows it as
@@ -469,6 +475,12 @@ export const commands = {
          *  only; the frontend words them. `None` on every other entry.
          */
         resticMeta: ResticSnapshotMeta | null
+        /**
+         *  What a share row on a server's share list (`smb://<server>`) says about its
+         *  share: the server's description of it, shown as the server set it. `None` on
+         *  every other entry.
+         */
+        shareMeta: ShareMeta | null
         /**
          *  `true` for a file whose bytes sit in a cold storage class and can't be
          *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
@@ -11275,6 +11287,12 @@ export type FileEntry = {
    */
   resticMeta: ResticSnapshotMeta | null
   /**
+   *  What a share row on a server's share list (`smb://<server>`) says about its
+   *  share: the server's description of it, shown as the server set it. `None` on
+   *  every other entry.
+   */
+  shareMeta: ShareMeta | null
+  /**
    *  `true` for a file whose bytes sit in a cold storage class and can't be
    *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
    *  Archive, from the listing's `StorageClass`. The pane shows it as
@@ -21883,6 +21901,15 @@ export type ShareListResult = {
   authMode: AuthMode
   // True when this answer came from the in-memory cache rather than the wire.
   fromCache: boolean
+}
+
+// The facts a server publishes about one of its shares, for the share's row.
+export type ShareMeta = {
+  /**
+   *  The server's own description of the share (SMB's share comment), or `None`
+   *  when it set none.
+   */
+  description: string | null
 }
 
 // Where `..` in a share's top folder leads, and the share's own switch.

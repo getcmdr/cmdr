@@ -112,13 +112,40 @@ pub async fn list_shares_on_host(
     cache_ttl_ms: Option<u64>,
     app_handle: tauri::AppHandle,
 ) -> Result<ShareListResult, ShareListError> {
-    let (guest, account) = account_listing_for(&app_handle, &hostname, ip_address.as_deref(), port);
+    let host = ListedHost {
+        host_id: &host_id,
+        hostname: &hostname,
+        ip_address: ip_address.as_deref(),
+        port,
+    };
+    list_host_shares(&app_handle, host, timeout_ms, cache_ttl_ms).await
+}
+
+/// Which server a share listing dials, and the id its shares are cached under.
+#[derive(Clone, Copy)]
+pub(crate) struct ListedHost<'a> {
+    pub host_id: &'a str,
+    pub hostname: &'a str,
+    pub ip_address: Option<&'a str>,
+    pub port: u16,
+}
+
+/// [`list_shares_on_host`]'s body, which the share-list volume's pane read shares: the
+/// cache, else a dial signed in by [`account_listing_for`]'s ladder (❌ never a Keychain
+/// read), with a refusal logged for the sign-in diagnostics.
+pub(crate) async fn list_host_shares(
+    app: &tauri::AppHandle,
+    host: ListedHost<'_>,
+    timeout_ms: Option<u64>,
+    cache_ttl_ms: Option<u64>,
+) -> Result<ShareListResult, ShareListError> {
+    let (guest, account) = account_listing_for(app, host.hostname, host.ip_address, host.port);
     let credentials = account.as_ref().map(|c| (c.username.as_str(), c.password.as_str()));
     let result = smb_client::list_shares(
-        &host_id,
-        &hostname,
-        ip_address.as_deref(),
-        port,
+        host.host_id,
+        host.hostname,
+        host.ip_address,
+        host.port,
         credentials,
         guest,
         timeout_ms,
@@ -126,7 +153,7 @@ pub async fn list_shares_on_host(
     )
     .await;
     // The account's password is this session's copy of a saved entry.
-    log_sign_in_refusal(&hostname, port, credentials, CredentialSource::Saved, &result);
+    log_sign_in_refusal(host.hostname, host.port, credentials, CredentialSource::Saved, &result);
     result
 }
 
@@ -178,7 +205,7 @@ fn listing_ladder(
 
 /// Whether a listing of this host may try guest: not when the person typed an
 /// account for it (`manual_servers::typed_username`), by either name it goes by.
-fn guest_attempt_for(
+pub(crate) fn guest_attempt_for(
     app: &tauri::AppHandle,
     hostname: &str,
     ip_address: Option<&str>,

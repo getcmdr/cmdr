@@ -833,6 +833,11 @@ kernel mount, which decomposes every name) on a backend that matches names byte-
 the share stores composed answers the kernel's decomposed spelling with `STATUS_OBJECT_PATH_NOT_FOUND` (ERR-VETBX,
 `crates/cmdr-smb/DETAILS.md` § "SMB names are opaque bytes").
 
+- **The pane's open is the volume's pane read.** `list_as_stored` reads through `Volume::list_directory_for_pane`, the
+  one read a backend may spend a dial or a Keychain ask on (a server's share list,
+  `apps/desktop/src-tauri/src/network/DETAILS.md` § "A server's share list is a listing on the `network` volume").
+  `entries_as_stored` (Ask Cmdr's `list_dir`) and a respell take the plain `list_directory_with_cancel`: no person
+  opened anything there.
 - **The pane seam lists as stored.** `read_directory_with_progress` lists through `list_as_stored`: as given first (free
   on the happy path), and only on `NotFound` asks `Volume::find_stored_spelling`, then lists what it answers. From there
   on the listing IS the stored spelling: `CachedListing::path`, the watch, the overlays, the index enrich, and every

@@ -1317,7 +1317,8 @@ index: folder rows and the folder's own `size` are ABSENT, never the inode's 4 K
   pointing at a subfolder or `search`. ⚠️ The cap bounds what's KEPT, not what the provider reads: no `Volume` lists
   in pages, so a 200,000-entry folder still materializes once inside the provider, as it does for a pane.
 - **The listing is the pane's open** (`cmdr_listing::entries_as_stored`), so a typed path in another Unicode form (an NFD
-  `Testföretag AB` against an NFC share) finds the stored spelling.
+  `Testföretag AB` against an NFC share) finds the stored spelling. ❗ Through the volume's plain read, ❌ never its pane
+  read: a server's share list (`smb://<server>`) answers from the share cache or `NotConnected`, never a dial (#324).
 
 Its misses ride the same shape as the resolver's (`LocationMissResult::on`, `location` naming the volume):
 `needsDiskAccess` (the FDA question is open, or macOS privacy refused the read; the `detail` says which),

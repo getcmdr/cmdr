@@ -271,7 +271,7 @@ fn backend_holds_favorites(kind: BackendKind) -> bool {
         | BackendKind::Nfs
         | BackendKind::Mtp
         | BackendKind::Adb => true,
-        BackendKind::Archive | BackendKind::GitPortal | BackendKind::Restic => false,
+        BackendKind::Archive | BackendKind::GitPortal | BackendKind::Restic | BackendKind::ShareList => false,
     }
 }
 
@@ -685,7 +685,12 @@ mod add_gate_tests {
     /// A view inside a drive has no folder of its own a favorite could reopen.
     #[test]
     fn an_archive_or_git_portal_backend_is_refused() {
-        for kind in [BackendKind::Archive, BackendKind::GitPortal, BackendKind::Restic] {
+        for kind in [
+            BackendKind::Archive,
+            BackendKind::GitPortal,
+            BackendKind::Restic,
+            BackendKind::ShareList,
+        ] {
             let volume = row("routed-1", "/Users/me/a.zip", LocationCategory::AttachedVolume, None);
             assert!(matches!(
                 favorite_volume_from("/Users/me/a.zip/docs", resolved(volume), |_| Some(kind)),

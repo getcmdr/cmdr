@@ -184,6 +184,29 @@ pub trait Volume: Send + Sync {
         self.list_directory(path, on_progress)
     }
 
+    /// Lists `path` for a pane listing the person opened (navigating onto it, Retry):
+    /// the one read that may cost what only a person's ask justifies.
+    ///
+    /// Every other reader (an agent's `list_dir`, About, a size walk, a respell after a
+    /// backend swap) goes through [`list_directory_with_cancel`](Self::list_directory_with_cancel).
+    /// A backend whose listing dials a server or reads the Keychain answers those from what
+    /// it already holds, and dials only here: a server's share list
+    /// (`apps/desktop/src-tauri/src/network/share_list_volume.rs`), where listing signs in
+    /// to the server and #324 forbids that for anything but the person opening it.
+    ///
+    /// The engine's pane open calls this (`cmdr_listing`'s `list_as_stored`); a re-read of
+    /// an open pane goes through [`list_directory_for_refresh`](Self::list_directory_for_refresh).
+    /// Default: [`list_directory_with_cancel`](Self::list_directory_with_cancel), since for
+    /// every other backend the two reads cost the same.
+    fn list_directory_for_pane<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
+        cancel: Option<&'a CancellationToken>,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        self.list_directory_with_cancel(path, on_progress, cancel)
+    }
+
     /// Lists `path` for a full re-read of an open listing (⌘R, the MCP `refresh`, a watcher
     /// rescan, a write op's top-up): each comes because the caller thinks the cache may be
     /// stale. Same entries as [`list_directory`](Self::list_directory), except where the

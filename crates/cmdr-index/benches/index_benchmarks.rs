@@ -207,6 +207,7 @@ fn listing_entry(path: &str) -> FileEntry {
         redirect_to_path: None,
         git_meta: None,
         restic_meta: None,
+        share_meta: None,
         in_cold_storage: false,
     }
 }

@@ -74,11 +74,8 @@ pub async fn list_shares(
     // Only use cache for non-authenticated requests.
     // When credentials are provided, the user is explicitly authenticating
     // and expects fresh results (not cached guest attempt results).
-    // ❗ A host that wants an account takes no GUEST listing from the cache
-    // either: one cached before the account was typed is the answer it refuses.
     if credentials.is_none()
-        && let Some(cached) = get_cached_shares(host_id)
-        && (guest == GuestAttempt::Try || cached.auth_mode != AuthMode::GuestAllowed)
+        && let Some(cached) = cached_listing(host_id, guest)
     {
         return Ok(cached);
     }
@@ -96,6 +93,16 @@ pub async fn list_shares(
     cache_shares(host_id, &result, ttl);
 
     Ok(result)
+}
+
+/// What the share cache answers a listing of `host_id` that brings no credentials, ❌
+/// never a dial: [`list_shares`]'s cache rule, and the whole answer for a reader that
+/// may not dial (the share-list volume's non-pane reads).
+///
+/// ❗ A host that wants an account (`guest` is `Skip`) takes no GUEST listing from the
+/// cache: one cached before the account was typed is the answer it refuses.
+pub fn cached_listing(host_id: &str, guest: GuestAttempt) -> Option<ShareListResult> {
+    get_cached_shares(host_id).filter(|cached| guest == GuestAttempt::Try || cached.auth_mode != AuthMode::GuestAllowed)
 }
 
 /// A listing whose reply was refused for its signature, or whose negotiation the server didn't

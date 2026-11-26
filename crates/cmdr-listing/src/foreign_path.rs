@@ -47,8 +47,33 @@ impl Listed {
     }
 }
 
-/// Lists `path` for a pane, falling back to the volume's stored spelling of it
-/// when `path` as given isn't there.
+/// Who a directory open reads for, which picks the volume's read.
+#[derive(Clone, Copy)]
+enum Reader {
+    /// A pane the person pointed at the folder: `Volume::list_directory_for_pane`, the
+    /// one read a backend may dial a server or ask the Keychain for.
+    Pane,
+    /// Anyone else (Ask Cmdr's `list_dir`, a respell nobody asked for): the plain read.
+    Other,
+}
+
+impl Reader {
+    async fn list(
+        self,
+        volume: &dyn Volume,
+        path: &AppPath,
+        on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+        cancel: Option<&CancellationToken>,
+    ) -> Result<Vec<FileEntry>, VolumeError> {
+        match self {
+            Self::Pane => volume.list_directory_for_pane(path, on_progress, cancel).await,
+            Self::Other => volume.list_directory_with_cancel(path, on_progress, cancel).await,
+        }
+    }
+}
+
+/// Lists `path` for a pane the person opened, falling back to the volume's stored
+/// spelling of it when `path` as given isn't there.
 ///
 /// Costs nothing extra on the happy path. A miss costs the resolve (a round trip
 /// or two, plus a parent listing per wrong component, free when a pane already
@@ -59,7 +84,18 @@ pub(crate) async fn list_as_stored(
     on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     cancel: Option<&CancellationToken>,
 ) -> Result<Listed, VolumeError> {
-    let missed = match volume.list_directory_with_cancel(path, on_progress, cancel).await {
+    list_as_stored_for(Reader::Pane, volume, path, on_progress, cancel).await
+}
+
+/// [`list_as_stored`] for `reader`.
+async fn list_as_stored_for(
+    reader: Reader,
+    volume: &dyn Volume,
+    path: &AppPath,
+    on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+    cancel: Option<&CancellationToken>,
+) -> Result<Listed, VolumeError> {
+    let missed = match reader.list(volume, path, on_progress, cancel).await {
         Ok(entries) => {
             return Ok(Listed {
                 path: path.to_owned(),
@@ -77,13 +113,17 @@ pub(crate) async fn list_as_stored(
         LogPrivate::dir_path(path.as_str()),
         LogPrivate::dir_path(stored.as_str())
     );
-    let entries = volume.list_directory_with_cancel(&stored, on_progress, cancel).await?;
+    let entries = reader.list(volume, &stored, on_progress, cancel).await?;
     Ok(Listed { path: stored, entries })
 }
 
 /// The entries of the folder at `path`, opened the way a pane opens a typed
 /// path ([`list_as_stored`]), for a reader outside the engine that doesn't keep
 /// a listing (Ask Cmdr's live `list_dir`).
+///
+/// ❗ Through the volume's plain read, ❌ never its pane read: an agent reading a
+/// folder is no person opening it, so a server's share list answers from what it
+/// holds rather than dialing (#324).
 ///
 /// # Errors
 ///
@@ -94,7 +134,7 @@ pub async fn entries_as_stored(
     path: &AppPath,
     cancel: Option<&CancellationToken>,
 ) -> Result<Vec<FileEntry>, VolumeError> {
-    list_as_stored(volume, path, None, cancel)
+    list_as_stored_for(Reader::Other, volume, path, None, cancel)
         .await
         .map(|listed| listed.entries)
 }
@@ -210,7 +250,8 @@ impl Inner {
             return;
         };
         let read = self.start_read([listing_id.as_str()]);
-        let listed = match list_as_stored(volume.as_ref(), &path, None, None).await {
+        // Nobody asked for this re-read, so it takes the volume's plain read.
+        let listed = match list_as_stored_for(Reader::Other, volume.as_ref(), &path, None, None).await {
             Ok(listed) => listed,
             Err(e) => {
                 // The pane keeps what it has; its next navigation or refresh asks again.

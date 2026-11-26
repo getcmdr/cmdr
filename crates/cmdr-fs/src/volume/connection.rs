@@ -146,6 +146,9 @@ pub enum BackendKind {
     GitPortal,
     /// A restic repo's snapshots, at `<repo>/Browse snapshots`.
     Restic,
+    /// A server's list of SMB shares, one folder per share, at `smb://<server>` on the
+    /// `network` volume. Read-only and unwatched: a share is mounted, ❌ never entered here.
+    ShareList,
 }
 
 impl BackendKind {
@@ -168,7 +171,8 @@ impl BackendKind {
             | BackendKind::Adb
             | BackendKind::Archive
             | BackendKind::GitPortal
-            | BackendKind::Restic => Namer::Bytes,
+            | BackendKind::Restic
+            | BackendKind::ShareList => Namer::Bytes,
         }
     }
 }
@@ -232,7 +236,14 @@ impl BackendKind {
             // S3 too: every request costs money, so no index walks it
             // (`docs/specs/s3-support-plan.md` § Product decisions). NFS
             // isn't indexed in the background either, like WebDAV.
-            Self::Sftp | Self::Webdav | Self::S3 | Self::Nfs | Self::Archive | Self::GitPortal | Self::Restic => false,
+            Self::Sftp
+            | Self::Webdav
+            | Self::S3
+            | Self::Nfs
+            | Self::Archive
+            | Self::GitPortal
+            | Self::Restic
+            | Self::ShareList => false,
         }
     }
 
@@ -256,7 +267,8 @@ impl BackendKind {
             | Self::Adb
             | Self::Archive
             | Self::GitPortal
-            | Self::Restic => false,
+            | Self::Restic
+            | Self::ShareList => false,
         }
     }
 
@@ -275,7 +287,14 @@ impl BackendKind {
     pub fn detaches_by_session_drop(self) -> bool {
         match self {
             Self::Sftp | Self::Webdav | Self::S3 | Self::Nfs => true,
-            Self::Local | Self::Smb | Self::Mtp | Self::Adb | Self::Archive | Self::GitPortal | Self::Restic => false,
+            Self::Local
+            | Self::Smb
+            | Self::Mtp
+            | Self::Adb
+            | Self::Archive
+            | Self::GitPortal
+            | Self::Restic
+            | Self::ShareList => false,
         }
     }
 
@@ -288,7 +307,8 @@ impl BackendKind {
     #[must_use]
     pub fn is_server(self) -> bool {
         match self {
-            Self::Smb | Self::Sftp | Self::Webdav | Self::S3 | Self::Nfs => true,
+            // A share list signs in to its server to list it, though it keeps no session.
+            Self::Smb | Self::Sftp | Self::Webdav | Self::S3 | Self::Nfs | Self::ShareList => true,
             Self::Local | Self::Mtp | Self::Adb | Self::Archive | Self::GitPortal | Self::Restic => false,
         }
     }
@@ -308,8 +328,8 @@ impl BackendKind {
             // a Unix symlink a `stat` reports (`crates/cmdr-smb/DETAILS.md`
             // § "Junctions and symlinks"). Restic: a snapshot's symlink nodes.
             Self::Local | Self::Sftp | Self::Nfs | Self::Adb | Self::Archive | Self::Smb | Self::Restic => true,
-            // WebDAV, S3, MTP, and the `.git` trees have none.
-            Self::Webdav | Self::S3 | Self::Mtp | Self::GitPortal => false,
+            // WebDAV, S3, MTP, the `.git` trees, and a share list have none.
+            Self::Webdav | Self::S3 | Self::Mtp | Self::GitPortal | Self::ShareList => false,
         }
     }
 
@@ -341,7 +361,8 @@ impl BackendKind {
             | Self::Webdav
             | Self::S3
             | Self::Mtp
-            | Self::GitPortal => true,
+            | Self::GitPortal
+            | Self::ShareList => true,
         }
     }
 }

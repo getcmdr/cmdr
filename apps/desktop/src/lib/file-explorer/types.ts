@@ -6,6 +6,7 @@ import type {
   GitEntryMeta,
   ListingErrorReason,
   ResticSnapshotMeta,
+  ShareMeta,
   TagRef,
 } from '#lib/ipc/bindings.js'
 
@@ -104,6 +105,11 @@ export interface FileEntry {
    * all three for the row's tooltip (both in `views/full-list-utils.ts`).
    */
   resticMeta?: ResticSnapshotMeta
+  /**
+   * What a share row on a server's share list (`smb://<server>`) says about its
+   * share: the server's own description of it, shown as the server set it.
+   */
+  shareMeta?: ShareMeta
   /**
    * The file's bytes sit in cold storage (S3 Glacier Flexible Retrieval or Deep
    * Archive) and can't be read until someone restores them. The row shows an

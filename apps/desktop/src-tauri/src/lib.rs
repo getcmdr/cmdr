@@ -433,6 +433,10 @@ pub fn run() {
             // through the volume host's event seam, wired in `volume_host`.
             network::os_mount_notice::set_app_handle(app.handle().clone());
 
+            // The `network` volume: the Servers hub and each server's share list. It lists
+            // nothing until a pane opens a share list, so registering it dials nothing.
+            network::share_list_volume::register(app.handle());
+
             // Network discovery (mDNS) startup is deferred. See the post-`load_settings`
             // block below. Starting mDNS here would trigger macOS's "Cmdr wants to find devices
             // on local networks" prompt at app launch even on first install before the user has

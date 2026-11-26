@@ -245,6 +245,10 @@ pub struct FileEntry {
     /// its backup: the host it ran on, its tags, and the paths it saved. Facts
     /// only; the frontend words them. `None` on every other entry.
     pub restic_meta: Option<crate::restic_meta::ResticSnapshotMeta>,
+    /// What a share row on a server's share list (`smb://<server>`) says about its
+    /// share: the server's description of it, shown as the server set it. `None` on
+    /// every other entry.
+    pub share_meta: Option<crate::share_meta::ShareMeta>,
     /// `true` for a file whose bytes sit in a cold storage class and can't be
     /// read until someone restores them: S3 Glacier Flexible Retrieval or Deep
     /// Archive, from the listing's `StorageClass`. The pane shows it as
@@ -289,6 +293,7 @@ impl FileEntry {
             redirect_to_path: None,
             git_meta: None,
             restic_meta: None,
+            share_meta: None,
             in_cold_storage: false,
         }
     }

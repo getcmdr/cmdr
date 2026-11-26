@@ -368,7 +368,8 @@ fn kind_of_backend(backend: BackendKind, mount: Option<MountClass>) -> Option<Vo
         BackendKind::Nfs => VolumeKind::Network,
         BackendKind::Mtp => VolumeKind::Mtp,
         BackendKind::Adb => VolumeKind::Adb,
-        BackendKind::Archive | BackendKind::GitPortal | BackendKind::Restic => return None,
+        // A share list is the way to a server's shares, ❌ not a place a location lives on.
+        BackendKind::Archive | BackendKind::GitPortal | BackendKind::Restic | BackendKind::ShareList => return None,
     })
 }
 

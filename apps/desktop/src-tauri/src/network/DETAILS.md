@@ -1049,6 +1049,43 @@ the toasts. Every off also withdraws the share's slow-connection notice (§ "Tel
 fallback"), so ❗ a new route that switches a share off goes through `set_direct_connection_for`, not
 `known_shares::set_direct_connection_enabled` directly.
 
+## A server's share list is a listing on the `network` volume
+
+`share_list_volume.rs::SmbServerVolume` is registered as `network` at startup (`lib.rs`), rooted at `smb://` (the
+app-path grammar spells it `smb:///`). The hub at `smb://` answers `NotADirectory` (the frontend draws it); a server's
+share list at `smb://<key>[:<port>]` lists one folder `FileEntry` per share, `smb://<key>/<share>`, carrying the
+server's description as `cmdr_fs::share_meta::ShareMeta`; a path at or inside a share answers `NotConnected` (a share
+is mounted, ❌ never entered here). Tracking issue: getcmdr/cmdr#1511; the frontend doesn't reach it yet.
+
+- **Only a pane the person pointed at a share list dials** (#324: listing signs in to the server). The engine's pane
+  open reads through `Volume::list_directory_for_pane` (`cmdr_listing`'s `list_as_stored`) and ⌘R through
+  `list_directory_for_refresh` (which drops the share cache first, as the hub's ⌘R does). Every other reader reaches
+  `list_directory_with_cancel`: Ask Cmdr's `list_dir` (`cmdr_listing::entries_as_stored`), About, a size walk, a
+  respell. Those get the share cache by `smb_client::cached_listing`'s rule, else `NotConnected`, ❌ never a dial.
+  `get_metadata` reads memory and the cache only. **Decision**: a separate trait read the engine calls, ❌ not a
+  listing-context flag: a flag would have to ride every read path into the backend, and the pane's open is already its
+  own call site. Pinned by `share_list_volume_test.rs`'s `a_read_that_is_no_pane_never_dials`.
+- **The pane read signs in with `commands::network::list_host_shares`**, the same body `list_shares_on_host` runs
+  (cache, else `account_listing_for`'s ladder: a typed account's session-cached password, else guest; ❌ never a
+  Keychain read). Timeout and cache TTL are smb_client's defaults: the frontend's network settings don't reach it yet.
+- **Interim refusals**: a refused listing maps onto the nearest `VolumeError` (`listing_refusal`: the sign-in classes
+  as `PermissionDenied`), until the typed share-list refusal replaces it.
+- **The path**: the frontend writes it (`apps/desktop/src/lib/servers/share-list-path.ts`, which says why the key is a
+  Bonjour name or a typed address and ❌ never an IP); `share_list_path.rs` is the one Rust reader. Both read
+  `share-list-path-cases.json`, so the escaping and the case, NFC, and port folding can't drift.
+- **Resolution** (`share_list_path::resolve`, memory only): fresh discovery first, a discovered host before a manual
+  one (the hub's pick, so the pane lists under the host id the hub's prefetch caches under), then the manual store (a
+  launch where discovery hasn't loaded it), then a host only the display cache lists, ❗ with its IP dropped: that
+  pairing is stale, and an IP DHCP handed to another machine must not get the dial.
+- **What it isn't**: `BackendKind::ShareList`, read-only, unwatched, not indexable, no export, and
+  `supports_local_fs_access` is `false` (the trait default `true` would hand `smb://<server>/<share>` to Quick Look and
+  `std::fs`). `location::facts` skips it (it's no place), and favorites don't hold it. Its root stays `smb://` whichever
+  server is listed, so the root history never reads a "move" that would rebase restored `smb://a` tabs onto `b`
+  (`a_restored_share_list_tab_keeps_its_server_after_two_were_listed`).
+- **The engine needed no change for the path**: `smb://<server>/` is its own scheme root in Rust (`smb:///` is another),
+  and the listing engine never checks a listed path against the volume's root (verified by
+  `the_engine_lists_a_share_list_as_folder_rows`, 2026-11-26).
+
 ## "Show “..” in the top folder"
 
 In an SMB share's top folder, `..` opens the server's share list (#1238; the frontend flow:

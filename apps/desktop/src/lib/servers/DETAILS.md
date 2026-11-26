@@ -54,6 +54,11 @@ segment). `server-path-utils.ts` is the frontend's reader and writer; the Rust t
 `isUnderServerRoot`, the twin of Rust's `cmdr_fs::volume::app_paths::path_is_under` (root trimmed first): a bare
 `${root}/` prefix refused every bucket under it.
 
+**An SMB server's share list** is `smb://<key>[:<port>]` on the `network` volume (the hub is `smb://`), written and read
+by `share-list-path.ts`, whose header says why the key is the Bonjour name or the typed address and ❌ never an IP. Its
+Rust reader is `apps/desktop/src-tauri/src/network/share_list_path.rs`; both read `share-list-path-cases.json`. Rust's
+grammar spells the root with a trailing `/` (`smb://testnas/`), which both readers fold.
+
 **Why a scheme and not a hint.** `commands/volumes.rs::resolve_path_to_volume` falls through to the mount table, which
 on both platforms walks up to `/` and answers the LOCAL root for any absolute path it doesn't recognize. So a
 scheme-free `/srv/data/x` is wrong at every resolver site the app has (a restored tab, a favorite, a drag between panes,

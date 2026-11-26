@@ -203,3 +203,116 @@ async fn a_look_alike_leaf_is_never_guessed() {
 
     assert_eq!(paths, vec![app(&foreign_leaf).to_owned()]);
 }
+
+/// A volume whose listing costs something only a person's ask justifies: its pane
+/// read lists, every other read answers `NotConnected`. Counts the pane reads.
+struct PaneOnlyVolume {
+    inner: InMemoryVolume,
+    pane_reads: std::sync::atomic::AtomicUsize,
+}
+
+impl PaneOnlyVolume {
+    fn new(inner: InMemoryVolume) -> Self {
+        Self {
+            inner,
+            pane_reads: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+
+    fn pane_reads(&self) -> usize {
+        self.pane_reads.load(std::sync::atomic::Ordering::Relaxed)
+    }
+}
+
+impl Volume for PaneOnlyVolume {
+    fn name(&self) -> &str {
+        self.inner.name()
+    }
+
+    fn root(&self) -> &AppPath {
+        self.inner.root()
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_metadata<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<FileEntry, VolumeError>> + Send + 'a>> {
+        self.inner.get_metadata(path)
+    }
+
+    fn list_directory<'a>(
+        &'a self,
+        path: &'a AppPath,
+        _on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        Box::pin(async move { Err(VolumeError::NotConnected(path.as_str().to_string())) })
+    }
+
+    fn list_directory_for_pane<'a>(
+        &'a self,
+        path: &'a AppPath,
+        on_progress: Option<&'a (dyn Fn(ListingProgress) + Sync)>,
+        _cancel: Option<&'a CancellationToken>,
+    ) -> std::pin::Pin<Box<dyn Future<Output = Result<Vec<FileEntry>, VolumeError>> + Send + 'a>> {
+        self.pane_reads.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.inner.list_directory(path, on_progress)
+    }
+}
+
+/// ❗ A pane's open is the read that may dial: it lists through the volume's pane read.
+#[tokio::test]
+async fn a_pane_open_lists_through_the_pane_read() {
+    let volume = PaneOnlyVolume::new(album().await);
+
+    let listed = list_as_stored(&volume, app(STORED), None, None)
+        .await
+        .expect("the pane read lists");
+
+    assert_eq!(listed.entries.len(), 1);
+    assert_eq!(volume.pane_reads(), 1);
+}
+
+/// ❗ Ask Cmdr's live `list_dir` is no person opening the folder, so it never takes
+/// the pane read: a share list answers it from what it holds, ❌ never a dial (#324).
+#[tokio::test]
+async fn an_agent_read_never_takes_the_pane_read() {
+    let volume = PaneOnlyVolume::new(album().await);
+
+    let result = entries_as_stored(&volume, app(STORED), None).await;
+
+    assert!(
+        matches!(result, Err(VolumeError::NotConnected(_))),
+        "got {:?}",
+        result.err()
+    );
+    assert_eq!(volume.pane_reads(), 0);
+}
+
+/// A respell re-reads an open pane because a backend swapped under it, which
+/// nobody asked for, so it takes the plain read too.
+#[tokio::test]
+async fn a_respell_never_takes_the_pane_read() {
+    use crate::testing::{TestEngine, TestListing};
+
+    let volume_id = format!("respell-pane-{}", uuid::Uuid::new_v4());
+    let volume = std::sync::Arc::new(PaneOnlyVolume::new(album().await));
+    let engine = TestEngine::builder()
+        .volume(&volume_id, std::sync::Arc::clone(&volume) as std::sync::Arc<dyn Volume>)
+        .build();
+    let listing = TestListing::new()
+        .volume(&volume_id)
+        .path(STORED)
+        .entries(Vec::new())
+        .insert(&engine, "respell-pane");
+
+    engine
+        .inner
+        .respell_listing(volume_id.clone(), listing.id().to_string(), app_text(STORED))
+        .await;
+
+    assert_eq!(volume.pane_reads(), 0);
+}

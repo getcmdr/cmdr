@@ -7,7 +7,8 @@ the words for a connect that stopped.
 
 - `server-path-utils.ts` reads and writes `<protocol>://<user>@<host>:<port>/<server path>`; `address-parser.ts` turns a
   pasted string into an endpoint (plus the protocol it spells out, for a warning only); `server-form.ts` is the add
-  form's model, with S3's provider presets in `s3-form.ts` (rendered by `S3EndpointFields.svelte`).
+  form's model, with S3's provider presets in `s3-form.ts` (rendered by `S3EndpointFields.svelte`). `share-list-path.ts`
+  writes and reads an SMB server's share-list path (`smb://<key>[:<port>]`).
 - `connect-flow.ts` picks the move by the volume's standing (via `server-outcomes.ts`); `open-sign-in.ts` picks the
   command it needs and opens `SignInSheet.svelte`, over `sign-in-contract.ts` + `sign-in-sheet-state.svelte.ts`.
   `saved-server-io.ts`: the sheets' one per-protocol switch for store reads and secret writes.

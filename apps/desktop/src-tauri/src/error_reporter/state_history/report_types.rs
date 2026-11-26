@@ -193,6 +193,7 @@ pub enum ReportBackend {
     Archive,
     GitPortal,
     Restic,
+    ShareList,
 }
 
 impl From<BackendKind> for ReportBackend {
@@ -209,6 +210,7 @@ impl From<BackendKind> for ReportBackend {
             BackendKind::Archive => Self::Archive,
             BackendKind::GitPortal => Self::GitPortal,
             BackendKind::Restic => Self::Restic,
+            BackendKind::ShareList => Self::ShareList,
         }
     }
 }

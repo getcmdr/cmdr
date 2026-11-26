@@ -116,6 +116,9 @@ pub(crate) mod smb_share_label;
 pub(crate) mod share_choices;
 // "Show “..” in the top folder": where `..` leads out of a share, and its per-share switch.
 pub(crate) mod smb_share_parent;
+// A server's share list as a listing: the `network` volume, and the path it reads its server from.
+pub(crate) mod share_list_path;
+pub(crate) mod share_list_volume;
 
 // The "we're stuck on the kernel mount" notice's once-per-server ledger. Lives
 // beside `smb_upgrade` (its only caller) rather than inside it, so the ledger is

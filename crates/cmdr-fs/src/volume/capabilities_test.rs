@@ -197,6 +197,7 @@ fn indexability_follows_the_backend_kind() {
         (BackendKind::Archive, false),
         (BackendKind::GitPortal, false),
         (BackendKind::Restic, false),
+        (BackendKind::ShareList, false),
     ] {
         let volume = InMemoryVolume::new("Test").with_backend_kind(kind);
         assert_eq!(volume.capabilities().can_be_indexed, indexable, "{kind:?}");
@@ -220,6 +221,7 @@ fn only_smb_has_an_os_mount_fallback() {
         (BackendKind::Archive, false),
         (BackendKind::GitPortal, false),
         (BackendKind::Restic, false),
+        (BackendKind::ShareList, false),
     ] {
         let volume = InMemoryVolume::new("Test").with_backend_kind(kind);
         assert_eq!(volume.capabilities().has_os_mount_fallback, has_fallback, "{kind:?}");

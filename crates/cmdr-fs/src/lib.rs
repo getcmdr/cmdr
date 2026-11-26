@@ -84,6 +84,7 @@ pub mod process_memory;
 pub mod restic_meta;
 pub mod restic_view;
 pub mod rt;
+pub mod share_meta;
 pub mod sqlite_util;
 pub mod staging;
 pub mod system_dirs;

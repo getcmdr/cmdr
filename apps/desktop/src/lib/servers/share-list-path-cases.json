@@ -1,0 +1,133 @@
+{
+  "hosts": [
+    {
+      "why": "A discovered server goes by its Bonjour name, lowercased, spaces and apostrophe kept",
+      "host": {
+        "id": "test_user_1snas",
+        "name": "Test_user_1's NAS",
+        "hostname": "test_user_1s-nas.local",
+        "ipAddress": "192.168.50.20",
+        "port": 445,
+        "source": "discovered"
+      },
+      "path": "smb://test_user_1's nas",
+      "key": "test_user_1's nas",
+      "port": 445
+    },
+    {
+      "why": "A port off 445 rides after the key",
+      "host": { "id": "testnas", "name": "Testnas", "hostname": "testnas.local", "port": 4450, "source": "discovered" },
+      "path": "smb://testnas:4450",
+      "key": "testnas",
+      "port": 4450
+    },
+    {
+      "why": "A discovered server nothing resolved yet has the same key",
+      "host": { "id": "testnas2", "name": "Testnas2", "port": 445, "source": "discovered" },
+      "path": "smb://testnas2",
+      "key": "testnas2",
+      "port": 445
+    },
+    {
+      "why": "A manual server goes by the address the person typed, ❌ never its label",
+      "host": {
+        "id": "manual-TestNAS-local-445",
+        "name": "TestNAS.local",
+        "hostname": "TestNAS.local",
+        "port": 445,
+        "source": "manual"
+      },
+      "path": "smb://testnas.local",
+      "key": "testnas.local",
+      "port": 445
+    },
+    {
+      "why": "A manual IPv4 server",
+      "host": {
+        "id": "manual-192-168-50-21-445",
+        "name": "192.168.50.21",
+        "hostname": "192.168.50.21",
+        "ipAddress": "192.168.50.21",
+        "port": 445,
+        "source": "manual"
+      },
+      "path": "smb://192.168.50.21",
+      "key": "192.168.50.21",
+      "port": 445
+    },
+    {
+      "why": "A manual IPv6 server is bracketed, its own colons kept",
+      "host": {
+        "id": "manual-fe80--1-445",
+        "name": "fe80::1",
+        "hostname": "fe80::1",
+        "ipAddress": "fe80::1",
+        "port": 445,
+        "source": "manual"
+      },
+      "path": "smb://[fe80::1]",
+      "key": "fe80::1",
+      "port": 445
+    },
+    {
+      "why": "A manual IPv6 server off 445: its label carries the port, its key doesn't",
+      "host": {
+        "id": "manual---1-4450",
+        "name": "::1:4450",
+        "hostname": "::1",
+        "ipAddress": "::1",
+        "port": 4450,
+        "source": "manual"
+      },
+      "path": "smb://[::1]:4450",
+      "key": "::1",
+      "port": 4450
+    },
+    {
+      "why": "A name holding the path grammar's own characters escapes them, so the authority stays one token",
+      "host": { "id": "testnas2", "name": "Test: NAS/2", "port": 445, "source": "discovered" },
+      "path": "smb://test%3A nas%2F2",
+      "key": "test: nas/2",
+      "port": 445
+    },
+    {
+      "why": "A percent sign escapes too, so decoding is unambiguous",
+      "host": { "id": "100nas", "name": "100% NAS [attic]", "port": 445, "source": "discovered" },
+      "path": "smb://100%25 nas %5Battic%5D",
+      "key": "100% nas [attic]",
+      "port": 445
+    }
+  ],
+  "spellings": [
+    { "why": "The reader folds an explicit 445", "path": "smb://testnas:445", "key": "testnas", "port": 445 },
+    { "why": "The reader folds case", "path": "smb://TestNAS", "key": "testnas", "port": 445 },
+    { "why": "Either hex case decodes", "path": "smb://test%3a nas", "key": "test: nas", "port": 445 },
+    {
+      "why": "Rust spells a scheme root with a trailing `/`, which the reader folds",
+      "path": "smb://testnas:4450/",
+      "key": "testnas",
+      "port": 4450
+    }
+  ],
+  "notShareLists": [
+    { "why": "The hub", "path": "smb://" },
+    { "why": "The hub, as Rust spells it", "path": "smb:///" },
+    { "why": "Two separators after the server", "path": "smb://testnas//" },
+    { "why": "A share is mounted, ❌ never a share list", "path": "smb://testnas/archive" },
+    { "why": "Another scheme", "path": "sftp://testnas" },
+    { "why": "A local path", "path": "/Volumes/testnas" },
+    { "why": "No port after the colon", "path": "smb://testnas:" },
+    { "why": "Port zero", "path": "smb://testnas:0" },
+    { "why": "A port past 65535", "path": "smb://testnas:65536" },
+    { "why": "A port that isn't digits", "path": "smb://testnas:abc" },
+    { "why": "Two bare colons: a name's colon is always escaped", "path": "smb://a:b:445" },
+    { "why": "An unclosed bracket", "path": "smb://[fe80::1" },
+    { "why": "Something after the bracket that isn't a port", "path": "smb://[fe80::1]x" },
+    { "why": "An empty key", "path": "smb://:4450" },
+    { "why": "An escape that isn't hex", "path": "smb://test%zz" },
+    { "why": "A cut-off escape", "path": "smb://test%2" },
+    { "why": "An escape past ASCII, which the writer never makes", "path": "smb://test%C3" },
+    { "why": "A bare bracket inside a name, which the writer always escapes", "path": "smb://a]b" },
+    { "why": "A bracketed name that isn't an IPv6 address", "path": "smb://[testnas]" }
+  ]
+}
