@@ -12,7 +12,7 @@ pub use super::smb_cache::invalidate_cache;
 pub use cmdr_smb::{AuthMode, ShareListError, ShareListResult};
 
 // Internal imports
-use super::os_mount::{list_shares_cli_as_guest, list_shares_cli_with_keychain, list_shares_cli_with_password};
+use super::os_mount::{list_shares_cli_as_guest, list_shares_cli_on_open_session, list_shares_cli_with_password};
 use super::smb_cache::{DEFAULT_CACHE_TTL_MS, DEFAULT_LIST_SHARES_TIMEOUT_MS, cache_shares, get_cached_shares};
 use cmdr_smb::{classify_authenticated_error, try_list_shares_as_guest, try_list_shares_authenticated};
 use cmdr_smb::{classify_error, convert_shares, is_auth_error};
@@ -238,29 +238,30 @@ async fn list_shares_smb2(
         }
         Err(e) if guest_refusal_wants_an_account(&e) => {
             // Guest refused. No credentials reach this leg (they skip guest), so
-            // try smbutil, which reads the macOS Keychain itself.
+            // try smbutil, which can list through a session macOS already has open
+            // to the server (a share Finder mounted). It reads no Keychain item.
             debug!(
-                "Guest share listing refused: backend=smb2, error_kind={:?}, nt_status={:?}, detail={:?}; trying Keychain fallback",
+                "Guest share listing refused: backend=smb2, error_kind={:?}, nt_status={:?}, detail={:?}; trying smbutil on an open session",
                 e.kind(),
                 e.status(),
                 cmdr_fs::log_detail::LogDetail(&e.to_string())
             );
             if !cli_fallback_allowed() {
-                // The frontend takes `AuthRequired` to the Keychain and then the
-                // sign-in sheet, and the account's listing goes through smb2, encrypted.
+                // The frontend takes `AuthRequired` to the sign-in sheet, and the
+                // account's listing goes through smb2, encrypted.
                 return Err(ShareListError::AuthRequired {
                     message: "Encryption is required, so the guest listing can't be used and smbutil isn't tried"
                         .to_string(),
                 });
             }
-            match list_shares_cli_with_keychain(hostname, ip_address, port).await {
+            match list_shares_cli_on_open_session(hostname, ip_address, port).await {
                 Ok(result) => {
-                    debug!("smbutil with Keychain succeeded, got {} shares", result.shares.len());
+                    debug!("smbutil listed {} shares on an open session", result.shares.len());
                     Ok(result)
                 }
                 Err(e) => {
                     debug!(
-                        "Keychain share-list fallback stopped: detail={:?}; requiring manual login",
+                        "Open-session share-list fallback stopped: detail={:?}; asking for a sign-in",
                         cmdr_fs::log_detail::LogDetail(&format!("{e:?}"))
                     );
                     Err(ShareListError::AuthRequired {

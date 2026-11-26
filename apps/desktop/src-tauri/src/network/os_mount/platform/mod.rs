@@ -32,7 +32,7 @@ const _: MountLogWords = MOUNT_LOG_WORDS;
 const _: fn() = || {
     fn resolves_to<T, F: Future<Output = T>>(_: F) {}
     resolves_to::<ShareList, _>(list_shares_cli_as_guest("", None, 0));
-    resolves_to::<ShareList, _>(list_shares_cli_with_keychain("", None, 0));
+    resolves_to::<ShareList, _>(list_shares_cli_on_open_session("", None, 0));
     resolves_to::<Option<ShareList>, _>(list_shares_cli_with_password("", None, 0, "", ""));
 };
 
@@ -68,9 +68,10 @@ pub(crate) use imp::sign_in_helper_pid;
 /// The host's shares as a guest, from the OS's own command-line client.
 pub(crate) use imp::list_shares_cli_as_guest;
 
-/// The host's shares under the credentials the OS itself keeps for it (macOS's Keychain), from
-/// its own command-line client.
-pub(crate) use imp::list_shares_cli_with_keychain;
+/// The host's shares through a session the OS already has open to it (a share Finder mounted),
+/// from its own command-line client. ❗ No password of anyone's goes out: with no open session
+/// it answers `AuthRequired`, so it lists only while something else is signed in.
+pub(crate) use imp::list_shares_cli_on_open_session;
 
 /// The host's shares under an explicit username and password, from the OS's own command-line
 /// client, or `None` when that client can't take a password without putting it in argv.

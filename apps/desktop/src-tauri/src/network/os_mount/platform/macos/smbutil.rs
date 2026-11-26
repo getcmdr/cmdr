@@ -29,51 +29,53 @@ pub(crate) async fn list_shares_cli_as_guest(
     })
 }
 
-/// Lists shares using macOS Keychain credentials via smbutil.
-/// This runs smbutil WITHOUT explicit credentials, allowing it to use
-/// credentials stored in macOS Keychain (for example, from previous Finder connections).
-/// No -G (guest) flag, so smbutil will try to authenticate using Keychain.
-pub(crate) async fn list_shares_cli_with_keychain(
+/// Lists shares through a session macOS already has open to the server, via smbutil.
+///
+/// No `-G` (guest) and no password: `smbutil view -N` reuses the signed-in session of a share
+/// Finder (or a Cmdr kernel mount) has open, as whatever account that session is. ❗ It reads no
+/// Keychain item: with no share of the server mounted it answers `AuthRequired`, which is why
+/// share lists stopped listing once Disconnect unmounted every share. The account it rode is
+/// nobody Cmdr can name, so the result says `CredsRequired` and the chip names no one
+/// (`share_list_sign_in::guest_leg_account`).
+pub(crate) async fn list_shares_cli_on_open_session(
     hostname: &str,
     ip_address: Option<&str>,
     port: u16,
 ) -> Result<ShareListResult, ShareListError> {
     let url = build_smbutil_url(hostname, ip_address, port);
     debug!(
-        "Running smbutil view: host={:?}, port={}, backend=smbutil, auth=keychain",
+        "Running smbutil view: host={:?}, port={}, backend=smbutil, auth=open_session",
         cmdr_fs::log_private::LogPrivate::host(hostname),
         port
     );
 
-    let shares = run_smbutil_view(&url, false).await.map_err(|e| {
-        // Convert generic auth errors to Keychain-specific messages
-        match e {
-            ShareListError::AuthRequired { .. } => ShareListError::AuthRequired {
-                message: "Keychain credentials invalid or missing".to_string(),
-            },
-            ShareListError::ProtocolError { message } => ShareListError::AuthRequired {
-                message: format!("No valid Keychain credentials: {}", message),
-            },
-            other => other,
-        }
+    let shares = run_smbutil_view(&url, false).await.map_err(|e| match e {
+        ShareListError::AuthRequired { .. } => ShareListError::AuthRequired {
+            message: "No session macOS has open to this server let smbutil list it".to_string(),
+        },
+        ShareListError::ProtocolError { message } => ShareListError::AuthRequired {
+            message: format!("smbutil found no open session to list through: {message}"),
+        },
+        other => other,
     })?;
 
     if shares.is_empty() {
         return Err(ShareListError::AuthRequired {
-            message: "Keychain auth returned no shares".to_string(),
+            message: "smbutil listed no shares through an open session".to_string(),
         });
     }
 
-    debug!("smbutil with Keychain auth succeeded, got {} shares", shares.len());
+    debug!("smbutil listed {} shares through an open session", shares.len());
 
     Ok(ShareListResult {
         shares,
-        auth_mode: cmdr_smb::AuthMode::CredsRequired, // User is authenticated via Keychain
+        // Signed in, as the open session's account: never a guest's list.
+        auth_mode: cmdr_smb::AuthMode::CredsRequired,
         from_cache: false,
     })
 }
 
-/// Builds a passwordless SMB URL for smbutil commands (guest or Keychain-backed).
+/// Builds a passwordless SMB URL for smbutil commands (guest, or riding an open session).
 ///
 /// Cmdr never embeds credentials in the smbutil URL: the cleartext password would land in the
 /// `ps`-readable argv. So this only ever builds `//host` / `//host:port`.

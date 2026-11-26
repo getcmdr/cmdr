@@ -155,8 +155,10 @@ impl SmbServerVolume {
                 listed_as.insert(host.id.clone(), account);
             }
             // A cached list doesn't say; the last listing's answer stands.
-            (Ok(_), None) => {}
-            (Err(_), _) => {
+            (Ok(listed), None) if listed.from_cache => {}
+            // A fresh one nobody can name the account of (it rode a session macOS had
+            // open) leaves no answer: the last one would describe a different sign-in.
+            (Ok(_), None) | (Err(_), _) => {
                 listed_as.remove(&host.id);
             }
         }

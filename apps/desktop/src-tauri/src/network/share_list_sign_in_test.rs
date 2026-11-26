@@ -239,6 +239,31 @@ async fn a_cached_guest_list_names_no_account() {
     assert_eq!(listed.account, None);
 }
 
+/// The guest attempt's macOS fallback (`smbutil view -N`) can ride a session Finder has
+/// open, signed in as an account Cmdr can't name. That listing is ❌ not a guest's: the
+/// chip once said "as guest" over a list only an account could see.
+#[tokio::test]
+async fn a_listing_that_rode_an_open_session_is_no_guest() {
+    let session = Session::new(None);
+    let listed = sign_in_and_list(
+        Ladder {
+            typed_username: None,
+            known: || session.known(),
+            stored_once: || session.stored_once(),
+        },
+        |_, _| {
+            ready(Ok(ShareListResult {
+                auth_mode: AuthMode::CredsRequired,
+                ..listed(false)
+            }))
+        },
+    )
+    .await;
+
+    assert!(listed.result.is_ok());
+    assert_eq!(listed.account, None, "nobody can say who it listed as");
+}
+
 /// A guest turned away falls to the stored password, read once.
 #[tokio::test]
 async fn a_refused_guest_falls_to_the_stored_password() {

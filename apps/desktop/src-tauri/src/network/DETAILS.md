@@ -21,7 +21,7 @@ of the app build.
 - **Manual servers**: `manual_servers.rs`: User-added servers via the "Add server" sheet. Parses addresses, checks TCP reachability (`manual_servers_reachability.rs`), persists to `manual-servers.json`, and injects synthetic `NetworkHost` entries with `source: Manual` into the discovery cache as pinned hosts, except one saved without contact until its first mount (§ "A manual server saved without contact"). Loaded at startup. An entry's `displayName` is a name a person typed, read through `label()` / `is_named()` (§ "A manual server's name").
 - **E2E testing**: `virtual_smb_hosts.rs`: Injects 14 synthetic `NetworkHost` entries for smb2's consumer Docker containers. Hosts come from `SMB_E2E_{SVC}_HOST` (default `localhost`). Ports come from `SMB_E2E_{SVC}_PORT` when set, else `smb2::testing::*_port()` (which reads `SMB_CONSUMER_*_PORT`, default 10480+). `SMB_E2E_*_PORT` is the test-suite contract (same var the frontend fixture reads), so backend and fixture agree on which port to connect to. This matters inside Docker where containers listen on `:445` internally but `SMB_CONSUMER_*_PORT` would point at the host-side mapping. Gated behind `smb-e2e` Cargo feature. Never enabled in production.
 - **Share listing**: Split across multiple files:
-  - `smb_client.rs`: Top-level share-listing entry point; orchestrates guest -> keychain -> prompt auth flow; tries smb2 first, then the OS's own share-list tool (`os_mount::list_shares_cli_*`)
+  - `smb_client.rs`: Top-level share-listing entry point; orchestrates guest -> stored password -> sheet auth flow; tries smb2 first, then the OS's own share-list tool (`os_mount::list_shares_cli_*`)
   - `smb_cache.rs`: 30-second in-memory cache for share lists, keyed by server address
   - The OS's share-list tools, one per arm of `os_mount/platform/`: `macos/smbutil.rs` (`smbutil view -G`, for older Samba/NAS servers; its output parser is `smbutil_output.rs`, compiled for the tests everywhere), `linux/smbclient.rs` (`smbclient -L`, needs the `samba-client` package; `linux/distro.rs` turns `crate::platform::LinuxDistro` into its install hint), and none on Windows yet. Only Linux's takes a password (`list_shares_cli_with_password` answers `None` on macOS)
   - The protocol layer under all of them is the `cmdr-smb` crate: the addr builder, the guest / authenticated `smb2::SmbClient` listing calls, the `classify_*` / `is_auth_error` classification, and the `ShareInfo` / `AuthMode` / `ShareListResult` / `ShareListError` vocabulary. `crates/cmdr-smb/DETAILS.md` says what belongs there and what stays here
@@ -220,7 +220,7 @@ discovery has paired the two.
 - A guest/anonymous SessionSetup the server rejects on auth grounds: macOS smbd answers with `STATUS_ACCOUNT_RESTRICTION` (0xC000006E), and smb2 ≥0.13.1 classifies the whole logon-rejection NTSTATUS family as `ErrorKind::AuthRequired`, so `is_auth_error` routes it to the credentials path (keychain → prompt) instead of the CLI fallback. Pinned by `crates/cmdr-smb/src/errors.rs::test_guest_rejection_status_is_auth_error`.
 
 The fallback paths:
-- **macOS:** `smbutil view -G -N` (guest) or `smbutil view -N` (Keychain-backed; smbutil reads the system Keychain itself). **No authenticated smbutil fallback**; see the credential-channel note below.
+- **macOS:** `smbutil view -G -N` (guest) or `smbutil view -N` (`list_shares_cli_on_open_session`: it rides a session macOS already has open to the server, a share Finder mounted, and reads no Keychain item, so with every share unmounted it answers `AuthRequired`; verified by David's QA, macOS 26, 2026-11-27). Its account is nobody Cmdr can name, so the listing names no account (`share_list_sign_in::guest_leg_account`), ❌ never "as guest". **No authenticated smbutil fallback**; see the credential-channel note below.
 - **Linux:** `smbclient -L` (from `samba-client` package), guest or authenticated. If `smbclient` is not installed, returns a `MissingDependency` error with a distro-specific install command (detected via `/etc/os-release`). The Linux arm's `list_shares_cli_*` delegate to it.
 - **Other platforms:** stubs return `ProtocolError`.
 
@@ -235,7 +235,7 @@ created inside the blocking task and dropped (unlinked) the moment the call retu
 `//user:password@host` URL (per `man smbutil`), `nsmb.conf`/`~/.nsmbrc` has no password keyword (per `man nsmb.conf`),
 there's no password env var, and the interactive prompt (omit `-N`) reads via `getpass()`/`/dev/tty` which a TTY-less
 spawned child can't feed reliably. So Cmdr **never shells out to smbutil with an explicit password**: `build_smbutil_url`
-only ever builds passwordless `//host` / `//host:port` URLs, used by the guest (`-G -N`) and Keychain (`-N`) paths. The
+only ever builds passwordless `//host` / `//host:port` URLs, used by the guest (`-G -N`) and open-session (`-N`) paths. The
 old URL-embedded-password leak is closed. The primary macOS mount path (`NetFSMountURLSync`) and smb2 share enumeration
 also never expose the password.
 
@@ -251,7 +251,7 @@ going until it's rebuilt; nothing is torn down on a flip (it would cut a running
 What changes in this module while it's on:
 
 - **No CLI fallback at all** (`smb_client.rs::cli_fallback_allowed`): not the guest `smbutil view -G` on a
-  `ProtocolError`, not the Keychain `smbutil view -N`, and not Linux's `smbclient -A`. The CLIs know nothing about the
+  `ProtocolError`, not the open-session `smbutil view -N`, and not Linux's `smbclient -A`. The CLIs know nothing about the
   requirement, so their answer would come over a connection nobody checked.
 - **A guest listing refused for encryption reads as `AuthRequired`** (`guest_refusal_wants_an_account`): a guest
   session has no keys, an account's may, so the frontend takes it to the Keychain and the sign-in sheet as it does for

@@ -30,8 +30,9 @@ use crate::network::smb_client::GuestAttempt;
 /// (`cmdr_fs::server_meta::ServerMeta`) carry it too.
 pub use cmdr_fs::server_meta::ShareListAccount;
 
-/// What one pane listing came to, and the account it used, when that's known (a cached
-/// list doesn't say who listed it).
+/// What one pane listing came to, and the account it used, when that's known: a cached
+/// list doesn't say who listed it, and neither does one that rode a session macOS had open
+/// (`guest_leg_account`).
 pub(crate) struct Listed {
     pub result: Result<ShareListResult, ShareListError>,
     pub account: Option<ShareListAccount>,
@@ -85,7 +86,7 @@ where
     let guest = dial(None, GuestAttempt::Try).await;
     match guest {
         Ok(result) => {
-            let account = (!result.from_cache).then_some(ShareListAccount::Guest);
+            let account = guest_leg_account(&result);
             Listed {
                 result: Ok(result),
                 account,
@@ -108,6 +109,18 @@ where
             result: Err(other),
             account: None,
         },
+    }
+}
+
+/// Who a listing that went out with no credentials listed as, by how it authenticated:
+/// guest only when the server let an anonymous session list it. ❗ The guest leg's macOS
+/// fallback (`smbutil view -N`) can ride a session Finder has open, signed in as an
+/// account Cmdr can't name (`AuthMode::CredsRequired`), so that one names nobody. A cached
+/// list doesn't say either.
+fn guest_leg_account(result: &ShareListResult) -> Option<ShareListAccount> {
+    match (result.from_cache, result.auth_mode) {
+        (false, cmdr_smb::AuthMode::GuestAllowed) => Some(ShareListAccount::Guest),
+        (true, _) | (false, cmdr_smb::AuthMode::CredsRequired | cmdr_smb::AuthMode::Unknown) => None,
     }
 }
 

@@ -47,14 +47,15 @@ pub(crate) async fn list_shares_cli_as_guest(
     })
 }
 
-/// Linux fallback: no Keychain equivalent; return AuthRequired so the user gets a login prompt.
-pub(crate) async fn list_shares_cli_with_keychain(
+/// Linux fallback: `smbclient` can't ride another client's session, so this answers
+/// `AuthRequired` and the person gets the sign-in sheet.
+pub(crate) async fn list_shares_cli_on_open_session(
     _hostname: &str,
     _ip_address: Option<&str>,
     _port: u16,
 ) -> Result<ShareListResult, ShareListError> {
     Err(ShareListError::AuthRequired {
-        message: "Stored credential lookup not available via smbclient fallback".to_string(),
+        message: "smbclient has no open session to list through".to_string(),
     })
 }
 

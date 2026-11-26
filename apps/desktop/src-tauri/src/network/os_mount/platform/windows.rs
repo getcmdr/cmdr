@@ -54,13 +54,13 @@ pub(crate) async fn list_shares_cli_as_guest(
 }
 
 /// No share-list CLI yet.
-pub(crate) async fn list_shares_cli_with_keychain(
+pub(crate) async fn list_shares_cli_on_open_session(
     _hostname: &str,
     _ip_address: Option<&str>,
     _port: u16,
 ) -> Result<ShareListResult, ShareListError> {
     Err(ShareListError::AuthRequired {
-        message: "Keychain authentication not available on this platform".to_string(),
+        message: "No open-session share listing on this platform".to_string(),
     })
 }
 

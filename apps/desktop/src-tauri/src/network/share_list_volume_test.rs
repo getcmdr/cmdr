@@ -21,7 +21,7 @@ struct FakeShares {
     hosts: KnownHosts,
     dialed: HashMap<String, Result<ShareListResult, ShareListError>>,
     /// The account each scripted dial reports it listed as.
-    accounts: HashMap<String, ShareListAccount>,
+    accounts: Mutex<HashMap<String, ShareListAccount>>,
     cache: HashMap<String, ShareListResult>,
     dials: Mutex<Vec<(String, Freshness)>>,
     cache_reads: Mutex<usize>,
@@ -72,7 +72,7 @@ impl ServerShares for FakeShares {
                 message: "not scripted".to_string(),
             })
         });
-        let account = self.accounts.get(&host.id).cloned();
+        let account = self.accounts.lock_ignore_poison().get(&host.id).cloned();
         Box::pin(async move { Listed { result, account } })
     }
 }
@@ -575,8 +575,8 @@ async fn a_rejected_account_stays_a_rejected_account() {
 /// drops it (nobody is signed in any more).
 #[tokio::test]
 async fn the_listed_account_is_remembered_per_server() {
-    let mut shares = testnas();
-    shares.accounts.insert(
+    let shares = testnas();
+    shares.accounts.lock_ignore_poison().insert(
         "id-testnas".to_string(),
         ShareListAccount::User {
             username: "testuser".to_string(),
@@ -599,6 +599,27 @@ async fn the_listed_account_is_remembered_per_server() {
         None,
         "the Servers list has no account"
     );
+}
+
+/// A fresh listing nobody can name the account of (one that rode a session macOS had open)
+/// drops the last listing's answer: "as guest" from before would describe a list only an
+/// account could see. A cached list still says nothing and changes nothing.
+#[tokio::test]
+async fn a_fresh_listing_with_no_known_account_drops_the_old_one() {
+    let shares = testnas();
+    shares
+        .accounts
+        .lock_ignore_poison()
+        .insert("id-testnas".to_string(), ShareListAccount::Guest);
+    let (volume, shares) = volume(shares);
+    let path = app("smb://testnas");
+    volume.list_directory_for_pane(&path, None, None).await.expect("lists");
+    assert_eq!(volume.listed_account(&path), Some(ShareListAccount::Guest));
+
+    shares.accounts.lock_ignore_poison().clear();
+    volume.list_directory_for_refresh(&path).await.expect("lists");
+
+    assert_eq!(volume.listed_account(&path), None);
 }
 
 /// The host a share list signs in to is the one its listing resolved, by the same id: a
@@ -664,8 +685,8 @@ fn saved_by_name() -> ServerSources {
 /// list reopened inside 30 s listed from the cache without asking for an account.
 #[tokio::test]
 async fn forgetting_a_server_drops_its_share_lists_account_and_cache_under_the_host_it_resolves_to() {
-    let mut shares = with_servers(testnas(), saved_by_name());
-    shares.accounts.insert(
+    let shares = with_servers(testnas(), saved_by_name());
+    shares.accounts.lock_ignore_poison().insert(
         "id-testnas".to_string(),
         ShareListAccount::User {
             username: "testuser".to_string(),

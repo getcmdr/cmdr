@@ -7,7 +7,7 @@ mod smbutil;
 use cmdr_smb::{ShareListError, ShareListResult};
 
 pub(crate) use mount::{mount_share_sync, unmount_smb_shares_from_host};
-pub(crate) use smbutil::{list_shares_cli_as_guest, list_shares_cli_with_keychain};
+pub(crate) use smbutil::{list_shares_cli_as_guest, list_shares_cli_on_open_session};
 
 /// NetFS signs in through `NetAuthSysAgent`, which can wedge.
 pub(crate) const CAN_WEDGE: bool = true;

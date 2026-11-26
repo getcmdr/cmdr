@@ -16,7 +16,7 @@ mod share_access;
 use serde::{Deserialize, Serialize};
 
 pub(crate) use platform::{
-    MOUNT_LOG_WORDS, list_shares_cli_as_guest, list_shares_cli_with_keychain, list_shares_cli_with_password,
+    MOUNT_LOG_WORDS, list_shares_cli_as_guest, list_shares_cli_on_open_session, list_shares_cli_with_password,
     unmount_smb_shares_from_host,
 };
 
