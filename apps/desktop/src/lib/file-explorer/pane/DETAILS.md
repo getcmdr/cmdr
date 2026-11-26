@@ -742,8 +742,8 @@ There's no Search-specific capabilities shim — `lib/search/capabilities.ts` ke
   type-to-jump keystroke read `!caps.hasBackendListing` for the "is there a real directory" half; the git lookup's
   `isDeviceVolumeId(volumeId)` skip STAYS — MTP and ADB have a backend listing but git can't run on either. The
   dir-exists poll reads its own capability instead, `paneFolderIsPolledForDeletion` (§ "Volume capabilities"). `caps` is
-  derived once per pane (`caps = $derived(capabilitiesForPane(volumeId, currentPath))`); the named `isNetworkView` /
-  `isSearchResultsView` deriveds re-source off `caps.kind`.
+  derived once per pane (`caps = $derived(capabilitiesForPane(volumeId, currentPath))`); the named `isSearchResultsView`
+  derived re-sources off `caps.kind`.
 
 ### A pane on a saved place
 
@@ -885,7 +885,7 @@ through the capability record is the "differently complicated" failure mode to a
   network-mirror / copy-path-between-panes identity branches).
 - **Display / view selection.** `VolumeBreadcrumb.svelte` (the "Network" / "Search results" labels + the
   network-disabled gate), `FilePane.svelte` (`paneViewKind` in the `{#if}` chain, sourced off `caps.kind`; the
-  `isNetworkView` / `isSearchResultsView` named deriveds; the `loadDirectory` skip for network / search-results panes).
+  `isSearchResultsView` named derived; the `loadDirectory` skip for search-results panes).
 - **Persistence / init mechanics.** `app-status-store.ts` (skip filesystem path-resolution for the virtual `network`
   volume on persist, and swap a stored `search-results://` path for a real folder at load — § "A snapshot never comes
   back"), `initialization.ts` (trust the stored `network` id at startup, no `resolvePathVolume`).

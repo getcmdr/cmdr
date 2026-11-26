@@ -170,8 +170,8 @@ pub(crate) enum ServerOpens {
         /// The app root a pane lands on.
         app_root: String,
     },
-    /// An S3 account: its root, which lists the buckets (§ "Decisions", 6 of
-    /// `docs/specs/servers-list-as-listing-plan.md`).
+    /// An S3 account: its root, which lists the buckets
+    /// (`apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "The Servers list's decisions").
     S3Account {
         /// The root place's volume id, which is the account's id, saved or not.
         root_volume_id: String,

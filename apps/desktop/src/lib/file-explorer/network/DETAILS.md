@@ -25,19 +25,18 @@ Lifecycle:
 ❗ **Nothing here lists a server's shares unasked** (#324). Listing a host's shares means connecting to it and signing
 in, as a guest where it lets one in. The Servers list never dials (Rust builds it from memory, the stores, and the mount
 table: `src-tauri/src/network/DETAILS.md`), and a server's shares are read only when a pane opens its share list. There
-is no prefetch: getcmdr/cmdr#1517 (decision 7) stopped it, because the reads below stay under the pane's wait reveal for
-reachable saved servers, and the one slow server is slow because of an `smbutil` Keychain read, which no background path
-may make. The backend has no other caller that lists unasked: `smb_client::list_shares` is reached through the two
-listing commands, both frontend-invoked by a person's door, and the share-list volume's sign-in ladder
-(`share_list_sign_in.rs`), which runs only for a pane that opened a share list (verified by reading its call sites,
-2026-11-26). E2E builds count every call per address (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`),
-which `servers-list-flows.spec.ts` reads: opening Servers asks no server at all. Pinned too by
-`network-store.servers-view.test.ts`.
+is no prefetch: getcmdr/cmdr#1517 stopped it (§ "The Servers list's decisions"), because the reads below stay under the
+pane's wait reveal for reachable saved servers, and the one slow server is slow because of an `smbutil` Keychain read,
+which no background path may make. The backend has no other caller that lists unasked: `smb_client::list_shares` is
+reached through the two listing commands, both frontend-invoked by a person's door, and the share-list volume's sign-in
+ladder (`share_list_sign_in.rs`), which runs only for a pane that opened a share list (verified by reading its call
+sites, 2026-11-26). E2E builds count every call per address
+(`apps/desktop/src-tauri/src/network/share_listing_tally.rs`), which `servers-list-flows.spec.ts` reads: opening Servers
+asks no server at all. Pinned too by `network-store.servers-view.test.ts`.
 
 **How long a share list's first read takes** (the wait a prefetch would have hidden; measured 2026-11-26 for
-getcmdr/cmdr#1517 § "Decisions", 7: `stall_probe::listing listing_done path=smb://<server>/ read_dir_ms`, a
-`read_dir_ms` of 0 or 1 excluded as a share-cache answer). The threshold is the pane's wait reveal, 800 ms
-(`WAIT_REVEAL_AFTER_MS`):
+getcmdr/cmdr#1517: `stall_probe::listing listing_done path=smb://<server>/ read_dir_ms`, a `read_dir_ms` of 0 or 1
+excluded as a share-cache answer). The threshold is the pane's wait reveal, 800 ms (`WAIT_REVEAL_AFTER_MS`):
 
 - Real servers, a dev log (macOS, a home LAN plus Tailscale): a Raspberry Pi saved by name (signs in with Cmdr's stored
   password) n=13, p50 88, p90 643, max 1,174 ms; a QNAP NAS saved by LAN IP n=3: 83, 87, 517; the same Pi by its IP (a
@@ -165,7 +164,7 @@ English, often a fallback tool's own stderr. `listSharesWithCredentials` throws 
 `type`, and the renderer threw on it; it reads as `protocol_error` now, its text kept for the log. Pinned by
 `share-list-error-messages.test.ts`.
 
-**A saved share on its share list** (§ "Decisions", 10 of `docs/specs/servers-list-as-listing-plan.md`): its row carries
+**A saved share on its share list** (§ "The Servers list's decisions", its first bullet): its row carries
 `ShareMeta.saved` (its place's volume id, status, account, and pin; Rust reads them, `src-tauri/src/network/DETAILS.md`
 § "A server's share list is a listing", and re-lists an open share list from the cache when they change). The row wears
 the status dot (`server-row-words.ts::rowStatusBadge`, drawn by `FileIcon`), Enter on it lands on its PLACE when the
@@ -220,6 +219,48 @@ mirrors to MCP). ❌ No view holds an `if server`; every Servers fact reaches th
 - **Not routed to Ask Cmdr**: `location/facts.rs` lists no volume for `smb://` (`BackendKind::ShareList`), so the
   agent's `list_dir` doesn't reach the Servers rows; an agent reads them from `cmdr://state`. A share list's path would
   otherwise be a live read that dials (#324).
+
+### The Servers list's decisions
+
+The Servers view was a hand-built table (its own header, cursor, keys, type-to-jump, footer, MCP push, and row menu
+host) that nested each connected server's shares under it and folded found-only hosts into a group. David's QA
+(2026-11-26) called it "too much magic": the two levels behaved differently, `..` from a nested share landed on the
+share list, and servers known only by an OS mount didn't show. getcmdr/cmdr#1517 made it this flat listing, with these
+decisions (David, 2026-11-26):
+
+- **Flat, one row per server, the standard views.** ❌ No share rows: a server's shares live on its share list, which
+  carries every share and a saved share's facts (§ "A server's share list": the dot, Pin, Forget share, Enter mounting
+  as the saved account).
+- **Columns: Name, one Details column, Last used.** The status is a dot on the icon, its words in Details and the row's
+  accessible name; no Size. Rejected: real Type / Address / Status columns (column machinery in both views for one pane
+  kind), and Type in the Ext slot with Status in the Size slot.
+- **"+ Add server…" has two homes**: F7 (the F-key bar reads "Add server"), ⌘K, the palette, and the empty list's words;
+  AND a trailing action row through the views' one generic per-kind seam. Rejected: a Rust-listed entry (sort and filter
+  would move or hide it, and pinning it last would need a special case in the engine's one comparator and filter point),
+  a footer button, and the palette alone.
+- **A server Cmdr only found nearby is an ordinary row** reading "Found nearby". Rejected: hidden-files treatment (a new
+  user with nothing saved would see an empty list), and not listing it.
+- **A server behind a mounted share is saved** the first time Cmdr sees the mount (Finder's, `mount_smbfs`'s, or
+  Cmdr's), so it stays after the unmount; Forget offers Disconnect first while a share is still mounted. Only the
+  SERVER, ❌ never its shares (`src-tauri/src/network/DETAILS.md` § "Servers behind mounted shares").
+- **One NAS at two addresses (LAN and Tailscale) is two rows**, and Edit server changes a saved server's address. ❌
+  Never merge two servers by GUID: Samba derives its server GUID from the NetBIOS name (#1518), so a match proves one
+  name, not one machine. One server holding several addresses was rejected for now (mounts, saved shares, and passwords
+  are all keyed per address); revisit only if two rows keep bothering David. A server saved by IP DOES merge with the
+  discovered host at exactly that address and port (plain equality, David, after the mounted-servers work).
+- **An S3 account is one row**; Enter opens its "All buckets" root, saving it if it isn't yet (Enter is the person
+  asking for it). Saved buckets stay reachable through their switcher pins. Rejected: a row per bucket, and an account
+  row that opens a second kind of "server's places" list.
+- **No prefetch** (§ "`network-store.svelte.ts`" has the numbers that decided it).
+- **The count line says the discovery state** ("5 servers, looking for more nearby…" / "…, nearby search is off"), and
+  the Settings switch is where discovery goes back on. Rejected: a clickable line, a non-row element in the views.
+- **Order is the pane's sort** (Name by default; Last used for recency). The old fixed order (connected, then asking,
+  then by use, nearby last) went.
+- **⌘R on a share list that lists shows nothing extra** when nothing changed, like a folder; ⌘R on its refused or
+  sign-in state retries.
+- **The merge lives in Rust, the words here**: Rust ships facts (`ServerMeta`), `server-row-words.ts` words them.
+  Rejected: the merge in TS pushing rows to Rust (two sources of truth and a startup race), and a frontend in-memory
+  listing (the search snapshot's six coupling points).
 
 ## `share-list-label.ts`
 
@@ -638,8 +679,8 @@ live. Backend side: `src-tauri/src/network/DETAILS.md` § "Discovery runs only w
 - **Lazy discovery on first user intent, not at startup**: avoids the macOS Local Network prompt on fresh installs
   before the user has context; `network.firstTriggerDone` persists so returning users get the launch warm-up.
 - **Resolution is fire-and-forget**: hosts come and go, so a timeout during resolution is normal, not worth surfacing.
-- **No share prefetch** (#324; getcmdr/cmdr#1517, decision 7): a server's shares are read when a pane opens its share
-  list, and a first open waits for that read (the numbers in § "`network-store.svelte.ts`").
+- **No share prefetch** (#324; getcmdr/cmdr#1517): a server's shares are read when a pane opens its share list, and a
+  first open waits for that read (the numbers in § "`network-store.svelte.ts`").
 - **State via getters, not raw `$state` exports**: raw exports lose reactivity when imported from a plain `.ts`; getters
   work everywhere and make the API boundary explicit.
 - **A reconnect is silent: no toast fires for one.** The recovery already shows itself where the user is looking, in the

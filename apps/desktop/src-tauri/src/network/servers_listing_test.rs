@@ -341,7 +341,7 @@ fn keeps_a_server_saved_by_ip_apart_from_a_host_on_another_port_there() {
 }
 
 /// ❗ Only the exact address merges: the same NAS by its Tailscale address stays a row of
-/// its own (two addresses are two servers, § "Decisions", 5), ❌ never paired by GUID.
+/// its own (two addresses are two servers), ❌ never paired by GUID.
 #[test]
 fn keeps_a_server_saved_by_another_address_of_that_machine_apart() {
     let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445), from_mount("100.64.0.10", 445)])
@@ -351,7 +351,8 @@ fn keeps_a_server_saved_by_another_address_of_that_machine_apart() {
     assert_eq!(named(&rows, "100.64.0.10").path, "smb://100.64.0.10");
 }
 
-/// ❗ Servers behind mounted shares (§ "Decisions", 4 and 5 of the Servers plan): one NAS
+/// ❗ Servers behind mounted shares (`apps/desktop/src/lib/file-explorer/network/DETAILS.md`
+/// § "The Servers list's decisions"): one NAS
 /// mounted by its LAN and its Tailscale address is two saved servers, both connected,
 /// whatever its GUID.
 #[test]
@@ -856,8 +857,8 @@ fn s3_account(places: Vec<SavedPlace>) -> SavedServer {
     }
 }
 
-/// One row per account, its buckets no rows of their own (§ "Decisions", 6 of
-/// `docs/specs/servers-list-as-listing-plan.md`).
+/// One row per account, its buckets no rows of their own
+/// (`apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "The Servers list's decisions").
 #[test]
 fn an_s3_account_is_one_row_with_no_place_or_pin_of_its_own() {
     let rows = Inputs::saved(vec![s3_account(vec![bucket(Some("scans")), bucket(Some("photos"))])]).rows();

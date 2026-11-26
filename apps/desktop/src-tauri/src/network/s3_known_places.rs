@@ -331,7 +331,8 @@ pub fn find(volume_id: &str) -> Option<KnownS3Place> {
 /// it's saved already.
 ///
 /// What Enter on an S3 account's Servers row runs before opening the root: Enter is the
-/// person asking for it (`docs/specs/servers-list-as-listing-plan.md` § "Decisions", 6).
+/// person asking for it (`apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "The Servers list's
+/// decisions").
 pub fn save_account_root(account_id: &str) -> RootSave {
     let places = all();
     if places.iter().any(|place| is_place(place, account_id)) {

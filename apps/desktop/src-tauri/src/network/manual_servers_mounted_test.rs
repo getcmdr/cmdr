@@ -203,7 +203,8 @@ fn a_persons_add_of_the_address_makes_it_ordinary() {
     assert_eq!(store.servers[0].label(), "Attic NAS");
 }
 
-/// ❗ § "Decisions", 5 (b): one NAS at two addresses stays two servers, and Edit server
+/// ❗ One NAS at two addresses stays two servers (`apps/desktop/src/lib/file-explorer/network/DETAILS.md`
+/// § "The Servers list's decisions"), and Edit server
 /// changes one's address but never merges it into the other (the relocate refusal).
 /// The edit is the person's, so the moved server is theirs.
 #[test]
