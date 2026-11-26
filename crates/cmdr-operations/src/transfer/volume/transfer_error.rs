@@ -530,6 +530,10 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
         // `DeviceDisconnected`, which would tell the user a session dropped
         // mid-copy.
         VolumeError::NotConnected(_) => not_connected(context_path, role),
+        // A server's share list is never a source or a destination (the pane refuses
+        // both before any write starts); defensively, a share that isn't mounted is
+        // the nearest truth.
+        VolumeError::ShareListRefused(_) => not_connected(context_path, role),
         // The backend refused a WRITE, so it is the destination that is read-only.
         VolumeError::ReadOnly(_) => WriteOperationError::ReadOnlyDevice {
             path: context_path.to_string(),

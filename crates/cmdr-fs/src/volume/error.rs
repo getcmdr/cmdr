@@ -14,6 +14,7 @@ use crate::error_detail::ErrorDetail;
 use crate::log_error::{ErrorLogText, ErrorText, write_plain};
 use crate::log_private::LogPrivate;
 use crate::os_error::OsErrorClass;
+use crate::share_list::ShareListRefusal;
 use crate::volume::git_error::FriendlyGitError;
 use crate::volume::locked_container::LockedContainer;
 
@@ -101,6 +102,15 @@ pub enum VolumeError {
     /// Boxed: this is the rare error, and three strings inline would grow every
     /// `Result` a volume returns.
     LinkNeedsConsent(Box<LinkSignIn>),
+    /// A server's share list (`smb://<server>` on the `network` volume) didn't list:
+    /// the server wants an account, turned one away, or couldn't be asked. Carries
+    /// the typed answer and the server's name, which the frontend words; a sign-in
+    /// class (`ShareListError::wants_sign_in`) is the pane's sign-in, ❌ never a
+    /// `PermissionDenied`, which reads as a folder's permissions.
+    ///
+    /// Boxed: the rare error, and its payload would grow every `Result` a volume
+    /// returns.
+    ShareListRefused(Box<ShareListRefusal>),
     /// The device's session died mid-operation but the device itself is still
     /// attached, and a reopen is already running in the background (MTP: a PTP
     /// `DeviceReset`, typically after a cancelled or timed-out transfer). The
@@ -368,6 +378,12 @@ impl ErrorLogText for VolumeError {
                 "The share only accepts encryption this connection couldn't agree on: ",
                 LogPrivate::path(path),
             ),
+            Self::ShareListRefused(refusal) => {
+                out.write_str("Share list refused (")?;
+                out.write_str(refusal.error.kind())?;
+                out.write_str("): ")?;
+                return out.value(LogPrivate::host(&refusal.server));
+            }
             Self::NotSupported => return out.write_str("Operation not supported"),
             Self::DeviceDisconnected(msg) => return detail_line(out, "Device disconnected: ", msg),
             Self::DeviceSessionReset(msg) => return detail_line(out, "Device session restarted: ", msg),

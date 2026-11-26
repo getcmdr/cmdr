@@ -207,6 +207,9 @@ pub fn delete_credentials(server: &str, share: Option<&str>) -> Result<(), Keych
 
     // Remove from cache first
     CREDENTIAL_CACHE.write_ignore_poison().remove(&account);
+    if share.is_none() {
+        forget_session_credentials(&[server.to_string()]);
+    }
 
     crate::secrets::store().delete(&account)?;
 
@@ -241,6 +244,7 @@ pub fn note_found_under_portless(server: &str, portless: &str) {
 ///
 /// An entry that isn't there is not a failure; a store that refuses a delete is.
 pub fn forget_server_credentials(servers: &[String], shares: &[String]) -> Result<usize, KeychainError> {
+    forget_session_credentials(servers);
     let mut names: Vec<String> = servers.to_vec();
     {
         let found = FOUND_UNDER_PORTLESS.read_ignore_poison();
@@ -303,6 +307,59 @@ pub fn cached_credentials(server: &str) -> Option<SmbCredentials> {
     CREDENTIAL_CACHE.read_ignore_poison().get(&account).cloned()
 }
 
+/// Accounts typed on a sign-in sheet this session, by server-level account name: the
+/// server's session credential, whether or not the person ticked Remember. Never written
+/// to the store (Remember is `save_credentials`), so a restart forgets it.
+static SESSION_TYPED: std::sync::LazyLock<RwLock<HashMap<String, SmbCredentials>>> =
+    std::sync::LazyLock::new(|| RwLock::new(HashMap::new()));
+
+/// The one store read each server gets this session (`keychain_session.rs`).
+static STORE_READS: std::sync::LazyLock<crate::network::keychain_session::ReadOnce> =
+    std::sync::LazyLock::new(crate::network::keychain_session::ReadOnce::default);
+
+/// Makes `credentials` what `server` signs in as for the rest of the session: an account
+/// a sheet just proved, remembered or not. A listing with no credentials and a mount with
+/// none both use it, so a typed-not-remembered sign-in holds for the mount that follows.
+pub fn remember_for_session(server: &str, credentials: SmbCredentials) {
+    SESSION_TYPED
+        .write_ignore_poison()
+        .insert(make_account_name(server, None), credentials);
+}
+
+/// What `server` signs in as this session, from memory ONLY: the account a sheet proved
+/// ([`remember_for_session`]), else the stored password a listing or mount already read
+/// ([`cached_credentials`]). ❗ Never touches the store, so a background listing may ask.
+pub fn session_credentials(server: &str) -> Option<SmbCredentials> {
+    let account = make_account_name(server, None);
+    let typed = SESSION_TYPED.read_ignore_poison().get(&account).cloned();
+    typed.or_else(|| cached_credentials(server))
+}
+
+/// [`session_credentials`], else the stored server-level password, read from the store at
+/// most ONCE per server per session (a miss is remembered too): the listing a person
+/// opened and the mount they started share this one read.
+///
+/// ❗ Blocking (a store read can wait on a system prompt): call it from a blocking task,
+/// and ❌ never from a background path (prefetch, a stale refresh, a non-pane reader).
+pub fn read_server_credentials_once(server: &str) -> Option<SmbCredentials> {
+    let account = make_account_name(server, None);
+    STORE_READS.read(
+        &account,
+        || session_credentials(server),
+        || get_credentials(server, None).ok(),
+    )
+}
+
+/// Drops the session credential a sheet set for each of `servers`: Forget saved password
+/// ([`forget_server_credentials`], [`delete_credentials`]) and Forget server. The one-read
+/// memo stays spent: whatever is left in the store, this session already asked.
+pub fn forget_session_credentials(servers: &[String]) {
+    let mut typed = SESSION_TYPED.write_ignore_poison();
+    for server in servers {
+        typed.remove(&make_account_name(server, None));
+    }
+}
+
 /// Checks if credentials exist without retrieving them.
 pub fn has_credentials(server: &str, share: Option<&str>) -> bool {
     get_credentials(server, share).is_ok()
@@ -323,6 +380,35 @@ pub fn has_server_credentials(servers: &[String], shares: &[String]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A sheet's answer is the server's session credential, on its own port only, never
+    /// in the store's cache ("Forget saved password" stays a store question), and gone
+    /// once its password is forgotten.
+    #[test]
+    fn a_session_credential_is_this_servers_until_forgotten() {
+        let _secrets = crate::test_support::isolate_secrets();
+        let server = "session-test-host:11482";
+        let typed = SmbCredentials {
+            username: "testuser".to_string(),
+            password: "12345678".to_string(),
+        };
+
+        remember_for_session(server, typed);
+
+        assert_eq!(
+            session_credentials("SESSION-TEST-HOST:11482").map(|c| c.username),
+            Some("testuser".to_string()),
+            "keyed like every read"
+        );
+        assert!(
+            session_credentials("session-test-host").is_none(),
+            "❌ never the 445 server on the same machine"
+        );
+        assert!(!has_cached_credentials(server), "nothing was stored or read");
+
+        forget_server_credentials(&[server.to_string()], &[]).expect("forgot");
+        assert!(session_credentials(server).is_none());
+    }
 
     /// ❗ Answers from what a listing or mount already read, and NEVER touches the
     /// store: opening a share list must not cost a Keychain access (each can raise a

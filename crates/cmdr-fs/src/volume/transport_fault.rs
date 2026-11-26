@@ -68,6 +68,8 @@ impl VolumeError {
             // end and a retry can't tell when the other server's back.
             | Self::LinkTargetUnreachable(_)
             | Self::LinkNeedsConsent(_) // the answer changes only when a person allows it
+            // A share list has no session to wait out: the pane's Retry asks again.
+            | Self::ShareListRefused(_)
             | Self::NotFound(_)
             | Self::PermissionDenied { .. }
             | Self::AlreadyExists(_)

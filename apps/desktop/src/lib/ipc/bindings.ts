@@ -5258,8 +5258,11 @@ export const commands = {
    *  # Arguments
    *  * `server` - Server hostname or IP address
    *  * `share` - Name of the share to mount
-   *  * `username` - Optional username for authentication
-   *  * `password` - Optional password for authentication
+   *  * `username` - Optional username for authentication (a sheet's answer, which
+   *    becomes the server's session credential once the mount proves it)
+   *  * `password` - Optional password for authentication. With neither, the mount
+   *    signs in as the server's session credential, else its stored password, read
+   *    at most once per session (`network::share_list_sign_in::mount_with_session`)
    *  * `port` - SMB port (default 445)
    *  * `timeout_ms` - Optional timeout in milliseconds (default: 20000)
    *  * `host_name` - The name the person knows the server by (the discovery list's
@@ -6074,8 +6077,9 @@ export const commands = {
    *  ❗ Exactly the store rows the listing filed under that host
    *  ([`smb_hosts::smb_host_group`]), found by the listing's id alone: nothing
    *  another host filed goes with it, not even a server on another port of the
-   *  same machine. Rows only: nothing is unmounted and no password is touched
-   *  ("Forget saved password" is its own request).
+   *  same machine. Rows only: nothing is unmounted and no stored password is touched
+   *  ("Forget saved password" is its own request), though an account this session
+   *  typed for the host stops signing in for it.
    *
    *  ❗ Emits `volumes-changed`: a pinned share of the host leaves the switcher.
    */
@@ -6088,7 +6092,7 @@ export const commands = {
    *  ❗ Call it BEFORE [`forget_saved_smb_host`]: the host's names come off the rows
    *  that command takes away. Every name the password can be filed under goes, on the
    *  host's own port ([`smb_hosts::SmbHostGroup::credential_names`]), with each saved
-   *  share's share-level entry and the in-memory cache; a server on another port of
+   *  share's share-level entry, the in-memory cache, and the session credential; a server on another port of
    *  the same machine keeps its own. Deleting reads nothing, so it raises no prompt to
    *  read a password.
    */
@@ -10784,6 +10788,11 @@ export type ErrorActionKind =
    *  SMB/Network shares, or fix the server's encryption.
    */
   | 'open_smb_encryption_setting'
+  /**
+   *  The server's share list wants an account: the pane's sign-in sheet for that
+   *  server, after which the listing runs again.
+   */
+  | 'sign_in_to_server'
 
 // How serious a failure is, and therefore how the frontend styles it.
 export type ErrorCategory =
@@ -13669,6 +13678,12 @@ export type ListingCompleteEvent = {
    *  up never sticks (`network/smb_share_parent.rs`).
    */
   shareParent: ShareParent | null
+  /**
+   *  Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
+   *  for the pane's "as <account>"; `None` for every other listing, and for a share list
+   *  answered from the cache, which doesn't say. Memory only, read on the way out.
+   */
+  shareListAccount: ShareListAccount | null
 }
 
 /**
@@ -13954,6 +13969,32 @@ export type ListingErrorReason =
       server: string
       // The other server the link leads to.
       target: string
+    }
+  /**
+   *  `VolumeError::ShareListRefused` for an account the listing lacks
+   *  (`ShareListError::wants_sign_in`): a normal step, not a failure, so the frontend
+   *  draws it calm and offers its sign-in.
+   */
+  | {
+      reason: 'shareListSignIn'
+      // What the server answered; the frontend words it per variant.
+      refusal: ShareListError
+      // The server's name as the Servers list knows it.
+      server: string
+    }
+  /**
+   *  `VolumeError::ShareListRefused` for everything else: the server couldn't be
+   *  asked, or its answer wasn't one Cmdr takes.
+   */
+  | {
+      reason: 'shareListUnavailable'
+      /**
+       *  What the server answered; the frontend words it per variant (and shows a
+       *  `missing_dependency`'s install command).
+       */
+      refusal: ShareListError
+      // The server's name as the Servers list knows it.
+      server: string
     }
   /**
    *  `VolumeError::EncryptionRequired`: "Always require SMB encryption" is on, and the share's
@@ -21797,6 +21838,17 @@ export type ShareLinkExpiry =
   // Seven days: the default, and the longest a SigV4 signature may live.
   | 'sevenDays'
 
+// The account a share list was listed as, for the pane's "as <account>".
+export type ShareListAccount =
+  // An anonymous session.
+  | { kind: 'guest' }
+  // Signed in as this account.
+  | {
+      kind: 'user'
+      // The account's username.
+      username: string
+    }
+
 /**
  *  Error types for share listing operations.
  *
@@ -21892,6 +21944,20 @@ export type ShareListError =
       // What the user would run to install it, when there's a one-liner.
       installCommand: string | null
     }
+
+/**
+ *  A share-list listing the server (or the client) refused: what it answered, and
+ *  the server it was asked, by the name the Servers list knows it by.
+ */
+export type ShareListRefusal = {
+  /**
+   *  The server's name as the Servers list knows it (its Bonjour name, or the
+   *  address a person typed), for the words.
+   */
+  server: string
+  // What the listing came to.
+  error: ShareListError
+}
 
 // Result of a share listing operation.
 export type ShareListResult = {
@@ -25475,6 +25541,17 @@ export type VolumeError =
    *  `Result` a volume returns.
    */
   | { type: 'linkNeedsConsent'; data: LinkSignIn }
+  /**
+   *  A server's share list (`smb://<server>` on the `network` volume) didn't list:
+   *  the server wants an account, turned one away, or couldn't be asked. Carries
+   *  the typed answer and the server's name, which the frontend words; a sign-in
+   *  class (`ShareListError::wants_sign_in`) is the pane's sign-in, ❌ never a
+   *  `PermissionDenied`, which reads as a folder's permissions.
+   *
+   *  Boxed: the rare error, and its payload would grow every `Result` a volume
+   *  returns.
+   */
+  | { type: 'shareListRefused'; data: ShareListRefusal }
   /**
    *  The device's session died mid-operation but the device itself is still
    *  attached, and a reopen is already running in the background (MTP: a PTP

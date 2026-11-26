@@ -20,6 +20,8 @@ use crate::network::HostSource;
 struct FakeShares {
     hosts: KnownHosts,
     dialed: HashMap<String, Result<ShareListResult, ShareListError>>,
+    /// The account each scripted dial reports it listed as.
+    accounts: HashMap<String, ShareListAccount>,
     cache: HashMap<String, ShareListResult>,
     dials: Mutex<Vec<(String, Freshness)>>,
     cache_reads: Mutex<usize>,
@@ -45,14 +47,15 @@ impl ServerShares for FakeShares {
         &'a self,
         host: &'a NetworkHost,
         freshness: Freshness,
-    ) -> Pin<Box<dyn Future<Output = Result<ShareListResult, ShareListError>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Listed> + Send + 'a>> {
         self.dials.lock_ignore_poison().push((host.id.clone(), freshness));
-        let answer = self.dialed.get(&host.id).cloned().unwrap_or_else(|| {
+        let result = self.dialed.get(&host.id).cloned().unwrap_or_else(|| {
             Err(ShareListError::HostUnreachable {
                 message: "not scripted".to_string(),
             })
         });
-        Box::pin(async move { answer })
+        let account = self.accounts.get(&host.id).cloned();
+        Box::pin(async move { Listed { result, account } })
     }
 }
 
@@ -162,6 +165,8 @@ async fn a_refresh_lists_past_the_cache() {
 
 /// ❗ #324: nothing but a pane the person pointed at a server dials it. An agent's
 /// `list_dir` (and any other plain read) gets `NotConnected` while nothing is cached.
+/// ❗ Also the Keychain pin: `ServerShares::list` is the only way to the stored-password
+/// read (`share_list_sign_in::list_for_pane`), so no `list` means no read.
 #[tokio::test]
 async fn a_read_that_is_no_pane_never_dials() {
     let (volume, shares) = volume(testnas());
@@ -228,9 +233,10 @@ async fn an_unknown_server_is_not_found_and_never_dialed() {
     assert!(shares.dials().is_empty());
 }
 
-/// A refused listing comes back as a refusal, ❌ never an empty list.
+/// A server that wants an account answers the typed share-list refusal, naming the
+/// server, ❌ never an empty list and ❌ never a folder's `PermissionDenied`.
 #[tokio::test]
-async fn a_refused_listing_is_a_refusal() {
+async fn a_refused_listing_is_the_typed_share_list_refusal() {
     let mut shares = testnas();
     shares.dialed.insert(
         "id-testnas".to_string(),
@@ -242,10 +248,74 @@ async fn a_refused_listing_is_a_refusal() {
 
     let listed = volume.list_directory_for_pane(&app("smb://testnas"), None, None).await;
 
+    let Err(VolumeError::ShareListRefused(refusal)) = listed else {
+        panic!("not the share-list refusal: {listed:?}");
+    };
+    assert_eq!(refusal.server, "Testnas");
+    assert!(matches!(refusal.error, ShareListError::AuthRequired { .. }));
+}
+
+/// `auth_required` and `auth_failed` stay apart: someone who never typed a password
+/// isn't told theirs is wrong.
+#[tokio::test]
+async fn a_rejected_account_stays_a_rejected_account() {
+    let mut shares = testnas();
+    shares.dialed.insert(
+        "id-testnas".to_string(),
+        Err(ShareListError::AuthFailed {
+            message: "rejected".to_string(),
+        }),
+    );
+    let (volume, _) = volume(shares);
+
+    let listed = volume.list_directory_for_pane(&app("smb://testnas"), None, None).await;
+
     assert!(
-        matches!(listed, Err(VolumeError::PermissionDenied { .. })),
+        matches!(&listed, Err(VolumeError::ShareListRefused(refusal)) if matches!(refusal.error, ShareListError::AuthFailed { .. })),
         "got {listed:?}"
     );
+}
+
+/// The account a pane listing used is what its `listing-complete` reports, and a refusal
+/// drops it (nobody is signed in any more).
+#[tokio::test]
+async fn the_listed_account_is_remembered_per_server() {
+    let mut shares = testnas();
+    shares.accounts.insert(
+        "id-testnas".to_string(),
+        ShareListAccount::User {
+            username: "testuser".to_string(),
+        },
+    );
+    let (volume, _) = volume(shares);
+    let path = app("smb://testnas");
+    assert_eq!(volume.listed_account(&path), None, "nothing listed yet");
+
+    volume.list_directory_for_pane(&path, None, None).await.expect("lists");
+
+    assert_eq!(
+        volume.listed_account(&path),
+        Some(ShareListAccount::User {
+            username: "testuser".to_string()
+        })
+    );
+    assert_eq!(volume.listed_account(&app("smb://")), None, "the hub has no account");
+}
+
+/// A non-pane read (Ask Cmdr's `list_dir`) answers from the cache and changes no
+/// account: only the person's own listing says who the pane is signed in as.
+#[tokio::test]
+async fn a_read_that_is_no_pane_leaves_the_account_alone() {
+    let mut shares = testnas();
+    shares
+        .cache
+        .insert("id-testnas".to_string(), listed(vec![share("public", None)]));
+    let (volume, _) = volume(shares);
+    let path = app("smb://testnas");
+
+    volume.list_directory(&path, None).await.expect("cached");
+
+    assert_eq!(volume.listed_account(&path), None);
 }
 
 /// About, a size walk, or a presence check asks `get_metadata`: memory and the cache
@@ -427,17 +497,21 @@ async fn smb_integration_a_share_list_of_the_fixture_lists_through_the_engine() 
             &'a self,
             host: &'a NetworkHost,
             _freshness: Freshness,
-        ) -> Pin<Box<dyn Future<Output = Result<ShareListResult, ShareListError>> + Send + 'a>> {
-            Box::pin(crate::network::smb_client::list_shares(
-                &host.id,
-                "127.0.0.1",
-                None,
-                host.port,
-                None,
-                crate::network::smb_client::GuestAttempt::Try,
-                None,
-                Some(0),
-            ))
+        ) -> Pin<Box<dyn Future<Output = Listed> + Send + 'a>> {
+            Box::pin(async move {
+                let result = crate::network::smb_client::list_shares(
+                    &host.id,
+                    "127.0.0.1",
+                    None,
+                    host.port,
+                    None,
+                    crate::network::smb_client::GuestAttempt::Try,
+                    None,
+                    Some(0),
+                )
+                .await;
+                Listed { result, account: None }
+            })
         }
     }
 

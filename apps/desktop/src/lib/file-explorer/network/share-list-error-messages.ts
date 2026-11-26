@@ -13,8 +13,10 @@
  * box.
  */
 import type { ShareListError } from '#lib/ipc/bindings.js'
-import { getMessage } from '#lib/intl/messages.svelte.js'
+import { getMessage, tString } from '#lib/intl/messages.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
+import { escapeMarkdown } from '#lib/error-messages/markdown-escape.js'
+import type { FriendlyErrorMessage } from '#lib/error-messages/friendly-error-message.js'
 
 /** Fills `{token}` placeholders in ONE pass, so a server literally named `{server}` stays a name. */
 function raw(key: MessageKey, params: Record<string, string> = {}): string {
@@ -47,4 +49,35 @@ const SHARE_LIST_MESSAGE: { [K in ShareListError['type']]: (server: string) => s
  */
 export function renderShareListError(error: ShareListError, serverName: string): string {
   return SHARE_LIST_MESSAGE[error.type](serverName)
+}
+
+/**
+ * A share list that didn't list, as the pane's error screen words it (the listing
+ * reasons `shareListSignIn` / `shareListUnavailable`): the share list's own title and
+ * sentence, so the screen and the servers list's tooltip say one thing.
+ *
+ * ❗ The sentence lands in markdown, so the server's name goes in escaped; the title is
+ * plain text. A server that wants an account reads as a sign-in, ❌ never "Couldn't
+ * connect" (cmdr-reports#10).
+ */
+export function shareListListingMessage(
+  reason: 'shareListSignIn' | 'shareListUnavailable',
+  error: ShareListError,
+  server: string,
+): FriendlyErrorMessage {
+  if (reason === 'shareListSignIn') {
+    return {
+      title: tString('fileExplorer.network.share.signInTitle', { hostName: server }),
+      message:
+        error.type === 'auth_required'
+          ? tString('fileExplorer.network.share.signInMessage')
+          : renderShareListError(error, escapeMarkdown(server)),
+      suggestion: '',
+    }
+  }
+  return {
+    title: tString('fileExplorer.network.share.connectFailedTitle', { hostName: server }),
+    message: renderShareListError(error, escapeMarkdown(server)),
+    suggestion: '',
+  }
 }

@@ -167,6 +167,7 @@ fn classify(err: &VolumeError, path_display: String, native: &dyn Fn() -> Option
         VolumeError::LinkNeedsConsent(sign_in) => {
             kinds::link_needs_consent(&path_display, &sign_in.server, &sign_in.target, raw)
         }
+        VolumeError::ShareListRefused(refusal) => kinds::share_list_refused(refusal, raw),
         VolumeError::DeviceSessionReset(_) => kinds::device_reconnecting(&path_display, raw),
         VolumeError::ReadOnly(_) => kinds::read_only(raw),
         VolumeError::StorageFull { .. } => kinds::storage_full(raw),

@@ -67,27 +67,31 @@ export function shareListHostKey(path: string): ShareListAddress | null {
   const authority = rest.endsWith('/') ? rest.slice(0, -1) : rest
   if (authority === '' || authority.includes('/')) return null
 
-  let key: string | null
-  let portText: string | null
+  const split = splitAuthority(authority)
+  if (split === null) return null
+  const { key, portText } = split
+  const port = portText === null ? SMB_PORT : readPort(portText)
+  if (port === null || key === null || key === '') return null
+  return { key: key.toLowerCase(), port }
+}
+
+/**
+ * An authority's key (unescaped, or the bracketed IPv6 literal) and its port text, or
+ * `null` when its shape doesn't read. A key that doesn't unescape comes back `null`.
+ */
+function splitAuthority(authority: string): { key: string | null; portText: string | null } | null {
   if (authority.startsWith('[')) {
     const close = authority.indexOf(']')
     if (close < 0) return null
     const literal = authority.slice(1, close).toLowerCase()
-    key = IPV6.test(literal) ? literal : null
+    const key = IPV6.test(literal) ? literal : null
     const rest = authority.slice(close + 1)
-    if (rest === '') portText = null
-    else if (rest.startsWith(':')) portText = rest.slice(1)
-    else return null
-  } else {
-    const colons = authority.split(':')
-    if (colons.length > 2) return null
-    key = unescapeKey(colons[0])
-    portText = colons.length === 2 ? colons[1] : null
+    if (rest === '') return { key, portText: null }
+    return rest.startsWith(':') ? { key, portText: rest.slice(1) } : null
   }
-
-  const port = portText === null ? SMB_PORT : readPort(portText)
-  if (port === null || key === null || key === '') return null
-  return { key: key.toLowerCase(), port }
+  const colons = authority.split(':')
+  if (colons.length > 2) return null
+  return { key: unescapeKey(colons[0]), portText: colons.length === 2 ? colons[1] : null }
 }
 
 function readPort(text: string): number | null {

@@ -20,6 +20,7 @@ use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
 use crate::listing_host::events::{ListingEndEffects, TauriListingEvents, WireCollector, error_analytics_category};
+use crate::network::share_list_volume::ShareListAccount;
 use crate::network::smb_share_parent::ShareParent;
 use crate::network::{HostSource, NetworkHost};
 use crate::test_support::{TestDir, wait_until_async};
@@ -48,6 +49,9 @@ struct RecordingEffects {
     /// What `share_parent` answers, and the volume ids it was asked about.
     share_parent: Option<ShareParent>,
     share_parent_asks: std::sync::Mutex<Vec<String>>,
+    /// What `share_list_account` answers, and the listings it was asked about.
+    share_list_account: Option<ShareListAccount>,
+    share_list_account_asks: std::sync::Mutex<Vec<(String, AppPathBuf)>>,
 }
 
 impl RecordingEffects {
@@ -92,6 +96,13 @@ impl ListingEndEffects for Arc<RecordingEffects> {
         self.share_parent_asks.lock_ignore_poison().push(volume_id.to_string());
         self.share_parent.clone()
     }
+
+    fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount> {
+        self.share_list_account_asks
+            .lock_ignore_poison()
+            .push((volume_id.to_string(), path.to_owned()));
+        self.share_list_account.clone()
+    }
 }
 
 /// What one listing did, end to end.
@@ -121,11 +132,19 @@ impl App {
 
     /// An engine serving `volume`, whose share `..` leads out of as `parent` says.
     fn serving_share(volume: &Registered, parent: ShareParent) -> Self {
+        Self::with_effects(
+            volume,
+            RecordingEffects {
+                share_parent: Some(parent),
+                ..RecordingEffects::default()
+            },
+        )
+    }
+
+    /// An engine serving `volume`, its bookkeeping answering as `effects` says.
+    fn with_effects(volume: &Registered, effects: RecordingEffects) -> Self {
         let wire = Arc::new(WireCollector::default());
-        let effects = Arc::new(RecordingEffects {
-            share_parent: Some(parent),
-            ..RecordingEffects::default()
-        });
+        let effects = Arc::new(effects);
         let reaction: Arc<dyn ListingEvents> =
             Arc::new(TauriListingEvents::with(Arc::clone(&wire), Arc::clone(&effects)));
         Self {
@@ -321,6 +340,31 @@ async fn a_listing_below_a_shares_top_folder_carries_no_share_parent() {
     assert_eq!(completes.len(), 1);
     assert!(completes[0].share_parent.is_none());
     assert!(app.effects.share_parent_asks.lock_ignore_poison().is_empty());
+}
+
+/// A share list's listing carries the account it signed in as (the pane's "as
+/// <account>"), asked of the listed volume and path.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_listing_carries_the_account_its_share_list_signed_in_as() {
+    let volume = share_with_a_folder("reaction-share-list-account");
+    let testuser = ShareListAccount::User {
+        username: "testuser".to_string(),
+    };
+    let app = App::with_effects(
+        &volume,
+        RecordingEffects {
+            share_list_account: Some(testuser.clone()),
+            ..RecordingEffects::default()
+        },
+    );
+    app.run(&volume.0, app_path!("/photos"), app.state()).await;
+
+    let completes = app.wire.completes.lock_ignore_poison();
+    assert_eq!(completes[0].share_list_account, Some(testuser));
+    assert_eq!(
+        *app.effects.share_list_account_asks.lock_ignore_poison(),
+        vec![(volume.0.clone(), app_path!("/photos").to_owned())]
+    );
 }
 
 // ============================================================================

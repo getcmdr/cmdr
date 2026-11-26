@@ -189,8 +189,8 @@ Always pass the resolved IP from mDNS discovery when one is available; fall back
 the host when nobody typed it in; `None` is "Browse as guest" and clears it). So does a sign-in that got a refused SHARE
 mounted (`share-mount.svelte.ts`'s `remountWith`): without it, a share guests can list but not open asked for the password
 on every mount (cmdr-reports#27). And a listing that got no credentials signs in
-as the preferred account with the password this session already read (`account_listing_for`, over
-`keychain::cached_credentials`, ❌ never a Keychain read). Without both, the next background prefetch listed as guest
+as the preferred account with its session credential (`smb_account_ladder::account_listing_for`, over
+`keychain::session_credentials`: a sheet's answer or a password this session already read, ❌ never a Keychain read). Without both, the next background prefetch listed as guest
 and "Sign in as testuser" read "as guest" three seconds later.
 
 ❗ **Credentials skip guest, always** (`GuestAttempt::given_credentials`, applied before both the smb2 legs and the CLI
@@ -1065,11 +1065,34 @@ is mounted, ❌ never entered here). Tracking issue: getcmdr/cmdr#1511; the fron
   `get_metadata` reads memory and the cache only. **Decision**: a separate trait read the engine calls, ❌ not a
   listing-context flag: a flag would have to ride every read path into the backend, and the pane's open is already its
   own call site. Pinned by `share_list_volume_test.rs`'s `a_read_that_is_no_pane_never_dials`.
-- **The pane read signs in with `commands::network::list_host_shares`**, the same body `list_shares_on_host` runs
-  (cache, else `account_listing_for`'s ladder: a typed account's session-cached password, else guest; ❌ never a
-  Keychain read). Timeout and cache TTL are smb_client's defaults: the frontend's network settings don't reach it yet.
-- **Interim refusals**: a refused listing maps onto the nearest `VolumeError` (`listing_refusal`: the sign-in classes
-  as `PermissionDenied`), until the typed share-list refusal replaces it.
+- **The pane read signs in with `share_list_sign_in::list_for_pane`**: a typed account's session credential, else
+  its stored password read ONCE, else `AuthRequired`; with no typed account, guest, and only a guest turned away (a
+  sign-in class) falls to the session credential, else the one stored read. Every other caller (prefetch, the
+  frontend's own `list_shares_on_host`, a non-pane read's cache rule) stays memory-only
+  (`smb_account_ladder.rs`). Timeout and cache TTL are smb_client's defaults (15 s, 30 s): the frontend's
+  `network.timeout` / `network.shareCacheDuration` settings don't reach the backend (a settings-plumbing gap, not
+  this volume's).
+- **The Keychain is read at most once per server per session** (`keychain::read_server_credentials_once` over
+  `keychain_session.rs`'s `ReadOnce`, keyed by the server-level account name): a hit lands in the keychain's cache, a
+  miss is remembered as spent, and a turn lock makes a racing listing and mount ask once. ❌ Only a pane listing and a
+  person's mount reach it; pinned by `keychain_session_test.rs` and `share_list_sign_in_test.rs`, and the no-dial pin
+  (`a_read_that_is_no_pane_never_dials`) is also the no-read pin, since `ServerShares::list` is the only way to it.
+- **The session credential**: a sheet's answer that worked (`list_shares_with_credentials`, or a mount sent
+  credentials) becomes the server's (`keychain::remember_for_session`), Remember or not, under its discovery name and
+  its dialed name ❗ on ITS port (a bare hostname would sign the 445 server on the same machine in). The pane's
+  re-list and `mount_network_share` with no credentials sign in as it (`share_list_sign_in::mount_with_session`: the
+  session credential, else the stored read up front for a typed account, else guest, and a guest the share turns
+  away costs the stored read and one more mount). Forget saved password (`forget_server_credentials`,
+  `delete_credentials`) and Forget server (`forget_saved_smb_host`) drop it; the one-read memo stays spent.
+- **Typed refusals**: a refused listing is `VolumeError::ShareListRefused` (`cmdr_fs::share_list::ShareListRefusal`:
+  the `ShareListError` plus the server's discovery name). `friendly_error` turns a sign-in class
+  (`ShareListError::wants_sign_in`: `auth_required`, `signing_required`, `auth_failed`) into the calm
+  `shareListSignIn` reason with the `sign_in_to_server` action and no retry, and the rest into
+  `shareListUnavailable` (`crates/cmdr-fs/src/volume/friendly_error/kinds.rs::share_list_refused` has the table);
+  the frontend words both through `renderShareListError`. The security-log call stays in `smb_client::list_shares`.
+- **The account it listed as** rides `listing-complete` as `shareListAccount` (`ShareListAccount`, the frontend's
+  `SignedInAs` shape), read from the volume's per-host memory (`SmbServerVolume::listed_account`); a cached list
+  doesn't say, and a refusal clears it.
 - **The path**: the frontend writes it (`apps/desktop/src/lib/servers/share-list-path.ts`, which says why the key is a
   Bonjour name or a typed address and ❌ never an IP); `share_list_path.rs` is the one Rust reader. Both read
   `share-list-path-cases.json`, so the escaping and the case, NFC, and port folding can't drift.

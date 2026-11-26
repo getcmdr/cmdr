@@ -19,19 +19,23 @@
 //! (`supports_local_fs_access` is `false`), so Quick Look and every `std::fs` fast path
 //! leave them alone.
 
+use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::share_list::ShareListRefusal;
 use cmdr_fs::share_meta::ShareMeta;
 use cmdr_fs::volume::{BackendKind, ListingProgress, Volume, VolumeError};
 use cmdr_smb::{ShareListError, ShareListResult};
 use tokio_util::sync::CancellationToken;
 
+use crate::ignore_poison::IgnorePoison;
 use crate::network::NetworkHost;
 use crate::network::share_list_path::{KnownHosts, NetworkPath, ShareListAddress, resolve};
+pub(crate) use crate::network::share_list_sign_in::{Listed, ShareListAccount};
 
 /// The id the Servers hub and every share list are registered under.
 pub(crate) const NETWORK_VOLUME_ID: &str = "network";
@@ -62,12 +66,14 @@ pub(crate) trait ServerShares: Send + Sync {
     /// credentials follows. ❌ Never a dial, ❌ never the Keychain.
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult>;
 
-    /// Lists `host`'s shares, signing in as a listing does. The one call that dials.
+    /// Lists `host`'s shares, signing in the way a pane's listing does
+    /// (`share_list_sign_in`), and says who it listed as. The one call that dials, and
+    /// the one that may read the stored password (once per session).
     fn list<'a>(
         &'a self,
         host: &'a NetworkHost,
         freshness: Freshness,
-    ) -> Pin<Box<dyn Future<Output = Result<ShareListResult, ShareListError>> + Send + 'a>>;
+    ) -> Pin<Box<dyn Future<Output = Listed> + Send + 'a>>;
 }
 
 /// Who a read is for, which decides whether it may dial.
@@ -85,6 +91,9 @@ enum Reader {
 pub(crate) struct SmbServerVolume {
     root: AppPathBuf,
     shares: Arc<dyn ServerShares>,
+    /// Who each server's last pane listing signed in as, by host id: what that
+    /// listing's `listing-complete` reports. Only a pane listing writes it.
+    listed_as: Mutex<HashMap<String, ShareListAccount>>,
 }
 
 impl SmbServerVolume {
@@ -92,7 +101,37 @@ impl SmbServerVolume {
         Self {
             root: AppPathBuf::parse(NETWORK_ROOT, PathFlavor::Posix).expect("`smb://` is an app path"),
             shares,
+            listed_as: Mutex::new(HashMap::new()),
         }
+    }
+
+    /// The account the last pane listing of the share list at `path` signed in as, from
+    /// memory only; `None` for any other path, or when no listing said (a cached list).
+    pub(crate) fn listed_account(&self, path: &AppPath) -> Option<ShareListAccount> {
+        let NetworkPath::ShareList(address) = NetworkPath::of(path.as_str()) else {
+            return None;
+        };
+        let host = resolve(&address, &self.shares.known_hosts())?;
+        self.listed_as.lock_ignore_poison().get(&host.id).cloned()
+    }
+
+    /// A pane listing (`freshness` says whether past the cache), with who it listed as
+    /// noted for its `listing-complete`.
+    async fn sign_in_and_list(&self, host: &NetworkHost, freshness: Freshness) -> Result<ShareListResult, VolumeError> {
+        let Listed { result, account } = self.shares.list(host, freshness).await;
+        let mut listed_as = self.listed_as.lock_ignore_poison();
+        match (&result, account) {
+            (Ok(_), Some(account)) => {
+                listed_as.insert(host.id.clone(), account);
+            }
+            // A cached list doesn't say; the last listing's answer stands.
+            (Ok(_), None) => {}
+            (Err(_), _) => {
+                listed_as.remove(&host.id);
+            }
+        }
+        drop(listed_as);
+        result.map_err(|error| listing_refusal(host, error))
     }
 
     /// The server a share list's `path` names, or `NotFound` when nothing known goes by it.
@@ -113,16 +152,8 @@ impl SmbServerVolume {
                 .shares
                 .cached(&host)
                 .ok_or_else(|| VolumeError::NotConnected(path.as_str().to_string()))?,
-            Reader::Pane => self
-                .shares
-                .list(&host, Freshness::Cached)
-                .await
-                .map_err(|error| listing_refusal(path, error))?,
-            Reader::Refresh => self
-                .shares
-                .list(&host, Freshness::Fresh)
-                .await
-                .map_err(|error| listing_refusal(path, error))?,
+            Reader::Pane => self.sign_in_and_list(&host, Freshness::Cached).await?,
+            Reader::Refresh => self.sign_in_and_list(&host, Freshness::Fresh).await?,
         };
         Ok(listed
             .shares
@@ -182,32 +213,14 @@ fn share_entry(share_list: &str, share: &cmdr_smb::ShareInfo) -> FileEntry {
     }
 }
 
-/// A listing the server refused, in the volume's vocabulary.
-///
-/// Interim: the sign-in classes read as `PermissionDenied` until the typed share-list
-/// refusal (a `VolumeError` arm the frontend turns into a Sign in action) replaces this.
-fn listing_refusal(path: &AppPath, error: ShareListError) -> VolumeError {
-    let path = path.as_str().to_string();
-    match error {
-        ShareListError::AuthRequired { .. }
-        | ShareListError::SigningRequired { .. }
-        | ShareListError::AuthFailed { .. } => VolumeError::PermissionDenied {
-            path,
-            raw_os_error: None,
-        },
-        ShareListError::Timeout { message } => VolumeError::ConnectionTimeout(message.into()),
-        ShareListError::SignatureInvalid { message } => VolumeError::SignatureInvalid(message.into()),
-        ShareListError::NegotiationInvalid { message } => VolumeError::NegotiationInvalid(message.into()),
-        ShareListError::EncryptionUnavailable { .. } => VolumeError::EncryptionUnavailable(path),
-        ShareListError::EncryptionRequired { .. } => VolumeError::EncryptionRequired(path),
-        ShareListError::HostUnreachable { message }
-        | ShareListError::ProtocolError { message }
-        | ShareListError::ResolutionFailed { message }
-        | ShareListError::MissingDependency { message, .. } => VolumeError::IoError {
-            message: message.into(),
-            raw_os_error: None,
-        },
-    }
+/// A listing the server refused: the typed share-list refusal, naming the server by
+/// the name the Servers list knows it by. A sign-in class is the pane's sign-in
+/// (`ShareListError::wants_sign_in`), the rest the server's answer.
+fn listing_refusal(host: &NetworkHost, error: ShareListError) -> VolumeError {
+    VolumeError::ShareListRefused(Box::new(ShareListRefusal {
+        server: host.name.clone(),
+        error,
+    }))
 }
 
 impl Volume for SmbServerVolume {
@@ -266,7 +279,7 @@ impl Volume for SmbServerVolume {
 }
 
 /// The app's servers and shares: discovery, the manual store, the share cache, and the
-/// listing's sign-in ladder (`commands::network::list_host_shares`).
+/// pane listing's sign-in ladder (`share_list_sign_in::list_for_pane`).
 pub(crate) struct AppServerShares {
     app: tauri::AppHandle,
 }
@@ -295,8 +308,12 @@ impl ServerShares for AppServerShares {
 
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult> {
         let hostname = Self::hostname_of(host);
-        let guest =
-            crate::commands::network::guest_attempt_for(&self.app, &hostname, host.ip_address.as_deref(), host.port);
+        let guest = crate::network::smb_account_ladder::guest_attempt_for(
+            &self.app,
+            &hostname,
+            host.ip_address.as_deref(),
+            host.port,
+        );
         crate::network::smb_client::cached_listing(&host.id, guest)
     }
 
@@ -304,21 +321,24 @@ impl ServerShares for AppServerShares {
         &'a self,
         host: &'a NetworkHost,
         freshness: Freshness,
-    ) -> Pin<Box<dyn Future<Output = Result<ShareListResult, ShareListError>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = Listed> + Send + 'a>> {
         Box::pin(async move {
             if freshness == Freshness::Fresh {
                 crate::network::smb_client::invalidate_cache(&host.id);
             }
-            let hostname = Self::hostname_of(host);
-            let listed = crate::commands::network::ListedHost {
-                host_id: &host.id,
-                hostname: &hostname,
-                ip_address: host.ip_address.as_deref(),
-                port: host.port,
-            };
-            crate::commands::network::list_host_shares(&self.app, listed, None, None).await
+            crate::network::share_list_sign_in::list_for_pane(&self.app, host).await
         })
     }
+}
+
+/// The account the share list at `path` on `volume_id` signed in as, when that's the
+/// `network` volume ([`SmbServerVolume::listed_account`]). Memory only.
+pub(crate) fn listed_account(volume_id: &str, path: &AppPath) -> Option<ShareListAccount> {
+    if volume_id != NETWORK_VOLUME_ID {
+        return None;
+    }
+    let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id)?;
+    volume.as_any().downcast_ref::<SmbServerVolume>()?.listed_account(path)
 }
 
 /// Registers the `network` volume. Once, at startup: it lists nothing until a pane opens

@@ -7,6 +7,7 @@ use crate::network::{
 };
 
 use crate::network::os_mount_notice::FallbackNotice;
+use crate::network::smb_account_ladder;
 use crate::network::smb_connect_directly::{self, UpgradeResult};
 use crate::network::smb_direct_switch::{self, DirectConnectionSwitch};
 use crate::network::smb_share_parent::{self, ShareParent};
@@ -123,23 +124,24 @@ pub async fn list_shares_on_host(
 
 /// Which server a share listing dials, and the id its shares are cached under.
 #[derive(Clone, Copy)]
-pub(crate) struct ListedHost<'a> {
+struct ListedHost<'a> {
     pub host_id: &'a str,
     pub hostname: &'a str,
     pub ip_address: Option<&'a str>,
     pub port: u16,
 }
 
-/// [`list_shares_on_host`]'s body, which the share-list volume's pane read shares: the
-/// cache, else a dial signed in by [`account_listing_for`]'s ladder (❌ never a Keychain
-/// read), with a refusal logged for the sign-in diagnostics.
-pub(crate) async fn list_host_shares(
+/// [`list_shares_on_host`]'s body: the cache, else a dial signed in by
+/// [`account_listing_for`]'s ladder (❌ never a Keychain read), with a refusal logged for
+/// the sign-in diagnostics. A pane's share list climbs its own ladder instead
+/// (`network::share_list_sign_in::list_for_pane`).
+async fn list_host_shares(
     app: &tauri::AppHandle,
     host: ListedHost<'_>,
     timeout_ms: Option<u64>,
     cache_ttl_ms: Option<u64>,
 ) -> Result<ShareListResult, ShareListError> {
-    let (guest, account) = account_listing_for(app, host.hostname, host.ip_address, host.port);
+    let (guest, account) = smb_account_ladder::account_listing_for(app, host.hostname, host.ip_address, host.port);
     let credentials = account.as_ref().map(|c| (c.username.as_str(), c.password.as_str()));
     let result = smb_client::list_shares(
         host.host_id,
@@ -155,91 +157,6 @@ pub(crate) async fn list_host_shares(
     // The account's password is this session's copy of a saved entry.
     log_sign_in_refusal(host.hostname, host.port, credentials, CredentialSource::Saved, &result);
     result
-}
-
-/// How a listing that got no credentials signs in: guest first, unless the person set
-/// an account for this host, in which case as that account with the password this
-/// session already read (`keychain::cached_credentials`, ❌ never a Keychain read), or
-/// not at all (`AuthRequired`, which the frontend takes to the Keychain and the sheet).
-///
-/// ❗ Without the cached leg, "Sign in as…" didn't stick: the next background listing
-/// had no password to offer and came back as nothing, where it used to come back guest.
-fn account_listing_for(
-    app: &tauri::AppHandle,
-    hostname: &str,
-    ip_address: Option<&str>,
-    port: u16,
-) -> (smb_client::GuestAttempt, Option<SmbCredentials>) {
-    listing_ladder(
-        hostname,
-        ip_address,
-        port,
-        |server| manual_servers::typed_username(app, server),
-        keychain::cached_credentials,
-    )
-}
-
-/// [`account_listing_for`]'s decision, over its two lookups: the account the person
-/// typed for a server, and this session's cached password for a credential key.
-///
-/// ❗ `cached_password` is the ONLY credential source it's handed, so the ladder has no
-/// way to reach the Keychain; and it's asked only once an account is typed.
-fn listing_ladder(
-    hostname: &str,
-    ip_address: Option<&str>,
-    port: u16,
-    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
-    cached_password: impl Fn(&str) -> Option<SmbCredentials>,
-) -> (smb_client::GuestAttempt, Option<SmbCredentials>) {
-    use crate::network::server_identity::smb_server;
-
-    let Some(username) = typed_account(hostname, ip_address, port, typed_username) else {
-        return (smb_client::GuestAttempt::Try, None);
-    };
-    let cached = std::iter::once(hostname)
-        .chain(ip_address)
-        .find_map(|name| cached_password(&smb_server(name, port)))
-        .filter(|creds| creds.username == username);
-    (smb_client::GuestAttempt::Skip, cached)
-}
-
-/// Whether a listing of this host may try guest: not when the person typed an
-/// account for it (`manual_servers::typed_username`), by either name it goes by.
-pub(crate) fn guest_attempt_for(
-    app: &tauri::AppHandle,
-    hostname: &str,
-    ip_address: Option<&str>,
-    port: u16,
-) -> smb_client::GuestAttempt {
-    guest_attempt(hostname, ip_address, port, |server| {
-        manual_servers::typed_username(app, server)
-    })
-}
-
-/// [`guest_attempt_for`]'s decision, over the typed-account lookup.
-fn guest_attempt(
-    hostname: &str,
-    ip_address: Option<&str>,
-    port: u16,
-    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
-) -> smb_client::GuestAttempt {
-    match typed_account(hostname, ip_address, port, typed_username) {
-        Some(_) => smb_client::GuestAttempt::Skip,
-        None => smb_client::GuestAttempt::Try,
-    }
-}
-
-/// The account the person typed for this host, by its hostname first, then its IP.
-fn typed_account(
-    hostname: &str,
-    ip_address: Option<&str>,
-    port: u16,
-    typed_username: impl Fn(&crate::network::server_identity::SmbServer) -> Option<String>,
-) -> Option<String> {
-    use crate::network::server_identity::SmbServer;
-
-    typed_username(&SmbServer::new(hostname, port))
-        .or_else(|| ip_address.and_then(|ip| typed_username(&SmbServer::new(ip, port))))
 }
 
 /// Prefetches shares for a host, so its share list is cached by the time someone opens it.
@@ -265,7 +182,7 @@ pub async fn prefetch_shares(
     app_handle: tauri::AppHandle,
 ) {
     // Fire and forget - we don't care about the result for prefetching
-    let (guest, account) = account_listing_for(&app_handle, &hostname, ip_address.as_deref(), port);
+    let (guest, account) = smb_account_ladder::account_listing_for(&app_handle, &hostname, ip_address.as_deref(), port);
     let _ = smb_client::list_shares(
         &host_id,
         &hostname,
@@ -433,13 +350,36 @@ pub async fn list_shares_with_credentials(
         ip_address.as_deref(),
         port,
         credentials,
-        guest_attempt_for(&app_handle, &hostname, ip_address.as_deref(), port),
+        smb_account_ladder::guest_attempt_for(&app_handle, &hostname, ip_address.as_deref(), port),
         timeout_ms,
         cache_ttl_ms,
     )
     .await;
     log_sign_in_refusal(&hostname, port, credentials, credential_source, &result);
+    // ❗ The account the sheet just proved is the server's session credential, Remember
+    // or not: the pane's re-list and the mount that follows sign in as it.
+    if let (Ok(_), Some((username, password))) = (&result, credentials) {
+        let proved = SmbCredentials {
+            username: username.to_string(),
+            password: password.to_string(),
+        };
+        for name in names_of_listed_host(&host_id, &hostname, port) {
+            keychain::remember_for_session(&name, proved.clone());
+        }
+    }
     result
+}
+
+/// Every name a sheet's answer for the host listed as `host_id` is filed under: its
+/// discovery name (what a sign-in saves and looks up under), and the hostname it dialed,
+/// ❗ on ITS port, or a server on 445 of the same machine would sign in as this account.
+fn names_of_listed_host(host_id: &str, hostname: &str, port: u16) -> Vec<String> {
+    let discovered = crate::network::fresh_discovered_hosts()
+        .into_iter()
+        .find(|host| host.id == host_id)
+        .map(|host| host.name);
+    let dialed = crate::network::server_identity::smb_server(hostname, port);
+    discovered.into_iter().chain(std::iter::once(dialed)).collect()
 }
 
 // --- Mount Commands ---
@@ -461,8 +401,11 @@ use crate::network::os_mount::{self, MountError, MountResult};
 /// # Arguments
 /// * `server` - Server hostname or IP address
 /// * `share` - Name of the share to mount
-/// * `username` - Optional username for authentication
-/// * `password` - Optional password for authentication
+/// * `username` - Optional username for authentication (a sheet's answer, which
+///   becomes the server's session credential once the mount proves it)
+/// * `password` - Optional password for authentication. With neither, the mount
+///   signs in as the server's session credential, else its stored password, read
+///   at most once per session (`network::share_list_sign_in::mount_with_session`)
 /// * `port` - SMB port (default 445)
 /// * `timeout_ms` - Optional timeout in milliseconds (default: 20000)
 /// * `host_name` - The name the person knows the server by (the discovery list's
@@ -494,22 +437,51 @@ pub async fn mount_network_share(
     timeout_ms: Option<u64>,
     host_name: Option<String>,
     attempt_id: Option<String>,
+    app_handle: tauri::AppHandle,
 ) -> Result<MountResult, MountError> {
     let actual_port = port.unwrap_or(445);
     // ❗ Before the mount: a move of this server landing while the mount is out must
     // keep it from saving the old address again (`remember_mount_since`).
     let set_out = crate::network::connect_wiring::DialTicket::now();
     let (cancel, _filed) = crate::network::file_mount_attempt(attempt_id.as_deref());
-    let result = os_mount::mount_share(
-        server.clone(),
-        share.clone(),
-        username.clone(),
-        password.clone(),
-        actual_port,
-        timeout_ms,
-        &cancel,
-    )
-    .await?;
+    let mount = |credentials: Option<SmbCredentials>| {
+        let (username, password) = credentials.map(|c| (c.username, c.password)).unzip();
+        os_mount::mount_share(
+            server.clone(),
+            share.clone(),
+            username,
+            password,
+            actual_port,
+            timeout_ms,
+            &cancel,
+        )
+    };
+    // No credentials from the frontend: the server's session credential, else its one
+    // stored read (`network::share_list_sign_in`). Sent ones are a sheet's answer, which
+    // becomes the session credential once the mount proves it.
+    let (result, username, password) = match (username, password) {
+        (Some(username), Some(password)) => {
+            let offered = SmbCredentials { username, password };
+            let result = mount(Some(offered.clone())).await?;
+            let dialed = crate::network::server_identity::smb_server(&server, actual_port);
+            for name in host_name.iter().cloned().chain(std::iter::once(dialed)) {
+                keychain::remember_for_session(&name, offered.clone());
+            }
+            (result, Some(offered.username), Some(offered.password))
+        }
+        _ => {
+            let (result, used) = crate::network::share_list_sign_in::mount_with_session(
+                &app_handle,
+                &server,
+                host_name.as_deref(),
+                actual_port,
+                mount,
+            )
+            .await?;
+            let (username, password) = used.map(|c| (c.username, c.password)).unzip();
+            (result, username, password)
+        }
+    };
 
     // Try to establish a direct smb2 connection and register as SmbVolume.
     // If this fails, the FSEvents watcher will register a LocalPosixVolume
@@ -776,7 +748,3 @@ pub fn set_network_enabled(enabled: bool, app_handle: tauri::AppHandle) {
         crate::network::clear_discovered_hosts(&app_handle);
     }
 }
-
-#[cfg(test)]
-#[path = "network_tests.rs"]
-mod tests;

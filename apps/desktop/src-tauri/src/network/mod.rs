@@ -9,6 +9,7 @@
 
 pub mod credential_store;
 pub mod keychain;
+pub(crate) mod keychain_session;
 
 pub mod connect_wiring;
 pub mod dial_flights;
@@ -94,6 +95,7 @@ pub(crate) mod smb_connect_failure;
 // SMB submodules - these are implementation details of smb_client
 mod smb_cache;
 // Who a `statfs` server string is: what to dial, what to call it, its saved credentials.
+pub(crate) mod smb_account_ladder;
 pub(crate) mod smb_server_address;
 pub(crate) mod smb_upgrade;
 // "Connect directly": the upgrade someone asked for, answered with where it left
@@ -118,6 +120,7 @@ pub(crate) mod share_choices;
 pub(crate) mod smb_share_parent;
 // A server's share list as a listing: the `network` volume, and the path it reads its server from.
 pub(crate) mod share_list_path;
+pub(crate) mod share_list_sign_in;
 pub(crate) mod share_list_volume;
 
 // The "we're stuck on the kernel mount" notice's once-per-server ledger. Lives

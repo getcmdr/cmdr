@@ -20,7 +20,8 @@ import type { FriendlyErrorMessage } from './friendly-error-message'
 import { esc, expandSystemStrings } from './compose'
 import { getMessage } from '#lib/intl/messages.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
-import type { LockedContainer } from '#lib/ipc/bindings.js'
+import type { LockedContainer, ShareListError } from '#lib/ipc/bindings.js'
+import { shareListListingMessage } from '#lib/file-explorer/network/share-list-error-messages.js'
 
 /**
  * Substitutes `{path}` / `{osMessage}` param tokens in a catalog value with the
@@ -116,6 +117,9 @@ export type ListingErrorReason =
   | { reason: 'smbEncryptionRequired'; path: string }
   | { reason: 'smbNegotiationInvalid'; path: string }
   | { reason: 'smbEncryptionUnavailable'; path: string }
+  // ── a server's share list (`smb://<server>`), worded by the share list's own words ──
+  | { reason: 'shareListSignIn'; refusal: ShareListError; server: string }
+  | { reason: 'shareListUnavailable'; refusal: ShareListError; server: string }
   | { reason: 'readOnly' }
   | { reason: 'storageFull' }
   | { reason: 'connectionTimedOut' }
@@ -147,6 +151,10 @@ export function getListingErrorMessage(r: ListingErrorReason): FriendlyErrorMess
   // locked, ❌ never the path (a 7z backed up in a snapshot is an archive).
   if (r.reason === 'archiveNeedsPassword' && r.container === 'resticRepo') {
     return compose('resticRepoNeedsPassword')
+  }
+  // A share list's words are the share list's own, one source with the servers list.
+  if (r.reason === 'shareListSignIn' || r.reason === 'shareListUnavailable') {
+    return shareListListingMessage(r.reason, r.refusal, r.server)
   }
   const params: Record<string, string> = {}
   if ('path' in r) params.path = esc(r.path)

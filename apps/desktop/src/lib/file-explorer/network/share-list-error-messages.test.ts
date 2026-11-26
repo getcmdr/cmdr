@@ -11,6 +11,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import type { ShareListError } from '#lib/ipc/bindings.js'
 import { _setLocaleForTests } from '#lib/intl/locale.js'
 import { renderShareListError } from './share-list-error-messages'
+import { getListingErrorMessage, type ListingErrorReason } from '#lib/error-messages/listing-error-messages.js'
+import { offersErrorReport } from '#lib/error-messages/listing-error.js'
 
 beforeAll(() => {
   _setLocaleForTests('en-US')
@@ -83,5 +85,54 @@ describe('renderShareListError', () => {
     for (const error of ALL.filter((e) => e.type !== 'missing_dependency')) {
       expect(renderShareListError(error, 'Testnas'), error.type).toContain('“Testnas”')
     }
+  })
+})
+
+/** The variants the backend sends as the sign-in reason (`ShareListError::wants_sign_in`). */
+const SIGN_IN_TYPES = new Set<ShareListError['type']>(['auth_required', 'signing_required', 'auth_failed'])
+
+function asListingReason(error: ShareListError, server: string): ListingErrorReason {
+  return SIGN_IN_TYPES.has(error.type)
+    ? { reason: 'shareListSignIn', refusal: error, server }
+    : { reason: 'shareListUnavailable', refusal: error, server }
+}
+
+describe('a share list refused as a listing', () => {
+  it('gives every variant a title and the share list’s own sentence', () => {
+    for (const error of ALL) {
+      const message = getListingErrorMessage(asListingReason(error, 'Testnas'))
+      expect(message.title, error.type).toContain('Testnas')
+      expect(message.title, error.type).not.toMatch(/^(errors|fileExplorer)\./)
+      expect(message.message, error.type).not.toBe('')
+      expect(message.message, error.type).not.toMatch(/^(errors|fileExplorer)\./)
+      expect(message.message, error.type).not.toContain('smbutil')
+      if (error.type !== 'auth_required') {
+        expect(message.message, `delegates to the share list's sentence: ${error.type}`).toBe(
+          renderShareListError(error, 'Testnas'),
+        )
+      }
+    }
+  })
+
+  it('words a server that wants an account as a sign-in, ❌ never as a failure', () => {
+    const signIn = getListingErrorMessage(asListingReason(CASES.auth_required, 'Testnas'))
+    expect(signIn.title).toBe('Sign in to Testnas')
+    expect(signIn.message).toBe('This server shows its shares once you sign in.')
+
+    const down = getListingErrorMessage(asListingReason(CASES.host_unreachable, 'Testnas'))
+    expect(down.title).toBe('Couldn’t connect to Testnas')
+  })
+
+  // The explanation renders as markdown, so a name like `Test_user_1's NAS` must not
+  // italicize half of itself.
+  it('escapes the server name for the markdown it lands in', () => {
+    const message = getListingErrorMessage(asListingReason(CASES.host_unreachable, 'Test_user_1’s NAS'))
+    expect(message.message).toContain('Test&#95;user&#95;1’s NAS')
+    expect(message.title, 'the title is plain text').toContain('Test_user_1’s NAS')
+  })
+
+  it('offers no error report for a sign-in, and one for the server’s other answers', () => {
+    expect(offersErrorReport('shareListSignIn')).toBe(false)
+    expect(offersErrorReport('shareListUnavailable')).toBe(true)
   })
 })

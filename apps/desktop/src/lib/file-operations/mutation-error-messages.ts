@@ -27,6 +27,7 @@ import type { MutationError, VolumeError } from '#lib/ipc/bindings.js'
 import { getMessage, tString } from '#lib/intl/messages.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import { getGitErrorMessage } from '#lib/error-messages/git-error-messages.js'
+import { renderShareListError } from '#lib/file-explorer/network/share-list-error-messages.js'
 import { validationMessage } from '#lib/utils/filename-validation.js'
 
 /** What is being named, so the reused validation copy agrees grammatically. */
@@ -61,6 +62,8 @@ const VOLUME_MESSAGE: { [K in VolumeError['type']]: (error: Extract<VolumeError,
   notConnected: () => raw('errors.volume.notConnected'),
   linkTargetUnreachable: () => raw('errors.volume.linkTargetUnreachable'),
   linkNeedsConsent: () => raw('errors.volume.linkNeedsConsent'),
+  // A server's share list: the share list's own sentence, one source with its pane.
+  shareListRefused: (e) => renderShareListError(e.data.error, e.data.server),
   deviceSessionReset: () => raw('errors.volume.deviceSessionReset'),
   readOnly: () => raw('errors.volume.readOnly'),
   storageFull: () => raw('errors.volume.storageFull'),

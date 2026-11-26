@@ -596,8 +596,9 @@ pub async fn eject_and_update_saved_smb_host(
 /// ❗ Exactly the store rows the listing filed under that host
 /// ([`smb_hosts::smb_host_group`]), found by the listing's id alone: nothing
 /// another host filed goes with it, not even a server on another port of the
-/// same machine. Rows only: nothing is unmounted and no password is touched
-/// ("Forget saved password" is its own request).
+/// same machine. Rows only: nothing is unmounted and no stored password is touched
+/// ("Forget saved password" is its own request), though an account this session
+/// typed for the host stops signing in for it.
 ///
 /// ❗ Emits `volumes-changed`: a pinned share of the host leaves the switcher.
 #[tauri::command]
@@ -606,6 +607,12 @@ pub fn forget_saved_smb_host(id: String, app: tauri::AppHandle) -> bool {
     let Some(group) = smb_hosts::smb_host_group(&id, manual_servers::all(&app)) else {
         return false;
     };
+    // An account this session typed for it goes with the server (memory only: the store
+    // is "Forget saved password"'s). Its names come off the rows, so before they go.
+    let hosts = crate::network::fresh_discovered_hosts();
+    if let Some(scope) = smb_hosts::smb_secret_scope(&id, manual_servers::all(&app), &hosts) {
+        crate::network::keychain::forget_session_credentials(&scope.names);
+    }
     let manual = group.manual && manual_servers::remove_manual_server(&id, &app).is_ok();
     let rows = known_shares::forget_rows(&group.rows);
     let forgotten = manual || rows > 0;
@@ -622,7 +629,7 @@ pub fn forget_saved_smb_host(id: String, app: tauri::AppHandle) -> bool {
 /// ❗ Call it BEFORE [`forget_saved_smb_host`]: the host's names come off the rows
 /// that command takes away. Every name the password can be filed under goes, on the
 /// host's own port ([`smb_hosts::SmbHostGroup::credential_names`]), with each saved
-/// share's share-level entry and the in-memory cache; a server on another port of
+/// share's share-level entry, the in-memory cache, and the session credential; a server on another port of
 /// the same machine keeps its own. Deleting reads nothing, so it raises no prompt to
 /// read a password.
 #[tauri::command]

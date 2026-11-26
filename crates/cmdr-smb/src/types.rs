@@ -2,10 +2,13 @@
 //! attempt went.
 //!
 //! Every type here crosses IPC, so it carries serde and `specta::Type`. The
-//! `#[serde(tag = "type")]` on [`ShareListError`] is load-bearing: each variant
-//! carries different fields while the JSON stays flat.
+//! refusal, [`ShareListError`], is filesystem vocabulary (a share-list listing
+//! refuses with it, `cmdr_fs::share_list`), re-exported here so callers keep
+//! writing `cmdr_smb::ShareListError`.
 
 use serde::{Deserialize, Serialize};
+
+pub use cmdr_fs::share_list::ShareListError;
 
 /// Information about a discovered share.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -41,103 +44,6 @@ pub struct ShareListResult {
     pub auth_mode: AuthMode,
     /// True when this answer came from the in-memory cache rather than the wire.
     pub from_cache: bool,
-}
-
-/// Error types for share listing operations.
-///
-/// Uses internally tagged representation so each variant can carry different fields
-/// while keeping a flat JSON shape (`{ "type": "...", "message": "..." }`).
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "snake_case", tag = "type")]
-pub enum ShareListError {
-    /// The server is offline, or nothing is listening on the SMB port.
-    HostUnreachable {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The server accepted the connection and then went quiet.
-    Timeout {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The server turned an anonymous session away; credentials are needed.
-    AuthRequired {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// Guest access won't work.
-    SigningRequired {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The credentials the caller supplied were rejected.
-    AuthFailed {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The server's reply on a signed session didn't carry a valid signature, so Cmdr refused
-    /// it. A possible sign of tampering, so ❌ never a fallback to another client.
-    SignatureInvalid {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The server didn't confirm the negotiation the connection ran on (SMB 3.0 and 3.0.2 check it
-    /// after sign-in), so smb2 closed the connection. A possible sign of tampering, like
-    /// [`Self::SignatureInvalid`], so ❌ never a fallback to another client.
-    NegotiationInvalid {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The server only accepts encrypted connections, and this one agreed on no way to encrypt.
-    /// ❌ Never a fallback to another client: the CLI fallback lists as a guest, unencrypted.
-    EncryptionUnavailable {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// Cmdr requires encryption ([`crate::SmbEncryption`]) and this connection can't have it:
-    /// the server agreed on no cipher, or it answered with a guest session, which has no keys.
-    /// ❌ Never a fallback to another client: the CLI fallback ignores the requirement.
-    EncryptionRequired {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The exchange broke down in a way none of the other variants describes.
-    ProtocolError {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// The hostname never resolved to an address.
-    ResolutionFailed {
-        /// Diagnostic detail, for logs.
-        message: String,
-    },
-    /// A required CLI tool is not installed.
-    MissingDependency {
-        /// Diagnostic detail, for logs.
-        message: String,
-        /// What the user would run to install it, when there's a one-liner.
-        #[serde(rename = "installCommand")]
-        install_command: Option<String>,
-    },
-}
-
-impl std::fmt::Display for ShareListError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::HostUnreachable { message } => write!(f, "Host unreachable: {}", message),
-            Self::Timeout { message } => write!(f, "Timeout: {}", message),
-            Self::AuthRequired { message } => write!(f, "Authentication required: {}", message),
-            Self::SigningRequired { message } => write!(f, "SMB signing required: {}", message),
-            Self::AuthFailed { message } => write!(f, "Authentication failed: {}", message),
-            Self::SignatureInvalid { message } => write!(f, "Reply refused for its signature: {}", message),
-            Self::NegotiationInvalid { message } => write!(f, "Negotiation not confirmed: {}", message),
-            Self::EncryptionUnavailable { message } => write!(f, "Encryption unavailable: {}", message),
-            Self::EncryptionRequired { message } => write!(f, "Encryption required by Cmdr: {}", message),
-            Self::ProtocolError { message } => write!(f, "Protocol error: {}", message),
-            Self::ResolutionFailed { message } => write!(f, "Resolution failed: {}", message),
-            Self::MissingDependency { message, .. } => write!(f, "Missing dependency: {}", message),
-        }
-    }
 }
 
 /// Converts smb2 share info to Cmdr's ShareInfo type.

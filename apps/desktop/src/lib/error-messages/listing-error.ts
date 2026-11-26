@@ -72,6 +72,8 @@ const REFUSALS: ReadonlySet<ListingErrorReason['reason']> = new Set([
   // couldn't agree on: the server's answer, not a bug in Cmdr (#1000).
   'smbNegotiationInvalid',
   'smbEncryptionUnavailable',
+  // A server's share list wants an account: a normal step, the pane's sign-in.
+  'shareListSignIn',
 ])
 
 /** Whether the error screen offers "Send error report…". An untyped failure does: it may be a bug. */

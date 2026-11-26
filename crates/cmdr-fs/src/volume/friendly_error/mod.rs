@@ -30,6 +30,7 @@ mod volume_error;
 
 use serde::{Deserialize, Serialize};
 
+use crate::share_list::ShareListError;
 use crate::volume::LockedContainer;
 use crate::volume::git_error::FriendlyGitErrorKind;
 
@@ -59,6 +60,9 @@ pub enum ErrorActionKind {
     /// User can turn "Always require SMB encryption" off in Cmdr's own Settings > File systems >
     /// SMB/Network shares, or fix the server's encryption.
     OpenSmbEncryptionSetting,
+    /// The server's share list wants an account: the pane's sign-in sheet for that
+    /// server, after which the listing runs again.
+    SignInToServer,
 }
 
 /// How serious a failure is, and therefore how the frontend styles it.
@@ -304,6 +308,24 @@ pub enum ListingErrorReason {
         /// The other server the link leads to.
         target: String,
     },
+    /// `VolumeError::ShareListRefused` for an account the listing lacks
+    /// (`ShareListError::wants_sign_in`): a normal step, not a failure, so the frontend
+    /// draws it calm and offers its sign-in.
+    ShareListSignIn {
+        /// What the server answered; the frontend words it per variant.
+        refusal: ShareListError,
+        /// The server's name as the Servers list knows it.
+        server: String,
+    },
+    /// `VolumeError::ShareListRefused` for everything else: the server couldn't be
+    /// asked, or its answer wasn't one Cmdr takes.
+    ShareListUnavailable {
+        /// What the server answered; the frontend words it per variant (and shows a
+        /// `missing_dependency`'s install command).
+        refusal: ShareListError,
+        /// The server's name as the Servers list knows it.
+        server: String,
+    },
     /// `VolumeError::EncryptionRequired`: "Always require SMB encryption" is on, and the share's
     /// connection can't encrypt (an unencrypted macOS mount, or a server that can't), so Cmdr
     /// didn't open it.
@@ -409,6 +431,8 @@ pub enum ListingErrorReason {
     },
 }
 
+#[cfg(test)]
+mod share_list_tests;
 #[cfg(test)]
 mod tests;
 

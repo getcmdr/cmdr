@@ -15,6 +15,7 @@
 //! inline in their mapper.
 
 use super::{ErrorActionKind, ErrorCategory, ListingError, ListingErrorReason};
+use crate::share_list::{ShareListError, ShareListRefusal};
 
 pub(super) fn not_found(path_display: &str, raw_detail: String) -> ListingError {
     ListingError {
@@ -256,6 +257,61 @@ pub(super) fn smb_encryption_required(path_display: &str, raw_detail: String) ->
         provider: None,
         action_kind: Some(ErrorActionKind::OpenSmbEncryptionSetting),
         retry_hint: true,
+        raw_detail,
+    }
+}
+
+/// A server's share list that didn't list (`VolumeError::ShareListRefused`).
+///
+/// An account it lacks is the calm sign-in reason, with the sign-in action and ❌ no retry:
+/// without an account the server gives the same answer (cmdr-reports#10). The rest is the
+/// server's answer, retried like the share list always offered, except where only a setting
+/// or the server's own configuration can change it.
+pub(super) fn share_list_refused(refusal: &ShareListRefusal, raw_detail: String) -> ListingError {
+    let ShareListRefusal { server, error } = refusal;
+    let (category, retry_hint, action_kind) = match error {
+        ShareListError::AuthRequired { .. }
+        | ShareListError::SigningRequired { .. }
+        | ShareListError::AuthFailed { .. } => {
+            (ErrorCategory::NeedsAction, false, Some(ErrorActionKind::SignInToServer))
+        }
+        ShareListError::HostUnreachable { .. }
+        | ShareListError::Timeout { .. }
+        | ShareListError::ResolutionFailed { .. }
+        | ShareListError::ProtocolError { .. } => (ErrorCategory::Transient, true, None),
+        // A refused reply or an unconfirmed negotiation: possible tampering, so serious, but
+        // a flaky network device causes it too, and asking again is what the words suggest.
+        ShareListError::SignatureInvalid { .. } | ShareListError::NegotiationInvalid { .. } => {
+            (ErrorCategory::Serious, true, None)
+        }
+        // The server's own encryption requirement: only its settings change the answer.
+        ShareListError::EncryptionUnavailable { .. } => (ErrorCategory::NeedsAction, false, None),
+        // Cmdr's own "Always require SMB encryption": the setting is the way out.
+        ShareListError::EncryptionRequired { .. } => (
+            ErrorCategory::NeedsAction,
+            true,
+            Some(ErrorActionKind::OpenSmbEncryptionSetting),
+        ),
+        // Installing the tool is the fix, then a retry.
+        ShareListError::MissingDependency { .. } => (ErrorCategory::NeedsAction, true, None),
+    };
+    let reason = if error.wants_sign_in() {
+        ListingErrorReason::ShareListSignIn {
+            refusal: error.clone(),
+            server: server.clone(),
+        }
+    } else {
+        ListingErrorReason::ShareListUnavailable {
+            refusal: error.clone(),
+            server: server.clone(),
+        }
+    };
+    ListingError {
+        category,
+        reason,
+        provider: None,
+        action_kind,
+        retry_hint,
         raw_detail,
     }
 }

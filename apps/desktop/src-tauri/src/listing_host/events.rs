@@ -28,6 +28,7 @@ use cmdr_listing::StalledOn;
 use cmdr_listing::host::{ListingEnd, ListingEvents};
 use cmdr_listing::{DirectoryDiffBatch, SortColumn};
 
+use crate::network::share_list_volume::ShareListAccount;
 use crate::network::smb_share_parent::ShareParent;
 
 // ============================================================================
@@ -76,6 +77,10 @@ pub struct ListingCompleteEvent {
     /// top-folder listing refreshes the answer: one asked before the share's mount was
     /// up never sticks (`network/smb_share_parent.rs`).
     pub share_parent: Option<ShareParent>,
+    /// Who a server's share list (`smb://<server>` on the `network` volume) signed in as,
+    /// for the pane's "as <account>"; `None` for every other listing, and for a share list
+    /// answered from the cache, which doesn't say. Memory only, read on the way out.
+    pub share_list_account: Option<ShareListAccount>,
 }
 
 /// Error event payload
@@ -287,6 +292,9 @@ pub(crate) trait ListingEndEffects: Send + Sync {
     /// top folder. ❗ Memory and the cached mount table only: it runs on the listing's
     /// way out.
     fn share_parent(&self, volume_id: &str) -> Option<ShareParent>;
+    /// The account the share list at `path` on `volume_id` signed in as, or `None` when
+    /// it's no share list. ❗ Memory only: it runs on every listing's way out.
+    fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount>;
 }
 
 /// The app's answers to [`ListingEndEffects`].
@@ -325,6 +333,10 @@ impl ListingEndEffects for AppListingEndEffects {
 
     fn share_parent(&self, volume_id: &str) -> Option<ShareParent> {
         crate::network::smb_share_parent::share_parent_of(volume_id)
+    }
+
+    fn share_list_account(&self, volume_id: &str, path: &AppPath) -> Option<ShareListAccount> {
+        crate::network::share_list_volume::listed_account(volume_id, path)
     }
 }
 
@@ -382,6 +394,7 @@ impl<W: ListingWire, E: ListingEndEffects> TauriListingEvents<W, E> {
             stored_path: end.stored_path.map(AppPathBuf::into_string),
             effective_sort_by: end.effective_sort_by,
             share_parent,
+            share_list_account: self.effects.share_list_account(end.volume_id, end.listed_path),
         });
     }
 

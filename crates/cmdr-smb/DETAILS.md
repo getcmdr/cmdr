@@ -58,7 +58,8 @@ Here, because the answer is yes:
   answered the named login with a guest session, else `NeedsCredentials` (`reconnect::credentials_refusal_state`), so
   the pane names what Cmdr refused.
 - `try_list_shares_as_guest` / `try_list_shares_authenticated` — one connect and one `list_shares`, nothing else.
-- `ShareInfo` / `AuthMode` / `ShareListResult` / `ShareListError` — what a listing attempt produced.
+- `ShareInfo` / `AuthMode` / `ShareListResult` / `ShareListError` — what a listing attempt produced. `ShareListError`
+  lives in `cmdr_fs::share_list` (a share list on the app's `network` volume refuses with it) and is re-exported here.
 
 In the app, because the answer is no:
 

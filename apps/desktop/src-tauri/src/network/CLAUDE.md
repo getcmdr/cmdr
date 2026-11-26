@@ -14,6 +14,7 @@ PLACE for S3 and NFS, a `*_volume_wiring.rs` that dials and registers), and thei
 
 ## Must-knows
 
+- **A share list or a bare mount reads the password via `keychain::read_server_credentials_once`**: once per server.
 - **A secret reaches a dial through `SecretOffer` or the store, ❌ never a `password` param.** `remember: false` writes
   nothing (`one_shot_credentials.rs`).
 - **Key everything by `(host, port, username)`**, ❌ never the host alone; a trusted host KEY keys
@@ -31,8 +32,7 @@ PLACE for S3 and NFS, a `*_volume_wiring.rs` that dials and registers), and thei
   `on_superseded`; ❌ never a bare overwrite or `on_unmount`, which cuts in-flight transfers. An EDIT to a connected
   SFTP/WebDAV place shares its session instead: `live_server_edit.rs` (`DETAILS.md` § "Editing a connected place").
 - **Drop a place's session through `commands::servers::disconnect_place_inner`, ❌ never a wiring's own `disconnect`**:
-  it emits the `VolumeUnmounted` that sends a pane standing on the place home. Eject routes here too, so a server
-  detaches from the chip, the switcher, and MCP the same way.
+  it emits the `VolumeUnmounted` that sends a pane standing on the place home. Eject routes here too.
 - **Decide at ACT time**: re-check `is_already_direct` and the per-share switch (`direct_connection_enabled`) under
   `lock_volume_upgrade`, right before connecting. ❗ Every auto upgrade dials through `register_smb_volume`, or the
   switch does nothing (`DETAILS.md` § "The per-share direct-connection switch"), and passes a `FallbackNotice`:

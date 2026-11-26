@@ -174,7 +174,9 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   connect result and ❌ never derived from the protocol or the sheet's mode; an unregistered id and a backend with no
   story of its own both answer `password`, the safe way to be wrong, and a share answers `username_password` because
   the share is the identity and the account is a field on it). Real on every OS.
-- **`network.rs`**: SMB/network shares: discovery, share listing, keychain, mounting, direct-connection upgrade,
+- **`network.rs`**: SMB/network shares: discovery, share listing (the memory-only account ladder is
+  `../network/smb_account_ladder.rs`), keychain, mounting (with no credentials sent, `mount_network_share` signs in
+  through `../network/share_list_sign_in.rs`), direct-connection upgrade,
   per-volume disconnect (`disconnect_smb_volume`: macOS shells out to
   `diskutil unmount`, Linux drops the smb2 session). Borrow Finder's saved password (macOS):
   `system_has_saved_smb_password` (prompt-free probe driving the "Use saved password" offer) and

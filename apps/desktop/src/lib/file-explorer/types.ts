@@ -175,7 +175,7 @@ export interface StreamingListingStartResult {
 // tauri-specta. Import them from `#lib/tauri-commands`.
 
 /** Action kind for errors that require a specific user action (mirrors Rust `ErrorActionKind`). */
-export type ErrorActionKind = 'open_privacy_settings' | 'open_smb_encryption_setting'
+export type ErrorActionKind = 'open_privacy_settings' | 'open_smb_encryption_setting' | 'sign_in_to_server'
 
 /**
  * Rendered, displayable error copy for `ErrorPane`. The backend ships a typed,

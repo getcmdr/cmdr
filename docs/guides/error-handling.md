@@ -121,10 +121,12 @@ The rule that replaced it:
   `apps/desktop/src/lib/file-explorer/network/mount-error-messages.ts`, and `mount-error.ts` beside it carries the value
   across the throw. A new variant needs its `errors.mount.<variant>` key and its arm in `MOUNT_MESSAGE`, whose record
   type demands every variant.
-- **Share-list refusals**: the enum is `crates/cmdr-smb/src/types.rs`; the words are
-  `apps/desktop/src/lib/file-explorer/network/share-list-error-messages.ts`, and `share-list-error.ts` beside it carries
-  the value across the throw. Every catch site reads it back through `shareListErrorOf`, which reads anything untyped as
-  `protocol_error`.
+- **Share-list refusals**: the enum is `crates/cmdr-fs/src/share_list.rs` (re-exported as `cmdr_smb::ShareListError`);
+  the words are `apps/desktop/src/lib/file-explorer/network/share-list-error-messages.ts`, and `share-list-error.ts`
+  beside it carries the value across the throw. Every catch site reads it back through `shareListErrorOf`, which reads
+  anything untyped as `protocol_error`. A share list on the `network` volume refuses with
+  `VolumeError::ShareListRefused`, which reaches the pane as the `shareListSignIn` / `shareListUnavailable` listing
+  reasons, worded by the same module (`shareListListingMessage`).
 - **The typed-error catalogue and the deadline helpers**:
   [the command layer](../../apps/desktop/src-tauri/src/commands/DETAILS.md#decisions) and
   `apps/desktop/src-tauri/src/commands/CLAUDE.md`.
