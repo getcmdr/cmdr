@@ -632,7 +632,8 @@ pub async fn eject_and_update_saved_smb_host(
 /// another host filed goes with it, not even a server on another port of the
 /// same machine. Rows only: nothing is unmounted and no stored password is touched
 /// ("Forget saved password" is its own request), though an account this session
-/// typed for the host stops signing in for it.
+/// typed for the host stops signing in for it, and the share list it bought is dropped
+/// from the share cache.
 ///
 /// ❗ Emits `volumes-changed`: a pinned share of the host leaves the switcher.
 #[tauri::command]
@@ -647,6 +648,10 @@ pub fn forget_saved_smb_host(id: String, app: tauri::AppHandle) -> bool {
     if let Some(scope) = smb_hosts::smb_secret_scope(&id, manual_servers::all(&app), &hosts) {
         crate::network::keychain::forget_session_credentials(&scope.names);
     }
+    // And the share list that credential bought, cached under the row's id (the host id its
+    // share list resolves to): served from the cache, a re-added server would list again
+    // without asking for the account the person just made Cmdr forget.
+    crate::network::smb_client::invalidate_cache(&id);
     let manual = group.manual && manual_servers::remove_manual_server(&id, &app).is_ok();
     let rows = known_shares::forget_rows(&group.rows);
     let forgotten = manual || rows > 0;
