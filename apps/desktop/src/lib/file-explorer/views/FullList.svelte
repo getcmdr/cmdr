@@ -525,16 +525,11 @@
     )
     const isParentRowVisible = $derived(hasParent && firstVisibleGlobalIndex === 0)
 
-    $effect(() => {
-        // Re-run when the scale settles (canvas measurer was just invalidated).
-        // Reading the tick keeps it as a Svelte dep without affecting any logic.
-        dependOn(scaleSettleTick)
-        const first = firstVisibleGlobalIndex
-        const last = lastVisibleGlobalIndex
+    /** The cached entries on screen, by UI index range (`..` excluded). */
+    function cachedEntriesBetween(first: number, last: number): FileEntry[] {
         const parentOffset = hasParent ? 1 : 0
         const firstBackend = Math.max(0, first - parentOffset)
         const lastBackend = last - parentOffset
-
         const entries = cache.entries
         const range = cache.range
         const visible: FileEntry[] = []
@@ -543,6 +538,16 @@
                 visible.push(entries[i - range.start])
             }
         }
+        return visible
+    }
+
+    $effect(() => {
+        // Re-run when the scale settles (canvas measurer was just invalidated).
+        // Reading the tick keeps it as a Svelte dep without affecting any logic.
+        dependOn(scaleSettleTick)
+        const first = firstVisibleGlobalIndex
+        const last = lastVisibleGlobalIndex
+        const visible = cachedEntriesBetween(first, last)
 
         const parentStats = isParentRowVisible ? cache.parentDirStats : null
         if (visible.length === 0 && !parentStats) return
