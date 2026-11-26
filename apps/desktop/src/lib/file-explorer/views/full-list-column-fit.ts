@@ -1,8 +1,8 @@
 /**
  * Which optional Full-view columns fit the pane, Finder-style: as the pane
  * narrows, the date column drops first, then Ext, so Name keeps a readable
- * width. Icon and Size always stay; a list with no dates never shows the date. Pure, so `FullList` and its tests share one
- * answer; the rationale and the threshold numbers are in `DETAILS.md` § "Narrow
+ * width. Icon and Size always stay; a list with no dates never shows the date, and one
+ * with no sizes never shows Size. Pure, so `FullList` and its tests share one answer; the rationale and the threshold numbers are in `DETAILS.md` § "Narrow
  * panes drop the date, then Ext".
  */
 
@@ -48,13 +48,18 @@ export function fitFullListColumns(args: {
    * date column never shows, and Ext fits against the room it would have taken.
    */
   hasDates?: boolean
+  /**
+   * `false` when no row carries a size (`ListWords.rowsHaveNoSizes`, a share list): there's
+   * no Size track, so its width goes to Name and the other columns.
+   */
+  hasSizes?: boolean
 }): FullListColumnFit {
-  const { rowAreaWidth, iconWidth, gitWidth, widths, scale, hasDates = true } = args
+  const { rowAreaWidth, iconWidth, gitWidth, widths, scale, hasDates = true, hasSizes = true } = args
   // Unmeasured (first paint, or a layout-less environment): today's full layout.
   if (rowAreaWidth <= 0) return { showDate: hasDates, showExt: true }
 
   const nameMin = FULL_NAME_MIN_WIDTH * scale
-  const fixed = [iconWidth, widths.size, ...(gitWidth > 0 ? [gitWidth] : [])]
+  const fixed = [iconWidth, ...(hasSizes ? [widths.size] : []), ...(gitWidth > 0 ? [gitWidth] : [])]
   const ext = widths.ext > 0 ? [widths.ext] : []
   // Every non-Name track costs its width plus one gap.
   const nameWidth = (tracks: number[]): number =>

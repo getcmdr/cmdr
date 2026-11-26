@@ -25,6 +25,8 @@
         showExtensionInName: boolean
         /** Whether the date column takes a track (a narrow pane drops it; `full-list-column-fit.ts`). */
         showDateColumn: boolean
+        /** Whether the Size column takes a track: off for a kind whose rows carry no sizes (`ListWords.rowsHaveNoSizes`). */
+        showSizeColumn?: boolean
         /** Whether the optional Git status column takes a track. */
         gitColumnVisible: boolean
         /** Suppresses the column-width transition for one paint after a nav. */
@@ -56,6 +58,7 @@
         dateFallbackNote,
         showExtensionInName,
         showDateColumn,
+        showSizeColumn = true,
         gitColumnVisible,
         skipTransition,
         scrollbarWidth,
@@ -143,16 +146,18 @@
             onClick={sort}
         />
     {/if}
-    <SortableHeader
-        column="size"
-        {isFocused}
-        {clearsSortLabel}
-        label={tString('fileExplorer.columns.size')}
-        align="right"
-        currentSortColumn={sortBy}
-        currentSortOrder={sortOrder}
-        onClick={sort}
-    />
+    {#if showSizeColumn}
+        <SortableHeader
+            column="size"
+            {isFocused}
+            {clearsSortLabel}
+            label={tString('fileExplorer.columns.size')}
+            align="right"
+            currentSortColumn={sortBy}
+            currentSortOrder={sortOrder}
+            onClick={sort}
+        />
+    {/if}
     <!-- One date column: it sorts by (and lights up for) the requested date, and its label
          names the date its cells show, which is Modified in a fallback. The Sort by chevron
          shares its track, left of the caret, and comes first in DOM order so ←/→ walk the

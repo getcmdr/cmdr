@@ -459,6 +459,8 @@
      * widths measured with the `showExtensionInName` SETTING, never the fitted
      * layout, or a dropped Ext would measure 0 and fit again.
      */
+    /** Whether the Size column takes a track: off only for a kind whose rows carry no sizes (a share list). */
+    const showSizeColumn = $derived(listWords?.rowsHaveNoSizes !== true)
     const columnFit = $derived(
         fitFullListColumns({
             rowAreaWidth: listClientWidth,
@@ -467,6 +469,7 @@
             widths: fitWidths,
             scale: getEffectiveScale(),
             hasDates: listWords?.rowsHaveNoDates !== true,
+            hasSizes: showSizeColumn,
         }),
     )
     const showDateColumn = $derived(columnFit.showDate)
@@ -478,12 +481,15 @@
     const extInName = $derived(showExtensionInName || !columnFit.showExt)
 
     const gridTemplate = $derived.by(() => {
-        const icon = `${String(iconColWidth)}px`
-        const ext = extInName ? '' : `${String(columnWidths.ext)}px `
-        const size = `${String(columnWidths.size)}px`
-        const date = showDateColumn ? ` ${String(columnWidths.date)}px` : ''
-        const git = gitColumnVisible ? `${String(GIT_COLUMN_WIDTH)}px ` : ''
-        return `${icon} 1fr ${git}${ext}${size}${date}`
+        const px = (width: number) => `${String(width)}px`
+        return [
+            px(iconColWidth),
+            '1fr',
+            ...(gitColumnVisible ? [px(GIT_COLUMN_WIDTH)] : []),
+            ...(extInName ? [] : [px(columnWidths.ext)]),
+            ...(showSizeColumn ? [px(columnWidths.size)] : []),
+            ...(showDateColumn ? [px(columnWidths.date)] : []),
+        ].join(' ')
     })
     /**
      * `.listbox-region`'s gutter sits ABOVE the spacer in the scroll content, so the
@@ -869,6 +875,7 @@
         {dateFallbackNote}
         showExtensionInName={extInName}
         {showDateColumn}
+        {showSizeColumn}
         {gitColumnVisible}
         {skipTransition}
         {scrollbarWidth}
@@ -959,11 +966,13 @@
                                 details: {
                                     host: extInName ? undefined : file.resticMeta?.hostname,
                                     description: extInName ? undefined : (file.shareMeta?.description ?? undefined),
-                                    size: rowSizeText({
-                                        override: sizeOverride.override,
-                                        triads: sizeTriads,
-                                        dirState: dirSizeState,
-                                    }),
+                                    size: showSizeColumn
+                                        ? rowSizeText({
+                                              override: sizeOverride.override,
+                                              triads: sizeTriads,
+                                              dirState: dirSizeState,
+                                          })
+                                        : undefined,
                                     // Named even when a narrow pane hides the date column: a screen
                                     // reader hears the same row at any width.
                                     date: { column: dateColumn, text: date.text },
@@ -1061,6 +1070,7 @@
                                 ></span>
                             {/if}
                         {/if}
+                        {#if showSizeColumn}
                         <span
                             class="col-size"
                             aria-label={sizeOverride.tooltip ?? sizeOverride.override}
@@ -1152,6 +1162,7 @@
                                 >
                             {/if}
                         </span>
+                        {/if}
                         {#if showDateColumn}
                             <!-- Every date the entry carries, built on hover only: a row renders far more often than anyone hovers it. -->
                             <span class="col-date" use:tooltip={{ html: () => buildDateTooltip(file, formattedDate, dateColumn).html }}>

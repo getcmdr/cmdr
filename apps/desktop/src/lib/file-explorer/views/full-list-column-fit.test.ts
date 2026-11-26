@@ -66,4 +66,20 @@ describe('fitFullListColumns', () => {
       expect(fit(extFits - 1, { hasDates: false }).showExt).toBe(false)
     })
   })
+
+  describe('a list whose rows carry no sizes', () => {
+    it('spends the Size width on Name, so Ext and the date stay longer', () => {
+      // chrome 24 + icon 16 + ext 40 + date 95 + three 8 px gaps = 199, plus Name's minimum.
+      const allFit = 199 + FULL_NAME_MIN_WIDTH
+      expect(fit(allFit, { hasSizes: false })).toEqual({ showDate: true, showExt: true })
+      expect(fit(allFit - 1, { hasSizes: false }).showDate).toBe(false)
+    })
+
+    it('fits a share list (no dates, no sizes) against icon and Ext alone', () => {
+      // chrome 24 + icon 16 + ext 40 + two 8 px gaps = 96, plus Name's minimum.
+      const extFits = 96 + FULL_NAME_MIN_WIDTH
+      expect(fit(extFits, { hasDates: false, hasSizes: false })).toEqual({ showDate: false, showExt: true })
+      expect(fit(extFits - 1, { hasDates: false, hasSizes: false }).showExt).toBe(false)
+    })
+  })
 })

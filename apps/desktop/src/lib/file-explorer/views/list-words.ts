@@ -15,6 +15,12 @@ export interface ListWords {
   extIsProse?: boolean
   /** No row carries a date, so Full shows no date column (`fitFullListColumns`'s `hasDates`). */
   rowsHaveNoDates?: boolean
+  /**
+   * No row carries a size (a share list: the network volume is unindexed and a share row's
+   * path is no filesystem path, so it could only ever say `<dir>`), so Full shows no Size
+   * column (`fitFullListColumns`'s `hasSizes`).
+   */
+  rowsHaveNoSizes?: boolean
   /** What the `..` row says in place of "Parent folder". */
   parentRowName?: string
   /** What an empty list says in place of "Empty folder". */

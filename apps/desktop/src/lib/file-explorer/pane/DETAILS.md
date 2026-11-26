@@ -2130,7 +2130,10 @@ Decisions (David, 2026-11-25), each with its why:
   rule and no new column machinery. Two kind words size it for prose: `extIsProse` lifts its cap from an extension's
   (~11 characters) to a sentence's (~33, `PROSE_CAP_SAMPLE`), so "System default share" shows in full, and
   `rowsHaveNoDates` drops the always-empty date track (`fitFullListColumns`'s `hasDates`), handing its room to Name and
-  Description. Size stays (`<dir>` on every row): the fit keeps Size on every list, and no seam hides it.
+  Description. `rowsHaveNoSizes` drops the Size track the same way (`hasSizes`; cells, header, and the row's accessible
+  name): a share row can never carry a size, since the `network` volume is unindexed (`share_list_volume.rs`) and a
+  share row's `smb://` path matches no index's paths, so Size only ever said `<dir>`. Brief needs nothing: it has no
+  Size cell, and a share row's hover tooltip has no size line to show.
 - **Escape doesn't leave a share list**: on a file list Escape never means "parent", so the share list follows the list.
   Backspace, `⌘↑`, and `..` leave it. `share.back` (Escape, Backspace, `⌘↑`) lives on only for the mount controller's
   wait and refusal, off the palette.

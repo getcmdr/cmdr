@@ -101,24 +101,46 @@ describe('FullList in a narrow pane', () => {
   })
 
   // A server's share list: its kind's words say the Ext column carries prose and the rows have
-  // no dates, so the description gets its width and the always-empty date track goes.
-  it('gives a share list’s descriptions their width and drops its empty date column', async () => {
+  // no dates and no sizes, so the description gets its width and the always-empty date and
+  // Size tracks go (a share row's Size could only ever say `<dir>`).
+  it('gives a share list’s descriptions their width and drops its empty date and Size columns', async () => {
     const description = 'System default share'
     const list = await mountFullList({
       entries: [
         dirEntry({ name: 'media', path: 'smb://testnas/media', shareMeta: { description }, modifiedAt: undefined }),
       ],
       viewport: { clientHeight: 400, clientWidth: 800, offsetWidth: 800 },
-      props: { listWords: { extHeader: 'Description', extIsProse: true, rowsHaveNoDates: true } },
+      props: {
+        listWords: { extHeader: 'Description', extIsProse: true, rowsHaveNoDates: true, rowsHaveNoSizes: true },
+      },
     })
     expect(list.rowNames()).toEqual(['media'])
     expect(list.target.querySelector('.col-ext')?.textContent.trim()).toBe(description)
     expect(list.target.querySelectorAll('.col-date').length).toBe(0)
     expect(list.target.querySelector('.header-date')).toBeNull()
-    expect(headerSortLabels(list.target)).toEqual(['Name', 'Description', 'Size'])
-    // icon 1fr ext size, the Ext track wide enough for the whole description (7 px per char + 2 px pad).
+    expect(list.target.querySelectorAll('.col-size').length).toBe(0)
+    expect(headerSortLabels(list.target)).toEqual(['Name', 'Description'])
+    // icon 1fr ext, the Ext track wide enough for the whole description (7 px per char + 2 px pad).
+    expect(trackCount(rowTemplate(list.target))).toBe(3)
     const [, , ext] = rowTemplate(list.target).split(/\s+/)
     expect(ext).toBe(`${String(description.length * 7 + 2)}px`)
+    expect(list.target.querySelector<HTMLElement>('.header-row')?.style.gridTemplateColumns).toBe(
+      rowTemplate(list.target),
+    )
+    // Nor does the row's accessible name read out a `<dir>` it no longer shows.
+    expect(list.rows()[0].getAttribute('aria-label')).not.toContain('<dir>')
+  })
+
+  // A folder's subfolders keep their Size column and its `<dir>` placeholder: only a kind that
+  // says its rows carry no sizes loses it.
+  it('keeps a folder’s Size column for its subfolders', async () => {
+    const list = await mountFullList({
+      entries: [dirEntry({ name: 'photos', path: '/test/photos', recursiveSize: undefined })],
+      viewport: { clientHeight: 400, clientWidth: 800, offsetWidth: 800 },
+    })
+    expect(list.target.querySelectorAll('.col-size').length).toBe(1)
+    expect(list.target.querySelector('.col-size')?.textContent.trim()).toBe('<dir>')
+    expect(headerSortLabels(list.target)).toEqual(['Name', 'Ext', 'Size', 'Modified'])
   })
 
   it('brings the columns back when the pane widens', async () => {

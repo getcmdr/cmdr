@@ -2,7 +2,7 @@
  * The words a pane's kind gives its list (`../views/list-words.ts`), read off the kind so
  * the views and the footer never ask which kind they show. Only a server's share list has
  * any today: its Ext column holds the share's description (measured as prose), its rows
- * carry no dates, its `..` goes back to Servers, and its footer counts shares.
+ * carry no dates and no sizes, its `..` goes back to Servers, and its footer counts shares.
  */
 
 import { tString } from '#lib/intl/messages.svelte.js'
@@ -17,6 +17,7 @@ export function listWordsFor(kind: VolumeKind): ListWords | undefined {
     extHeader: tString('fileExplorer.columns.description'),
     extIsProse: true,
     rowsHaveNoDates: true,
+    rowsHaveNoSizes: true,
     parentRowName: tString('fileExplorer.network.share.parentRowName'),
     emptyText: tString('fileExplorer.network.share.emptyList'),
     countRows: (count) => tString('fileExplorer.network.share.shareCount', { count, countText: formatInteger(count) }),
