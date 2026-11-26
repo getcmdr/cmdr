@@ -256,10 +256,27 @@ fn matches_a_saved_smb_host_to_a_discovered_one_by_name_when_the_ids_differ() {
     assert_eq!(rows.len(), 1);
 }
 
-/// A server saved off a mount by IP is the discovered host at that IP: one row, under
-/// the Bonjour name, ❌ never a second "10.0.0.4" row beside it.
+/// A share Finder mounted by Bonjour name is saved under its `.local` hostname, which is
+/// the discovered host's: one row, under the Bonjour name, ❌ never a second row.
 #[test]
-fn matches_a_server_saved_by_ip_to_the_discovered_host_at_that_ip() {
+fn matches_a_server_saved_off_a_bonjour_mount_to_the_discovered_host() {
+    let rows = Inputs::saved(vec![from_mount("testnas.local", 445)])
+        .hosts(vec![NetworkHost {
+            hostname: Some("testnas.local".to_string()),
+            ip_address: Some("10.0.0.4".to_string()),
+            ..host("bonjour-testnas", "Testnas")
+        }])
+        .mount("Testnas._smb._tcp.local", 445)
+        .rows();
+    assert_eq!(names(&rows), ["Testnas"]);
+    assert!(rows[0].meta.saved);
+}
+
+/// ❗ A mount by IP is the person's pick of address (§ "Decisions", 5): its server stays a
+/// row of its own beside the Bonjour host at that IP, which the row neither opens nor signs
+/// in to. Both read connected.
+#[test]
+fn keeps_a_server_saved_by_ip_apart_from_the_bonjour_host_at_that_ip() {
     let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
         .hosts(vec![NetworkHost {
             hostname: Some("testnas.local".to_string()),
@@ -268,22 +285,8 @@ fn matches_a_server_saved_by_ip_to_the_discovered_host_at_that_ip() {
         }])
         .mount("10.0.0.4", 445)
         .rows();
-    assert_eq!(names(&rows), ["Testnas"]);
-    assert!(rows[0].meta.saved);
-    assert_eq!(rows[0].meta.status, ServerStatus::Connected);
-}
-
-/// ❗ The IP alone isn't the server: a host on another port at that IP is another one.
-#[test]
-fn keeps_a_server_saved_by_ip_apart_from_a_host_on_another_port_there() {
-    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
-        .hosts(vec![NetworkHost {
-            ip_address: Some("10.0.0.4".to_string()),
-            port: 10480,
-            ..host("bonjour-fixture", "Fixture")
-        }])
-        .rows();
-    assert_eq!(rows.len(), 2);
+    assert_eq!(names(&rows), ["10.0.0.4", "Testnas"]);
+    assert!(rows.iter().all(|row| row.meta.status == ServerStatus::Connected));
 }
 
 /// ❗ Servers behind mounted shares (§ "Decisions", 4 and 5 of the Servers plan): one NAS

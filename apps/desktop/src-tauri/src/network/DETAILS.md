@@ -397,8 +397,9 @@ macOS and Windows `lifecycle::handle_volume_mounted`, Linux's mount-table watche
   which flips between an IP and a `.local` name with discovery timing (launches would save one NAS again and again). An
   mDNS service name in `statfs` is no hostname, so it's keyed by its `.local` one (`service_name_to_hostname`), which
   the Servers list pairs with the discovered host of that name.
-- **Unnamed and marked `savedFromMount`**: the label is the address, which a Bonjour name and a typed name outrank (the
-  Servers list matches a discovered host at the saved IP and port, `servers_listing.rs::resolves_to`). Like a host saved
+- **Unnamed and marked `savedFromMount`**: the label is the address, which a Bonjour name and a typed name outrank. A
+  server saved by IP stays a row of its own beside the Bonjour host at that IP (an address is the person's pick, §
+  "Decisions", 5 of the Servers plan; `servers_listing.rs`'s module doc). Like a host saved
   without contact, it stays out of `load_manual_servers`' discovery injection, so it never reads "Found nearby" off its
   own manual host, and the hub's prefetch skips it (`savedSmbHostIds`): nothing lists its shares unasked (#324), a
   Tailscale address included. A mount through Cmdr (`note_first_connect`), a person's own add of the address, or an

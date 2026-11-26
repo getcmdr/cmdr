@@ -49,16 +49,15 @@ host that gets no prefetch is exactly a host the hub puts in its nearby group, p
 `awaitingFirstConnect` (saved without contact by "Add anyway" or an approved Ask Cmdr card): it's the person's, but
 nothing contacts it until they connect, so it's listed only when they open it (#777), and minus a host Cmdr saved off
 someone else's mount (`savedFromMount`, Rust `network/DETAILS.md` § "Servers behind mounted shares"), whose shares
-nobody opened in Cmdr. The match also claims the discovered host at a saved server's IP and port (`resolvesTo`), so a
-server saved by IP is one row with its Bonjour twin. The store reads `listSavedServers()` fresh per decision
-(`readSavedServers`, one read shared by every host that asks while it's out), because a host becomes the person's the
-moment they add it or mount one of its shares, and nothing tells the store when. A read that breaks answers "none
-saved": not knowing whose a host is must never be what signs Cmdr in to it. Pinned by `network-store.prefetch.test.ts`.
-The backend has no other caller that lists unasked: `smb_client::list_shares` is reached through the three listing
-commands, all frontend-invoked, and the share-list volume's sign-in ladder (`share_list_sign_in.rs`), which runs only
-for a pane that opened a share list (verified by reading its call sites, 2026-11-26). E2E builds count every call per
-address (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`), which `servers-list-flows.spec.ts` reads: opening
-Servers asks a saved server (the prefetch) and never a found one.
+nobody opened in Cmdr. The store reads `listSavedServers()` fresh per decision (`readSavedServers`, one read shared by
+every host that asks while it's out), because a host becomes the person's the moment they add it or mount one of its
+shares, and nothing tells the store when. A read that breaks answers "none saved": not knowing whose a host is must
+never be what signs Cmdr in to it. Pinned by `network-store.prefetch.test.ts`. The backend has no other caller that
+lists unasked: `smb_client::list_shares` is reached through the three listing commands, all frontend-invoked, and the
+share-list volume's sign-in ladder (`share_list_sign_in.rs`), which runs only for a pane that opened a share list
+(verified by reading its call sites, 2026-11-26). E2E builds count every call per address
+(`apps/desktop/src-tauri/src/network/share_listing_tally.rs`), which `servers-list-flows.spec.ts` reads: opening Servers
+asks a saved server (the prefetch) and never a found one.
 
 **How long a share list's first read takes** (the wait the prefetch hides; measured 2026-11-26 for getcmdr/cmdr#1517 §
 "Decisions", 7: `stall_probe::listing listing_done path=smb://<server>/ read_dir_ms`, a `read_dir_ms` of 0 or 1 excluded

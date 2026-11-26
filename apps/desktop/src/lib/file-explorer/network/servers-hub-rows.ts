@@ -270,27 +270,8 @@ function matchingHosts(server: SavedServer, hosts: NetworkHost[]): NetworkHost[]
       host.id === server.id ||
       host.name.toLowerCase() === address ||
       host.name.toLowerCase() === name ||
-      host.hostname?.toLowerCase() === address ||
-      resolvesTo(host, address),
+      host.hostname?.toLowerCase() === address,
   )
-}
-
-/**
- * Whether discovery resolved `host` to the address a saved server dials (`host`, or
- * `host:port` off 445): a server saved off a mount by IP is the Bonjour host at that IP.
- * ❗ The port too: one IP can serve several SMB servers. Mirrors Rust's
- * `servers_listing.rs::resolves_to`.
- */
-function resolvesTo(host: NetworkHost, address: string): boolean {
-  const { hostname, port } = splitAddress(address)
-  if (host.port !== port) return false
-  return [host.ipAddress, host.hostname].some((spelled) => spelled?.toLowerCase() === hostname)
-}
-
-/** A saved SMB address as its host and port: `host`, or `host:port` off 445. */
-function splitAddress(address: string): { hostname: string; port: number } {
-  const withPort = /^(.+):(\d+)$/.exec(address)
-  return withPort ? { hostname: withPort[1], port: Number(withPort[2]) } : { hostname: address, port: SMB_PORT }
 }
 
 /**
@@ -496,7 +477,8 @@ export function openMoveFor(row: HubRow, rows: HubRow[], volumes: VolumeInfo[]):
  * `host:port` off 445 (the listing's `SavedServer.address`).
  */
 export function savedHostFor(row: HubRow): NetworkHost {
-  const { hostname, port } = splitAddress(row.address)
+  const withPort = /^(.+):(\d+)$/.exec(row.address)
+  const [hostname, port] = withPort ? [withPort[1], Number(withPort[2])] : [row.address, SMB_PORT]
   return { id: row.id, name: row.name, hostname, port, source: 'manual' }
 }
 

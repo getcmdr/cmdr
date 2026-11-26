@@ -15,9 +15,12 @@
 //! server name `statfs` reported while mDNS files the same machine under its Bonjour
 //! name. It claims EVERY host that matches, since one machine can be in the discovery
 //! list under both spellings. That match compares lowercase strings on purpose: it pairs
-//! a saved LABEL with a Bonjour name, which no address-and-port identity can answer. It
-//! also claims the host discovery resolved to the saved address and port, so a server
-//! saved off a mount by IP is one row with its Bonjour twin.
+//! a saved LABEL with a Bonjour name, which no address-and-port identity can answer.
+//!
+//! ❗ A server saved by IP is NOT claimed by the Bonjour host discovery resolved to that
+//! IP: an address is the person's pick (§ "Decisions", 5 of the Servers plan), and the
+//! claimed host is what the row opens, signs in to, and prefetches (the E2E suite's
+//! auth-by-IP server keeps the discovered `SMB Test (Auth)` untouched that way).
 //!
 //! ❌ Never merge two rows by server GUID: Samba derives its GUID from the NetBIOS name,
 //! so it proves a name, not a machine (#1518). Two addresses of one NAS are two rows.
@@ -160,7 +163,6 @@ fn matching_hosts<'a>(server: &SavedServer, hosts: &'a [NetworkHost]) -> Vec<&'a
     }
     let address = server.address.to_lowercase();
     let name = server.display_name.to_lowercase();
-    let dials = SmbServer::from_name(&address);
     hosts
         .iter()
         .filter(|host| {
@@ -169,20 +171,8 @@ fn matching_hosts<'a>(server: &SavedServer, hosts: &'a [NetworkHost]) -> Vec<&'a
                 || host_name == address
                 || host_name == name
                 || host.hostname.as_deref().map(str::to_lowercase).as_deref() == Some(address.as_str())
-                || resolves_to(host, &dials)
         })
         .collect()
-}
-
-/// Whether discovery resolved `host` to the address `dials` names, on its port: a server
-/// saved off a mount by IP (`manual_servers::remember_mounted_servers`) is the Bonjour
-/// host at that IP. ❗ The port too: one IP can serve several SMB servers.
-fn resolves_to(host: &NetworkHost, dials: &SmbServer) -> bool {
-    host.port == dials.port()
-        && [host.ip_address.as_deref(), host.hostname.as_deref()]
-            .into_iter()
-            .flatten()
-            .any(|spelled| spelled.eq_ignore_ascii_case(dials.host()))
 }
 
 /// Which matching host the row speaks for. A DISCOVERED host wins: its name is the
