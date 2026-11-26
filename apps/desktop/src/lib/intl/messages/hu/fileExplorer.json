@@ -377,10 +377,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connecting": "Csatlakozás…",
-  "@fileExplorer.network.connecting": {
-    "sourceHash": "72021eb"
-  },
   "fileExplorer.network.signIn": "Bejelentkezés",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -400,94 +396,6 @@
   "fileExplorer.network.osMountFallback.closeTooltip": "Elvetés",
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "sourceHash": "48845bf"
-  },
-  "fileExplorer.network.browser.searching": "Keresés…",
-  "@fileExplorer.network.browser.searching": {
-    "sourceHash": "c31723a"
-  },
-  "fileExplorer.network.browser.refresh": "Frissítés",
-  "@fileExplorer.network.browser.refresh": {
-    "sourceHash": "0e91610"
-  },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {A frissítéshez nyomd meg ezt: <key></key>, vagy válaszd ezt a sort} other {A frissítéshez nyomd meg ezt: <key></key>, vagy kattints ide}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "3e17581"
-  },
-  "fileExplorer.network.browser.status.resolving": "Feloldás…",
-  "@fileExplorer.network.browser.status.resolving": {
-    "sourceHash": "6d2b99e"
-  },
-  "fileExplorer.network.browser.status.waitingForNetwork": "Várakozás a hálózatra…",
-  "@fileExplorer.network.browser.status.waitingForNetwork": {
-    "sourceHash": "d1c5574"
-  },
-  "fileExplorer.network.browser.status.notChecked": "Nincs ellenőrizve",
-  "@fileExplorer.network.browser.status.notChecked": {
-    "sourceHash": "d16948e"
-  },
-  "fileExplorer.network.browser.status.loggedIn": "Bejelentkezve",
-  "@fileExplorer.network.browser.status.loggedIn": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "A bejelentkezés nem sikerült",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "5a96e84"
-  },
-  "fileExplorer.network.browser.status.loginNeeded": "Bejelentkezés szükséges",
-  "@fileExplorer.network.browser.status.loginNeeded": {
-    "sourceHash": "de0b59e"
-  },
-  "fileExplorer.network.browser.status.timeout": "Időtúllépés",
-  "@fileExplorer.network.browser.status.timeout": {
-    "sourceHash": "70594d9"
-  },
-  "fileExplorer.network.browser.status.unreachable": "Nem elérhető",
-  "@fileExplorer.network.browser.status.unreachable": {
-    "sourceHash": "abaa46a"
-  },
-  "fileExplorer.network.browser.status.error": "Probléma",
-  "@fileExplorer.network.browser.status.error": {
-    "sourceHash": "54a0e8c"
-  },
-  "fileExplorer.network.browser.status.loggedInOk": "Bejelentkezve",
-  "@fileExplorer.network.browser.status.loggedInOk": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.guest": "Vendég",
-  "@fileExplorer.network.browser.status.guest": {
-    "sourceHash": "5ed8944"
-  },
-  "fileExplorer.network.browser.status.connected": "Kapcsolódva",
-  "@fileExplorer.network.browser.status.connected": {
-    "sourceHash": "2296556"
-  },
-  "fileExplorer.network.browser.tooltip.resolving": "Gépnév és IP-cím feloldása…",
-  "@fileExplorer.network.browser.tooltip.resolving": {
-    "sourceHash": "cac249d"
-  },
-  "fileExplorer.network.browser.tooltip.waitingForNetwork": "Várakozás a hálózati névfeloldásra",
-  "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
-    "sourceHash": "81ac569"
-  },
-  "fileExplorer.network.browser.tooltip.doubleClickToConnect": "Kattints duplán a csatlakozáshoz és a megosztások megtekintéséhez",
-  "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
-    "sourceHash": "a068f74"
-  },
-  "fileExplorer.network.browser.tooltip.credsStored": "A hitelesítő adatok el vannak mentve. Kattints duplán a csatlakozáshoz.",
-  "@fileExplorer.network.browser.tooltip.credsStored": {
-    "sourceHash": "ff82a32"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "A mentett hitelesítő adatokat a szerver elutasította. Jelentkezz be frissített adatokkal.",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "a3d55a2"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "Ehhez a géphez bejelentkezés szükséges. Kattints duplán a hitelesítő adatok megadásához.",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "8e64ac0"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "A hitelesítés nem sikerült. Ellenőrizd a hitelesítő adatokat, és próbáld újra.",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "b8620ab"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "A felfedezett gépek nem távolíthatók el",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {

@@ -378,10 +378,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connecting": "Đang kết nối…",
-  "@fileExplorer.network.connecting": {
-    "sourceHash": "72021eb"
-  },
   "fileExplorer.network.signIn": "Đăng nhập",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -401,94 +397,6 @@
   "fileExplorer.network.osMountFallback.closeTooltip": "Bỏ qua",
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "sourceHash": "48845bf"
-  },
-  "fileExplorer.network.browser.searching": "Đang tìm kiếm…",
-  "@fileExplorer.network.browser.searching": {
-    "sourceHash": "c31723a"
-  },
-  "fileExplorer.network.browser.refresh": "Làm mới",
-  "@fileExplorer.network.browser.refresh": {
-    "sourceHash": "0e91610"
-  },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {Nhấn <key></key> hoặc chọn ở đây để làm mới} other {Nhấn <key></key> hoặc bấm vào đây để làm mới}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "3e17581"
-  },
-  "fileExplorer.network.browser.status.resolving": "Đang phân giải…",
-  "@fileExplorer.network.browser.status.resolving": {
-    "sourceHash": "6d2b99e"
-  },
-  "fileExplorer.network.browser.status.waitingForNetwork": "Đang chờ mạng…",
-  "@fileExplorer.network.browser.status.waitingForNetwork": {
-    "sourceHash": "d1c5574"
-  },
-  "fileExplorer.network.browser.status.notChecked": "Chưa kiểm tra",
-  "@fileExplorer.network.browser.status.notChecked": {
-    "sourceHash": "d16948e"
-  },
-  "fileExplorer.network.browser.status.loggedIn": "Đã đăng nhập",
-  "@fileExplorer.network.browser.status.loggedIn": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "Đăng nhập không thành công",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "5a96e84"
-  },
-  "fileExplorer.network.browser.status.loginNeeded": "Cần đăng nhập",
-  "@fileExplorer.network.browser.status.loginNeeded": {
-    "sourceHash": "de0b59e"
-  },
-  "fileExplorer.network.browser.status.timeout": "Hết thời gian chờ",
-  "@fileExplorer.network.browser.status.timeout": {
-    "sourceHash": "70594d9"
-  },
-  "fileExplorer.network.browser.status.unreachable": "Không tới được",
-  "@fileExplorer.network.browser.status.unreachable": {
-    "sourceHash": "abaa46a"
-  },
-  "fileExplorer.network.browser.status.error": "Sự cố",
-  "@fileExplorer.network.browser.status.error": {
-    "sourceHash": "54a0e8c"
-  },
-  "fileExplorer.network.browser.status.loggedInOk": "Đã đăng nhập",
-  "@fileExplorer.network.browser.status.loggedInOk": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.guest": "Khách",
-  "@fileExplorer.network.browser.status.guest": {
-    "sourceHash": "5ed8944"
-  },
-  "fileExplorer.network.browser.status.connected": "Đã kết nối",
-  "@fileExplorer.network.browser.status.connected": {
-    "sourceHash": "2296556"
-  },
-  "fileExplorer.network.browser.tooltip.resolving": "Đang phân giải tên máy chủ và địa chỉ IP…",
-  "@fileExplorer.network.browser.tooltip.resolving": {
-    "sourceHash": "cac249d"
-  },
-  "fileExplorer.network.browser.tooltip.waitingForNetwork": "Đang chờ phân giải tên trên mạng",
-  "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
-    "sourceHash": "81ac569"
-  },
-  "fileExplorer.network.browser.tooltip.doubleClickToConnect": "Bấm đúp để kết nối và xem các mục chia sẻ",
-  "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
-    "sourceHash": "a068f74"
-  },
-  "fileExplorer.network.browser.tooltip.credsStored": "Đã lưu thông tin đăng nhập. Bấm đúp để kết nối.",
-  "@fileExplorer.network.browser.tooltip.credsStored": {
-    "sourceHash": "ff82a32"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "Thông tin đăng nhập đã lưu bị từ chối. Hãy đăng nhập bằng thông tin mới.",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "a3d55a2"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "Máy chủ này yêu cầu đăng nhập. Bấm đúp để nhập thông tin đăng nhập.",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "8e64ac0"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "Xác thực không thành công. Hãy kiểm tra thông tin đăng nhập và thử lại.",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "b8620ab"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "Không thể gỡ bỏ máy chủ được phát hiện tự động",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {

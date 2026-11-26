@@ -375,10 +375,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connecting": "正在連線⋯",
-  "@fileExplorer.network.connecting": {
-    "sourceHash": "72021eb"
-  },
   "fileExplorer.network.signIn": "登入",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -398,94 +394,6 @@
   "fileExplorer.network.osMountFallback.closeTooltip": "關閉",
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "sourceHash": "48845bf"
-  },
-  "fileExplorer.network.browser.searching": "正在搜尋⋯",
-  "@fileExplorer.network.browser.searching": {
-    "sourceHash": "c31723a"
-  },
-  "fileExplorer.network.browser.refresh": "重新整理",
-  "@fileExplorer.network.browser.refresh": {
-    "sourceHash": "0e91610"
-  },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {按 <key></key> 或選取這裡重新整理} other {按 <key></key> 或按這裡重新整理}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "3e17581"
-  },
-  "fileExplorer.network.browser.status.resolving": "正在解析⋯",
-  "@fileExplorer.network.browser.status.resolving": {
-    "sourceHash": "6d2b99e"
-  },
-  "fileExplorer.network.browser.status.waitingForNetwork": "正在等待網路⋯",
-  "@fileExplorer.network.browser.status.waitingForNetwork": {
-    "sourceHash": "d1c5574"
-  },
-  "fileExplorer.network.browser.status.notChecked": "尚未檢查",
-  "@fileExplorer.network.browser.status.notChecked": {
-    "sourceHash": "d16948e"
-  },
-  "fileExplorer.network.browser.status.loggedIn": "已登入",
-  "@fileExplorer.network.browser.status.loggedIn": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "無法登入",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "5a96e84"
-  },
-  "fileExplorer.network.browser.status.loginNeeded": "需要登入",
-  "@fileExplorer.network.browser.status.loginNeeded": {
-    "sourceHash": "de0b59e"
-  },
-  "fileExplorer.network.browser.status.timeout": "逾時",
-  "@fileExplorer.network.browser.status.timeout": {
-    "sourceHash": "70594d9"
-  },
-  "fileExplorer.network.browser.status.unreachable": "無法連線",
-  "@fileExplorer.network.browser.status.unreachable": {
-    "sourceHash": "abaa46a"
-  },
-  "fileExplorer.network.browser.status.error": "出現問題",
-  "@fileExplorer.network.browser.status.error": {
-    "sourceHash": "54a0e8c"
-  },
-  "fileExplorer.network.browser.status.loggedInOk": "已登入",
-  "@fileExplorer.network.browser.status.loggedInOk": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.guest": "訪客",
-  "@fileExplorer.network.browser.status.guest": {
-    "sourceHash": "5ed8944"
-  },
-  "fileExplorer.network.browser.status.connected": "已連線",
-  "@fileExplorer.network.browser.status.connected": {
-    "sourceHash": "2296556"
-  },
-  "fileExplorer.network.browser.tooltip.resolving": "正在解析主機名稱和 IP 位址⋯",
-  "@fileExplorer.network.browser.tooltip.resolving": {
-    "sourceHash": "cac249d"
-  },
-  "fileExplorer.network.browser.tooltip.waitingForNetwork": "正在等待網路解析名稱",
-  "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
-    "sourceHash": "81ac569"
-  },
-  "fileExplorer.network.browser.tooltip.doubleClickToConnect": "按兩下即可連線並查看共享資料夾",
-  "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
-    "sourceHash": "a068f74"
-  },
-  "fileExplorer.network.browser.tooltip.credsStored": "已儲存登入資訊。按兩下即可連線。",
-  "@fileExplorer.network.browser.tooltip.credsStored": {
-    "sourceHash": "ff82a32"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "已儲存的登入資訊遭到拒絕。請用更新後的登入資訊登入。",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "a3d55a2"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "這台主機需要登入。按兩下即可輸入登入資訊。",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "8e64ac0"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "無法通過驗證。請檢查登入資訊後再試一次。",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "b8620ab"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "無法移除自動探索到的主機",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {

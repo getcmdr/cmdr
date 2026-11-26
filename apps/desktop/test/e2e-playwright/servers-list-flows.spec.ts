@@ -1,12 +1,12 @@
 /**
  * What a person and an agent can do on the Servers list, pinned by MEANING so the pins outlive how the list is drawn
- * (getcmdr/cmdr#1517 turns it from its own table into a standard listing).
+ * (getcmdr/cmdr#1517 made it a standard listing).
  *
  * ❗ Every check here reads which server, which pane location, and which saved entry, ❌ never the list's encoding: a
  * row is found by its NAME (what precedes its first two-space gap in `cmdr://state`), the Servers list by its location
- * (`network` at `smb://`), and a share list by its path (`smb://<server>`). The `protocol=` / `status=` / `shares=`
- * tokens, the nearby group, the add row, and the table's DOM are meant to change, so nothing here reads them. Keys go
- * through `defaultKey(commandId)` and the pane's focus, ❌ never a hub selector.
+ * (`network` at `smb://`), and a share list by its path (`smb://<server>`). The `protocol=` / `status=` / `account=`
+ * tokens are an encoding, so nothing here reads them. Keys go through `defaultKey(commandId)` and the pane's focus, ❌
+ * never a view selector.
  *
  * The SFTP and WebDAV flows run on both lanes (their fixture servers are leased by both). The SMB flows need the Docker
  * SMB stack's discovered hosts and its addresses, so they run on Linux only, like `smb.spec.ts`; their titles carry
@@ -430,6 +430,40 @@ describeSmb('Servers list survives: SMB servers', () => {
     }
   })
 
+  /**
+   * #1519: while a share list's sign-in screen is up, `cmdr://state` describes THAT pane (the share list's path, no
+   * rows), ❌ never the Servers rows it came from. The standard mirror follows the pane's own location.
+   */
+  test('SMB: a share list’s sign-in screen mirrors the share list, not the Servers rows', async ({ tauriPage }) => {
+    const address = authServerIp()
+    test.skip(address === null, 'needs the auth server’s IP (Linux Docker)')
+    if (address === null) return
+    const server = 'SMB Test auth by IP (mirror)'
+    const added = await addSmbServerByIp(tauriPage, address, server)
+    try {
+      await openServersList('left')
+      await awaitServerListed('left', server)
+      await mcpCall('move_cursor', { pane: 'left', filename: server })
+      await mcpCall('open_under_cursor', {})
+      // The refused listing opens the sign-in sheet once; cancelling stays on the in-pane sign-in screen.
+      await expect.poll(async () => tauriPage.isVisible(SHEET), { timeout: waitBudget(30000) }).toBeTruthy()
+      await cancelSheet(tauriPage)
+
+      await expect
+        .poll(
+          async () => {
+            const view = await paneView('left')
+            return { path: view.path, rows: [...view.rows.values()].map(nameOf) }
+          },
+          { timeout: waitBudget(15000) },
+        )
+        .toEqual({ path: `smb://${address}`, rows: [] })
+    } finally {
+      await mcpSelectVolume('left', LOCAL_VOLUME_NAME)
+      await forgetSmbHost(tauriPage, added.host.id)
+    }
+  })
+
   async function signInFromRowMenu(tauriPage: PageLike, server: string): Promise<void> {
     await openServersList('left')
     await awaitServerListed('left', server)
@@ -470,13 +504,11 @@ describeSmb('Servers list survives: SMB servers', () => {
   }
 
   /**
-   * #324's baseline: what opening the Servers list asks of the servers on it, read off the backend's share-listing
-   * tally (`network/share_listing_tally.rs`). Today the list prefetches every SAVED SMB server's shares while it's on
-   * screen, and nothing else's; the switch to the standard listing flips the first half to "asks nobody".
+   * #324, literally: opening the Servers list asks NO server for its shares, read off the backend's share-listing
+   * tally (`network/share_listing_tally.rs`). The rows come from memory, the stores, and the mount table; a saved
+   * server's shares are read when a pane opens its share list, and a server Cmdr only found the same.
    */
-  test('SMB: opening the Servers list asks a saved server for its shares, and never one Cmdr only found', async ({
-    tauriPage,
-  }) => {
+  test('SMB: opening the Servers list asks no server for its shares, saved or found', async ({ tauriPage }) => {
     const address = guestServerIp()
     test.skip(address === null, 'needs the guest server’s IP (Linux Docker)')
     if (address === null) return
@@ -493,10 +525,8 @@ describeSmb('Servers list survives: SMB servers', () => {
       await awaitServerListed('left', name)
       await awaitServerListed('left', 'SMB Test (Unicode)')
 
-      // Today: the saved server is asked (the prefetch). The switch flips this to zero.
-      await expect.poll(async () => (await asks(address)).asked, { timeout: waitBudget(30000) }).toBeGreaterThan(0)
-      console.log(`[#324 baseline] opening Servers asked the saved server: ${JSON.stringify(await asks(address))}`)
-      // A server Cmdr only found is never asked unasked (#324), by its address or its name.
+      // No prefetch: the saved server is never asked while the list is on screen, nor a found one, by address or name.
+      expect((await asks(address)).asked).toBe(0)
       expect((await asks(SMB_UNICODE_HOST)).asked).toBe(0)
       expect((await asks('SMB Test (Unicode)')).asked).toBe(0)
     } finally {

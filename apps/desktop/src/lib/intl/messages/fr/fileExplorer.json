@@ -378,10 +378,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connecting": "Connexion…",
-  "@fileExplorer.network.connecting": {
-    "sourceHash": "72021eb"
-  },
   "fileExplorer.network.signIn": "S’identifier",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -401,94 +397,6 @@
   "fileExplorer.network.osMountFallback.closeTooltip": "Ignorer",
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "sourceHash": "48845bf"
-  },
-  "fileExplorer.network.browser.searching": "Recherche…",
-  "@fileExplorer.network.browser.searching": {
-    "sourceHash": "c31723a"
-  },
-  "fileExplorer.network.browser.refresh": "Actualiser",
-  "@fileExplorer.network.browser.refresh": {
-    "sourceHash": "0e91610"
-  },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {Appuyez sur <key></key> ou sélectionnez ici pour actualiser} other {Appuyez sur <key></key> ou cliquez ici pour actualiser}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "3e17581"
-  },
-  "fileExplorer.network.browser.status.resolving": "Résolution…",
-  "@fileExplorer.network.browser.status.resolving": {
-    "sourceHash": "6d2b99e"
-  },
-  "fileExplorer.network.browser.status.waitingForNetwork": "En attente du réseau…",
-  "@fileExplorer.network.browser.status.waitingForNetwork": {
-    "sourceHash": "d1c5574"
-  },
-  "fileExplorer.network.browser.status.notChecked": "Non vérifié",
-  "@fileExplorer.network.browser.status.notChecked": {
-    "sourceHash": "d16948e"
-  },
-  "fileExplorer.network.browser.status.loggedIn": "Identifié",
-  "@fileExplorer.network.browser.status.loggedIn": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "Identification refusée",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "5a96e84"
-  },
-  "fileExplorer.network.browser.status.loginNeeded": "Identification requise",
-  "@fileExplorer.network.browser.status.loginNeeded": {
-    "sourceHash": "de0b59e"
-  },
-  "fileExplorer.network.browser.status.timeout": "Délai dépassé",
-  "@fileExplorer.network.browser.status.timeout": {
-    "sourceHash": "70594d9"
-  },
-  "fileExplorer.network.browser.status.unreachable": "Inaccessible",
-  "@fileExplorer.network.browser.status.unreachable": {
-    "sourceHash": "abaa46a"
-  },
-  "fileExplorer.network.browser.status.error": "Problème",
-  "@fileExplorer.network.browser.status.error": {
-    "sourceHash": "54a0e8c"
-  },
-  "fileExplorer.network.browser.status.loggedInOk": "Identifié",
-  "@fileExplorer.network.browser.status.loggedInOk": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.guest": "Invité",
-  "@fileExplorer.network.browser.status.guest": {
-    "sourceHash": "5ed8944"
-  },
-  "fileExplorer.network.browser.status.connected": "Connecté",
-  "@fileExplorer.network.browser.status.connected": {
-    "sourceHash": "2296556"
-  },
-  "fileExplorer.network.browser.tooltip.resolving": "Résolution du nom d’hôte et de l’adresse IP…",
-  "@fileExplorer.network.browser.tooltip.resolving": {
-    "sourceHash": "cac249d"
-  },
-  "fileExplorer.network.browser.tooltip.waitingForNetwork": "En attente de la résolution du nom réseau",
-  "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
-    "sourceHash": "81ac569"
-  },
-  "fileExplorer.network.browser.tooltip.doubleClickToConnect": "Double-cliquez pour vous connecter et voir les partages",
-  "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
-    "sourceHash": "a068f74"
-  },
-  "fileExplorer.network.browser.tooltip.credsStored": "Identifiants enregistrés. Double-cliquez pour vous connecter.",
-  "@fileExplorer.network.browser.tooltip.credsStored": {
-    "sourceHash": "ff82a32"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "Les identifiants enregistrés ont été refusés. Identifiez-vous avec des identifiants à jour.",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "a3d55a2"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "Cet hôte demande une identification. Double-cliquez pour saisir vos identifiants.",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "8e64ac0"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "Authentification refusée. Vérifiez vos identifiants et réessayez.",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "b8620ab"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "Impossible de retirer les hôtes détectés",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {

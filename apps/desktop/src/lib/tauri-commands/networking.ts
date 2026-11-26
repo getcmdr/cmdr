@@ -156,32 +156,6 @@ export async function listSharesOnHost(
   return res.data
 }
 
-/**
- * Prefetches shares for a host (for example, on hover).
- * Same as listSharesOnHost but designed for prefetching - errors are silently ignored.
- * Returns immediately if shares are already cached.
- * @param hostId Unique identifier for the host
- * @param hostname Hostname to connect to
- * @param ipAddress Optional resolved IP address
- * @param port SMB port
- * @param timeoutMs Optional timeout in milliseconds (default: 15000)
- * @param cacheTtlMs Optional cache TTL in milliseconds (default: 30000)
- */
-export async function prefetchShares(
-  hostId: string,
-  hostname: string,
-  ipAddress: string | undefined,
-  port: number,
-  timeoutMs?: number,
-  cacheTtlMs?: number,
-): Promise<void> {
-  try {
-    await commands.prefetchShares(hostId, hostname, ipAddress ?? null, port, timeoutMs ?? null, cacheTtlMs ?? null)
-  } catch {
-    // Silently ignore prefetch errors
-  }
-}
-
 // ============================================================================
 // Known shares store (macOS only)
 // ============================================================================

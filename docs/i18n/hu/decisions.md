@@ -345,8 +345,7 @@ hits), `NAS-t`.
 
 - Trust button `Beállítás megbízhatóként` (UsersGroups). `valami beékelődött közéd és a szerver közé` (Apple's stem, no
   attack named).
-- ⚠️ The pane line keeps `kapcsolód-`, the sheet `csatlakoz-` (`fileExplorer.network.connecting` forces `Csatlakozás…`).
-  Keep them apart.
+- ⚠️ The pane line keeps `kapcsolód-`, the sheet `csatlakoz-`. Keep them apart.
 - `Megjegyzés a kulcskarikában`, no `jelszó` (SFTP may save a passphrase); `Kulcsjelmondat`.
 - `Kijelentkezve innen: {name}` keeps the pane lines nominal; `Ellenőriztem a kulcsot` / `a tanúsítványt`.
   `az ssh-agent` (esz-esz-há); `Nextcloud-cím`.

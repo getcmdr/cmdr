@@ -1657,6 +1657,10 @@ mount would hold it); every other backend ignores the path. Each answer was read
   they lack.
 - **`InMemoryVolume`**: every date by default (the reference); `with_supported_dates` plays a volume without one and
   drops it from listings and stats, `with_dates_claimed_as` makes the claim lie.
+- **The Servers list** (the app's `SmbServerVolume` at `smb://`): Modified only, and Modified is a LAST USE
+  (`SupportedDates::modified_is_last_use`): a row without one was never used. The engine ranks such a row after every
+  dated one in both orders and doesn't hold the rows in name order under "Folders always by name"
+  (`crates/cmdr-listing/DETAILS.md` § "Requested and effective sort"). A share list carries no dates.
 
 ### Stream lengths and write progress
 

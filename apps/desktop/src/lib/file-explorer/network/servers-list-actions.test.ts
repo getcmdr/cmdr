@@ -1,5 +1,5 @@
 /**
- * What F8, a right-click, and a row-menu pick do to each kind of hub row.
+ * What F8, a right-click, and a row-menu pick do to each kind of Servers row.
  *
  * The whole risk here is that a one-place row and an SMB host take different
  * paths at every branch, and the wrong branch removes the wrong thing: a Forget
@@ -41,6 +41,7 @@ const setCredentialStatus = vi.fn()
 let credentialStatus = 'has_creds'
 const openEditServerSheet = vi.fn((_server: unknown) => Promise.resolve({ kind: 'saved' }))
 const runServerRowAction = vi.fn((_payload: unknown) => Promise.resolve())
+const savedServerOfShareList = vi.fn((_path: string) => Promise.resolve<string | null>(null))
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
   forgetSavedSmbHost: (id: string) => forgetSavedSmbHost(id),
@@ -50,6 +51,10 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   forgetServerSecret: (volumeId: string) => forgetServerSecret(volumeId),
   disconnectNetworkHost: (...args: unknown[]) => disconnectNetworkHost(...(args as [])),
   smbHostHasMounts: (host: unknown) => smbHostHasMounts(host),
+  savedServerOfShareList: (path: string) => savedServerOfShareList(path),
+}))
+vi.mock('./share-list-label', () => ({
+  shareListServerLabel: (path: string) => (path === 'smb://printer' ? 'Printer' : 'Attic NAS'),
 }))
 vi.mock('./network-store.svelte', () => ({
   getCredentialStatus: () => credentialStatus,
@@ -85,25 +90,22 @@ vi.mock('#lib/utils/confirm-dialog.js', () => ({
   confirmWithCheckbox: (question: unknown) => confirmWithCheckbox(question),
 }))
 
-import { createHubActions, editHubRow, editServerInView } from './servers-hub-actions'
-import type { HubRow } from './servers-hub-rows'
+import { createServerRowActions, editServerRow, editServerInView } from './servers-list-actions'
+import type { ServerRow } from './server-row-of-entry'
 import type { VolumeContextActionKind } from '#lib/ipc/bindings.js'
 import type { ServerRowMenuEntry } from '../navigation/row-menu'
 
 const host: NetworkHost = { id: 'h1', name: 'Attic NAS', ipAddress: '10.0.0.4', port: 445, source: 'manual' }
 
 /** A one-place server: the servers family speaks for it. */
-const placeRow: HubRow = {
+const placeRow: ServerRow = {
   id: 'sftp-testnas.local-22-test_user_1',
-  kind: 'server',
-  parentId: null,
+  path: 'sftp://test_user_1@testnas.local:22',
   account: null,
-  place: null,
   name: 'Testnas',
   protocol: 'sftp',
   address: 'testnas.local:22',
   status: 'saved',
-  lastConnectedAt: null,
   volumeId: 'sftp-testnas.local-22-test_user_1',
   pinned: true,
   saved: {
@@ -132,17 +134,14 @@ const placeRow: HubRow = {
 }
 
 /** A saved SMB host: a manual-server entry, with no place to act on. */
-const savedHostRow: HubRow = {
+const savedHostRow: ServerRow = {
   id: 'manual-10-0-0-4-445',
-  kind: 'server',
-  parentId: null,
+  path: 'smb://10.0.0.4',
   account: null,
-  place: null,
   name: 'Attic NAS',
   protocol: 'smb',
   address: '10.0.0.4',
   status: 'found_nearby',
-  lastConnectedAt: null,
   volumeId: null,
   pinned: false,
   saved: {
@@ -160,30 +159,8 @@ const savedHostRow: HubRow = {
   host,
 }
 
-/** A saved share under the saved host: a row of its own (`docs/specs/saved-smb-shares.md`). */
-const shareRow: HubRow = {
-  ...savedHostRow,
-  id: 'share:smb-container',
-  kind: 'place',
-  parentId: savedHostRow.id,
-  account: { kind: 'user', username: 'test_user_6' },
-  name: 'Container',
-  status: 'saved',
-  volumeId: 'smb-container',
-  pinned: true,
-  place: {
-    volumeId: 'smb-container',
-    name: 'Container',
-    pinned: true,
-    connected: false,
-    appRoot: '/Volumes/Container',
-    username: 'test_user_6',
-    autoReconnect: null,
-  },
-}
-
 /** A host only mDNS knows about: nothing of the user's to remove. */
-const nearbyOnlyRow: HubRow = {
+const nearbyOnlyRow: ServerRow = {
   ...savedHostRow,
   id: 'h2',
   saved: null,
@@ -203,7 +180,7 @@ const liveVolume: VolumeInfo = {
 const refreshSaved = vi.fn(() => Promise.resolve())
 
 function actions(volumes: VolumeInfo[] = []) {
-  return createHubActions({
+  return createServerRowActions({
     getRows: () => [placeRow, savedHostRow, nearbyOnlyRow],
     getVolumes: () => volumes,
     refreshSaved,
@@ -375,11 +352,6 @@ describe('forget', () => {
     expect(disconnectNetworkHost).not.toHaveBeenCalled()
   })
 
-  it('asks a share’s Forget with a Forget button too', async () => {
-    await actions().forget(shareRow)
-    expect(confirmDialog).toHaveBeenCalledWith(expect.any(String), 'Forget share', 'Forget')
-  })
-
   it('re-reads the saved list after removing a host, which nothing broadcasts', async () => {
     await actions().forget(savedHostRow)
     expect(refreshSaved).toHaveBeenCalledOnce()
@@ -401,7 +373,7 @@ describe('forget', () => {
 
 describe('rowMenu', () => {
   /** The menu's entries as their action names, so an assertion reads like the menu. */
-  function actionsOf(row: HubRow, volumes: VolumeInfo[] = [], opened = nothingMounted): string[] {
+  function actionsOf(row: ServerRow, volumes: VolumeInfo[] = [], opened = nothingMounted): string[] {
     const menu = actions(volumes).rowMenu(row, opened)
     if (!menu) return []
     return [...menu.actions, ...menu.fixes, ...menu.settings].map(keyOf)
@@ -545,15 +517,6 @@ describe('an SMB host row’s actions', () => {
     expect(openRow).toHaveBeenCalledExactlyOnceWith(savedHostRow)
   })
 
-  it('signs in to a saved host mDNS isn’t seeing as the host its address makes', async () => {
-    const unseen: HubRow = { ...savedHostRow, host: null }
-    await actions().runRowEntry(unseen, account('sign-in-as'))
-    expect(runServerAccountAction).toHaveBeenCalledWith('sign-in-as', {
-      host: { id: 'manual-10-0-0-4-445', name: 'Attic NAS', hostname: '10.0.0.4', port: 445, source: 'manual' },
-      label: 'Attic NAS',
-    })
-  })
-
   /**
    * ❗ **Two rows can stand on one discovered host**: a saved host and a second
    * saved row for the same machine (QA 2026-09-25: "Edit server…" on the SECOND
@@ -561,14 +524,14 @@ describe('an SMB host row’s actions', () => {
    * whichever row comes first in the list.
    */
   describe('when two rows share one host', () => {
-    const twinRow: HubRow = {
+    const twinRow: ServerRow = {
       ...savedHostRow,
       id: 'manual-localhost-11482-445',
       name: 'localhost:11482',
-      saved: { ...(savedHostRow.saved as NonNullable<HubRow['saved']>), id: 'manual-localhost-11482-445' },
+      saved: { ...(savedHostRow.saved as NonNullable<ServerRow['saved']>), id: 'manual-localhost-11482-445' },
     }
     const withTwin = () =>
-      createHubActions({
+      createServerRowActions({
         getRows: () => [savedHostRow, twinRow],
         getVolumes: () => [],
         refreshSaved,
@@ -592,51 +555,19 @@ describe('an SMB host row’s actions', () => {
   })
 })
 
-describe('a saved share', () => {
-  it('forgets only the share, after asking, and never the host', async () => {
-    await actions().forget(shareRow)
-    expect(confirmDialog).toHaveBeenCalledOnce()
-    expect(forgetServer).toHaveBeenCalledWith('smb-container')
-    expect(forgetSavedSmbHost).not.toHaveBeenCalled()
-  })
-
-  it('keeps a share the user said no to', async () => {
-    confirmDialog.mockResolvedValueOnce(false)
-    await actions().forget(shareRow)
-    expect(forgetServer).not.toHaveBeenCalled()
-  })
-
-  it('offers Open, the pin, and Forget share, and no Disconnect: a share’s session is its mount', () => {
-    const menu = actions().rowMenu(shareRow, nothingMounted)
-    expect(menu?.actions.map(keyOf)).toEqual(['open', 'unpin', 'forget-server'])
-    expect(menu?.actions[2].label).toBe('Forget share')
-  })
-
-  it('opens a share the way Enter does, and forgets it through its own question', async () => {
-    const menu = actions().rowMenu(shareRow, nothingMounted)
-    if (!menu) throw new Error('a share has a menu')
-    await actions().runRowEntry(shareRow, menu.actions[0])
-    expect(openRow).toHaveBeenCalledWith(shareRow)
-
-    await actions().runRowEntry(shareRow, menu.actions[2])
-    expect(forgetServer).toHaveBeenCalledWith('smb-container')
-    expect(forgetSavedServer).not.toHaveBeenCalled()
-  })
-})
-
 /**
- * Edit and Rename (F4, F2, ⇧F6 by default, whatever they're bound to) on a hub row are
+ * Edit and Rename (F4, F2, ⇧F6 by default, whatever they're bound to) on a Servers row are
  * "Edit server…". ❗ A row with nothing to edit says why, ❌ never does nothing.
  */
-describe('editHubRow', () => {
+describe('editServerRow', () => {
   it('opens Edit server on a saved SMB host', async () => {
-    await editHubRow(savedHostRow)
+    await editServerRow(savedHostRow)
     expect(openEditServerSheet).toHaveBeenCalledExactlyOnceWith(savedHostRow.saved)
     expect(addToast).not.toHaveBeenCalled()
   })
 
   it('opens Edit server on a one-place server through the menu’s own Edit', async () => {
-    await editHubRow(placeRow)
+    await editServerRow(placeRow)
     expect(runServerRowAction).toHaveBeenCalledExactlyOnceWith({
       action: 'edit',
       volumeId: 'sftp-testnas.local-22-test_user_1',
@@ -645,17 +576,8 @@ describe('editHubRow', () => {
   })
 
   /** ❗ With an `id`, so F4 held down or pressed again replaces the hint instead of stacking copies. */
-  it('says why a share row has nothing to edit', async () => {
-    await editHubRow(shareRow)
-    expect(openEditServerSheet).not.toHaveBeenCalled()
-    expect(addToast).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('server'), {
-      level: 'info',
-      id: 'servers-edit-hint',
-    })
-  })
-
   it('says why a host only mDNS knows has nothing to edit', async () => {
-    await editHubRow(nearbyOnlyRow)
+    await editServerRow(nearbyOnlyRow)
     expect(openEditServerSheet).not.toHaveBeenCalled()
     expect(addToast).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('Attic NAS'), {
       level: 'info',
@@ -665,24 +587,26 @@ describe('editHubRow', () => {
 })
 
 /**
- * What's in view on the Servers volume: a hub row, or the host whose share list is up.
+ * What's in view on the Servers volume: a Servers row, or the share list that is up.
  * ❗ Every case answers something: a sheet, or a toast saying why not.
  */
 describe('editServerInView', () => {
-  it('edits the hub row under the cursor', async () => {
-    await editServerInView({ row: savedHostRow, host: null })
+  it('edits the Servers row under the cursor', async () => {
+    await editServerInView({ row: savedHostRow, shareListPath: null })
     expect(openEditServerSheet).toHaveBeenCalledExactlyOnceWith(savedHostRow.saved)
   })
 
-  it('edits the saved server whose share list is up, found by its host', async () => {
+  it('edits the saved server whose row opens the share list that is up', async () => {
     if (!savedHostRow.saved) throw new Error('fixture')
+    savedServerOfShareList.mockResolvedValueOnce(savedHostRow.saved.id)
     listSavedServers.mockResolvedValueOnce([savedHostRow.saved])
-    await editServerInView({ row: null, host })
+    await editServerInView({ row: null, shareListPath: 'smb://10.0.0.4' })
+    expect(savedServerOfShareList).toHaveBeenCalledExactlyOnceWith('smb://10.0.0.4')
     expect(openEditServerSheet).toHaveBeenCalledExactlyOnceWith(savedHostRow.saved)
   })
 
-  it('says a nearby host whose share list is up has nothing saved to edit', async () => {
-    await editServerInView({ row: null, host: { ...host, id: 'h9', name: 'Printer', ipAddress: '10.0.0.9' } })
+  it('says a share list nobody saved a server for has nothing to edit', async () => {
+    await editServerInView({ row: null, shareListPath: 'smb://printer' })
     expect(openEditServerSheet).not.toHaveBeenCalled()
     expect(addToast).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('Printer'), {
       level: 'info',
@@ -691,7 +615,7 @@ describe('editServerInView', () => {
   })
 
   it('asks for a server when the cursor is on Add server…', async () => {
-    await editServerInView({ row: null, host: null })
+    await editServerInView({ row: null, shareListPath: null })
     expect(addToast).toHaveBeenCalledExactlyOnceWith('Select a server to edit it.', {
       level: 'info',
       id: 'servers-edit-hint',
@@ -699,7 +623,7 @@ describe('editServerInView', () => {
   })
 })
 
-describe('an S3 account and its places', () => {
+describe('an S3 account', () => {
   const s3Place = (bucket: string) => ({
     volumeId: `s3-host-443-akia-${bucket}`,
     name: bucket,
@@ -709,9 +633,10 @@ describe('an S3 account and its places', () => {
     username: 'AKIA',
     autoReconnect: true,
   })
-  const account: HubRow = {
+  const account: ServerRow = {
     ...placeRow,
     id: 's3-host-443-akia-root',
+    path: 's3://AKIA@host:443',
     name: 'AKIA@host',
     protocol: 's3',
     volumeId: null,
@@ -729,22 +654,6 @@ describe('an S3 account and its places', () => {
       places: [s3Place('photos'), s3Place('scans')],
     },
   }
-  const bucketRow: HubRow = {
-    ...account,
-    id: 'share:s3-host-443-akia-photos',
-    kind: 'place',
-    parentId: account.id,
-    name: 'photos',
-    volumeId: 's3-host-443-akia-photos',
-    pinned: true,
-    place: s3Place('photos'),
-  }
-
-  it('forgets a bucket on its own, through the servers family, like a one-place row', async () => {
-    await actions().forget(bucketRow)
-    expect(forgetSavedServer).toHaveBeenCalledExactlyOnceWith('s3-host-443-akia-photos', 'photos')
-    expect(forgetServer).not.toHaveBeenCalled()
-  })
 
   it('forgets the whole account: the shared secret FIRST, then every place under it', async () => {
     await actions().forget(account)
@@ -765,37 +674,9 @@ describe('an S3 account and its places', () => {
     expect(forgetServer).not.toHaveBeenCalled()
   })
 
-  it('edits a bucket through its own volume id, and the account row as the account', async () => {
-    await editHubRow(bucketRow)
-    expect(runServerRowAction).toHaveBeenCalledExactlyOnceWith({
-      action: 'edit',
-      volumeId: 's3-host-443-akia-photos',
-      volumeName: 'photos',
-    })
-    await editHubRow(account)
+  it('edits the account row as the account', async () => {
+    await editServerRow(account)
     expect(openEditServerSheet).toHaveBeenCalledExactlyOnceWith(account.saved)
     expect(addToast).not.toHaveBeenCalled()
-  })
-
-  it('shows and flips the bucket’s OWN "Reconnect automatically", ❌ not the account’s', async () => {
-    const quietBucket: HubRow = { ...bucketRow, place: { ...s3Place('photos'), autoReconnect: false } }
-    expect(actions().rowMenu(quietBucket, nothingMounted)?.settings[0]).toMatchObject({
-      toggle: 'auto-reconnect',
-      checked: false,
-    })
-    await actions().runRowEntry(quietBucket, {
-      type: 'toggle',
-      toggle: 'auto-reconnect',
-      label: 'Reconnect automatically',
-      checked: false,
-    })
-    expect(setServerAutoReconnect).toHaveBeenCalledWith('s3-host-443-akia-photos', true)
-  })
-
-  it('gives a bucket the server-place menu, ❌ not a share’s', () => {
-    const menu = actions().rowMenu(bucketRow, nothingMounted)
-    const picks = menu?.actions.map(keyOf) ?? []
-    expect(picks).toContain('edit')
-    expect(menu?.actions.some((entry) => entry.label === 'Forget share')).toBe(false)
   })
 })

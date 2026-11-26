@@ -211,6 +211,16 @@ export async function findFileIndex(listingId: string, name: string, includeHidd
 }
 
 /**
+ * Finds the row whose entry's path is exactly `path` in a cached listing: where the cursor
+ * lands on a list whose row names aren't the key a pane left by (the Servers list).
+ */
+export async function findPathIndex(listingId: string, path: string, includeHidden: boolean): Promise<number | null> {
+  const res = await commands.findPathIndex(listingId, path, includeHidden)
+  if (res.status === 'error') throwListingLookupError(res.error)
+  return res.data
+}
+
+/**
  * Finds the indices of multiple files by name in a cached listing (batch version of `findFileIndex`).
  * Returns only found names as keys; removed files are absent from the map.
  */

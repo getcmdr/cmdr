@@ -9,6 +9,7 @@ export {
   setListingNameFilter,
   getFileRange,
   findFileIndex,
+  findPathIndex,
   compareDirectories,
   countFolderSizes,
   cancelFolderSizeCount,
@@ -282,7 +283,6 @@ export {
   getNetworkDiscoveryState,
   resolveNetworkHost,
   listSharesOnHost,
-  prefetchShares,
   getKnownShareByName,
   updateKnownShare,
   getUsernameHint,
@@ -1136,6 +1136,7 @@ export type {
 // Servers: one command family over SFTP, WebDAV, and SMB hosts
 export {
   listSavedServers,
+  savedServerOfShareList,
   newServerAttemptId,
   SavedPlaceFailure,
   asSavedPlaceRefusal,

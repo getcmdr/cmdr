@@ -19,42 +19,15 @@
   "@servers.pinHint.gotIt": {
     "description": "VERB phrase (imperative), the button that dismisses the notification. Casual acknowledgement, the way a person says \"understood\" and moves on. Two or three words at most."
   },
-  "servers.hub.colName": "Name",
-  "@servers.hub.colName": {
-    "description": "Column heading in the servers hub: the server’s own name. One or two words; the column is narrow.",
-    "screenshot": "servers-hub.png"
-  },
   "servers.hub.colType": "Type",
   "@servers.hub.colType": {
     "description": "Column heading in the servers hub for which protocol a server speaks (SFTP, WebDAV, SMB). One word.",
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.colAddress": "Address",
-  "@servers.hub.colAddress": {
-    "description": "Column heading in the servers hub for where the server lives: a hostname, an IP address, or a web address. One word.",
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.colStatus": "Status",
-  "@servers.hub.colStatus": {
-    "description": "Column heading in the servers hub for how the server is doing right now. One word.",
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.colLastUsed": "Last used",
-  "@servers.hub.colLastUsed": {
-    "description": "Column heading in the servers hub for when the user last connected to the server. Two words at most.",
     "screenshot": "servers-hub.png"
   },
   "servers.hub.addServer": "Add server…",
   "@servers.hub.addServer": {
     "description": "The last row of the servers hub, which opens the form for typing a new server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
     "screenshot": "servers-hub.png"
-  },
-  "servers.hub.moreShares": "More shares on {server}…",
-  "@servers.hub.moreShares": {
-    "description": "A row in the servers hub, under a saved file server's shared folders, shown when not all of that server's shared folders fit or the list isn't known yet. Activating it opens the full list of that server's shared folders. \"Shares\" means shared folders on a network file server. Italic, like \"Add server…\". The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
-    "placeholders": {
-      "server": "the file server's name as the list shows it, like \"Testnas\""
-    }
   },
   "servers.hub.status.connected": "Connected",
   "@servers.hub.status.connected": {
@@ -85,11 +58,6 @@
   "@servers.hub.status.waitingForKey": {
     "description": "Status of an SSH server whose identity key the user hasn’t approved yet. \"The key\" is the server’s SSH host key, a fingerprint a person compares before trusting the server. Address the user directly."
   },
-  "servers.hub.neverUsed": "Never used",
-  "@servers.hub.neverUsed": {
-    "description": "Shown in the servers hub’s \"Last used\" column for a server the user has never connected to. Short.",
-    "screenshot": "servers-hub.png"
-  },
   "servers.hub.shareAccount": "as {username}",
   "@servers.hub.shareAccount": {
     "description": "Shown after an SMB server's or saved share's name in the Servers list, and after the server's name in its share list, in a quieter color, saying which account it's signed in as: \"Container as test_user_6\". {username} is the account name, never translated. If a bare “as sven” doesn’t work in your language, a label form (“Account: sven”) or an added verb (“signed in as sven”) is fine; keep it short.",
@@ -105,10 +73,6 @@
   "@servers.hub.editPickHint": {
     "description": "Toast when the user presses Edit or Rename (F4, F2) in the Servers list while the cursor is on the \"Add server…\" row rather than on a server. “Select” here means moving the cursor onto a server row (arrow keys or a click), not marking it the way files get selected; use your language’s verb for picking or pointing at a row."
   },
-  "servers.hub.editShareHint": "A share has nothing to edit. To edit its server, select the server’s row.",
-  "@servers.hub.editShareHint": {
-    "description": "Toast when the user presses Edit or Rename (F4, F2) on a saved SMB share's row in the Servers list. Shares carry no settings of their own; the server row right above them does."
-  },
   "servers.hub.editNearbyHint": "{name} was found nearby and isn’t saved, so there’s nothing to edit.",
   "@servers.hub.editNearbyHint": {
     "description": "Toast when the user presses Edit or Rename (F4, F2) on a server row in the Servers list that Cmdr only found on the local network and the user never saved. {name} is the server's name.",
@@ -121,17 +85,6 @@
     "description": "Info toast after \"Browse as guest\" on an SMB server (a computer sharing folders over the network) that hasn't let anyone in without an account since Cmdr started, or turned the guest away just now. {name} is the server's name.",
     "placeholders": {
       "name": "the server name, like Testnas"
-    }
-  },
-  "servers.hub.s3AllBuckets": "All buckets",
-  "@servers.hub.s3AllBuckets": {
-    "description": "Name of a row in the Servers list, indented right under an S3 storage account’s row (which shows the account’s name): opening it shows every bucket that account can see. The other rows under the account are single buckets, shown by their own names. “Bucket” is the S3 term for a top-level storage container; use the term the providers’ consoles use in your language. Short, NOUN phrase, sentence case."
-  },
-  "servers.hub.openAccountHint": "{name} isn’t a place to open. Open one of the buckets under it.",
-  "@servers.hub.openAccountHint": {
-    "description": "Toast when the user presses Enter or double-clicks an S3 account’s row in the Servers list. The account itself can’t be opened; its saved buckets, listed as rows right below it, can. “Bucket” is the S3 term; keep the provider console’s term.",
-    "placeholders": {
-      "name": "the account’s name in the list, like \"Photos backup\""
     }
   },
   "servers.hub.forgetAccountConfirm": "Forget {name} and every bucket saved under it? Cmdr drops their connections and stops listing them. Your files stay in the buckets.",
@@ -159,57 +112,6 @@
     "placeholders": {
       "name": "the share name, like Container"
     }
-  },
-  "servers.hub.nearbyGroup": "{count, plural, one {{countText} server found nearby} other {{countText} servers found nearby}}",
-  "@servers.hub.nearbyGroup": {
-    "description": "Header row in the servers hub, below the servers the user saved. It groups the servers Cmdr found on the local network that the user never saved, and it opens and collapses that group; collapsed, this line is all that shows of them. The rows under it carry the status \"Found nearby\", so use the same wording for \"found nearby\" here. The word order is free: put the count first or last, whichever reads naturally.",
-    "placeholders": {
-      "count": "the number of servers in the group, for choosing the plural form",
-      "countText": "the number as the user’s locale writes it, like \"12\""
-    },
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.discoveryOff": "Local network discovery is off.",
-  "@servers.hub.discoveryOff": {
-    "description": "One line in the servers hub, in place of the list of servers found nearby, when the user has turned local network discovery off in Settings. Saved servers still work and are still listed; this line is only about the nearby ones."
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Turn it on in Settings} linuxGnome {Turn it on in Preferences} linuxKde {Turn it on in Configure Cmdr} other {Turn it on in Settings}}",
-  "@servers.hub.discoveryOffLink": {
-    "description": "Link beside the discovery-off line; it opens Settings at the switch that turns local network discovery back on. VERB phrase, imperative. \"Settings\" is the app’s own Settings window; use the word the rest of the app uses for it (settings.window.title). The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language (Microsoft’s, which can differ from Apple’s), the same word settings.window.title’s `windows` branch uses.",
-    "identicalBranches": {
-      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
-    }
-  },
-  "servers.hub.nfsHint": "NFS servers don’t announce themselves, so they don’t show up here.",
-  "@servers.hub.nfsHint": {
-    "description": "One muted line at the bottom of the servers hub: NFS servers can’t be found automatically on the network, unlike SMB ones. Followed by a link (servers.hub.nfsHintLink) that opens the Add server form on NFS. “NFS” is a protocol name; keep it as-is.",
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.nfsHintLink": "Add one with its address",
-  "@servers.hub.nfsHintLink": {
-    "description": "Link after servers.hub.nfsHint in the servers hub. Opens the Add server form with NFS already selected, where the user types the NFS server’s address.",
-    "screenshot": "servers-hub.png"
-  },
-  "servers.hub.emptyTitle": "No servers yet",
-  "@servers.hub.emptyTitle": {
-    "description": "Heading of the empty state in the servers hub, when the user has saved none and Cmdr found none nearby. Short and neutral.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Add one below, or turn on a Mac or NAS on your network and Cmdr will find it.} windows {Add one below, or turn on a PC or NAS on your network and Cmdr will find it.} other {Add one below, or turn on a computer or NAS on your network and Cmdr will find it.}}",
-  "@servers.hub.emptyMessage": {
-    "description": "One line under the empty-state heading in the servers hub. \"NAS\" is a network storage box; keep the abbreviation if your language uses it, otherwise say the equivalent. \"below\" points at the \"Add server…\" row at the bottom of the list. The screenshot shows the macOS wording.",
-    "screenshot": "servers-hub.png",
-    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
-  },
-  "servers.hub.rowCount": "{count, plural, one {{countText} server} other {{countText} servers}}",
-  "@servers.hub.rowCount": {
-    "description": "The count in the status bar under the servers hub. Counts saved servers and nearby ones together, and excludes the \"Add server…\" row.",
-    "placeholders": {
-      "count": "the number, for choosing the plural form",
-      "countText": "the number as the user’s locale writes it, like \"1,024\""
-    },
-    "screenshot": "servers-hub.png"
   },
   "servers.paneState.connecting": "Connecting to {name}…",
   "@servers.paneState.connecting": {

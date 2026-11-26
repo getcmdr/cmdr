@@ -17,10 +17,10 @@
 import { runServerRowAction } from '#lib/file-explorer/navigation/server-row-actions.js'
 import { openAddServerSheet } from '#lib/servers/open-sign-in.js'
 import {
-  createHubActions,
+  createServerRowActions,
   disconnectSmbHost,
   editServerInView,
-} from '#lib/file-explorer/network/servers-hub-actions.js'
+} from '#lib/file-explorer/network/servers-list-actions.js'
 import { runServerAccountAction } from '#lib/file-explorer/network/share-list-sign-in.js'
 import type { ServerAccountAction } from '#lib/file-explorer/navigation/row-menu.js'
 import type { NetworkHost } from '#lib/file-explorer/types.js'
@@ -28,9 +28,12 @@ import { isSmbShareVolume, toggleShareParentRow } from '#lib/file-explorer/netwo
 import { serverCommandTarget, type ServerCommandTarget } from '#lib/servers/server-command-target.js'
 import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
 import { shareListHostAt } from '#lib/file-explorer/network/share-list-label.js'
+import { capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
 import { getVolumes } from '#lib/stores/volume-store.svelte.js'
 import { listSavedServers } from '#lib/tauri-commands/index.js'
 import { getAppLogger } from '#lib/logging/logger.js'
+import { addToast } from '#lib/ui/toast/index.js'
+import { tString } from '#lib/intl/messages.svelte.js'
 import type { ExplorerAPI } from '../explorer-api'
 import { detached } from './detached'
 import type { CommandHandlerRecord } from './types'
@@ -43,6 +46,12 @@ const log = getAppLogger('servers')
  */
 function shareListHost(): NetworkHost | null {
   return shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath())
+}
+
+/** The focused pane's path when it shows a server's share list, else `null`. */
+function shareListPathInView(): string | null {
+  const path = getFocusedPanePath()
+  return capabilitiesForPane(getFocusedPaneVolumeId(), path).kind === 'share-list' ? path : null
 }
 
 /** The server the user is pointing at, or `null`. */
@@ -155,7 +164,11 @@ export const serversHandlers = {
     // name to edit.
     if (explorerRef && getFocusedPaneVolumeId() === 'network') {
       const explorer = explorerRef
-      detached(explorer.getFocusedPaneServerRow().then((row) => editServerInView({ row, host: shareListHost() })))
+      detached(
+        explorer
+          .getFocusedPaneServerRow()
+          .then((row) => editServerInView({ row, shareListPath: shareListPathInView() })),
+      )
       return
     }
     detached(editPlaceInView(explorerRef))
@@ -168,14 +181,13 @@ export const serversHandlers = {
 
 /**
  * F8 on the Servers list (`file.delete` there, the F-key bar's "Forget"): forgets the server
- * under the cursor, per row kind, through the hub row's own Forget (`createHubActions`), keyed
- * by the row's id. A row with no server (nothing under the cursor) does nothing. ❗ The hub,
- * while it renders, claims the F8 KEY itself; this is the bar's and the palette's road there.
+ * under the cursor, per row kind, through the row's own Forget (`createServerRowActions`), keyed
+ * by the row's id. A row with no server (nothing under the cursor) does nothing.
  */
 export async function forgetServerInView(explorerRef: ExplorerAPI | undefined): Promise<void> {
   const row = (await explorerRef?.getFocusedPaneServerRow()) ?? null
   if (!row) return
-  const actions = createHubActions({
+  const actions = createServerRowActions({
     getRows: () => [row],
     getVolumes,
     // The `volumes-changed` every Forget emits re-lists the Servers list (`servers_relist.rs`).
@@ -215,6 +227,12 @@ export async function openAddServer(explorerRef: ExplorerAPI | undefined): Promi
         to: { selectVolume: { volumeId, path: root } },
         source: 'user',
       })
+    },
+    // "Add" saved it without opening: on the Servers list the new row, selected, is the proof;
+    // anywhere else a toast says where it went.
+    onAdded: ({ serverId, name }) => {
+      if (explorerRef?.selectAddedServerInFocusedPane(serverId)) return
+      addToast(tString('servers.sheet.addedToast', { name }), { level: 'success' })
     },
   })
 }

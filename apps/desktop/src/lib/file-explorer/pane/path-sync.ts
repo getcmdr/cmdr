@@ -16,7 +16,6 @@ export interface InitialPathSyncInput {
   /** Where the pane actually is (user navigation moves this without the prop). */
   currentPath: string
   isSearchResultsView: boolean
-  isNetworkView: boolean
   /**
    * Whether `device-connect.svelte.ts` is holding this pane while it opens a
    * phone. ❗ A load here would dial the SAME phone a second time through
@@ -45,12 +44,6 @@ export function resolveInitialPathAction(input: InitialPathSyncInput): InitialPa
   // A phone being opened over ADB: what resumes the load is the connect
   // factory's own `onConnected`, at the path this arm commits.
   if (input.deviceIsConnecting) return { kind: 'sync-path', path: initialPath }
-
-  // The Servers hub (`isNetworkView`: the NEW path's kind, `smb://`) lists nothing, so
-  // nothing loads, ❗ but the path still commits: a pane that came from a share kept that
-  // share's path, and its header read "Servers ▸ /Volumes/public". A server's share list
-  // (`smb://<server>`) is a listing, and loads like any folder.
-  if (input.isNetworkView) return { kind: 'sync-path', path: initialPath }
 
   return { kind: 'load', path: initialPath }
 }

@@ -89,7 +89,7 @@
     import type { RenameStepDirection } from '../rename/rename-step'
     import { formatByteSizeTiered } from '#lib/units/index.js'
     import type { ListWords } from './list-words'
-    import { cursorRowCount, trailingRowIndex, trailingRowWithin, type TrailingRow } from './trailing-row'
+    import { cursorRowCount, trailingRowIndex, trailingRowWithin, widenTrailingColumn, type TrailingRow } from './trailing-row'
     import TrailingActionRow from './TrailingActionRow.svelte'
     import { createRowActivation } from './row-activation'
     import { sortFallbackNote } from '../pane/sort-fallback'
@@ -374,15 +374,18 @@
         onFirstWidths: snapWidthTransition,
     })
 
+    /** Width of any column past the measured set: in flight, or given up on. */
+    const provisionalWidth = $derived(provisionalColumnWidth(capPx))
     /**
      * Rendered per-column widths: chrome added at the live text scale (the icon grows with
      * it), clamped to the live pane. Derived rather than stored, so a pane resize is pure
-     * frontend math and never an IPC round-trip.
+     * frontend math and never an IPC round-trip. The trailing row's column reads its label
+     * in full: measured widths only know the entries' names.
      */
-    const columnWidths = $derived(clampColumnWidths(widthsStore.rawWidths, capPx, getEffectiveScale()))
-
-    /** Width of any column past the measured set: in flight, or given up on. */
-    const provisionalWidth = $derived(provisionalColumnWidth(capPx))
+    const columnWidths = $derived(widenTrailingColumn({
+        widths: clampColumnWidths(widthsStore.rawWidths, capPx, getEffectiveScale()),
+        trailingIndex, itemsPerColumn, minWidth: provisionalWidth,
+    }))
 
     /**
      * Running cumulative width totals: `prefixSums[i] = sum(widths[0..i))`.

@@ -6,11 +6,11 @@
  * existing-mount upgrade pass and records `network.firstTriggerDone = true`, so later
  * launches warm the server list up briefly without surprising the user. The browse
  * itself, which is what fires the system "Cmdr wants to find devices on local networks"
- * prompt, runs while a Servers view is on screen (`holdDiscoveryForServersView`) or an
+ * prompt, runs while a pane shows the Servers list (`holdDiscoveryForServersView`) or an
  * upgrade needs it.
  *
- * Callers: `ServersHub` mount and the OS-mount → direct-smb2
- * upgrade click in `VolumeBreadcrumb`.
+ * Callers: a pane showing the Servers list (`../pane/servers-list-pane.svelte.ts`) and the
+ * OS-mount → direct-smb2 upgrade click in `VolumeBreadcrumb`.
  *
  * No-op when `network.enabled === false`. The caller doesn't need to gate; this is the
  * single chokepoint.

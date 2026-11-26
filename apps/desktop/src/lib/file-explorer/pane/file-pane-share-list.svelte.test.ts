@@ -1,8 +1,8 @@
 /**
  * A pane on a server's share list (`network` at `smb://<server>`) is a real listing the
  * standard views render, with its kind's own words (the Description column, "2 shares",
- * "Back to Servers"), and its `..` goes to the Servers hub with the cursor on THAT server's
- * row. A refused listing is the calm sign-in screen naming the server. The doors and the
+ * "Back to Servers"), and its `..` loads the Servers list (`smb://`) with the cursor on THAT server's
+ * row, found by its path. A refused listing is the calm sign-in screen naming the server. The doors and the
  * mount are `share-list-pane.svelte.test.ts`'s; this starts the pane on its tab's path.
  */
 import { describe, it, expect, vi } from 'vitest'
@@ -14,13 +14,13 @@ import type { FileEntry, NetworkHost } from '../types'
 import { explorerState } from './explorer-state.svelte'
 import { createInitialTabState } from './tab-operations'
 import { createTabManager, getActiveTab } from '../tabs/tab-state-manager.svelte'
-import { writeTabPath } from './hub-landing.svelte'
 import { registerFocusHome } from '#lib/ui/focus-restore.js'
 import { focusActivePane } from './active-pane-focus'
 import { MountFailure } from '../network/mount-error'
 
 const events = vi.hoisted(() => ({ recorder: null as ListenRecorder | null }))
 const listDirectoryStartMock = vi.hoisted(() => vi.fn())
+const findPathIndexMock = vi.hoisted(() => vi.fn())
 const mountNetworkShareMock = vi.hoisted(() => vi.fn())
 const cancelServerConnectMock = vi.hoisted(() => vi.fn())
 const net = vi.hoisted(() => ({ hosts: [] as NetworkHost[] }))
@@ -63,6 +63,7 @@ vi.mock('#lib/tauri-commands/index.js', async (importOriginal) => {
     ),
     getFileAt: vi.fn((_id: string, index: number) => Promise.resolve(SHARES[index] ?? null)),
     findFileIndex: vi.fn().mockResolvedValue(null),
+    findPathIndex: findPathIndexMock,
     getTotalCount: vi.fn().mockResolvedValue(SHARES.length),
     // What the backend counts for the fixture's two shares: folders, no files, no bytes.
     getListingStats: vi.fn().mockResolvedValue({
@@ -176,7 +177,7 @@ function lastListingId(): string {
 describe("FilePane on a server's share list", () => {
   const { getTarget } = useMountTarget()
 
-  it('renders the shares as a listing, and `..` lands on the hub with the cursor on that server', async () => {
+  it('renders the shares as a listing, and `..` loads the Servers list with the cursor on that server', async () => {
     net.hosts = [ATTIC, TESTNAS]
     listDirectoryStartMock.mockImplementation((_v, _p, _h, _sb, _so, listingId: string) =>
       Promise.resolve({ listingId, status: { status: 'loading' } }),
@@ -196,7 +197,7 @@ describe("FilePane on a server's share list", () => {
       viewMode: 'full' as const,
       onPathChange: (path: string) => {
         committed.push(path)
-        writeTabPath(getActiveTab(explorerState.getTabMgr('left')), path)
+        getActiveTab(explorerState.getTabMgr('left')).path = path
         props.initialPath = path
       },
     })
@@ -233,15 +234,23 @@ describe("FilePane on a server's share list", () => {
       'Description',
     )
 
-    await pane.navigateToParent()
+    // ❗ `smb://`, ❌ never the TS grammar's `parentOf('smb://testnas')` (`smb:/`). The Servers
+    // row reads "Testnas" while its path is the share list's, so the landing goes BY PATH.
+    findPathIndexMock.mockResolvedValue(1)
+    await expect(pane.navigateToParent()).resolves.toBe(true)
+    await waitForUpdates(50)
+    expect(listDirectoryStartMock.mock.calls.at(-1)?.[1]).toBe('smb://')
+    events.recorder?.fireListingEvent('listing-complete', {
+      listingId: lastListingId(),
+      totalCount: 3,
+      volumeRoot: 'smb://',
+    })
     await waitForUpdates(100)
 
     expect(committed.at(-1)).toBe('smb://')
-    await vi.waitFor(() => {
-      expect(getTarget().querySelector('.server-row.is-under-cursor')?.textContent).toContain('Testnas')
-    })
-    // The landing is spent once the hub has it.
-    expect(getActiveTab(explorerState.getTabMgr('left')).landOnServer).toBeUndefined()
+    expect(findPathIndexMock).toHaveBeenCalledWith(lastListingId(), 'smb://testnas', true)
+    // The Servers list is the volume's root: no `..`, so the row's index is the pane's.
+    expect(pane.getCursorIndex()).toBe(1)
     await unmount(component)
   })
 

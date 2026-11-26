@@ -378,10 +378,6 @@
   "@fileExplorer.searchResults.unavailableBody": {
     "sourceHash": "3e4cfa2"
   },
-  "fileExplorer.network.connecting": "Conectando…",
-  "@fileExplorer.network.connecting": {
-    "sourceHash": "72021eb"
-  },
   "fileExplorer.network.signIn": "Iniciar sesión",
   "@fileExplorer.network.signIn": {
     "sourceHash": "bfd402b"
@@ -401,94 +397,6 @@
   "fileExplorer.network.osMountFallback.closeTooltip": "Descartar",
   "@fileExplorer.network.osMountFallback.closeTooltip": {
     "sourceHash": "48845bf"
-  },
-  "fileExplorer.network.browser.searching": "Buscando…",
-  "@fileExplorer.network.browser.searching": {
-    "sourceHash": "c31723a"
-  },
-  "fileExplorer.network.browser.refresh": "Actualizar",
-  "@fileExplorer.network.browser.refresh": {
-    "sourceHash": "0e91610"
-  },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {Pulsa <key></key> o selecciona aquí para actualizar} other {Pulsa <key></key> o haz clic aquí para actualizar}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "3e17581"
-  },
-  "fileExplorer.network.browser.status.resolving": "Resolviendo…",
-  "@fileExplorer.network.browser.status.resolving": {
-    "sourceHash": "6d2b99e"
-  },
-  "fileExplorer.network.browser.status.waitingForNetwork": "Esperando a la red…",
-  "@fileExplorer.network.browser.status.waitingForNetwork": {
-    "sourceHash": "d1c5574"
-  },
-  "fileExplorer.network.browser.status.notChecked": "Sin comprobar",
-  "@fileExplorer.network.browser.status.notChecked": {
-    "sourceHash": "d16948e"
-  },
-  "fileExplorer.network.browser.status.loggedIn": "Sesión iniciada",
-  "@fileExplorer.network.browser.status.loggedIn": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "No se ha podido iniciar sesión",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "5a96e84"
-  },
-  "fileExplorer.network.browser.status.loginNeeded": "Inicio de sesión necesario",
-  "@fileExplorer.network.browser.status.loginNeeded": {
-    "sourceHash": "de0b59e"
-  },
-  "fileExplorer.network.browser.status.timeout": "Tiempo agotado",
-  "@fileExplorer.network.browser.status.timeout": {
-    "sourceHash": "70594d9"
-  },
-  "fileExplorer.network.browser.status.unreachable": "Sin acceso",
-  "@fileExplorer.network.browser.status.unreachable": {
-    "sourceHash": "abaa46a"
-  },
-  "fileExplorer.network.browser.status.error": "Problema",
-  "@fileExplorer.network.browser.status.error": {
-    "sourceHash": "54a0e8c"
-  },
-  "fileExplorer.network.browser.status.loggedInOk": "Sesión iniciada",
-  "@fileExplorer.network.browser.status.loggedInOk": {
-    "sourceHash": "55a8cd8"
-  },
-  "fileExplorer.network.browser.status.guest": "Invitado",
-  "@fileExplorer.network.browser.status.guest": {
-    "sourceHash": "5ed8944"
-  },
-  "fileExplorer.network.browser.status.connected": "Conectado",
-  "@fileExplorer.network.browser.status.connected": {
-    "sourceHash": "2296556"
-  },
-  "fileExplorer.network.browser.tooltip.resolving": "Resolviendo el nombre de host y la dirección IP…",
-  "@fileExplorer.network.browser.tooltip.resolving": {
-    "sourceHash": "cac249d"
-  },
-  "fileExplorer.network.browser.tooltip.waitingForNetwork": "Esperando a que la red resuelva el nombre",
-  "@fileExplorer.network.browser.tooltip.waitingForNetwork": {
-    "sourceHash": "81ac569"
-  },
-  "fileExplorer.network.browser.tooltip.doubleClickToConnect": "Haz doble clic para conectarte y ver los recursos compartidos",
-  "@fileExplorer.network.browser.tooltip.doubleClickToConnect": {
-    "sourceHash": "a068f74"
-  },
-  "fileExplorer.network.browser.tooltip.credsStored": "Credenciales guardadas. Haz doble clic para conectarte.",
-  "@fileExplorer.network.browser.tooltip.credsStored": {
-    "sourceHash": "ff82a32"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "Se han rechazado las credenciales guardadas. Inicia sesión con credenciales actualizadas.",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "a3d55a2"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "Este host requiere iniciar sesión. Haz doble clic para introducir las credenciales.",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "8e64ac0"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "No se ha podido autenticar. Revisa tus credenciales e inténtalo de nuevo.",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "b8620ab"
   },
   "fileExplorer.network.browser.cannotRemoveDiscovered": "No se pueden quitar los hosts detectados",
   "@fileExplorer.network.browser.cannotRemoveDiscovered": {

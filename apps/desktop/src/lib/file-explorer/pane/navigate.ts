@@ -578,14 +578,10 @@ function commitHistoryWalk(
   deps.persist({ kind: 'pane-state', pane })
   deps.persist({ kind: 'last-used-path', record: { volumeId: entry.volumeId, path: targetPath } })
 
-  // The `network` volume restores no cursor here: the hub keeps its own, and a share list lands
-  // like any listing.
-  if (entry.volumeId !== 'network') {
-    // The entry's own cursor, never the pane's: the pane's index belongs to the
-    // listing it's leaving. A copy, since readings keep writing into the entry.
-    const cursor = entry.cursor ? { ...entry.cursor } : undefined
-    paneRef?.restoreHistoryCursor({ path: targetPath, cursor })
-  }
+  // The entry's own cursor, never the pane's: the pane's index belongs to the
+  // listing it's leaving. A copy, since readings keep writing into the entry.
+  const cursor = entry.cursor ? { ...entry.cursor } : undefined
+  paneRef?.restoreHistoryCursor({ path: targetPath, cursor })
 }
 
 /**

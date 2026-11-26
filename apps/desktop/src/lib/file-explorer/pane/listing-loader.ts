@@ -35,6 +35,7 @@ import {
   type Location,
   cancelListing,
   findFileIndex,
+  findPathIndex,
   pathExistsChecked,
   resolvePathVolume,
   listDirectoryEnd,
@@ -396,7 +397,7 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     await loadDirectoryAt(args)
   }
 
-  async function loadDirectoryAt({ path, selectName }: LoadDirectoryArgs) {
+  async function loadDirectoryAt({ path, selectName, selectPath }: LoadDirectoryArgs) {
     // Cancel any active rename when navigating
     deps.renameCancel()
     cancelClickToRename()
@@ -459,7 +460,7 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     // Store the load for use in event handlers, and as the one a cancel would stop
     const loadPath = path
     const historyCursor = deps.takeHistoryCursor(path)
-    const load: ListingLoad = { volumeId, path, selectName, historyCursor }
+    const load: ListingLoad = { volumeId, path, selectName, selectPath, historyCursor }
     inFlight = load
 
     // Loading state is set synchronously above; Svelte will render it on the next
@@ -692,6 +693,24 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
     return restoredCursorIndex(cursor, foundRowIndex, totalCount + parentRow)
   }
 
+  /**
+   * Where a landed listing puts its cursor: on the row the load named (by name, or by PATH where the rows' names
+   * aren't what the pane left by: the Servers list), else on a history entry's remembered row, else on the first.
+   */
+  async function landingCursorIndex(load: ListingLoad, totalCount: number, includeHidden: boolean): Promise<number> {
+    const parentRow = deps.getHasParent() ? 1 : 0
+    if (load.selectName) {
+      const found = await findFileIndex(deps.getListingId(), load.selectName, includeHidden)
+      return found === null ? 0 : found + parentRow
+    }
+    if (load.selectPath) {
+      const found = await findPathIndex(deps.getListingId(), load.selectPath, includeHidden)
+      return found === null ? 0 : found + parentRow
+    }
+    if (load.historyCursor) return historyCursorIndex(load.historyCursor, totalCount, includeHidden)
+    return 0
+  }
+
   // Handle listing completion event
   async function handleListingComplete(payload: ListingCompleteEvent, load: ListingLoad) {
     benchmark.logEventValue('listing-complete received, totalCount', payload.totalCount)
@@ -712,16 +731,7 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
 
     const includeHidden = deps.getIncludeHidden()
 
-    // Determine initial cursor position
-    if (load.selectName) {
-      const foundIndex = await findFileIndex(deps.getListingId(), load.selectName, includeHidden)
-      const adjustedIndex = deps.getHasParent() ? (foundIndex ?? -1) + 1 : (foundIndex ?? 0)
-      deps.setCursorIndexRaw(adjustedIndex >= 0 ? adjustedIndex : 0)
-    } else if (load.historyCursor) {
-      deps.setCursorIndexRaw(await historyCursorIndex(load.historyCursor, payload.totalCount, includeHidden))
-    } else {
-      deps.setCursorIndexRaw(0)
-    }
+    deps.setCursorIndexRaw(await landingCursorIndex(load, payload.totalCount, includeHidden))
 
     deps.setLoading(false)
     deps.setOpeningFolder(false)

@@ -39,14 +39,9 @@ function pane(mode: 'jump' | 'filter', active = false, renaming = false, typingL
 const key = (k: string, mods: KeyboardEventInit = {}) => new KeyboardEvent('keydown', { key: k, ...mods })
 
 describe('typingFilters', () => {
-  it('follows the setting in a folder', () => {
-    expect(typingFilters('filter', false)).toBe(true)
-    expect(typingFilters('jump', false)).toBe(false)
-  })
-
-  it('falls back to jump in the network views, which have nothing to filter', () => {
-    expect(typingFilters('filter', true)).toBe(false)
-    expect(typingFilters('jump', true)).toBe(false)
+  it('follows the setting, the Servers list and a share list included (both are listings)', () => {
+    expect(typingFilters('filter')).toBe(true)
+    expect(typingFilters('jump')).toBe(false)
   })
 })
 

@@ -1,28 +1,25 @@
 /**
  * Which server the palette's server commands act on.
  *
- * The hub IS a pane, so "the focused pane's volume" answers the synthetic hub row
+ * The Servers list IS a pane, so "the focused pane's volume" answers the synthetic Servers row
  * rather than the server the cursor is on. The cursor row wins wherever there is
  * one; the pane's own volume is the fallback for a pane standing inside a server.
  */
 
 import { describe, it, expect } from 'vitest'
 import { serverCommandTarget, type ServerCommandSources } from './server-command-target'
-import type { HubRow } from '#lib/file-explorer/network/servers-hub-rows.js'
+import type { ServerRow } from '#lib/file-explorer/network/server-row-of-entry.js'
 import type { NetworkHost, VolumeInfo } from '#lib/file-explorer/types.js'
 
-function row(overrides: Partial<HubRow> = {}): HubRow {
+function row(overrides: Partial<ServerRow> = {}): ServerRow {
   return {
     id: 'sftp-testnas.local-22-test_user_1',
-    kind: 'server',
-    parentId: null,
+    path: 'sftp://test_user_1@testnas.local:22',
     account: null,
-    place: null,
     name: 'Testnas',
     protocol: 'sftp',
     address: 'testnas.local:22',
     status: 'saved',
-    lastConnectedAt: null,
     volumeId: 'sftp-testnas.local-22-test_user_1',
     pinned: true,
     saved: null,
@@ -58,7 +55,7 @@ function sources(overrides: Partial<ServerCommandSources> = {}): ServerCommandSo
 }
 
 describe('serverCommandTarget', () => {
-  it('takes the hub row under the cursor when the focused pane is the hub', () => {
+  it('takes the Servers row under the cursor when the focused pane is the Servers list', () => {
     const target = serverCommandTarget(sources({ cursorRow: row() }))
     expect(target).toEqual({
       kind: 'place',
@@ -93,18 +90,6 @@ describe('serverCommandTarget', () => {
     })
   })
 
-  it('takes a saved SMB host mDNS isn’t seeing by the host its address makes', () => {
-    const hostRow = row({ id: 'manual-10-0-0-4-445', protocol: 'smb', volumeId: null, host: null, address: '10.0.0.4' })
-    const target = serverCommandTarget(sources({ cursorRow: hostRow }))
-    expect(target?.kind === 'smb-server' && target.host).toEqual({
-      id: 'manual-10-0-0-4-445',
-      name: 'Testnas',
-      hostname: '10.0.0.4',
-      port: 445,
-      source: 'manual',
-    })
-  })
-
   it('takes the server whose share list the pane shows, when the pane isn’t the hub', () => {
     expect(serverCommandTarget(sources({ shareListHost: nas }))).toEqual({
       kind: 'smb-server',
@@ -119,7 +104,7 @@ describe('serverCommandTarget', () => {
     expect(serverCommandTarget(sources({ cursorRow: account, paneVolume: volume() }))).toBeNull()
   })
 
-  it('answers nothing for the synthetic hub volume, which is not a server', () => {
+  it('answers nothing for the synthetic Servers volume, which is not a server', () => {
     const hub = volume({ id: 'network', name: 'Servers', path: 'smb://', fsType: 'smbfs', connectionState: null })
     expect(serverCommandTarget(sources({ paneVolume: hub }))).toBeNull()
   })

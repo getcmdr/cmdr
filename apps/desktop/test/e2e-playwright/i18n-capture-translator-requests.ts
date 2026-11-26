@@ -87,56 +87,30 @@ const NEARBY_HOST = {
 }
 
 /**
- * The Servers hub with a host only found nearby, then that host's sign-in screen: the state a share
- * list falls to when a server turns a guest away. Only with its sheet up: cancelling the sheet walks
- * back to the hub by design, so the screen is never on show without it. Discovery announces through events nothing in Rust
- * listens to, and the host goes away again with its own `network-host-lost`.
+ * A found host's sign-in screen: the state a share list falls to when a server turns a guest away. Only with its sheet
+ * up, which a listing the person started opens over it. The host is frontend-only (announced through an event nothing
+ * in Rust listens to, gone again with its own `network-host-lost`), so the pane goes straight to its share-list path,
+ * the door every Servers row opens by.
  */
 export async function captureNetworkSurfaces(main: TauriPage, report: Report, failed: string[]): Promise<void> {
   await ensureAppReady(main)
   await initMcpClient(main)
   const guestRefusal = { err: { type: 'auth_required', message: 'Scripted guest refusal' } }
-  // The hub's own read of a host's shares, and the share list's listing (`share_list_listing`,
-  // `commands/e2e.rs`), which refuses before any lookup or dial: the host is frontend-only.
-  const restoreHub = await stubIpcAnswer(main, 'list_shares_on_host', guestRefusal)
-  const restoreListing = await stubIpcAnswer(main, 'share_list_listing', guestRefusal)
-  const restore = async () => {
-    await restoreHub()
-    await restoreListing()
-  }
+  // The share list's listing (`share_list_listing`, `commands/e2e.rs`), which refuses before any lookup or dial: the
+  // host is frontend-only.
+  const restore = await stubIpcAnswer(main, 'share_list_listing', guestRefusal)
   try {
     await mcpSelectVolume('left', 'Servers')
-    await main.waitForSelector('.servers-hub .add-row', waitBudget(15000))
+    await main.waitForSelector('.file-pane [data-trailing-row]', waitBudget(15000))
     await emitBackendEvent(main, 'network-host-found', NEARBY_HOST)
-    const group = '.servers-hub .nearby-group-label'
-
-    await captureSurface('servers-hub-nearby', report, failed, async () => {
-      await startSink(main, 'servers-hub-nearby')
-      await main.waitForSelector(group, waitBudget(5000))
-      return { page: main, readySelector: group }
-    })
-    await captureCall(main, 'disable').catch(() => {})
 
     await captureSurface('network-sign-in-sheet', report, failed, async () => {
       await startSink(main, 'network-sign-in-sheet')
-      // Unfold the group if it's folded, then open the host, as a double click would.
-      await main.evaluate(`(function(){
-        var toggle = document.querySelector('.servers-hub .nearby-group-label')?.closest('button');
-        if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
-      })()`)
-      await main.waitForSelector('.servers-hub [data-hub-row] .row-icon', waitBudget(5000))
+      await emitBackendEvent(main, 'mcp-nav-to-path', { pane: 'left', path: 'smb://testnas' })
       await expect
-        .poll(
-          async () => {
-            await main.evaluate(`(function(){
-              var rows = [...document.querySelectorAll('.servers-hub [data-hub-row]')];
-              var row = rows.find(function(r){ return (r.textContent || '').includes(${JSON.stringify(NEARBY_HOST.name)}) && !r.querySelector('.nearby-group-label'); });
-              if (row) row.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-            })()`)
-            return main.evaluate<boolean>(`document.querySelector('.error-pane') !== null`)
-          },
-          { timeout: waitBudget(5000) },
-        )
+        .poll(async () => main.evaluate<boolean>(`document.querySelector('.error-pane') !== null`), {
+          timeout: waitBudget(5000),
+        })
         .toBe(true)
       await main.waitForSelector('[data-dialog-id="server-sign-in"]', waitBudget(5000))
       return { page: main, readySelector: '[data-dialog-id="server-sign-in"]' }
@@ -207,7 +181,7 @@ export async function captureCompareToasts(main: TauriPage, report: Report, fail
   })
   await navigatePane(main, 'right', right, 'file-a.txt', false)
   await mcpSelectVolume('left', 'Servers')
-  await main.waitForSelector('.servers-hub .add-row', waitBudget(15000))
+  await main.waitForSelector('.file-pane [data-trailing-row]', waitBudget(15000))
   await captureToastSurface('toast-compare-needs-two-folders', report, failed, main, async () => {
     await dispatchMenuCommand(main, 'selection.compareDirectories')
   })

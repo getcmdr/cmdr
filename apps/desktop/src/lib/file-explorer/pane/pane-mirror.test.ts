@@ -20,7 +20,6 @@ function makePaneRef(overrides: Record<string, unknown> = {}) {
   return {
     getCursorEntry: vi.fn(() => null),
     refreshCursorEntry: vi.fn(() => Promise.resolve(null)),
-    getNetworkCursorEntry: vi.fn(() => null),
     openShareList: vi.fn(),
     ...overrides,
   }
@@ -136,9 +135,17 @@ describe('createPaneMirror', () => {
     expect(setFocusedPane).not.toHaveBeenCalled()
   })
 
-  it('opens the server under the hub’s cursor as its share list in the target pane, keeping focus', () => {
+  it('opens the SMB server under the Servers list’s cursor as its share list (the row’s path) in the target pane', async () => {
+    // The row is RE-READ: the displayed copy runs a debounce behind a move.
     const left = makePaneRef({
-      getNetworkCursorEntry: vi.fn(() => ({ kind: 'host', host: testnas }) as never),
+      refreshCursorEntry: vi.fn(() =>
+        Promise.resolve({
+          isDirectory: true,
+          name: 'Testnas',
+          path: 'smb://testnas',
+          serverMeta: { protocol: 'smb' },
+        } as never),
+      ),
     })
     const right = makePaneRef()
     const { mirror, navigate } = setup({
@@ -150,11 +157,16 @@ describe('createPaneMirror', () => {
 
     mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
 
-    expect(right.openShareList).toHaveBeenCalledWith(testnas, { mount: undefined })
-    expect(navigate).not.toHaveBeenCalled()
+    await vi.waitFor(() => {
+      expect(navigate).toHaveBeenCalledWith({
+        pane: 'right',
+        to: { goTo: { volumeId: 'network', path: 'smb://testnas' } },
+        source: 'mirror',
+      })
+    })
   })
 
-  it('sends the target to the hub (a volume select, never a remembered share list) from a hub row with no server', () => {
+  it('sends the target to the Servers list (a volume select, never a remembered share list) from any other row', async () => {
     const { mirror, navigate } = setup({
       refs: { left: makePaneRef(), right: makePaneRef() },
       volumeIdByPane: { left: 'network', right: 'root' },
@@ -164,10 +176,12 @@ describe('createPaneMirror', () => {
 
     mirror.copyPathBetweenPanes({ source: 'left', target: 'right' })
 
-    expect(navigate).toHaveBeenCalledWith({
-      pane: 'right',
-      to: { selectVolume: { volumeId: 'network', path: 'smb://' } },
-      source: 'mirror',
+    await vi.waitFor(() => {
+      expect(navigate).toHaveBeenCalledWith({
+        pane: 'right',
+        to: { selectVolume: { volumeId: 'network', path: 'smb://' } },
+        source: 'mirror',
+      })
     })
   })
 

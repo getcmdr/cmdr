@@ -24,6 +24,12 @@ pub struct SupportedDates {
     /// Entries carry the date they were added to their folder (macOS APFS and
     /// HFS+ only).
     pub added: bool,
+    /// The modification date is a LAST USE (the Servers list's "Last used"): a row with
+    /// none was never used. Sorting by it, such a row ranks after every dated one in both
+    /// orders, and the directory mode doesn't hold the rows in name order, since every
+    /// row is a place the person orders by use (`cmdr-listing`'s `EffectiveSort::resolve`).
+    #[serde(default)]
+    pub modified_is_last_use: bool,
 }
 
 impl SupportedDates {
@@ -32,17 +38,27 @@ impl SupportedDates {
     pub const NONE: Self = Self {
         created: false,
         added: false,
+        modified_is_last_use: false,
     };
 
     /// The creation date on top of the modification date.
     pub const CREATED: Self = Self {
         created: true,
         added: false,
+        modified_is_last_use: false,
+    };
+
+    /// The modification date only, as a last use (see [`Self::modified_is_last_use`]).
+    pub const LAST_USE: Self = Self {
+        created: false,
+        added: false,
+        modified_is_last_use: true,
     };
 
     /// Every date a listing can carry.
     pub const ALL: Self = Self {
         created: true,
         added: true,
+        modified_is_last_use: false,
     };
 }

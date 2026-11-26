@@ -15,34 +15,13 @@
   "@servers.pinHint.gotIt": {
     "sourceHash": "5ad3dbd"
   },
-  "servers.hub.colName": "Nome",
-  "@servers.hub.colName": {
-    "sourceHash": "dcd1d52"
-  },
   "servers.hub.colType": "Tipo",
   "@servers.hub.colType": {
     "sourceHash": "baaddf7"
   },
-  "servers.hub.colAddress": "Endereço",
-  "@servers.hub.colAddress": {
-    "sourceHash": "56ef8f2"
-  },
-  "servers.hub.colStatus": "Status",
-  "@servers.hub.colStatus": {
-    "sourceHash": "920e413",
-    "sameAsSourceJustification": "Glossary-locked: 'Status' kept verbatim, naturalized in pt-BR tech UI and used consistently across pt (glossary 'status . Status (kept verbatim)'); byte-identical to the shipped sibling licensing.section.labelStatus, which carries the same English."
-  },
-  "servers.hub.colLastUsed": "Último uso",
-  "@servers.hub.colLastUsed": {
-    "sourceHash": "830ec7f"
-  },
   "servers.hub.addServer": "Adicionar servidor…",
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
-  },
-  "servers.hub.moreShares": "Mais compartilhamentos em {server}…",
-  "@servers.hub.moreShares": {
-    "sourceHash": "db4e1ab"
   },
   "servers.hub.status.connected": "Conectado",
   "@servers.hub.status.connected": {
@@ -72,10 +51,6 @@
   "@servers.hub.status.waitingForKey": {
     "sourceHash": "f0a43e8"
   },
-  "servers.hub.neverUsed": "Nunca usado",
-  "@servers.hub.neverUsed": {
-    "sourceHash": "24d3236"
-  },
   "servers.hub.shareAccount": "como {username}",
   "@servers.hub.shareAccount": {
     "sourceHash": "56f57a1"
@@ -88,10 +63,6 @@
   "@servers.hub.editPickHint": {
     "sourceHash": "08e6752"
   },
-  "servers.hub.editShareHint": "Um compartilhamento não tem nada para editar. Para editar o servidor dele, selecione a linha do servidor.",
-  "@servers.hub.editShareHint": {
-    "sourceHash": "8cc5e87"
-  },
   "servers.hub.editNearbyHint": "O Cmdr encontrou {name} por perto, e esse servidor não está salvo, então não há nada para editar.",
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
@@ -99,14 +70,6 @@
   "servers.hub.browseAsGuestUnavailable": "{name} não deixou nenhum convidado entrar, então não dá para voltar a navegar como convidado.",
   "@servers.hub.browseAsGuestUnavailable": {
     "sourceHash": "e2571cd"
-  },
-  "servers.hub.s3AllBuckets": "Todos os buckets",
-  "@servers.hub.s3AllBuckets": {
-    "sourceHash": "2a5828a"
-  },
-  "servers.hub.openAccountHint": "A conta {name} não é um local para abrir. Abra um dos buckets abaixo dela.",
-  "@servers.hub.openAccountHint": {
-    "sourceHash": "c52ee6f"
   },
   "servers.hub.forgetAccountConfirm": "Esquecer a conta {name} e todos os buckets salvos nela? O Cmdr encerra as conexões e tira a conta e os buckets da lista. Seus arquivos continuam nos buckets.",
   "@servers.hub.forgetAccountConfirm": {
@@ -127,38 +90,6 @@
   "servers.hub.forgetShareConfirm": "Esquecer {name}? O Cmdr tira esse compartilhamento da lista. Se ele estiver montado, continua montado, e seus arquivos continuam no servidor.",
   "@servers.hub.forgetShareConfirm": {
     "sourceHash": "8c14aaa"
-  },
-  "servers.hub.nearbyGroup": "{count, plural, one {{countText} servidor encontrado por perto} many {{countText} servidores encontrados por perto} other {{countText} servidores encontrados por perto}}",
-  "@servers.hub.nearbyGroup": {
-    "sourceHash": "cd7a44d"
-  },
-  "servers.hub.discoveryOff": "A descoberta na rede local está desativada.",
-  "@servers.hub.discoveryOff": {
-    "sourceHash": "cadcceb"
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Ativar nas Configurações} linuxGnome {Ativar nas Preferências} linuxKde {Ativar em Configurar Cmdr} other {Ativar nos Ajustes}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "cd006e8"
-  },
-  "servers.hub.nfsHint": "Os servidores NFS não se anunciam, então não aparecem aqui.",
-  "@servers.hub.nfsHint": {
-    "sourceHash": "40b516d"
-  },
-  "servers.hub.nfsHintLink": "Adicione um pelo endereço",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "0324564"
-  },
-  "servers.hub.emptyTitle": "Nenhum servidor ainda",
-  "@servers.hub.emptyTitle": {
-    "sourceHash": "7846930"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Adicione um abaixo, ou ligue um Mac ou um NAS na sua rede e o Cmdr vai encontrá-lo.} windows {Adicione um abaixo, ou ligue um PC ou um NAS na sua rede e o Cmdr vai encontrá-lo.} other {Adicione um abaixo, ou ligue um computador ou um NAS na sua rede e o Cmdr vai encontrá-lo.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "7ca97ce"
-  },
-  "servers.hub.rowCount": "{count, plural, one {{countText} servidor} many {{countText} servidores} other {{countText} servidores}}",
-  "@servers.hub.rowCount": {
-    "sourceHash": "7ef87d1"
   },
   "servers.paneState.connecting": "Conectando a {name}…",
   "@servers.paneState.connecting": {

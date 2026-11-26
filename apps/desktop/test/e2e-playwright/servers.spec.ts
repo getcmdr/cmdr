@@ -96,15 +96,15 @@ async function closeVolumePicker(tauriPage: PageLike): Promise<void> {
 const SHEET = '[data-dialog-id="server-sign-in"]'
 
 /**
- * Opens the sheet from the hub's Add row.
+ * Opens the sheet from the Servers list's trailing "Add server…" row.
  *
- * ❗ A DOUBLE click: the hub's rows follow the file list, where one click moves
- * the cursor and two open the thing. A single click here selects the row and
- * nothing else, which is what this helper existing at all records.
+ * ❗ A DOUBLE click: the row follows the file list, where one click moves the cursor
+ * and two open the thing. A single click lands the cursor and nothing else, which is
+ * what this helper existing at all records.
  */
 async function activateAddRow(tauriPage: PageLike): Promise<void> {
   await tauriPage.evaluate(`(function () {
-    document.querySelector('.servers-hub .add-row').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    document.querySelector('.file-pane [data-trailing-row]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
   })()`)
   await expect.poll(async () => tauriPage.isVisible(SHEET), { timeout: waitBudget(5000) }).toBeTruthy()
 }
@@ -123,7 +123,7 @@ async function leftPaneRows(): Promise<string> {
   return mcpReadResource('cmdr://state')
 }
 
-test.describe('The servers hub', () => {
+test.describe('The Servers list', () => {
   test.beforeEach(async ({ tauriPage }) => {
     await initMcpClient(tauriPage)
     await ensureAppReady(tauriPage)
@@ -148,9 +148,9 @@ test.describe('The servers hub', () => {
     await closeVolumePicker(tauriPage)
   })
 
-  test('selecting it opens the hub, whose last row is always "Add server…"', async ({ tauriPage }) => {
+  test('selecting it opens the Servers list, whose last row is always "Add server…"', async ({ tauriPage }) => {
     await closeVolumePicker(tauriPage)
-    // The tool polls for the pane's pushed volume name, so a hub that never
+    // The tool polls for the pane's pushed volume name, so a list that never
     // mounts (or pushes a different name) surfaces here as a timeout.
     await mcpCall('select_volume', { pane: 'left', name: SERVERS_VOLUME_NAME })
 
@@ -159,13 +159,20 @@ test.describe('The servers hub', () => {
       .toBeTruthy()
   })
 
-  test('the hub is on screen as a table, not as a file listing', async ({ tauriPage }) => {
+  test('the Servers list is a file listing, its last row "+ Add server…" an action', async ({ tauriPage }) => {
     await closeVolumePicker(tauriPage)
     await mcpCall('select_volume', { pane: 'left', name: SERVERS_VOLUME_NAME })
-    await expect.poll(async () => tauriPage.isVisible('.servers-hub'), { timeout: waitBudget(15000) }).toBeTruthy()
-    // The add row is keyboard-navigable, which is what makes it a row rather
-    // than a button under the list.
-    expect(await tauriPage.isVisible('.servers-hub .add-row')).toBe(true)
+    // The standard listbox, with the trailing action row the cursor reaches.
+    await expect
+      .poll(async () => tauriPage.isVisible('.file-pane [role="listbox"] [data-trailing-row]'), {
+        timeout: waitBudget(15000),
+      })
+      .toBeTruthy()
+    await expect
+      .poll(async () => (await leftPaneRows()).includes('+ Add server…  kind=action command=servers.connect'), {
+        timeout: waitBudget(15000),
+      })
+      .toBeTruthy()
   })
 })
 
@@ -180,10 +187,10 @@ test.describe('Adding a server through the sheet', () => {
     await mcpCall('select_volume', { pane: 'left', name: LOCAL_VOLUME_NAME })
   })
 
-  test("the hub's Add row opens the one sheet, and only the person picks the protocol", async ({ tauriPage }) => {
+  test('the "Add server…" row opens the one sheet, and only the person picks the protocol', async ({ tauriPage }) => {
     await mcpCall('select_volume', { pane: 'left', name: SERVERS_VOLUME_NAME })
     await expect
-      .poll(async () => tauriPage.isVisible('.servers-hub .add-row'), { timeout: waitBudget(15000) })
+      .poll(async () => tauriPage.isVisible('.file-pane [data-trailing-row]'), { timeout: waitBudget(15000) })
       .toBeTruthy()
 
     await activateAddRow(tauriPage)
@@ -214,7 +221,7 @@ test.describe('Adding a server through the sheet', () => {
   test('a server that cannot be reached says so under the address, and the sheet stays open', async ({ tauriPage }) => {
     await mcpCall('select_volume', { pane: 'left', name: SERVERS_VOLUME_NAME })
     await expect
-      .poll(async () => tauriPage.isVisible('.servers-hub .add-row'), { timeout: waitBudget(15000) })
+      .poll(async () => tauriPage.isVisible('.file-pane [data-trailing-row]'), { timeout: waitBudget(15000) })
       .toBeTruthy()
     await activateAddRow(tauriPage)
 

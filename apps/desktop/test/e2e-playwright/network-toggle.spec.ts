@@ -1,20 +1,20 @@
 /**
- * What turning `network.enabled` off does to the servers hub.
+ * What turning `network.enabled` off does to the Servers list.
  *
  * The switch gates mDNS discovery and SMB, which is what the macOS Local Network
- * permission is about; SFTP and WebDAV need none of it. So the hub stays open and
+ * permission is about; SFTP and WebDAV need none of it. So the list stays open and
  * keeps listing saved servers, and the only thing that changes is that the hosts
- * it would have found nearby are replaced by one line and a link back to the
- * switch.
+ * it would have found nearby are gone and the footer's count says the nearby
+ * search is off.
  *
  * Covered here:
  * - The switcher row is called "Servers" whatever the switch says.
- * - Selecting it opens the hub in both states, rather than deflecting to Settings.
- * - With discovery off, the hub says so and offers the way back.
+ * - Selecting it opens the Servers list in both states, rather than deflecting to Settings.
+ * - With discovery off, the footer says so.
  *
  * Uses the `mcp-set-setting` event to write the setting from the test, which
  * triggers the same code path as the Settings UI (cache + cross-window emit +
- * `settings-applier` live-apply). This keeps the test focused on the hub's UX
+ * `settings-applier` live-apply). This keeps the test focused on the Servers list's UX
  * without coupling it to settings-page navigation.
  *
  * Out of scope: macOS Local Network OS prompt timing (the TCC dialog isn't
@@ -32,16 +32,22 @@ import { initMcpClient, mcpCall, mcpReadResource } from '../e2e-shared/mcp-clien
 // pane on a virtual MTP volume (mcp-nav-to-path won't cross volume boundaries).
 const LOCAL_VOLUME_NAME = os.platform() === 'linux' ? 'Root' : 'Macintosh HD'
 
-/** The hub row's label, which is also Rust's `SERVERS_VOLUME_NAME` const. */
+/** The Servers row's label, which is also Rust's `SERVERS_VOLUME_NAME` const. */
 const SERVERS_VOLUME_NAME = 'Servers'
 
 const PICKER_TRIGGER = '.volume-name'
 const PICKER_DROPDOWN = '[data-menu]'
 const ANY_VOLUME_ITEM = '[data-menu-row]'
-const HUB = '.servers-hub'
-const DISCOVERY_OFF = '.servers-hub .discovery-off'
+/** The Servers list: the standard listbox, ending in its "Add server…" action row. */
+const SERVERS_LIST = '.file-pane [role="listbox"] [data-trailing-row]'
+/** The pane footers, whose count says whether the nearby search is on. */
+const FOOTER = '.file-pane .selection-info'
 
-/** Reads the visible label of the servers hub row in the switcher. */
+async function footerText(tauriPage: Parameters<typeof pollUntil>[0]): Promise<string> {
+  return tauriPage.evaluate<string>(`(document.querySelector(${JSON.stringify(FOOTER)})?.textContent ?? '')`)
+}
+
+/** Reads the visible label of the Servers row in the switcher. */
 async function readServersLabel(tauriPage: Parameters<typeof pollUntil>[0]): Promise<string | null> {
   return tauriPage.evaluate<string | null>(`(function() {
     var items = document.querySelectorAll('[data-menu-row]');
@@ -78,11 +84,11 @@ async function closeVolumePicker(tauriPage: Parameters<typeof pollUntil>[0]): Pr
   await escapeOverlayUntilGone(tauriPage, PICKER_DROPDOWN)
 }
 
-/** Puts the left pane on the hub and waits for it to render. */
-async function openHub(tauriPage: Parameters<typeof pollUntil>[0]): Promise<void> {
+/** Puts the left pane on the Servers list and waits for it to render. */
+async function openServersList(tauriPage: Parameters<typeof pollUntil>[0]): Promise<void> {
   await closeVolumePicker(tauriPage)
   await mcpCall('select_volume', { pane: 'left', name: SERVERS_VOLUME_NAME })
-  await expect.poll(async () => tauriPage.isVisible(HUB), { timeout: waitBudget(15000) }).toBeTruthy()
+  await expect.poll(async () => tauriPage.isVisible(SERVERS_LIST), { timeout: waitBudget(15000) }).toBeTruthy()
 }
 
 test.describe('Local network discovery off', () => {
@@ -132,7 +138,7 @@ test.describe('Local network discovery off', () => {
     // afterEach hooks inner-to-outer) fails the test on a leaked `[data-menu]`.
     await closeVolumePicker(tauriPage)
     // Restore the default so the next spec file starts clean, and leave the pane
-    // off the hub so the next spec doesn't inherit it.
+    // off the Servers list so the next spec doesn't inherit it.
     await setSettingViaBridge('network.enabled', true)
     await mcpCall('select_volume', { pane: 'left', name: LOCAL_VOLUME_NAME })
   })
@@ -146,35 +152,32 @@ test.describe('Local network discovery off', () => {
     await setSettingViaBridge('network.enabled', false)
     await openVolumePicker(tauriPage)
     await tauriPage.waitForSelector(ANY_VOLUME_ITEM, 3000)
-    // Pre-hub this said "Network (disabled)" and the row refused to open. The
+    // Once this said "Network (disabled)" and the row refused to open. The
     // saved servers behind it never needed the permission the switch is about.
     expect(await readServersLabel(tauriPage)).toBe(SERVERS_VOLUME_NAME)
   })
 
-  test('the hub opens with discovery off, and says so in place of the nearby hosts', async ({ tauriPage }) => {
+  test('the Servers list opens with discovery off, and its footer says so', async ({ tauriPage }) => {
     await setSettingViaBridge('network.enabled', false)
-    await openHub(tauriPage)
+    await openServersList(tauriPage)
 
-    await expect.poll(async () => tauriPage.isVisible(DISCOVERY_OFF), { timeout: waitBudget(5000) }).toBeTruthy()
-    const text = await tauriPage.evaluate<string>(
-      `(document.querySelector(${JSON.stringify(DISCOVERY_OFF)})?.textContent ?? '')`,
-    )
-    expect(text).toContain('Local network discovery is off.')
-    // The way back is a link, ❗ not an instruction to go find the setting.
-    expect(text).toContain('Turn it on in Settings')
-
-    // The rest of the hub is untouched: the add row is still the last one.
-    expect(await tauriPage.isVisible('.servers-hub .add-row')).toBe(true)
+    await expect
+      .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
+      .toContain('nearby search is off')
+    // The rest of the list is untouched: the "Add server…" row is still the last one.
+    expect(await tauriPage.isVisible(SERVERS_LIST)).toBe(true)
   })
 
-  test('turning discovery back on takes the line away', async ({ tauriPage }) => {
+  test('turning discovery back on takes the words away', async ({ tauriPage }) => {
     await setSettingViaBridge('network.enabled', false)
-    await openHub(tauriPage)
-    await expect.poll(async () => tauriPage.isVisible(DISCOVERY_OFF), { timeout: waitBudget(5000) }).toBeTruthy()
+    await openServersList(tauriPage)
+    await expect
+      .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
+      .toContain('nearby search is off')
 
     await setSettingViaBridge('network.enabled', true)
     await expect
-      .poll(async () => !(await tauriPage.isVisible(DISCOVERY_OFF)), { timeout: waitBudget(5000) })
-      .toBeTruthy()
+      .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
+      .not.toContain('nearby search is off')
   })
 })

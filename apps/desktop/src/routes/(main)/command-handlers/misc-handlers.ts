@@ -13,7 +13,8 @@ import { goToLatestDownload } from '#lib/downloads/go-to-latest.js'
 import { goToTrash } from '#lib/file-operations/delete/go-to-trash.js'
 import { undoLastTrash } from '#lib/file-operations/delete/trash-undo.js'
 import { addFavoriteFolder } from '#lib/file-explorer/navigation/add-favorite-folder.js'
-import { getFocusedPanePath } from '#lib/file-explorer/pane/focused-pane-reads.js'
+import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
+import { capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
 import type { CommandArgs } from '#lib/commands/index.js'
 import { focusNewestToast } from '#lib/ui/toast/toast-focus.js'
 import { selectVolumeForMcp } from '../mcp-volume-select'
@@ -50,8 +51,12 @@ export const miscHandlers = {
     explorerRef?.toggleFavoritesMenu()
   },
 
+  // The palette's "Refresh network hosts": a re-list of the Servers list in the focused pane, the
+  // ⌘R it gets there (memory and the stores, never a dial). Off the Servers list it does nothing.
   'network.refresh': ({ explorerRef }) => {
-    explorerRef?.refreshNetworkHosts()
+    if (capabilitiesForPane(getFocusedPaneVolumeId(), getFocusedPanePath()).kind === 'network') {
+      detached(explorerRef?.refreshPane())
+    }
   },
 
   'volume.selectByName': ({ explorerRef, dispatchArgs }) => {

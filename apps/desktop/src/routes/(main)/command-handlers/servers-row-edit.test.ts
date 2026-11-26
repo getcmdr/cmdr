@@ -1,6 +1,6 @@
 /**
  * Edit and Rename on the Servers volume are "Edit server…": `file.edit`, `file.rename`, and `servers.edit` all hand
- * `editServerInView` what the pane shows (the hub row under the cursor, or the host whose share list is up), whatever
+ * `editServerInView` what the pane shows (the Servers row under the cursor, or the share list that is up), whatever
  * keys they're bound to, and keep their file-list meaning everywhere else.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -11,7 +11,7 @@ const openInEditorOrExplain = vi.fn(() => Promise.resolve('opened'))
 let volumeId = 'root'
 let focusedPath = '/Users/me'
 
-vi.mock('#lib/file-explorer/network/servers-hub-actions.js', () => ({
+vi.mock('#lib/file-explorer/network/servers-list-actions.js', () => ({
   editServerInView: (view: unknown) => editServerInView(view),
 }))
 vi.mock('#lib/file-explorer/navigation/server-row-actions.js', () => ({
@@ -33,14 +33,14 @@ vi.mock('#lib/tauri-commands/index.js', () => ({ listSavedServers: () => Promise
 import { fileHandlers } from './file-handlers'
 import { serversHandlers } from './servers-handlers'
 import type { CommandHandlerContext } from './types'
-import type { HubRow } from '#lib/file-explorer/network/servers-hub-rows.js'
+import type { ServerRow } from '#lib/file-explorer/network/server-row-of-entry.js'
 import type { NetworkHost } from '#lib/file-explorer/types.js'
 
-const hubRow = { id: 'manual-nas', kind: 'server', name: 'Testnas' } as unknown as HubRow
+const serverRow = { id: 'manual-nas', name: 'Testnas' } as unknown as ServerRow
 const host: NetworkHost = { id: 'h1', name: 'Testnas', port: 445, source: 'discovered' }
 
-/** The pane on the hub (its cursor on `row`), or on `placesHost`'s share list: the path names the server. */
-function hctx(row: HubRow | null, placesHost: NetworkHost | null = null) {
+/** The pane on the Servers list (its cursor on `row`), or on `placesHost`'s share list: the path names the server. */
+function hctx(row: ServerRow | null, placesHost: NetworkHost | null = null) {
   focusedPath = placesHost ? 'smb://testnas' : volumeId === 'network' ? 'smb://' : '/Users/me'
   const explorerRef = {
     getFocusedPaneServerRow: vi.fn(() => Promise.resolve(row)),
@@ -75,20 +75,20 @@ describe('on the Servers volume', () => {
     volumeId = 'network'
   })
 
-  it.each(onServersVolume)('%s edits the hub row under the cursor', async (_id, handler) => {
-    const { ctx, explorerRef } = hctx(hubRow)
+  it.each(onServersVolume)('%s edits the Servers row under the cursor', async (_id, handler) => {
+    const { ctx, explorerRef } = hctx(serverRow)
     void handler(ctx)
     await settled()
-    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: hubRow, host: null })
+    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: serverRow, shareListPath: null })
     expect(explorerRef.startRename).not.toHaveBeenCalled()
     expect(openInEditorOrExplain).not.toHaveBeenCalled()
   })
 
-  it.each(onServersVolume)('%s edits the host whose share list is up', async (_id, handler) => {
+  it.each(onServersVolume)('%s edits the server whose share list is up', async (_id, handler) => {
     const { ctx } = hctx(null, host)
     void handler(ctx)
     await settled()
-    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, host })
+    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, shareListPath: 'smb://testnas' })
   })
 
   /** "Add server…" under the cursor: `editServerInView` says to pick a server, ❌ never silence. */
@@ -97,7 +97,7 @@ describe('on the Servers volume', () => {
     const rename = fileHandlers['file.rename']
     rename(ctx)
     await settled()
-    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, host: null })
+    expect(editServerInView).toHaveBeenCalledExactlyOnceWith({ row: null, shareListPath: null })
     expect(explorerRef.startRename).not.toHaveBeenCalled()
   })
 })

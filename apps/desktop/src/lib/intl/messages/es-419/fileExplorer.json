@@ -95,26 +95,6 @@
   "@fileExplorer.network.osMountFallback.shareNotOnServer": {
     "sourceHash": "5b7621b"
   },
-  "fileExplorer.network.browser.refreshHint": "{platform, select, windows {Presiona <key></key> o selecciona aquí para actualizar} other {Presiona <key></key> o haz clic aquí para actualizar}}",
-  "@fileExplorer.network.browser.refreshHint": {
-    "sourceHash": "0a80d8e"
-  },
-  "fileExplorer.network.browser.status.loginFailed": "No se pudo iniciar sesión",
-  "@fileExplorer.network.browser.status.loginFailed": {
-    "sourceHash": "3abf43d"
-  },
-  "fileExplorer.network.browser.tooltip.credsRejected": "Se rechazaron las credenciales guardadas. Inicia sesión con credenciales actualizadas.",
-  "@fileExplorer.network.browser.tooltip.credsRejected": {
-    "sourceHash": "c8aeeb0"
-  },
-  "fileExplorer.network.browser.tooltip.requiresLogin": "Este host requiere iniciar sesión. Haz doble clic para ingresar las credenciales.",
-  "@fileExplorer.network.browser.tooltip.requiresLogin": {
-    "sourceHash": "a66dd42"
-  },
-  "fileExplorer.network.browser.tooltip.authFailed": "No se pudo autenticar. Revisa tus credenciales e inténtalo de nuevo.",
-  "@fileExplorer.network.browser.tooltip.authFailed": {
-    "sourceHash": "9bba671"
-  },
   "fileExplorer.network.browser.hostRemoveFailed": "No se pudo olvidar {hostName}",
   "@fileExplorer.network.browser.hostRemoveFailed": {
     "sourceHash": "5f0d379"

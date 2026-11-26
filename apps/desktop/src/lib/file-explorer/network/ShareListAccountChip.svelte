@@ -5,7 +5,7 @@
      * guest where a guest listing worked, Forget saved password). With no listing to say who
      * it's signed in as yet, it offers "Sign in as…" itself, so the door is always there.
      *
-     * ❗ One door of three to the same actions (the hub's row menu, the palette): the items are
+     * ❗ One door of three to the same actions (the Servers row's menu, the palette): the items are
      * `row-menu.ts::accountMenu`, a pick runs `share-list-sign-in.ts::runServerAccountAction`.
      * ❗ It reads no password: the account comes from what this session's listings said.
      *
@@ -34,7 +34,7 @@
         type ShareRowAction,
     } from '../navigation/row-menu'
     import { runServerRowAction } from '../navigation/server-row-actions'
-    import { forgetSavedShare } from './servers-hub-actions'
+    import { forgetSavedShare } from './servers-list-actions'
     import type { FileEntry } from '../types'
     import type { MenuAnchor } from '#lib/tauri-commands/index.js'
     import { getAppLogger } from '#lib/logging/logger.js'
@@ -122,7 +122,7 @@
 
     /**
      * A share row's verb. A saved share's pin and Forget share act on its PLACE (the volume id
-     * its row carries, `ShareMeta.saved`), through what the switcher's and the hub's menus run;
+     * its row carries, `ShareMeta.saved`), through what the switcher's and the Servers row's menus run;
      * the row's dot follows with the re-list their `volumes-changed` brings.
      */
     async function runShareVerb(verb: ShareRowAction, share: FileEntry): Promise<void> {

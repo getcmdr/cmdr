@@ -19,8 +19,8 @@ settled wording into `terms.json` (and `decisions.md` when the reason is worth k
   `Log de alterações` to keep the catalog's `log → registro` family; confirm it reads naturally as a menu item.
 - **`Cortar` (menu bar) vs `Recortar` (command palette)** for Cut (`menu.edit.cut`, `commands.editCut.*`): the menu bar
   copies Finder's `Cortar`; everywhere else says `Recortar`. Confirm the split, or unify.
-- **`Status` kept English** (`licensing.section.labelStatus`, `servers.hub.colStatus`, `settings.adb.status.label`):
-  macOS pt-BR says `Estado`. Confirm the naturalized loanword over Apple's word.
+- **`Status` kept English** (`licensing.section.labelStatus`, `settings.adb.status.label`): macOS pt-BR says `Estado`.
+  Confirm the naturalized loanword over Apple's word.
 - **`pasta superior` over `pasta pai`** (`commands.navParent.label` and family): the pile favors `pasta pai`; the
   catalog keeps `pasta superior`. Switching is a whole-catalog migration.
 - **`online` unhyphenated** (`commands.cloudRemoveDownload.description`, `fileOperations.delete.cloudOnlineOnly*`): the

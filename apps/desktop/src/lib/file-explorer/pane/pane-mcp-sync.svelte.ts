@@ -54,10 +54,8 @@ export interface PaneMcpSyncDeps {
   paneId: 'left' | 'right'
   /**
    * Whether this pane's kind mirrors to the MCP `PaneState` store
-   * (`VolumeCapabilities.syncsToMcp`). `false` only for the network kind, whose
-   * push `ServersHub` owns (see `syncPaneStateToMcp`). FilePane supplies this
-   * from its derived caps, so the gate reads the kind capability, not a
-   * `getIsNetworkView()` derivation off a raw `volumeId ===` derived.
+   * (`VolumeCapabilities.syncsToMcp`). FilePane supplies this from its derived
+   * caps, so the gate reads the kind capability, never a raw `volumeId ===`.
    */
   getSyncsToMcp: () => boolean
   getListingId: () => string
@@ -131,9 +129,6 @@ export interface PaneMcpSyncDeps {
 /**
  * Mirrors a `FilePane`'s state into the MCP `PaneState` store so `cmdr://state`
  * reflects navigation, selection, and type-to-jump for MCP-driven tests/agents.
- *
- * Only the network pane is skipped: `ServersHub` owns the MCP push for that
- * view, and FilePane's sync would clobber its host list.
  */
 /**
  * How many rows of the visible range `cmdr://state` carries. A cap rather than
@@ -187,8 +182,7 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
 
   /**
    * Returns true when MCP shouldn't carry a BACKEND-listing file list for this
-   * pane: the network pane (ServersHub owns that push) or no listing yet. A
-   * search-results pane also has no listing id, and its rows come from the
+   * pane: no listing yet. A search-results pane also has no listing id, and its rows come from the
    * snapshot branch in `buildMcpFileList` before this is consulted. Extracted to
    * keep that function under the cyclomatic complexity cap.
    */
@@ -319,25 +313,10 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
   /**
    * Sync pane state to Rust for MCP context tools.
    * Called when files load, cursor position changes, or view mode changes.
-   *
-   * Skipped entirely on the Network virtual volume: `ServersHub`
-   * (mounted inside `NetworkMountView`) owns the pane-state push for that
-   * view and writes the host list as `files`. Without this guard, FilePane's
-   * own sync races ServersHub's and overwrites it with stale local-pane
-   * data (empty `files`, the old fixture `path`, and a leftover
-   * `totalFiles`/`loadedRange`). That clobber is why three SMB tests
-   * (`guest host shows share count`, `auth host shows share count`,
-   * `50-share host shows correct share count`) used to time out at the 30s
-   * pollUntil deadline — `cmdr://state` never contained the host entries
-   * ServersHub had just pushed.
-   *
-   * MTP volumes are not affected: their file list comes from a normal
-   * `list_directory` against the volume, so FilePane's sync is the right
-   * source of truth there.
    */
   async function syncPaneStateToMcp() {
-    // The network skip folds into the `syncsToMcp` capability, supplied by
-    // FilePane's derived caps. A search-results pane DOES sync: it is a real pane
+    // Gated on the `syncsToMcp` capability, supplied by FilePane's derived caps.
+    // A search-results pane DOES sync: it is a real pane
     // an agent can move the cursor in and delete from, and while it pushed nothing
     // the store went on describing the directory the pane came from.
     if (!deps.getSyncsToMcp()) return
@@ -350,9 +329,11 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
       // Rows on screen, `..` included. FilePane already folds the parent row and
       // the snapshot's own count into one derived, so this doesn't redo either.
       const effectiveTotal = deps.getRowCount()
-      // Use actual visible range, clamped to valid bounds
+      // Use actual visible range, clamped to valid bounds. A mirrored trailing action row is
+      // one more row on screen past the entries, so the range reaches it too.
+      const mirroredRows = effectiveTotal + (files.some((file) => file.action) ? 1 : 0)
       const loadedStart = Math.max(0, visibleRangeStart)
-      const loadedEnd = Math.min(effectiveTotal, visibleRangeEnd)
+      const loadedEnd = Math.min(mirroredRows, visibleRangeEnd)
       // Surface type-to-jump state so MCP-driven tests can assert it.
       // Only populated while a buffer or visible indicator exists:
       // keeps the YAML clean in the common case (no jump active).

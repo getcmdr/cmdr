@@ -35,7 +35,7 @@ use cmdr_fs::app_path::{AppPath, AppPathBuf, PathFlavor};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::share_list::ShareListRefusal;
 use cmdr_fs::share_meta::{SavedShareMeta, ShareMeta};
-use cmdr_fs::volume::{BackendKind, ListingProgress, Volume, VolumeError, WatchCoverage};
+use cmdr_fs::volume::{BackendKind, ListingProgress, SupportedDates, Volume, VolumeError, WatchCoverage};
 use cmdr_smb::{ShareListError, ShareListResult};
 use tokio_util::sync::CancellationToken;
 
@@ -350,6 +350,17 @@ impl Volume for SmbServerVolume {
         WatchCoverage::EveryWriter
     }
 
+    /// The Servers list's date is each server's LAST USE: sorting by it ranks the never-used
+    /// last and isn't held in name order by "Folders always by name" (every row is a folder
+    /// standing for a server). A share list carries no dates at all.
+    fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
+        let dates = match NetworkPath::of(path.as_str()) {
+            NetworkPath::Hub => SupportedDates::LAST_USE,
+            _ => SupportedDates::NONE,
+        };
+        Box::pin(std::future::ready(dates))
+    }
+
     fn list_directory<'a>(
         &'a self,
         path: &'a AppPath,
@@ -482,6 +493,17 @@ pub(crate) fn listed_account(volume_id: &str, path: &AppPath) -> Option<ShareLis
     }
     let volume = crate::file_system::volume::manager::get_volume_manager().get(volume_id)?;
     volume.as_any().downcast_ref::<SmbServerVolume>()?.listed_account(path)
+}
+
+/// The saved server whose Servers row opens the share list at `path`, by its id, or `None`
+/// (no share list, or a server nobody saved). Memory, the stores, and the mount table only.
+pub(crate) fn saved_server_of_share_list(app: &tauri::AppHandle, path: &str) -> Option<String> {
+    let NetworkPath::ShareList(address) = NetworkPath::of(path) else {
+        return None;
+    };
+    AppServerShares { app: app.clone() }
+        .server_sources()
+        .saved_row_opening(&address)
 }
 
 /// Registers the `network` volume and subscribes its Servers list's re-list. Once, at

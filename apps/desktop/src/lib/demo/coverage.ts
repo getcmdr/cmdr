@@ -124,7 +124,6 @@ export const notInDemo = {
   resolveHost: NETWORK,
   connectToServer: NETWORK,
   listSharesOnHost: NETWORK,
-  prefetchShares: NETWORK,
   getKnownShareByName: NETWORK,
   updateKnownShare: NETWORK,
   getUsernameHint: NETWORK,
@@ -176,6 +175,9 @@ export const notInDemo = {
   guessNfsIdentity: NETWORK,
   getKnownNfsPlaces: NETWORK,
   listSavedServers: NETWORK,
+  savedServerOfShareList: NETWORK,
+  // Only the Servers list lands a cursor by a row's path
+  findPathIndex: NETWORK,
   connectSavedPlace: NETWORK,
   connectServer: NETWORK,
   cancelServerConnect: NETWORK,

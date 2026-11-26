@@ -369,9 +369,7 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
    * ("Matching what is shown in the list…"). A snapshot pane is one whose kind
    * has no backend listing (`!caps.hasBackendListing`), read from the capability
    * defaults rather than a `volumeId === 'search-results'` string compare.
-   * The network kind is also `!hasBackendListing`, but its pane never opens the
-   * Selection dialog (NetworkMountView has no file list), so this stays a
-   * snapshot-only flag in practice.
+   * Only the search-results snapshot is `!hasBackendListing`.
    */
   async function getFocusedPaneEntries(): Promise<{
     entries: FileEntry[]
@@ -440,14 +438,6 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
 
   /** Returns true when the cursor landed on the named item, false when it wasn't found. */
   async function moveCursorByName(paneRef: FilePaneAPI, name: string): Promise<boolean> {
-    const inNetwork: boolean = paneRef.isInNetworkView()
-    if (inNetwork) {
-      // Network views handle name lookup locally
-      const idx: number = paneRef.findNetworkItemIndex(name)
-      if (idx < 0) return false
-      await paneRef.setCursorIndex(idx)
-      return true
-    }
     // A kind's trailing action row ("Add server…") is no listing entry: the pane knows its index.
     const trailingIndex = paneRef.trailingRowIndexNamed(name)
     if (trailingIndex !== null) {
@@ -502,8 +492,7 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
    * Behind ⌘R (`pane.refresh`) and the MCP refresh tool (a round-trip — throws on
    * failure so the adapter reports the real outcome).
    *
-   * The network browser has no listing to re-read, so there the refresh is a host
-   * re-scan instead, and a failed listing has none either, so there it's a retry.
+   * A failed listing has no listing to re-read, so there the refresh is a retry.
    * Everywhere else the re-read is the point: the whole reason a
    * caller refreshes is "I think the cache is stale", and a bare `refreshView()`
    * only re-renders the same stale cache. Hence `force: true`, which also bypasses
@@ -514,10 +503,6 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
   async function refreshPane(): Promise<void> {
     const paneRef = access.getPaneRef(access.getFocusedPane())
     if (!paneRef) throw new Error('The focused pane is unavailable')
-    if (paneRef.isInNetworkView()) {
-      paneRef.refreshNetworkHosts()
-      return
-    }
     // A failed listing holds no listing id (`listing-loader.ts::resetLoadingState`), so there's
     // nothing to re-read: ⌘R does what the screen's Try again does. That covers any kind, a
     // share list's sign-in and refusal screens included.
@@ -552,12 +537,6 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
     if (pane === 'both' || pane === 'right') {
       void access.getPaneRef('right')?.navigateToPath(access.getPanePath('right'))
     }
-  }
-
-  /** Refresh network hosts in the focused pane (used by ⌘R shortcut). */
-  function refreshNetworkHosts() {
-    const paneRef = access.getPaneRef(access.getFocusedPane())
-    paneRef?.refreshNetworkHosts()
   }
 
   /**
@@ -688,7 +667,6 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
     refreshPane,
     injectError,
     resetError,
-    refreshNetworkHosts,
     handleMcpSelect,
     handleMcpSelectNames,
   }

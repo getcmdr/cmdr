@@ -5,6 +5,7 @@ import {
   isTrailingRowIndex,
   trailingRowCount,
   trailingRowIndex,
+  widenTrailingColumn,
   type TrailingRow,
 } from './trailing-row'
 
@@ -45,5 +46,20 @@ describe('clampCursorAcrossRebuild', () => {
   it('clamps as before when the kind has no trailing row', () => {
     expect(clampCursorAcrossRebuild({ cursorIndex: 8, previousEntryRows: 10, entryRows: 5, row: undefined })).toBe(4)
     expect(clampCursorAcrossRebuild({ cursorIndex: 3, previousEntryRows: 3, entryRows: 0, row: undefined })).toBe(0)
+  })
+})
+
+describe('widenTrailingColumn', () => {
+  /** Brief measures entry names only, so a column of short names would clip the action's words. */
+  it('widens only the column the trailing row lands in, never narrowing it', () => {
+    const widths = [120, 100, 100]
+    // Five rows per column, the trailing row at index 7: the second column.
+    expect(widenTrailingColumn({ widths, trailingIndex: 7, itemsPerColumn: 5, minWidth: 260 })).toEqual([120, 260, 100])
+    expect(widenTrailingColumn({ widths: [300], trailingIndex: 2, itemsPerColumn: 5, minWidth: 260 })).toEqual([300])
+  })
+
+  it('leaves the widths alone with no trailing row, or one past the measured columns', () => {
+    expect(widenTrailingColumn({ widths: [100], trailingIndex: null, itemsPerColumn: 5, minWidth: 260 })).toEqual([100])
+    expect(widenTrailingColumn({ widths: [100], trailingIndex: 5, itemsPerColumn: 5, minWidth: 260 })).toEqual([100])
   })
 })

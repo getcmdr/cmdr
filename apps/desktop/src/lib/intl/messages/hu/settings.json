@@ -1335,10 +1335,6 @@
   "@settings.network.firstTriggerDone.description": {
     "sourceHash": "7982e11"
   },
-  "settings.network.nearbyServersGroup.label": "A közelben felfedezett szerverek csoportja",
-  "@settings.network.nearbyServersGroup.label": {
-    "sourceHash": "cfa28b1"
-  },
   "settings.network.directSmbConnection.label": "Közvetlen kapcsolódás SMB-megosztásokhoz",
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"

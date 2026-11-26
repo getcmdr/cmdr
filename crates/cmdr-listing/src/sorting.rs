@@ -27,13 +27,19 @@ pub struct EffectiveSort {
     column: SortColumn,
     order: SortOrder,
     dir_mode: DirectorySortMode,
+    /// The volume's modification date is a last use (`SupportedDates::modified_is_last_use`):
+    /// a row without one ranks after every dated row in both orders.
+    undated_last: bool,
 }
 
 impl EffectiveSort {
     /// The sort a pane that asked for `requested` gets on a volume listing
     /// `supported`: Created or Added falls back to Modified where the volume
-    /// doesn't record it, and every other column sorts as asked. The order and
-    /// directory mode always stay the pane's.
+    /// doesn't record it, and every other column sorts as asked. The order always
+    /// stays the pane's, and so does the directory mode, except on a volume whose
+    /// date is a LAST USE (the Servers list): every row there is a folder standing
+    /// for a place, so "Folders always by name" would pin a sort by use to name
+    /// order; there the folders sort like files, which on Name is the same order.
     pub fn resolve(
         requested: SortColumn,
         order: SortOrder,
@@ -45,10 +51,15 @@ impl EffectiveSort {
             SortColumn::Added if !supported.added => SortColumn::Modified,
             column => column,
         };
+        let dir_mode = match dir_mode {
+            DirectorySortMode::AlwaysByName if supported.modified_is_last_use => DirectorySortMode::LikeFiles,
+            dir_mode => dir_mode,
+        };
         Self {
             column,
             order,
             dir_mode,
+            undated_last: supported.modified_is_last_use,
         }
     }
 
@@ -250,17 +261,31 @@ pub fn entry_comparator<E: SortableEntry + ?Sized>(
         column: sort_by,
         order: sort_order,
         dir_mode: dir_sort_mode,
+        undated_last,
     } = sort;
     move |a, b| {
-        if dir_sort_mode == DirectorySortMode::MixedWithFiles {
-            return compare_mixed(a, b, sort_by, sort_order, &collator);
+        if dir_sort_mode != DirectorySortMode::MixedWithFiles {
+            // Directories always come first
+            match (a.is_directory(), b.is_directory()) {
+                (true, false) => return std::cmp::Ordering::Less,
+                (false, true) => return std::cmp::Ordering::Greater,
+                _ => {}
+            }
         }
 
-        // Directories always come first
-        match (a.is_directory(), b.is_directory()) {
-            (true, false) => return std::cmp::Ordering::Less,
-            (false, true) => return std::cmp::Ordering::Greater,
-            _ => {}
+        // A last-use date (`SupportedDates::modified_is_last_use`): a row never used ranks
+        // after every used one whatever the order, A→Z among themselves.
+        if undated_last && sort_by == SortColumn::Modified {
+            match (a.modified_at(), b.modified_at()) {
+                (None, None) => return a.compare_name(b, &collator),
+                (None, Some(_)) => return std::cmp::Ordering::Greater,
+                (Some(_), None) => return std::cmp::Ordering::Less,
+                (Some(_), Some(_)) => {}
+            }
+        }
+
+        if dir_sort_mode == DirectorySortMode::MixedWithFiles {
+            return compare_mixed(a, b, sort_by, sort_order, &collator);
         }
 
         // AlwaysByName keeps directories A→Z under every other column, whatever

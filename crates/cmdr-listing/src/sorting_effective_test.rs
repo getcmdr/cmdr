@@ -30,8 +30,8 @@ fn modified_only() -> SupportedDates {
 
 fn added_only() -> SupportedDates {
     SupportedDates {
-        created: false,
         added: true,
+        ..SupportedDates::NONE
     }
 }
 
@@ -241,4 +241,39 @@ fn sort_key_changed_sees_a_kind_change_under_every_column() {
         let sort = every_date(column, SortOrder::Ascending, DirectorySortMode::LikeFiles);
         assert!(sort_key_changed(&file, &folder, &sort), "{column:?}");
     }
+}
+
+/// A volume whose modification date is a LAST USE (the Servers list's "Last used"): every
+/// row is a folder standing for a place, so "Folders always by name" mustn't hold them in
+/// name order when the person sorts by use, and X/// in BOTH orders (A→Z among themselves), never first ascending as an unknown file date does.
+#[test]
+fn a_last_use_date_sorts_folders_by_use_with_the_never_used_last_in_both_orders() {
+    let fresh = || {
+        vec![
+            make_entry("Attic", true, None, None),
+            make_entry("Basement", true, None, Some(1_700_000_002)),
+            make_entry("Cellar", true, None, Some(1_700_000_001)),
+            make_entry("Den", true, None, None),
+        ]
+    };
+    let collator = super::testing::collator_for("en");
+    let sorted = |column: SortColumn, order: SortOrder| {
+        let mut entries = fresh();
+        let sort = EffectiveSort::resolve(column, order, DirectorySortMode::AlwaysByName, SupportedDates::LAST_USE);
+        super::sorting::sort_entries(&collator, &mut entries, sort);
+        entries.into_iter().map(|e| e.name).collect::<Vec<_>>()
+    };
+    assert_eq!(
+        sorted(SortColumn::Modified, SortOrder::Ascending),
+        ["Cellar", "Basement", "Attic", "Den"]
+    );
+    assert_eq!(
+        sorted(SortColumn::Modified, SortOrder::Descending),
+        ["Basement", "Cellar", "Attic", "Den"]
+    );
+    // On Name, the directory mode and the arrow still do what they do everywhere.
+    assert_eq!(
+        sorted(SortColumn::Name, SortOrder::Descending),
+        ["Den", "Cellar", "Basement", "Attic"]
+    );
 }

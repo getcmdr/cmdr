@@ -5,8 +5,8 @@
  * copyPathBetweenPanes` delegate.
  *
  * When the source pane is focused, the cursor refines the destination:
- * cursor-on-folder uses the folder's path; cursor-on-server (the Servers hub) opens that
- * server's share list; cursor-on-share (a server's share list) opens the same share list
+ * cursor-on-folder uses the folder's path; cursor-on-server (the Servers list) opens that
+ * SMB server's share list (the row's own path), any other server's row the Servers list; cursor-on-share (a server's share list) opens the same share list
  * and mounts that share once it lands (`share-list-arrival.svelte.ts`), ❌ never the
  * share's `smb://` path, which is mounted, not navigated to. `followCursor: false` skips
  * that refinement: Clone pane (`pane.clone`, ⌘⇧C, Total Commander's "Target = Source")
@@ -62,8 +62,8 @@ export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
     restoreFocus(originalFocused)
   }
 
-  /** The Servers hub in `target`: a volume select, which always lands on the hub, never a remembered share list. */
-  function mirrorHub(target: 'left' | 'right'): void {
+  /** The Servers list in `target`: a volume select, which always lands on it, never a remembered share list. */
+  function mirrorServersList(target: 'left' | 'right'): void {
     const originalFocused = deps.getFocusedPane()
     deps.navigate({
       pane: target,
@@ -95,11 +95,15 @@ export function createPaneMirror(deps: PaneMirrorDeps): PaneMirror {
     const sourcePath = deps.getPanePath(source)
     const sourceKind = capabilitiesForPane(sourceVolumeId, sourcePath).kind
 
-    // The Servers hub: a server under the cursor opens its share list, anything else the hub.
+    // The Servers list: an SMB server under the cursor opens its share list, which IS the row's
+    // path; anything else (a one-place server, whose path is on another volume) the Servers
+    // list. Re-read, like the share list's row below.
     if (sourceKind === 'network') {
-      const cursor = sourceFocused ? sourcePaneRef.getNetworkCursorEntry() : null
-      if (cursor?.kind === 'host') openShareList(target, cursor.host, undefined)
-      else mirrorHub(target)
+      const read = sourceFocused ? sourcePaneRef.refreshCursorEntry() : Promise.resolve(null)
+      void read.then((entry) => {
+        if (entry?.serverMeta?.protocol === 'smb') mirrorLocalStateToPane(target, sourceVolumeId, entry.path)
+        else mirrorServersList(target)
+      })
       return
     }
 

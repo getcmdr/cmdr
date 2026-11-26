@@ -148,6 +148,7 @@ macro_rules! ipc_command_manifest {
                     crate::commands::file_system::get_selection_snapshot,
                     crate::commands::file_system::get_brief_column_text_widths,
                     crate::commands::file_system::find_file_index,
+                    crate::commands::file_system::find_path_index,
                     crate::commands::file_system::compare_directories,
                     crate::commands::file_system::count_folder_sizes,
                     crate::commands::file_system::cancel_folder_size_count,
@@ -651,7 +652,6 @@ macro_rules! ipc_command_manifest {
                     crate::commands::network::connect_to_server,
                     crate::commands::network::get_network_discovery_state,
                     crate::commands::network::list_shares_on_host,
-                    crate::commands::network::prefetch_shares,
                     crate::commands::network::get_known_share_by_name,
                     crate::commands::network::update_known_share,
                     crate::commands::network::get_username_hint,
@@ -753,6 +753,7 @@ macro_rules! ipc_command_manifest {
             cfg(all()) {
                 typed: [
                     crate::commands::servers::list_saved_servers,
+                    crate::commands::servers::saved_server_of_share_list,
                     crate::commands::servers::connect_saved_place,
                     crate::commands::servers::connect_server,
                     crate::commands::servers::cancel_server_connect,

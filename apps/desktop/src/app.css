@@ -363,7 +363,7 @@
   --color-git-portal-subtle: color-mix(in oklch, var(--color-git-portal), transparent 85%);
 
   /* === Server glyph ===
-     * The SMB server row's filled monitor (`monitor-filled`, `ServersHub.svelte`): its edge
+     * The SMB server row's filled monitor (`network:server-smb`, `#lib/glyph-icons.ts`): its edge
      * in the accent, its screen the same color at reduced opacity. Light mode takes the
      * darker `--color-accent-pop`, since the raw accent is under 3:1 on white for gold and
      * yellow; dark mode takes the accent itself. Gated at 3:1 by `scripts/check-a11y-contrast`. */

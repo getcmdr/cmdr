@@ -100,8 +100,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - "System disk" (Linux) and "system drive" (Windows) have no concept: they ride on `startup-disk`, and no Linux catalog
   in the pile names a system disk. Also unconfirmed Windows labels: "Settings > Personalization > Colors", "Settings >
   Apps", and "Windows display language". (hu)
-- `fileExplorer.network.browser.refreshHint`: Windows' input-neutral "select here" has no natural rendering where the
-  target is the hint text itself; say what "here" is ("select this hint") in the description. (hu)
 - `file` matches the app name "File Explorer", so a locale whose Windows name has no file word (sv `Utforskaren`) drifts
   on every Windows branch naming it; sv carries six exceptions. Add "File Explorer" to `file`'s `notMatch`. (sv, uk: a
   `windows` form on `file` accepting «Провідник»)
@@ -249,9 +247,9 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
 - `fileExplorer.shareParentRow.hint`: "look like a top folder" leaves the reader to infer it means "has no “..” row";
   say so ("show no “..”, like any top folder"). Also, "share’s top folder" doubles the folder noun wherever a share is
   itself a "shared folder" (cs `kořenová složka sdílené složky`). (cs, zh-Hant: `共享資料夾的最上層資料夾`)
-- `servers.hub.moreShares`'s note says "the single character … (U+2026); keep it", which contradicts each locale's
-  `mechanics.json` ellipsis (zh-Hant `⋯`). It's a house phrasing on 12 keys (`servers.json`, `commands.json`,
-  `menu.json`); reword them together: "keep a trailing ellipsis, in your locale's glyph". (zh-Hant)
+- The house note "the single character … (U+2026); keep it", which contradicts each locale's `mechanics.json` ellipsis
+  (zh-Hant `⋯`). It's a house phrasing on 12 keys (`servers.json`, `commands.json`, `menu.json`); reword them together:
+  "keep a trailing ellipsis, in your locale's glyph". (zh-Hant)
 - `startup-disk` has no `windows` / `other` forms for nl, pt, uk, vi, and zh, so `settings.indexing.pausedForSpaceNote`
   reused the system-drive and system-disk words `fileExplorer.dirSize.pausedForSpaceOtherDrive` ships; record them as
   rulings in a termbase pass. (nl, pt, uk, vi, zh)

@@ -15,33 +15,13 @@
   "@servers.pinHint.gotIt": {
     "sourceHash": "5ad3dbd"
   },
-  "servers.hub.colName": "Tên",
-  "@servers.hub.colName": {
-    "sourceHash": "dcd1d52"
-  },
   "servers.hub.colType": "Loại",
   "@servers.hub.colType": {
     "sourceHash": "baaddf7"
   },
-  "servers.hub.colAddress": "Địa chỉ",
-  "@servers.hub.colAddress": {
-    "sourceHash": "56ef8f2"
-  },
-  "servers.hub.colStatus": "Trạng thái",
-  "@servers.hub.colStatus": {
-    "sourceHash": "920e413"
-  },
-  "servers.hub.colLastUsed": "Dùng cuối",
-  "@servers.hub.colLastUsed": {
-    "sourceHash": "830ec7f"
-  },
   "servers.hub.addServer": "Thêm máy chủ…",
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
-  },
-  "servers.hub.moreShares": "Các mục chia sẻ khác trên {server}…",
-  "@servers.hub.moreShares": {
-    "sourceHash": "db4e1ab"
   },
   "servers.hub.status.connected": "Đã kết nối",
   "@servers.hub.status.connected": {
@@ -71,10 +51,6 @@
   "@servers.hub.status.waitingForKey": {
     "sourceHash": "f0a43e8"
   },
-  "servers.hub.neverUsed": "Chưa từng dùng",
-  "@servers.hub.neverUsed": {
-    "sourceHash": "24d3236"
-  },
   "servers.hub.shareAccount": "với tư cách {username}",
   "@servers.hub.shareAccount": {
     "sourceHash": "56f57a1"
@@ -87,10 +63,6 @@
   "@servers.hub.editPickHint": {
     "sourceHash": "08e6752"
   },
-  "servers.hub.editShareHint": "Mục chia sẻ không có gì để sửa. Để sửa máy chủ của mục chia sẻ này, hãy chọn hàng của máy chủ đó.",
-  "@servers.hub.editShareHint": {
-    "sourceHash": "8cc5e87"
-  },
   "servers.hub.editNearbyHint": "{name} được tìm thấy ở gần và chưa được lưu, nên không có gì để sửa.",
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
@@ -98,14 +70,6 @@
   "servers.hub.browseAsGuestUnavailable": "{name} chưa cho khách nào vào, nên không thể quay lại duyệt với tư cách khách.",
   "@servers.hub.browseAsGuestUnavailable": {
     "sourceHash": "e2571cd"
-  },
-  "servers.hub.s3AllBuckets": "Tất cả bộ chứa",
-  "@servers.hub.s3AllBuckets": {
-    "sourceHash": "2a5828a"
-  },
-  "servers.hub.openAccountHint": "{name} không phải là nơi để mở. Hãy mở một trong các bộ chứa bên dưới tài khoản này.",
-  "@servers.hub.openAccountHint": {
-    "sourceHash": "c52ee6f"
   },
   "servers.hub.forgetAccountConfirm": "Quên {name} và mọi bộ chứa đã lưu bên dưới tài khoản này? Cmdr sẽ ngắt các kết nối và không hiển thị tài khoản cùng các bộ chứa này nữa. Các tệp của bạn vẫn ở trong các bộ chứa.",
   "@servers.hub.forgetAccountConfirm": {
@@ -126,38 +90,6 @@
   "servers.hub.forgetShareConfirm": "Quên {name}? Cmdr sẽ không hiển thị mục chia sẻ này nữa. Nếu đang được gắn kết, mục chia sẻ vẫn được gắn kết. Các tệp của bạn vẫn ở trên máy chủ.",
   "@servers.hub.forgetShareConfirm": {
     "sourceHash": "8c14aaa"
-  },
-  "servers.hub.nearbyGroup": "{count, plural, other {{countText} máy chủ tìm thấy ở gần}}",
-  "@servers.hub.nearbyGroup": {
-    "sourceHash": "cd7a44d"
-  },
-  "servers.hub.discoveryOff": "Việc tìm máy chủ trên mạng cục bộ đang tắt.",
-  "@servers.hub.discoveryOff": {
-    "sourceHash": "cadcceb"
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Bật trong Cài đặt} linuxGnome {Bật trong Tùy thích} linuxKde {Bật trong Cấu hình Cmdr} other {Bật trong Cài đặt}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "cd006e8"
-  },
-  "servers.hub.nfsHint": "Máy chủ NFS không tự thông báo trên mạng, nên không xuất hiện ở đây.",
-  "@servers.hub.nfsHint": {
-    "sourceHash": "40b516d"
-  },
-  "servers.hub.nfsHintLink": "Thêm một máy chủ bằng địa chỉ",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "0324564"
-  },
-  "servers.hub.emptyTitle": "Chưa có máy chủ nào",
-  "@servers.hub.emptyTitle": {
-    "sourceHash": "7846930"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Hãy thêm một máy chủ ở bên dưới, hoặc bật một máy Mac hay NAS trên mạng của bạn và Cmdr sẽ tìm thấy nó.} windows {Hãy thêm một máy chủ ở bên dưới, hoặc bật một PC hay NAS trên mạng của bạn và Cmdr sẽ tìm thấy nó.} other {Hãy thêm một máy chủ ở bên dưới, hoặc bật một máy tính hay NAS trên mạng của bạn và Cmdr sẽ tìm thấy nó.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "7ca97ce"
-  },
-  "servers.hub.rowCount": "{count, plural, other {{countText} máy chủ}}",
-  "@servers.hub.rowCount": {
-    "sourceHash": "7ef87d1"
   },
   "servers.paneState.connecting": "Đang kết nối tới {name}…",
   "@servers.paneState.connecting": {

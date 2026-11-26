@@ -11,7 +11,7 @@ GNOME / Thunar / Dolphin / Total Commander; catalog consistency over a pile-idea
   (`Điều hướng & thao tác tệp`). The AI family (`ai.translateError.*`, `ai.cloudConsent.*`, `askCmdr.gate.*`) and
   `fileExplorer.quickLookHint.configurable` keep EN's `>` (their `@key`).
 
-## Giọng lỗi: các cụm đã chốt (`errors.*`, `updates.failure.*`, `fileExplorer.network.browser.status.error`, `licensing.error.*Hint`)
+## Giọng lỗi: các cụm đã chốt (`errors.*`, `updates.failure.*`, `licensing.error.*Hint`)
 
 - The style digest's error phrases beat the word-for-word `Đây là những cách để thử:`, the MS-register
   `Đã xảy ra sự cố không mong muốn`, and the bureaucratic `Vui lòng`. "Try again?" stays a bare `Thử lại?`. "fixes" →

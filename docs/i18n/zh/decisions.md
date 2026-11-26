@@ -356,8 +356,8 @@ them.
 
 - `登录 {name}`, no preposition; `已从 {name} 退出登录`. Passphrase `密码短语`, the key's `密钥密码短语` (bare `密码` is
   the account's).
-- Guest `客人` (macOS; `来宾` is Microsoft's): `servers.sheet.connectAsGuest`,
-  `fileExplorer.network.browser.status.guest`, `errors.shareList.signingRequired` change together.
+- Guest `客人` (macOS; `来宾` is Microsoft's): `servers.sheet.connectAsGuest`, `errors.shareList.signingRequired` change
+  together.
 - `连接方式` over NetAuthAgent's `连接身份` (asks whether to use an account). `有东西夹在你和它之间`, never
   `中间人攻击`.
 - Owner `所有者`, not `管理员`; `我核对过密钥了` / `证书了`; `仍然添加` (like `仍然使用`); Sign in as… `用其他账户登录…`

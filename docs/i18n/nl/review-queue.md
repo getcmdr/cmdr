@@ -39,8 +39,8 @@ wording into `terms.json` (and `decisions.md` when the reason is worth keeping).
   `het eigen macOS-proces` is longer and `eigen` reads ambiguously.
 - **"Places" → `Locaties`** (`shortcuts.scope.places`): Dutch can't carry EN's Places-vs-Locations split; confirm it
   doesn't clash with `Ga naar locatie`.
-- **`lokale netwerkdetectie`** (`servers.hub.discoveryOff`): both halves sourced, the compound not. Looser alternative
-  `Detectie in je lokale netwerk`.
+- **`lokale netwerkdetectie`** (`fileExplorer.network.servers.serverCountDiscoveryOff`): both halves sourced, the
+  compound not. Looser alternative `Detectie in je lokale netwerk`.
 - **"platform tools" kept English, "Android tooling" → `Android-tools`**: no pile source; confirm, and whether "de
   Android platform tools" wants a hyphen.
 - **`Onboardingchecklist`** closed (19 letters) vs `Onboarding-checklist`.

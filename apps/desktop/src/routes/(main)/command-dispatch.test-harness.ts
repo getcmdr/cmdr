@@ -174,9 +174,9 @@ export function makeExplorerSpy(): Record<string, ReturnType<typeof vi.fn>> {
     'openContextMenuAtCursor',
     'moveCursor',
     'scrollTo',
-    'refreshNetworkHosts',
     'showServersInFocusedPane',
     'openSmbHandOffInFocusedPane',
+    'selectAddedServerInFocusedPane',
     'getFocusedPaneServerRow',
     'selectVolumeByName',
     'setSortColumn',
@@ -522,9 +522,10 @@ export const DELEGATE_ROWS: DelegateRow[] = [
 
   // --- Network / volume ---
   {
+    // Off the Servers list (the harness's focused pane is a folder) it re-lists nothing.
     id: 'network.refresh',
     expect: (e) => {
-      expect(e.refreshNetworkHosts).toHaveBeenCalledOnce()
+      expect(e.refreshPane).not.toHaveBeenCalled()
     },
   },
   {

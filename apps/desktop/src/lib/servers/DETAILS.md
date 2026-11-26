@@ -14,8 +14,8 @@ Three levels. Every rule in this file is a consequence of them.
 2. **Place**: the mountable thing under an account. An SMB share, an SFTP or WebDAV root, an S3 bucket or the account
    root that lists the buckets, an NFS export, later a shared drive. A place becomes a `VolumeInfo`, and it is what
    tabs, favorites, and paths point at. SFTP and WebDAV have exactly one place per account; SMB, S3, and NFS have many,
-   which is why the SMB host → shares step is the general shape rather than an oddity
-   (`../file-explorer/network/DETAILS.md` § "The pure modules beside it" has the hub's account → places rows).
+   which is why the SMB host → shares step is the general shape rather than an oddity (the Servers list shows the
+   account; its places are its own listing, `../file-explorer/network/DETAILS.md` § "The Servers list as a listing").
 3. **Pin**: whether a place shows in the volume switcher.
 
 ❗ **Why three levels and not "a server is a volume".** A server is not plugged in, and nothing else reminds a person it
@@ -25,11 +25,11 @@ scrolls past their own disks. The pin IS the cap, and the user holds it.
 
 ### The four rules
 
-1. **The switcher's Network group holds three things and nothing else**: the hub row, every place connected right now,
-   and every pinned place (greyed, hollow dot). A place is pinned on its first successful connect, and Unpin lives in
-   the row's context menu. ❌ No "Connect to server…" row in the switcher: adding lives in the hub, the palette, and ⌘K.
-   Where the rule is applied, and why the LISTING hides nothing: `../file-explorer/navigation/DETAILS.md` § "The
-   three-things rule, and which side enforces it".
+1. **The switcher's Network group holds three things and nothing else**: the Servers row, every place connected right
+   now, and every pinned place (greyed, hollow dot). A place is pinned on its first successful connect, and Unpin lives
+   in the row's context menu. ❌ No "Connect to server…" row in the switcher: adding lives in the Servers list (F7, its
+   "Add server…" row), the palette, and ⌘K. Where the rule is applied, and why the LISTING hides nothing:
+   `../file-explorer/navigation/DETAILS.md` § "The three-things rule, and which side enforces it".
 2. **Every row in the switcher is a place, and opening one that isn't live brings it to life IN THE PANE, with a
    cancel.** MTP already worked this way; SFTP, WebDAV, SMB, and ADB inherit it (`../file-explorer/pane/DETAILS.md` § "A
    pane on a saved place").
@@ -54,10 +54,10 @@ segment). `server-path-utils.ts` is the frontend's reader and writer; the Rust t
 `isUnderServerRoot`, the twin of Rust's `cmdr_fs::volume::app_paths::path_is_under` (root trimmed first): a bare
 `${root}/` prefix refused every bucket under it.
 
-**An SMB server's share list** is `smb://<key>[:<port>]` on the `network` volume (the hub is `smb://`), written and read
-by `share-list-path.ts`, whose header says why the key is the Bonjour name or the typed address and ❌ never an IP. Its
-Rust reader is `apps/desktop/src-tauri/src/network/share_list_path.rs`; both read `share-list-path-cases.json`. Rust's
-grammar spells the root with a trailing `/` (`smb://testnas/`), which both readers fold.
+**An SMB server's share list** is `smb://<key>[:<port>]` on the `network` volume (the Servers list is `smb://`), written
+and read by `share-list-path.ts`, whose header says why the key is the Bonjour name or the typed address and ❌ never an
+IP. Its Rust reader is `apps/desktop/src-tauri/src/network/share_list_path.rs`; both read `share-list-path-cases.json`.
+Rust's grammar spells the root with a trailing `/` (`smb://testnas/`), which both readers fold.
 
 **Why a scheme and not a hint.** `commands/volumes.rs::resolve_path_to_volume` falls through to the mount table, which
 on both platforms walks up to `/` and answers the LOCAL root for any absolute path it doesn't recognize. So a
@@ -211,16 +211,17 @@ turning it on there rides the next successful sign-in's offer.
 the secret; a bucket reads as its own name and keeps only its "Reconnect automatically" switch
 (`src-tauri/src/network/DETAILS.md` § "The S3 twin, a place per entry").
 
-- **The account** (Edit on the account's hub row: `openEditServerSheet(server)`, no `placeVolumeId`): the Name field,
-  the provider and the key locked (`servers.sheet.identityLockedS3Account`), ❌ no Bucket field and ❌ no Advanced. It
-  reads the store and the Keychain through one of the account's places (`storeId`: they share the secret, and each
-  `SavedS3Place` carries the account's raw name), and Save renames through `updateSavedS3Account` (blank unnames it), ❌
-  never `updateSavedServer`, whose bucket-less target would save the account ROOT as a new place. ❗ On "Other
-  S3-compatible" the endpoint, region, and path-style switch stay editable (`S3EndpointFields`' `endpointEditable`, with
-  `servers.sheet.s3EndpointMoveHelp`), and Save sends the provider beside the name: a new endpoint MOVES the account and
-  every bucket under its key, with the shared secret (`apps/desktop/src-tauri/src/server_move.rs`). A preset's field
-  stays locked and sends nothing: another region or account ID is other storage, not a new road to the same one. A move
-  leaves the account under a new id, which the sheet reads back (`accountSavedAs`) for any Save again.
+- **The account** (Edit on the account's Servers row: `openEditServerSheet(server)`, no `placeVolumeId`): the Name
+  field, the provider and the key locked (`servers.sheet.identityLockedS3Account`), ❌ no Bucket field and ❌ no
+  Advanced. It reads the store and the Keychain through one of the account's places (`storeId`: they share the secret,
+  and each `SavedS3Place` carries the account's raw name), and Save renames through `updateSavedS3Account` (blank
+  unnames it), ❌ never `updateSavedServer`, whose bucket-less target would save the account ROOT as a new place. ❗ On
+  "Other S3-compatible" the endpoint, region, and path-style switch stay editable (`S3EndpointFields`'
+  `endpointEditable`, with `servers.sheet.s3EndpointMoveHelp`), and Save sends the provider beside the name: a new
+  endpoint MOVES the account and every bucket under its key, with the shared secret
+  (`apps/desktop/src-tauri/src/server_move.rs`). A preset's field stays locked and sends nothing: another region or
+  account ID is other storage, not a new road to the same one. A move leaves the account under a new id, which the sheet
+  reads back (`accountSavedAs`) for any Save again.
 - **A place** (Edit on a bucket or root row, the switcher's menu included:
   `openEditServerSheet(server, placeVolumeId)`): the provider, the key, and the bucket locked
   (`servers.sheet.identityLockedS3`), ❌ no Name field, Advanced with the place's own switch. Save sends the target with
@@ -290,7 +291,7 @@ the typed password, then closes. ❗ Every refusal writes NOTHING, the password 
 its sentence under its own field with the caret there, opening Advanced first. The backend's `unreachable` (a connected
 server that didn't confirm a folder within 5 s, or a server a Forget elsewhere took away meanwhile) reads as
 `save_unconfirmed`, ❌ never the dial's `unreachable`: nothing was saved, which is the half of the story that sentence
-has to tell. A saved edit republishes the volume list, which is how the hub and the switcher learn it
+has to tell. A saved edit republishes the volume list, which is how the Servers list and the switcher learn it
 (`apps/desktop/src-tauri/src/commands/DETAILS.md` § `servers.rs`). Where panes go when a connected place's root moved:
 `../file-explorer/pane/DETAILS.md` § "A place whose root moved under the pane".
 
@@ -526,19 +527,19 @@ somewhere else. Only "Add and open" moves a pane:
 
 - **"Add and open" lands a pane on the new place**, through `openAddServerSheet`'s `onConnected` (the place's volume id
   and app root, read off `list_saved_servers` rather than the volume store, which can still hold the previous
-  `volumes-changed`). ⌘K and Go to path land the focused pane; the hub lands its own. SMB's add is a share mount, so it
-  hands off instead (`onSmbHandOff`): the saved host's share list, mounting the share the address named. ⌘K and Go to
-  path both go through `ExplorerAPI.openSmbHandOffInFocusedPane` (one destination, ❌ never a bare Servers list); the
-  hub does the same to its own pane.
-- **"Add" closes as `added`** with the server's saved id, and `onAdded` shows it: the hub selects the new row
-  (`ServersHub.selectServer`, which waits for the row to be listed), and a door with no list on screen raises a toast
-  saying where it went. ❗ "Add" only saves: an SFTP or WebDAV "Add" drops the session its check opened
-  (`disconnectPlace`), so the row reads Saved, and a password Remember filed stays filed. A place that was already live
-  before the Add keeps its session, since a pane may be standing on it.
+  `volumes-changed`). ⌘K, F7, "Add server…", and Go to path land the focused pane. SMB's add is a share mount, so it
+  hands off instead (`onSmbHandOff`): the saved host's share list, mounting the share the address named. Every door goes
+  through `ExplorerAPI.openSmbHandOffInFocusedPane` (one destination, ❌ never a bare Servers list).
+- **"Add" closes as `added`** with the server's saved id, and `onAdded` shows it: a focused pane on the Servers list
+  selects the new row by its id once the re-list lists it (`ExplorerAPI.selectAddedServerInFocusedPane`,
+  `../file-explorer/pane/servers-list-pane.svelte.ts`), and anywhere else a toast says where it went. ❗ "Add" only
+  saves: an SFTP or WebDAV "Add" drops the session its check opened (`disconnectPlace`), so the row reads Saved, and a
+  password Remember filed stays filed. A place that was already live before the Add keeps its session, since a pane may
+  be standing on it.
 - **"Add anyway"** appears under the address only after `unreachable` or `timed_out`, beside a line saying nothing was
   checked. It saves as typed, contacting nothing until the user connects: `connect_to_server` with
-  `check_reachability: false` for SMB (saved `awaitingFirstConnect`, out of discovery and share listing, and the hub row
-  reads "Not connected yet": `src-tauri/src/network/DETAILS.md` § "A manual server saved without contact"),
+  `check_reachability: false` for SMB (saved `awaitingFirstConnect`, out of discovery and share listing, and its Servers
+  row reads "Not connected yet": `src-tauri/src/network/DETAILS.md` § "A manual server saved without contact"),
   `update_saved_server` for SFTP, WebDAV, S3, and NFS (plus the typed password when Remember is on). ❌ Never for
   `invalid_url`: `AddServerError` keeps an address that doesn't parse apart from a server that didn't answer, and only
   the second can be added anyway. ❌ Never the default.
@@ -616,14 +617,13 @@ asks for the export and the identity to act as instead (`NfsPlaceFields.svelte`,
 - ❗ **A typed `nfs://nas/volume1/data/photos` is an ADDRESS, ❌ not an app path.** Go to path and ⌘K hand it to the
   sheet as a prefill; only Cmdr's own spelling, whose export segment carries an escape (`%2F`), navigates or prefills
   the export exactly (`nfsFieldsFromAppPath`). Read as an app path, the unescaped one would name export `/volume1`.
-- **The hub's line**: NFS servers don't announce themselves, so `ServersHub.svelte` shows one muted line under its list
-  whose link opens this sheet already on NFS. Decision (revisit in review): no Bonjour browse and no port probing of
-  known hosts.
+- **NFS servers don't announce themselves**: no Bonjour browse and no port probing of known hosts. A person adds one
+  through the sheet's protocol picker.
 
 ## Saved SMB shares
 
-A share Cmdr mounts is saved as a place under its host, with the account it signed in as (cmdr-reports#7): a row under
-the host in the hub, pinnable like an SFTP place, and brought back to life in the pane through the same `connect-flow`
+A share Cmdr mounts is saved as a place under its host, with the account it signed in as (cmdr-reports#7): a row on its
+server's share list, pinnable like an SFTP place, and brought back to life in the pane through the same `connect-flow`
 arm 3. Model, store, writers, and what Forget does: `docs/specs/saved-smb-shares.md`. What differs from an SFTP place on
 this side:
 
@@ -658,37 +658,35 @@ nothing but shape.
 target: a `place` (reached by its `volumeId`) or an `smb-server` (reached by its host: it has no volume, and ❌ never a
 fake `volumeId`).
 
-1. **The hub's cursor row** (`ExplorerAPI.getFocusedPaneHubRow()`, an SMB host's included). A row with a `volumeId` wins
-   outright as a place; an SMB server row is an `smb-server` (a saved host mDNS isn't seeing stands for the host its
-   address makes, `savedHostFor`).
+1. **The Servers row under the cursor** (`ExplorerAPI.getFocusedPaneServerRow()`, an SMB server's included). A row with
+   a `volumeId` wins outright as a place; an SMB server row is an `smb-server`, by the host its share list resolves to
+   (`../file-explorer/network/server-row-of-entry.ts`).
 2. **The server whose share list the pane shows** (read from the pane's path by `share-list-label.ts::shareListHostAt`,
    in ONE place in the handlers, `shareListHost`), an `smb-server`.
 3. **The focused pane's own volume**, for a pane standing INSIDE a server, filtered through `isServerPlaceRow` so a
-   mounted SMB share, the synthetic hub row, and a local disk all answer `null`.
+   mounted SMB share, the synthetic Servers row, and a local disk all answer `null`.
 
 Two details are load-bearing:
 
 - **Any other row with no `volumeId` (an S3 account) stops the search** rather than falling through: the user is
   pointing at that server, and quietly acting on the pane's volume instead would move a server they aren't pointing at.
-  A saved SHARE row has a `volumeId`, so it wins like a one-place row: the pin moves, and Disconnect answers `false` (a
-  share's session is a mount, which `disconnectPlace` doesn't speak; Eject in the switcher is its detach).
 - **An `smb-server` target takes only what an SMB server has**: Disconnect (unmounts its shares,
-  `servers-hub-actions.ts::disconnectSmbHost`), Forget saved password, Sign in as…, and Browse as guest (all through
-  `share-list-sign-in.ts::runServerAccountAction`, the hub row menu's and the path bar account menu's runner). The pin
-  and the share-parent switch skip it (a host has neither). A Sign in as… or Browse as guest that lists from a HUB row
-  opens the server's share list; on the share list itself the list follows the listing.
+  `servers-list-actions.ts::disconnectSmbHost`), Forget saved password, Sign in as…, and Browse as guest (all through
+  `share-list-sign-in.ts::runServerAccountAction`, the Servers row menu's and the path bar account menu's runner). The
+  pin and the share-parent switch skip it (a host has neither). A Sign in as… or Browse as guest that lists from a
+  Servers row opens the server's share list; on the share list itself the list follows the listing.
 - **A target resolved from the pane's volume reports `pinned: null`**, because a `VolumeInfo` carries no pin (the pin is
   the switcher's cap, decided in Rust, and deliberately off the wire). `servers.togglePin` reads `listSavedServers()`
   for that case; a store that doesn't answer reads as unpinned, which makes the command a pin rather than a no-op.
 
 **Edit and Rename on the Servers volume are "Edit server…".** `file.edit` and `file.rename` (F4, F2 / ⇧F6 by default,
 read through the shortcut system like every command) and `servers.edit` hand
-`../file-explorer/network/servers-hub-actions.ts::editServerInView` what the pane shows: the hub row under the cursor
-(`ExplorerAPI.getFocusedPaneHubRow()`, an SMB host's included, since the `host` arm of `NetworkCursorEntry` carries its
-row), else the host whose share list is up (`shareListHostAt` on the pane's path), matched to its saved server by the
-hub's own merge. Off that volume they keep their file-list meaning. ❗ Every case answers: a row with nothing saved to
-edit (a share, a host only mDNS sees) and "Add server…" under the cursor each get a one-line info toast, ❌ never
-silence. That is also why the F-key bar's F2 button is enabled there (`FunctionKeyBar.svelte`'s `canRename`).
+`../file-explorer/network/servers-list-actions.ts::editServerInView` what the pane shows: the Servers row under the
+cursor (`ExplorerAPI.getFocusedPaneServerRow()`), else the share list that is up, matched to the saved server whose
+Servers row opens it (Rust's `saved_server_of_share_list`, the list's own match). Off that volume they keep their
+file-list meaning. ❗ Every case answers: a row with nothing saved to edit (a host only mDNS sees) and "Add server…"
+under the cursor each get a one-line info toast, ❌ never silence. That is also why the F-key bar's F2 button is enabled
+there (`FunctionKeyBar.svelte`'s `canRename`).
 
 The handlers themselves (`src/routes/(main)/command-handlers/servers-handlers.ts`) then route a place through
 `../file-explorer/navigation/server-row-actions.ts::runServerRowAction` and an SMB server through the functions its row

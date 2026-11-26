@@ -1,9 +1,8 @@
 <script lang="ts">
     /**
-     * A Servers list row's right-click (and ⌃⏎) menu: the same lists the hub's rows carry
-     * (`row-menu.ts`: `smbHostRowMenu` for an SMB server, `volumeRowMenu` for a one-place
-     * server), run by the same actions (`servers-hub-actions.ts::createHubActions`), so no two
-     * surfaces can drift. The row is resolved by its OWN id (`server-row-of-entry.ts`), and
+     * A Servers list row's right-click (and ⌃⏎) menu: the lists `row-menu.ts` builds
+     * (`smbHostRowMenu` for an SMB server, `volumeRowMenu` for a one-place server), run by
+     * `servers-list-actions.ts::createServerRowActions`, so the switcher and this menu can't drift. The row is resolved by its OWN id (`server-row-of-entry.ts`), and
      * re-resolved after a pick, so a Pin that keeps the menu up offers the flipped pin.
      *
      * Headless: the pane mounts it beside the path (where a share list's account chip sits)
@@ -22,9 +21,8 @@
     import { smbHostHasMounts, type MenuAnchor } from '#lib/tauri-commands/index.js'
     import { getVolumes } from '#lib/stores/volume-store.svelte.js'
     import { rowMenuSections, type ServerRowMenuEntry } from '../navigation/row-menu'
-    import { createHubActions, smbHostOf, type RowMenuOpenFacts } from './servers-hub-actions'
-    import { readServerRowOf } from './server-row-of-entry'
-    import type { HubRow } from './servers-hub-rows'
+    import { createServerRowActions, type RowMenuOpenFacts } from './servers-list-actions'
+    import { readServerRowOf, type ServerRow } from './server-row-of-entry'
     import type { FileEntry } from '../types'
 
     interface Props {
@@ -37,14 +35,14 @@
     const { onOpenChange, onOpenRow }: Props = $props()
 
     /** The row whose menu is up, as resolved when it opened (or after the last pick), and its entry. */
-    let row = $state<HubRow | null>(null)
+    let row = $state<ServerRow | null>(null)
     let entry: FileEntry | null = null
     let opened = $state<RowMenuOpenFacts>({ hasMounts: false })
     let focusBeforeOpen: FocusOrigin | null = null
     /** Where the last right-click landed, for a row menu the list opens with no anchor of its own. */
     let pointer: MenuAnchor | null = null
 
-    const actions = createHubActions({
+    const actions = createServerRowActions({
         getRows: () => (row ? [row] : []),
         getVolumes,
         refreshSaved: async () => {
@@ -86,7 +84,7 @@
         if (!at) return
         const resolved = await readServerRowOf(target)
         if (!resolved) return
-        const host = smbHostOf(resolved)
+        const host = resolved.host
         const facts: RowMenuOpenFacts = { hasMounts: host ? await smbHostHasMounts(host).catch(() => false) : false }
         if (!actions.rowMenu(resolved, facts)) return
         entry = target

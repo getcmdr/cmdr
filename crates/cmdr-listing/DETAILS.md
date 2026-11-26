@@ -502,7 +502,10 @@ asking for Added on an smbfs mount gets Modified order.
   `EffectiveSort::resolve(requested, order, dir_mode, supported)`, and `entry_comparator` and `sort_entries` take
   nothing else.** Why: the fallback rule lives in ONE function, and a sort site that forgets it doesn't compile. Rule:
   Created or Added that `supported` lacks becomes Modified; every other column, the order, and the directory mode stay
-  as asked.
+  as asked, except on a volume whose Modified is a LAST USE (`supported.modified_is_last_use`, the Servers list): there
+  a row with no date (never used) ranks after every dated one in both orders, A→Z among themselves, and `AlwaysByName`
+  resolves to `LikeFiles`, since every row is a folder standing for a place the person orders by use (pinned by
+  `sorting_effective_test.rs::a_last_use_date_sorts_folders_by_use_with_the_never_used_last_in_both_orders`).
 - **Decision: `CachedListing` stores the requested column plus the reading volume's `SupportedDates`, and `effective()`
   derives the column.** Why: no stored effective column can drift from its inputs, and nothing holding a resolved column
   can hand it back as the next request or persist it. Only `CachedListing` holds sort state (the cache lookups return

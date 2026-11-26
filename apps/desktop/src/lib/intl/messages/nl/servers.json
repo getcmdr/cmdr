@@ -15,35 +15,14 @@
   "@servers.pinHint.gotIt": {
     "sourceHash": "5ad3dbd"
   },
-  "servers.hub.colName": "Naam",
-  "@servers.hub.colName": {
-    "sourceHash": "dcd1d52"
-  },
   "servers.hub.colType": "Type",
   "@servers.hub.colType": {
     "sourceHash": "baaddf7",
     "sameAsSourceJustification": "Dutch for this column heading is \"Type\": macOS System Settings Localizable.loctable renders \"Type\"→\"Type\" (verified on macOS 26.6.2, build 25G83, 2026-09-06)."
   },
-  "servers.hub.colAddress": "Adres",
-  "@servers.hub.colAddress": {
-    "sourceHash": "56ef8f2"
-  },
-  "servers.hub.colStatus": "Status",
-  "@servers.hub.colStatus": {
-    "sourceHash": "920e413",
-    "sameAsSourceJustification": "Dutch for this column heading is \"Status\": macOS System Settings Localizable.loctable renders \"Status\"→\"Status\" (verified on macOS 26.6.2, build 25G83, 2026-09-06)."
-  },
-  "servers.hub.colLastUsed": "Laatst gebruikt",
-  "@servers.hub.colLastUsed": {
-    "sourceHash": "830ec7f"
-  },
   "servers.hub.addServer": "Voeg server toe…",
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
-  },
-  "servers.hub.moreShares": "Meer gedeelde mappen op {server}…",
-  "@servers.hub.moreShares": {
-    "sourceHash": "db4e1ab"
   },
   "servers.hub.status.connected": "Verbonden",
   "@servers.hub.status.connected": {
@@ -73,10 +52,6 @@
   "@servers.hub.status.waitingForKey": {
     "sourceHash": "f0a43e8"
   },
-  "servers.hub.neverUsed": "Nooit gebruikt",
-  "@servers.hub.neverUsed": {
-    "sourceHash": "24d3236"
-  },
   "servers.hub.shareAccount": "als {username}",
   "@servers.hub.shareAccount": {
     "sourceHash": "56f57a1"
@@ -89,10 +64,6 @@
   "@servers.hub.editPickHint": {
     "sourceHash": "08e6752"
   },
-  "servers.hub.editShareHint": "Aan een gedeelde map valt niets te wijzigen. Selecteer de rij van de server om de server te wijzigen.",
-  "@servers.hub.editShareHint": {
-    "sourceHash": "8cc5e87"
-  },
   "servers.hub.editNearbyHint": "{name} is in de buurt gevonden en niet opgeslagen, dus er valt niets te wijzigen.",
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
@@ -100,14 +71,6 @@
   "servers.hub.browseAsGuestUnavailable": "{name} heeft geen gast binnengelaten, dus je kunt niet terug naar bladeren als gast.",
   "@servers.hub.browseAsGuestUnavailable": {
     "sourceHash": "e2571cd"
-  },
-  "servers.hub.s3AllBuckets": "Alle buckets",
-  "@servers.hub.s3AllBuckets": {
-    "sourceHash": "2a5828a"
-  },
-  "servers.hub.openAccountHint": "{name} is geen plek om te openen. Open een van de buckets eronder.",
-  "@servers.hub.openAccountHint": {
-    "sourceHash": "c52ee6f"
   },
   "servers.hub.forgetAccountConfirm": "{name} en elke bucket die daaronder is opgeslagen vergeten? Cmdr verbreekt de verbindingen en haalt de buckets uit de lijst. Je bestanden blijven in de buckets staan.",
   "@servers.hub.forgetAccountConfirm": {
@@ -128,39 +91,6 @@
   "servers.hub.forgetShareConfirm": "{name} vergeten? Cmdr haalt de gedeelde map uit de lijst. Is de gedeelde map aangekoppeld, dan blijft dat zo, en je bestanden blijven op de server staan.",
   "@servers.hub.forgetShareConfirm": {
     "sourceHash": "8c14aaa"
-  },
-  "servers.hub.nearbyGroup": "{count, plural, one {{countText} server gevonden in de buurt} other {{countText} servers gevonden in de buurt}}",
-  "@servers.hub.nearbyGroup": {
-    "sourceHash": "cd7a44d"
-  },
-  "servers.hub.discoveryOff": "Lokale netwerkdetectie staat uit.",
-  "@servers.hub.discoveryOff": {
-    "sourceHash": "cadcceb"
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Zet het aan in Instellingen} linuxGnome {Zet het aan in Voorkeuren} linuxKde {Zet het aan in ‘Cmdr configureren’} other {Zet het aan in Instellingen}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "cd006e8"
-  },
-  "servers.hub.nfsHint": "NFS-servers maken zichzelf niet bekend, dus ze verschijnen hier niet.",
-  "@servers.hub.nfsHint": {
-    "sourceHash": "40b516d"
-  },
-  "servers.hub.nfsHintLink": "Voeg er een toe met het adres",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "0324564"
-  },
-  "servers.hub.emptyTitle": "Nog geen servers",
-  "@servers.hub.emptyTitle": {
-    "sourceHash": "7846930"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Voeg er hieronder een toe, of zet een Mac of NAS in je netwerk aan, dan vindt Cmdr hem.} windows {Voeg er hieronder een toe, of zet een pc of NAS in je netwerk aan, dan vindt Cmdr hem.} other {Voeg er hieronder een toe, of zet een computer of NAS in je netwerk aan, dan vindt Cmdr hem.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "7ca97ce"
-  },
-  "servers.hub.rowCount": "{count, plural, one {{countText} server} other {{countText} servers}}",
-  "@servers.hub.rowCount": {
-    "sourceHash": "7ef87d1",
-    "sameAsSourceJustification": "Dutch for the singular and the plural of \"server\" is \"server\" / \"servers\": macOS AppKit renders \"Servers\"→\"Servers\" and Finder nl says \"Wis recente servers\" (verified on macOS 26.6.2, build 25G83, 2026-09-06), so both ICU branches land byte-identical to English."
   },
   "servers.paneState.connecting": "Verbinden met {name}…",
   "@servers.paneState.connecting": {

@@ -61,6 +61,14 @@ pub fn list_saved_servers(app: tauri::AppHandle) -> Vec<SavedServer> {
     )
 }
 
+/// The id of the saved server whose Servers row opens the share list at `path`, or `None`:
+/// what Edit server edits on a share list. Cached state only, ❌ never the wire.
+#[tauri::command]
+#[specta::specta]
+pub fn saved_server_of_share_list(app: tauri::AppHandle, path: String) -> Option<String> {
+    crate::network::share_list_volume::saved_server_of_share_list(&app, &path)
+}
+
 // ============================================================================
 // Connecting
 // ============================================================================

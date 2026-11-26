@@ -69,6 +69,14 @@ export async function listSavedServers(): Promise<SavedServer[]> {
 }
 
 /**
+ * The id of the saved server whose Servers row opens the share list at `path`, or `null` (a
+ * server nobody saved): what Edit server edits on a share list. Cached state only.
+ */
+export async function savedServerOfShareList(path: string): Promise<string | null> {
+  return await commands.savedServerOfShareList(path)
+}
+
+/**
  * A name for one connect attempt, minted BEFORE the dial so a cancel button is
  * armed from the first millisecond. `cancelServerConnect` takes the same one.
  */

@@ -164,20 +164,17 @@ test.afterEach(() => {
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 /**
- * The servers hub's entry for a host in `cmdr://state` (`<name>  protocol=smb  status=…`), or `undefined`.
- *
- * ❗ Read off the state, ❌ not the DOM: the hosts Cmdr only found sit in a group that starts collapsed once a server is
- * saved (which the mounts in this file do), and a collapsed group renders none of them. The state lists them either
- * way, and `move_cursor` onto one opens the group.
+ * The Servers list's entry for a host in `cmdr://state` (`<name>  protocol=smb status=…`), or `undefined`. Read off
+ * the state, ❌ not the DOM: the state names a row's facts as locale-independent tokens.
  */
-async function hostEntryInHub(hostName: string): Promise<string | undefined> {
+async function hostEntryInServersList(hostName: string): Promise<string | undefined> {
   const state = await mcpReadResource('cmdr://state')
   return state.split('\n').find((line) => line.includes(`${hostName}  protocol=`))
 }
 
-/** Checks whether the servers hub lists a host. */
+/** Checks whether the Servers list lists a host. */
 async function hostExistsInPane(hostName: string): Promise<boolean> {
-  return (await hostEntryInHub(hostName)) !== undefined
+  return (await hostEntryInServersList(hostName)) !== undefined
 }
 
 /**
@@ -185,7 +182,7 @@ async function hostExistsInPane(hostName: string): Promise<boolean> {
  * `i:<n> <kind> `, with the `[cur]` / `[sel]` markers taken off).
  *
  * ❗ The share-list pins read THIS, ❌ never the share list's DOM. A share list is an ordinary file listing on the
- * `network` volume: its `path` is the server's key (`smb://<key>`, no trailing slash) and its `volume` the hub's own
+ * `network` volume: its `path` is the server's key (`smb://<key>`, no trailing slash) and its `volume` the Servers list's own
  * name, ❌ never `Network > <host>`.
  */
 interface PaneRows {
@@ -255,7 +252,7 @@ async function shareExistsInPane(side: 'left' | 'right', shareName: string): Pro
 }
 
 /** The Servers list's row the cursor is on, or `null` when the pane isn't on the Servers list. */
-async function hubRowUnderCursor(side: 'left' | 'right'): Promise<string | null> {
+async function serverRowUnderCursor(side: 'left' | 'right'): Promise<string | null> {
   const pane = await paneRows(side)
   if (pane.volumeId !== 'network' || pane.rows[0] === '..') return null
   return pane.rows[pane.cursorIndex] ?? null
@@ -278,10 +275,10 @@ async function openHost(side: 'left' | 'right', hostName: string, shareName: str
 }
 
 /**
- * Opens a host from the hub, waits for its share list, and comes back to the hub.
+ * Opens a host from the Servers list, waits for its share list, and comes back to the Servers list.
  *
  * A host Cmdr only found has its shares listed when someone opens it, and at no other time (#324), so this is what
- * puts a `shares=` count on its hub entry.
+ * puts the account it listed as on its Servers row.
  */
 async function openHostAndComeBack(hostName: string): Promise<void> {
   await mcpCall('move_cursor', { pane: 'left', filename: hostName })
@@ -358,7 +355,7 @@ describeSmb('SMB host discovery', () => {
     expect(hasAuth).toBe(true)
   })
 
-  test('guest host shows share count once it has been opened', async ({ tauriPage }) => {
+  test('a found host names the account it listed as once it has been opened', async ({ tauriPage }) => {
     await ensureAppReady(tauriPage)
 
     await mcpSelectVolume('left', 'Servers')
@@ -366,7 +363,7 @@ describeSmb('SMB host discovery', () => {
 
     await openHostAndComeBack('SMB Test (Guest)')
     await expect
-      .poll(async () => (await hostEntryInHub('SMB Test (Guest)'))?.includes('shares=1'), {
+      .poll(async () => (await hostEntryInServersList('SMB Test (Guest)'))?.includes('account=guest'), {
         timeout: waitBudget(30000),
       })
       .toBeTruthy()
@@ -378,13 +375,12 @@ describeSmb('Adding an SMB host through the sign-in sheet', () => {
     await ensureAppReady(tauriPage)
     await mcpSelectVolume('left', 'Servers')
     await expect
-      .poll(async () => tauriPage.isVisible('.servers-hub .add-row'), { timeout: waitBudget(30000) })
+      .poll(async () => tauriPage.isVisible('.file-pane [data-trailing-row]'), { timeout: waitBudget(30000) })
       .toBeTruthy()
 
-    // A DOUBLE click: the hub's rows follow the file list, where one click moves
-    // the cursor and two open the thing.
+    // The Servers list's "Add server…" row, by a DOUBLE click: one click moves the cursor and two open the thing.
     await tauriPage.evaluate(`(function () {
-      document.querySelector('.servers-hub .add-row').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      document.querySelector('.file-pane [data-trailing-row]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     })()`)
     const sheet = '[data-dialog-id="server-sign-in"]'
     await expect.poll(async () => tauriPage.isVisible(sheet), { timeout: waitBudget(5000) }).toBeTruthy()
@@ -427,7 +423,7 @@ describeSmb('SMB share browsing', () => {
     expect(pane.volumeId).toBe('network')
     expect(pane.rows[0]).toBe('..')
     expect(pane.cursorIndex).toBe(0)
-    // The standard mirror's spelling: the server's stable key, and the hub's own volume name.
+    // The standard mirror's spelling: the server's stable key, and the Servers list's own volume name.
     expect(pane.path).toBe('smb://smb test (guest)')
     expect(pane.volume).not.toContain(' > ')
   })
@@ -507,7 +503,7 @@ describeSmb('SMB share browsing', () => {
     await mcpCall('open_under_cursor', {})
 
     await expect
-      .poll(async () => (await hubRowUnderCursor('left'))?.startsWith(`${server}  protocol=smb`), {
+      .poll(async () => (await serverRowUnderCursor('left'))?.startsWith(`${server}  protocol=smb`), {
         timeout: waitBudget(15000),
       })
       .toBeTruthy()
@@ -519,7 +515,7 @@ describeSmb('SMB share browsing', () => {
     // Network` from inside a host was a silent no-op and the tool timed out waiting
     // for the volume name to fall back from "Network > SMB Test (Guest)". With a
     // failed mount on screen that left an agent with no way out at all.
-    // ❗ Also #324's "Servers lands on the hub": picking Servers never reopens (and so never re-lists) the last server.
+    // ❗ Also #324's "Servers lands on the Servers list": picking Servers never reopens (and so never re-lists) the last server.
     await ensureAppReady(tauriPage)
 
     await mcpSelectVolume('left', 'Servers')
@@ -529,7 +525,7 @@ describeSmb('SMB share browsing', () => {
     // The tool itself polls for the volume name, so a no-op surfaces as a timeout here.
     await mcpSelectVolume('left', 'Servers')
 
-    await expect.poll(async () => hubRowUnderCursor('left'), { timeout: waitBudget(15000) }).not.toBeNull()
+    await expect.poll(async () => serverRowUnderCursor('left'), { timeout: waitBudget(15000) }).not.toBeNull()
     const pane = await paneRows('left')
     expect(pane.volumeId).toBe('network')
     expect(pane.rows.some((row) => row.startsWith('SMB Test (Guest)  protocol=smb'))).toBe(true)
@@ -635,7 +631,7 @@ describeSmb('SMB share browsing', () => {
       await mcpCall('move_cursor', { pane: 'left', index: 0 })
       await mcpCall('open_under_cursor', {})
       await expect
-        .poll(async () => (await hubRowUnderCursor('left'))?.startsWith(`${name}  protocol=smb`), {
+        .poll(async () => (await serverRowUnderCursor('left'))?.startsWith(`${name}  protocol=smb`), {
           timeout: waitBudget(15000),
         })
         .toBeTruthy()
@@ -667,7 +663,7 @@ describeSmb('SMB share browsing', () => {
 
     // The queued mount was spent: opening the same server again in the right pane stays on its share list.
     await mcpSelectVolume('right', 'Servers')
-    await expect.poll(async () => hubRowUnderCursor('right'), { timeout: waitBudget(15000) }).not.toBeNull()
+    await expect.poll(async () => serverRowUnderCursor('right'), { timeout: waitBudget(15000) }).not.toBeNull()
     await openHost('right', 'SMB Test (Guest)', SMB_GUEST_SHARE)
     // A round trip that needs the share list, after its listing landed: a second mount would have left it by now.
     await mcpCall('move_cursor', { pane: 'right', filename: SMB_GUEST_SHARE })
@@ -839,11 +835,11 @@ describeSmb('SMB authentication', () => {
 
     await mcpSelectVolume('left', 'Servers')
     await expect.poll(async () => hostExistsInPane('SMB Test (Auth)'), { timeout: waitBudget(30000) }).toBeTruthy()
-    // Found, and not listed: no share count on its entry until someone opens it.
-    expect(await hostEntryInHub('SMB Test (Auth)')).not.toContain('shares=')
+    // Found, and not listed: no account on its entry until someone opens it and signs in.
+    expect(await hostEntryInServersList('SMB Test (Auth)')).not.toContain('account=')
 
-    // Enter on the hub row, the key a person presses (not MCP's open), with the pane focused first: a click
-    // there could land the hub's cursor on another row.
+    // Enter on the Servers row, the key a person presses (not MCP's open), with the pane focused first: a click
+    // there could land the cursor on another row.
     await focusPane(tauriPage, 0)
     await mcpCall('move_cursor', { pane: 'left', filename: 'SMB Test (Auth)' })
     await tauriPage.keyboard.press('Enter')
@@ -868,20 +864,19 @@ describeSmb('SMB authentication', () => {
       .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
       .toBeTruthy()
 
-    // ⌘[ goes back to the hub, with the cursor on the server. Read off the DOM first: while the error screen is up,
-    // `cmdr://state` still carries the hub's rows, so the mirror alone can't tell the two apart.
+    // ⌘[ goes back to the Servers list, with the cursor on the server: the error screen gone, the list's action row back.
     await pressKey(tauriPage, defaultKey('nav.back'))
     await expect
       .poll(
         async () =>
           tauriPage.evaluate<boolean>(
-            `!document.querySelector('.error-pane') && !!document.querySelector('.servers-hub')`,
+            `!document.querySelector('.error-pane') && !!document.querySelector('.file-pane [data-trailing-row]')`,
           ),
         { timeout: waitBudget(15000) },
       )
       .toBeTruthy()
     await expect
-      .poll(async () => (await hubRowUnderCursor('left'))?.startsWith('SMB Test (Auth)  protocol=smb'), {
+      .poll(async () => (await serverRowUnderCursor('left'))?.startsWith('SMB Test (Auth)  protocol=smb'), {
         timeout: waitBudget(15000),
       })
       .toBeTruthy()
@@ -920,12 +915,12 @@ describeSmb('SMB authentication', () => {
     await mcpCall('move_cursor', { pane: 'left', index: 0 })
     await mcpCall('open_under_cursor', {})
     await expect
-      .poll(async () => hubRowUnderCursor('left'), { timeout: waitBudget(15000) })
+      .poll(async () => serverRowUnderCursor('left'), { timeout: waitBudget(15000) })
       .toMatch(new RegExp(`^SMB Test \\(Auth\\) {2}protocol=smb .*account=${SMB_AUTH_USERNAME}( |$)`))
   })
 
   /**
-   * The hub row's menu is one of the account's three doors (with the path bar's account and the palette), all running
+   * The Servers row's menu is one of the account's three doors (with the path bar's account and the palette), all running
    * the one sign-in module. A Sign in as… that lists opens the server's share list, as activating the row does.
    */
   test('Sign in as… from a server row’s menu signs in and opens its share list', async ({ tauriPage }) => {
@@ -934,23 +929,15 @@ describeSmb('SMB authentication', () => {
 
     await mcpSelectVolume('left', 'Servers')
     await expect.poll(async () => hostExistsInPane('SMB Test (Auth)'), { timeout: waitBudget(30000) }).toBeTruthy()
-    // The cursor on it opens its group, so its row is on screen to right-click.
+    // The keyboard's context-menu key on the cursor row, in the focused pane.
+    await focusPane(tauriPage, 0)
     await mcpCall('move_cursor', { pane: 'left', filename: 'SMB Test (Auth)' })
     await expect
-      .poll(
-        async () =>
-          tauriPage.evaluate<boolean>(`(function () {
-            var row = [...document.querySelectorAll('[data-hub-row]')].find(function (el) {
-              return el.textContent.includes('SMB Test (Auth)');
-            });
-            if (!row) return false;
-            var box = row.getBoundingClientRect();
-            row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: box.left + 20, clientY: box.top + 5 }));
-            return true;
-          })()`),
-        { timeout: waitBudget(15000) },
-      )
+      .poll(async () => (await serverRowUnderCursor('left'))?.startsWith('SMB Test (Auth)  protocol=smb'), {
+        timeout: waitBudget(15000),
+      })
       .toBeTruthy()
+    await pressKey(tauriPage, defaultKey('file.contextMenu'))
 
     // The item by its value (`row:<rowId>:account:sign-in-as`), ❌ not its words.
     const signInRow = `document.querySelector('[data-menu] [data-menu-row$=":account:sign-in-as"]')`
@@ -1012,20 +999,6 @@ describeSmb('SMB 50-share server', () => {
 
     // smb2's consumer 50-shares container creates 50 shares
     expect(result.shares.length).toBeGreaterThanOrEqual(50)
-  })
-
-  test('50-share host shows correct share count in Network view', async ({ tauriPage }) => {
-    await ensureAppReady(tauriPage)
-
-    await mcpSelectVolume('left', 'Servers')
-    await expect.poll(async () => hostExistsInPane('SMB Test (50 Shares)'), { timeout: waitBudget(30000) }).toBeTruthy()
-
-    await openHostAndComeBack('SMB Test (50 Shares)')
-    await expect
-      .poll(async () => (await hostEntryInHub('SMB Test (50 Shares)'))?.includes('shares=50'), {
-        timeout: waitBudget(30000),
-      })
-      .toBeTruthy()
   })
 
   test('typing a share’s letters on its share list moves the cursor to that share', async ({ tauriPage }) => {

@@ -72,8 +72,7 @@
         type TabMoveRequest,
     } from './tab-operations'
     import { initNetworkDiscovery, cleanupNetworkDiscovery } from '../network/network-store.svelte'
-    import type { HubRow } from '../network/servers-hub-rows'
-    import { serverRowUnderCursor } from '../network/server-row-of-entry'
+    import { serverRowUnderCursor, type ServerRow } from '../network/server-row-of-entry'
     import { initVolumeStore, getVolumes as getStoreVolumes, cleanupVolumeStore } from '#lib/stores/volume-store.svelte.js'
     import { initVolumeBusyStore, cleanupVolumeBusyStore } from '#lib/stores/volume-busy-store.svelte.js'
     import { initRestrictedPathsStore } from '#lib/stores/restricted-paths-store.svelte.js'
@@ -1233,11 +1232,6 @@
         void dragDrop.handleFileDrop(paths, targetPane, targetFolderPath, operation, identity)
     }
 
-    /** Refresh network hosts in the focused pane (used by ⌘R shortcut). */
-    export function refreshNetworkHosts() {
-        paneCommands.refreshNetworkHosts()
-    }
-
     /**
      * Takes the focused pane to the servers hub.
      *
@@ -1252,13 +1246,24 @@
 
     /**
      * An SMB add's hand-off, in the focused pane: the host it saved, opened as its
-     * share list, mounting the share the address named. ❗ The ONE place an add that
-     * wasn't raised from the hub lands (Go to path, ⌘K): the hub's own Add does the
-     * same thing to its own pane (`NetworkMountView.openAddServer`). A bare Servers
+     * share list, mounting the share the address named. ❗ The ONE place every Add server
+     * door lands (F7 and "Add server…" on the Servers list, Go to path, ⌘K). A bare Servers
      * list there showed no mount, no share list, and no selection.
      */
     export function openSmbHandOffInFocusedPane(handOff: SmbHandOff): void {
         paneMirror.openShareList(explorerState.getFocusedPane(), handOff.host, handOff.sharePath ?? undefined)
+    }
+
+    /**
+     * A server the Add sheet saved without opening ("Add"): its row, selected in the focused
+     * pane once a re-list lists it, when that pane shows the Servers list. Answers whether it
+     * does, so the caller can say where the server went otherwise.
+     */
+    export function selectAddedServerInFocusedPane(serverId: string): boolean {
+        const pane = explorerState.getFocusedPane()
+        if (capabilitiesForPane(getPaneVolumeId(pane), getPanePath(pane)).kind !== 'network') return false
+        getPaneRef(pane)?.selectServerRowWhenListed(serverId)
+        return true
     }
 
     /**
@@ -1267,7 +1272,7 @@
      * pane, so "the focused pane's volume" would answer the synthetic hub row), and what Edit,
      * Rename, and F8 act on there.
      */
-    export function getFocusedPaneServerRow(): Promise<HubRow | null> {
+    export function getFocusedPaneServerRow(): Promise<ServerRow | null> {
         return serverRowUnderCursor(getPaneRef(explorerState.getFocusedPane()))
     }
 

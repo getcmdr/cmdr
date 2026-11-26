@@ -166,7 +166,7 @@ CLDR categories: `one`, `other` (verified with `new Intl.PluralRules('sv')`). Wr
 - **Commas**: no comma before `och` / `eller` joining two short main clauses, nor before a list's last item; keep it
   when the clauses are long enough to need the break, and always before a consequence `så` ("Skriv en notering eller
   bifoga din e-post, så läggs det till …"). An `eller` inside an item already hanging on an `eller` is marked by a comma
-  before the outer one (`servers.hub.emptyMessage`). Use `samt` before a last item that itself contains `och`.
+  before the outer one. Use `samt` before a last item that itself contains `och`.
 - **Percent**: a space before `%` (`100 %`, `{percent} %`), even inside a placeholder-heavy string.
 - **Numbers and dates** come from the formatter layer (comma decimal, space thousands separator); never hardcode them.
 - **Multipliers** use `gånger`, spelled out through nine: `fyra gånger`, `100 gånger`, never `4x`.

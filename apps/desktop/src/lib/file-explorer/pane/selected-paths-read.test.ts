@@ -139,10 +139,4 @@ describe('readSelectedPathsForCopy', () => {
     expect(resolveSnapshotPathsSpy).toHaveBeenCalledWith('sr-3', [0, 2], -1)
     expect(getSelectionSnapshotSpy).not.toHaveBeenCalled()
   })
-
-  it('reports no selection on a pane with no listing and no snapshot (the Servers hub)', async () => {
-    const read = await readSelectedPathsForCopy(access(paneStub({ selectedIndices: [0] }), 'network'))
-    expect(read).toEqual({ kind: 'noSelection' })
-    expect(getSelectionSnapshotSpy).not.toHaveBeenCalled()
-  })
 })

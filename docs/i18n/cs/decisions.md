@@ -189,7 +189,7 @@ chatbot (reviewed).
 The unnamed {drive} may be a drive or a server, so toto umístění; every {drive} frame keeps it bare with no head noun
 (Teď se indexuje {drive}).
 
-## Kept after native review (`menu.tab.*`, `menu.app.acknowledgements`, `menu.app.changelog`, `menu.app.onboarding`, `menu.help.whatsNew`, `fileExplorer.quickFilter.intro.gotIt`, `fileExplorer.network.browser.status.error`, `settings.mediaIndex.importanceThreshold.*`, `onboarding.wizard.step*`, `askCmdr.thinking`, `servers.refusal.hostKeyRevoked`, `viewer.statusBar.badge.streaming*`, `viewer.toolbar.tail.*`, `commands.paneLeftVolumeChooser.label`, `settings.appearance.dateColors.opt.wilting`, `ai.local.installStep*`, `commands.aboutOpenUpgrade.label`)
+## Kept after native review (`menu.tab.*`, `menu.app.acknowledgements`, `menu.app.changelog`, `menu.app.onboarding`, `menu.help.whatsNew`, `fileExplorer.quickFilter.intro.gotIt`, `settings.mediaIndex.importanceThreshold.*`, `onboarding.wizard.step*`, `askCmdr.thinking`, `servers.refusal.hostKeyRevoked`, `viewer.statusBar.badge.streaming*`, `viewer.toolbar.tail.*`, `commands.paneLeftVolumeChooser.label`, `settings.appearance.dateColors.opt.wilting`, `ai.local.installStep*`, `commands.aboutOpenUpgrade.label`)
 
 Confirmed as shipped: záložka, Poděkování, Seznam změn, Co je nového, Úvodní průvodce, Rozumím, Problém, Smetí, v/ve per
 plural branch, Krok {step} z {total} (z before a variable, ze before a literal 4), Přemýšlí…, kompromitovaný,

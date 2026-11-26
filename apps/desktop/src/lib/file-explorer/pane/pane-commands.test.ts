@@ -53,7 +53,6 @@ function buildPaneRef(
     hasParent: boolean
     isRenaming: boolean
     isJumpActive: boolean
-    isInNetworkView: boolean
     errorState: PaneErrorState | null
     currentPath: string
     volumeId: string
@@ -75,7 +74,6 @@ function buildPaneRef(
     getListingId: () => overrides.listingId ?? 'listing-1',
     hasParentEntry: () => overrides.hasParent ?? false,
     isRenaming: () => overrides.isRenaming ?? false,
-    isInNetworkView: () => overrides.isInNetworkView ?? false,
     getErrorState: () => overrides.errorState ?? null,
     getCurrentPath: () => overrides.currentPath ?? '/listing',
     getVolumeId: () => overrides.volumeId ?? 'root',
@@ -105,7 +103,6 @@ function buildPaneRef(
     setSelectedIndices: vi.fn(),
     applyIndices: vi.fn(),
     setCursorIndex: vi.fn(() => Promise.resolve()),
-    findNetworkItemIndex: vi.fn(() => -1),
     trailingRowIndexNamed: vi.fn((): number | null => null),
     whenLoadSettles: vi.fn(() => Promise.resolve()),
     syncStateToMcpNow: vi.fn(() => Promise.resolve()),
@@ -129,7 +126,6 @@ function buildPaneRef(
     closeHeaderMenu: vi.fn(),
     openCursorItem: vi.fn(() => Promise.resolve()),
     refreshView: vi.fn(),
-    refreshNetworkHosts: vi.fn(),
     injectError: vi.fn(),
     navigateToPath: vi.fn(() => Promise.resolve()),
   }
@@ -724,16 +720,6 @@ describe('delegating commands', () => {
     expect(ref.refreshView).toHaveBeenCalledOnce()
   })
 
-  it('refreshPane re-scans hosts when the pane shows the network browser', async () => {
-    // ⌘R means "refresh what I'm looking at", and the network browser has no
-    // listing to re-read.
-    const ref = buildPaneRef({ isInNetworkView: true })
-    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
-    await cmds.refreshPane()
-    expect(ref.refreshNetworkHosts).toHaveBeenCalledOnce()
-    expect(refreshListingSpy).not.toHaveBeenCalled()
-  })
-
   it('refreshPane on a failed listing retries the navigation, as its Try again does', async () => {
     // A failed listing (a share list's sign-in or refusal screen included) drops its
     // listing id, so a forced re-read had nothing to re-read and ⌘R did nothing at all.
@@ -764,13 +750,6 @@ describe('delegating commands', () => {
     expect(ref.refreshView).not.toHaveBeenCalled()
   })
 
-  it('refreshNetworkHosts refreshes the focused pane', () => {
-    const ref = buildPaneRef()
-    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
-    cmds.refreshNetworkHosts()
-    expect(ref.refreshNetworkHosts).toHaveBeenCalledOnce()
-  })
-
   it('injectError injects into the named pane', () => {
     const right = buildPaneRef()
     const cmds = create(buildAccess({ paneRefs: { right } }))
@@ -796,20 +775,10 @@ describe('delegating commands', () => {
   })
 })
 
-describe('moveCursorByName network-vs-listing dispatch', () => {
-  it('uses the network item index in a network view', async () => {
-    const ref = buildPaneRef({ isInNetworkView: true })
-    vi.mocked(ref.findNetworkItemIndex).mockReturnValue(3)
-    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
-    await cmds.moveCursorByName(refOf(ref), 'host-a')
-    expect(ref.findNetworkItemIndex).toHaveBeenCalledWith('host-a')
-    expect(ref.setCursorIndex).toHaveBeenCalledWith(3)
-    expect(findFileIndexSpy).not.toHaveBeenCalled()
-  })
-
-  it('falls to the file-listing path when not in a network view', async () => {
+describe('moveCursorByName: listing or trailing row', () => {
+  it('finds the name in the file listing', async () => {
     findFileIndexSpy.mockResolvedValue(2)
-    const ref = buildPaneRef({ isInNetworkView: false, hasParent: false })
+    const ref = buildPaneRef({ hasParent: false })
     const cmds = create(buildAccess({ paneRefs: { left: ref } }))
     const found = await cmds.moveCursorByName(refOf(ref), 'file')
     expect(findFileIndexSpy).toHaveBeenCalledOnce()
@@ -818,7 +787,7 @@ describe('moveCursorByName network-vs-listing dispatch', () => {
   })
 
   it("lands on a kind's trailing action row by its name, which no listing holds", async () => {
-    const ref = buildPaneRef({ isInNetworkView: false, hasParent: false })
+    const ref = buildPaneRef({ hasParent: false })
     vi.mocked(ref.trailingRowIndexNamed).mockReturnValue(4)
     const cmds = create(buildAccess({ paneRefs: { left: ref } }))
     const found = await cmds.moveCursorByName(refOf(ref), '+ Add server…')
@@ -828,9 +797,9 @@ describe('moveCursorByName network-vs-listing dispatch', () => {
     expect(found).toBe(true)
   })
 
-  it('reports not-found for a missing network item without moving the cursor', async () => {
-    const ref = buildPaneRef({ isInNetworkView: true })
-    vi.mocked(ref.findNetworkItemIndex).mockReturnValue(-1)
+  it('reports not-found for a name nothing holds, without moving the cursor', async () => {
+    findFileIndexSpy.mockResolvedValue(null)
+    const ref = buildPaneRef({})
     const cmds = create(buildAccess({ paneRefs: { left: ref } }))
     const found = await cmds.moveCursorByName(refOf(ref), 'no-such-host')
     expect(ref.setCursorIndex).not.toHaveBeenCalled()

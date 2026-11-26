@@ -561,6 +561,17 @@ export const commands = {
       __TAURI_INVOKE('find_file_index', { listingId, name, includeHidden }),
     ),
   /**
+   *  The row whose entry's path is exactly `path`, where the cursor lands when a pane comes
+   *  back to a list whose row names aren't the key it left by: the Servers list (`smb://`),
+   *  whose rows read as a server's friendly name while the share list the pane left is
+   *  `smb://<key>`. A plain walk of the visible rows: such a list is a handful of rows, and
+   *  `with_rows` is the engine's one read over them.
+   */
+  findPathIndex: (listingId: string, path: string, includeHidden: boolean) =>
+    typedError<number | null, ListingLookupError>(
+      __TAURI_INVOKE('find_path_index', { listingId, path, includeHidden }),
+    ),
+  /**
    *  Compare directories (⇧F2): which rows each pane should mark against the
    *  other. A pure read of the two cached listings; see `listing/compare.rs`.
    */
@@ -5050,23 +5061,6 @@ export const commands = {
     typedError<ShareListResult, ShareListError>(
       __TAURI_INVOKE('list_shares_on_host', { hostId, hostname, ipAddress, port, timeoutMs, cacheTtlMs }),
     ),
-  /**
-   *  Prefetches shares for a host, so its share list is cached by the time someone opens it.
-   *  Same as list_shares_on_host but designed for prefetching - errors are silently ignored.
-   *  Returns immediately if shares are already cached.
-   *
-   *  Listing signs in to the host (as a guest, where it lets one in), so the frontend calls
-   *  this for servers the user saved, only while a Servers view is on screen, and never for
-   *  one that was only discovered.
-   */
-  prefetchShares: (
-    hostId: string,
-    hostname: string,
-    ipAddress: string | null,
-    port: number,
-    timeoutMs: number | null,
-    cacheTtlMs: number | null,
-  ) => __TAURI_INVOKE<void>('prefetch_shares', { hostId, hostname, ipAddress, port, timeoutMs, cacheTtlMs }),
   // Gets a specific known share by server and share name.
   getKnownShareByName: (serverName: string, shareName: string) =>
     __TAURI_INVOKE<{
@@ -5756,6 +5750,11 @@ export const commands = {
    *  network traffic.
    */
   listSavedServers: () => __TAURI_INVOKE<SavedServer[]>('list_saved_servers'),
+  /**
+   *  The id of the saved server whose Servers row opens the share list at `path`, or `None`:
+   *  what Edit server edits on a share list. Cached state only, ❌ never the wire.
+   */
+  savedServerOfShareList: (path: string) => __TAURI_INVOKE<string | null>('saved_server_of_share_list', { path }),
   /**
    *  Dials a server the user has already saved, by the id its place carries.
    *

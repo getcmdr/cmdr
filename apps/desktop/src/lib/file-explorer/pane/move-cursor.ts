@@ -42,12 +42,9 @@ export async function moveCursorToTarget(
   await paneRef.whenLoadSettles()
 
   if (typeof to === 'number') {
-    // `setCursorIndex` stores the value unclamped, so range-check first. A
-    // network view counts its own rows (hosts or shares, `0` while a mount runs
-    // or its failure is on screen) rather than the file listing; without that
-    // count the check was skipped there and the host browser silently CLAMPED
-    // an out-of-range index, so the tool reported a move it hadn't made.
-    const total = paneRef.isInNetworkView() ? paneRef.getNetworkItemCount() : paneRef.getCursorRowCount()
+    // `setCursorIndex` stores the value unclamped, so range-check first: an
+    // out-of-range index would otherwise report a move the tool hadn't made.
+    const total = paneRef.getCursorRowCount()
     if (to < 0 || to >= total) {
       throw new Error(
         `Index ${String(to)} is out of range in the ${pane} pane (${String(total)} ${pluralize(total, 'item')})`,

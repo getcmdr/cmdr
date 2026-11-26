@@ -15,34 +15,14 @@
   "@servers.pinHint.gotIt": {
     "sourceHash": "5ad3dbd"
   },
-  "servers.hub.colName": "Nom",
-  "@servers.hub.colName": {
-    "sourceHash": "dcd1d52"
-  },
   "servers.hub.colType": "Type",
   "@servers.hub.colType": {
     "sourceHash": "baaddf7",
     "sameAsSourceJustification": "French for the protocol/kind column is the identical word \"Type\": macOS Finder renders the \"Kind\" column as \"Type\" (LocalizableMerged.strings keys N224 / N169.35) and Apple's own profile detail panes ship \"Type\" -> \"Type\" (ManagedClient.app mcx/iChat profileDomainPlugin Localizable.loctable, key str_Detail_globalproxy_Type), macOS 26.6.2 build 25G83, 2026-09-06."
   },
-  "servers.hub.colAddress": "Adresse",
-  "@servers.hub.colAddress": {
-    "sourceHash": "56ef8f2"
-  },
-  "servers.hub.colStatus": "État",
-  "@servers.hub.colStatus": {
-    "sourceHash": "920e413"
-  },
-  "servers.hub.colLastUsed": "Dernière utilisation",
-  "@servers.hub.colLastUsed": {
-    "sourceHash": "830ec7f"
-  },
   "servers.hub.addServer": "Ajouter un serveur…",
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
-  },
-  "servers.hub.moreShares": "Autres partages sur {server}…",
-  "@servers.hub.moreShares": {
-    "sourceHash": "db4e1ab"
   },
   "servers.hub.status.connected": "Connecté",
   "@servers.hub.status.connected": {
@@ -72,10 +52,6 @@
   "@servers.hub.status.waitingForKey": {
     "sourceHash": "f0a43e8"
   },
-  "servers.hub.neverUsed": "Jamais utilisé",
-  "@servers.hub.neverUsed": {
-    "sourceHash": "24d3236"
-  },
   "servers.hub.shareAccount": "en tant que « {username} »",
   "@servers.hub.shareAccount": {
     "sourceHash": "56f57a1"
@@ -88,10 +64,6 @@
   "@servers.hub.editPickHint": {
     "sourceHash": "08e6752"
   },
-  "servers.hub.editShareHint": "Il n’y a rien à modifier sur un partage. Pour modifier son serveur, sélectionnez la ligne de ce serveur.",
-  "@servers.hub.editShareHint": {
-    "sourceHash": "8cc5e87"
-  },
   "servers.hub.editNearbyHint": "Le serveur {name} a été découvert à proximité et n’est pas enregistré, il n’y a donc rien à modifier.",
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
@@ -99,14 +71,6 @@
   "servers.hub.browseAsGuestUnavailable": "{name} n’a laissé entrer aucun invité, il n’y a donc pas d’accès invité auquel revenir.",
   "@servers.hub.browseAsGuestUnavailable": {
     "sourceHash": "e2571cd"
-  },
-  "servers.hub.s3AllBuckets": "Tous les compartiments",
-  "@servers.hub.s3AllBuckets": {
-    "sourceHash": "2a5828a"
-  },
-  "servers.hub.openAccountHint": "Le compte {name} ne s’ouvre pas. Ouvrez l’un des compartiments sous ce compte.",
-  "@servers.hub.openAccountHint": {
-    "sourceHash": "c52ee6f"
   },
   "servers.hub.forgetAccountConfirm": "Oublier {name} et tous les compartiments enregistrés sous ce compte ? Cmdr ferme leurs connexions et ne les affiche plus. Vos fichiers restent dans les compartiments.",
   "@servers.hub.forgetAccountConfirm": {
@@ -127,38 +91,6 @@
   "servers.hub.forgetShareConfirm": "Oublier {name} ? Cmdr n’affiche plus ce partage. S’il est monté, il le reste, et vos fichiers restent sur le serveur.",
   "@servers.hub.forgetShareConfirm": {
     "sourceHash": "8c14aaa"
-  },
-  "servers.hub.nearbyGroup": "{count, plural, one {{countText} serveur découvert à proximité} many {{countText} serveurs découverts à proximité} other {{countText} serveurs découverts à proximité}}",
-  "@servers.hub.nearbyGroup": {
-    "sourceHash": "cd7a44d"
-  },
-  "servers.hub.discoveryOff": "La découverte du réseau local est désactivée.",
-  "@servers.hub.discoveryOff": {
-    "sourceHash": "cadcceb"
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Activez-la dans les Paramètres} linuxGnome {Activez-la dans les Préférences} linuxKde {Activez-la dans « Configurer Cmdr »} other {Activez-la dans les Réglages}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "cd006e8"
-  },
-  "servers.hub.nfsHint": "Les serveurs NFS ne s’annoncent pas sur le réseau, ils n’apparaissent donc pas ici.",
-  "@servers.hub.nfsHint": {
-    "sourceHash": "40b516d"
-  },
-  "servers.hub.nfsHintLink": "Ajoutez-en un avec son adresse",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "0324564"
-  },
-  "servers.hub.emptyTitle": "Pas encore de serveur",
-  "@servers.hub.emptyTitle": {
-    "sourceHash": "7846930"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Ajoutez-en un ci-dessous, ou allumez un Mac ou un NAS sur votre réseau et Cmdr le trouvera.} windows {Ajoutez-en un ci-dessous, ou allumez un PC ou un NAS sur votre réseau et Cmdr le trouvera.} other {Ajoutez-en un ci-dessous, ou allumez un ordinateur ou un NAS sur votre réseau et Cmdr le trouvera.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "7ca97ce"
-  },
-  "servers.hub.rowCount": "{count, plural, one {{countText} serveur} many {{countText} serveurs} other {{countText} serveurs}}",
-  "@servers.hub.rowCount": {
-    "sourceHash": "7ef87d1"
   },
   "servers.paneState.connecting": "Connexion à {name}…",
   "@servers.paneState.connecting": {

@@ -37,6 +37,8 @@ vi.mock('#lib/file-explorer/quick-look/quick-look-state.svelte.js', () => ({
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: () => [] }))
 
 import { quickLookOpen, trackEvent } from '#lib/tauri-commands/index.js'
+import { addToast } from '#lib/ui/toast/index.js'
+import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
 import { quickLookState } from '#lib/file-explorer/quick-look/quick-look-state.svelte.js'
 import { fileHandlers } from './file-handlers'
 import type { CommandHandlerContext } from './types'
@@ -141,5 +143,22 @@ describe('file.quickLook reports every outcome', () => {
       dispatchArgs: undefined,
     } as unknown as CommandHandlerContext)
     expect(outcome()).toBe('noTarget')
+  })
+})
+
+describe('file.quickLook on the Servers list', () => {
+  /** A Servers row is a server: its `smb://` or place path must never reach macOS as a file. */
+  it('says a server is no file to preview, and opens nothing', async () => {
+    vi.mocked(getFocusedPaneVolumeId).mockReturnValue('network')
+    vi.mocked(getFocusedPanePath).mockReturnValue('smb://')
+    await fileHandlers['file.quickLook'](ctxAt('smb://testnas'))
+    vi.mocked(getFocusedPaneVolumeId).mockReturnValue('root')
+    vi.mocked(getFocusedPanePath).mockReturnValue('/x')
+    expect(quickLookOpen).not.toHaveBeenCalled()
+    expect(quickLookState.isOpen).toBe(false)
+    expect(addToast).toHaveBeenCalledWith(expect.stringContaining('testnas'), {
+      level: 'info',
+      id: 'servers-not-a-file',
+    })
   })
 })

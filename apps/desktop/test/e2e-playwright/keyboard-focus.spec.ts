@@ -209,12 +209,14 @@ test.describe('Keyboard focus: which pane the next ↓ moves', () => {
     await expectKeysReach(tauriPage, 'left')
   })
 
-  test('after the pane shows the servers hub and comes back, the same pane', async ({ tauriPage }) => {
+  test('after the pane shows the Servers list and comes back, the same pane', async ({ tauriPage }) => {
     await ensureMcpClient(tauriPage)
     try {
       await mcpCall('select_volume', { pane: 'left', name: 'Servers' })
       await expect
-        .poll(async () => tauriPage.isVisible('.file-pane.is-focused .servers-hub'), { timeout: waitBudget(15000) })
+        .poll(async () => tauriPage.isVisible('.file-pane.is-focused [data-trailing-row]'), {
+          timeout: waitBudget(15000),
+        })
         .toBeTruthy()
     } finally {
       await mcpCall('select_volume', { pane: 'left', name: LOCAL_VOLUME_NAME })

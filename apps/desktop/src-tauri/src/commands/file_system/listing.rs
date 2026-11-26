@@ -286,6 +286,23 @@ pub async fn find_file_index(
     listings().find_file_index(&ListingId::new(listing_id), &name, include_hidden)
 }
 
+/// The row whose entry's path is exactly `path`, where the cursor lands when a pane comes
+/// back to a list whose row names aren't the key it left by: the Servers list (`smb://`),
+/// whose rows read as a server's friendly name while the share list the pane left is
+/// `smb://<key>`. A plain walk of the visible rows: such a list is a handful of rows, and
+/// `with_rows` is the engine's one read over them.
+#[tauri::command]
+#[specta::specta]
+pub async fn find_path_index(
+    listing_id: String,
+    path: String,
+    include_hidden: bool,
+) -> Result<Option<usize>, ListingLookupError> {
+    listings().with_rows(&ListingId::new(listing_id), include_hidden, |rows| {
+        rows.iter().position(|entry| entry.path == path)
+    })
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn find_file_indices(

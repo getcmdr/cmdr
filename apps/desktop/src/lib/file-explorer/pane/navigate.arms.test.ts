@@ -307,8 +307,11 @@ describe('history walk ({ history } arm)', () => {
 
     expect(h.tab('left').volumeId).toBe('network')
     expect(h.tab('left').path).toBe('smb://srv')
-    // The network volume restores no cursor from history.
-    expect(h.paneState.left.paneRef?.restoreHistoryCursor).not.toHaveBeenCalled()
+    // The `network` volume lists like any other, so its history entry restores the cursor too.
+    expect(h.paneState.left.paneRef?.restoreHistoryCursor).toHaveBeenCalledWith({
+      path: 'smb://srv',
+      cursor: undefined,
+    })
   })
 })
 

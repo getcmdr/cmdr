@@ -1,18 +1,17 @@
 # Network browser
 
-SMB discovery and browsing: the servers hub, a server's share list, the direct-connect upgrade, and the reconnect
+SMB discovery and browsing: the Servers list, a server's share list, the direct-connect upgrade, and the reconnect
 manager. Signing in is `#lib/servers`' one sheet; this module only says what to ask and what to do with the answer.
 
 ## Module map
 
 - `network-store.svelte.ts`: the `$state` singleton behind all network data. `lazy-trigger.ts`: the network-action hook.
-- `ServersHub.svelte` (+ `servers-hub-{rows,items,shares,keys,actions,mcp,columns}.ts`, `servers-hub-list.svelte.ts`,
-  `host-status.ts`, `ServersHubRowMenu.svelte`, `ServersHubStatusBar.svelte`): the hub table on the `network` volume.
-  `share-list-sign-in.ts`: a share list's sign-in and every door's account actions. `ShareListAccountChip.svelte`: the
-  path bar's account and a share row's menu. `share-list-label.ts`: a share-list path's friendly name. `smb-sign-in.ts`:
-  SMB's side of the sheet. `list-cursor.ts`: the hub's arrow keys, jump rule, and scrolling. `server-row-words.ts`,
-  `server-row-of-entry.ts`, `ServersListRowMenu.svelte`: the Servers listing (DETAILS). `mount-error-messages.ts` (+
-  `mount-error.ts`): a refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
+- The Servers list is a listing (Rust builds its rows); here are its words and its actions: `server-row-words.ts`,
+  `server-row-of-entry.ts` (the row an action takes), `servers-list-actions.ts` (F8, Edit, the row menus),
+  `ServersListRowMenu.svelte`. `share-list-sign-in.ts`: a share list's sign-in and every door's account actions.
+  `ShareListAccountChip.svelte`: the path bar's account and a share row's menu. `share-list-label.ts`: a share-list
+  path's friendly name. `smb-sign-in.ts`: SMB's side of the sheet. `mount-error-messages.ts` (+ `mount-error.ts`): a
+  refused mount's words. `share-parent-*`: `..` out of a share's top folder (DETAILS).
 - `SmbLinkConsentDialog.svelte`: the ask before a link signs in to another server, opened from the pane's error screen
   (`crates/cmdr-smb/DETAILS.md` § "Signing in through a link").
 - `direct-connect.ts` (+ `upgrade-messages.ts`, `LocalNetworkBlockedToastContent.svelte`): the "Connect directly"
@@ -25,12 +24,12 @@ manager. Signing in is `#lib/servers`' one sheet; this module only says what to 
 - **❌ Never import raw `$state` from `network-store.svelte.ts`; use the exported getters.** Svelte 5 `$state` is
   reactive only inside `.svelte` / `.svelte.ts`: a plain `.ts` import silently loses it.
 - **`triggerNetworkDiscovery()` is the single chokepoint for a networking intent**; ❌ don't gate on `network.enabled`
-  yourself. The browse runs while a Servers view holds it (`holdDiscoveryForServersView`).
-- **❌ Never list the shares of a host Cmdr only found, unless the person opens it** (#324): listing signs in to it.
-  Prefetch, the stale refresh, and ⌘R all gate on `savedSmbHostIds`; a new `listSharesOnHost` caller must too. Even a
-  saved server's prefetch waits for a Servers view on screen: nothing is listed at launch.
-- **The hub's cursor counts what's on screen; MCP indexes the full list** (a collapsed nearby group hides rows). Cross
-  with `servers-hub-items.ts`, ❌ never index `rows` by the cursor. DETAILS § "The nearby group".
+  yourself. The browse runs while a pane shows the Servers list (`holdDiscoveryForServersView`, held by
+  `../pane/servers-list-pane.svelte.ts`).
+- **❌ Never list a server's shares unless a pane opens its share list** (#324): listing signs in to it. The Servers
+  list never dials (Rust builds it from memory, the stores, and the mount table), and nothing prefetches.
+- **A Servers row action takes the row by its OWN id, and an SMB row's host by the row's path** (the host its share list
+  resolves to), ❌ never a host found by name or address (`server-row-of-entry.ts`).
 - **❌ The frontend never reads the Keychain**: each access can raise a system prompt, so the backend reads a server's
   stored password at most once per session, inside a listing or a mount the person started
   (`src-tauri/src/network/share_list_sign_in.rs`). "Is one stored?" for a button reads the backend's in-memory cache

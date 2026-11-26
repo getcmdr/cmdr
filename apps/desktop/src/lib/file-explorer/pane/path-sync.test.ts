@@ -15,7 +15,6 @@ const base = {
   initialPath: '/dir',
   currentPath: '/dir',
   isSearchResultsView: false,
-  isNetworkView: false,
   deviceIsConnecting: false,
 }
 
@@ -54,21 +53,12 @@ describe('resolveInitialPathAction', () => {
     ).toEqual({ kind: 'sync-path', path: 'adb://R58M12345/sdcard' })
   })
 
-  /**
-   * ❗ The network view owns its own data, so nothing LOADS, but the path still
-   * commits: left as the previous volume's, the header read "Servers ▸ /Volumes/public"
-   * after a share, and anything reading the pane's path got a folder it isn't on
-   * (QA 2026-09-25).
-   */
-  it('commits the network view’s path without loading a listing', () => {
-    expect(
-      resolveInitialPathAction({
-        ...base,
-        isNetworkView: true,
-        currentPath: '/Volumes/public',
-        initialPath: 'smb://',
-      }),
-    ).toEqual({ kind: 'sync-path', path: 'smb://' })
+  /** The Servers list is a listing like any folder: a pane sent there loads it. */
+  it('loads the Servers list like any folder', () => {
+    expect(resolveInitialPathAction({ ...base, currentPath: '/Volumes/public', initialPath: 'smb://' })).toEqual({
+      kind: 'load',
+      path: 'smb://',
+    })
   })
 })
 

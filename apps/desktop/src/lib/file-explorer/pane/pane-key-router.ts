@@ -37,7 +37,6 @@ export interface PaneKeyRouterDeps {
    * `share.back` and leaves every other key dead, ❌ never the hidden list's.
    */
   handleShareMountKeyDown: (event: KeyboardEvent) => boolean
-  getIsNetworkView: () => boolean
   getIsSearchResultsView: () => boolean
   getViewMode: () => ViewMode
   /** Whether the synthetic `..` row exists (no parent to go to without it). */
@@ -49,8 +48,6 @@ export interface PaneKeyRouterDeps {
    * answering whether it did. Enter there runs it, ❌ never falls through to a cursor move.
    */
   activateTrailingRow?: () => boolean
-  /** Forward to `NetworkMountView`, which owns its own cursor. */
-  handleNetworkKeyDown: (event: KeyboardEvent) => void
   /** Forward to the search-results pane's key handling. */
   handleSearchResultsKeyDown: (event: KeyboardEvent) => void
   handleBriefModeKeys: (event: KeyboardEvent) => void
@@ -195,11 +192,6 @@ export function createPaneKeyRouter(deps: PaneKeyRouterDeps): PaneKeyRouter {
 
     // A mount running, its refusal, or its sign-in sheet replaced the share list's rows.
     if (deps.handleShareMountKeyDown(e)) return
-
-    if (deps.getIsNetworkView()) {
-      deps.handleNetworkKeyDown(e)
-      return
-    }
 
     // Search-results pane: route Enter to the cursor row's activation, arrow keys
     // through the SearchResultsView's setCursorIndex. The view embeds FullList but

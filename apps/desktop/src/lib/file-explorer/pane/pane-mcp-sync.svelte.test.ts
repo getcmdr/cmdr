@@ -186,6 +186,32 @@ describe('buildMcpFileList', () => {
     expect(getTrailingEntry).toHaveBeenCalledWith(4)
   })
 
+  /** `loadedEnd` spans what's mirrored, so the trailing row's index is inside the loaded range. */
+  it('counts a mirrored trailing row in the loaded range, never in totalFiles', async () => {
+    const trailing = { name: '+ Add server…', path: '', isDirectory: false, size: null, recursiveSize: null }
+    const sync = createPaneMcpSync(
+      deps({
+        getTotalCount: () => 3,
+        getRowCount: () => 3,
+        getVisibleRangeStart: () => 0,
+        getVisibleRangeEnd: () => 4,
+        getTrailingEntry: () => ({
+          ...trailing,
+          modified: null,
+          recursiveSizeUpdating: null,
+          action: 'servers.connect',
+        }),
+      }),
+    )
+    updateLeftPaneState.mockClear()
+
+    await sync.syncPaneStateToMcp()
+
+    expect(updateLeftPaneState).toHaveBeenCalledWith(
+      expect.objectContaining({ totalFiles: 3, loadedStart: 0, loadedEnd: 4 }),
+    )
+  })
+
   it('leaves it out while the window stops short of the last entry, and lists it alone on an empty list', async () => {
     const trailing = {
       name: '+ Add server…',

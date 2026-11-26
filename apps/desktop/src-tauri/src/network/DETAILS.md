@@ -75,7 +75,7 @@ saving: `docs/notes/performance/mdns-browse-gating-2026-09-27.md`.
   `discovery_gate_test.rs`); `transition` carries out each step under the gate's lock, so a start and a stop can't land
   in the opposite order they were decided in.
 - **The holders**, each for exactly its need:
-  - The Servers view (`NetworkMountView`, host list and share list alike): the frontend counts shown views
+  - The Servers list (a pane on `smb://`, `servers-list-pane.svelte.ts`): the frontend counts the panes showing it
     (`holdDiscoveryForServersView`) and sends `set_servers_view_shown` on the first and the last. A reloaded page sends
     its own truth from `initNetworkDiscovery`.
   - Every upgrade's `smb_server_address::discover_server`, for the whole dial (§ "SMB upgrade waits briefly for mDNS to
@@ -196,8 +196,8 @@ so nothing dials it, and the next write persists the repair. So does a sign-in t
 mounted (`share-mount.svelte.ts`'s `remountWith`): without it, a share guests can list but not open asked for the password
 on every mount (cmdr-reports#27). And a listing that got no credentials signs in
 as the preferred account with its session credential (`smb_account_ladder::account_listing_for`, over
-`keychain::session_credentials`: a sheet's answer or a password this session already read, ❌ never a Keychain read). Without both, the next background prefetch listed as guest
-and "Sign in as testuser" read "as guest" three seconds later.
+`keychain::session_credentials`: a sheet's answer or a password this session already read, ❌ never a Keychain read). Without both, a background listing (the prefetch the Servers view once ran)
+listed as guest, and "Sign in as testuser" read "as guest" three seconds later.
 
 ❗ **Credentials skip guest, always** (`GuestAttempt::given_credentials`, applied before both the smb2 legs and the CLI
 fallback, which lists as guest). Credentials are the question: someone pressed "Sign in as…" or the listing is using
@@ -360,7 +360,7 @@ only for a named entry, so a Bonjour name still outranks an address nobody chose
 - **Naming saves.** `name_server_entry_at_path` renames an entry, or creates one for a host only the share history knew
   (keyed by the id the listing published, which has to be one the address mints), so any saved SMB host can be named.
 - **The host's own `name` never changes.** The injected `NetworkHost` keeps the address as its name, because that name
-  keys the Keychain (`credential_key`) and the share cache; the hub reads the label off the saved list instead.
+  keys the Keychain (`credential_key`) and the share cache; the Servers list reads the label off the saved list instead.
 
 ### TCP reachability check runs in the dialog, before the host is added
 
@@ -377,12 +377,12 @@ SMB share is on"). The entry carries `awaitingFirstConnect: true` (absent reads 
 launch and on every network action) leaves it out of the list too.
 
 - **Its first mount makes it ordinary** (`note_first_connect`, from `smb_saved_shares::remember_mount`, every Cmdr
-  mount): the flag clears, and the next load lists it. The hub needs no discovery entry to show or open it: a saved host
-  mDNS isn't seeing is drawn from the saved listing (`servers-hub-rows.ts::savedHostFor`).
+  mount): the flag clears, and the next load lists it. The Servers list needs no discovery entry to show or open it: a
+  saved host mDNS isn't seeing is a row off the saved listing, opening the share list at its address.
 - **A contact-free save never hides an ordinary host**, and a checked add of a waiting host (the probe reached it) makes
   it ordinary: a re-save keeps the flag only while both saves say so (`add_server_entry_to_path`).
-- **The hub says "Not connected yet"** for it: the listing carries `SavedServer.awaitingFirstConnect`, and the frontend
-  keeps its shares out of the prefetch (`apps/desktop/src/lib/file-explorer/network/DETAILS.md`).
+- **Its Servers row says "Not connected yet"**: the listing carries `SavedServer.awaitingFirstConnect`, and nothing
+  lists its shares until the person opens it (no prefetch, #324).
 - **Decision: "Add anyway" saves contact-free too** (David, 2026-10-28, #777). **Why**: one rule everywhere, saving a
   server is a store write and contact starts when the user connects. An approved card is as user-initiated as the
   sheet (`docs/design-principles.md`, "An approved action is the user's own"), so the two must not differ. The cost: a user's unchecked add
@@ -407,12 +407,11 @@ macOS and Windows `lifecycle::handle_volume_mounted`, Linux's mount-table watche
   server saved by IP is one Servers row with the Bonjour host at exactly that address and port, named after it, while
   the row still opens the saved address (§ "The Servers list's rows"). Like a host saved
   without contact, it stays out of `load_manual_servers`' discovery injection, so it never reads "Found nearby" off its
-  own manual host, and the hub's prefetch skips it (`savedSmbHostIds`): nothing lists its shares unasked (#324), a
-  Tailscale address included. A mount through Cmdr (`note_first_connect`), a person's own add of the address, or an
+  own manual host. Nothing lists its shares unasked (#324), a Tailscale address included. A mount through Cmdr (`note_first_connect`), a person's own add of the address, or an
   address edit (`relocate_at_path`) makes it ordinary.
 - **One NAS at two addresses is two servers** (LAN and Tailscale), ❌ never merged by GUID (§ "Which server a share is
   on"). Edit server moves one to a new address and refuses one another entry holds.
-- **Forget offers to unmount first** while a share from the server is mounted (`servers-hub-actions.ts`), since the
+- **Forget offers to unmount first** while a share from the server is mounted (`servers-list-actions.ts`, F8 and the row menu's Forget), since the
   next mount event or launch would save it right back; a share that won't unmount keeps the server.
 
 ### Mount path disambiguation for same-name shares
@@ -850,9 +849,9 @@ the migration, and what Forget does). What the code has to defend:
 - **❗ `lastConnectedAt` means a connection happened, in every saved-server store.** A save that connected nothing (an
   Add naming a share, "Add anyway", an edit of an unconnected place, an approved Ask Cmdr card) files it EMPTY, and each
   store's `remember` (`upsert_share_row` for SMB) keeps the stored time when the incoming one is empty. Why: it's
-  "Last used" and the hub's recency order, and `connect_volume` dials the most recently connected member of a share
+  "Last used" and the Servers list's Last used sort, and `connect_volume` dials the most recently connected member of a share
   (`location/same_share.rs` `connect_target`), so a stamped save would steer a dial to a place nobody connected.
-  Empty already reads as "never used" everywhere (`servers-hub-rows.ts`, the recency sorts). An SMB host's "saved at"
+  Empty already reads as "never used" everywhere (the Servers row's date, which sorts never-used last). An SMB host's "saved at"
   is the manual entry's own `added_at`.
 - **One row per share, keyed by server identity + folded share name, ❌ never by account**: an SMB volume id carries no
   username (`known_shares::upsert_share_row`). A replace keeps the pin, except that the FIRST mount pins it (rule 1 of
@@ -1059,7 +1058,7 @@ different question, different grain.)
 **Stored as an opt-out list, `KnownSharesStore::direct_connection_opt_outs`**, ❌ not a flag on `KnownNetworkShare`. That
 type records Cmdr's own connects (server-level sign-in history, and the shares Cmdr itself mounted, § "Saved SMB
 shares"), so a share macOS mounted has no row; minting one would invent a connection history that then shows up in the
-servers hub. Absence means on, so a
+Servers list. Absence means on, so a
 `known-shares.json` written before the setting existed keeps every share on the fast connection. The store writes
 without an `AppHandle` (the path is stashed at load), because "Connect directly" records consent from code the MCP
 executor calls too.
@@ -1102,7 +1101,7 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
 
 - **Only a pane the person pointed at a share list dials** (#324: listing signs in to the server). The engine's pane
   open reads through `Volume::list_directory_for_pane` (`cmdr_listing`'s `list_as_stored`) and ⌘R through
-  `list_directory_for_refresh` (which drops the share cache first, as the hub's ⌘R does). Every other reader reaches
+  `list_directory_for_refresh` (which drops the share cache first). Every other reader reaches
   `list_directory_with_cancel`: Ask Cmdr's `list_dir` (`cmdr_listing::entries_as_stored`), About, a size walk, a
   respell. Those get the share cache by `smb_client::cached_listing`'s rule, else `NotConnected`, ❌ never a dial.
   `get_metadata` reads memory and the cache only. **Decision**: a separate trait read the engine calls, ❌ not a
@@ -1129,7 +1128,7 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `only_a_forced_refresh_dials_an_open_share_list`.
 - **The pane read signs in with `share_list_sign_in::list_for_pane`**: a typed account's session credential, else
   its stored password read ONCE, else `AuthRequired`; with no typed account, guest, and only a guest turned away (a
-  sign-in class) falls to the session credential, else the one stored read. Every other caller (prefetch, the
+  sign-in class) falls to the session credential, else the one stored read. Every other caller (the
   frontend's own `list_shares_on_host`, a non-pane read's cache rule) stays memory-only
   (`smb_account_ladder.rs`). Timeout and cache TTL are smb_client's defaults (15 s, 30 s): the frontend's
   `network.timeout` / `network.shareCacheDuration` settings don't reach the backend (a settings-plumbing gap, not
@@ -1172,7 +1171,8 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   ❌ no NFC fold, which only the reader does). Both languages read `share-list-path-cases.json`, so the escaping and
   the case, NFC, and port folding can't drift.
 - **Resolution** (`share_list_path::resolve`, memory only): fresh discovery first, a discovered host before a manual
-  one (the hub's pick, so the pane lists under the host id the hub's prefetch caches under), then the manual store (a
+  one (the frontend's `share-list-label.ts` picks the same, so a Servers row's actions sign in to the host the share
+  list lists under), then the manual store (a
   launch where discovery hasn't loaded it), then a server an SMB share is mounted from (`KnownHosts::mounted`, made by
   `smb_share_parent::mounted_hosts` off the kernel's mount-table snapshot, the same host `..` out of that share opens),
   then a host only the display cache lists, ❗ with its IP dropped: that pairing is stale, and an IP DHCP handed to
@@ -1189,7 +1189,7 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
 - **Considered and rejected** (David, 2026-11-25): a listing overlay on a fake directory (overlays decorate a real
   listing, and a share list has no underlying directory); a frontend in-memory listing (the backend must own the sign-in
   ladder and the typed refusals); a volume id per server (`smb-server:<host>`) registered per visit (a lifecycle for
-  something with no session to manage, while one `network` volume with path routing keeps the hub and its share lists
+  something with no session to manage, while one `network` volume with path routing keeps the Servers list and its share lists
   on one volume, so the switcher, history, and the drop-foreign-listings prefix rule stay as they are).
 - **The engine needed no change for the path**: `smb://<server>/` is its own scheme root in Rust (`smb:///` is another),
   and the listing engine never checks a listed path against the volume's root (verified by
@@ -1201,12 +1201,14 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
 server, then one per host only mDNS knows. It's a pure fold over `ServerRowInputs` (the saved listing, `fresh_discovered_hosts`,
 the volume list's connection states, the kernel's SMB mount table, and a snapshot of the accounts share lists signed
 in as), so ❌ nothing in it dials, reads the Keychain, or `statfs`es a mount; a test injects every input. The pane
-doesn't show these rows yet: the frontend's hub still runs its own merge (`servers-hub-rows.ts`) until the switch
-(plan: `docs/specs/servers-list-as-listing-plan.md`).
+renders them through the standard views (`apps/desktop/src/lib/file-explorer/network/DETAILS.md` § "The Servers list as
+a listing").
 
 - **The volume lists them** (`SmbServerVolume`, `smb://`): one directory `FileEntry` per row (`server_entry`), with
-  `server_meta`, the reserved icon id, and the last use as `modified_at`, for EVERY reader (pane, ⌘R, Ask Cmdr's
-  `list_dir`, `get_metadata` on a row's path): memory, the stores, and the mount table only
+  `server_meta`, the reserved icon id, and the last use as `modified_at` (a LAST USE: `supported_dates` answers
+  `SupportedDates::LAST_USE` for `smb://`, so a Last used sort ranks the never-used last and isn't held in name order
+  by "Folders always by name"), for EVERY reader (pane, ⌘R, `get_metadata` on a row's path; Ask Cmdr's location facts
+  list no volume for `smb://`, so its `list_dir` doesn't reach them): memory, the stores, and the mount table only
   (`ServerShares::server_sources`), so #324 has nothing to gate. The listed accounts are a snapshot taken under the
   lock and released before anything else is read. Pinned by
   `the_servers_list_is_every_known_server_as_a_folder_for_every_reader` (no dial, no share-cache read).
@@ -1237,14 +1239,13 @@ doesn't show these rows yet: the frontend's hub still runs its own merge (`serve
 - **The merge** (a saved SMB host claims every discovered host matching its id, address, or label, a discovered one
   speaks for the row; the name ranks a person's name, then the Bonjour name, then the stand-in) compares lowercase
   strings, ❌ not `server_identity`: it pairs a saved LABEL with a Bonjour name, which no address-and-port identity
-  answers. **Decision**: kept the hub's semantics, so every ported regression anchor holds unchanged.
+  answers. **Decision**: kept the TypeScript merge's semantics when it moved here, so every ported regression anchor held.
 - **A server saved by IP merges with its Bonjour twin** (David, 2026-11-26): a DISCOVERED host whose resolved IP and
   port equal the saved address (`bonjour_twins`) is claimed too, so "Naspolya" at `192.168.1.111` is one row. ❗ The
   twin lends only its name and "found nearby"; the row keeps the saved server's id, account, and share list at the
   saved address. **Why**: the claimed host used to be what a row opened and signed in to, and an auth server added
   by IP then signed in to the discovered `SMB Test (Auth)` (the E2E leak `servers-list-flows.spec.ts` avoids). Plain
-  address-and-port equality, ❌ never a GUID; another address of the machine (Tailscale) stays its own row. The
-  hub's TS merge doesn't do this; it shows two rows until the switch.
+  address-and-port equality, ❌ never a GUID; another address of the machine (Tailscale) stays its own row.
 - **Status**: a one-place server's (and an S3 account's most urgent place's) off the volume list's `ConnectionState`;
   an SMB server is `Connected` while a share from it is in the mount table (Cmdr's mount or the OS's), by
   `server_identity::mount_is_from` (address AND port, discovery pairing names with IPs), which wins over "Not connected
@@ -1254,8 +1255,8 @@ doesn't show these rows yet: the frontend's hub still runs its own merge (`serve
   else the one it's set to be used with; an S3 account's is its key; a one-place server names none (its name says it).
 - ❌ **Never merge two rows by server GUID**: a Samba GUID is the NetBIOS name (#1518), so one NAS at two addresses is
   two rows (`keeps_one_nas_at_two_addresses_as_two_rows`).
-- **Not here**: the order (the pane sorts), the hub's place rows under a many-place server (a saved share's facts move
-  to its share list), and every word (the frontend's).
+- **Not here**: the order (the pane sorts), a many-place server's places (a saved share's facts are on its share
+  list), and every word (the frontend's).
 
 ## "Show “..” in the top folder"
 
@@ -1436,13 +1437,13 @@ id, never by comparing fields. The provider preset rides as `S3ProviderChoice` (
 `s3+<scheme>://<host>:<port>`, scope the key id), so every bucket under one key reads one Keychain entry, and forgetting
 one place's secret forgets it for its siblings. `s3_volume_wiring.rs` is WebDAV's three steps (dial, register retiring the
 incumbent, remember). A place's edit changes only its switch, since provider, key id, and bucket ARE the place; the
-switch reaches a live volume at once. `saved_servers/` groups the places back under one hub row per account
+switch reaches a live volume at once. `saved_servers/` groups the places back under one Servers row per account
 (`saved_servers/s3_accounts.rs`), and `server_volumes::server_volume_for_path` picks the MOST specific saved root, because the
 account root and a bucket place spell one object the same way.
 
 ❗ **The name is the ACCOUNT's, ❌ never a place's**, the SMB host-and-shares shape: the account row shows the name a
 person typed (else `key id@host`), a bucket place reads as its bucket exactly as the provider spells it, and the account
-root reads as its account (`place_label`), which the hub words "All buckets" under the account's row. The store keeps one
+root reads as its account (`place_label`), which the account's Servers row opens. The store keeps one
 `KnownS3Account` record per NAMED account beside the places (an unnamed one has none), and it goes with the account's
 last place on Forget. Two writers, on purpose:
 
@@ -1473,7 +1474,7 @@ leaves no volume, no saved server, and no secret.
 its own id (`cmdr_fs::volume::nfs_volume_id`, from host, the canonical port, and the export), pin, start folder, and
 switch, found by that id. The name is the SERVER's (one `KnownNfsServer` record per named host plus port, written by
 `adopt_typed_name`, the S3 account rule), and an export reads as its own path. `saved_servers/nfs_places.rs` groups
-the exports back under one hub row per server, whose id is its root export's place id.
+the exports back under one Servers row per server, whose id is its root export's place id.
 
 - **Decision (revisit in review): the uid and groups live in the entry, in plain JSON, ❌ not the Keychain.** `AUTH_SYS`
   sends them with every call and proves nothing, so they're a preference like SMB's username, and a Keychain prompt in
@@ -1532,7 +1533,7 @@ what an edit stored, the same trap `remember`'s pin rule closes for `pinned`.
 An SFTP or WebDAV entry's `display_name` holds only a name a person typed; empty means unnamed. What the UI calls the
 server is `saved_server_fields::server_label`, reached through the stores' `label()`: the name when there is one, else
 `username@host` (no port, scheme, or path, and the host alone for an account with no username). Every read goes through
-it: `server_volumes::server_places` (the volume list and the switcher), `commands/servers.rs`'s listing (the hub, which
+it: `server_volumes::server_places` (the volume list and the switcher), `commands/servers.rs`'s listing (the Servers list, which
 publishes `name_source: fallback` for an unnamed account so the frontend never derives a label), and both wirings'
 `connect_and_register` (the name a live volume is built with).
 

@@ -17,7 +17,6 @@ import {
   type SizeDisplayMode,
   type BriefColumnWidthMode,
   type AppColor,
-  type NearbyServersGroupChoice,
   densityMappings,
 } from '#lib/settings/index.js'
 import { formatDateForDisplay, type FormattedDate } from './format-utils'
@@ -50,7 +49,6 @@ let showTags = $state<boolean>(true)
 let briefColumnWidthMode = $state<BriefColumnWidthMode>('paneWidth')
 let briefColumnWidthMaxPx = $state<number>(400)
 let networkEnabled = $state<boolean>(true)
-let nearbyServersGroup = $state<NearbyServersGroupChoice>('auto')
 let showShareParentRow = $state<boolean>(true)
 let switcherFavoritesExpanded = $state<boolean>(false)
 let typeToJumpResetDelay = $state<number>(1000)
@@ -117,7 +115,6 @@ async function runInit(options?: { restrictedWindow?: boolean }): Promise<void> 
     briefColumnWidthMode = getSetting('listing.briefColumnWidthMode')
     briefColumnWidthMaxPx = getSetting('listing.briefColumnWidthMaxPx')
     networkEnabled = getSetting('network.enabled')
-    nearbyServersGroup = nearbyServersGroupChoiceOf(getSetting('network.nearbyServersGroup'))
     showShareParentRow = getSetting('network.showShareParentRow')
     switcherFavoritesExpanded = getSetting('behavior.switcherFavoritesExpanded')
     typeToJumpResetDelay = getSetting('fileExplorer.typeToJump.resetDelay')
@@ -217,9 +214,6 @@ function applySettingChange(id: string, value: unknown): void {
       break
     case 'network.enabled':
       networkEnabled = value as boolean
-      break
-    case 'network.nearbyServersGroup':
-      nearbyServersGroup = nearbyServersGroupChoiceOf(value)
       break
     case 'network.showShareParentRow':
       showShareParentRow = value as boolean
@@ -413,14 +407,6 @@ export function getNetworkEnabled(): boolean {
   return networkEnabled
 }
 
-/**
- * Whether the servers hub's "found nearby" group is open: `expanded` or
- * `collapsed` once the person toggled it, `auto` before.
- */
-export function getNearbyServersGroupChoice(): NearbyServersGroupChoice {
-  return nearbyServersGroup
-}
-
 /** The default for `..` in an SMB share's top folder; a share's own override wins (`network/share-parent-row.svelte.ts`). */
 export function getShowShareParentRow(): boolean {
   return showShareParentRow
@@ -429,11 +415,6 @@ export function getShowShareParentRow(): boolean {
 /** Whether the volume switcher's favorites section was last left open (one value for both panes). */
 export function getSwitcherFavoritesExpanded(): boolean {
   return switcherFavoritesExpanded
-}
-
-/** A stored `string` nothing validates: anything but the two choices reads as "never chose". */
-function nearbyServersGroupChoiceOf(value: unknown): NearbyServersGroupChoice {
-  return value === 'expanded' || value === 'collapsed' ? value : 'auto'
 }
 
 /**

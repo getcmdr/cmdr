@@ -15,33 +15,13 @@
   "@servers.pinHint.gotIt": {
     "sourceHash": "5ad3dbd"
   },
-  "servers.hub.colName": "Имя",
-  "@servers.hub.colName": {
-    "sourceHash": "dcd1d52"
-  },
   "servers.hub.colType": "Тип",
   "@servers.hub.colType": {
     "sourceHash": "baaddf7"
   },
-  "servers.hub.colAddress": "Адрес",
-  "@servers.hub.colAddress": {
-    "sourceHash": "56ef8f2"
-  },
-  "servers.hub.colStatus": "Состояние",
-  "@servers.hub.colStatus": {
-    "sourceHash": "920e413"
-  },
-  "servers.hub.colLastUsed": "Последнее использование",
-  "@servers.hub.colLastUsed": {
-    "sourceHash": "830ec7f"
-  },
   "servers.hub.addServer": "Добавить сервер…",
   "@servers.hub.addServer": {
     "sourceHash": "9574f8e"
-  },
-  "servers.hub.moreShares": "Другие общие папки на сервере {server}…",
-  "@servers.hub.moreShares": {
-    "sourceHash": "db4e1ab"
   },
   "servers.hub.status.connected": "Подключено",
   "@servers.hub.status.connected": {
@@ -71,10 +51,6 @@
   "@servers.hub.status.waitingForKey": {
     "sourceHash": "f0a43e8"
   },
-  "servers.hub.neverUsed": "Не использовался",
-  "@servers.hub.neverUsed": {
-    "sourceHash": "24d3236"
-  },
   "servers.hub.shareAccount": "как {username}",
   "@servers.hub.shareAccount": {
     "sourceHash": "56f57a1"
@@ -87,10 +63,6 @@
   "@servers.hub.editPickHint": {
     "sourceHash": "08e6752"
   },
-  "servers.hub.editShareHint": "У общей папки нет своих параметров. Чтобы изменить сервер, выберите его строку.",
-  "@servers.hub.editShareHint": {
-    "sourceHash": "8cc5e87"
-  },
   "servers.hub.editNearbyHint": "Сервер {name} найден поблизости и не сохранен, поэтому изменять нечего.",
   "@servers.hub.editNearbyHint": {
     "sourceHash": "64653de"
@@ -98,14 +70,6 @@
   "servers.hub.browseAsGuestUnavailable": "Сервер {name} не впускал гостей, поэтому вернуться к гостевому доступу нельзя.",
   "@servers.hub.browseAsGuestUnavailable": {
     "sourceHash": "e2571cd"
-  },
-  "servers.hub.s3AllBuckets": "Все бакеты",
-  "@servers.hub.s3AllBuckets": {
-    "sourceHash": "2a5828a"
-  },
-  "servers.hub.openAccountHint": "Учетную запись {name} нельзя открыть. Откройте один из бакетов под ней.",
-  "@servers.hub.openAccountHint": {
-    "sourceHash": "c52ee6f"
   },
   "servers.hub.forgetAccountConfirm": "Забыть учетную запись {name} и все сохраненные в ней бакеты? Cmdr закроет их подключения и перестанет показывать эти бакеты. Ваши файлы останутся в бакетах.",
   "@servers.hub.forgetAccountConfirm": {
@@ -126,38 +90,6 @@
   "servers.hub.forgetShareConfirm": "Забыть общую папку {name}? Cmdr перестанет ее показывать. Если она подключена, то так и останется подключенной, а ваши файлы останутся на сервере.",
   "@servers.hub.forgetShareConfirm": {
     "sourceHash": "8c14aaa"
-  },
-  "servers.hub.nearbyGroup": "{count, plural, one {Поблизости найден {countText} сервер} few {Поблизости найдены {countText} сервера} many {Поблизости найдено {countText} серверов} other {Поблизости найдено {countText} сервера}}",
-  "@servers.hub.nearbyGroup": {
-    "sourceHash": "cd7a44d"
-  },
-  "servers.hub.discoveryOff": "Поиск устройств в локальной сети выключен.",
-  "@servers.hub.discoveryOff": {
-    "sourceHash": "cadcceb"
-  },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Включить в параметрах} linuxGnome {Включить в параметрах} linuxKde {Включить в окне «Настроить Cmdr»} other {Включить в настройках}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "cd006e8"
-  },
-  "servers.hub.nfsHint": "Серверы NFS не сообщают о себе в сети, поэтому здесь их не видно.",
-  "@servers.hub.nfsHint": {
-    "sourceHash": "40b516d"
-  },
-  "servers.hub.nfsHintLink": "Добавить сервер по адресу",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "0324564"
-  },
-  "servers.hub.emptyTitle": "Серверов пока нет",
-  "@servers.hub.emptyTitle": {
-    "sourceHash": "7846930"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Добавьте сервер ниже или включите Mac или NAS в своей сети, и Cmdr его найдет.} windows {Добавьте сервер ниже или включите компьютер или NAS в своей сети, и Cmdr его найдет.} other {Добавьте сервер ниже или включите компьютер или NAS в своей сети, и Cmdr его найдет.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "7ca97ce"
-  },
-  "servers.hub.rowCount": "{count, plural, one {{countText} сервер} few {{countText} сервера} many {{countText} серверов} other {{countText} сервера}}",
-  "@servers.hub.rowCount": {
-    "sourceHash": "7ef87d1"
   },
   "servers.paneState.connecting": "Подключение к серверу {name}…",
   "@servers.paneState.connecting": {

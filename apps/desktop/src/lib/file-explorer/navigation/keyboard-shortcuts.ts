@@ -116,7 +116,7 @@ function isKeyOf(combo: string, commandId: CommandId): boolean {
 
 /**
  * Handles keyboard navigation shortcuts for file lists: `nav.home`, `nav.end`, `nav.pageUp`, and
- * `nav.pageDown`, whatever keys they hold (both file views, the places browser, and the servers hub
+ * `nav.pageDown`, whatever keys they hold (both file views and the places browser
  * share them, so one key means one thing everywhere).
  * Returns the new index, whether the event was handled, and whether the jump overflowed.
  */

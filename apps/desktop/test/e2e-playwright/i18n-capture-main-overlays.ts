@@ -274,10 +274,11 @@ export async function captureQueryOverlays(
 }
 
 /**
- * The servers hub: the table the Network row opens (`servers.hub.*`), whose last
- * row is always "Add server…", so it renders with no server saved or nearby. The
- * sheet that row opens is the gallery's `server-sign-in-*` states, so this surface
- * is the hub alone. Same 15 s budget `servers.spec.ts` gives the mount.
+ * The Servers list the Network row opens, whose last row is always "Add server…",
+ * so it renders with no server saved or nearby. The sheet that row opens is the
+ * gallery's `server-sign-in-*` states, so this surface is the list alone (its surface
+ * id keeps the old name, which the screenshots are filed under). Same 15 s budget
+ * `servers.spec.ts` gives the mount.
  */
 export async function captureServersHub(
   main: TauriPage,
@@ -287,8 +288,8 @@ export async function captureServersHub(
   await initMcpClient(main)
   await captureMainOverlay(main, report, failed, 'servers-hub', async () => {
     await mcpSelectVolume('left', 'Servers')
-    await main.waitForSelector('.servers-hub .add-row', 15000)
-    return '.servers-hub .add-row'
+    await main.waitForSelector('.file-pane [data-trailing-row]', 15000)
+    return '.file-pane [data-trailing-row]'
   })
   // Leave the panes back on local so nothing downstream inherits Network.
   await mcpSelectVolume('left', LOCAL_VOLUME_NAME).catch(() => {})

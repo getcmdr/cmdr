@@ -112,11 +112,11 @@ selection and pixel scroll stay out.
   the tab's history. The cursor isn't part of an entry's identity (`entriesEqual` skips it), and a cloned tab's history
   is a `$state.snapshot` copy, so tabs never share one.
 - **Restoring.** `navigate.ts::commitHistoryWalk` hands the pane a COPY of the destination entry's cursor
-  (`FilePaneAPI.restoreHistoryCursor`; none for the servers hub). A listing takes it when its load starts and lands on
-  it before the rows paint (`listing-loader.ts`, `takeHistoryCursor`); a snapshot has no load, so the sync factory
-  applies it once the snapshot's rows are mounted at that path. `restoredCursorIndex` picks the row where it is now,
-  else the saved index clamped into the rows, else 0. Any load takes and clears the parked cursor, so it can't land on a
-  later, unrelated visit.
+  (`FilePaneAPI.restoreHistoryCursor`; the Servers list too, a listing like any). A listing takes it when its load
+  starts and lands on it before the rows paint (`listing-loader.ts`, `takeHistoryCursor`); a snapshot has no load, so
+  the sync factory applies it once the snapshot's rows are mounted at that path. `restoredCursorIndex` picks the row
+  where it is now, else the saved index clamped into the rows, else 0. Any load takes and clears the parked cursor, so
+  it can't land on a later, unrelated visit.
 
 ## `path-navigation.ts`
 
@@ -141,7 +141,7 @@ Backspace away, and shown in the breadcrumb, and a remembered path (arm 3) still
 ### Picking a volume itself (`picked-volume-path.ts`)
 
 `pathForPickedVolume(volume)` is where a pane goes when the user picks the volume ITSELF: a switcher row
-(`VolumeBreadcrumb`), a hub row (`../pane/NetworkMountView.svelte`), the palette's and MCP's select
+(`VolumeBreadcrumb`), a one-place server's Servers row (`../pane/network-row-open.ts`), the palette's and MCP's select
 (`../pane/volume-selection.ts`), and a server row's Open (`DualPaneExplorer`). A pane headed somewhere specific (a
 restored tab, a favorite, go-to-path, history) never comes through it, so it keeps its path.
 
@@ -164,8 +164,8 @@ Commander One (verified by hand, 2026-10-06). This command is the one-keystroke 
 - **❗ The target stays on the pane's own volume, opened in place** (`{ goTo }` with the pane's own `volumeId`). Another
   volume's id would take the switch arm, whose best-path correction swaps a root for the remembered folder, and a path
   off the pane's volume is dropped as a foreign listing. A share pane wandered off its mount gets the share's root.
-- The servers hub and a search snapshot have no root: a no-op, as is a pane already there, or one that moved while
-  `resolvePathVolume` answered.
+- A search snapshot has no root: a no-op, as is a pane already there, or one that moved while `resolvePathVolume`
+  answered.
 
 ### Following an edited place or a renamed drive (`root-change-follow.ts`)
 
@@ -305,9 +305,9 @@ extra modifier is another combo, `⌘Home` included). Default keys in parenthese
   down by `visibleItems - 1`.
 
 Returns `null` for anything else. Decision/Why: **the keys come from the registry, never a key table here**, so one key
-means one thing everywhere: both file views, the places browser, and the servers hub all follow a user's rebind of those
-four commands (on macOS too, on purpose), and a key the registry gives another command (Windows and Linux's `Alt+↑` for
-Go to parent) can't also jump the cursor to the top.
+means one thing everywhere: both file views and the places browser follow a user's rebind of those four commands (on
+macOS too, on purpose), and a key the registry gives another command (Windows and Linux's `Alt+↑` for Go to parent)
+can't also jump the cursor to the top.
 
 Brief PageUp/PageDown lands on the **bottom row** of the target column (TUI convention).
 
@@ -478,7 +478,7 @@ the share words for a share: `detach_word_for_volume_id` reads the word off the 
 ### Row actions: the → submenu
 
 A row's actions live in its → submenu, in the switcher, the favorites menu, and (as a right-click menu at the pointer)
-the servers hub. **`row-menu.ts` is the ONE list** every door shows, so no two surfaces drift on which items a row has,
+the Servers list. **`row-menu.ts` is the ONE list** every door shows, so no two surfaces drift on which items a row has,
 their order, or which a transfer greys.
 
 **Three named groups** (`RowMenu`'s `actions` / `fixes` / `settings`), always in this order, each with its own builder
@@ -499,7 +499,7 @@ list can't disagree on where the rule goes.
   (§ "Connection state indicator" above has why only then). Under it, "Show “..” in the top folder" (the share's
   effective value, its tooltip naming the server), re-read when the switcher opens like the direct-connection switch; a
   flip goes through `../network/share-parent-row.svelte.ts` (`../network/DETAILS.md` § "`..` out of a share's top
-  folder"). The servers hub's share rows keep their own menu, so it isn't there.
+  folder"). A share-list row keeps its own menu, so it isn't there.
 - **A server place**: `Open`, `Edit server…` (saved only), `Disconnect` (when `showsDisconnect`), `Pin to switcher` or
   `Unpin`, `Forget saved password`, `Forget server` (saved only). ❌ Never `Eject`: it promises safe-to-unplug, and a
   server has nothing to unplug. `Open` and `Edit server…` lead, the way the row's two purposes rank, and neither is
@@ -510,15 +510,15 @@ list can't disagree on where the rule goes.
   checkbox in a second group, under a rule, carrying the sign-in sheet's label and its explanation as the row tooltip
   (`#lib/servers/DETAILS.md`, the "Reconnect automatically" paragraph); an unsaved one-shot connection has nothing to
   persist, so no checkbox. "Saved" and the switch's value come from `listSavedPlaces()`, read when the switcher opens
-  (the hub has its saved list already, and re-reads it on the `volumes-changed` a flip emits).
+  (the Servers row reads the saved list at action time, and its list re-lists on the `volumes-changed` a flip emits).
 - **A favorite**: `Rename`, `Set shortcut key…`, `Remove from favorites` (§ "The favorites menu").
 - **An SMB server's rows** (`ServerRowMenu`, whose actions group also holds `RowAccountEntry` and `RowShareEntry`): the
-  hub's host row (`smbHostRowMenu`: Open, Edit… when saved, Disconnect while a share is mounted, the account items,
+  Servers row's menu (`smbHostRowMenu`: Open, Edit… when saved, Disconnect while a share is mounted, the account items,
   Forget server when saved, ❌ no pin), a share-list row (`shareRowMenu`: Open, which mounts, Copy path, the account
   items), and the path bar's account menu (`accountMenu`). The account items are ONE builder, `serverAccountEntries`, as
   a TS kind (`ServerAccountAction`), ❌ not members of the Rust `VolumeContextActionKind`: no native menu draws them,
-  and a host has no volume. The section helpers take a ROW KEY (a volume's id, or the hub row's `rowId` for a host), so
-  every item value stays unique (`row:<rowKey>:account:sign-in-as`). Their runner is
+  and a host has no volume. The section helpers take a ROW KEY (a volume's id, or the Servers row's `rowId` for a host),
+  so every item value stays unique (`row:<rowKey>:account:sign-in-as`). Their runner is
   `../network/share-list-sign-in.ts::runServerAccountAction` (`../network/DETAILS.md` § the account doors).
 
 **Both doors, one list.** → (or a hover) opens the submenu, and a right-click on the row opens the same one: the
@@ -526,8 +526,8 @@ primitive does it (`#lib/ui/DETAILS.md` § Menu), so none of these rows raises a
 `VolumeContextActionKind` in a `RowMenuPick` payload (a union member of each menu's row data, ❌ never a value prefix),
 and land in the handlers the palette uses: `runVolumeRowAction` sends Eject and Disconnect through `runDetach` (the
 inline button's path, which refuses a busy volume whatever the menu showed) and the rest to `runServerRowAction`. `Open`
-is the surface's own navigation, so the switcher moves ITS pane (the same `openVolume` a click on the row runs) and the
-hub moves its. A fix pick goes to `runRowFix` on every surface.
+is the surface's own navigation, so the switcher moves ITS pane (the same `openVolume` a click on the row runs) and a
+Servers row's menu moves its. A fix pick goes to `runRowFix` on every surface.
 
 **Which picks keep the menu up** (`MenuItem.keepsMenuOpen`): Eject and Disconnect, like the inline button, so several go
 in a row; the pin pair; and all three favorite actions (the two editors happen in the row). Open, Edit, the two Forgets,
@@ -814,10 +814,10 @@ default, so the switcher of someone who never uses favorites stays the drive lis
 - **Empty**: the row stays, with a `0`, and opens on the ⌃D menu's "(Your favorites will show here)". It's where the
   feature gets discovered, and it carries the ⌃D chip, which the "See favorites" row did with no favorites too.
 - **The remembered state** is the hidden setting `behavior.switcherFavoritesExpanded`, read through
-  `reactive-settings.svelte.ts` like the servers hub's `network.nearbyServersGroup`. ONE value for both panes, not one
-  per pane: it's a preference about how the switcher reads, not about where a pane is, and per-pane would make Tab
-  (which hands the open switcher to the other pane) visibly re-fold the list. The switcher seeds a local `$state` from
-  it on every `open()` and flips that at once, then `setSetting`s, so the row answers without waiting on the store.
+  `reactive-settings.svelte.ts`. ONE value for both panes, not one per pane: it's a preference about how the switcher
+  reads, not about where a pane is, and per-pane would make Tab (which hands the open switcher to the other pane)
+  visibly re-fold the list. The switcher seeds a local `$state` from it on every `open()` and flips that at once, then
+  `setSetting`s, so the row answers without waiting on the store.
 
 **One consequence worth knowing**: with nothing checked, the switcher's cursor opens on the favorites row rather than on
 the first volume, so Enter straight after ⌥F1 opens or folds the section. With a checked row — the ordinary case — the
@@ -1006,9 +1006,9 @@ Gotchas for the four other places that name has to match, one of which is Rust.
 5. Network: always includes the synthetic `'network'` hub row (`smb://`, labelled "Servers") plus any mounted SMB shares
    and every SFTP or WebDAV place the listing carried. ❗ The row is there whatever `network.enabled` says, and opening
    it always navigates. That switch gates mDNS discovery and SMB, which is what the macOS Local Network permission is
-   about; SFTP and WebDAV need none of it, so refusing to open the hub would hide a person's saved servers over a
-   permission they don't need. The hub says the discovery half is off in its own list instead (`../network/DETAILS.md` §
-   "Discovery off"), with a link to the setting.
+   about; SFTP and WebDAV need none of it, so refusing to open the Servers list would hide a person's saved servers over
+   a permission they don't need. Its footer says the nearby search is off instead (`../network/DETAILS.md` § "The
+   Servers list as a listing").
 
 `getIconForVolume(volume)`: returns the appropriate icon path for a volume based on its category.
 

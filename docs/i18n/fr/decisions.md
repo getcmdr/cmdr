@@ -111,7 +111,7 @@ and the top traps live in `style.md`; don't repeat them here.
 ## IA dans le cloud et lecture des fichiers (`ai.cloudConsent.*`, `askCmdr.gate.cloudOff.body`, `settings.ai.cloudConsent.lockedHint`, `settings.askCmdr.enabled.label`, `askCmdr.tool.inspectFile.*`)
 
 - Switch `Autoriser l’IA dans le cloud`; as a verb, the same words conjugated (`Autorisez-la …`). "X is off" agrees with
-  X, like `servers.hub.discoveryOff`. Turn on → `Activer Ask Cmdr`; custom endpoints →
+  X, like `fileExplorer.network.servers.serverCountDiscoveryOff`. Turn on → `Activer Ask Cmdr`; custom endpoints →
   `points de terminaison personnalisés`; side panel → `panneau latéral` (tentative).
 - The promise is about approval: `ne modifie jamais un fichier sans votre approbation`.
 

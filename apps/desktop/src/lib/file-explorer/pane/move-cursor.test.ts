@@ -7,15 +7,11 @@ import type { FilePaneAPI } from './types'
  *  `@typescript-eslint/unbound-method` on a typed interface's methods. */
 function makePaneRefStub(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}) {
   const whenLoadSettles = overrides.whenLoadSettles ?? vi.fn().mockResolvedValue(undefined)
-  const isInNetworkView = overrides.isInNetworkView ?? vi.fn().mockReturnValue(false)
-  const getNetworkItemCount = overrides.getNetworkItemCount ?? vi.fn().mockReturnValue(0)
   const getCursorRowCount = overrides.getCursorRowCount ?? vi.fn().mockReturnValue(10)
   const setCursorIndex = overrides.setCursorIndex ?? vi.fn().mockResolvedValue(undefined)
   const syncStateToMcpNow = overrides.syncStateToMcpNow ?? vi.fn().mockResolvedValue(undefined)
   const ref = {
     whenLoadSettles,
-    isInNetworkView,
-    getNetworkItemCount,
     getCursorRowCount,
     setCursorIndex,
     syncStateToMcpNow,
@@ -23,8 +19,6 @@ function makePaneRefStub(overrides: Partial<Record<string, ReturnType<typeof vi.
   return {
     ref,
     whenLoadSettles,
-    isInNetworkView,
-    getNetworkItemCount,
     getCursorRowCount,
     setCursorIndex,
     syncStateToMcpNow,
@@ -90,18 +84,6 @@ describe('moveCursorToTarget', () => {
       const pane = makePaneRefStub({ getCursorRowCount: vi.fn().mockReturnValue(5) })
       const { deps } = makeDeps(pane.ref)
       await expect(moveCursorToTarget('left', -1, 'tool', deps)).rejects.toThrow('Index -1 is out of range')
-    })
-
-    it('range-checks against the network row count, not the file-listing count, in a network view', async () => {
-      const pane = makePaneRefStub({
-        isInNetworkView: vi.fn().mockReturnValue(true),
-        getNetworkItemCount: vi.fn().mockReturnValue(2),
-        getCursorRowCount: vi.fn().mockReturnValue(500),
-      })
-      const { deps } = makeDeps(pane.ref)
-      // Pre-fix this read the file listing's count and let an out-of-range host
-      // index through, which the host browser then silently clamped.
-      await expect(moveCursorToTarget('left', 2, 'tool', deps)).rejects.toThrow('Index 2 is out of range')
     })
   })
 

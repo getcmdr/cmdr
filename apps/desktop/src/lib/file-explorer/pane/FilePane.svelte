@@ -54,7 +54,6 @@
     import ListingStalledView from './ListingStalledView.svelte'
     import type { ListingPhase, StalledOn } from '#lib/ipc/bindings.js'
     import VolumeUnreachableBanner from './VolumeUnreachableBanner.svelte'
-    import NetworkMountView from './NetworkMountView.svelte'
     import SearchResultsView from './SearchResultsView.svelte'
     import type {
         CancelLoadingPayload,
@@ -140,6 +139,8 @@
     import { countFolderOnSpace as countFolderOnSpaceAt } from './folder-size-count'
     import { createShareParentPane } from './share-parent-pane.svelte'
     import { createShareListPane } from './share-list-pane.svelte'
+    import { createServersListPane } from './servers-list-pane.svelte'
+    import { takeRestoredLanding } from './restored-landing.svelte'
     import { createMtpDisconnectWatch } from './mtp-disconnect-watch.svelte'
     import { createSnapshotSelectionSync } from './snapshot-selection-sync.svelte'
     import { createHistoryCursorSync } from './history-cursor-sync.svelte'
@@ -324,10 +325,6 @@
         getListingId: () => listingId,
         getLoading: () => loading,
         getHasBackendListing: () => caps.hasBackendListing,
-        getInMemoryJump: () =>
-            isNetworkView && getNetworkItemCount() > 0
-                ? (prefix) => networkMountViewRef?.jumpToPrefix(prefix) ?? null
-                : null,
         getIncludeHidden: () => includeHidden,
         getHasParent: () => hasParent,
         setCursorIndex: (index: number) => void setCursorIndex(index),
@@ -510,7 +507,7 @@
     let volumeRootFromEvent = $state<string | undefined>(undefined)
 
 
-    import type { ErrorPaneAPI, RemoteConnectViewAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, RowMenuHostAPI } from './types'
+    import type { ErrorPaneAPI, RemoteConnectViewAPI, ListViewAPI, VolumeBreadcrumbAPI, RowMenuHostAPI } from './types'
     import type { PaneErrorState, StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
@@ -523,7 +520,6 @@
     let shareMountViewRef: RemoteConnectViewAPI | undefined = $state()
     let volumeBreadcrumbRef: VolumeBreadcrumbAPI | undefined = $state()
     let rowMenuHostRef: RowMenuHostAPI | undefined = $state()
-    let networkMountViewRef: NetworkMountViewAPI | undefined = $state()
     let searchResultsViewRef: SearchResultsViewAPI | undefined = $state()
     // The pane's root element, so the Enter-behavior popup can anchor at the cursor row.
     let paneEl: HTMLElement | undefined = $state()
@@ -553,18 +549,11 @@
      */
     const caps = $derived(capabilitiesForPane(volumeId, currentPath))
 
-    // Check if we're viewing the network (special virtual volume). Sourced from
-    // the kind, not a `volumeId === 'network'` string compare.
-    const isNetworkView = $derived(caps.kind === 'network')
-
     /**
      * Check if we're viewing a search-results snapshot (the other virtual volume,
-     * `search-results://<id>`). Behaves like the network view: no backend listing,
-     * no file watcher, no git lookups, no pane-state-to-MCP sync. The pane renders
-     * `SearchResultsView` which pulls the snapshot from the in-memory store.
-     * Most code paths that gate on `isNetworkView` also gate on this; the few
-     * exceptions are noted at each call site. Sourced from the kind, not a
-     * `volumeId === 'search-results'` string compare.
+     * `search-results://<id>`): no backend listing, no file watcher, no git lookups.
+     * The pane renders `SearchResultsView`, which pulls the snapshot from the in-memory
+     * store. Sourced from the kind, not a `volumeId === 'search-results'` string compare.
      */
     const isSearchResultsView = $derived(caps.kind === 'search-results')
 
@@ -718,7 +707,7 @@
     const trailing = createTrailingRowPane({ getRow: () => trailingRow, getEntryRows: () => effectiveTotalCount,
         getCursorIndex: () => cursorIndex, runCommand: (commandId) => onCommand?.(commandId) })
     const paneViewKind = $derived<PaneViewKind>(
-        isNetworkView ? 'network' : isSearchResultsView ? 'search-results' : 'normal',
+        isSearchResultsView ? 'search-results' : 'normal',
     )
 
     /** Which pieces of the status footer this pane renders (`pane-footer.ts`). */
@@ -832,6 +821,14 @@
         syncMcp: () => { debouncedSyncMcp.call() },
     })
 
+    // The Servers list: the mDNS hold while it's on screen, and a just-added server's row selected once listed.
+    const serversList = createServersListPane({ getIsServersList: () => caps.kind === 'network',
+        getTotalCount: () => totalCount, getListingId: () => listingId, getEntriesSnapshot,
+        setCursorIndex: (index) => void setCursorIndex(index) })
+    export function selectServerRowWhenListed(rowId: string): void {
+        serversList.selectRowWhenListed(rowId)
+    }
+
     // `..` in an SMB share's top folder opens the server's share list (`share-parent-pane.svelte.ts`).
     const shareParent = createShareParentPane({
         getVolume: () => currentVolumeInfo,
@@ -931,22 +928,8 @@
         return isSearchResultsView ? selectionInfo.entry : selectionInfo.readCursorEntry(options)
     }
 
-    /**
-     * The network browser's cursor target (host or share), or `null` when
-     * this pane is not in the network view or nothing valid is under the cursor.
-     */
-    // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer.copyPathBetweenPanes
-    export function getNetworkCursorEntry(): NetworkCursorEntry | null {
-        if (!isNetworkView) return null
-        return networkMountViewRef?.getNetworkCursorEntry() ?? null
-    }
-
     /** Also scrolls to make the cursor visible and syncs state to MCP. */
     export async function setCursorIndex(index: number): Promise<void> {
-        if (isNetworkView) {
-            networkMountViewRef?.setCursorIndex(index)
-            return
-        }
         if (isSearchResultsView) {
             cursorIndex = index
             searchResultsViewRef?.setCursorIndex(index)
@@ -1028,7 +1011,7 @@
 
     // Quick filter delegates (`FilePaneAPI`), driven by `routeTypingKey` and `pane.quickFilter`.
     export function isQuickFilterMode(): boolean {
-        return quickFilterSession.kind !== null || typingFilters(getTypeToJumpMode(), isNetworkView)
+        return quickFilterSession.kind !== null || typingFilters(getTypeToJumpMode())
     }
     export function isQuickFilterActive(): boolean {
         return quickFilterSession.kind !== null || quickFilter.isActive()
@@ -1074,27 +1057,6 @@
             if (mode !== 'filter') quickFilter.clear()
         })
     })
-
-    /** Find an item by name in network views. Returns index or -1. */
-    export function findNetworkItemIndex(name: string): number {
-        return networkMountViewRef?.findItemIndex(name) ?? -1
-    }
-
-    /** Cursor-addressable rows in the network view (hosts or shares), `0` outside it. */
-    // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer.moveCursor's range check
-    export function getNetworkItemCount(): number {
-        if (!isNetworkView) return 0
-        return networkMountViewRef?.getItemCount() ?? 0
-    }
-
-    export function isInNetworkView(): boolean {
-        return isNetworkView
-    }
-
-    /** Refresh network hosts (used by ⌘R shortcut). */
-    export function refreshNetworkHosts(): void {
-        networkMountViewRef?.refreshNetworkHosts()
-    }
 
     export function getSelectedIndices(): number[] {
         return selection.getSelectedIndices()
@@ -1184,14 +1146,8 @@
      * copy runs a debounce behind, and arrow-down then ⌃⏎ is an ordinary sequence.
      * Measuring the anchor AFTER that round trip is deliberate too: the row may have
      * scrolled during it, and the menu should land where the row is now.
-     *
-     * The network view has no file rows: it opens the servers hub's cursor row menu instead.
      */
     export async function openContextMenuAtCursor(): Promise<void> {
-        if (isNetworkView) {
-            await networkMountViewRef?.openContextMenuAtCursor()
-            return
-        }
         const cursorEntry = await refreshCursorEntry()
         if (!cursorEntry) return
         await handleContextMenu(cursorEntry, cursorRowAnchor(paneEl ?? null))
@@ -1469,20 +1425,24 @@
      * Navigates up and selects the folder we came from. Returns false if already at root.
      *
      * A share's top folder goes up to its server's share list, and a share list up to the
-     * Servers hub; the hub itself is a root (nothing above it, so `false`).
+     * Servers list; the Servers list is the volume's root (nothing above it, so `false`).
      */
     export function navigateToParent(): Promise<boolean> {
         if (shareParent.leaveTopFolder() || leaveShareList()) return Promise.resolve(true)
-        if (isNetworkView) return Promise.resolve(false)
         return loader.navigateToParent()
     }
 
-    /** A share list's parent is the Servers hub, which lists nothing: commit `smb://` with no load (the hub lands on the server). */
+    /**
+     * A share list's parent is the Servers list (`smb://`, ❗ never the TS grammar's
+     * `parentOf`, which reads `smb:/`), landing on the server's row by the share list's path:
+     * the row's name is the server's friendly name, its path is the share list's. Also from
+     * the share list's error screen, where no listing is live.
+     */
     function leaveShareList(): boolean {
         if (caps.kind !== 'share-list') return false
-        loader.leaveListing()
+        const sharelistPath = currentPath
         currentPath = NETWORK_VOLUME_PATH
-        onPathChange?.(NETWORK_VOLUME_PATH)
+        void loader.loadDirectory({ path: NETWORK_VOLUME_PATH, selectPath: sharelistPath })
         return true
     }
 
@@ -1778,11 +1738,6 @@
      */
     // noinspection JSUnusedGlobalSymbols -- Used dynamically by DualPaneExplorer/MCP
     export async function openCursorItem(): Promise<void> {
-        if (isNetworkView) {
-            // The Servers hub: its cursor lives in ServersHub, not the file list.
-            networkMountViewRef?.openCursorItem()
-            return
-        }
         if (isSearchResultsView) {
             searchResultsViewRef?.openCursorItem()
             return
@@ -1799,19 +1754,14 @@
         return isSearchResultsView ? searchResultsViewRef?.getCursorEntry() : getEntryUnderCursor()
     }
 
-    /** What opening the cursor's entry would do. A network view only ever navigates, so it has nothing to say. */
+    /** What opening the cursor's entry would do. */
     export function describeCursorItem(): CursorItemDescription | null {
-        const entry = isNetworkView ? undefined : entryForTool()
+        const entry = entryForTool()
         return entry ? activation.describe(entry) : null
     }
 
     /** `openCursorItem` for a tool, checked against what a person agreed to. */
     export async function openCursorItemForTool(gate: ToolOpenGate): Promise<ToolOpenAnswer> {
-        if (isNetworkView) {
-            if ('expectedPath' in gate) return 'changedWhileAsking'
-            networkMountViewRef?.openCursorItem()
-            return 'opened'
-        }
         if (trailing.isUnderCursor()) {
             // An action, not a file: a gate a person agreed to names a path it never had.
             if ('expectedPath' in gate) return 'changedWhileAsking'
@@ -1845,20 +1795,18 @@
         },
     })
 
-    // Keydown routing for a focused pane: the rename / network / search-results
+    // Keydown routing for a focused pane: the rename / search-results
     // bails, the open + parent keys, the Selection dialog's `+` / `-`, the six
     // selection commands, and the Brief/Full split. All of it in
     // `pane-key-router.ts`; the pane keeps the refs and state it reads.
     const keyRouter = createPaneKeyRouter({
         getRenameActive: () => rename.active,
         handleShareMountKeyDown: (e) => shareList.mount.handleKeyDown(e),
-        getIsNetworkView: () => isNetworkView,
         getIsSearchResultsView: () => isSearchResultsView,
         getViewMode: () => viewMode,
         getHasParent: () => hasParent,
         getEntryUnderCursor,
         activateTrailingRow: trailing.activateUnderCursor,
-        handleNetworkKeyDown: (e) => networkMountViewRef?.handleKeyDown(e),
         handleSearchResultsKeyDown: (e) => { searchPaneKeys.handleSearchResultsKeyDown(e); },
         handleBriefModeKeys: (e) => { cursorNav.handleBriefModeKeys(e); },
         handleFullModeKeys: (e) => { cursorNav.handleFullModeKeys(e); },
@@ -1968,8 +1916,6 @@
             initialPath, // Track this
             currentPath: untrack(() => currentPath), // Don't track: user navigation changes this
             isSearchResultsView,
-            // The path's OWN kind: the hub lists nothing, and a share list it opens does.
-            isNetworkView: capabilitiesForPane(volumeId, initialPath).kind === 'network',
             deviceIsConnecting: deviceConnect.holdsListing,
         })
 
@@ -1983,8 +1929,6 @@
                 void loader.loadDirectory({ path: action.path })
                 break
             case 'sync-path':
-                // Off a share list to the hub: its listing ends here, so a late completion can't land it back.
-                if (untrack(() => caps.kind) === 'share-list') loader.leaveListing()
                 currentPath = action.path
                 break
             case 'none':
@@ -2121,7 +2065,7 @@
         getCursorIndex: () => cursorIndex,
         getShownLocation: () => {
             const settled = isSearchResultsView ? searchSnapshot !== undefined : listingId !== '' && !loading
-            return settled && !isNetworkView ? { volumeId, path: currentPath } : null
+            return settled ? { volumeId, path: currentPath } : null
         },
         getSnapshotRows: () => searchSnapshot?.entries,
         getCurrentPath: () => currentPath,
@@ -2154,11 +2098,10 @@
         // Live disk-space updates from the backend poller (typed event).
         diskSpace.startListening()
 
-        // Skip directory loading for the Servers hub (ServersHub holds its own data) and
-        // the search-results snapshot.
+        // Skip directory loading for the search-results snapshot.
         log.debug(
-            '[FilePane] onMount: paneId={paneId}, volumeId={volumeId}, currentPath={currentPath}, isNetworkView={isNetworkView}',
-            { paneId, volumeId, currentPath, isNetworkView },
+            '[FilePane] onMount: paneId={paneId}, volumeId={volumeId}, currentPath={currentPath}',
+            { paneId, volumeId, currentPath },
         )
         if (unreachable) {
             log.debug('[FilePane] onMount: SKIPPING loadDirectory for unreachable tab, paneId={paneId}', { paneId })
@@ -2167,15 +2110,15 @@
             // A restored tab on a phone: the dial owns the pane until it answers.
             log.debug('[FilePane] onMount: SKIPPING loadDirectory while the phone opens, paneId={paneId}', { paneId })
             loading = false
-        } else if (!isNetworkView && !isSearchResultsView) {
+        } else if (!isSearchResultsView) {
             log.debug('[FilePane] onMount: triggering loadDirectory for paneId={paneId}', { paneId })
-            void loader.loadDirectory({ path: currentPath })
+            // A restored share-list tab comes back as the Servers list, on that server's row.
+            void loader.loadDirectory({ path: currentPath, selectPath: caps.kind === 'network' ? takeRestoredLanding(paneId) : undefined })
         } else {
             log.debug('[FilePane] onMount: SKIPPING loadDirectory for paneId={paneId}', { paneId })
-            // Clear the initial `loading = true` for virtual-volume panes (network /
-            // search-results) — they don't go through the loadDirectory pipeline that
-            // would otherwise flip it false. Without this clear, the LoadingIcon stays
-            // up forever and the virtual view never renders.
+            // Clear the initial `loading = true` for the search-results pane: it doesn't go through
+            // the loadDirectory pipeline that would otherwise flip it false. Without this clear,
+            // the LoadingIcon stays up forever and the virtual view never renders.
             loading = false
         }
 
@@ -2327,8 +2270,6 @@
             {#key shareList.mount.view.state.kind === 'connecting'}
                 <RemoteConnectView bind:this={shareMountViewRef} name={shareList.mount.view.name} server={shareList.mount.view.server} address={shareList.mount.view.address} state={shareList.mount.view.state} />
             {/key}
-        {:else if paneViewKind === 'network'}
-            <NetworkMountView bind:this={networkMountViewRef} {paneId} {isFocused} {onVolumeChange} onOpenServer={shareList.openServer} />
         {:else if paneViewKind === 'search-results'}
             <SearchResultsView
                 bind:this={searchResultsViewRef}

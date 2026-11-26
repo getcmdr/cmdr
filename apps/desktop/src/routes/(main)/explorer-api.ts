@@ -33,7 +33,7 @@ import type {
   StartRenameOptions,
 } from '#lib/file-explorer/pane/types.js'
 import type { Initiator } from '#lib/tauri-commands/index.js'
-import type { HubRow } from '#lib/file-explorer/network/servers-hub-rows.js'
+import type { ServerRow } from '#lib/file-explorer/network/server-row-of-entry.js'
 import type { SmbHandOff } from '#lib/servers/open-sign-in.js'
 
 /**
@@ -332,11 +332,12 @@ export interface ExplorerAPI {
   moveCursor: (pane: 'left' | 'right', to: number | string, by: PaneMoveBy) => Promise<void>
   scrollTo: (pane: 'left' | 'right', index: number) => void
   refreshPane: () => Promise<void>
-  refreshNetworkHosts: () => void
-  /** Takes the focused pane to the servers hub (the `servers.show` command). */
+  /** Takes the focused pane to the Servers list (the `servers.show` command). */
   showServersInFocusedPane: () => void
   /** An SMB add's hand-off: the saved host's share list in the focused pane, mounting the share it named. */
   openSmbHandOffInFocusedPane: (handOff: SmbHandOff) => void
+  /** A server "Add" saved: its row selected once listed, when the focused pane shows the Servers list. Answers whether it does. */
+  selectAddedServerInFocusedPane: (serverId: string) => boolean
   /**
    * The Servers row under the focused pane's cursor, an SMB host's included, or `null`
    * off the Servers list: the hub's cursor row while it renders, else the listing's
@@ -344,7 +345,7 @@ export interface ExplorerAPI {
    * commands aim at (`serverCommandTarget`), what Edit and Rename there edit
    * (`editHubRow`), and what F8 forgets.
    */
-  getFocusedPaneServerRow: () => Promise<HubRow | null>
+  getFocusedPaneServerRow: () => Promise<ServerRow | null>
   injectError: (pane: 'left' | 'right', friendly: FriendlyError) => void
   resetError: (pane: 'left' | 'right' | 'both') => void
   /** E2E only: drive the native drag-and-drop drop entry programmatically (real

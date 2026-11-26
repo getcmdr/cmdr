@@ -220,13 +220,14 @@ describe('selectVolumeForMcp', () => {
     })
   })
 
-  it('answers without a listing on the servers hub, which never lists', async () => {
+  it('answers once the Servers list’s own listing lands, like any folder', async () => {
     const correction = pendingCorrection('network')
     const { explorer } = fakeExplorer(
       { volumeId: 'root', path: '/Users/test_user_3', listingId: 'L0', loading: false },
       (p) => {
         p.volumeId = 'network'
         p.path = 'smb://'
+        p.listingId = 'L1'
         return correction.outcome
       },
     )

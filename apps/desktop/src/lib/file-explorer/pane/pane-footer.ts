@@ -16,8 +16,7 @@
  * "not yet fetched" empty track forever, which reads as "0% full". It gets the
  * counts and no space, from the pane's routed KIND (❌ never a `volumeId` check).
  *
- * The network view has no listing to count, and an error state replaces the list
- * entirely, so both lose the footer completely.
+ * An error state replaces the list entirely, so it loses the footer completely.
  */
 
 import type { PaneViewKind } from './types'
@@ -45,6 +44,5 @@ export interface PaneFooterVisibility {
 export function paneFooterVisibility({ kind, volumeKind, hasError }: PaneFooterInput): PaneFooterVisibility {
   if (hasError) return { selectionInfo: false, volumeSpace: false }
   if (kind === 'normal') return { selectionInfo: true, volumeSpace: !NO_DISK_KINDS.has(volumeKind) }
-  if (kind === 'search-results') return { selectionInfo: true, volumeSpace: false }
-  return { selectionInfo: false, volumeSpace: false }
+  return { selectionInfo: true, volumeSpace: false }
 }

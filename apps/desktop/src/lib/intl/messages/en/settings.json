@@ -1606,10 +1606,6 @@
   "@settings.network.firstTriggerDone.description": {
     "description": "Internal help text for the first-trigger flag (not user-facing)."
   },
-  "settings.network.nearbyServersGroup.label": "Nearby servers group",
-  "@settings.network.nearbyServersGroup.label": {
-    "description": "Internal, hidden-from-UI label for a value remembering whether the user last opened or collapsed the group of servers found nearby, in the servers list. Surfaces only in settings search."
-  },
   "settings.network.directSmbConnection.label": "Connect directly to SMB shares",
   "@settings.network.directSmbConnection.label": {
     "description": "Label for the toggle enabling Cmdr's own direct SMB connection (faster than the system mount). \"SMB\" is a protocol name; keep it. In Settings > File systems > SMB/Network shares.",

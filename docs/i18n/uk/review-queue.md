@@ -119,9 +119,9 @@ record the outcome in `terms.json` or `decisions.md`).
   `main.escapeFullScreenHint.switchLabel`, `errors.write.insufficientSpace.title`, `shortcuts.scope.errorScreen`,
   `fileOperations.mkdir.createIn`): shorter shapes welcome; «тло» vs «фон».
 - **Narrow fields** (`fileExplorer.dirSize.noPerms`, `multiRename.mediaEditor.digits`,
-  `multiRename.counterEditor.digits`, `servers.sheet.nfsUid`/`nfsGid`, `servers.hub.colLastUsed`, `ai.cloud.effort.max`,
-  `settings.control.unitItems`, `multiRename.searchOptionHelp.on`/`.off`): «<без доступу>», «Кількість цифр», «ID
-  користувача», «Востаннє», «Максимальний» vs «Макс.», «елем.», «Увімк.».
+  `multiRename.counterEditor.digits`, `servers.sheet.nfsUid`/`nfsGid`, `fileExplorer.columns.lastUsed`,
+  `ai.cloud.effort.max`, `settings.control.unitItems`, `multiRename.searchOptionHelp.on`/`.off`): «<без доступу>»,
+  «Кількість цифр», «ID користувача», «Востаннє», «Максимальний» vs «Макс.», «елем.», «Увімк.».
 - **Settings phrasing** (`settings.network.localNetworkAccessLabel`, `settings.network.permissionIntroSuffix`,
   `settings.network.enabled.label`, `settings.askCmdr.spendPause.label`, `settings.askCmdr.wakeDelay.label`,
   `settings.mediaIndex.parallelism.description`, `settings.mediaIndex.progress.coveredOfTotal`/`coveredDone`,
@@ -217,4 +217,3 @@ record the outcome in `terms.json` or `decisions.md`).
 - **Share top folder** (`fileExplorer.shareParentRow.*`, `settings.network.showShareParentRow.*`,
   `settings.behavior.shareParentRowHintSeen.*`, `commands.serversToggleShareParentRow.label`): «коренева папка спільної
   папки» repeats «папка» because both rulings use it; confirm it reads naturally, or suggest a shorter form.
-  `servers.hub.moreShares` renders "More shares" as «Інші спільні папки…»; confirm.

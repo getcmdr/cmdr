@@ -159,43 +159,6 @@ async fn list_host_shares(
     result
 }
 
-/// Prefetches shares for a host, so its share list is cached by the time someone opens it.
-/// Same as list_shares_on_host but designed for prefetching - errors are silently ignored.
-/// Returns immediately if shares are already cached.
-///
-/// Listing signs in to the host (as a guest, where it lets one in), so the frontend calls
-/// this for servers the user saved, only while a Servers view is on screen, and never for
-/// one that was only discovered.
-#[tauri::command]
-#[specta::specta]
-#[allow(
-    clippy::too_many_arguments,
-    reason = "Tauri command requires all parameters to be top-level"
-)]
-pub async fn prefetch_shares(
-    host_id: String,
-    hostname: String,
-    ip_address: Option<String>,
-    port: u16,
-    timeout_ms: Option<u64>,
-    cache_ttl_ms: Option<u64>,
-    app_handle: tauri::AppHandle,
-) {
-    // Fire and forget - we don't care about the result for prefetching
-    let (guest, account) = smb_account_ladder::account_listing_for(&app_handle, &hostname, ip_address.as_deref(), port);
-    let _ = smb_client::list_shares(
-        &host_id,
-        &hostname,
-        ip_address.as_deref(),
-        port,
-        account.as_ref().map(|c| (c.username.as_str(), c.password.as_str())),
-        guest,
-        timeout_ms,
-        cache_ttl_ms,
-    )
-    .await;
-}
-
 // --- Known Shares Commands ---
 
 use crate::network::known_shares::{

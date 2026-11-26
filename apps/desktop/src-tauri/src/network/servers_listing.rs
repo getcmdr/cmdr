@@ -90,6 +90,18 @@ impl ServerSources {
         })
     }
 
+    /// The id of the SAVED server whose Servers row opens the share list at `address`, or
+    /// `None` (a server nobody saved): what Edit server on a share list edits. The same match
+    /// [`saved_shares_on`] makes, so a server saved by IP and shown under its Bonjour twin is
+    /// found by the share list at the address it was saved with.
+    pub(crate) fn saved_row_opening(&self, address: &ShareListAddress) -> Option<String> {
+        let opens = ServerOpens::ShareList(address.clone());
+        self.rows(&HashMap::new())
+            .into_iter()
+            .find(|row| row.meta.saved && row.opens == opens)
+            .map(|row| row.meta.row_id)
+    }
+
     /// The saved shares on the share list at `address` ([`saved_shares_on`]).
     pub(crate) fn saved_shares(
         &self,

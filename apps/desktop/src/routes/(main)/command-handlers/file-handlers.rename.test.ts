@@ -14,7 +14,7 @@ vi.mock('#lib/file-explorer/pane/focused-pane-reads.js', () => ({
   getFocusedPaneVolumeId: () => 'network',
 }))
 vi.mock('#lib/stores/volume-store.svelte.js', () => ({ getVolumes: () => [] }))
-vi.mock('#lib/file-explorer/network/servers-hub-actions.js', () => ({ editServerInView: h.editServerInView }))
+vi.mock('#lib/file-explorer/network/servers-list-actions.js', () => ({ editServerInView: h.editServerInView }))
 
 import { fileHandlers } from './file-handlers'
 import type { CommandHandlerContext } from './types'

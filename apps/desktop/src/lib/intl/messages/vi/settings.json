@@ -1333,10 +1333,6 @@
   "@settings.network.firstTriggerDone.description": {
     "sourceHash": "7982e11"
   },
-  "settings.network.nearbyServersGroup.label": "Nhóm máy chủ ở gần",
-  "@settings.network.nearbyServersGroup.label": {
-    "sourceHash": "cfa28b1"
-  },
   "settings.network.directSmbConnection.label": "Kết nối trực tiếp tới mục chia sẻ SMB",
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"

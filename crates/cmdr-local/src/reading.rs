@@ -474,6 +474,7 @@ pub(crate) fn supported_dates_of(dir: &Path) -> SupportedDates {
     SupportedDates {
         created: platform::stat(dir).and_then(|metadata| metadata.created()).is_ok(),
         added: platform::added_is_supported(dir),
+        modified_is_last_use: false,
     }
 }
 

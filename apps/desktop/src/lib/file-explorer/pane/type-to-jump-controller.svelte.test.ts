@@ -34,7 +34,6 @@ function setup(over: Partial<TypeToJumpControllerDeps> = {}) {
     getListingId: () => 'listing-1',
     getLoading: () => false,
     getHasBackendListing: () => true,
-    getInMemoryJump: () => null,
     getIncludeHidden: () => true,
     getHasParent: () => true,
     setCursorIndex,
@@ -105,46 +104,6 @@ describe('createTypeToJumpController held pattern', () => {
     expect(setup().ctl.canMatch()).toBe(true)
     expect(setup({ getLoading: () => true }).ctl.canMatch()).toBe(false)
     expect(setup({ getHasBackendListing: () => false }).ctl.canMatch()).toBe(false)
-    expect(setup({ getHasBackendListing: () => false, getInMemoryJump: () => () => null }).ctl.canMatch()).toBe(true)
-  })
-})
-
-describe('createTypeToJumpController over a list in memory', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  const networkView = (match: (prefix: string) => string | null) => ({
-    getListingId: () => '',
-    getHasBackendListing: () => false,
-    getInMemoryJump: () => match,
-  })
-
-  it('asks the view with the whole buffer, never the backend, and shows the indicator', () => {
-    const match = vi.fn((prefix: string) => (prefix === 'n' || prefix === 'na' ? 'Testnas' : null))
-    const { ctl } = setup(networkView(match))
-    ctl.handleJumpKeystroke('N')
-    ctl.handleJumpKeystroke('a')
-    expect(match.mock.calls).toEqual([['n'], ['na']])
-    expect(ipc.findFirstFuzzyMatch).not.toHaveBeenCalled()
-    expect(ctl.indicatorVisible).toBe(true)
-    expect(ctl.buffer).toBe('na')
-    expect(ctl.lastMatchedName).toBe('Testnas')
-  })
-
-  it('keeps the last match when a longer buffer matches nothing', () => {
-    const { ctl } = setup(networkView((prefix) => (prefix === 'n' ? 'Testnas' : null)))
-    ctl.handleJumpKeystroke('n')
-    ctl.handleJumpKeystroke('z')
-    expect(ctl.buffer).toBe('nz')
-    expect(ctl.lastMatchedName).toBe('Testnas')
-  })
-
-  it('a view with no rows gets no buffer and no indicator', () => {
-    const { ctl } = setup({ getListingId: () => '', getHasBackendListing: () => false })
-    ctl.handleJumpKeystroke('n')
-    expect(ctl.indicatorVisible).toBe(false)
-    expect(ctl.buffer).toBe('')
   })
 })
 

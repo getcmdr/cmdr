@@ -8,9 +8,8 @@ lifecycle, drag handling, volume tinting, and navigation primitives.
 
 `DualPaneExplorer.svelte` is the root: it owns both panes, the unified key/command dispatch, the dialog manager, and the
 MCP-exposed surface. `FilePane.svelte` is one pane: it owns its listing, cursor, selection, view mode, type-to-jump
-buffer, rename flow, breadcrumb, and the alt-view rendering ({#if/elseif} between `NetworkMountView`,
-`RemoteConnectView`, `SearchResultsView`, `ListingStalledView`, `ErrorPane`, `VolumeUnreachableBanner`, and the regular
-list).
+buffer, rename flow, breadcrumb, and the alt-view rendering ({#if/elseif} between `RemoteConnectView`,
+`SearchResultsView`, `ListingStalledView`, `ErrorPane`, `VolumeUnreachableBanner`, and the regular list).
 
 ## File map
 
@@ -37,9 +36,8 @@ carry live here:
 - **`git-browser-sync.svelte.ts::cleanup()` has to drop the SETTING listeners too**, not just the repo subscription, or
   they leak per pane.
 - **Two independent MCP mirrors, so a change to one doesn't cover the other**: `pane-mcp-sync.svelte.ts` mirrors pane
-  state and deliberately skips network + search-results panes (`ServersHub` owns the MCP push for the network view and
-  would get clobbered; a snapshot is local dialog state, not a directory agents query), while `tab-mcp-sync.svelte.ts`
-  debounce-mirrors each pane's tab structure via `updatePaneTabs`.
+  state for every kind whose caps say `syncsToMcp` (all of them today, the Servers list and a search snapshot included),
+  while `tab-mcp-sync.svelte.ts` debounce-mirrors each pane's tab structure via `updatePaneTabs`.
 - **Two drags, two controllers, and they never meet**: `drag-drop-controller.svelte.ts` is the native FILE drag (Tauri's
   drop events), while a TAB drag is `../tabs/tab-drag-controller.svelte.ts` on plain pointer events. `DualPaneExplorer`
   creates both, hands each `TabBar` its `forPane()` face, and mounts `TabDragOverlay`; a tab drop lands in
@@ -91,8 +89,9 @@ suite:
   `effectiveSortBy`, the column its rows really follow: `../DETAILS.md` § Sorting, "Requested vs effective column".
 - `pane-footer.ts`: which parts of the status footer a view kind renders. Two answers, because they differ on two panes:
   a search-results pane and a server's share list count their rows like any folder but report no free space.
-- `hub-landing.svelte.ts`: where the Servers hub's cursor lands coming back from a share list (§ "A server's share list
-  (kind-from-path)").
+- `restored-landing.svelte.ts`: which Servers row a restored share-list tab lands on (§ "A server's share list
+  (kind-from-path)"). `servers-list-pane.svelte.ts`: the Servers list's discovery hold and a just-added server's
+  selection.
 - `pane-key-router.ts` / `pane-pointer.ts`: keyboard routing and mouse handling for a focused pane.
 - `entry-activation.ts`: what opening an entry does (redirect, archive Enter policy, browse, viewer, OS default app).
   `opening-toast.ts`: the two-second "{file} is opening in {app}…" toast beside every OS-default-app launch. The app
@@ -395,8 +394,8 @@ speaks through the cursor row it lands on.
 **Type-to-jump factory.** One `createTypeToJumpState` instance per pane, inside `FilePane`. Reset triggers (ESC, arrows,
 Page/Home/End, Enter, Tab, Backspace, rename entry, context menu, drag start, pane switch, tab switch, dir change,
 re-sort, listing replace) all call the factory's `clearJumpState()`. The generation counter discards stale async match
-responses. Backend match runs in `crates/cmdr-listing/src/fuzzy_jump.rs`; the network views match in memory
-(`../network/DETAILS.md` § Typing jumps).
+responses. Backend match runs in `crates/cmdr-listing/src/fuzzy_jump.rs`. The Servers list and a share list are
+listings, so they jump the same way.
 
 **Quick filter (Filter typing mode, the default).** `fileExplorer.typeToJump.mode` picks what typing does: `filter`
 (Total Commander's quick filter) or `jump`, and the network views always jump (`typingFilters`). `routeTypingKey`
@@ -511,14 +510,14 @@ company on the snapshot pane:
   never a `volumeId` check.
 
 **One footer height everywhere.** The band from the list's bottom edge to the function-key bar measures the same in a
-folder, a search-results pane, a disk image, the Servers hub, and a share list, so switching between them never makes it
-jump. Two shared pieces carry it: the `--pane-footer-*` tokens in `app.css` (the band body's block padding, font size,
-and min height, read by `SelectionInfo` and `ServersHubStatusBar`; horizontal insets stay per component) and the
-`.pane-footer-edge` class in `app-file-list.css` (the 2px top edge). The edge renders whenever the footer does: the
-usage bar fills it with its track where a total exists, and anywhere else it stays a plain border-colored rule with no
-role, so it can't read as "0% full". The min height is the text's own line box, so an empty readout (an empty folder
-with no space figure) keeps the height too. Pinned by `pane-footer-band.test.ts` (the sources read the shared metrics);
-the heights themselves were measured in the running app.
+folder, a search-results pane, a disk image, the Servers list, and a share list, so switching between them never makes
+it jump. Two shared pieces carry it: the `--pane-footer-*` tokens in `app.css` (the band body's block padding, font
+size, and min height, read by `SelectionInfo`; horizontal insets stay per component) and the `.pane-footer-edge` class
+in `app-file-list.css` (the 2px top edge). The edge renders whenever the footer does: the usage bar fills it with its
+track where a total exists, and anywhere else it stays a plain border-colored rule with no role, so it can't read as "0%
+full". The min height is the text's own line box, so an empty readout (an empty folder with no space figure) keeps the
+height too. Pinned by `pane-footer-band.test.ts` (the sources read the shared metrics); the heights themselves were
+measured in the running app.
 
 The snapshot pane also passes `totalMatches` (the snapshot's `totalCount`). When the search found MORE than the pane
 holds — the 10,000-row cap, or a walk still filling it — the no-selection line reads "No selection, 10,000 of 34,512
@@ -575,10 +574,10 @@ volume-id string. The record has two halves, and which half answers is the whole
   capabilities: those answer for the drive, and the pane is inside something ON it. A fourth routed kind, `share-list`,
   is checked first and only on the `network` volume (§ "A server's share list (kind-from-path)").
 - **A question about a PANE asks `capabilitiesForPane`, ❌ never `capabilitiesFor(volumeId)`**: on `network`, the
-  volume's own row is the hub's (`hasBackendListing: false`), so a share-list pane would read as a snapshot pane.
-  `capabilitiesFor` stays where the VOLUME is the question (the terminal and search gates, the transfer dialog's
-  `renamesCanCopy`, `confirmation-skip.ts`'s S3 check, MCP `select_volume`'s landing, which is always the hub) and where
-  no pane path exists.
+  volume's own row is the Servers list's, so a share-list pane would read as the Servers list. `capabilitiesFor` stays
+  where the VOLUME is the question (the terminal and search gates, the transfer dialog's `renamesCanCopy`,
+  `confirmation-skip.ts`'s S3 check, MCP `select_volume`'s landing, which is always the Servers list) and where no pane
+  path exists.
 - **`deleted-dir-poll.ts` drops an answer about a folder the pane has since left**: a share that mounted back elsewhere
   moved the pane mid-poll, and the old path's "missing" walked it off the share.
 - **`deleted-dir-poll.ts` trusts the backend's "missing" for `/` too**: a pane on `/` that hears it twice walks up (the
@@ -713,15 +712,14 @@ There's no Search-specific capabilities shim — `lib/search/capabilities.ts` ke
   are in no column's order (the snapshot pane's ranked state): every header stays clickable, none is active, no caret
   draws, and no column claims the caret allowance in the measured tracks (`measure-column-widths::chromeFor`). Where a
   snapshot pane's click goes and why: `../../search/DETAILS.md` § "The snapshot pane's row order".
-- **MCP sync** (`pane-mcp-sync.svelte.ts`): the network skip off `!syncsToMcp`. The deps interface carries a single
-  `getSyncsToMcp()` accessor (FilePane supplies it from its derived caps). Only `network` is false, because `ServersHub`
-  owns that pane's push. A search-results pane DOES mirror even with no backend listing: its rows come off the frontend
-  snapshot through `snapshot-mcp-rows.ts` (basename in `name`, absolute path in `path`, no recursive fields), its
-  `totalFiles` is the snapshot's own count, and `hasParentRow: false` tells the backend gate that one counted row is one
-  real file. ❌ Don't turn that push back off: MCP's copy/move/delete pre-check reasons on this store, so a pane that
-  pushes nothing leaves it describing whatever directory the pane came FROM, and an old cursor parked on that
-  directory's `..` refused a delete over rows the user could see. Gate: `src-tauri/src/tools/actions/DETAILS.md` §
-  "Empty-operation fast-fail".
+- **MCP sync** (`pane-mcp-sync.svelte.ts`): gated on `syncsToMcp`. The deps interface carries a single `getSyncsToMcp()`
+  accessor (FilePane supplies it from its derived caps); every kind mirrors today. A search-results pane DOES mirror
+  even with no backend listing: its rows come off the frontend snapshot through `snapshot-mcp-rows.ts` (basename in
+  `name`, absolute path in `path`, no recursive fields), its `totalFiles` is the snapshot's own count, and
+  `hasParentRow: false` tells the backend gate that one counted row is one real file. ❌ Don't turn that push back off:
+  MCP's copy/move/delete pre-check reasons on this store, so a pane that pushes nothing leaves it describing whatever
+  directory the pane came FROM, and an old cursor parked on that directory's `..` refused a delete over rows the user
+  could see. Gate: `src-tauri/src/tools/actions/DETAILS.md` § "Empty-operation fast-fail".
 - **The mirrored rows carry the pane's OWN "is this size still moving" answer**, as `recursiveSizeUpdating`.
   `inFluxAnswerFor(volumeId)` composes it exactly as `FullList` composes its hourglass
   (`aggregating || under a walk || this dir's own pending writes`), resolved once per push and asked per row, so a row
@@ -736,8 +734,8 @@ There's no Search-specific capabilities shim — `lib/search/capabilities.ts` ke
   (`=== '/'`, `=== root`) stay. At the root, `topFolderLeadsOut` (an SMB share whose `..` opens its server's shares) is
   the one way a volume's top folder gets a `..` row.
 - **FilePane alt-view chain** (`FilePane.svelte`): the kind-structural view selection resolves through a `paneViewKind`
-  derived discriminant (`'network' | 'search-results' | 'normal'`) off `caps.kind`. The `{#if}` chain branches on
-  `paneViewKind` for the two alt-views (NetworkMountView / SearchResultsView) and the SelectionInfo footer
+  derived discriminant (`'search-results' | 'normal'`) off `caps.kind`. The `{#if}` chain branches on `paneViewKind` for
+  the one alt-view (`SearchResultsView`; the Servers list and a share list are listings) and the SelectionInfo footer
   (`paneViewKind === 'normal'`). The RUNTIME-state branches (`unreachable`, the SAVED-place dial, the reconnect cycle's
   `RemoteConnectState`, the gave-up banner, `loading` / `friendlyError` / `error`) stay per-feature and gate IN FRONT of
   the descriptor, byte-identical precedence. This is a derived discriminant, NOT a new component. The git lookup and the
@@ -910,15 +908,14 @@ the synchronous refusal gate for the in-place path arm); its refusal strings are
 component-resident writers (`moveCursor`, `restoreCursorByFilename`); those callers reach back via `paneCommands.*`.
 
 **`refreshPane` is the one refresh, and it forces.** ⌘R (`pane.refresh`) and the MCP `refresh` tool both land in
-`pane-commands.ts::refreshPane()`. It routes on the view: the network browser has no listing, so there it re-scans hosts
-(`paneRef.refreshNetworkHosts()`); a pane whose listing failed (`getErrorState() === 'listing-failed'`, any kind, a
-share list's sign-in and refusal screens included) holds no listing id, so there ⌘R re-navigates to the same path, as
-`ErrorPane`'s Try again does (the `unreachable` banner keeps its own retry); everywhere else it calls
-`refreshListing(listingId, true)` and then `refreshView()`. The `true` matters — unforced, the backend answers a
-watcher-backed listing straight out of the cache, which is honest on MTP and a lie on SMB (another machine's writes
-never reached the watcher). The post-write top-ups (`transfer-pane-effects.ts`, the rename flows, `NewFolderDialog`)
-stay unforced on purpose: they fire after every transfer, and a forced re-read of a 1k-entry MTP folder costs ~17 s.
-Rationale lives with `refresh_listing` in `src-tauri/src/commands/file_system/listing.rs`.
+`pane-commands.ts::refreshPane()`. It routes on the view: a pane whose listing failed
+(`getErrorState() === 'listing-failed'`, any kind, a share list's sign-in and refusal screens included) holds no listing
+id, so there ⌘R re-navigates to the same path, as `ErrorPane`'s Try again does (the `unreachable` banner keeps its own
+retry); everywhere else it calls `refreshListing(listingId, true)` and then `refreshView()`. The `true` matters —
+unforced, the backend answers a watcher-backed listing straight out of the cache, which is honest on MTP and a lie on
+SMB (another machine's writes never reached the watcher). The post-write top-ups (`transfer-pane-effects.ts`, the rename
+flows, `NewFolderDialog`) stay unforced on purpose: they fire after every transfer, and a forced re-read of a 1k-entry
+MTP folder costs ~17 s. Rationale lives with `refresh_listing` in `src-tauri/src/commands/file_system/listing.rs`.
 
 Same-folder copies top up both pane listings: the focused source pane needs the duplicate's row for inline rename, even
 when its watcher has not delivered the write. Cross-folder copies top up only the destination.
@@ -1076,8 +1073,8 @@ through `readPressedRows`, the same revision-checked, busy-folder-tolerant read 
 row state still settling at dispatch) answer `changed`, which the handler words itself; ❌ never the old indices re-read
 against newer rows, which would name other files. The paths are the rows' own `path`, the same field the cursor getter
 reads, so archive, S3, SFTP, and phone panes copy the same kind of path for N rows as for one. A search-results pane
-resolves from its frozen snapshot instead (no listing, no shifting); the Servers hub has no file selection and falls
-back to the cursor.
+resolves from its frozen snapshot instead (no listing, no shifting); the Servers list has no file selection worth
+copying (its rows are servers) and copies the cursor row's path like any list.
 
 **"Open terminal here" reads the cursor through a third getter**, `getCursorRowForTerminal()`, which returns the row's
 name, path, and `isDirectory`. It needs `..` as a real answer (like copy-path) AND the folder flag (unlike either
@@ -1425,13 +1422,13 @@ return-point bookkeeping. `navigate.ts` re-exports the names callers use, so the
   strings (on-network, smb-path-unsupported, snapshot-path-unsupported, MTP-mismatch, on-MTP-volume, pane-unavailable)
   are EXACT contract — the MCP adapter forwards them verbatim as the `mcp-response` error; `navigate.refusals.test.ts` +
   the handler suite pin them byte-for-byte.
-- **A share's `smb://<server>/<share>` is refused (`smb-path-unsupported`); the hub and a share list aren't.**
-  `resolve_location` maps EVERY `smb://` path onto the `network` volume, where `smb://` (the hub) and `smb://<server>`
-  (a share list) are places and a share is mounted, never navigated to
+- **A share's `smb://<server>/<share>` is refused (`smb-path-unsupported`); the Servers list and a share list aren't.**
+  `resolve_location` maps EVERY `smb://` path onto the `network` volume, where `smb://` (the Servers list) and
+  `smb://<server>` (a share list) are places and a share is mounted, never navigated to
   (`navigate-refusals.ts::shareListNavigationRefusal`, asked by `navigateToLocation`). On the `network` volume, the
-  in-place arm lists a share list, lands the hub through the switch arm (the hub lists nothing), and refuses anything
-  else (`on-network-volume`). A share's path used to take the switch arm and report success from the host list. A
-  mounted share is its own volume (`select_volume` by stable volume id, or by a unique legacy name).
+  in-place arm lists a share list, lands the Servers list through the switch arm, and refuses anything else
+  (`on-network-volume`). A share's path used to take the switch arm and report success from the host list. A mounted
+  share is its own volume (`select_volume` by stable volume id, or by a unique legacy name).
 - **A `search-results://` path in a `{ goTo }` is refused (`snapshot-path-unsupported`).** Only the `{ snapshot }` arm
   may open a result set: it routes through the volume-change machinery that claims the snapshot's refcount, so a path
   arriving any other way would leave a pane holding an id nothing keeps alive. The refusal is the frontend's own answer
@@ -1766,10 +1763,10 @@ Escape while a pane's listing loads returns the pane to what it last SHOWED, lik
    switch (volume, path, and a pushed entry), a history walk (the index), and the background correction (path and an
    entry). The first such commit since the pane last landed stores a return point (`return-point.ts`): the tab's volume,
    path, and current history entry before it. The arm restores all three in one commit with no push, drops a correction
-   still resolving, and reopens the Servers hub host when that's what the pane showed. A switch's pushed entry stays as
-   a Forward target, so Forward retries the cancelled navigation.
-2. **The cancelled load isn't on the pane's volume** ⇒ nothing more. The pane already moved to a view with no listing
-   (the Servers hub, a search snapshot), and stopping the stray load was the whole job.
+   still resolving, and reopens what the pane showed. A switch's pushed entry stays as a Forward target, so Forward
+   retries the cancelled navigation.
+2. **The cancelled load isn't on the pane's volume** ⇒ nothing more. The pane already moved to a view with no listing (a
+   search snapshot), and stopping the stray load was the whole job.
 3. **The pane showed something on this volume** ⇒ re-list `lastShown` through the in-place arm. An in-place navigation
    (Enter, a breadcrumb, Backspace, `nav_to_path` on the same volume) commits only when its listing lands, so history is
    already right and the landing's `pushPath` dedupes.
@@ -2074,10 +2071,11 @@ its root (the listing reports the view folder). Wording, the row's icon, and ind
 ## A server's share list (kind-from-path)
 
 The `network` volume at `smb://<server>` (exactly one authority, no share) is the `share-list` kind; `smb://` stays the
-`network` kind (the Servers hub, `NetworkMountView`), and a share's own `smb://<server>/<share>` is `network` too (a
-share is mounted, never listed). The ONE routing rule is `#lib/servers/share-list-path.ts::isShareListLocation`, which
-`capabilitiesForPane` answers from; ❌ no other site reads the path as a share list. The listing is the backend's
-(`SmbServerVolume`, `src-tauri/src/network/DETAILS.md`), so the pane renders the standard list.
+`network` kind (the Servers list, a listing too: `../network/DETAILS.md` § "The Servers list as a listing"), and a
+share's own `smb://<server>/<share>` is `network` too (a share is mounted, never listed). The ONE routing rule is
+`#lib/servers/share-list-path.ts::isShareListLocation`, which `capabilitiesForPane` answers from; ❌ no other site reads
+the path as a share list. The listing is the backend's (`SmbServerVolume`, `src-tauri/src/network/DETAILS.md`), so the
+pane renders the standard list.
 
 - **The row**: a real listing with a `..`, mirrored to MCP, and nothing else: no writes, no source, no index, no poll,
   no tags. `canBeSource: false` greys only the F-key bar, so each verb refuses at its own seam: pane-side writes in
@@ -2088,30 +2086,28 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   the pane's rename (which refuses it typed) instead of Edit server (`file-handlers.ts`).
 - **The footer**: `SelectionInfo` with no disk space (`pane-footer.ts` takes the routed kind): no server answers a space
   query, so the usage bar would sit empty, reading "0% full".
-- **`..`**: `FilePane.navigateToParent` (and the `..` row's activation) take the share-list arm, which drops the listing
-  without a load (`listing-loader.ts::leaveListing`, so a late completion can't commit the share list back over the hub)
-  and commits `smb://`. The `..` row names the hub (`has-parent.ts::parentRowPath`, for the MCP mirror) and is no drop
-  target. ❗ `parentOf('smb://x')` is `smb:/` by the grammar's slash arithmetic: never ask it here.
-- **The hub landing is DERIVED** (`hub-landing.svelte.ts`): the one path write every commit goes through
-  (`pane-accessors.svelte.ts::setPanePath` → `writeTabPath`) notes `TabState.landOnServer` when the tab goes from a
-  share list to `smb://`, and any other path change drops it. `NetworkMountView` takes it once and calls
-  `ServersHub.selectShareListServer`, which waits for the row (`servers-hub-rows.ts::isServerOfShareList`). A restore
-  has no path to leave: `app-status-store.ts::restoreShareListLocation` brings a share-list tab back as the hub (❌
-  never the share list: nothing lists at launch, #324) and hands the landing over in `LoadedPaneTabs`'
-  `landOnServerByTabId`, which `initialization.ts` puts on the tab.
+- **`..`**: `FilePane.navigateToParent` (and the `..` row's activation) take the share-list arm, which loads `smb://`
+  with the cursor on that server's row, found BY PATH (`selectPath`, Rust's `find_path_index`: the row reads the
+  server's friendly name, its path is the share list's). The `..` row names the Servers list
+  (`has-parent.ts::parentRowPath`, for the MCP mirror) and is no drop target. ❗ `parentOf('smb://x')` is `smb:/` by the
+  grammar's slash arithmetic: never ask it here.
+- **A restored share-list tab lands on its server**: `app-status-store.ts::restoreShareListLocation` brings it back as
+  the Servers list (❌ never the share list: nothing lists at launch, #324) and hands the share-list path over in
+  `LoadedPaneTabs`' `landOnServerByTabId`; `initialization.ts` puts it on the tab, and the pane's first listing of
+  `smb://` selects that row by path (`restored-landing.svelte.ts`). History Back from a share list restores the cursor
+  like any folder's.
 - **Never remembered**: `persistence-subscriber.svelte.ts` records no share list as `network`'s last-used path, and a
   volume switch to a place with no listing runs no background "better path" correction (`navigate.ts`), so picking
-  Servers always lands on the hub, never on a remembered or other-pane share list (each would be a dial).
-- **Every door is a path**: the hub's rows, the add-server hand-off, the mirror, `..` out of a share's top folder,
+  Servers always lands on the Servers list, never on a remembered or other-pane share list (each would be a dial).
+- **Every door is a path**: the Servers rows, the add-server hand-off, the mirror, `..` out of a share's top folder,
   go-to-path, MCP `nav_to_path`, and history all send the pane to `smb://<server>`. A door that has more to say queues
   the pane's ARRIVAL first (`share-list-arrival.svelte.ts`: a share to mount, the share `..` came out of), kept per pane
   because a pinned tab opens the list in a new pane component, spent once the list lands, and dropped the moment the
   pane is anywhere but where it was queued from or for (cmdr-reports#7). ❌ No door threads a host or a share through
   the navigation. A landing is matched by `sameShareList`, ❌ never byte-for-byte: Rust spells the root `smb://<key>/`.
   The mirror (`pane-mirror.ts`) RE-READS the source's cursor row before naming the share: the displayed copy runs a
-  debounce behind a move. The hub commits through the switch arm (`onVolumeChange`, `exact`), so the initial-path effect
-  asks the NEW path's kind (`path-sync.ts`: the hub syncs, a share list loads), and a switch off a share list to the hub
-  ends its listing (`leaveListing`).
+  debounce behind a move. The Servers list commits through the switch arm (`onVolumeChange`, `exact`) and loads like any
+  folder.
 - **Enter mounts** (`share-list-pane.svelte.ts::openShare`, ahead of `entry-activation.ts` in `handleNavigate` and the
   tool open): the share-mount controller, with no credential of the frontend's own (the backend signs in with the
   server's session credential). Its states render through the ONE `RemoteConnectView`, in FRONT of the error and list
@@ -2123,12 +2119,12 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
 - **A sign-in refusal** (`shareListSignIn`) is the calm error screen: no assertive alert, the server by its friendly
   label, Sign in (`share-list-sign-in.ts::askToSignInToList`, then Retry), no Try again. It's final like an access
   refusal (`#lib/error-messages/access-refusal.ts`): ❌ never the existence probe, whose cache-only "no" walked the pane
-  up to the hub. The sheet also opens on its own, ONCE, for a listing the person started: a door's arrival or a
+  up to the Servers list. The sheet also opens on its own, ONCE, for a listing the person started: a door's arrival or a
   `navigateToPath` (a navigation, Retry, an account door) arms it; a tab coming back, a repaint, or a re-list nobody
   started asks nothing (servers principle 4). Cancelling it STAYS on this screen with keyboard focus on Sign in
   (`ErrorPane.focusSignIn`; Enter asks again, ⌘[ goes back): it's the honest "you're not signed in" place, and a cancel
-  that left for the hub made it unreachable. The screen's action row is pane chrome (`data-pane-chrome`), so the
-  explorer's focus guard and the sheet's focus restore both leave a focused button there.
+  that left for the Servers list made it unreachable. The screen's action row is pane chrome (`data-pane-chrome`), so
+  the explorer's focus guard and the sheet's focus restore both leave a focused button there.
 - **The kind's words** (`list-kind-words.ts` → `../views/list-words.ts`, plain props): the Ext column headed Description
   with each share's description in it (`extCellText`), `..` named "Back to Servers", the empty list pointing at the path
   bar's account, and the footer counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then
@@ -2347,9 +2343,9 @@ pins it in the running app (real wheels through this path verified on macOS 27 w
 extra argument. ❗ Whose rows the menu acts on (cursor inside the selection → the selection; outside → that one row) is
 decided once, in that function, for both input devices — two paths deciding it separately are two paths that drift
 apart, and the disabled header line at the top of the menu would then start lying. The `..` row keeps its own one-item
-menu, anchored the same way. In the network view there are no file rows: `⌃⏎` goes through `NetworkMountView` to the
-servers hub's own `openContextMenuAtCursor`, which opens the cursor row's menu under the row with the same anchor rule
-(`../network/DETAILS.md` § Context menu and F8).
+menu, anchored the same way. On a share list and the Servers list, the row's menu is the kind's own (`handleContextMenu`
+hands it to the row-menu host beside the path, `RowMenuHostAPI`), with the same anchor rule (`../network/DETAILS.md` §
+"Acting on a Servers row").
 
 The cursor row is RE-READ (`refreshCursorEntry`) for the reason "Select all of the same kind" above re-reads it, and the
 anchor is measured AFTER that round trip, so a row that scrolled during it still gets the menu where it now sits.

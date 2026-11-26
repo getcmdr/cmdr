@@ -25,10 +25,6 @@ describe('paneFooterVisibility', () => {
     })
   })
 
-  it('keeps the footer off the network view, which has nothing to count', () => {
-    expect(paneFooterVisibility({ kind: 'network', volumeKind: 'local', hasError: false }).selectionInfo).toBe(false)
-  })
-
   it('gives a share list the counts without the disk-space readout, which no server answers', () => {
     // A share list renders as a normal list, but the network volume never answers a
     // space query: the usage bar would sit as an empty track forever, reading "0% full".

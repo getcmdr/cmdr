@@ -130,6 +130,18 @@ fn volume(shares: FakeShares) -> (SmbServerVolume, Arc<FakeShares>) {
     )
 }
 
+/// The Servers list's date is a LAST USE, so sorting by "Last used" ranks the never-used
+/// last and isn't held in name order by "Folders always by name"; a share list has no dates.
+#[tokio::test]
+async fn the_servers_list_dates_are_last_uses_and_a_share_list_has_none() {
+    let (volume, _) = volume(testnas());
+    assert_eq!(volume.supported_dates(&app("smb://")).await, SupportedDates::LAST_USE);
+    assert_eq!(
+        volume.supported_dates(&app("smb://testnas")).await,
+        SupportedDates::NONE
+    );
+}
+
 /// ❗ A pane opening a share list gets one folder per share, each under the share
 /// list's path, with the server's description as a fact.
 #[tokio::test]

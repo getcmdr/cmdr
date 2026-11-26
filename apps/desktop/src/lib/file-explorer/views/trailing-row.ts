@@ -75,3 +75,23 @@ export function clampCursorAcrossRebuild(input: {
   // An empty list leaves index 0: the trailing row when there is one, else nothing.
   return Math.max(0, Math.min(cursorIndex, entryRows - 1))
 }
+
+/**
+ * Brief's column widths with the trailing row's column at least `minWidth` wide. The measured
+ * widths are the widest ENTRY name per column (the backend never sees the trailing row), so a
+ * column of short names would clip the row's words ("Add server…" under three-letter servers).
+ * `minWidth` is the width an unmeasured column renders at, which fits a short action label.
+ */
+export function widenTrailingColumn(input: {
+  widths: readonly number[]
+  trailingIndex: number | null
+  itemsPerColumn: number
+  minWidth: number
+}): number[] {
+  const { widths, trailingIndex, itemsPerColumn, minWidth } = input
+  const widened = [...widths]
+  if (trailingIndex === null) return widened
+  const column = Math.floor(trailingIndex / Math.max(1, itemsPerColumn))
+  if (column < widened.length) widened[column] = Math.max(widened[column], minWidth)
+  return widened
+}

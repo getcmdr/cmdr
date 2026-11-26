@@ -3,14 +3,6 @@
   "@servers.hub.addServer": {
     "sourceHash": "a4578b9"
   },
-  "servers.hub.discoveryOffLink": "{platform, select, windows {Actívala en Configuración} linuxGnome {Actívala en Preferencias} linuxKde {Actívala en Configurar Cmdr} other {Actívala en Configuración}}",
-  "@servers.hub.discoveryOffLink": {
-    "sourceHash": "f629ffa"
-  },
-  "servers.hub.emptyMessage": "{platform, select, macos {Agrega uno aquí abajo, o enciende un Mac o un NAS de tu red y Cmdr lo encontrará.} windows {Agrega uno aquí abajo, o enciende un PC o un NAS de tu red y Cmdr lo encontrará.} other {Agrega uno aquí abajo, o enciende una computadora o un NAS de tu red y Cmdr lo encontrará.}}",
-  "@servers.hub.emptyMessage": {
-    "sourceHash": "f1e7915"
-  },
   "servers.refusal.authenticationRejected": "Esa contraseña no funcionó para {username}.",
   "@servers.refusal.authenticationRejected": {
     "sourceHash": "e9cdb01"
@@ -190,10 +182,6 @@
   "servers.paneState.guestSessionRefusedHint": "Pediste iniciar sesión con tu cuenta, pero el servidor te ofreció una sesión como invitado. Normalmente eso significa que la contraseña no era correcta. Rara vez se debe a que alguien esté manipulando la conexión.",
   "@servers.paneState.guestSessionRefusedHint": {
     "sourceHash": "66cfe16"
-  },
-  "servers.hub.nfsHintLink": "Agrega uno con su dirección",
-  "@servers.hub.nfsHintLink": {
-    "sourceHash": "c927c31"
   },
   "servers.sheet.identityLockedNfs": "El servidor y la exportación son los que identifican esta ubicación. Para abrir otra exportación, agrégala como un servidor nuevo.",
   "@servers.sheet.identityLockedNfs": {

@@ -260,10 +260,7 @@ fn an_entry_loses_the_dates_its_folder_does_not_claim() {
     let modified_only = withhold_unclaimed_dates(entry.clone(), SupportedDates::NONE);
     assert_eq!((modified_only.created_at, modified_only.added_at), (None, None));
 
-    let created_only = SupportedDates {
-        created: true,
-        added: false,
-    };
+    let created_only = SupportedDates::CREATED;
     let kept = withhold_unclaimed_dates(entry, created_only);
     assert_eq!((kept.created_at, kept.added_at), (Some(1_600_000_000), None));
 }

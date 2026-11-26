@@ -1,7 +1,7 @@
 /**
  * The palette's door to an SMB server's account: `servers.signInAs`, `servers.browseAsGuest`,
- * and the SMB arms of `servers.forgetSecret` and `servers.disconnect`. Each acts on the hub's
- * cursor host row, else the server whose share list the pane shows, else nothing, and runs
+ * and the SMB arms of `servers.forgetSecret` and `servers.disconnect`. Each acts on the Servers
+ * row under the cursor, else the server whose share list the pane shows, else nothing, and runs
  * the function the row menu runs, so the doors can't drift.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -15,7 +15,7 @@ let focusedPath = 'smb://'
 vi.mock('#lib/file-explorer/network/share-list-sign-in.js', () => ({
   runServerAccountAction: (action: string, server: unknown) => runServerAccountAction(action, server),
 }))
-vi.mock('#lib/file-explorer/network/servers-hub-actions.js', () => ({
+vi.mock('#lib/file-explorer/network/servers-list-actions.js', () => ({
   disconnectSmbHost: (host: unknown, label: string) => disconnectSmbHost(host, label),
   editServerInView: vi.fn(() => Promise.resolve()),
 }))
@@ -39,7 +39,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({ listSavedServers: () => Promise
 
 import { serversHandlers } from './servers-handlers'
 import type { CommandHandlerContext } from './types'
-import type { HubRow } from '#lib/file-explorer/network/servers-hub-rows.js'
+import type { ServerRow } from '#lib/file-explorer/network/server-row-of-entry.js'
 import type { NetworkHost } from '#lib/file-explorer/types.js'
 
 const nas: NetworkHost = {
@@ -51,16 +51,15 @@ const nas: NetworkHost = {
 }
 const hostRow = {
   id: 'manual-testnas',
-  kind: 'server',
   protocol: 'smb',
   name: 'My NAS',
   address: 'testnas.local',
   volumeId: null,
   host: nas,
-} as unknown as HubRow
+} as unknown as ServerRow
 
-/** The pane on the hub (its cursor on `view.row`), or on `view.shareListHost`'s share list: the path names the server. */
-function hctx(view: { row?: HubRow | null; shareListHost?: NetworkHost | null }) {
+/** The pane on the Servers list (its cursor on `view.row`), or on `view.shareListHost`'s share list: the path names the server. */
+function hctx(view: { row?: ServerRow | null; shareListHost?: NetworkHost | null }) {
   focusedPath = view.shareListHost ? 'smb://testnas' : 'smb://'
   const explorerRef = {
     getFocusedPaneServerRow: vi.fn(() => Promise.resolve(view.row ?? null)),
@@ -84,7 +83,7 @@ describe.each([
   ['servers.signInAs', 'sign-in-as'],
   ['servers.browseAsGuest', 'browse-as-guest'],
 ] as const)('%s', (id, action) => {
-  it('acts on the hub’s cursor host row, by the name the row shows', async () => {
+  it('acts on the Servers row under the cursor, by the name the row shows', async () => {
     const { ctx } = hctx({ row: hostRow })
     serversHandlers[id](ctx)
     await settled()
@@ -106,8 +105,8 @@ describe.each([
     expect(runServerAccountAction).not.toHaveBeenCalled()
   })
 
-  /** From a hub row, a listing that landed opens the share list, as the row menu's does. */
-  it('opens the server’s share list once it listed from a hub row', async () => {
+  /** From a Servers row, a listing that landed opens the share list, as the row menu's does. */
+  it('opens the server’s share list once it listed from a Servers row', async () => {
     runServerAccountAction.mockResolvedValueOnce({ listed: true })
     const { ctx, explorerRef } = hctx({ row: hostRow })
     serversHandlers[id](ctx)

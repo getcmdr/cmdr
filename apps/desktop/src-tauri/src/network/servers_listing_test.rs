@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use cmdr_fs::server_meta::{ServerProtocol, ServerStatus, ShareListAccount};
 use cmdr_fs::volume::ConnectionState;
 
-use super::{SERVER_ICON_ID, SMB_SERVER_ICON_ID, ServerOpens, ServerRow, ServerRowInputs, server_rows};
+use super::{SERVER_ICON_ID, SMB_SERVER_ICON_ID, ServerOpens, ServerRow, ServerRowInputs, ServerSources, server_rows};
 use crate::network::share_list_path::ShareListAddress;
 use crate::network::{HostSource, NetworkHost};
 use crate::saved_servers::{SavedPlace, SavedServer, ServerNameSource};
@@ -929,4 +929,23 @@ fn a_saved_and_a_found_row_carry_their_own_ids() {
         .rows();
     assert_eq!(named(&rows, "Testnas").meta.row_id, SFTP_ID);
     assert_eq!(named(&rows, "Someone else").meta.row_id, "h9");
+}
+
+/// Edit server on a share list edits the SAVED server whose row opens that share list: the
+/// one saved by IP at its address, even while it shows under its Bonjour twin's name, and
+/// nothing for a server nobody saved.
+#[test]
+fn finds_the_saved_server_whose_row_opens_a_share_list() {
+    let saved = from_mount("10.0.0.4", 445);
+    let sources = ServerSources {
+        saved: vec![saved.clone()],
+        hosts: vec![bonjour_testnas_at("10.0.0.4", 445), host("bonjour-attic", "Attic")],
+        ..ServerSources::default()
+    };
+    let at = |key: &str| ShareListAddress {
+        key: key.to_string(),
+        port: 445,
+    };
+    assert_eq!(sources.saved_row_opening(&at("10.0.0.4")), Some(saved.id));
+    assert_eq!(sources.saved_row_opening(&at("attic")), None);
 }

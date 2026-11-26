@@ -25,7 +25,7 @@ const saved = vi.hoisted(() => ({ runServerRowAction: vi.fn(), forgetSavedShare:
 
 vi.mock('./network-store.svelte', () => ({ getNetworkHosts: () => h.hosts }))
 vi.mock('../navigation/server-row-actions', () => ({ runServerRowAction: saved.runServerRowAction }))
-vi.mock('./servers-hub-actions', () => ({ forgetSavedShare: saved.forgetSavedShare }))
+vi.mock('./servers-list-actions', () => ({ forgetSavedShare: saved.forgetSavedShare }))
 vi.mock('./share-list-sign-in', () => ({
   runServerAccountAction: (action: string, server: unknown) => h.runServerAccountAction(action, server),
   serverAccountFacts: () => ({ listedAccount: h.listedAccount, guestListingWorked: h.guestListingWorked }),

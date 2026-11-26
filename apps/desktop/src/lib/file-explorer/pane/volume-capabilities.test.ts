@@ -171,13 +171,12 @@ describe('capabilitiesForKind — the frozen per-kind defaults', () => {
     },
     network: {
       kind: 'network',
-      hasBackendListing: false,
+      // The Servers list: a real listing (one folder per server), the volume's root, read-only.
+      hasBackendListing: true,
       canWrite: false,
       canBeSource: false,
       hasParentRow: false,
-      // No file list at all (NetworkMountView renders instead), so there is
-      // nothing for a sort to order.
-      syncsToMcp: false,
+      syncsToMcp: true,
       canBeIndexed: false,
       pollsForDeletedFolder: false,
       canShareLinks: false,

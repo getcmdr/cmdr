@@ -80,7 +80,6 @@ describe('createPaneKeyRouter', () => {
   let state: {
     renameActive: boolean
     shareMountHoldsKeys: boolean
-    isNetworkView: boolean
     isSearchResultsView: boolean
     viewMode: 'brief' | 'full'
     hasParent: boolean
@@ -97,7 +96,6 @@ describe('createPaneKeyRouter', () => {
     state = {
       renameActive: false,
       shareMountHoldsKeys: false,
-      isNetworkView: false,
       isSearchResultsView: false,
       viewMode: 'full',
       hasParent: true,
@@ -106,12 +104,10 @@ describe('createPaneKeyRouter', () => {
     deps = {
       getRenameActive: vi.fn(() => state.renameActive),
       handleShareMountKeyDown: vi.fn(() => state.shareMountHoldsKeys),
-      getIsNetworkView: vi.fn(() => state.isNetworkView),
       getIsSearchResultsView: vi.fn(() => state.isSearchResultsView),
       getViewMode: vi.fn(() => state.viewMode),
       getHasParent: vi.fn(() => state.hasParent),
       getEntryUnderCursor: vi.fn(() => state.cursorEntry),
-      handleNetworkKeyDown: vi.fn(),
       handleSearchResultsKeyDown: vi.fn(),
       handleBriefModeKeys: vi.fn(),
       handleFullModeKeys: vi.fn(),
@@ -150,15 +146,6 @@ describe('createPaneKeyRouter', () => {
     it('cancels a pending click-to-rename on any other keystroke', () => {
       router().handleKeyDown(keyEvent())
       expect(renameActivation.cancelClickToRename).toHaveBeenCalledTimes(1)
-    })
-
-    it('hands the whole event to the network view', () => {
-      state.isNetworkView = true
-      onlyCommand('nav.open')
-      const e = keyEvent()
-      router().handleKeyDown(e)
-      expect(deps.handleNetworkKeyDown).toHaveBeenCalledWith(e)
-      expect(deps.openEntry).not.toHaveBeenCalled()
     })
 
     it('hands the whole event to the search-results view', () => {

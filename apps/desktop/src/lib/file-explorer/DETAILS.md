@@ -236,10 +236,11 @@ For the full module map, decisions, and gotchas, see `git/CLAUDE.md`.
 
 ## Network browser (`network/`)
 
-- **ServersHub.svelte**: Top-level network view; lists discovered servers
+- **The Servers list**: a file listing at `smb://`, one folder per server (`network/DETAILS.md` § "The Servers list as a
+  listing")
 - **A server's share list**: a file listing at `smb://<server>` (`pane/share-list-pane.svelte.ts`)
 - **smb-sign-in.ts**: SMB's side of the one sign-in sheet (`#lib/servers`), shared by its three credential sites
-- **network-store.svelte.ts**: Reactive state for discovered servers, selected server/share, and auth mode
+- **network-store.svelte.ts**: Reactive state for discovered servers and what this session's listings said
 - **`network/types.ts`** (the network vocabulary: hosts, shares, known shares, mount refusals) is re-exported from
   `types.ts`, which stays the one import seam. It re-exports the wire refusals (`MountError`, `ShareListError`) from
   `#lib/ipc/bindings` rather than restating them: a hand-written copy had drifted to a `message` field the backend no

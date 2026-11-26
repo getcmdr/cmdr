@@ -102,7 +102,7 @@ export type VolumeKind =
   | 'nfs' // an NFS export Cmdr dials itself (real backend listing, nfs:// scheme, no system clipboard, no terminal)
   | 'mtp' // connected MTP storage (real backend listing, mtp:// scheme, no system clipboard)
   | 'adb' // an Android device over ADB (real backend listing, adb:// scheme, no system clipboard)
-  | 'network' // the Servers hub, the `network` volume at `smb://` (no listing: `NetworkMountView` renders it)
+  | 'network' // the Servers list, the `network` volume at `smb://` (one row per server, read-only)
   | 'share-list' // a server's shares, the `network` volume at `smb://<server>` (kind-from-path, read-only)
   | 'search-results' // the snapshot virtual volume (search-results:// namespace, flat result set)
   | 'archive' // a pane inside a supported archive (kind-from-path; zip is writable, see the row)
@@ -142,11 +142,11 @@ export interface VolumeCapabilities {
    */
   hasParentRow: boolean
   /**
-   * FilePane mirrors this pane's state to the MCP `PaneState` store. False only
-   * for `network`, where `ServersHub` owns the push and FilePane's would
-   * clobber its host list. Every other kind mirrors, the search-results snapshot
-   * included: it's a real pane an agent moves the cursor in and deletes from, and
-   * a pane that pushes nothing leaves the store describing wherever it came from.
+   * FilePane mirrors this pane's state to the MCP `PaneState` store. Every kind
+   * mirrors, the search-results snapshot included: it's a real pane an agent moves
+   * the cursor in and deletes from, and a pane that pushes nothing leaves the store
+   * describing wherever it came from. Kept as a cell so a kind with nothing to
+   * mirror could say so.
    */
   syncsToMcp: boolean
   /**
@@ -321,15 +321,15 @@ const CAPABILITY_TABLE: Readonly<Record<VolumeKind, VolumeCapabilities>> = Objec
   }),
   network: Object.freeze({
     kind: 'network',
-    // The strictest kind: no listing, no source ops (the host/share list isn't
-    // files), no MCP sync (ServersHub owns that push). The write/source
-    // `false`s are structurally-true-no-guard cells (a network pane renders
-    // NetworkMountView and never reaches the file-list `{#if}`).
-    hasBackendListing: false,
+    // The Servers list (`SmbServerVolume` lists `smb://` in Rust): a real listing of one
+    // folder row per server, the volume's root, so no `..`. Like `share-list`, no row is a
+    // file: every write and source cell is off, and each verb refuses or takes its
+    // Servers meaning at its own per-kind seam (F7 Add server, F8 Forget, Enter opens).
+    hasBackendListing: true,
     canWrite: false,
     canBeSource: false,
     hasParentRow: false,
-    syncsToMcp: false,
+    syncsToMcp: true,
     canBeIndexed: false,
     pollsForDeletedFolder: false,
     canShareLinks: false,

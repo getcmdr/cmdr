@@ -34,8 +34,7 @@ const CHANGED: SelectedPathsRead = { kind: 'changed' }
 
 /**
  * A search-results pane has no backend listing: its rows ARE the frozen
- * snapshot, so indices into it can't shift under us. A pane with neither (the
- * Servers hub) has no file selection to copy.
+ * snapshot, so indices into it can't shift under us.
  */
 function readListinglessSelection(paneRef: FilePaneAPI, selectedIndices: number[]): SelectedPathsRead {
   const snapshotId = snapshotIdFromPanePath(paneRef.getCurrentPath())

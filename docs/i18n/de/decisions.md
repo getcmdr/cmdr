@@ -397,8 +397,7 @@ Deliberate splits (don't unify):
   file date.
 - `Gespeichert`, never Podcasts' `Gesichert`. `Wartet darauf, dass du den Schlüssel prüfst` (verb over noun pile).
   „Local network discovery is off.“ → `Die Suche im lokalen Netzwerk ist ausgeschaltet.`
-- `servers.hub.rowCount` has identical branches (`{countText} Server`), deliberately. „Disconnect server“ →
-  `Verbindung zum Server trennen`. `Places` → `Orte` (Finder), buckets too.
+- „Disconnect server“ → `Verbindung zum Server trennen`. `Places` → `Orte` (Finder), buckets too.
 
 ## Das Verbindungsblatt, der Hostschlüssel und die zwei Vorschauzeilen (`servers.sheet.*`, `servers.hostKey.*`, `servers.paneState.signedOut`/`.signIn`/`.hostKeyChanged*`, `goToPath.dialog.opensServer`/`.addsServer`, `commands.serversConnect.label`)
 

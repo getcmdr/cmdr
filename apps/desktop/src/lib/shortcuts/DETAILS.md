@@ -420,8 +420,8 @@ ran `clearShareState` + `fetchShares` for every host, then `pane.refresh` dispat
 `refreshNetworkHosts()` → `ServersHub.refresh()`, which is that same handler's body again. The paged cursor keys are the
 same shape and hid better: `nav.pageDown`'s handler is `sendKeyToFocusedPane('PageDown')`, so one press moved two pages
 (measured: 54 rows with 27 on screen), while `Home` and `End` doubled invisibly by being idempotent. ❌ Don't reach for
-a "did you handle it?" return value instead: `pane-key-router` hands the network and search views every key and returns
-either way, so a boolean has nobody to tell. `claimKey(e)` IS the claim.
+a "did you handle it?" return value instead: `pane-key-router` hands the search view every key and returns either way,
+so a boolean has nobody to tell. `claimKey(e)` IS the claim.
 
 So local handlers don't test raw key flags; they ask the registry:
 

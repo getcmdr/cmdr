@@ -1,6 +1,6 @@
 /**
  * E2E for an AI suggestion to add a server: the card shows what the click saves, with nothing to
- * type into, and approving it saves the server into the servers hub, NOT connected.
+ * type into, and approving it saves the server into the Servers list, NOT connected.
  *
  * The card is staged through the real `propose_server` handler (`e2e_propose_server`,
  * `playwright-e2e` only, as on a turn the user started), so the card is exactly what a model's
@@ -105,11 +105,11 @@ test.describe('An AI suggestion to add a server', () => {
       await expect.poll(() => savedServerNamed(tauriPage, name), { timeout: waitBudget(10000) }).toBeDefined()
       expect((await savedServerNamed(tauriPage, name))?.lastConnectedAt).toBeFalsy()
 
-      // In the servers hub, as a saved server with no session: `saved`, never `connected`.
+      // On the Servers list, as a saved server with no session: `saved`, never `connected`.
       await escapeOverlayUntilGone(tauriPage, DIALOG)
       await mcpCall('select_volume', { pane: 'left', name: 'Servers' })
       await expect
-        .poll(async () => (await mcpReadResource('cmdr://state')).includes(`${name}  protocol=sftp  status="saved"`), {
+        .poll(async () => (await mcpReadResource('cmdr://state')).includes(`${name}  protocol=sftp status=saved`), {
           timeout: waitBudget(15000),
         })
         .toBeTruthy()

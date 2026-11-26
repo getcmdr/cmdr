@@ -1336,10 +1336,6 @@
   "@settings.network.firstTriggerDone.description": {
     "sourceHash": "7982e11"
   },
-  "settings.network.nearbyServersGroup.label": "Grupo de servidores por perto",
-  "@settings.network.nearbyServersGroup.label": {
-    "sourceHash": "cfa28b1"
-  },
   "settings.network.directSmbConnection.label": "Conectar diretamente a compartilhamentos SMB",
   "@settings.network.directSmbConnection.label": {
     "sourceHash": "407c4f1"

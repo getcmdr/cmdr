@@ -1,7 +1,6 @@
 import type { FileEntry, FriendlyError, NetworkHost } from '../types'
 import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
 import type { Initiator, ListingIndexSizesChanged, Location } from '#lib/tauri-commands/index.js'
-import type { HubRow } from '../network/servers-hub-rows'
 import type { FavoritesMenuOpenTrigger } from '../navigation/favorites-analytics'
 import type { HistoryCursor } from '../navigation/navigation-history'
 import type { PaneRowState } from './pane-row-state'
@@ -82,6 +81,11 @@ export interface VolumeChangePayload {
 export interface LoadDirectoryArgs {
   path: string
   selectName?: string
+  /**
+   * The row to land on by its entry's PATH, where the rows' names aren't what the pane left by
+   * (the Servers list's friendly names over `smb://<key>`). Read when `selectName` is absent.
+   */
+  selectPath?: string
 }
 
 /** A directory load: the volume and path it lists, and the entry it puts under the cursor on landing. */
@@ -215,8 +219,6 @@ export interface FilePaneAPI {
    * fine to DISPLAY and not fine to ACT on. `null` also when the rows never settled.
    */
   refreshCursorEntry(options?: CursorReadOptions): Promise<FileEntry | null>
-  /** Cursor target inside the network view (host or share), or null. */
-  getNetworkCursorEntry(): NetworkCursorEntry | null
   setCursorIndex(index: number): Promise<void>
   getCursorIndex(): number
   /** The entry rows (incl. the `..` row; snapshot count for snapshot panes), never a trailing action row. */
@@ -239,7 +241,6 @@ export interface FilePaneAPI {
    * history entry once that entry's rows are on screen (`pane/history-cursor-sync.svelte.ts`).
    */
   restoreHistoryCursor(target: HistoryCursorTarget): void
-  isInNetworkView(): boolean
   hasParentEntry(): boolean
   /**
    * The last `directory-diff` sequence applied: which state of the listing the rows
@@ -265,15 +266,13 @@ export interface FilePaneAPI {
   getSwapState(): SwapState
   adoptListing(state: SwapState): void
 
-  findNetworkItemIndex(name: string): number
-  /** Cursor-addressable rows in the network view (hosts or shares), `0` outside it. */
-  getNetworkItemCount(): number
-  refreshNetworkHosts(): void
   /**
    * Opens `host`'s share list in this pane, mounting `arrival.mount` once it lands when
    * named (`share-list-arrival.svelte.ts`).
    */
   openShareList(host: NetworkHost, arrival?: { mount?: string }): void
+  /** On the Servers list: lands the cursor on the row whose id is `rowId`, now or once a re-list brings it. */
+  selectServerRowWhenListed(rowId: string): void
 
   getSelectedIndices(): number[]
   isAllSelected(): boolean
@@ -476,51 +475,13 @@ export interface FavoritesMenuAPI {
   getIsOpen(): boolean
 }
 
-/** The list methods ServersHub exports. */
-export interface BrowserAPI {
-  /**
-   * No "handled" return: both browsers sit below the document-level dispatcher, so a
-   * claimed key is one that got `preventDefault()` + `stopPropagation()`. `NetworkMountView`
-   * and `pane-key-router` hand the network view every key and return either way.
-   */
-  handleKeyDown(e: KeyboardEvent): void
-  setCursorIndex(index: number): void
-  findItemIndex(name: string): number
-  /** Type-to-jump: moves the cursor to the first row whose name starts with `prefix`; answers that name, or `null`. */
-  jumpToPrefix(prefix: string): string | null
-  openCursorItem(): void
-  /** How many rows the cursor can sit on, so a caller can range-check an index. */
-  getItemCount(): number
-}
-
-/** Typed interface for ServersHub's exported methods (extends BrowserAPI with refresh). */
-export interface ServersHubAPI extends BrowserAPI {
-  refresh(): void
-  /** SMB host under the cursor; `null` on a one-place server or the "Add server…" row. */
-  getHostUnderCursor(): NetworkHost | null
-  /**
-   * The whole row under the cursor; `null` on the "Add server…" row.
-   *
-   * ❗ How a command reaches what the user is looking at: the hub IS a pane, so
-   * "act on the focused pane's volume" would otherwise act on the synthetic hub
-   * row rather than the server the cursor is on.
-   */
-  getRowUnderCursor(): HubRow | null
-  /** Selects a server by its saved id (or a host's discovery id), now or once it's listed. */
-  selectServer(id: string): void
-  /** Selects the server whose share list `path` is (`smb://<server>`), now or once it's listed. */
-  selectShareListServer(path: string): void
-  /** ⌃⏎: the cursor row's menu, opened from the keyboard just under the row. */
-  openContextMenuAtCursor(): Promise<void>
-}
-
 /** Typed interface for SearchResultsView's exported methods. */
 /**
  * Which view a pane renders, as a function of its capability KIND. `FilePane`'s
  * alt-view `{#if}` chain branches on it, and `pane-footer.ts` decides the status
  * footer from it.
  */
-export type PaneViewKind = 'network' | 'search-results' | 'normal'
+export type PaneViewKind = 'search-results' | 'normal'
 
 export interface SearchResultsViewAPI {
   /** Focuses the results list without scrolling; false when it isn't mounted. */
@@ -533,26 +494,6 @@ export interface SearchResultsViewAPI {
 }
 
 /**
- * Typed interface for NetworkMountView's exported methods.
- * @public consumed via `import type` from FilePane.svelte; knip's Svelte parser misses type-only imports
- */
-export interface NetworkMountViewAPI {
-  handleKeyDown(e: KeyboardEvent): void
-  setCursorIndex(index: number): void
-  findItemIndex(name: string): number
-  /** Type-to-jump in the hub; answers the name it landed on, or `null`. */
-  jumpToPrefix(prefix: string): string | null
-  openCursorItem(): void
-  /** Rows the cursor can sit on in the hub. */
-  getItemCount(): number
-  refreshNetworkHosts(): void
-  /** What the hub's cursor is on: an SMB host, another server's row, or `null` (the Add row, an empty hub). */
-  getNetworkCursorEntry(): NetworkCursorEntry | null
-  /** ⌃⏎ in the servers hub: the cursor row's menu. */
-  openContextMenuAtCursor(): Promise<void>
-}
-
-/**
  * What hosts a `network` kind's row menu beside the path: `ShareListAccountChip.svelte` (a
  * share row on a share list) or `ServersListRowMenu.svelte` (a server on the Servers list).
  */
@@ -560,10 +501,3 @@ export interface RowMenuHostAPI {
   /** Opens the row's menu at `anchor` (⌃⏎'s), or where the last right-click landed. */
   openRowMenu(entry: FileEntry, anchor: { x: number; y: number } | null | undefined): void | Promise<void>
 }
-
-/** What the Servers hub's cursor is on, returned by NetworkMountView. */
-export type NetworkCursorEntry =
-  /** An SMB host in the hub, with the hub row it is on (Edit server… acts on the row). */
-  | { kind: 'host'; host: NetworkHost; row: HubRow }
-  /** A hub row with no SMB host: an SFTP or WebDAV server, or an S3 account or one of its places. */
-  | { kind: 'server'; row: HubRow }

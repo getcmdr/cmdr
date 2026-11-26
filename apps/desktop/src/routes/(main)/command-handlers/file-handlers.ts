@@ -22,7 +22,6 @@ import { showInFileManagerOrExplain } from '#lib/file-explorer/file-manager-reve
 import { addToast } from '#lib/ui/toast/index.js'
 import CopiedPathToastContent from '#lib/file-explorer/CopiedPathToastContent.svelte'
 import { getFocusedPanePath, getFocusedPaneVolumeId } from '#lib/file-explorer/pane/focused-pane-reads.js'
-import { shareListHostAt } from '#lib/file-explorer/network/share-list-label.js'
 import { capabilitiesFor, capabilitiesForPane } from '#lib/file-explorer/pane/volume-capabilities.js'
 import { pathInsideArchive } from '#lib/file-explorer/pane/archive-paths.js'
 import { openInEditorOrExplain } from '#lib/file-explorer/pane/editor-open.js'
@@ -36,7 +35,7 @@ import { copiedPath, displayPath } from '#lib/utils/display-path.js'
 import { formatNumber } from '#lib/file-explorer/selection/selection-info-utils.js'
 import { extractFilename } from '#lib/file-explorer/operations/selection-adjustment.js'
 import { trackEvent } from '#lib/tauri-commands/index.js'
-import { editServerInView } from '#lib/file-explorer/network/servers-hub-actions.js'
+import { editServerInView } from '#lib/file-explorer/network/servers-list-actions.js'
 import { forgetResticPassword } from '#lib/file-explorer/restic/forget-password.js'
 import type { CommandArgs } from '#lib/commands/index.js'
 import { detached } from './detached'
@@ -152,7 +151,8 @@ async function copySelectionOr(
 /** What the Servers volume shows: the Servers row under the cursor, or the host whose share list is up. */
 async function serverInView(explorer: NonNullable<CommandHandlerContext['explorerRef']>) {
   const row = await explorer.getFocusedPaneServerRow()
-  return { row, host: shareListHostAt(getFocusedPaneVolumeId(), getFocusedPanePath()) }
+  const path = getFocusedPanePath()
+  return { row, shareListPath: capabilitiesForPane(getFocusedPaneVolumeId(), path).kind === 'share-list' ? path : null }
 }
 
 /** Whether the focused pane is the Servers list (`network` at `smb://`), by its kind. */
@@ -390,6 +390,15 @@ export const fileHandlers = {
       // be told apart from people reaching for it where it can't work; without
       // the refusal, a zero is unreadable (`analytics/DETAILS.md` § Reading a zero).
       detached(trackEvent('quick_look_used', { outcome: 'insideArchive' }))
+      return
+    }
+    // A Servers row is a server, ❌ never a file to preview: its path (`smb://<server>`, a
+    // place's `sftp://…`) would reach macOS as one. Said, like Get info's.
+    if (onServersList()) {
+      addToast(tString('fileExplorer.network.servers.notAFile', { name: entryUnderCursor.filename }), {
+        level: 'info',
+        id: 'servers-not-a-file',
+      })
       return
     }
     const volumeId = getFocusedPaneVolumeId()

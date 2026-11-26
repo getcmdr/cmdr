@@ -105,11 +105,10 @@ export interface TypingKeyTarget {
 }
 
 /**
- * Whether plain typing narrows the list, per the `fileExplorer.typeToJump.mode` setting. The
- * network views have no backend listing to filter, so there typing always jumps.
+ * Whether plain typing narrows the list, per the `fileExplorer.typeToJump.mode` setting.
  */
-export function typingFilters(mode: 'filter' | 'jump', isNetworkView: boolean): boolean {
-  return mode === 'filter' && !isNetworkView
+export function typingFilters(mode: 'filter' | 'jump'): boolean {
+  return mode === 'filter'
 }
 
 /**
