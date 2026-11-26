@@ -45,6 +45,7 @@ pub(super) fn set_account_at_path(
             added_at: crate::timestamps::now_rfc3339(),
             username: typed_account(username),
             awaiting_first_connect: false,
+            saved_from_mount: false,
         };
         store.servers.push(entry.clone());
         entry

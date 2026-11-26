@@ -130,6 +130,13 @@ pub struct SavedServer {
     /// `false`, like the store field it mirrors.
     #[serde(default)]
     pub awaiting_first_connect: bool,
+    /// An SMB host Cmdr saved because one of its shares was mounted outside Cmdr
+    /// (Finder, `mount_smbfs`), and no mount through Cmdr has gone through since: it
+    /// stays listed after the share unmounts, but nothing lists its shares unasked
+    /// (#324). Always `false` for the other protocols. ❗ Absent reads `false`, like
+    /// the store field it mirrors (`manual_servers::ManualServerEntry`).
+    #[serde(default)]
+    pub saved_from_mount: bool,
 }
 
 /// Which server to dial, in add mode.

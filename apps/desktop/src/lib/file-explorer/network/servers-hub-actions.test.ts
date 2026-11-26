@@ -16,6 +16,8 @@ const forgetSavedSmbHost = vi.fn((_id: string) => Promise.resolve(true))
 const forgetServer = vi.fn((_volumeId: string) => Promise.resolve(true))
 const forgetServerSecret = vi.fn((_volumeId: string) => Promise.resolve(true))
 const disconnectNetworkHost = vi.fn(() => Promise.resolve(['/Volumes/Public']))
+/** Whether a share from the host is mounted, one answer per ask (the kernel's mount table). */
+const smbHostHasMounts = vi.fn((_host: unknown) => Promise.resolve(false))
 const forgetSavedServer = vi.fn(() => Promise.resolve())
 const setServerAutoReconnect = vi.fn((_volumeId: string, _on: boolean) => Promise.resolve())
 const runVolumeRowAction = vi.fn((_payload: unknown) => Promise.resolve())
@@ -47,6 +49,7 @@ vi.mock('#lib/tauri-commands/index.js', () => ({
   forgetServer: (volumeId: string) => forgetServer(volumeId),
   forgetServerSecret: (volumeId: string) => forgetServerSecret(volumeId),
   disconnectNetworkHost: (...args: unknown[]) => disconnectNetworkHost(...(args as [])),
+  smbHostHasMounts: (host: unknown) => smbHostHasMounts(host),
 }))
 vi.mock('./network-store.svelte', () => ({
   getCredentialStatus: () => credentialStatus,
@@ -220,6 +223,7 @@ beforeEach(() => {
   confirmWithCheckbox.mockResolvedValue({ confirmed: true, checked: true })
   credentialStatus = 'has_creds'
   accountFacts = { listedAccount: undefined, guestListingWorked: false }
+  smbHostHasMounts.mockResolvedValue(false)
 })
 
 /** What a row menu learned on open: nothing mounted, unless a test says so. */
@@ -321,6 +325,54 @@ describe('forget', () => {
     await actions().forget(savedHostRow)
     expect(forgetSavedSmbHost).toHaveBeenCalledOnce()
     expect(addToast).toHaveBeenCalledWith(expect.stringContaining('saved password'), { level: 'error' })
+  })
+
+  /**
+   * ❗ Cmdr lists every server a mounted share comes from, so a host forgotten with a
+   * share still mounted would come right back: the question offers to unmount first,
+   * and only an unmount that left nothing behind lets the Forget go on.
+   */
+  it('offers to unmount a host’s shares first while one is mounted, then forgets it', async () => {
+    smbHostHasMounts.mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+    const order: string[] = []
+    disconnectNetworkHost.mockImplementationOnce(() => {
+      order.push('unmount')
+      return Promise.resolve(['/Volumes/Public'])
+    })
+    forgetSavedSmbHost.mockImplementationOnce(() => {
+      order.push('forget')
+      return Promise.resolve(true)
+    })
+    await actions().forget(savedHostRow)
+    expect(confirmWithCheckbox).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message:
+          'Some of Attic NAS’s shares are still mounted, so Cmdr would list it again right away. Unmount them and forget Attic NAS?',
+        confirmLabel: 'Unmount and forget',
+      }),
+    )
+    expect(order).toEqual(['unmount', 'forget'])
+  })
+
+  it('keeps a host whose share won’t unmount, and says why', async () => {
+    smbHostHasMounts.mockResolvedValue(true)
+    await actions().forget(savedHostRow)
+    expect(disconnectNetworkHost).toHaveBeenCalledOnce()
+    expect(forgetSavedSmbHost).not.toHaveBeenCalled()
+    expect(forgetSavedSmbHostPassword).not.toHaveBeenCalled()
+    expect(addToast).toHaveBeenCalledWith(
+      'Some of Attic NAS’s shares are still mounted, so Cmdr kept it. Close what’s using them and try again.',
+      { level: 'error' },
+    )
+  })
+
+  it('unmounts nothing for a host nothing is mounted from, or when the person says no', async () => {
+    await actions().forget(savedHostRow)
+    expect(disconnectNetworkHost).not.toHaveBeenCalled()
+    smbHostHasMounts.mockResolvedValue(true)
+    confirmWithCheckbox.mockResolvedValue({ confirmed: false, checked: true })
+    await actions().forget(savedHostRow)
+    expect(disconnectNetworkHost).not.toHaveBeenCalled()
   })
 
   it('asks a share’s Forget with a Forget button too', async () => {

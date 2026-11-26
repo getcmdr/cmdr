@@ -588,6 +588,7 @@ fn signed_in_manual_server(
         added_at: "2026-11-03T00:00:00Z".to_string(),
         username: Some("test_user_1".to_string()),
         awaiting_first_connect: false,
+        saved_from_mount: false,
     };
     let discovery_name = manual_servers::discovery_name(address, port);
     let mut row = share_row(&discovery_name, "private", Some("test_user_1"), Some(volume_id));

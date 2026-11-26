@@ -875,6 +875,7 @@ fn the_saved_facts_draft_each_place_and_its_smb_host() {
         added_at: String::new(),
         username: Some("test_user_3".into()),
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }];
     let known = vec![share_row(
         "192.0.2.77",
@@ -905,6 +906,7 @@ fn the_saved_facts_draft_each_place_and_its_smb_host() {
             auto_reconnect: None,
         }],
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }];
     let entry = sftp.clone();
     let saved = SavedServers::from_listing(listing, smb_hosts, move |id| {

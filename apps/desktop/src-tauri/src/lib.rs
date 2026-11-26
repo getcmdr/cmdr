@@ -675,6 +675,13 @@ pub fn run() {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             file_system::upgrade_existing_smb_mounts();
 
+            // Every server a share is mounted from joins the Servers list and stays there:
+            // the mount table and the stores only, no network. An E2E run leaves the
+            // developer's own mounts alone (`may_adopt_preexisting_network_mounts`).
+            if test_mode::may_adopt_preexisting_network_mounts() {
+                tauri::async_runtime::spawn_blocking(network::manual_servers::remember_mounted_servers);
+            }
+
             menu::install::at_startup(app, &saved_settings)?;
 
             // Before the first status check: an older version may have left the license key in

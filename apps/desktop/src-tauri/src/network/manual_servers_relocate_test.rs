@@ -13,6 +13,7 @@ fn entry(address: &str, port: u16, name: &str) -> ManualServerEntry {
         added_at: "2026-09-01T00:00:00Z".to_string(),
         username: Some("test_user_1".to_string()),
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 

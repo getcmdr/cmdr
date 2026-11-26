@@ -96,6 +96,7 @@ fn sftp_server() -> SavedServer {
         auto_reconnect: Some(true),
         places: vec![place(SFTP_ID, "Testnas", "sftp://test_user_1@testnas.local:22", true)],
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 
@@ -121,6 +122,7 @@ fn smb_server() -> SavedServer {
         auto_reconnect: None,
         places: Vec::new(),
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 
@@ -129,6 +131,19 @@ fn smb(id: &str, display_name: &str, address: &str) -> SavedServer {
         id: id.to_string(),
         display_name: display_name.to_string(),
         address: address.to_string(),
+        ..smb_server()
+    }
+}
+
+/// An SMB server Cmdr saved because a share from it was mounted: unnamed, so its label is
+/// the address (`saved_servers::smb_hosts`).
+fn from_mount(address: &str, port: u16) -> SavedServer {
+    let label = crate::network::manual_servers::discovery_name(address, port);
+    SavedServer {
+        id: crate::network::manual_servers::generate_server_id(address, port),
+        display_name: label.clone(),
+        address: label,
+        saved_from_mount: true,
         ..smb_server()
     }
 }
@@ -239,6 +254,58 @@ fn matches_a_saved_smb_host_to_a_discovered_one_by_name_when_the_ids_differ() {
         .hosts(vec![host("bonjour-1", "testnas")])
         .rows();
     assert_eq!(rows.len(), 1);
+}
+
+/// A server saved off a mount by IP is the discovered host at that IP: one row, under
+/// the Bonjour name, ❌ never a second "10.0.0.4" row beside it.
+#[test]
+fn matches_a_server_saved_by_ip_to_the_discovered_host_at_that_ip() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
+        .hosts(vec![NetworkHost {
+            hostname: Some("testnas.local".to_string()),
+            ip_address: Some("10.0.0.4".to_string()),
+            ..host("bonjour-testnas", "Testnas")
+        }])
+        .mount("10.0.0.4", 445)
+        .rows();
+    assert_eq!(names(&rows), ["Testnas"]);
+    assert!(rows[0].meta.saved);
+    assert_eq!(rows[0].meta.status, ServerStatus::Connected);
+}
+
+/// ❗ The IP alone isn't the server: a host on another port at that IP is another one.
+#[test]
+fn keeps_a_server_saved_by_ip_apart_from_a_host_on_another_port_there() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445)])
+        .hosts(vec![NetworkHost {
+            ip_address: Some("10.0.0.4".to_string()),
+            port: 10480,
+            ..host("bonjour-fixture", "Fixture")
+        }])
+        .rows();
+    assert_eq!(rows.len(), 2);
+}
+
+/// ❗ Servers behind mounted shares (§ "Decisions", 4 and 5 of the Servers plan): one NAS
+/// mounted by its LAN and its Tailscale address is two saved servers, both connected,
+/// whatever its GUID.
+#[test]
+fn lists_both_addresses_of_one_mounted_nas_as_two_connected_servers() {
+    let rows = Inputs::saved(vec![from_mount("10.0.0.4", 445), from_mount("100.64.0.10", 445)])
+        .mount("10.0.0.4", 445)
+        .mount("100.64.0.10", 445)
+        .rows();
+    assert_eq!(names(&rows), ["10.0.0.4", "100.64.0.10"]);
+    assert!(rows.iter().all(|row| row.meta.saved));
+    assert!(rows.iter().all(|row| row.meta.status == ServerStatus::Connected));
+}
+
+/// Unmounted, a mount-saved server is still listed, as saved.
+#[test]
+fn keeps_a_server_saved_from_a_mount_after_its_share_unmounts() {
+    let rows = Inputs::saved(vec![from_mount("100.64.0.10", 445)]).rows();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].meta.status, ServerStatus::Saved);
 }
 
 #[test]
@@ -405,6 +472,7 @@ fn calls_a_saved_smb_host_saved_when_the_only_host_behind_it_is_its_own_manual_e
 fn calls_a_saved_smb_host_nobody_connected_yet_not_connected_yet_even_when_mdns_sees_it() {
     let waiting = SavedServer {
         awaiting_first_connect: true,
+        saved_from_mount: false,
         ..smb_server()
     };
     assert_eq!(
@@ -439,6 +507,7 @@ fn calls_an_smb_server_with_a_mounted_share_connected() {
 fn a_mount_wins_over_not_connected_yet() {
     let waiting = SavedServer {
         awaiting_first_connect: true,
+        saved_from_mount: false,
         ..smb_server()
     };
     let rows = Inputs::saved(vec![waiting]).mount("10.0.0.4", 445).rows();
@@ -683,6 +752,7 @@ fn s3_account(places: Vec<SavedPlace>) -> SavedServer {
         auto_reconnect: Some(true),
         places,
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 

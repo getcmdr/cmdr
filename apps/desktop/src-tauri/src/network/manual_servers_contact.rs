@@ -38,10 +38,10 @@ pub fn save_manual_server_without_contact<R: Runtime>(
     ))
 }
 
-/// A mount of `server` just went through: a host saved without contact that it names
-/// becomes an ordinary one, which the next load puts in the discovery list
-/// (`load_manual_servers`, on the next network action such as opening the servers
-/// view). Answers whether one was waiting.
+/// A mount of `server` just went through Cmdr: a host saved without contact, or saved
+/// from someone else's mount, that it names becomes an ordinary one, which the next
+/// load puts in the discovery list (`load_manual_servers`, on the next network action
+/// such as opening the servers view). Answers whether one was waiting.
 ///
 /// ❗ Reads the store through the standalone data dir: it runs from the mount's
 /// bookkeeping (`smb_saved_shares::remember_mount`), which holds no `AppHandle`.
@@ -56,7 +56,8 @@ pub fn note_first_connect(server: &SmbServer) -> bool {
 /// entry is waiting, so an ordinary mount reads the file and writes nothing.
 pub(super) fn note_first_connect_at_path(path: &Path, server: &SmbServer, hosts: &[NetworkHost]) -> bool {
     let waits = |entry: &ManualServerEntry| {
-        entry.awaiting_first_connect && SmbServer::new(&entry.address, entry.port).is(server, hosts)
+        (entry.awaiting_first_connect || entry.saved_from_mount)
+            && SmbServer::new(&entry.address, entry.port).is(server, hosts)
     };
     if !read_store_from_path(path).servers.iter().any(waits) {
         return false;
@@ -66,19 +67,23 @@ pub(super) fn note_first_connect_at_path(path: &Path, server: &SmbServer, hosts:
     let mut woke = false;
     for entry in store.servers.iter_mut().filter(|entry| waits(entry)) {
         entry.awaiting_first_connect = false;
+        entry.saved_from_mount = false;
         woke = true;
     }
     if woke {
         write_store_to_path(path, &store);
-        info!("A manual server saved without contact was connected; it joins the discovery list");
+        info!("A manual server nobody had connected through Cmdr was connected; it joins the discovery list");
     }
     woke
 }
 
 /// The entries that belong in the discovery list: every one but a host saved without
-/// contact that no mount went through yet. Pure.
+/// contact, or saved from someone else's mount, that no mount through Cmdr went
+/// through yet. Pure.
 pub(super) fn discoverable(entries: &[ManualServerEntry]) -> impl Iterator<Item = &ManualServerEntry> {
-    entries.iter().filter(|entry| !entry.awaiting_first_connect)
+    entries
+        .iter()
+        .filter(|entry| !entry.awaiting_first_connect && !entry.saved_from_mount)
 }
 
 #[cfg(test)]

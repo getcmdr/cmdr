@@ -26,6 +26,7 @@ fn entry(address: &str, awaiting_first_connect: bool) -> ManualServerEntry {
         added_at: "2026-10-27T00:00:00Z".to_string(),
         username: None,
         awaiting_first_connect,
+        saved_from_mount: false,
     }
 }
 

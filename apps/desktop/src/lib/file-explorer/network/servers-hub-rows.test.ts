@@ -421,6 +421,34 @@ describe('savedSmbHostIds', () => {
     )
     expect([...ids]).toEqual([])
   })
+
+  /**
+   * ❗ #324: a server Cmdr saved off someone else's mount (a Tailscale address included)
+   * is never dialed by the prefetch, the stale re-read, or ⌘R, even when the discovered
+   * host at its IP is the same NAS.
+   */
+  it('leaves out a server saved from a mount, matched by its IP or not', () => {
+    const fromMount = smbServer({
+      id: 'manual-10-0-0-4-445',
+      displayName: '10.0.0.4',
+      address: '10.0.0.4',
+      savedFromMount: true,
+    })
+    const hosts = [host({ id: 'bonjour-attic', name: 'Testnas', ipAddress: '10.0.0.4', hostname: 'testnas.local' })]
+    expect([...savedSmbHostIds([fromMount], hosts)]).toEqual([])
+    expect([...savedSmbHostIds([{ ...fromMount, savedFromMount: false }], hosts)]).toEqual(['bonjour-attic'])
+  })
+})
+
+describe('buildHubRows: a server saved by IP', () => {
+  /** The discovered host at a saved server's IP and port is that server: one row, ❌ never a second "10.0.0.4". */
+  it('claims the discovered host at its IP and port, and not one on another port', () => {
+    const saved = [smbServer({ id: 'manual-10-0-0-4-445', displayName: '10.0.0.4', address: '10.0.0.4' })]
+    const atIp = host({ id: 'bonjour-attic', name: 'Testnas', ipAddress: '10.0.0.4' })
+    expect(buildHubRows({ saved, hosts: [atIp], volumes: [] })).toHaveLength(1)
+    const otherPort = host({ id: 'bonjour-fixture', name: 'Fixture', ipAddress: '10.0.0.4', port: 10480 })
+    expect(buildHubRows({ saved, hosts: [otherPort], volumes: [] })).toHaveLength(2)
+  })
 })
 
 describe('buildHubRows: what a row carries', () => {

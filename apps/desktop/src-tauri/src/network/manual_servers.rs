@@ -107,6 +107,16 @@ pub struct ManualServerEntry {
     /// typed host.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub awaiting_first_connect: bool,
+    /// Saved by Cmdr itself because the kernel had one of its shares mounted (Finder,
+    /// `mount_smbfs`, or any mount Cmdr didn't make), so the server stays listed after
+    /// the share unmounts ([`remember_mounted_servers`]). Nobody typed it or opened it,
+    /// so, like a host saved without contact, it stays out of the discovery list and
+    /// nothing lists its shares unasked (#324) until a mount through Cmdr
+    /// ([`note_first_connect`]) or a person's own add of the address makes it ordinary.
+    /// Unnamed: its label is the address, which a Bonjour name and a typed name outrank.
+    /// ❗ Absent reads `false`.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub saved_from_mount: bool,
 }
 
 /// What an add or an edit sets on a host besides its address.
@@ -490,7 +500,8 @@ fn read_store<R: Runtime>(app: &AppHandle<R>) -> ManualServersStore {
 ///
 /// ❗ A host already saved as an ordinary one stays ordinary: a contact-free save of it
 /// can't take it out of the discovery list. A checked add of a waiting host (the probe
-/// reached it) makes it ordinary.
+/// reached it) makes it ordinary, and a person's add of a host saved from a mount makes
+/// it theirs.
 fn add_server_entry_to_path(path: &Path, mut entry: ManualServerEntry) {
     let _guard = get_store_lock().lock().unwrap_or_else(|e| e.into_inner());
     let mut store = read_store_from_path(path);
@@ -502,6 +513,7 @@ fn add_server_entry_to_path(path: &Path, mut entry: ManualServerEntry) {
             entry.username = existing.username.clone();
         }
         entry.awaiting_first_connect &= existing.awaiting_first_connect;
+        entry.saved_from_mount &= existing.saved_from_mount;
         *existing = entry;
     } else {
         store.servers.push(entry);
@@ -576,6 +588,7 @@ fn save_parsed_at(
             added_at: crate::timestamps::now_rfc3339(),
             username: username.clone(),
             awaiting_first_connect: contact == Contact::AwaitingFirstConnect,
+            saved_from_mount: false,
         };
         add_server_entry_to_path(path, entry);
     }
@@ -644,6 +657,7 @@ fn name_server_entry_at_path(
             added_at: crate::timestamps::now_rfc3339(),
             username: typed_account(edit.username.as_deref()),
             awaiting_first_connect: false,
+            saved_from_mount: false,
         };
         store.servers.push(entry.clone());
         entry
@@ -804,6 +818,10 @@ mod contact;
 use contact::discoverable;
 pub use contact::note_first_connect;
 pub use contact::save_manual_server_without_contact;
+
+#[path = "manual_servers_mounted.rs"]
+mod mounted;
+pub use mounted::remember_mounted_servers;
 
 #[path = "manual_servers_reachability.rs"]
 mod reachability;

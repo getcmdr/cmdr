@@ -382,6 +382,32 @@ launch and on every network action) leaves it out of the list too.
   sheet (`docs/design-principles.md`, "An approved action is the user's own"), so the two must not differ. The cost: a user's unchecked add
   no longer shows the host's shares right away; they appear once the user opens it.
 
+### Servers behind mounted shares
+
+`remember_mounted_servers` (`manual_servers_mounted.rs`) saves the SERVER of every SMB share the kernel has mounted
+(Finder's, `mount_smbfs`'s, anyone's) that no store knows yet, so it shows in the Servers list and stays there after the
+share unmounts. It runs at launch (not under E2E: `may_adopt_preexisting_network_mounts`) and on every mount event (the
+macOS and Windows `lifecycle::handle_volume_mounted`, Linux's mount-table watcher), off the calling thread.
+
+- **Only the server, ❌ never a share**: a share the person never opened in Cmdr is no history (§ "Saved SMB shares").
+- **Memory and the mount table only**: `volumes::smb_mounts()` (❌ no `statfs` per mount, which hangs on a dead share),
+  both stores, and `fresh_discovered_hosts`. A server any manual entry or share-history row already is (by
+  `SmbServer::is`) is skipped, and the write re-checks by id under `STORE_LOCK`, so passes are idempotent.
+- **Keyed by the mount's own spelling, port included**, ❌ never by `smb_share_parent::made_host`'s resolved address,
+  which flips between an IP and a `.local` name with discovery timing (launches would save one NAS again and again). An
+  mDNS service name in `statfs` is no hostname, so it's keyed by its `.local` one (`service_name_to_hostname`), which
+  the Servers list pairs with the discovered host of that name.
+- **Unnamed and marked `savedFromMount`**: the label is the address, which a Bonjour name and a typed name outrank (the
+  Servers list matches a discovered host at the saved IP and port, `servers_listing.rs::resolves_to`). Like a host saved
+  without contact, it stays out of `load_manual_servers`' discovery injection, so it never reads "Found nearby" off its
+  own manual host, and the hub's prefetch skips it (`savedSmbHostIds`): nothing lists its shares unasked (#324), a
+  Tailscale address included. A mount through Cmdr (`note_first_connect`), a person's own add of the address, or an
+  address edit (`relocate_at_path`) makes it ordinary.
+- **One NAS at two addresses is two servers** (LAN and Tailscale), ❌ never merged by GUID (§ "Which server a share is
+  on"). Edit server moves one to a new address and refuses one another entry holds.
+- **Forget offers to unmount first** while a share from the server is mounted (`servers-hub-actions.ts`), since the
+  next mount event or launch would save it right back; a share that won't unmount keeps the server.
+
 ### Mount path disambiguation for same-name shares
 
 When two servers have a share with the same name (for example, two NAS devices both sharing `public`), the mount code

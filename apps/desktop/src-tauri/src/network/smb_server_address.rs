@@ -94,7 +94,7 @@ pub(crate) async fn discover_server(server: &str, timeout: Duration) -> Discover
     }
 }
 
-fn is_service_name(server: &str) -> bool {
+pub(crate) fn is_service_name(server: &str) -> bool {
     server.contains("._tcp") || server.contains("._udp")
 }
 

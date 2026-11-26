@@ -21,6 +21,7 @@ import {
   listSavedServers,
   forgetServer,
   forgetServerSecret,
+  smbHostHasMounts,
 } from '#lib/tauri-commands/index.js'
 import { getCredentialStatus, setCredentialStatus } from './network-store.svelte'
 import {
@@ -210,17 +211,30 @@ export function createHubActions(deps: HubActionDeps): HubActions {
   /**
    * Forgets a saved SMB host: its manual entry, its sign-in history, and the
    * shares saved under it, and (the box, checked by default) its stored password.
-   * ❗ Nothing is unmounted.
+   *
+   * ❗ Nothing is unmounted behind the person's back. But Cmdr lists every server a
+   * mounted share comes from (`manual_servers::remember_mounted_servers`), so a host
+   * with a share still mounted would come right back: for one, the question offers to
+   * unmount its shares first, and a share that won't go keeps the host saved.
    */
   async function removeSavedSmbHost(row: HubRow): Promise<void> {
-    const question = forgetServerQuestion(
-      tString('fileExplorer.network.browser.removeHostConfirm', { hostName: row.name }),
-    )
+    const host = smbHostOf(row)
+    // The kernel's mount table, matched by where the host dials: no password read.
+    const mounted = host ? await smbHostHasMounts(host).catch(() => false) : false
+    const question = mounted
+      ? {
+          ...forgetServerQuestion(
+            tString('fileExplorer.network.browser.removeMountedHostConfirm', { hostName: row.name }),
+          ),
+          confirmLabel: tString('fileExplorer.network.browser.disconnectAndForgetButton'),
+        }
+      : forgetServerQuestion(tString('fileExplorer.network.browser.removeHostConfirm', { hostName: row.name }))
     // ❗ The password box only where one may be stored, known without a Keychain read.
     const { confirmed, checked } = mayHaveStoredPassword(row)
       ? await confirmWithCheckbox(question)
       : { confirmed: await confirmDialog(question.message, question.title, question.confirmLabel), checked: false }
     if (!confirmed) return
+    if (mounted && host && !(await unmountAllOf(host, row.name))) return
     // ❗ The password FIRST: the backend finds its names on the rows the Forget removes.
     if (checked) await forgetHostPassword(row)
     try {
@@ -231,6 +245,24 @@ export function createHubActions(deps: HubActionDeps): HubActions {
     } catch {
       addToast(tString('fileExplorer.network.browser.hostRemoveFailed', { hostName: row.name }), { level: 'error' })
     }
+  }
+
+  /**
+   * Unmounts every share of `host`, for a Forget that would otherwise see it come right
+   * back. Answers whether none is left; one that stayed (a file open on it) says so.
+   */
+  async function unmountAllOf(host: NetworkHost, label: string): Promise<boolean> {
+    try {
+      await disconnectNetworkHost(host)
+      if (!(await smbHostHasMounts(host))) return true
+    } catch (e) {
+      log.warn('Unmounting the shares of {host} before forgetting it broke down: {error}', {
+        host: host.name,
+        error: e,
+      })
+    }
+    addToast(tString('fileExplorer.network.browser.hostStillMounted', { hostName: label }), { level: 'error' })
+    return false
   }
 
   /**

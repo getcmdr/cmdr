@@ -20104,6 +20104,14 @@ export type SavedServer = {
    *  `false`, like the store field it mirrors.
    */
   awaitingFirstConnect?: boolean
+  /**
+   *  An SMB host Cmdr saved because one of its shares was mounted outside Cmdr
+   *  (Finder, `mount_smbfs`), and no mount through Cmdr has gone through since: it
+   *  stays listed after the share unmounts, but nothing lists its shares unasked
+   *  (#324). Always `false` for the other protocols. ❗ Absent reads `false`, like
+   *  the store field it mirrors (`manual_servers::ManualServerEntry`).
+   */
+  savedFromMount?: boolean
 }
 
 /**

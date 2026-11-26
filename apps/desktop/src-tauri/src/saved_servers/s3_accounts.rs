@@ -64,6 +64,7 @@ pub(super) fn s3_accounts(
                 auto_reconnect: Some(entry.auto_reconnect),
                 places: vec![place],
                 awaiting_first_connect: false,
+                saved_from_mount: false,
             }),
         }
     }

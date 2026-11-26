@@ -47,15 +47,18 @@ into a connection per saved host per launch. Three places hold the found-host li
 "Saved" is one question with one answer: `servers-hub-rows.ts::savedSmbHostIds`, the match the hub's merge makes, so a
 host that gets no prefetch is exactly a host the hub puts in its nearby group, plus a saved host still
 `awaitingFirstConnect` (saved without contact by "Add anyway" or an approved Ask Cmdr card): it's the person's, but
-nothing contacts it until they connect, so it's listed only when they open it (#777). The store reads
-`listSavedServers()` fresh per decision (`readSavedServers`, one read shared by every host that asks while it's out),
-because a host becomes the person's the moment they add it or mount one of its shares, and nothing tells the store when.
-A read that breaks answers "none saved": not knowing whose a host is must never be what signs Cmdr in to it. Pinned by
-`network-store.prefetch.test.ts`. The backend has no other caller that lists unasked: `smb_client::list_shares` is
-reached through the three listing commands, all frontend-invoked, and the share-list volume's sign-in ladder
-(`share_list_sign_in.rs`), which runs only for a pane that opened a share list (verified by reading its call sites,
-2026-11-26). E2E builds count every call per address (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`),
-which `servers-list-flows.spec.ts` reads: opening Servers asks a saved server (the prefetch) and never a found one.
+nothing contacts it until they connect, so it's listed only when they open it (#777), and minus a host Cmdr saved off
+someone else's mount (`savedFromMount`, Rust `network/DETAILS.md` § "Servers behind mounted shares"), whose shares
+nobody opened in Cmdr. The match also claims the discovered host at a saved server's IP and port (`resolvesTo`), so a
+server saved by IP is one row with its Bonjour twin. The store reads `listSavedServers()` fresh per decision
+(`readSavedServers`, one read shared by every host that asks while it's out), because a host becomes the person's the
+moment they add it or mount one of its shares, and nothing tells the store when. A read that breaks answers "none
+saved": not knowing whose a host is must never be what signs Cmdr in to it. Pinned by `network-store.prefetch.test.ts`.
+The backend has no other caller that lists unasked: `smb_client::list_shares` is reached through the three listing
+commands, all frontend-invoked, and the share-list volume's sign-in ladder (`share_list_sign_in.rs`), which runs only
+for a pane that opened a share list (verified by reading its call sites, 2026-11-26). E2E builds count every call per
+address (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`), which `servers-list-flows.spec.ts` reads: opening
+Servers asks a saved server (the prefetch) and never a found one.
 
 **How long a share list's first read takes** (the wait the prefetch hides; measured 2026-11-26 for getcmdr/cmdr#1517 §
 "Decisions", 7: `stall_probe::listing listing_done path=smb://<server>/ read_dir_ms`, a `read_dir_ms` of 0 or 1 excluded
@@ -304,19 +307,20 @@ regression guard.
 
 F8 forgets the SAVED server under the cursor: a one-place row through `forgetSavedServer` (so the hub asks exactly what
 the switcher's menu asks), an SMB host through `forgetSavedSmbHost` (its manual entry, its sign-in history, and its
-saved shares; nothing unmounted), a saved share through `forgetServer` on its id (the row and its pin only), an S3 place
-like a one-place row, an S3 account as every place under it (§ "The pure modules beside it"), and a host only mDNS knows
-about gets the "Can't remove discovered hosts" toast. A share row's right-click is an in-app menu too: Open, the pin,
-and Forget share. Right-click on a one-place row opens the house `Menu` at the pointer, holding the same list the
-switcher row's → submenu shows (`../navigation/row-menu.ts`; Open moves THIS pane, like Enter). An SMB host's is the
-same house `Menu`, from `row-menu.ts::smbHostRowMenu`: Open, Edit… for a saved host, Disconnect while a share from it is
-mounted (the one fact the menu asks on open, `smb_host_has_mounts` over the kernel's mount table), the server's account
-items (Sign in as…, Browse as guest where a guest listing worked, Forget saved password), and Forget server for a saved
-one. ❗ Opening it reads no password: the account items come from what this session's listings said, and Forget saved
-password is offered unconditionally, answering "there was none" itself (`share-list-sign-in.ts::forgetPassword`). An
-account action runs `runServerAccountAction`, the one runner the path bar's account menu and the palette share, and a
-Sign in as… or Browse as guest that lists opens the server's share list, as activating the row does. Cursor auto-clamps
-when a row disappears.
+saved shares; nothing unmounted unasked, but while a share from it is mounted the question offers "Unmount and forget",
+since Cmdr would save a mounted share's server right back, and a share that won't go keeps the host), a saved share
+through `forgetServer` on its id (the row and its pin only), an S3 place like a one-place row, an S3 account as every
+place under it (§ "The pure modules beside it"), and a host only mDNS knows about gets the "Can't remove discovered
+hosts" toast. A share row's right-click is an in-app menu too: Open, the pin, and Forget share. Right-click on a
+one-place row opens the house `Menu` at the pointer, holding the same list the switcher row's → submenu shows
+(`../navigation/row-menu.ts`; Open moves THIS pane, like Enter). An SMB host's is the same house `Menu`, from
+`row-menu.ts::smbHostRowMenu`: Open, Edit… for a saved host, Disconnect while a share from it is mounted (the one fact
+the menu asks on open, `smb_host_has_mounts` over the kernel's mount table), the server's account items (Sign in as…,
+Browse as guest where a guest listing worked, Forget saved password), and Forget server for a saved one. ❗ Opening it
+reads no password: the account items come from what this session's listings said, and Forget saved password is offered
+unconditionally, answering "there was none" itself (`share-list-sign-in.ts::forgetPassword`). An account action runs
+`runServerAccountAction`, the one runner the path bar's account menu and the palette share, and a Sign in as… or Browse
+as guest that lists opens the server's share list, as activating the row does. Cursor auto-clamps when a row disappears.
 
 `⌃⏎` (`file.contextMenu`) opens the cursor row's menu from the keyboard, the same menu a right-click opens, placed just
 under the row by `../pane/context-menu-anchor.ts`; a right-click opens it at the pointer. The "Add server…" row has

@@ -18,6 +18,7 @@ fn manual_entry(address: &str) -> ManualServerEntry {
         added_at: "2026-09-03T00:00:00Z".to_string(),
         username: None,
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 
@@ -75,6 +76,25 @@ fn an_account_label_is_the_users_name_and_an_smb_hosts_address_is_a_stand_in() {
         ServerNameSource::User
     );
     assert_eq!(find(&servers, smb_host).name_source, ServerNameSource::Fallback);
+}
+
+/// ❗ **A host saved off someone else's mount says so**, which is what keeps the hub's
+/// share prefetch off it (#324), and it ranks as a stand-in under any Bonjour name.
+#[test]
+fn a_host_saved_from_a_mount_is_listed_as_such_and_as_a_stand_in() {
+    let smb_host = "192.0.2.44";
+    let from_mount = ManualServerEntry {
+        display_name: String::new(),
+        saved_from_mount: true,
+        ..manual_entry(smb_host)
+    };
+
+    let servers = saved_servers_of(vec![from_mount]);
+
+    let smb = find(&servers, smb_host);
+    assert!(smb.saved_from_mount);
+    assert!(!smb.awaiting_first_connect, "nothing calls it not connected yet");
+    assert_eq!(smb.name_source, ServerNameSource::Fallback);
 }
 
 /// ❗ **An SMB host a person named is listed by that name, as theirs**, so the
@@ -276,6 +296,7 @@ fn manual_entry_on_port(address: &str, port: u16, name: &str) -> ManualServerEnt
         added_at: "2026-09-03T00:00:00Z".to_string(),
         username: None,
         awaiting_first_connect: false,
+        saved_from_mount: false,
     }
 }
 

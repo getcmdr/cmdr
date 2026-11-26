@@ -42,6 +42,7 @@ pub(super) fn relocate_at_path(
         added_at: existing.map_or_else(crate::timestamps::now_rfc3339, |at| store.servers[at].added_at.clone()),
         username: typed_account(edit.username.as_deref()),
         awaiting_first_connect: false,
+        saved_from_mount: false,
     };
     match existing {
         Some(at) => store.servers[at] = entry.clone(),

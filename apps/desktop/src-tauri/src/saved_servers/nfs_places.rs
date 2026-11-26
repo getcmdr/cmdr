@@ -59,6 +59,7 @@ pub(super) fn nfs_servers(
                 auto_reconnect: Some(entry.auto_reconnect),
                 places: vec![place],
                 awaiting_first_connect: false,
+                saved_from_mount: false,
             }),
         }
     }

@@ -228,6 +228,12 @@ fn check_for_mount_changes() {
     if changed {
         crate::volume_broadcast::emit_volumes_changed();
     }
+    // A CIFS share's server joins the Servers list the moment it mounts, whoever mounted
+    // it (the mount table and the stores only, no network). Off this thread: it reads
+    // and maybe writes the store file.
+    if !changes.mounted.is_empty() {
+        std::thread::spawn(crate::network::manual_servers::remember_mounted_servers);
+    }
 }
 
 /// Build a map of real (non-virtual) mount points from /proc/mounts, or `None` when it

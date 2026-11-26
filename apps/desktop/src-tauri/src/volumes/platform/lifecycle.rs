@@ -56,6 +56,10 @@ pub(crate) fn handle_volume_mounted(volume_path: &str) {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     try_upgrade_smb_mount(volume_path);
 
+    // A share's server joins the Servers list the moment it mounts, whoever mounted it.
+    // The mount table and the stores only: no network, ❌ no `statfs` on the new mount.
+    std::thread::spawn(crate::network::manual_servers::remember_mounted_servers);
+
     if let Some(app) = APP_HANDLE.get() {
         let payload = VolumeMounted {
             volume_path: volume_path.to_string(),
