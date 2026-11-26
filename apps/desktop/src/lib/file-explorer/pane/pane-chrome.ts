@@ -1,6 +1,6 @@
 /**
  * Pane chrome: each pane's tab bar, location bar (volume button, path segments, repo chip,
- * eject), and its list's sort header. Each is a `data-pane-chrome` group inside the pane's
+ * eject), and its list's sort header, or the error screen's action row in place of a list. Each is a `data-pane-chrome` group inside the pane's
  * `data-pane-chrome-scope` wrapper. The function key bar is global, not chrome.
  *
  * Keyboard users reach it through "Move focus to the pane controls" (`pane.focusControls`),

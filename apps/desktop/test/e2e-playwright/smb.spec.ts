@@ -824,7 +824,9 @@ describeSmb('SMB cross-storage copy', () => {
 // fixture's value is the real Samba round-trip.
 
 describeSmb('SMB authentication', () => {
-  test('opening the auth host asks for a sign-in, and cancelling returns to the host list', async ({ tauriPage }) => {
+  test('opening the auth host asks for a sign-in, and cancelling stays on its Sign in until ⌘[ goes back', async ({
+    tauriPage,
+  }) => {
     await ensureAppReady(tauriPage)
     const sheet = '[data-dialog-id="server-sign-in"]'
 
@@ -837,8 +839,28 @@ describeSmb('SMB authentication', () => {
     await mcpCall('open_under_cursor', {})
     await expect.poll(async () => tauriPage.isVisible(sheet), { timeout: waitBudget(30000) }).toBeTruthy()
 
-    // "Not now" leaves nothing to read on this host, so the pane goes back to the hub, with the cursor on the server.
+    // "Not now" leaves the pane on the in-pane sign-in state, the honest "you're not signed in" place, with
+    // keyboard focus on its Sign in. (A synthetic Enter doesn't press a button, so the test presses it by click.)
     await escapeOverlayUntilGone(tauriPage, sheet)
+    const focusedSignIn = `(function () {
+      var el = document.activeElement;
+      return !!el && el.tagName === 'BUTTON' && !!el.closest('.error-pane') && el.textContent.trim() === 'Sign in';
+    })()`
+    await expect
+      .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
+      .toBeTruthy()
+    expect(await hubRowUnderCursor('left')).toBeNull()
+
+    // Sign in asks again; a second "Not now" lands on Sign in again.
+    await tauriPage.evaluate(`document.activeElement.click()`)
+    await expect.poll(async () => tauriPage.isVisible(sheet), { timeout: waitBudget(15000) }).toBeTruthy()
+    await escapeOverlayUntilGone(tauriPage, sheet)
+    await expect
+      .poll(async () => tauriPage.evaluate<boolean>(focusedSignIn), { timeout: waitBudget(15000) })
+      .toBeTruthy()
+
+    // ⌘[ goes back to the hub, with the cursor on the server.
+    await pressKey(tauriPage, defaultKey('nav.back'))
     await expect
       .poll(async () => (await hubRowUnderCursor('left'))?.startsWith('SMB Test (Auth)  protocol=smb'), {
         timeout: waitBudget(15000),

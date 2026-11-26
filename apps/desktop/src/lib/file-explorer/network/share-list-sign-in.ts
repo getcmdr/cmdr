@@ -5,7 +5,7 @@
  * The share list's own component only renders what these answer. Each function takes the
  * server (its `NetworkHost` and the label the person knows it by) and answers an outcome;
  * ❌ none of them touches a view. Where cancelling lands is the CALLER's call, because it
- * differs per site: a refused listing goes back to the Servers list, "Sign in as…" stays.
+ * differs per site: a refused listing stays on its in-pane Sign in, "Sign in as…" on the list.
  *
  * ❗ **One ask at a time, guarded HERE** (`sheetRound`), since three doors (the hub's row
  * menu, the path bar's account, the palette) and the share list itself all open the sheet:

@@ -388,6 +388,12 @@ export interface FilePaneAPI {
   autoScrollDuringDrag(position: DragAutoScrollPointer, elapsedMs: number): DragAutoScrollFrameResult
 }
 
+/** Typed interface for `ErrorPane`'s exported methods used by FilePane. */
+export interface ErrorPaneAPI {
+  /** Focuses Sign in, where a cancelled share-list sign-in leaves the pane; false when the screen offers none. */
+  focusSignIn: () => Promise<boolean>
+}
+
 /** Typed interface for BriefList/FullList exported methods used by FilePane. */
 export interface ListViewAPI {
   /** Focuses the listbox without scrolling; false when it isn't mounted. */

@@ -340,22 +340,23 @@ classic anti-pattern, and with it VoiceOver said "File explorer web application�
 at launch (0.52.0); neither 2026-10-15 listening run heard it after the change.
 
 **Pane chrome.** Each pane's tab bar (`TabBar`), location bar (`FilePane`'s `.header`, a `role="toolbar"`: volume
-button, drive badges, path segments, repo chip, eject), and sort header (both views' `.header-row`, a toolbar too) carry
-`data-pane-chrome`, inside the pane's `data-pane-chrome-scope` wrapper. `pane-chrome.ts` owns it. The guard leaves focus
-there, so VoiceOver's "keyboard focus follows the VoiceOver cursor" can rest on a control. While focus is in chrome,
-`key-dispatch` forwards nothing to the pane and runs no type-to-jump: ←/→ walk the group's controls, Home/End jump to
-its ends, ↑/↓ hop to the same pane's next group, Escape returns to the list (`focusActivePane`), and the global resolver
-leaves Enter, Space, the arrows, and Home/End to the control (`paneChromeOwnsKey`). `Tab` stays `pane.switch`, and
-modifier shortcuts still run. The keyboard way in is `pane.focusControls` (default ⌃F5), landing on the volume button.
-Activating a segment, a tab, or the volume button clicks it, and the click bubbles to the pane's (or the tab bar's)
-`onclick` (`handlePaneClick` / `onPaneFocus` → `focusActivePane`), so focus lands back in the list; a menu opened from a
-focused control takes focus and gives it back to that control on close (`#lib/ui/focus-restore.ts`, `home-control`), or
-home when the control is gone. A sort button handles Enter/Space itself without a click, so focus stays on it for the
-next press (ascending, then descending). Decision: arrow-key focus, ❌ no roving `tabindex`. `Tab` never walks the page
-here, so `tabindex` would only matter to WebKit, which makes a button with an explicit `tabindex` mouse-focusable on
-macOS (`HTMLFormControlElement::isMouseFocusable`, WebKit main, source-read 2026-10-15): a click would leave focus on
-chrome, and the next arrow would walk the toolbar instead of moving the cursor. The repo chip opts in with
-`tabindex="-1"` (a status pill, `role="img"`), so a click focuses it for a moment, until the click reaches the pane.
+button, drive badges, path segments, repo chip, eject), sort header (both views' `.header-row`, a toolbar too), and the
+error screen's action row (`ErrorPane`'s `.cta`, in place of a list) carry `data-pane-chrome`, inside the pane's
+`data-pane-chrome-scope` wrapper. `pane-chrome.ts` owns it. The guard leaves focus there, so VoiceOver's "keyboard focus
+follows the VoiceOver cursor" can rest on a control. While focus is in chrome, `key-dispatch` forwards nothing to the
+pane and runs no type-to-jump: ←/→ walk the group's controls, Home/End jump to its ends, ↑/↓ hop to the same pane's next
+group, Escape returns to the list (`focusActivePane`), and the global resolver leaves Enter, Space, the arrows, and
+Home/End to the control (`paneChromeOwnsKey`). `Tab` stays `pane.switch`, and modifier shortcuts still run. The keyboard
+way in is `pane.focusControls` (default ⌃F5), landing on the volume button. Activating a segment, a tab, or the volume
+button clicks it, and the click bubbles to the pane's (or the tab bar's) `onclick` (`handlePaneClick` / `onPaneFocus` →
+`focusActivePane`), so focus lands back in the list; a menu opened from a focused control takes focus and gives it back
+to that control on close (`#lib/ui/focus-restore.ts`, `home-control`), or home when the control is gone. A sort button
+handles Enter/Space itself without a click, so focus stays on it for the next press (ascending, then descending).
+Decision: arrow-key focus, ❌ no roving `tabindex`. `Tab` never walks the page here, so `tabindex` would only matter to
+WebKit, which makes a button with an explicit `tabindex` mouse-focusable on macOS
+(`HTMLFormControlElement::isMouseFocusable`, WebKit main, source-read 2026-10-15): a click would leave focus on chrome,
+and the next arrow would walk the toolbar instead of moving the cursor. The repo chip opts in with `tabindex="-1"` (a
+status pill, `role="img"`), so a click focuses it for a moment, until the click reaches the pane.
 
 **Pane announcer.** VoiceOver never speaks a listbox's own name, neither at launch nor on `Tab` (macOS 27.0, VoiceOver
 10, 2026-10-15 spike, even with distinct names and the active descendant held back up to 1.2 s). So each `FilePane`
@@ -2113,7 +2114,10 @@ share is mounted, never listed). The ONE routing rule is `#lib/servers/share-lis
   refusal (`#lib/error-messages/access-refusal.ts`): ❌ never the existence probe, whose cache-only "no" walked the pane
   up to the hub. The sheet also opens on its own, ONCE, for a listing the person started: a door's arrival or a
   `navigateToPath` (a navigation, Retry, an account door) arms it; a tab coming back, a repaint, or a re-list nobody
-  started asks nothing (servers principle 4). Cancelling it goes to the hub.
+  started asks nothing (servers principle 4). Cancelling it STAYS on this screen with keyboard focus on Sign in
+  (`ErrorPane.focusSignIn`; Enter asks again, ⌘[ goes back): it's the honest "you're not signed in" place, and a cancel
+  that left for the hub made it unreachable. The screen's action row is pane chrome (`data-pane-chrome`), so the
+  explorer's focus guard and the sheet's focus restore both leave a focused button there.
 - **The kind's words** (`list-kind-words.ts` → `../views/list-words.ts`, plain props): the Ext column headed Description
   with each share's description in it (`extCellText`), `..` named "Back to Servers", the empty list pointing at the path
   bar's account, and the footer counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then

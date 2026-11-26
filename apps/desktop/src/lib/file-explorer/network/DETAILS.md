@@ -331,9 +331,11 @@ password read ONCE per session, else guest: `src-tauri/src/network/share_list_si
 the pane shows as the calm sign-in screen (`ErrorPane`'s Sign in, `share-list-sign-in.ts::askToSignInToList`). ❗ The
 frontend reads no Keychain and keeps no password: every stored read is the backend's, and a typed answer crosses once,
 for its own attempt (a mount's Try again sends none: `share_list_sign_in.rs::mount_with_sheet_answer`). A listing the
-person started (a door, a navigation, Retry) opens the sheet on its own once; cancelling it goes BACK to Servers,
-because this sheet is up only because the listing itself can't be read. "Sign in as…" opens the same sheet with no
-refusal and no guest, prefilled with the listed account, and its cancel stays on the list.
+person started (a door, a navigation, Retry) opens the sheet on its own once; cancelling it leaves the pane ON the
+in-pane sign-in state (`ErrorPane`'s Sign in, with keyboard focus on it: Enter asks again, ⌘[ goes back), the honest
+"you're not signed in" place. A cancel that went back to Servers made that state unreachable while the sheet covered it.
+"Sign in as…" opens the same sheet with no refusal and no guest, prefilled with the listed account, and its cancel stays
+on the list.
 
 `share-list-sign-in.ts`, the sheet round: every `attempt` is `listWithAccount`, which answers `handed_off` on success
 (nothing here connects a VOLUME, and the loaded list IS the result), keeps the sheet open on `authentication_rejected` /

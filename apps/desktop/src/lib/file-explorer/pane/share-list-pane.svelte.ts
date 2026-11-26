@@ -4,7 +4,8 @@
  * share-mount controller, rendered through the ONE `RemoteConnectView`); a door's queued
  * arrival lands once the list does (mount that share, or put the cursor on the one `..`
  * came out of); a sign-in refusal on a listing the person started opens the sheet on its
- * own, once; and the error screen names the server by its friendly label.
+ * own, once, and a cancel leaves the pane on the error screen's Sign in; and the error
+ * screen names the server by its friendly label.
  *
  * A factory, ❌ not FilePane code (FilePane is at its size cap), and ❌ never a view
  * branch: the views render the share list as any listing (`../views/list-words.ts`).
@@ -52,8 +53,11 @@ export interface ShareListPaneDeps {
   moveCursorTo: (index: number) => void
   /** Lists the share list again, the way Retry does. */
   relist: () => void
-  /** Goes back to the Servers hub, with the cursor on this server (the share list's `..`). */
-  leave: () => void
+  /**
+   * Puts keyboard focus on the error screen's Sign in (`ErrorPane`'s `focusSignIn`), where a
+   * cancelled ask leaves the pane: Enter asks again, ⌘[ goes back.
+   */
+  focusSignIn: () => void
   /** Takes the pane to another volume (the mounted share) or to a share list. */
   onVolumeChange: (change: VolumeChangePayload) => void
   /** Pushes the pane's state to `cmdr://state`. */
@@ -121,9 +125,9 @@ export function createShareListPane(deps: ShareListPaneDeps): ShareListPane {
   async function askOnce(path: string, refusal: NonNullable<FriendlyError['shareListRefusal']>): Promise<void> {
     const outcome = await askToSignInToList(path, refusal)
     if (!sameShareList(deps.getCurrentPath(), path)) return
-    // ❗ Cancelling goes back to Servers: this sheet opened because the LIST needs a sign-in,
-    // so "not now" means the person has no business here.
-    if (outcome?.kind === 'cancelled') deps.leave()
+    // ❗ Cancelling STAYS on the in-pane sign-in state, focus on its Sign in: that screen is the
+    // honest "you're not signed in" place, and a cancel that left for Servers made it unreachable.
+    if (outcome?.kind === 'cancelled') deps.focusSignIn()
     else if (outcome) deps.relist()
   }
 

@@ -506,7 +506,7 @@
     let volumeRootFromEvent = $state<string | undefined>(undefined)
 
 
-    import type { ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
+    import type { ErrorPaneAPI, ListViewAPI, VolumeBreadcrumbAPI, NetworkMountViewAPI, NetworkCursorEntry, ShareListAccountChipAPI } from './types'
     import type { StartRenameOptions } from './types'
     import type { BrowseUnlockRequest, CreatePress } from './dialog-props'
     import type { DragAutoScrollFrameResult, DragAutoScrollPointer } from '../drag/drag-auto-scroll'
@@ -514,6 +514,7 @@
     // Component refs for keyboard navigation
     let fullListRef: ListViewAPI | undefined = $state()
     let briefListRef: ListViewAPI | undefined = $state()
+    let errorPaneRef: ErrorPaneAPI | undefined = $state()
     let volumeBreadcrumbRef: VolumeBreadcrumbAPI | undefined = $state()
     let shareListAccountChipRef: ShareListAccountChipAPI | undefined = $state()
     let networkMountViewRef: NetworkMountViewAPI | undefined = $state()
@@ -817,7 +818,7 @@
         getListingId: () => listingId, getIncludeHidden: () => includeHidden, getFriendlyError: () => friendlyError,
         getListingFailed: () => Boolean(friendlyError || error),
         moveCursorTo: (index) => { moveCursorTo(index) }, relist: () => void navigateToPath(currentPath),
-        leave: () => void navigateToParent(), onVolumeChange: (change) => onVolumeChange?.(change),
+        focusSignIn: () => void errorPaneRef?.focusSignIn(), onVolumeChange: (change) => onVolumeChange?.(change),
         syncMcp: () => { debouncedSyncMcp.call() },
     })
 
@@ -2333,6 +2334,7 @@
             />
         {:else if friendlyError && !showLoadingView}
             <ErrorPane
+                bind:this={errorPaneRef}
                 friendly={friendlyError}
                 folderPath={currentPath}
                 folderLabel={shareList.label}

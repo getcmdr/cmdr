@@ -103,7 +103,7 @@ function create(initial: { volumeId?: string; path?: string } = {}) {
   const deps = {
     moveCursorTo: vi.fn(),
     relist: vi.fn(),
-    leave: vi.fn(),
+    focusSignIn: vi.fn(),
     onVolumeChange: vi.fn(),
     syncMcp: vi.fn(),
   }
@@ -222,15 +222,19 @@ describe('a door’s arrival', () => {
 })
 
 describe('a sign-in refusal', () => {
-  it('asks once on a share list the person opened, and a cancel goes back to Servers', async () => {
+  // The in-pane sign-in state is the honest "you're not signed in" place: Cancel leaves the
+  // pane on it, with focus on its Sign in (Enter asks again, ⌘[ goes back), ❌ not on Servers.
+  it('asks once on a share list the person opened, and a cancel stays on its Sign in', async () => {
     h.askToSignInToList.mockResolvedValue({ kind: 'cancelled' })
-    const { state, leave } = create()
+    const { state, focusSignIn, onVolumeChange, relist } = create()
     queueShareListArrival('left', { path: 'smb://testnas', origin: 'smb://' })
     state.friendly = signInRefusal
     flushSync()
     await vi.waitFor(() => {
-      expect(leave).toHaveBeenCalledOnce()
+      expect(focusSignIn).toHaveBeenCalledOnce()
     })
+    expect(onVolumeChange).not.toHaveBeenCalled()
+    expect(relist).not.toHaveBeenCalled()
     expect(h.askToSignInToList).toHaveBeenCalledExactlyOnceWith('smb://testnas', { type: 'auth_required', message: '' })
 
     // A repaint of the same refusal asks nothing.

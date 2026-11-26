@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy } from 'svelte'
+    import { onDestroy, tick } from 'svelte'
     import Icon from '#lib/ui/Icon.svelte'
     import type { FriendlyError } from '../types'
     import { openPrivacySettings } from '#lib/tauri-commands/index.js'
@@ -134,6 +134,24 @@
         friendly.shareListRefusal?.type === 'missing_dependency' ? friendly.shareListRefusal.installCommand : null,
     )
 
+    let ctaRow: HTMLDivElement | undefined = $state()
+
+    /**
+     * Puts keyboard focus on Sign in, where a cancelled share-list sign-in leaves the pane
+     * (`share-list-pane.svelte.ts`): Enter asks again, ⌘[ goes back. Waits a tick so the
+     * sheet that just closed has unmounted. The action row is pane chrome, so the sheet's own
+     * focus restore and the explorer's focus guard both leave it there. False when this
+     * screen offers no Sign in.
+     */
+    export async function focusSignIn(): Promise<boolean> {
+        await tick()
+        // Sign in leads the action row whenever it's offered.
+        const signInButton = offersSignIn ? ctaRow?.querySelector('button') : null
+        if (!signInButton) return false
+        signInButton.focus()
+        return true
+    }
+
     /** The sheet, for the server this share list names; a listing that landed (or failed anew) re-lists. */
     async function signIn() {
         const refusal = friendly.shareListRefusal ?? { type: 'auth_required', message: '' }
@@ -203,7 +221,10 @@
             <CopyBox text={installCommand} />
         {/if}
 
-        <div class="cta">
+        <!-- Pane chrome (`pane-chrome.ts`): a button focused here keeps Enter and Space, ←/→ walk
+             the row, and Escape goes back to the pane. Only a cancelled share-list sign-in puts
+             focus here on its own (`focusSignIn`); a click doesn't focus a button in WKWebView. -->
+        <div class="cta" bind:this={ctaRow} data-pane-chrome>
             {#if offersSignIn}
                 <Button variant="primary" onclick={() => void signIn()}>{tString('fileExplorer.network.signIn')}</Button>
             {/if}

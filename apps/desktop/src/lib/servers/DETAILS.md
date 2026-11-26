@@ -160,8 +160,8 @@ variant and the store's own words, ❌ never the secret.
 requests, so the endpoint header, the remembered username, and the refusal vocabulary can't drift between them):
 
 - **A share listing** (`../file-explorer/network/share-list-sign-in.ts`) → `listSharesWithCredentials`. Server-level, so
-  the header is `smb://<host>` and guest is offered where the host allows one. Cancelling goes back to the host list
-  (the share list's call; "Sign in as…" stays).
+  the header is `smb://<host>` and guest is offered where the host allows one. Cancelling leaves the pane on the share
+  list's in-pane sign-in state, focus on its Sign in (the share list's call; "Sign in as…" stays on the list).
 - **A share mount** (`../file-explorer/pane/share-mount.svelte.ts`) → `mountNetworkShare`, then `saveSmbCredentials` ❗
   only once it went through. Cancelling goes back to the share list.
 - **A "Connect directly" upgrade** (`../file-explorer/network/direct-connect.ts`) → `upgradeToSmbVolumeWithCredentials`,

@@ -12,6 +12,7 @@ import { mount, tick } from 'svelte'
 import ErrorPane from './ErrorPane.svelte'
 import { withPlatform } from '#lib/platform/test-platform.js'
 import type { FriendlyError } from '../types'
+import type { ErrorPaneAPI } from './types'
 
 vi.mock('#lib/tauri-commands/index.js', () => ({
   openPrivacySettings: vi.fn(() => Promise.resolve()),
@@ -81,6 +82,44 @@ describe('a share list with no tool to list it', () => {
     await tick()
     expect(target.textContent).toContain(installCommand)
     expect(buttonTexts(target)).not.toContain('Sign in')
+    target.remove()
+  })
+})
+
+describe('a share list that wants an account', () => {
+  const friendly: FriendlyError = {
+    ...base,
+    category: 'needs_action',
+    retryHint: false,
+    actionKind: 'sign_in_to_server',
+    shareListRefusal: { type: 'auth_required', message: '' },
+  }
+
+  // Where a cancelled sign-in sheet leaves the pane: focus on Sign in, so Enter asks again.
+  it('puts focus on Sign in when asked, in an action row that keeps it (pane chrome)', async () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const pane: ErrorPaneAPI = mount(ErrorPane, {
+      target,
+      props: { folderPath: 'smb://testnas', canGoBack: true, friendly },
+    })
+    await tick()
+    expect(await pane.focusSignIn()).toBe(true)
+    const focused = document.activeElement
+    expect(focused?.textContent.trim()).toBe('Sign in')
+    expect(focused?.closest('[data-pane-chrome]')).not.toBeNull()
+    target.remove()
+  })
+
+  it('has no Sign in to focus on any other error', async () => {
+    const target = document.createElement('div')
+    document.body.appendChild(target)
+    const pane: ErrorPaneAPI = mount(ErrorPane, {
+      target,
+      props: { folderPath: '/Volumes/x/y', friendly: { ...base, category: 'serious', retryHint: true } },
+    })
+    await tick()
+    expect(await pane.focusSignIn()).toBe(false)
     target.remove()
   })
 })
