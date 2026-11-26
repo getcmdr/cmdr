@@ -46,12 +46,10 @@
  * ## The single commit point
  *
  * volumeId + path + history go through one `commit(pane, { volumeId?, path,
- * history, networkHost? })` call that the pinned-tab fork, the in-place path
+ * history })` call that the pinned-tab fork, the in-place path
  * arm, the volume switch, the history walk, and every edge flow share. The ONLY
  * caller of the per-pane mutators (`setPaneVolumeId` / `setPanePath` /
- * `setPaneHistory`) is this `commit` (in `navigate-commit.ts`) — the sole exceptions are the two
- * orthogonal network-host pushes (`handleNetworkHostChange`,
- * `mirrorNetworkStateToPane`) that carry an SMB host onto the history entry.
+ * `setPaneHistory`) is this `commit` (in `navigate-commit.ts`).
  *
  * ## Transaction token (Q3 — FE-side request map keyed by side)
  *
@@ -133,7 +131,6 @@ import {
   canGoForward,
   createHistory,
   type NavigationHistory,
-  type HistoryEntry,
 } from '../navigation/navigation-history'
 import { isSnapshotPath } from '../navigation/real-folder-history'
 import { isPathOnVolume } from '#lib/path/canonical.js'
@@ -339,7 +336,6 @@ function commitVolumeSwitch(
   targetPath: string,
   options: {
     shiftFocus: boolean
-    networkHost?: HistoryEntry['networkHost']
     terminal?: boolean
     pushHistory?: boolean
     fromCancel?: boolean
@@ -350,16 +346,6 @@ function commitVolumeSwitch(
     const activeTab = getActiveTab(deps.getTabMgr(pane))
     // Record the OLD path as the last-used for the OLD volume before the swap.
     deps.persist({ kind: 'last-used-path', record: { volumeId: activeTab.volumeId, path: activeTab.path } })
-  }
-
-  // Landing on Network means the host list unless the caller names a host, the same
-  // rule `commitHistoryWalk` applies on a history entry. The pane's own effect only
-  // clears the host when the pane LEAVES the network volume, so without this a
-  // re-select from inside a host (the picker, the breadcrumb, MCP `select_volume`)
-  // left the share list — or a mount-error pane — up, with no way out but a detour
-  // through another volume.
-  if (volumeId === 'network') {
-    deps.getPaneRef(pane)?.setNetworkHost(options.networkHost ?? null)
   }
 
   if (!options.terminal && tryPinnedVolumeFork(deps, pane, { volumeId, path: targetPath })) {
@@ -374,7 +360,6 @@ function commitVolumeSwitch(
       volumeId,
       path: targetPath,
       history: options.pushHistory === false ? 'none' : 'push-entry',
-      networkHost: options.networkHost,
     })
   }
   if (options.fromCancel) {
@@ -420,7 +405,7 @@ export function navigate(intent: NavigateIntent, deps: NavigateDeps): NavigateRe
   // switch arm, even when the volume equals the pane's current one (the
   // cancel walk-up, retry, and `selectVolumeByIndex` re-select callers
   // all pass the current id on purpose).
-  return switchVolumeArm(deps, intent, to.selectVolume.volumeId, to.selectVolume.path, to.networkHost)
+  return switchVolumeArm(deps, intent, to.selectVolume.volumeId, to.selectVolume.path)
 }
 
 /**
@@ -461,19 +446,12 @@ function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, asked: L
  * correction. The unmount redirect and the walk-up additionally suppress the
  * history push (`pushHistory: false`).
  */
-function switchVolumeArm(
-  deps: NavigateDeps,
-  intent: NavigateIntent,
-  volumeId: string,
-  path: string,
-  networkHost?: HistoryEntry['networkHost'],
-): NavigateResult {
+function switchVolumeArm(deps: NavigateDeps, intent: NavigateIntent, volumeId: string, path: string): NavigateResult {
   const { pane, source } = intent
   const token = mintToken(deps, pane)
   const volumePath = deps.getVolumePathById(volumeId) ?? path
   const corrected = commitVolumeSwitch(deps, pane, token, volumeId, volumePath, path, {
     shiftFocus: shiftsFocus(source),
-    networkHost,
     terminal: source === 'fallback' || source === 'cancel',
     pushHistory: intent.pushHistory,
     fromCancel: source === 'cancel',
@@ -579,7 +557,7 @@ function navigateHistory(
 /**
  * Commits a history-walk destination (folds `updatePaneAfterHistoryNavigation`,
  * DPE:1023): set history + path, switch volume if the target entry crosses
- * volumes, record last-used-path, and restore the network host on a network entry.
+ * volumes, record last-used-path, and put the entry's cursor back.
  */
 function commitHistoryWalk(
   deps: NavigateDeps,
@@ -600,9 +578,9 @@ function commitHistoryWalk(
   deps.persist({ kind: 'pane-state', pane })
   deps.persist({ kind: 'last-used-path', record: { volumeId: entry.volumeId, path: targetPath } })
 
-  if (entry.volumeId === 'network') {
-    paneRef?.setNetworkHost(entry.networkHost ?? null)
-  } else {
+  // The `network` volume restores no cursor here: the hub keeps its own, and a share list lands
+  // like any listing.
+  if (entry.volumeId !== 'network') {
     // The entry's own cursor, never the pane's: the pane's index belongs to the
     // listing it's leaving. A copy, since readings keep writing into the entry.
     const cursor = entry.cursor ? { ...entry.cursor } : undefined

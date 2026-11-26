@@ -7,13 +7,7 @@
 import type { FilePaneAPI } from './types'
 import type { ConnectionState } from '../types'
 import { pushHistoryEntry, type TabManager } from '../tabs/tab-state-manager.svelte'
-import {
-  pushPath,
-  respellCurrentPath,
-  setCurrentIndex,
-  type NavigationHistory,
-  type HistoryEntry,
-} from '../navigation/navigation-history'
+import { pushPath, respellCurrentPath, setCurrentIndex, type NavigationHistory } from '../navigation/navigation-history'
 import type { DetermineNavigationPathArgs } from '../navigation/path-navigation'
 import type { Location } from '#lib/tauri-commands/index.js'
 import type { ReturnPoint } from './return-point'
@@ -34,9 +28,8 @@ export type NavigateSource = 'user' | 'mcp' | 'history' | 'correction' | 'cancel
  */
 export type NavigateTo =
   | { goTo: Location } // navigate to a location; in-place arm (same volume) or switch arm (different volume)
-  // Deliberately (re)activate a volume; ALWAYS the switch arm, even if already current. On the
-  // network volume, `networkHost` opens that host's share list (`..` out of an SMB share's top folder).
-  | { selectVolume: Location; networkHost?: HistoryEntry['networkHost'] }
+  // Deliberately (re)activate a volume; ALWAYS the switch arm, even if already current.
+  | { selectVolume: Location }
   | { history: 'back' | 'forward' | 'parent' }
   | { snapshot: string } // search-results snapshot id; routes through the volume-change machinery
   | { returnTo: ReturnPoint } // a cancelled load hands the pane back to what it showed
@@ -87,7 +80,7 @@ export interface NavigateCommit {
   path: string
   /**
    * History push policy. `'push-path'` pushes a same-volume path entry (the
-   * in-place arm). `'push-entry'` pushes `{ volumeId, path, networkHost? }` (the
+   * in-place arm). `'push-entry'` pushes `{ volumeId, path }` (the
    * volume-switch + edge-flow arms). `'none'` commits state without touching
    * history (the volume-unmount redirect — its no-history-push asymmetry).
    * `{ moveTo }` points history back at an entry still in the stack (the
@@ -96,8 +89,6 @@ export interface NavigateCommit {
    * (`adoptStoredSpelling`).
    */
   history: 'push-path' | 'push-entry' | 'none' | { moveTo: number } | { respellFrom: string }
-  /** For `'push-entry'` on the network volume: the host to carry on the entry. */
-  networkHost?: HistoryEntry['networkHost']
 }
 
 /** Last-used-path record: a `Location` (volumeId + path). Fired through the persistence trigger. */
@@ -229,9 +220,7 @@ export function commit(deps: NavigateDeps, c: NavigateCommit): void {
     deps.setPaneHistory(c.pane, pushPath(deps.getPaneHistory(c.pane), c.path))
   } else if (c.history === 'push-entry') {
     const volumeId = c.volumeId ?? deps.getPaneVolumeId(c.pane)
-    const entry: HistoryEntry = { volumeId, path: c.path }
-    if (c.networkHost !== undefined) entry.networkHost = c.networkHost
-    deps.setPaneHistory(c.pane, pushHistoryEntry(deps.getPaneHistory(c.pane), entry))
+    deps.setPaneHistory(c.pane, pushHistoryEntry(deps.getPaneHistory(c.pane), { volumeId, path: c.path }))
   } else if (c.history === 'none') {
     // State only, no history change.
   } else if ('respellFrom' in c.history) {

@@ -146,15 +146,13 @@ describe('the { returnTo } arm', () => {
     expect(h.tab('left')).toMatchObject({ volumeId: 'root', path: '/Users/me' })
   })
 
-  it('reopens the Servers hub host the pane showed', () => {
-    const h = makeHarness({ left: { volumeId: 'network', path: 'smb://' } })
-    const host = { name: 'nas', hostname: 'testnas.local' } as never
-    h.tab('left').history = { stack: [{ volumeId: 'network', path: 'smb://', networkHost: host }], currentIndex: 0 }
+  it('reopens the share list the pane showed', () => {
+    const h = makeHarness({ left: { volumeId: 'network', path: 'smb://testnas' } })
+    h.tab('left').history = { stack: [{ volumeId: 'network', path: 'smb://testnas' }], currentIndex: 0 }
     selectVolume(h, 'ext', '/Volumes/Ext')
 
     returnToShown(h)
 
-    expect(h.tab('left').volumeId).toBe('network')
-    expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenLastCalledWith(host)
+    expect(h.tab('left')).toMatchObject({ volumeId: 'network', path: 'smb://testnas' })
   })
 })

@@ -71,8 +71,6 @@ export interface VolumeChangePayload {
    * the other pane's or the remembered folder instead.
    */
   exact?: boolean
-  /** On the network volume: the host whose share list opens (`..` out of an SMB share's top folder). */
-  networkHost?: NetworkHost
 }
 
 /**
@@ -219,8 +217,6 @@ export interface FilePaneAPI {
   refreshCursorEntry(options?: CursorReadOptions): Promise<FileEntry | null>
   /** Cursor target inside the network view (host or share), or null. */
   getNetworkCursorEntry(): NetworkCursorEntry | null
-  /** The host whose share list the network view shows, or null (the Servers list, or not the network view). */
-  getNetworkHost(): NetworkHost | null
   setCursorIndex(index: number): Promise<void>
   getCursorIndex(): number
   /** Total cursor-addressable rows (incl. the `..` row; snapshot count for snapshot panes). */
@@ -269,7 +265,6 @@ export interface FilePaneAPI {
   /** Cursor-addressable rows in the network view (hosts or shares), `0` outside it. */
   getNetworkItemCount(): number
   refreshNetworkHosts(): void
-  setNetworkHost(host: NetworkHost | null): void
   /**
    * Opens `host`'s share list in this pane, mounting `arrival.mount` once it lands when
    * named (`share-list-arrival.svelte.ts`).

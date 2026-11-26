@@ -330,12 +330,16 @@ pub async fn connect_saved_share(
     }
 }
 
-/// The password the Keychain holds for `username` on the host, or `None` when it
-/// holds none, holds another account's, or didn't answer in time.
+/// The password this session knows for `username` on the host, or `None` when it
+/// knows none, knows another account's, or the store didn't answer in time.
+///
+/// ❗ Through `keychain::read_server_credentials_once`, the memo the share list and a
+/// bare mount share: an account a sheet proved this session answers first, and the
+/// store itself is read at most once per server per session, hit or miss.
 async fn stored_password(host_name: &str, username: &str) -> Option<String> {
     let host = host_name.to_string();
     let stored = cmdr_fs::deadline::blocking_with_timeout(SECRET_STORE_LIMIT, None, move || {
-        keychain::get_credentials(&host, None).ok()
+        keychain::read_server_credentials_once(&host)
     })
     .await?;
     (stored.username == username).then_some(stored.password)

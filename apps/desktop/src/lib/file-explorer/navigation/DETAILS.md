@@ -56,7 +56,7 @@ Purely functional: all operations return new objects, never mutate. The one in-p
 
 ```
 NavigationHistory = { stack: HistoryEntry[], currentIndex: number }
-HistoryEntry = { volumeId: string, path: string, networkHost?: NetworkHost, cursor?: HistoryCursor }
+HistoryEntry = { volumeId: string, path: string, cursor?: HistoryCursor }
 HistoryCursor = { index: number, rowPath?: string }
 PushResult = { history: NavigationHistory, droppedEntries: HistoryEntry[] }
 ```

@@ -233,38 +233,21 @@ describe('NavigationHistory', () => {
   })
 
   describe('network volume navigation', () => {
-    const networkHost = { id: 'server1', name: 'server1', hostname: 'server1.local', port: 445 }
-
-    it('tracks active network host in history', () => {
+    it('walks the hub and share lists as plain paths', () => {
       let h = createHistory('network', 'smb://')
-      h = pushH(h, { volumeId: 'network', path: 'smb://', networkHost })
+      h = pushH(h, { volumeId: 'network', path: 'smb://server1' })
+      h = pushH(h, { volumeId: 'network', path: 'smb://server2' })
 
-      expect(h.stack).toHaveLength(2)
-      expect(getCurrentEntry(h).networkHost).toEqual(networkHost)
+      expect(h.stack.map((e) => e.path)).toEqual(['smb://', 'smb://server1', 'smb://server2'])
+      expect(getCurrentEntry(back(h)).path).toBe('smb://server1')
     })
 
-    it('distinguishes different network hosts', () => {
-      const host1 = { id: 'server1', name: 'server1', hostname: 'server1.local', port: 445 }
-      const host2 = { id: 'server2', name: 'server2', hostname: 'server2.local', port: 445 }
-
-      let h = createHistory('network', 'smb://')
-      h = pushH(h, { volumeId: 'network', path: 'smb://', networkHost: host1 })
-      h = pushH(h, { volumeId: 'network', path: 'smb://', networkHost: host2 })
-
-      expect(h.stack).toHaveLength(3) // root, host1, host2
-      expect(h.stack[1].networkHost).toEqual(host1)
-      expect(h.stack[2].networkHost).toEqual(host2)
-    })
-
-    it('does not duplicate identical network host entries', () => {
-      const host = { id: 'server1', name: 'server1', hostname: 'server1.local', port: 445 }
-
-      let h = createHistory('network', 'smb://')
-      h = pushH(h, { volumeId: 'network', path: 'smb://', networkHost: host })
+    it('does not duplicate the same share list', () => {
+      let h = createHistory('network', 'smb://server1')
       const before = h
-      h = pushH(h, { volumeId: 'network', path: 'smb://', networkHost: host })
+      h = pushH(h, { volumeId: 'network', path: 'smb://server1' })
 
-      expect(h).toBe(before) // Unchanged
+      expect(h).toBe(before)
     })
   })
 

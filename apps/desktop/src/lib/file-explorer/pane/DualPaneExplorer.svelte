@@ -29,7 +29,7 @@
         onVolumeContextAction,
         onVolumeUnmounted,
     } from '#lib/tauri-commands/index.js'
-    import type { SortColumn, NetworkHost, WriteOperationError, FriendlyError, FileEntry } from '../types'
+    import type { SortColumn, WriteOperationError, FriendlyError, FileEntry } from '../types'
     import { ensureFontMetricsLoaded } from '#lib/font-metrics/index.js'
     import { determineNavigationPath } from '../navigation/path-navigation'
     import { createVolumeRootFollow } from './volume-root-follow'
@@ -45,7 +45,6 @@
     import {
         getActiveTab,
         getAllTabs,
-        pushHistoryEntry,
         trimClosedStack,
         MAX_TABS_PER_PANE,
         type MoveTabResult,
@@ -378,9 +377,8 @@
 
     // The store-backed `NavigateDeps`, built the same way `paneAccess` is — the
     // component owns the construction; `navigate()` owns the transaction logic.
-    // The ONLY callers of `setPaneVolumeId` / `setPanePath` / `setPaneHistory` are
-    // `navigate()`'s internal `commit` and the two orthogonal network-host pushes
-    // (`handleNetworkHostChange`, `mirrorNetworkStateToPane`).
+    // The ONLY caller of `setPaneVolumeId` / `setPanePath` / `setPaneHistory` is
+    // `navigate()`'s internal `commit`.
     const navigateDeps: NavigateDeps = {
         getTabMgr,
         getPaneVolumeId,
@@ -508,17 +506,6 @@
         const paneRef = getPaneRef(pane)
         if (!paneRef) return
         await paneCommands.moveCursorByNameInFileListing(paneRef, filename)
-    }
-
-    function handleNetworkHostChange(pane: 'left' | 'right', host: NetworkHost | null) {
-        setPaneHistory(
-            pane,
-            pushHistoryEntry(getPaneHistory(pane), {
-                volumeId: 'network',
-                path: 'smb://',
-                networkHost: host ?? undefined,
-            }),
-        )
     }
 
     // Re-sort both panes when directorySortMode setting changes
@@ -1284,11 +1271,6 @@
         return entry?.kind === 'server' || entry?.kind === 'host' ? entry.row : null
     }
 
-    /** The host whose share list the focused pane shows, or `null`. Edit and Rename there edit that server. */
-    export function getFocusedPaneNetworkHost(): NetworkHost | null {
-        return getPaneRef(explorerState.getFocusedPane())?.getNetworkHost() ?? null
-    }
-
     export async function handleMcpSelect(
         pane: 'left' | 'right',
         start: number,
@@ -1488,10 +1470,10 @@
                     onCursorReading={(reading: CursorReading) => {
                         recordCursor(getCurrentEntry(getPaneHistory(paneId)), reading)
                     }}
-                    onVolumeChange={({ volumeId, targetPath, exact, networkHost }: VolumeChangePayload) => {
+                    onVolumeChange={({ volumeId, targetPath, exact }: VolumeChangePayload) => {
                         navigateIntent({
                             pane: paneId,
-                            to: { selectVolume: { volumeId, path: targetPath }, networkHost },
+                            to: { selectVolume: { volumeId, path: targetPath } },
                             source: 'user',
                             exact,
                         })
@@ -1518,9 +1500,6 @@
                     }}
                     onSortChange={(column: SortColumn) => sortOps.handleSortChange(paneId, column)}
                     onSortMenu={(anchor: MenuAnchor | null) => sortOps.openDateSortMenu(paneId, anchor)}
-                    onNetworkHostChange={(host: NetworkHost | null) => {
-                        handleNetworkHostChange(paneId, host)
-                    }}
                     onCancelLoading={(cancelled: CancelLoadingPayload) => {
                         edgeFlow.handleCancelLoading(paneId, cancelled)
                     }}

@@ -291,12 +291,11 @@ describe('history walk ({ history } arm)', () => {
     if (result.status === 'started') await result.settled
   })
 
-  it('back across volumes switches the pane volume and restores a network host', () => {
+  it('back across volumes lands on the share list the entry names', () => {
     const mgr = h.mgr('left')
-    const host = { id: 'srv', name: 'srv', hostname: 'srv.local', port: 445 }
     getActiveTab(mgr).history = {
       stack: [
-        { volumeId: 'network', path: 'smb://', networkHost: host },
+        { volumeId: 'network', path: 'smb://srv' },
         { volumeId: 'root', path: '/Users/me/deep' },
       ],
       currentIndex: 1,
@@ -307,32 +306,9 @@ describe('history walk ({ history } arm)', () => {
     navigate({ pane: 'left', to: { history: 'back' }, source: 'user' }, h.deps)
 
     expect(h.tab('left').volumeId).toBe('network')
-    expect(h.tab('left').path).toBe('smb://')
-    expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenCalledWith(host)
-    // The servers hub has no rows of its own to put a cursor on.
+    expect(h.tab('left').path).toBe('smb://srv')
+    // The network volume restores no cursor from history.
     expect(h.paneState.left.paneRef?.restoreHistoryCursor).not.toHaveBeenCalled()
-  })
-})
-
-describe('{ selectVolume } with a network host (`..` out of an SMB share, #1238)', () => {
-  it('lands on the host’s share list in one history entry', () => {
-    const host = { id: 'srv', name: 'srv', hostname: 'srv.local', port: 445 }
-    const depthBefore = h.tab('left').history.stack.length
-
-    navigate(
-      {
-        pane: 'left',
-        to: { selectVolume: { volumeId: 'network', path: 'smb://' }, networkHost: host },
-        source: 'user',
-      },
-      h.deps,
-    )
-
-    expect(h.tab('left').volumeId).toBe('network')
-    expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenCalledWith(host)
-    const { stack, currentIndex } = h.tab('left').history
-    expect(stack.length).toBe(depthBefore + 1)
-    expect(stack[currentIndex]).toMatchObject({ volumeId: 'network', networkHost: host })
   })
 })
 
@@ -448,17 +424,6 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
     expect(h.paneState.left.paneRef?.navigateToPath).not.toHaveBeenCalled()
   })
 
-  it('re-selecting Network from inside a host clears the host, so the pane lands on the host list', () => {
-    h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
-
-    navigate({ pane: 'left', to: { selectVolume: { volumeId: 'network', path: 'smb://' } }, source: 'user' }, h.deps)
-
-    // Pre-fix the pane kept its open host, so `select_volume Network` was a silent
-    // no-op: the share list (or a mount-error pane) stayed up and the MCP tool
-    // timed out waiting for the volume name to drop back to plain "Network".
-    expect(h.paneState.left.paneRef?.setNetworkHost).toHaveBeenCalledWith(null)
-  })
-
   it('selecting Servers from a share list lands on the hub, never on a better path (#324)', () => {
     // The other pane on a share list would be a "valid other-pane path" to the correction,
     // which would then probe it (a dial) and move this pane onto that server's listing.
@@ -471,13 +436,5 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
 
     expect(h.tab('left').path).toBe('smb://')
     expect(h.determineNavigationPath).not.toHaveBeenCalled()
-  })
-
-  it('switching to a non-network volume leaves the network host alone (the pane clears it itself)', () => {
-    h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
-
-    navigate({ pane: 'left', to: { selectVolume: { volumeId: 'ext', path: '/Volumes/Ext' } }, source: 'user' }, h.deps)
-
-    expect(h.paneState.left.paneRef?.setNetworkHost).not.toHaveBeenCalled()
   })
 })

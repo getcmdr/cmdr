@@ -8,10 +8,9 @@
  * - forward(): moves index forward in the stack
  *
  * Each history entry contains the full navigation state: volume ID, path, and
- * optional network state (for the Network virtual volume).
+ * the cursor it last sat on (a server's share list is its own `smb://<server>` path).
  */
 
-import type { NetworkHost } from '../types'
 import type { Location } from '#lib/tauri-commands/index.js'
 
 /**
@@ -27,14 +26,11 @@ import type { Location } from '#lib/tauri-commands/index.js'
 export const MAX_HISTORY_PER_TAB = 100
 
 /**
- * A single entry in the navigation history: a `Location` (volumeId + path) plus
- * the network host the entry was browsing, when on the network volume.
- * `HistoryEntry` is NOT persisted, so composing `Location` here has zero
- * serialization impact (the `networkHost` stays out of `Location`).
+ * A single entry in the navigation history: a `Location` (volumeId + path). A server's
+ * share list is its own path (`smb://<server>`), so the path alone says what the entry showed.
+ * `HistoryEntry` is NOT persisted.
  */
 export type HistoryEntry = Location & {
-  /** For network volume: the network host (if browsing shares) */
-  networkHost?: NetworkHost
   /**
    * Where the cursor last sat while this entry was on screen, so Back and Forward
    * put it back. Written in place by `history-cursor.ts::recordCursor`, and NOT
@@ -88,15 +84,7 @@ export function createHistory(volumeId: string, path: string): NavigationHistory
 
 /** Compares two history entries for equality. */
 function entriesEqual(a: HistoryEntry, b: HistoryEntry): boolean {
-  if (a.volumeId !== b.volumeId || a.path !== b.path) {
-    return false
-  }
-  // Compare network host if present
-  const aHost = a.networkHost
-  const bHost = b.networkHost
-  if (!aHost && !bHost) return true
-  if (!aHost || !bHost) return false
-  return aHost.name === bHost.name && aHost.hostname === bHost.hostname
+  return a.volumeId === b.volumeId && a.path === b.path
 }
 
 /**

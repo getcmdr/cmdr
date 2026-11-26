@@ -136,7 +136,6 @@
     import { resolveInitialPathAction, shouldReloadAfterReachable } from './path-sync'
     import { createHiddenFilesResync } from './hidden-files-resync'
     import { countFolderOnSpace as countFolderOnSpaceAt } from './folder-size-count'
-    import { createNetworkHostState } from './network-host-state.svelte'
     import { createShareParentPane } from './share-parent-pane.svelte'
     import { createShareListPane } from './share-list-pane.svelte'
     import { createMtpDisconnectWatch } from './mtp-disconnect-watch.svelte'
@@ -185,8 +184,6 @@
         onRequestFocus?: () => void
         /** Tab in this pane's open volume switcher hands the switcher to the other pane. */
         onSwitchVolumeChooserPane?: () => void
-        /** Called when active network host changes (for history tracking) */
-        onNetworkHostChange?: (host: NetworkHost | null) => void
         /** Escape during a load: the parent puts the pane back on what it last showed */
         onCancelLoading?: (cancelled: CancelLoadingPayload) => void
         /** Called when MTP connection fails fatally (device disconnected, timeout) - parent should fall back to previous volume */
@@ -247,7 +244,6 @@
         onSortMenu,
         onRequestFocus,
         onSwitchVolumeChooserPane,
-        onNetworkHostChange,
         onCancelLoading,
         onMtpFatalError,
         onNeedsPassword,
@@ -815,14 +811,6 @@
     /** What to draw the disk-usage bar with, or `null` when there is no bar to draw. */
     const usageBar = $derived(diskSpace.volumeSpace ? getUsageBar(diskSpace.volumeSpace) : null)
 
-    // The Network host the pane has open (and any share queued to auto-mount on
-    // it), cleared whenever the pane leaves the network volume by ANY route
-    // (`network-host-state.svelte.ts`).
-    const networkHost = createNetworkHostState({
-        getIsNetworkView: () => isNetworkView,
-        onHostChange: (host) => onNetworkHostChange?.(host),
-    })
-
     // A server's share list: Enter mounts, a door's arrival lands, a sign-in refusal asks (`share-list-pane.svelte.ts`).
     const shareList = createShareListPane({
         getPaneId: () => paneId, getVolumeId: () => volumeId, getCurrentPath: () => currentPath,
@@ -942,11 +930,6 @@
         return networkMountViewRef?.getNetworkCursorEntry() ?? null
     }
 
-    // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer.getFocusedPaneNetworkHost
-    export function getNetworkHost(): NetworkHost | null {
-        return isNetworkView ? networkHost.host : null
-    }
-
     /** Also scrolls to make the cursor visible and syncs state to MCP. */
     export async function setCursorIndex(index: number): Promise<void> {
         if (isNetworkView) {
@@ -1055,10 +1038,10 @@
         if (!rename.active) quickFilterSession.cycle()
     }
 
-    // A pattern belongs to its listing; a new one starts unfiltered on the backend. A network
-    // view has no listing, so its session goes with the list it was opened on.
+    // A pattern belongs to its listing; a new one starts unfiltered on the backend. A share
+    // list is a listing too, so a new server's shares get a new id and a fresh filter.
     $effect(() => {
-        dependOn(listingId, networkHost.host)
+        dependOn(listingId)
         untrack(() => {
             quickFilter.reset()
             quickFilterSession.end()
@@ -1459,11 +1442,6 @@
         return currentPath
     }
 
-    // noinspection JSUnusedGlobalSymbols -- Used dynamically
-    export function setNetworkHost(host: NetworkHost | null): void {
-        networkHost.setHost(host)
-    }
-
     // noinspection JSUnusedGlobalSymbols -- used by DualPaneExplorer's pane mirror and SMB hand-off
     export function openShareList(host: NetworkHost, arrival?: { mount?: string }): void {
         shareList.openServer(host, arrival)
@@ -1472,20 +1450,12 @@
     /**
      * Navigates up and selects the folder we came from. Returns false if already at root.
      *
-     * On the Network volume "up" walks the browser stack, not a directory tree: a
-     * host's share list (and the mount-error pane it turns into on a mount that
-     * didn't go through) steps back to the host list, exactly like the Escape /
-     * Backspace / ⌘↑ the share list binds. Without this the file-list primitive had
-     * nothing to walk, so ⌘↑ and the MCP `nav_to_parent` tool were silent no-ops
-     * there and an agent had no way out of a failed mount.
+     * A share's top folder goes up to its server's share list, and a share list up to the
+     * Servers hub; the hub itself is a root (nothing above it, so `false`).
      */
     export function navigateToParent(): Promise<boolean> {
         if (shareParent.leaveTopFolder() || leaveShareList()) return Promise.resolve(true)
-        if (isNetworkView) {
-            if (networkHost.host === null) return Promise.resolve(false)
-            networkHost.handleHostChange(null)
-            return Promise.resolve(true)
-        }
+        if (isNetworkView) return Promise.resolve(false)
         return loader.navigateToParent()
     }
 

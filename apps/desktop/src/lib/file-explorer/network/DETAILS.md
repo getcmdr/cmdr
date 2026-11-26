@@ -602,11 +602,11 @@ in flight is ignored.
 
 ## Mount-phase auth failures
 
-`NetworkMountView.svelte` (in `../pane/`) opens the sign-in sheet instead of dead-ending in its error pane whenever
-`mountNetworkShare` rejects with a failure another credential can answer (`smb-sign-in.ts::isMountSignInQuestion`):
-`auth_failed` (including the NetAuth -6600 code the backend maps), `auth_required`, and `permission_denied`. The sheet
-opens carrying that refusal, pre-filled with the username the failed attempt tried; what its `attempt` then runs is
-`../../servers/DETAILS.md` § "The sheet contract".
+The share-mount controller (`../pane/share-mount.svelte.ts`) opens the sign-in sheet instead of dead-ending in its error
+pane whenever `mountNetworkShare` rejects with a failure another credential can answer
+(`smb-sign-in.ts::isMountSignInQuestion`): `auth_failed` (including the NetAuth -6600 code the backend maps),
+`auth_required`, and `permission_denied`. The sheet opens carrying that refusal, pre-filled with the username the failed
+attempt tried; what its `attempt` then runs is `../../servers/DETAILS.md` § "The sheet contract".
 
 A share guests can list but not open reaches here as `auth_required`, not as the "not found" NetFS reports: the backend
 asks the server itself which it was (`src-tauri/src/network/DETAILS.md` § "A share that says not found"). That is what
@@ -616,7 +616,7 @@ and keeps the sheet open on `account_not_permitted`, so the user can try another
 Two properties are load-bearing:
 
 - **`mountError` is set for an auth failure too**, so the pane behind the sheet holds the failure and the MCP mirror
-  reports it. Cancelling clears it through `handleMountErrorBack`, back to the share list.
+  reports it. Cancelling clears it through the controller's `back`, back to the share list.
 - **`auth_required` gets a calm pane, ❌ never the red one.** Behind the sheet it reads "Sign in to open …" with a lock,
   Sign in, and Back, and no Try again (without an account it gets the same answer). `auth_failed` and
   `permission_denied` keep the red "Couldn't mount share" pane: there an answer the person gave was turned away. A share
@@ -626,9 +626,9 @@ Two properties are load-bearing:
   `mount_missing` (the system reported the share connected and no mount of it is there:
   `src-tauri/src/network/DETAILS.md` § "A reported mount counts once it's there") answers `handed_off`, closing the
   sheet onto the pane's error state with its own "Try again" / "Back": the sheet has no words for a share that went
-  missing. Non-auth failures never open it in the first place. Pinned by `../pane/NetworkMountView.test.ts`.
+  missing. Non-auth failures never open it in the first place. Pinned by `../pane/share-mount.svelte.test.ts`.
 
-**The pane's words are the frontend's.** `NetworkMountView` renders `renderMountError(error, host.name)`
+**The pane's words are the frontend's.** The share-mount controller renders `renderMountError(error, host.name)`
 (`mount-error-messages.ts`): one `errors.mount.*` key per `MountError` variant, in a record typed over the variants so a
 new one can't ship without words. It names the host the way the pane shows it, since the backend only knows the address
 it mounted by. `mountNetworkShare` throws the typed value as a `MountFailure` (`mount-error.ts`), and a caught value
@@ -638,13 +638,13 @@ same sentence plus the typed `reason`. Why the variants are cut the way they are
 
 ## A mount that waits
 
-A NetFS mount can hang behind a stuck macOS sign-in helper for the whole mount timeout (#604), so `NetworkMountView`
-renders the wait through `../pane/RemoteConnectView.svelte`, the ONE remote-wait view: a `connecting` state named after
-the share, with the server's friendly name beside it ("testshare on Testnas": the hub's label, else the host's name) and
-the `host:port` it dials under that, and that view's Cancel (`share.back` cancels too, since no browser is mounted to
-take the key). Each mount mints an attempt id (`newServerAttemptId`) and passes it to `mountNetworkShare`; Cancel hands
-it to `cancelServerConnect`. After 10 s (`MOUNT_SLOW_AFTER_MS`, the backend's `SUSPECT_AFTER`) the state's `hint` swaps
-the generic "This can take a few seconds." for a line saying it's still waiting for macOS.
+A NetFS mount can hang behind a stuck macOS sign-in helper for the whole mount timeout (#604), so the share-mount
+controller renders the wait through `../pane/RemoteConnectView.svelte`, the ONE remote-wait view: a `connecting` state
+named after the share, with the server's friendly name beside it ("testshare on Testnas": the hub's label, else the
+host's name) and the `host:port` it dials under that, and that view's Cancel (`share.back` cancels too, since no browser
+is mounted to take the key). Each mount mints an attempt id (`newServerAttemptId`) and passes it to `mountNetworkShare`;
+Cancel hands it to `cancelServerConnect`. After 10 s (`MOUNT_SLOW_AFTER_MS`, the backend's `SUSPECT_AFTER`) the state's
+`hint` swaps the generic "This can take a few seconds." for a line saying it's still waiting for macOS.
 
 - **The wait keeps its own copy of what it names** (`mounting`: share, server, address), captured at mount start: a
   mount that went through clears `lastMountAttempt`, the host, and its label before it lands on the share, and the wait
@@ -658,8 +658,8 @@ the generic "This can take a few seconds." for a line saying it's still waiting 
   with the command that restarts the helper. Try again re-mounts; while the old NetFS call is still stuck in the same
   helper, the backend answers the same right away. How the backend decides: `src-tauri/src/network/DETAILS.md` § "A
   mount Cmdr gave up on, and a wedged sign-in helper".
-- **The running mount keeps its own `mounting` copy** (share + address), ❌ not one derived from `lastMountAttempt` and
-  `currentNetworkHost`: a mount that went through clears both before it lands on the share, with the wait still up.
+- **The running mount keeps its own `mounting` copy** (share + address), ❌ not one derived from `lastMountAttempt`: a
+  mount that went through clears it before it lands on the share, with the wait still up.
 
 ## SMB live-reconnect flow (cross-component)
 
@@ -800,10 +800,9 @@ the hosts it found, so a view opens on them at once and the fresh browse adds an
 
 ## Gotchas
 
-- **`currentNetworkHost` lives in both `NetworkMountView` (local) and `FilePane` (via `initialNetworkHost` +
-  `onNetworkHostChange`).** When `NetworkMountView` mutates its copy (mount success, back), it must propagate via
-  `onNetworkHostChange`, or switching away from Network and back re-mounts with a stale host (bit E2E test 436 "unicode
-  shares render" where a prior guest-share mount left FilePane stuck on guest).
+- **Which server a pane shows is its path alone** (`smb://<server>`): no component holds a host copy beside it, so the
+  stale-host bug a second copy once caused (leaving Servers and coming back re-mounted with an old host, E2E "unicode
+  shares render") can't happen.
 - **`network` volume ID is virtual**: the discovery UI has no real mount point until a share is mounted via
   `mount_smbfs`. Mounted shares then appear as separate `VolumeInfo` entries with real IDs.
 - **Credential status keyed by lowercase `host.name`**: the same physical host can change IP (DHCP) and hostname (mDNS

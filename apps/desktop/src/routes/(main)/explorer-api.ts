@@ -9,7 +9,7 @@ import type { McpSelectMode, McpTabAction, ConfirmDialogType } from '#lib/comman
 import type { ActiveTabMove, TabMoveRequest } from '#lib/file-explorer/pane/tab-operations.js'
 import type { MoveTabResult } from '#lib/file-explorer/tabs/tab-state-manager.svelte.js'
 import type { QuickLookKeyEventPayload } from '#lib/file-explorer/quick-look/quick-look-state.svelte.js'
-import type { FileEntry, FriendlyError, NetworkHost, TransferOperationType } from '#lib/file-explorer/types.js'
+import type { FileEntry, FriendlyError, TransferOperationType } from '#lib/file-explorer/types.js'
 import type {
   AdoptedOperationData,
   ConfirmOptions,
@@ -343,8 +343,6 @@ export interface ExplorerAPI {
    * Edit and Rename there edit (`editHubRow`).
    */
   getFocusedPaneHubRow: () => HubRow | null
-  /** The host whose share list the focused pane shows, or `null`. */
-  getFocusedPaneNetworkHost: () => NetworkHost | null
   injectError: (pane: 'left' | 'right', friendly: FriendlyError) => void
   resetError: (pane: 'left' | 'right' | 'both') => void
   /** E2E only: drive the native drag-and-drop drop entry programmatically (real

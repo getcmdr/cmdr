@@ -5,7 +5,6 @@
     interface HistoryEntry {
         volumeId: string
         path: string
-        networkHost?: { name: string; hostname: string }
     }
 
     interface NavigationHistory {
@@ -54,9 +53,6 @@
 
     /** Format a history entry for display */
     function formatEntry(entry: HistoryEntry): string {
-        if (entry.networkHost) {
-            return `${entry.networkHost.name} (${entry.networkHost.hostname})`
-        }
         // eslint-disable-next-line cmdr/no-raw-path-arithmetic -- a debug-only label
         const parts = entry.path.split('/')
         const lastPart = parts[parts.length - 1] || parts[parts.length - 2] || entry.path

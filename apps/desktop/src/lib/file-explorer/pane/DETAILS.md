@@ -143,8 +143,6 @@ suite:
   `supportsTrash`, plus the archive boundary), shared by the delete opener and the rename conflict dialog. A volume
   missing from the list answers YES on purpose: a refused trash is honest and reversible, a permanent delete isn't. A
   caller with its own reason to force permanence (an online-only cloud file) folds it in on top.
-- `network-host-state.svelte.ts`: the Network host a history entry still names (nothing sets one now: a share list is a
-  path), retiring with the history plumbing.
 - `share-list-pane.svelte.ts`: a pane's side of a server's share list (Enter mounts, a door's arrival lands, a sign-in
   refusal asks once, the error screen's friendly label), with `share-list-arrival.svelte.ts` (what a door queued, per
   pane) and `list-kind-words.ts` (the list's words on the kind). § "A server's share list (kind-from-path)".
@@ -172,7 +170,7 @@ suite:
 **Where a factory is CREATED matters when it owns `$effect`s.** Svelte runs effects in creation order, so a factory
 whose effects interact with the component's own (`selection-info-feed`, which feeds the MCP push and the menu-context
 effect) is created at the spot its effects used to occupy, not with the other factories at the top. Ones whose effects
-touch only their own state (`row-overlays`, `network-host-state`) sit wherever reads them best.
+touch only their own state (`row-overlays`) sit wherever reads them best.
 
 **Deps are deferred closures**, so a factory can be created before the state it reads is declared. That's what lets the
 listing loader (created near the top) reach `caps`, `hasParent`, and the feeds declared hundreds of lines below.
@@ -1383,10 +1381,9 @@ replaced, so a reader sees a pane that simply didn't move. The same push names e
 `navigate(intent, deps)` entry. `DualPaneExplorer` builds the `NavigateDeps` (store getters/mutators + the FilePane
 handle + the persistence trigger + the side-keyed token map) and wraps `navigate()` as its `navigate` export; the bus,
 the MCP adapter, the four external write-callers, and the FilePane render-prop shims all call it. It sits ON TOP of the
-FilePane listing primitives (`navigateToPath` / `navigateToParent`); listing mechanics stay pane-owned. The only callers
-of `setPaneVolumeId` / `setPanePath` / `setPaneHistory` are `navigate()`'s internal `commit` plus the two orthogonal
-network-host pushes (`handleNetworkHostChange`, `mirrorNetworkStateToPane`, which carry an SMB host onto the history
-entry — they're not pane-destination changes).
+FilePane listing primitives (`navigateToPath` / `navigateToParent`); listing mechanics stay pane-owned. The only caller
+of `setPaneVolumeId` / `setPanePath` / `setPaneHistory` is `navigate()`'s internal `commit`. Which server a pane shows
+lives in its path alone (`smb://<server>`), so no history entry carries a host beside it.
 
 The transaction is split across four files for length, with no import cycle: `navigate-commit.ts` holds the contract
 types, `commit`, and token minting, which `navigate.ts` and `navigate-return.ts` both import instead of each other;
@@ -1432,11 +1429,6 @@ return-point bookkeeping. `navigate.ts` re-exports the names callers use, so the
   rather than a platform accident — macOS's `resolve_location` already fails the shape (`statfs` on a non-path), but
   Linux's longest-prefix mount match hands it back as the ROOT volume, which a pane would then try to list. Go to path
   refuses the same shape one layer earlier (`#lib/go-to-path/DETAILS.md` § The scheme intercept).
-- **A switch TO the `network` volume resets the pane's open host** (`commitVolumeSwitch` calls
-  `paneRef.setNetworkHost(options.networkHost ?? null)`, mirroring what `commitHistoryWalk` does for a history entry).
-  The pane's own effect only clears the host when it LEAVES the network volume, so without this a re-select from inside
-  a host (picker, breadcrumb, MCP `select_volume`) left the share list — or a mount-error pane — on screen, and the MCP
-  tool timed out waiting for the volume name to fall back to plain `Network`.
 - **Token model (the staleness mechanism).** A per-pane `txToken` (caller-owned `Map`), minted by every `navigate()` arm
   that starts a navigation, does two jobs. It carries the same-token self-re-entry rule: a parent-nav / walk-up
   completion re-entering via `onPathChange` carries the SAME token and so commits (not dropped). And it's the per-pane

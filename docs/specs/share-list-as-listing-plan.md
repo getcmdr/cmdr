@@ -818,6 +818,18 @@ added.
   finds nothing outside discovery types (the `networkHostFound`/`Lost`/`Resolved` events don't match `-w`), and every M1
   pin is green.
 
+- **As landed** (for M7):
+  - The grep finds nothing in `apps/desktop/src` (`share-mount.svelte.ts`'s `networkHost` params became `host`).
+  - `commitHistoryWalk` still restores no cursor on the `network` volume (the hub keeps its own); a share list could
+    take the generic restore now, a free improvement left out of a dead-code milestone.
+  - Keychain: `smb_saved_shares.rs::stored_password` (a saved share's dial, which a pane restored onto a saved share
+    also reaches at launch) now goes through `read_server_credentials_once`, pinned by
+    `a_saved_share_reads_the_store_once_hit_or_miss`. `smb_server_address.rs::get_keychain_password` stays direct: the
+    OS-mount upgrade reads share-level and port-variant keys from its launch and mount-watch passes, a background path
+    by design of the upgrade, outside this plan (`src-tauri/src/network/DETAILS.md`, the Keychain line).
+  - `NetworkMountView.svelte` is the hub's thin wrapper; `NetworkMountView.wiring.test.ts` (stubbed hub) brings it to
+    100% lines.
+
 ### M7: close-out
 
 - **Scope**: dead i18n keys (the header's back arrow, connecting sentence, share-list error titles if unused), `knip`,

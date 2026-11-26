@@ -135,3 +135,25 @@ fn a_favorited_share_off_445_files_under_the_same_server_name_a_cmdr_mount_uses(
         "the address stays what the mount dialed"
     );
 }
+
+/// ❗ **A saved share's mount reads the Keychain at most once per server per session,
+/// sharing the share list's memo** (`keychain::read_server_credentials_once`): a miss
+/// stays spent, so a second dial (Try again, the next Enter) never raises another
+/// system prompt, even once a password sits in the store behind the cache.
+#[tokio::test]
+async fn a_saved_share_reads_the_store_once_hit_or_miss() {
+    let _secrets = crate::test_support::isolate_secrets();
+    let host = "saved-share-once.local";
+
+    assert_eq!(stored_password(host, "test_user_1").await, None, "nothing stored yet");
+    let account = format!("smb://{}", crate::network::server_identity::credential_key(host));
+    crate::secrets::store()
+        .set(&account, b"test_user_1\x0012345678")
+        .expect("stored behind the cache");
+
+    assert_eq!(
+        stored_password(host, "test_user_1").await,
+        None,
+        "the one read was spent on the miss"
+    );
+}

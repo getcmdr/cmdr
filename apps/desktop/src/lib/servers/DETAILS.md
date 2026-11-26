@@ -659,8 +659,8 @@ fake `volumeId`).
 1. **The hub's cursor row** (`ExplorerAPI.getFocusedPaneHubRow()`, an SMB host's included). A row with a `volumeId` wins
    outright as a place; an SMB server row is an `smb-server` (a saved host mDNS isn't seeing stands for the host its
    address makes, `savedHostFor`).
-2. **The server whose share list the pane shows** (`getFocusedPaneNetworkHost()`, read in ONE place in the handlers,
-   `shareListHost`), an `smb-server`.
+2. **The server whose share list the pane shows** (read from the pane's path by `share-list-label.ts::shareListHostAt`,
+   in ONE place in the handlers, `shareListHost`), an `smb-server`.
 3. **The focused pane's own volume**, for a pane standing INSIDE a server, filtered through `isServerPlaceRow` so a
    mounted SMB share, the synthetic hub row, and a local disk all answer `null`.
 
@@ -683,10 +683,10 @@ Two details are load-bearing:
 read through the shortcut system like every command) and `servers.edit` hand
 `../file-explorer/network/servers-hub-actions.ts::editServerInView` what the pane shows: the hub row under the cursor
 (`ExplorerAPI.getFocusedPaneHubRow()`, an SMB host's included, since the `host` arm of `NetworkCursorEntry` carries its
-row), else the host whose share list is up (`getFocusedPaneNetworkHost()`), matched to its saved server by the hub's own
-merge. Off that volume they keep their file-list meaning. ❗ Every case answers: a row with nothing saved to edit (a
-share, a host only mDNS sees) and "Add server…" under the cursor each get a one-line info toast, ❌ never silence. That
-is also why the F-key bar's F2 button is enabled there (`FunctionKeyBar.svelte`'s `canRename`).
+row), else the host whose share list is up (`shareListHostAt` on the pane's path), matched to its saved server by the
+hub's own merge. Off that volume they keep their file-list meaning. ❗ Every case answers: a row with nothing saved to
+edit (a share, a host only mDNS sees) and "Add server…" under the cursor each get a one-line info toast, ❌ never
+silence. That is also why the F-key bar's F2 button is enabled there (`FunctionKeyBar.svelte`'s `canRename`).
 
 The handlers themselves (`src/routes/(main)/command-handlers/servers-handlers.ts`) then route a place through
 `../file-explorer/navigation/server-row-actions.ts::runServerRowAction` and an SMB server through the functions its row

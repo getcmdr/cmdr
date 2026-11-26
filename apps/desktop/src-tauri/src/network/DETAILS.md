@@ -1075,8 +1075,12 @@ is mounted, ❌ never entered here). Tracking issue: getcmdr/cmdr#1511; the fron
 - **The Keychain is read at most once per server per session** (`keychain::read_server_credentials_once` over
   `keychain_session.rs`'s `ReadOnce`, keyed by the server-level account name): a hit lands in the keychain's cache, a
   miss is remembered as spent, and a turn lock makes a racing listing and mount ask once. ❌ Only a pane listing and a
-  person's mount reach it; pinned by `keychain_session_test.rs` and `share_list_sign_in_test.rs`, and the no-dial pin
-  (`a_read_that_is_no_pane_never_dials`) is also the no-read pin, since `ServerShares::list` is the only way to it.
+  person's mount reach it (a bare share mount, and a saved share's dial, `smb_saved_shares.rs::stored_password`);
+  pinned by `keychain_session_test.rs`, `share_list_sign_in_test.rs`, and
+  `a_saved_share_reads_the_store_once_hit_or_miss`, and the no-dial pin (`a_read_that_is_no_pane_never_dials`) is
+  also the no-read pin, since `ServerShares::list` is the only way to it. ❗ The OS-mount upgrade
+  (`smb_server_address.rs::get_keychain_password`) reads the store on its own, per share and per key spelling, from
+  its launch, mount-watch, and pane-open passes: outside this memo, by design of the upgrade, not of the share list.
 - **The session credential**: a sheet's answer that worked (`list_shares_with_credentials`, or a mount sent
   credentials) becomes the server's (`keychain::remember_for_session`), Remember or not, under its discovery name and
   its dialed name ❗ on ITS port (a bare hostname would sign the 445 server on the same machine in). The pane's

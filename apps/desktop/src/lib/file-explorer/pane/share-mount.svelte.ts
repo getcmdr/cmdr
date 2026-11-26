@@ -100,10 +100,10 @@ export interface ShareMount {
 }
 
 /** Returns the hostname or IP to connect to (port goes separately), falling back to the hostname for loopback. */
-function resolveServerAddress(networkHost: NetworkHost): string {
-  const ip = networkHost.ipAddress
+function resolveServerAddress(host: NetworkHost): string {
+  const ip = host.ipAddress
   const isLoopback = ip === '127.0.0.1' || ip === '::1'
-  return (isLoopback ? networkHost.hostname : ip) ?? networkHost.hostname ?? networkHost.name
+  return (isLoopback ? host.hostname : ip) ?? host.hostname ?? host.name
 }
 
 /** `host:port` the way the other connecting views show it (`serverAddressOf`), an IPv6 host bracketed. */
@@ -115,9 +115,9 @@ function dialedAddress(server: string, port: number): string {
  * What the person calls the host (the hub's label, else its name), or `null` when that's
  * only its address: the dialed `host:port` shows under it, and one address twice says nothing.
  */
-function friendlyServerName(networkHost: NetworkHost, label: string | undefined, dialed: string): string | null {
-  const friendly = label ?? networkHost.name
-  const isAddress = [dialed, networkHost.ipAddress].some((a) => a?.toLowerCase() === friendly.toLowerCase())
+function friendlyServerName(host: NetworkHost, label: string | undefined, dialed: string): string | null {
+  const friendly = label ?? host.name
+  const isAddress = [dialed, host.ipAddress].some((a) => a?.toLowerCase() === friendly.toLowerCase())
   return isAddress ? null : friendly
 }
 

@@ -59,11 +59,9 @@ export function returnToShown(deps: NavigateDeps, intent: NavigateIntent, point:
     path: point.shown.path,
     // An entry a later push truncated away comes back as a fresh one.
     history: index === null ? 'push-entry' : { moveTo: index },
-    networkHost: point.entry.networkHost,
   })
 
   const paneRef = deps.getPaneRef(pane)
-  if (point.shown.volumeId === 'network') paneRef?.setNetworkHost(point.entry.networkHost ?? null)
   if (point.shown.volumeId !== leavingVolumeId || !paneRef) return { status: 'started', settled: SETTLED_NOOP }
   return { status: 'started', settled: paneRef.navigateToPath(point.shown.path, intent.selectName) }
 }

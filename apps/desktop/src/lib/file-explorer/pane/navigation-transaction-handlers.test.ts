@@ -33,7 +33,7 @@ const captured = vi.hoisted((): { props: Record<string, Record<string, unknown>>
 const suppressRef = vi.hoisted(() => ({ paneId: null as string | null }))
 
 // A no-op function for every method the coordinator may call on a pane ref
-// (`getListingId`, `navigateToPath`, `setNetworkHost`, `clearJumpState`, …). The
+// (`getListingId`, `navigateToPath`, `clearJumpState`, …). The
 // instance is a plain object of named no-ops rather than a Proxy: a Proxy that
 // answers EVERY property (incl. Svelte's internal symbols) corrupts mount.
 function makePaneRefStub(): Record<string, () => unknown> {
@@ -41,8 +41,6 @@ function makePaneRefStub(): Record<string, () => unknown> {
     'getListingId',
     'navigateToPath',
     'navigateToParent',
-    'setNetworkHost',
-    'setNetworkAutoMount',
     'clearJumpState',
     'cancelRename',
     'getCursorEntry',

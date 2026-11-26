@@ -23,7 +23,6 @@ function dispatch(args: unknown) {
   const explorerRef = {
     startRename: vi.fn(),
     getFocusedPaneHubRow: () => null,
-    getFocusedPaneNetworkHost: () => null,
   }
   fileHandlers['file.rename']({ explorerRef, ctx: {}, dispatchArgs: args } as unknown as CommandHandlerContext)
   return explorerRef
