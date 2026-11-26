@@ -644,6 +644,51 @@ fn two_mounts_of_one_share_are_adopted_once_from_the_share_root() {
     assert_eq!(paths, ["/Volumes/SYSVOL"]);
 }
 
+/// The adopter pass runs on every Servers visit. A share whose upgrade failed used to
+/// be re-dialed (and its Keychain entry re-read) on each one: 24 rounds, 123 guest
+/// refusals, and 276 Keychain lookups in one QA session. Each share gets ONE try from
+/// the pass per run; retries belong to the person opening it, a remount, "Connect
+/// directly", or the per-share switch.
+#[test]
+fn the_adopter_pass_tries_each_share_once_per_run() {
+    let mounts = || {
+        vec![
+            (
+                "/Volumes/testshare".to_string(),
+                mount_of("192.168.50.10", "testshare", 445),
+            ),
+            (
+                "/Volumes/testshare2".to_string(),
+                mount_of("192.168.50.30", "testshare2", 445),
+            ),
+        ]
+    };
+    let paths = |picked: &[(String, SmbMountInfo)]| picked.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>();
+    let mut tries = AdopterTries::default();
+
+    // Asking without claiming (the pass's cheap pre-gate) spends nothing.
+    assert_eq!(
+        paths(&tries.untried(mounts())),
+        ["/Volumes/testshare", "/Volumes/testshare2"]
+    );
+    assert_eq!(
+        paths(&tries.claim(mounts())),
+        ["/Volumes/testshare", "/Volumes/testshare2"]
+    );
+
+    // The next visit finds both still on the OS mount, and leaves them alone.
+    assert!(tries.untried(mounts()).is_empty());
+    assert!(tries.claim(mounts()).is_empty());
+
+    // A share mounted since then is new to the pass, and gets its one try.
+    let mut later = mounts();
+    later.push((
+        "/Volumes/testshare3".to_string(),
+        mount_of("192.168.50.40", "testshare3", 445),
+    ));
+    assert_eq!(paths(&tries.claim(later)), ["/Volumes/testshare3"]);
+}
+
 /// When no predecessor exists, `register_replacing_predecessor` just
 /// registers — no lifecycle hook (there's nothing to call it on), no panic.
 #[tokio::test]

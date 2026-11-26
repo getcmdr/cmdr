@@ -101,6 +101,14 @@ where it's a diagnostic. Before this, `try_smb_upgrade` built an English sentenc
 "Direct connection failed: " (the style guide forbids "failed" outright), and the two catch-block call sites pasted a
 raw `String(e)` in the same slot.
 
+**Each share gets ONE try from the pass per app run** (`smb_upgrade::AdopterTries`, keyed by volume id). The pass
+runs on every networking intent, every Servers visit included, and re-dialing each share whose try failed re-read its
+Keychain entry every time: 24 rounds, 123 guest refusals, and 276 Keychain lookups in one QA session. The pre-gate asks
+`untried` (spending nothing, so a pass that returns before its scan keeps the try); the act-time scan `claim`s. Retries
+come from paths where someone is looking at the share: the pane-open upgrade (its 60 s cooldown), the mount watcher on a
+remount, "Connect directly", and the per-share switch. A share mounted later in the run is new to the pass and gets its
+try.
+
 **Only one pass runs at a time** (`smb_upgrade::UpgradePass`, an RAII guard over a process-global flag).
 `note_network_action` calls `upgrade_existing_smb_mounts` on every user networking action, so without the
 guard N actions stack N passes that each sleep 15 s and then fire. Dropping the extra triggers is safe precisely

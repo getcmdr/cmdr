@@ -276,6 +276,47 @@ impl Drop for UpgradePass {
     }
 }
 
+/// The shares the adopter pass has dialed this run, by volume id: each gets ONE try
+/// from the pass per app run.
+///
+/// The pass runs on every networking intent, and every Servers visit is one. Without
+/// this, a share whose upgrade failed (a guest refusal, a missing password) was
+/// re-dialed and its Keychain entry re-read on each visit: 24 rounds, 123 guest
+/// refusals, and 276 Keychain lookups in one QA session. Retries belong to paths
+/// where someone is looking at the share: the pane-open upgrade (its own cooldown),
+/// the mount watcher on a remount, "Connect directly", and the per-share switch.
+#[derive(Default)]
+pub(crate) struct AdopterTries {
+    tried: std::collections::HashSet<String>,
+}
+
+impl AdopterTries {
+    /// The shares in `mounts` the pass hasn't tried yet, recording nothing: the
+    /// pass's cheap pre-gate, which must not spend a try it may never make.
+    pub(crate) fn untried(&self, mounts: Vec<(String, SmbMountInfo)>) -> Vec<(String, SmbMountInfo)> {
+        mounts
+            .into_iter()
+            .filter(|(_, info)| !self.tried.contains(&adopter_volume_id(info)))
+            .collect()
+    }
+
+    /// The shares in `mounts` the pass hasn't tried yet, each recorded as tried now.
+    pub(crate) fn claim(&mut self, mounts: Vec<(String, SmbMountInfo)>) -> Vec<(String, SmbMountInfo)> {
+        mounts
+            .into_iter()
+            .filter(|(_, info)| self.tried.insert(adopter_volume_id(info)))
+            .collect()
+    }
+}
+
+fn adopter_volume_id(info: &SmbMountInfo) -> String {
+    crate::file_system::volume::smb_volume_id(&info.server, info.port, &info.share)
+}
+
+/// This run's [`AdopterTries`].
+pub(crate) static ADOPTER_TRIES: std::sync::LazyLock<std::sync::Mutex<AdopterTries>> =
+    std::sync::LazyLock::new(std::sync::Mutex::default);
+
 /// Which of the kernel's SMB mounts an adopter pass should upgrade: every one whose
 /// share `served_by_smb_volume` says has no session yet, once per share.
 ///

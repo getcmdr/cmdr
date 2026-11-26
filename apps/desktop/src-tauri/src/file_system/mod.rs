@@ -237,8 +237,11 @@ fn register_discovered_volumes() {
 ///   mounts here are the developer's own — see
 ///   `test_mode::may_adopt_preexisting_network_mounts`),
 /// - direct-SMB is disabled (`network.directSmbConnection`),
-/// - or the mount table lists no SMB share left to upgrade (no scan cost, no prompt).
+/// - or the mount table lists no SMB share left to upgrade (no scan cost, no prompt),
+///   counting a share this pass already tried this run as done: each gets one try
+///   from here per run (`smb_upgrade::AdopterTries`).
 pub fn upgrade_existing_smb_mounts() {
+    use crate::ignore_poison::IgnorePoison;
     use crate::network::smb_upgrade::UpgradePass;
 
     // Before the scan, not after: an E2E run must not so much as look at what the
@@ -256,8 +259,14 @@ pub fn upgrade_existing_smb_mounts() {
     // Cheap gate only: is there anything here at all? Kicking off mDNS pops the
     // macOS Local Network prompt, so a machine with no SMB mounts must not reach
     // it. The list this returns is NOT what we act on (see below).
-    if os_mounted_smb_shares().is_empty() {
-        log::debug!("No SMB mounts to upgrade");
+    //
+    // Only shares this pass hasn't tried yet this run (`smb_upgrade::AdopterTries`):
+    // the pass runs on every Servers visit, and re-dialing a share whose try failed
+    // re-reads its Keychain entry each time. The pane-open upgrade owns the retries.
+    let tries = &crate::network::smb_upgrade::ADOPTER_TRIES;
+    let mounted = os_mounted_smb_shares();
+    if tries.lock_ignore_poison().untried(mounted).is_empty() {
+        log::debug!("No SMB mounts left for the adopter pass to try");
         return;
     }
 
@@ -293,7 +302,8 @@ pub fn upgrade_existing_smb_mounts() {
         // a share mounted during the wait wouldn't be in a pre-scan at all. Both
         // halves of that were real: acting on a 15-second-old list is what
         // replaced a healthy volume out from under a running copy.
-        let volumes_to_upgrade = os_mounted_smb_shares();
+        let mounted = os_mounted_smb_shares();
+        let volumes_to_upgrade = tries.lock_ignore_poison().claim(mounted);
         if volumes_to_upgrade.is_empty() {
             log::debug!("Nothing left to upgrade once mDNS settled");
             return;
