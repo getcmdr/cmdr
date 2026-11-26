@@ -19,8 +19,8 @@ Per catalog area, each renderable key is one of these:
 
 Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 
-**Total: 4270 / 6219 keys have a screenshot (69%):** 2122 direct (34%), 1930 representative (31%), and 218 not shown
-(4%). 1752 remain uncoupled, and 197 are native surfaces a webview capture cannot reach.
+**Total: 4247 / 6193 keys have a screenshot (69%):** 2107 direct (34%), 1924 representative (31%), and 216 not shown
+(3%). 1749 remain uncoupled, and 197 are native surfaces a webview capture cannot reach.
 
 | Area            | Direct | Representative | Not shown | Uncoupled | Native | Total | Any % |
 | --------------- | -----: | -------------: | --------: | --------: | -----: | ----: | ----: |
@@ -29,14 +29,14 @@ Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 | ai              |      1 |            159 |         0 |         0 |      0 |   160 |  100% |
 | askCmdr         |    176 |            319 |         3 |        47 |      0 |   545 |   91% |
 | commandPalette  |      3 |              2 |         0 |         2 |      0 |     7 |   71% |
-| commands        |    246 |              5 |         1 |        90 |      0 |   342 |   74% |
+| commands        |    244 |              5 |         1 |        90 |      0 |   340 |   74% |
 | common          |      8 |              1 |         1 |         9 |      0 |    19 |   53% |
 | crashReporter   |     12 |             11 |         0 |         0 |      0 |    23 |  100% |
 | downloads       |      9 |              6 |         0 |        21 |      0 |    36 |   42% |
 | errorReporter   |     12 |              0 |         4 |        43 |      0 |    59 |   27% |
 | errors          |    189 |            504 |         0 |         0 |      0 |   693 |  100% |
 | feedback        |      8 |              6 |         0 |         2 |      0 |    16 |   88% |
-| fileExplorer    |    150 |             75 |        11 |       377 |      0 |   613 |   38% |
+| fileExplorer    |    146 |             69 |        11 |       381 |      0 |   607 |   37% |
 | fileOperations  |    129 |            101 |         7 |       128 |      0 |   365 |   65% |
 | goToPath        |      5 |              7 |         0 |         2 |      0 |    14 |   86% |
 | indexing        |     34 |             18 |         0 |        18 |      0 |    70 |   74% |
@@ -54,8 +54,8 @@ Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 | search          |      8 |             54 |         0 |         0 |      0 |    62 |  100% |
 | securityNotices |      0 |              0 |         0 |        16 |      0 |    16 |    0% |
 | selection       |     12 |              0 |         2 |         1 |      0 |    15 |   93% |
-| servers         |     73 |             90 |        15 |        60 |      0 |   238 |   75% |
-| settings        |    364 |             51 |       117 |       411 |      0 |   943 |   56% |
+| servers         |     64 |             90 |        13 |        54 |      0 |   221 |   76% |
+| settings        |    364 |             51 |       117 |       410 |      0 |   942 |   56% |
 | shortcuts       |     37 |             45 |         0 |         0 |      0 |    82 |  100% |
 | stateRecovery   |      0 |              0 |         0 |        33 |      0 |    33 |    0% |
 | suggestedOps    |     69 |              0 |        17 |        27 |      0 |   113 |   76% |
