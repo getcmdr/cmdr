@@ -21,6 +21,11 @@ vi.mock('#lib/ipc/bindings.js', () => ({
     hasServerSecret: vi.fn(),
     forgetServerSecret: vi.fn(),
     updateSavedServer: vi.fn(),
+    savedServerOfShareList: vi.fn(),
+    shareListHost: vi.fn(),
+    saveS3AccountRoot: vi.fn(),
+    forgetSavedSmbHost: vi.fn(),
+    forgetSavedSmbHostPassword: vi.fn(),
   },
 }))
 
@@ -38,8 +43,14 @@ import {
   setPlaceAutoReconnect,
   setPlacePinned,
   updateSavedServer,
+  savedServerOfShareList,
+  shareListHost,
+  saveS3AccountRoot,
+  forgetSavedSmbHost,
+  forgetSavedSmbHostPassword,
   type ServerTarget,
 } from './servers'
+import { KeychainFailure } from '#lib/servers/keychain-failure.js'
 
 const target: ServerTarget = {
   protocol: 'sftp',
@@ -144,5 +155,52 @@ describe('the saved list', () => {
       outcome: 'start_folder_outside_root',
     })
     expect(commands.updateSavedServer).toHaveBeenCalledWith(target, 'sftp-nas-local-22-test_user_1')
+  })
+})
+
+describe('the Servers list’s lookups', () => {
+  it('reads the saved server a share list stands for by its path', async () => {
+    vi.mocked(commands.savedServerOfShareList).mockResolvedValueOnce('manual-testnas-local-445')
+    expect(await savedServerOfShareList('smb://testnas.local')).toBe('manual-testnas-local-445')
+    expect(commands.savedServerOfShareList).toHaveBeenCalledWith('smb://testnas.local')
+  })
+
+  it('hands the share list’s host over in the frontend’s shape: an unknown IP is absent, ❌ not null', async () => {
+    vi.mocked(commands.shareListHost).mockResolvedValueOnce({
+      id: 'manual-TestNAS-local-445',
+      name: 'TestNAS.local',
+      hostname: 'TestNAS.local',
+      ipAddress: null,
+      port: 445,
+      source: 'manual',
+    })
+    expect(await shareListHost('smb://testnas.local')).toEqual({
+      id: 'manual-TestNAS-local-445',
+      name: 'TestNAS.local',
+      hostname: 'TestNAS.local',
+      ipAddress: undefined,
+      port: 445,
+      source: 'manual',
+    })
+    vi.mocked(commands.shareListHost).mockResolvedValueOnce(null)
+    expect(await shareListHost('smb://gone-nas')).toBeNull()
+  })
+
+  it('saves an S3 account’s root by the account’s own id', async () => {
+    vi.mocked(commands.saveS3AccountRoot).mockResolvedValueOnce(true)
+    expect(await saveS3AccountRoot('s3-account-1')).toBe(true)
+    expect(commands.saveS3AccountRoot).toHaveBeenCalledWith('s3-account-1')
+  })
+
+  it('forgets an SMB host and its password by the row’s id, and throws a store’s refusal typed', async () => {
+    vi.mocked(commands.forgetSavedSmbHost).mockResolvedValueOnce(true)
+    expect(await forgetSavedSmbHost('testnas')).toBe(true)
+    vi.mocked(commands.forgetSavedSmbHostPassword).mockResolvedValueOnce({ status: 'ok', data: false })
+    expect(await forgetSavedSmbHostPassword('testnas')).toBe(false)
+    vi.mocked(commands.forgetSavedSmbHostPassword).mockResolvedValueOnce({
+      status: 'error',
+      error: { type: 'access_denied', message: 'denied' },
+    })
+    await expect(forgetSavedSmbHostPassword('testnas')).rejects.toBeInstanceOf(KeychainFailure)
   })
 })
