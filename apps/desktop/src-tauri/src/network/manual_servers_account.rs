@@ -19,13 +19,17 @@ use crate::network::{NetworkHost, on_host_found};
 /// ❗ Found by [`SmbServer::is`], the way [`typed_username`](super::typed_username) reads it, and the name
 /// stays. A host nobody typed in is saved with no name, so the preference has
 /// somewhere to live: the person just told Cmdr how they use this server. Clearing
-/// an account a host never had saves nothing (`None`).
+/// an account a host never had saves nothing (`None`), and so does a `server` whose host
+/// isn't an address a dial can reach (`dialable::is_dialable`).
 pub(super) fn set_account_at_path(
     path: &Path,
     server: &SmbServer,
     hosts: &[NetworkHost],
     username: Option<&str>,
 ) -> Option<ManualServerEntry> {
+    if !super::dialable::is_dialable(server.host()) {
+        return None;
+    }
     let _guard = get_store_lock().lock().unwrap_or_else(|e| e.into_inner());
     let mut store = read_store_from_path(path);
     let entry = if let Some(existing) = store
@@ -55,8 +59,11 @@ pub(super) fn set_account_at_path(
 }
 
 /// Sets the account `server` is used with ("Sign in as…"). See [`set_account_at_path`].
-/// Answers whether the store could be written.
+/// Answers whether the store could be written; `false` for a `server` that isn't an address.
 pub fn set_account<R: Runtime>(server: &SmbServer, username: Option<&str>, app_handle: &AppHandle<R>) -> bool {
+    if !super::dialable::is_dialable(server.host()) {
+        return false;
+    }
     let Some(path) = get_store_path(app_handle) else {
         return false;
     };

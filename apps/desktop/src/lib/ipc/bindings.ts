@@ -5146,9 +5146,10 @@ export const commands = {
    *
    *  ❗ The account the person TYPED for this host (the add or edit sheet) wins over the
    *  share history: it is a stated preference, where the history is only who signed in
-   *  last, and Edit is where it changes.
+   *  last, and Edit is where it changes. It's looked up where the host is dialed
+   *  (`dialable_server_of`), where "Sign in as…" saves it; the share history by its name.
    */
-  getUsernameHint: (serverName: string) => __TAURI_INVOKE<string | null>('get_username_hint', { serverName }),
+  getUsernameHint: (host: NetworkHost) => __TAURI_INVOKE<string | null>('get_username_hint', { host }),
   /**
    *  Gets every host discovery knows, including ones a stopped browse found: the
    *  Servers view shows them straight away while a fresh browse runs.
@@ -5470,13 +5471,16 @@ export const commands = {
    */
   getEjectingVolumeIds: () => __TAURI_INVOKE<string[]>('get_ejecting_volume_ids'),
   /**
-   *  Sets the account the SMB server `server_name` (its discovery name, `host` or
-   *  `host:port`) is used with: "Sign in as…" in its share list, or `None` for guest.
-   *  The same preference a typed username is, so the listing stops trying guest and
-   *  signs in as it. Answers whether the store could be written.
+   *  Sets the account the SMB server `host` is used with: "Sign in as…" in its share
+   *  list, or `None` for guest. The same preference a typed username is, so the listing
+   *  stops trying guest and signs in as it. Answers whether the store could be written.
+   *
+   *  ❗ Saved at the address the host is dialed at (`dialable_server_of`: its hostname or
+   *  IP, on its port), ❌ never its name: a discovered host's name is its Bonjour display
+   *  name (`SMB Test (Auth)`), which no dial can reach. An unresolved host saves nothing.
    */
-  setSmbAccountPreference: (serverName: string, username: string | null) =>
-    __TAURI_INVOKE<boolean>('set_smb_account_preference', { serverName, username }),
+  setSmbAccountPreference: (host: NetworkHost, username: string | null) =>
+    __TAURI_INVOKE<boolean>('set_smb_account_preference', { host, username }),
   /**
    *  Unmounts all SMB shares mounted from `host`, answering the mount paths that went.
    *  Uses a 15s timeout because `statfs` on hung mounts can block indefinitely

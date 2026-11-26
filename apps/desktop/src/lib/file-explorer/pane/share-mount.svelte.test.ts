@@ -163,7 +163,7 @@ describe('a mount a credential answers', () => {
     )
     expect(h.saveSmbCredentials).toHaveBeenCalledWith('Testnas', null, 'test_user_3', 'hunter2')
     // cmdr-reports#27: the account that got in becomes the host's account.
-    expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', 'test_user_3')
+    expect(h.setSmbAccountPreference).toHaveBeenCalledWith(host, 'test_user_3')
   })
 
   it('keeps the sheet open on a second refusal, and saves nothing', async () => {

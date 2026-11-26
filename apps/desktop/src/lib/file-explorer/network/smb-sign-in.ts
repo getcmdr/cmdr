@@ -40,6 +40,13 @@ const log = getAppLogger('fileExplorer')
 export interface SmbSignInHost {
   /** ❗ The stable Bonjour name: it is what the credential store and the hints are keyed by. */
   name: string
+  /**
+   * Where it's dialed, when the caller holds the host (a `NetworkHost` fits as is): the
+   * account "Sign in as…" saved is found there, ❌ never under `name` (a Bonjour label).
+   */
+  hostname?: string
+  ipAddress?: string
+  port?: number
 }
 
 /**
@@ -113,7 +120,9 @@ async function rememberedUsername(request: SmbSignInRequest): Promise<string | u
       const known = await getKnownShareByName(request.host.name, request.shareName)
       if (known?.username) return known.username
     }
-    return (await getUsernameHint(request.host.name)) ?? undefined
+    // A host known only by name (a mounted share's upgrade) is looked up by that name, on 445
+    // unless it spells a port: the backend reads `host:port` off it.
+    return (await getUsernameHint({ id: request.host.name, port: 445, ...request.host })) ?? undefined
   } catch (e) {
     log.warn('Reading the remembered username for {host} broke down: {error}', {
       host: request.host.name,

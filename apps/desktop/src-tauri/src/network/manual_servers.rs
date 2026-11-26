@@ -470,7 +470,9 @@ pub fn all<R: Runtime>(app: &AppHandle<R>) -> Vec<ManualServerEntry> {
 /// doesn't read is set aside before anything writes over it, and a server entry
 /// that doesn't read costs that entry only.
 fn read_store_from_path(path: &Path) -> ManualServersStore {
-    let store: ManualServersStore = super::server_list_file::read(path, StateFile::SmbServers);
+    let mut store: ManualServersStore = super::server_list_file::read(path, StateFile::SmbServers);
+    // ❗ The one gate: an entry whose address can't be dialed never reaches a consumer.
+    store.servers = dialable::usable_entries(store.servers, &crate::network::fresh_discovered_hosts());
     names::mirror(path, &store.servers);
     store
 }
@@ -804,6 +806,10 @@ mod names;
 pub use names::typed_name;
 #[cfg(test)]
 pub(crate) use names::{named_for_test, typed_name_among};
+
+#[path = "manual_servers_dialable.rs"]
+mod dialable;
+pub(crate) use dialable::{dialable_name, dialable_server_of};
 
 #[path = "manual_servers_account.rs"]
 mod account;

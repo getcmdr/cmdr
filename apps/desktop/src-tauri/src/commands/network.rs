@@ -247,13 +247,17 @@ pub fn update_known_share(
 ///
 /// ❗ The account the person TYPED for this host (the add or edit sheet) wins over the
 /// share history: it is a stated preference, where the history is only who signed in
-/// last, and Edit is where it changes.
+/// last, and Edit is where it changes. It's looked up where the host is dialed
+/// (`dialable_server_of`), where "Sign in as…" saves it, else under its name when that is
+/// an address (a mounted share's upgrade knows only `host` or `host:port`); the share
+/// history by its name.
 #[tauri::command]
 #[specta::specta]
-pub fn get_username_hint(server_name: String, app_handle: tauri::AppHandle) -> Option<String> {
-    // `server_name` is the discovery name, which spells the port off 445 (`localhost:11482`).
-    let server = crate::network::server_identity::SmbServer::from_name(&server_name);
-    manual_servers::typed_username(&app_handle, &server).or_else(|| known_shares::get_username_hint(&server_name))
+pub fn get_username_hint(host: NetworkHost, app_handle: tauri::AppHandle) -> Option<String> {
+    manual_servers::dialable_server_of(&host)
+        .or_else(|| manual_servers::dialable_name(&host.name))
+        .and_then(|server| manual_servers::typed_username(&app_handle, &server))
+        .or_else(|| known_shares::get_username_hint(&host.name))
 }
 
 // --- Keychain Commands ---
@@ -680,14 +684,24 @@ pub async fn connect_to_server(
     manual_servers::add_manual_server(&address, &details, reachability, &app_handle).await
 }
 
-/// Sets the account the SMB server `server_name` (its discovery name, `host` or
-/// `host:port`) is used with: "Sign in as…" in its share list, or `None` for guest.
-/// The same preference a typed username is, so the listing stops trying guest and
-/// signs in as it. Answers whether the store could be written.
+/// Sets the account the SMB server `host` is used with: "Sign in as…" in its share
+/// list, or `None` for guest. The same preference a typed username is, so the listing
+/// stops trying guest and signs in as it. Answers whether the store could be written.
+///
+/// ❗ Saved at the address the host is dialed at (`dialable_server_of`: its hostname or
+/// IP, on its port), ❌ never its name: a discovered host's name is its Bonjour display
+/// name (`SMB Test (Auth)`), which no dial can reach. An unresolved host saves nothing.
 #[tauri::command]
 #[specta::specta]
-pub fn set_smb_account_preference(server_name: String, username: Option<String>, app_handle: tauri::AppHandle) -> bool {
-    let server = crate::network::server_identity::SmbServer::from_name(&server_name);
+pub fn set_smb_account_preference(host: NetworkHost, username: Option<String>, app_handle: tauri::AppHandle) -> bool {
+    let Some(server) = manual_servers::dialable_server_of(&host) else {
+        log::warn!(
+            target: "network::manual_servers",
+            "Not saving an account for {:?}: discovery hasn't resolved its address",
+            cmdr_fs::log_private::LogPrivate::host(&host.name)
+        );
+        return false;
+    };
     let set = manual_servers::set_account(&server, username.as_deref(), &app_handle);
     if set {
         crate::volume_broadcast::emit_volumes_changed();

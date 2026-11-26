@@ -240,7 +240,7 @@ describe('listWithAccount: what a listing that worked leaves behind', () => {
     expect(h.setCredentialStatus).toHaveBeenCalledWith('Testnas', 'has_creds')
     expect(h.setListedAccount).toHaveBeenCalledWith('testnas-id', { kind: 'user', username: 'testuser' })
     // ❗ The choice sticks: it becomes the server's account, so later listings sign in as it.
-    expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', 'testuser')
+    expect(h.setSmbAccountPreference).toHaveBeenCalledWith(host, 'testuser')
     expect(h.updateKnownShare).toHaveBeenCalledWith('Testnas', '', 'credentials', 'guest_or_credentials', 'testuser')
     expect(h.saveSmbCredentials, 'not asked to remember').not.toHaveBeenCalled()
   })
@@ -285,7 +285,7 @@ describe('the account actions', () => {
 
     const outcome = await useGuest(server)
 
-    expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', null)
+    expect(h.setSmbAccountPreference).toHaveBeenCalledWith(host, null)
     // ❗ While the account is set, the backend never lists this server as guest.
     expect(h.setSmbAccountPreference.mock.invocationCallOrder[0]).toBeLessThan(
       h.listSharesWithCredentials.mock.invocationCallOrder[0],
@@ -384,7 +384,7 @@ describe('runServerAccountAction: every door’s one runner', () => {
     h.listSharesWithCredentials.mockResolvedValue(listed('guest_allowed'))
 
     expect(await runServerAccountAction('browse-as-guest', server)).toEqual({ listed: true })
-    expect(h.setSmbAccountPreference).toHaveBeenCalledWith('Testnas', null)
+    expect(h.setSmbAccountPreference).toHaveBeenCalledWith(host, null)
   })
 
   /** ❗ It drops the account FIRST, so where no guest got in it never starts, and says why. */

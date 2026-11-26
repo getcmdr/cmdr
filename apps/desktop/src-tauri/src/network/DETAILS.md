@@ -186,7 +186,13 @@ Always pass the resolved IP from mDNS discovery when one is available; fall back
 4. Never assume "guest only"; always offer "Sign in as…" when guest succeeds (can't distinguish guest-only from guest-or-creds at probe time)
 
 ❗ **"Sign in as…" sets that preference too** (`set_smb_account_preference` → `manual_servers::set_account`, saving
-the host when nobody typed it in; `None` is "Browse as guest" and clears it). So does a sign-in that got a refused SHARE
+the host when nobody typed it in; `None` is "Browse as guest" and clears it). ❗ It takes the whole `NetworkHost` and
+saves it where it's DIALED (`manual_servers::dialable_server_of`: its hostname, else its IP, on its port), ❌ never its
+`name`: a discovered host's name is its Bonjour display name, and saving `SMB Test (Auth)` on 445 as an address made
+the Servers list dial it literally (`NT_STATUS_INVALID_PARAMETER`). `get_username_hint` reads it back the same way.
+Every store read goes through `manual_servers_dialable.rs::usable_entries`: an entry whose address isn't a hostname or
+IP is logged once, then becomes the discovered host it names (by `same_machine`, keeping its account) or is skipped,
+so nothing dials it, and the next write persists the repair. So does a sign-in that got a refused SHARE
 mounted (`share-mount.svelte.ts`'s `remountWith`): without it, a share guests can list but not open asked for the password
 on every mount (cmdr-reports#27). And a listing that got no credentials signs in
 as the preferred account with its session credential (`smb_account_ladder::account_listing_for`, over
@@ -724,8 +730,9 @@ the account-refused rows are unit-tested only.
 ## Server-keyed answers are lookups, never maps
 
 `known_shares` answers "what username should the sign-in sheet pre-fill" with
-`get_username_hint(server_name) -> Option<String>`, and "what do we know about this share" with
-`get_known_share(server_name, share_name)`. Both take raw names and do the keying HERE.
+`get_username_hint(host) -> Option<String>` (the whole `NetworkHost`: the typed account is found where it's dialed,
+the share history by its name), and "what do we know about this share" with `get_known_share(server_name,
+share_name)`. Both do the keying HERE.
 
 The alternative is what this used to be: a command returning `HashMap<server_key, username>` for every server at once,
 which puts the KEY in the IPC contract. The caller then has to rebuild that key to read its own answer, so the rule

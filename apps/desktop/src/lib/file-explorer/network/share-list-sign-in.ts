@@ -117,7 +117,7 @@ export async function listWithAccount(
     setShareState(host.id, result)
     setCredentialStatus(host.name, username ? 'has_creds' : 'no_creds')
     setListedAccount(host.id, username !== null ? { kind: 'user', username } : { kind: 'guest' })
-    void setSmbAccountPreference(host.name, username).catch(() => {})
+    void setSmbAccountPreference(host, username).catch(() => {})
 
     // ❗ Written only once the account has worked.
     if (remember && username !== null && password !== null) {
@@ -227,7 +227,7 @@ export async function signInAs(
 /** "Browse as guest": the way back from an account, where a guest listing worked on this server. */
 export async function useGuest(server: ShareListServer): Promise<ShareListAttempt> {
   // ❗ The account goes FIRST: while it's set, the backend never lists this server as guest.
-  await setSmbAccountPreference(server.host.name, null).catch(() => false)
+  await setSmbAccountPreference(server.host, null).catch(() => false)
   return await listWithAccount(server, { username: null, password: null, remember: false }, 'typed')
 }
 

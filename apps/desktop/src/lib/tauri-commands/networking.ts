@@ -226,15 +226,14 @@ export async function updateKnownShare(
 }
 
 /**
- * The username to pre-fill for `serverName`, or null if it has never been signed in to.
+ * The username to pre-fill for `host`, or null if it has never been signed in to.
  *
- * Pass whatever name you have (an mDNS instance name, a `.local` hostname, an IP): the
- * backend matches on the server's stable identity, so any name form finds a hint saved
- * under any other. Only available on macOS.
+ * Takes the whole host: the backend looks the account up where the host is DIALED (its
+ * hostname or IP, on its port), which its Bonjour name alone can't say. Only available on macOS.
  */
-export async function getUsernameHint(serverName: string): Promise<string | null> {
+export async function getUsernameHint(host: NetworkHost): Promise<string | null> {
   try {
-    return await commands.getUsernameHint(serverName)
+    return await commands.getUsernameHint(wireHost(host))
   } catch {
     // Command not available (non-macOS) - no hint to offer
     return null
@@ -618,12 +617,13 @@ export async function connectToServer(
  * @param serverId The manual server's host ID (like "manual-192-168-1-100-445")
  */
 /**
- * Sets the account the SMB server `serverName` (its discovery name) is used with, the
- * same preference a typed username is: "Sign in as…" in its share list, or `null` for
- * guest. Answers whether the store could be written.
+ * Sets the account the SMB server `host` is used with, the same preference a typed
+ * username is: "Sign in as…" in its share list, or `null` for guest. Answers whether the
+ * store could be written. ❗ The whole host, ❌ never its name: the backend saves it at the
+ * address the host is dialed at, and a Bonjour name (`SMB Test (Auth)`) is no address.
  */
-export async function setSmbAccountPreference(serverName: string, username: string | null): Promise<boolean> {
-  return await commands.setSmbAccountPreference(serverName, username)
+export async function setSmbAccountPreference(host: NetworkHost, username: string | null): Promise<boolean> {
+  return await commands.setSmbAccountPreference(wireHost(host), username)
 }
 
 /**

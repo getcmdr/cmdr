@@ -297,7 +297,7 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
         guestAllowed: false,
         initialUsername: lastMountAttempt?.username ?? undefined,
         refusal: refusalForMountError(firstError),
-        attempt: (answer) => remountWith(share, host.name, answer),
+        attempt: (answer) => remountWith(share, host, answer),
       })
       if (result.kind === 'cancelled') back()
     } finally {
@@ -308,7 +308,7 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
   /** One mount round-trip with what the person offered, remembering the credential ❗ only once it went through. */
   async function remountWith(
     share: ShareInfo,
-    hostName: string,
+    host: NetworkHost,
     answer: { username: string | null; password: string | null; remember: boolean },
   ): Promise<SignInAttemptOutcome> {
     const credentials = answer.username === null ? null : { username: answer.username, password: answer.password ?? '' }
@@ -317,10 +317,10 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
       // ❗ The account that got in becomes the host's account, as "Sign in as…" does, so the
       // next visit lists and mounts as it. Without this, a share guests can list but not
       // open asked for the password on every mount (cmdr-reports#27).
-      if (credentials) void setSmbAccountPreference(hostName, credentials.username).catch(() => {})
+      if (credentials) void setSmbAccountPreference(host, credentials.username).catch(() => {})
       if (credentials && answer.remember && answer.password !== null) {
         try {
-          await saveSmbCredentials(hostName, null, credentials.username, answer.password)
+          await saveSmbCredentials(host.name, null, credentials.username, answer.password)
         } catch (e) {
           log.warn('Mount succeeded but saving credentials failed: {error}', { error: e })
         }
