@@ -291,6 +291,11 @@ pub async fn find_file_index(
 /// whose rows read as a server's friendly name while the share list the pane left is
 /// `smb://<key>`. A plain walk of the visible rows: such a list is a handful of rows, and
 /// `with_rows` is the engine's one read over them.
+///
+/// ❗ When no row has that path, the row that stands for the server the share list lists
+/// (`share_list_volume::servers_row_path`, by identity): a share list opened at a Bonjour
+/// twin's path belongs to the row of the server saved by its IP, which lists under the IP's
+/// path, so a lookup by path alone left the cursor on the first row.
 #[tauri::command]
 #[specta::specta]
 pub async fn find_path_index(
@@ -298,9 +303,19 @@ pub async fn find_path_index(
     path: String,
     include_hidden: bool,
 ) -> Result<Option<usize>, ListingLookupError> {
-    listings().with_rows(&ListingId::new(listing_id), include_hidden, |rows| {
-        rows.iter().position(|entry| entry.path == path)
-    })
+    let id = ListingId::new(listing_id);
+    let position = |path: &str| {
+        listings().with_rows(&id, include_hidden, |rows| {
+            rows.iter().position(|entry| entry.path == path)
+        })
+    };
+    match position(&path)? {
+        Some(found) => Ok(Some(found)),
+        None => match crate::network::share_list_volume::servers_row_path(&path) {
+            Some(row_path) if row_path != path => position(&row_path),
+            _ => Ok(None),
+        },
+    }
 }
 
 #[tauri::command]

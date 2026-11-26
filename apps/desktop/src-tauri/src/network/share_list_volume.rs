@@ -83,6 +83,9 @@ pub(crate) trait ServerShares: Send + Sync {
     /// credentials follows. ❌ Never a dial, ❌ never the Keychain.
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult>;
 
+    /// Drops what the share cache holds for the host `host_id`. Memory only.
+    fn drop_cached(&self, host_id: &str);
+
     /// Lists `host`'s shares, signing in the way a pane's listing does
     /// (`share_list_sign_in`), and says who it listed as. The one call that dials, and
     /// the one that may read the stored password (once per session).
@@ -160,6 +163,62 @@ impl SmbServerVolume {
         drop(listed_as);
         self.shares.rows_may_have_changed();
         result.map_err(|error| listing_refusal(host, error))
+    }
+
+    /// The ids of every host a share list of `row` may have listed under: the hosts the row
+    /// stands for ([`ServerRow::hosts`]) and the one its own share list resolves to. Memory
+    /// and the stores only.
+    fn share_list_hosts_of(&self, row: &ServerRow, known: &KnownHosts) -> Vec<String> {
+        let resolved = match NetworkPath::of(&row.path) {
+            NetworkPath::ShareList(address) => resolve(&address, known).map(|host| host.id),
+            _ => None,
+        };
+        let mut ids = row.hosts.clone();
+        ids.extend(resolved.filter(|id| !row.hosts.contains(id)));
+        ids
+    }
+
+    /// Forgets what the share lists of the Servers row `row_id` signed in as and what they
+    /// cached, under EVERY host the row stands for. ❗ By identity, ❌ never the row's id
+    /// alone: a server saved by name or `.local` hostname lists under the DISCOVERED host's
+    /// id, so a forget by the row's id left "as testuser" on the row and a reopened share
+    /// list listing from the cache without asking. Call it while the row is still listed
+    /// (before Forget takes its store rows). Memory only: no dial, no Keychain.
+    pub(crate) fn forget_server_share_lists(&self, row_id: &str) {
+        let known = self.shares.known_hosts();
+        let mut ids = vec![row_id.to_string()];
+        if let Some(row) = self.server_rows().into_iter().find(|row| row.meta.row_id == row_id) {
+            ids.extend(
+                self.share_list_hosts_of(&row, &known)
+                    .into_iter()
+                    .filter(|id| id != row_id),
+            );
+        }
+        let mut listed_as = self.listed_as.lock_ignore_poison();
+        for id in &ids {
+            listed_as.remove(id);
+        }
+        drop(listed_as);
+        for id in &ids {
+            self.shares.drop_cached(id);
+        }
+    }
+
+    /// The path of the Servers row that stands for the server the share list at `path`
+    /// lists, by identity: the host the path resolves to, among the hosts each row stands
+    /// for. A share list at a Bonjour twin's path is the IP-saved row's, which lists under
+    /// the IP's path. `None` for any other path or a server no row stands for. Memory and
+    /// the stores only.
+    pub(crate) fn servers_row_path(&self, path: &str) -> Option<String> {
+        let NetworkPath::ShareList(address) = NetworkPath::of(path) else {
+            return None;
+        };
+        let known = self.shares.known_hosts();
+        let host = resolve(&address, &known)?;
+        self.server_rows()
+            .into_iter()
+            .find(|row| self.share_list_hosts_of(row, &known).contains(&host.id))
+            .map(|row| row.path)
     }
 
     /// The Servers list's rows, now. The listed accounts are a snapshot: the lock is
@@ -481,6 +540,10 @@ impl ServerShares for AppServerShares {
         crate::network::smb_client::cached_listing(&host.id, guest)
     }
 
+    fn drop_cached(&self, host_id: &str) {
+        crate::network::smb_client::invalidate_cache(host_id);
+    }
+
     fn list<'a>(
         &'a self,
         host: &'a NetworkHost,
@@ -511,6 +574,32 @@ pub(crate) fn listed_account(volume_id: &str, path: &AppPath) -> Option<ShareLis
 pub(crate) fn share_list_host(path: &str) -> Option<NetworkHost> {
     let volume = crate::file_system::volume::manager::get_volume_manager().get(NETWORK_VOLUME_ID)?;
     volume.as_any().downcast_ref::<SmbServerVolume>()?.share_list_host(path)
+}
+
+/// Forgets what the share lists of the Servers row `row_id` signed in as and cached
+/// ([`SmbServerVolume::forget_server_share_lists`]). Call it while the row is still listed:
+/// before Forget takes its store rows. Memory only.
+pub(crate) fn forget_server_share_lists(row_id: &str) {
+    let manager = crate::file_system::volume::manager::get_volume_manager();
+    match manager
+        .get(NETWORK_VOLUME_ID)
+        .as_ref()
+        .and_then(|volume| volume.as_any().downcast_ref::<SmbServerVolume>())
+    {
+        Some(volume) => volume.forget_server_share_lists(row_id),
+        // No `network` volume (a unit test's app): only the row's own id can hold a list.
+        None => crate::network::smb_client::invalidate_cache(row_id),
+    }
+}
+
+/// The path of the Servers row that stands for the server the share list at `path` lists
+/// ([`SmbServerVolume::servers_row_path`]). Memory, the stores, and the mount table only.
+pub(crate) fn servers_row_path(path: &str) -> Option<String> {
+    let volume = crate::file_system::volume::manager::get_volume_manager().get(NETWORK_VOLUME_ID)?;
+    volume
+        .as_any()
+        .downcast_ref::<SmbServerVolume>()?
+        .servers_row_path(path)
 }
 
 /// The saved server whose Servers row opens the share list at `path`, by its id, or `None`

@@ -1233,10 +1233,24 @@ a listing").
   can arrive twice, and the listing engine keys entries by path. Pinned by
   `never_emits_two_rows_under_one_id_whatever_the_sources_repeat`, `never_emits_two_rows_that_lead_to_one_place`, and
   `never_emits_two_rows_at_one_path`.
-- **The merge** (a saved SMB host claims every discovered host matching its id, address, or label, a discovered one
-  speaks for the row; the name ranks a person's name, then the Bonjour name, then the stand-in) compares lowercase
-  strings, ❌ not `server_identity`: it pairs a saved LABEL with a Bonjour name, which no address-and-port identity
-  answers. **Decision**: kept the TypeScript merge's semantics when it moved here, so every ported regression anchor held.
+- **The merge** (`matching_hosts`: a saved SMB host claims every discovered host matching its id, its address as the
+  host's discovery name or hostname ON THE SAVED PORT, or a label nobody chose; a discovered one speaks for the row; the
+  name ranks a person's name, then the Bonjour name, then the stand-in). The label match compares lowercase strings,
+  ❌ not `server_identity`: it pairs a statfs-spelled LABEL with a Bonjour name, which no address-and-port identity
+  answers. ❗ A name a person chose (`ServerNameSource::User`) never matches: the Tailscale entry renamed "Naspolya"
+  claimed the LAN host mDNS found under that name and opened and signed in to the LAN address. An IP never matches
+  here either; it's `bonjour_twins`' (below), because a matched host is what the row OPENS. Pinned by
+  `a_name_the_person_chose_never_claims_a_discovered_host_at_another_address` and
+  `a_saved_hostname_never_claims_a_discovered_host_on_another_port`.
+- **The hosts a row stands for** (`ServerRow.hosts`): a saved SMB server's own id, its matched hosts, and its twins; a
+  found host's own id. A share list listed under any of them (or under the host the row's own path resolves to) is
+  that row's, by identity: Forget server drops their listed accounts and share-cache entries
+  (`SmbServerVolume::forget_server_share_lists`, called by `forget_saved_smb_host` before the store rows go; a server
+  saved by name lists under the DISCOVERED host's id, so a forget by the row's id left "as testuser" on the row and a
+  reopen inside 30 s listed from the cache without asking), and `find_path_index` lands `..` from a twin's share list
+  on the IP-saved row (`servers_row_path`), whose path is the IP's. Pinned by
+  `forgetting_a_server_drops_its_share_lists_account_and_cache_under_the_host_it_resolves_to` and
+  `a_share_list_at_a_twins_path_lands_on_the_row_that_stands_for_that_host`.
 - **A server saved by IP merges with its Bonjour twin** (David, 2026-11-26): a DISCOVERED host whose resolved IP and
   port equal the saved address (`bonjour_twins`) is claimed too, so "Naspolya" at `192.168.1.111` is one row. ❗ The
   twin lends only its name and "found nearby"; the row keeps the saved server's id, account, and share list at the

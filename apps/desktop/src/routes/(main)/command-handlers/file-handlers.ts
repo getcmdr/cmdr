@@ -291,6 +291,11 @@ export const fileHandlers = {
   },
 
   'file.deletePermanently': ({ explorerRef }) => {
+    // On the Servers list, ⇧F8 is F8's Forget: forgetting a server is already for good.
+    if (onServersList()) {
+      detached(forgetServerInView(explorerRef))
+      return
+    }
     detached(explorerRef?.openDeleteDialog({ permanent: true, initiator: 'user' }))
   },
 

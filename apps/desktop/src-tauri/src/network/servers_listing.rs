@@ -11,11 +11,14 @@
 //! BOTH a saved server and a discovered host (adding one injects it into the discovery
 //! state), so concatenating the two sources shows a person's NAS twice. The dedup
 //! matches on the id first (a manual host keeps its store id in the discovery list),
-//! then on the name or resolved hostname, because `known_shares` files a host under the
-//! server name `statfs` reported while mDNS files the same machine under its Bonjour
-//! name. It claims EVERY host that matches, since one machine can be in the discovery
-//! list under both spellings. That match compares lowercase strings on purpose: it pairs
-//! a saved LABEL with a Bonjour name, which no address-and-port identity can answer.
+//! then on the saved address (as the host's name or resolved hostname, on its port), then
+//! on a label nobody chose, because `known_shares` files a host under the server name
+//! `statfs` reported while mDNS files the same machine under its Bonjour name. It claims
+//! EVERY host that matches, since one machine can be in the discovery list under both
+//! spellings. The label match compares lowercase strings on purpose: it pairs a saved
+//! LABEL with a Bonjour name, which no address-and-port identity can answer. ❗ A name a
+//! PERSON chose never matches: renaming the Tailscale entry after the NAS made it open
+//! the LAN host.
 //!
 //! ❗ A server saved by IP and the Bonjour host discovery resolved to exactly that address
 //! and port are ONE row under the Bonjour name (`bonjour_twins`), but the row stays the
@@ -155,6 +158,11 @@ pub(crate) struct ServerRow {
     /// server's share-list path as the frontend writes it (`share_list_path`), a
     /// one-place server's app root, an S3 account's root. Unique per row.
     pub path: String,
+    /// The ids of every host this row stands for: a saved SMB server's own id, the hosts
+    /// it claimed ([`matching_hosts`]), and its Bonjour twins; a found host's own id; none
+    /// for any other protocol. A share list listed under any of them is THIS server's, by
+    /// identity: what Forget clears and where `..` from a twin's share list lands.
+    pub hosts: Vec<String>,
 }
 
 /// Where a row leads. ❗ Two rows never lead to one place ([`server_rows`] keeps the
@@ -244,20 +252,32 @@ fn has_many_places(protocol: ServerProtocol) -> bool {
 /// ❗ Plural on purpose: ONE machine can be in that list twice, because adding a host by
 /// hand injects a `manual` host beside the `discovered` one mDNS already found. Claiming
 /// only the first would leave the other as a second row for the same NAS.
+///
+/// By the id, by the saved ADDRESS (the host's discovery name or hostname, on the saved
+/// port), and by the label only when nobody chose it (`ServerNameSource::Fallback`: the
+/// way `statfs` spelled the server). ❗ A name a person chose is a label, ❌ never an
+/// identity: the Tailscale entry renamed after the NAS claimed the LAN host mDNS found
+/// under that name, and opened and signed in to the LAN address. An IP is
+/// [`bonjour_twins`]' to match, ❌ not this function's: a host matched here is the one the
+/// row OPENS.
 fn matching_hosts<'a>(server: &SavedServer, hosts: &'a [NetworkHost]) -> Vec<&'a NetworkHost> {
     if server.protocol != ServerProtocol::Smb {
         return Vec::new();
     }
-    let address = server.address.to_lowercase();
-    let name = server.display_name.to_lowercase();
+    let dials = SmbServer::from_name(&server.address);
+    let spells_address = |name: &str, port: u16| port == dials.port() && name.eq_ignore_ascii_case(dials.host());
+    let label = (server.name_source == ServerNameSource::Fallback).then(|| server.display_name.to_lowercase());
     hosts
         .iter()
         .filter(|host| {
-            let host_name = host.name.to_lowercase();
+            let discovery_name = SmbServer::from_name(&host.name);
             host.id == server.id
-                || host_name == address
-                || host_name == name
-                || host.hostname.as_deref().map(str::to_lowercase).as_deref() == Some(address.as_str())
+                || spells_address(discovery_name.host(), discovery_name.port())
+                || host
+                    .hostname
+                    .as_deref()
+                    .is_some_and(|hostname| spells_address(hostname, host.port))
+                || label.as_deref() == Some(host.name.to_lowercase().as_str())
         })
         .collect()
 }
@@ -313,6 +333,12 @@ fn saved_row(
     // Everything that is this machine, a Bonjour twin at the saved address included: what
     // the row is named after and how live it reads. What it OPENS is `host`'s.
     let machine: Vec<&NetworkHost> = hosts.iter().chain(twins).copied().collect();
+    let host_ids = match server.protocol {
+        ServerProtocol::Smb => std::iter::once(server.id.clone())
+            .chain(machine.iter().map(|host| host.id.clone()))
+            .collect(),
+        _ => Vec::new(),
+    };
     let many = has_many_places(server.protocol);
     let place: Option<&SavedPlace> = server.places.first();
     let account = match server.protocol {
@@ -377,6 +403,7 @@ fn saved_row(
         icon_id: icon_for(server.protocol),
         opens,
         path,
+        hosts: host_ids,
     })
 }
 
@@ -411,6 +438,7 @@ fn nearby_row(host: &NetworkHost, inputs: &ServerRowInputs<'_>) -> ServerRow {
         icon_id: SMB_SERVER_ICON_ID,
         opens: ServerOpens::ShareList(ShareListAddress::of_host(host)),
         path: share_list_path(host),
+        hosts: vec![host.id.clone()],
     }
 }
 

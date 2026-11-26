@@ -392,6 +392,40 @@ fn keeps_one_nas_at_two_addresses_as_two_rows() {
     assert_eq!(rows.len(), 2);
 }
 
+/// ❗ A name the person CHOSE is a label, ❌ never an identity: the Tailscale entry renamed
+/// after the NAS keeps its own row and opens its own address, ❌ never the LAN host mDNS
+/// found under that name (which would sign in to the LAN address).
+#[test]
+fn a_name_the_person_chose_never_claims_a_discovered_host_at_another_address() {
+    let renamed = SavedServer {
+        name_source: ServerNameSource::User,
+        ..smb("manual-100-64-0-10-445", "Testnas", "100.64.0.10")
+    };
+    let rows = Inputs::saved(vec![renamed])
+        .hosts(vec![bonjour_testnas_at("10.0.0.4", 445)])
+        .rows();
+
+    assert_eq!(rows.len(), 2, "the saved server and the LAN host stay two rows");
+    let saved = rows.iter().find(|row| row.meta.saved).expect("the saved row");
+    assert_eq!(saved.path, "smb://100.64.0.10");
+    assert_eq!(saved.meta.address, "100.64.0.10");
+    assert!(rows.iter().any(|row| !row.meta.saved && row.path == "smb://testnas"));
+}
+
+/// ❗ The port is part of the address: a server saved at `testnas.local` (445) is ❌ not
+/// the host mDNS found with that hostname on another port.
+#[test]
+fn a_saved_hostname_never_claims_a_discovered_host_on_another_port() {
+    let rows = Inputs::saved(vec![smb("manual-testnas-local-445", "Attic NAS", "testnas.local")])
+        .hosts(vec![NetworkHost {
+            hostname: Some("testnas.local".to_string()),
+            port: 10480,
+            ..host("bonjour-testnas", "Testnas")
+        }])
+        .rows();
+    assert_eq!(names(&rows), ["Attic NAS", "Testnas"]);
+}
+
 // --- Icons --------------------------------------------------------------------------
 
 #[test]

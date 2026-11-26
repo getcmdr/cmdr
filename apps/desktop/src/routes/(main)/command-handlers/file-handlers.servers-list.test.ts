@@ -41,7 +41,7 @@ function explorer() {
   }
 }
 
-function run(id: 'file.newFolder' | 'file.delete' | 'file.getInfo', args?: unknown) {
+function run(id: 'file.newFolder' | 'file.delete' | 'file.deletePermanently' | 'file.getInfo', args?: unknown) {
   const explorerRef = explorer()
   void fileHandlers[id]({ explorerRef, ctx: {}, dispatchArgs: args } as unknown as CommandHandlerContext)
   return explorerRef
@@ -66,6 +66,14 @@ describe('F7 and F8 on the Servers list', () => {
     expect(ref.openDeleteDialog).not.toHaveBeenCalled()
   })
 
+  /** ❗ Forgetting a server is already for good, so ⇧F8 asks exactly what F8 asks. */
+  it('⇧F8 forgets the server under the cursor too, ❌ not a delete', () => {
+    h.path = 'smb://'
+    const ref = run('file.deletePermanently')
+    expect(h.forgetServerInView).toHaveBeenCalledWith(ref)
+    expect(ref.openDeleteDialog).not.toHaveBeenCalled()
+  })
+
   it('leaves an agent’s mkdir and delete on their own road there', () => {
     h.path = 'smb://'
     expect(run('file.newFolder', { mcpRequestId: 'r', initiator: 'aiClient' }).openNewFolderDialog).toHaveBeenCalled()
@@ -78,6 +86,7 @@ describe('F7 and F8 on the Servers list', () => {
     h.path = 'smb://testnas'
     expect(run('file.newFolder').openNewFolderDialog).toHaveBeenCalled()
     expect(run('file.delete').openDeleteDialog).toHaveBeenCalled()
+    expect(run('file.deletePermanently').openDeleteDialog).toHaveBeenCalled()
   })
 
   it('says a server is no file on Get info, ❌ never asks About for its place path', async () => {

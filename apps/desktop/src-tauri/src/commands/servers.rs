@@ -648,10 +648,11 @@ pub fn forget_saved_smb_host(id: String, app: tauri::AppHandle) -> bool {
     if let Some(scope) = smb_hosts::smb_secret_scope(&id, manual_servers::all(&app), &hosts) {
         crate::network::keychain::forget_session_credentials(&scope.names);
     }
-    // And the share list that credential bought, cached under the row's id (the host id its
-    // share list resolves to): served from the cache, a re-added server would list again
-    // without asking for the account the person just made Cmdr forget.
-    crate::network::smb_client::invalidate_cache(&id);
+    // And the share lists that credential bought, and who they signed in as, under EVERY
+    // host the row stands for (a server saved by name lists under the discovered host's
+    // id): served from the cache, a re-added server would list again without asking for
+    // the account the person just made Cmdr forget. Before the rows go, which say which.
+    crate::network::share_list_volume::forget_server_share_lists(&id);
     let manual = group.manual && manual_servers::remove_manual_server(&id, &app).is_ok();
     let rows = known_shares::forget_rows(&group.rows);
     let forgotten = manual || rows > 0;

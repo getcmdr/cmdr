@@ -19,7 +19,7 @@ import {
   forgetServerSecret,
   smbHostHasMounts,
 } from '#lib/tauri-commands/index.js'
-import { getCredentialStatus, setCredentialStatus } from './network-store.svelte'
+import { forgetShareListsOfMachine, getCredentialStatus, setCredentialStatus } from './network-store.svelte'
 import {
   forgetSavedServer,
   forgetServerQuestion,
@@ -219,6 +219,9 @@ export function createServerRowActions(deps: ServerRowActionDeps): ServerRowActi
     try {
       const forgotten = await forgetSavedSmbHost(row.id)
       if (!forgotten) throw new Error('nothing saved under that host')
+      // Who its share lists signed in as goes with it, the frontend's copy of what the
+      // backend's Forget just dropped.
+      if (host) forgetShareListsOfMachine(host)
       addToast(tString('fileExplorer.network.browser.hostRemoved', { hostName: row.name }), { level: 'success' })
       await deps.refreshSaved()
     } catch {

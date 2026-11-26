@@ -29,6 +29,8 @@ struct FakeShares {
     servers: Mutex<ServerSources>,
     /// How many times a listing said the rows may have changed.
     rows_changes: Mutex<usize>,
+    /// Every host id whose cached share list was dropped.
+    dropped: Mutex<Vec<String>>,
 }
 
 impl FakeShares {
@@ -53,6 +55,10 @@ impl ServerShares for FakeShares {
     fn cached(&self, host: &NetworkHost) -> Option<ShareListResult> {
         *self.cache_reads.lock_ignore_poison() += 1;
         self.cache.get(&host.id).cloned()
+    }
+
+    fn drop_cached(&self, host_id: &str) {
+        self.dropped.lock_ignore_poison().push(host_id.to_string());
     }
 
     fn list<'a>(
@@ -627,6 +633,123 @@ fn the_share_list_host_is_the_one_its_listing_resolves() {
     assert_eq!(*shares.cache_reads.lock_ignore_poison(), 0);
 }
 
+/// A server saved by its Bonjour name: its row's id is the store's, but its share list
+/// resolves to (and caches and notes its account under) the DISCOVERED host's id.
+fn saved_by_name() -> ServerSources {
+    use crate::saved_servers::{SavedServer, ServerNameSource};
+    use cmdr_fs::server_meta::ServerProtocol;
+    ServerSources {
+        saved: vec![SavedServer {
+            id: "manual-testnas-445".to_string(),
+            protocol: ServerProtocol::Smb,
+            display_name: "Testnas".to_string(),
+            name_source: ServerNameSource::Fallback,
+            address: "Testnas".to_string(),
+            username: None,
+            pinned: false,
+            last_connected_at: None,
+            auto_reconnect: None,
+            places: Vec::new(),
+            awaiting_first_connect: false,
+            saved_from_mount: false,
+        }],
+        hosts: vec![host("Testnas", 445)],
+        ..ServerSources::default()
+    }
+}
+
+/// ❗ Forget drops what the server's share list signed in as and cached under EVERY host
+/// its row stands for, the discovered host its share list resolves to included: keyed by
+/// the row's id alone, the row read "Found nearby … as testuser" after Forget and a share
+/// list reopened inside 30 s listed from the cache without asking for an account.
+#[tokio::test]
+async fn forgetting_a_server_drops_its_share_lists_account_and_cache_under_the_host_it_resolves_to() {
+    let mut shares = with_servers(testnas(), saved_by_name());
+    shares.accounts.insert(
+        "id-testnas".to_string(),
+        ShareListAccount::User {
+            username: "testuser".to_string(),
+        },
+    );
+    let (volume, shares) = volume(shares);
+    let path = app("smb://testnas");
+    volume.list_directory_for_pane(&path, None, None).await.expect("lists");
+    assert!(volume.listed_account(&path).is_some(), "the sign-in is noted");
+
+    volume.forget_server_share_lists("manual-testnas-445");
+
+    assert_eq!(volume.listed_account(&path), None);
+    let dropped = shares.dropped.lock_ignore_poison().clone();
+    assert!(dropped.contains(&"id-testnas".to_string()), "dropped {dropped:?}");
+    assert!(
+        dropped.contains(&"manual-testnas-445".to_string()),
+        "dropped {dropped:?}"
+    );
+    // Once the store row is gone, the host mDNS still sees reads as nobody's.
+    shares.servers.lock_ignore_poison().saved.clear();
+    let entries = volume.server_entries();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(
+        entries[0].server_meta.as_ref().and_then(|meta| meta.account.clone()),
+        None
+    );
+    assert!(shares.dials().len() == 1, "Forget dials nothing");
+}
+
+/// A server saved by IP and shown under its Bonjour twin, the twin at `10.0.0.4`.
+fn saved_by_ip_with_twin() -> ServerSources {
+    use crate::saved_servers::{SavedServer, ServerNameSource};
+    use cmdr_fs::server_meta::ServerProtocol;
+    ServerSources {
+        saved: vec![SavedServer {
+            id: "manual-10-0-0-4-445".to_string(),
+            protocol: ServerProtocol::Smb,
+            display_name: "10.0.0.4".to_string(),
+            name_source: ServerNameSource::Fallback,
+            address: "10.0.0.4".to_string(),
+            username: None,
+            pinned: false,
+            last_connected_at: None,
+            auto_reconnect: None,
+            places: Vec::new(),
+            awaiting_first_connect: false,
+            saved_from_mount: false,
+        }],
+        hosts: vec![NetworkHost {
+            ip_address: Some("10.0.0.4".to_string()),
+            ..host("Testnas", 445)
+        }],
+        ..ServerSources::default()
+    }
+}
+
+/// ❗ Going up from a share list opened at a Bonjour twin's path lands on the row that
+/// stands for that host, found by identity: the IP-saved row lists under the IP's path,
+/// so a lookup by path alone found nothing and the cursor fell to the first row.
+#[test]
+fn a_share_list_at_a_twins_path_lands_on_the_row_that_stands_for_that_host() {
+    let mut shares = with_servers(testnas(), saved_by_ip_with_twin());
+    shares.hosts.fresh = vec![NetworkHost {
+        ip_address: Some("10.0.0.4".to_string()),
+        ..host("Testnas", 445)
+    }];
+    shares.hosts.saved = vec![crate::network::manual_servers::create_network_host("10.0.0.4", 445)];
+    let (volume, shares) = volume(shares);
+
+    assert_eq!(
+        volume.servers_row_path("smb://testnas").as_deref(),
+        Some("smb://10.0.0.4"),
+        "the twin's share list maps to the saved row"
+    );
+    assert_eq!(
+        volume.servers_row_path("smb://10.0.0.4").as_deref(),
+        Some("smb://10.0.0.4")
+    );
+    assert_eq!(volume.servers_row_path("smb://gone-nas"), None);
+    assert_eq!(volume.servers_row_path("smb://"), None);
+    assert!(shares.dials().is_empty());
+}
+
 /// A non-pane read (Ask Cmdr's `list_dir`) answers from the cache and changes no
 /// account: only the person's own listing says who the pane is signed in as.
 #[tokio::test]
@@ -908,6 +1031,8 @@ async fn smb_integration_a_share_list_of_the_fixture_lists_through_the_engine() 
         fn cached(&self, _host: &NetworkHost) -> Option<ShareListResult> {
             None
         }
+
+        fn drop_cached(&self, _host_id: &str) {}
 
         fn list<'a>(
             &'a self,

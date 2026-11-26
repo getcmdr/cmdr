@@ -37,6 +37,7 @@ const confirmWithCheckbox = vi.fn((_question: unknown) => Promise.resolve({ conf
 const forgetSavedSmbHostPassword = vi.fn((_id: string) => Promise.resolve(true))
 const listSavedServers = vi.fn(() => Promise.resolve<unknown[]>([]))
 const setCredentialStatus = vi.fn()
+const forgetShareListsOfMachine = vi.fn((_host: unknown) => {})
 /** What the store's in-memory credential status says about the host. */
 let credentialStatus = 'has_creds'
 const openEditServerSheet = vi.fn((_server: unknown) => Promise.resolve({ kind: 'saved' }))
@@ -60,6 +61,9 @@ vi.mock('./network-store.svelte', () => ({
   getCredentialStatus: () => credentialStatus,
   setCredentialStatus: (...args: unknown[]) => {
     setCredentialStatus(...(args as []))
+  },
+  forgetShareListsOfMachine: (host: unknown) => {
+    forgetShareListsOfMachine(host)
   },
 }))
 vi.mock('./share-list-sign-in', () => ({
@@ -227,6 +231,20 @@ describe('forget', () => {
     expect(confirmWithCheckbox).toHaveBeenCalledOnce()
     expect(forgetSavedSmbHost).toHaveBeenCalledWith('manual-10-0-0-4-445')
     expect(forgetSavedServer).not.toHaveBeenCalled()
+  })
+
+  /**
+   * ❗ The frontend's copy of who the share list signed in as goes with the server, like
+   * the backend's: kept, the row menu still offered the forgotten account's items.
+   */
+  it('drops the account its share lists signed in as, only once the server is forgotten', async () => {
+    await actions().forget(savedHostRow)
+    expect(forgetShareListsOfMachine).toHaveBeenCalledWith(host)
+
+    forgetShareListsOfMachine.mockClear()
+    confirmWithCheckbox.mockResolvedValueOnce({ confirmed: false, checked: false })
+    await actions().forget(savedHostRow)
+    expect(forgetShareListsOfMachine).not.toHaveBeenCalled()
   })
 
   /**

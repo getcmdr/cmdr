@@ -69,14 +69,16 @@ signs in to and caches under; with none, the host the path names stands in (its 
 server saved by IP and shown under its Bonjour twin's name signs in, notes its account, and reads its credential status
 as the share list at the saved address does, ❌ never as the twin or as a host parsed out of the Details text.
 
-- **F8** (`file.delete` on the `network` kind; an agent's `delete` keeps its own road and refusal) forgets the SAVED
-  server under the cursor (`servers-list-actions.ts`): a one-place server through `forgetSavedServer` (so it asks
-  exactly what the switcher's menu asks), an SMB server through its manual entry, sign-in history, and saved shares, an
-  S3 account as every place under it plus, box checked, the secret they share (written FIRST, while a place still names
-  the entry), and a host only mDNS knows about gets the "Can't remove discovered hosts" toast. ❗ An SMB server with a
-  share still mounted offers "Disconnect and forget": Cmdr saves a mounted share's server right back
-  (`src-tauri/src/network/DETAILS.md` § "Servers behind mounted shares"), and a share that won't unmount keeps the host.
-  Nothing is unmounted unasked. The password box shows only where one may be stored, known without a Keychain read.
+- **F8 and ⇧F8** (`file.delete` and `file.deletePermanently` on the `network` kind, since a Forget is for good anyway;
+  an agent's `delete` keeps its own road and refusal) forget the SAVED server under the cursor
+  (`servers-list-actions.ts`): a one-place server through `forgetSavedServer` (so it asks exactly what the switcher's
+  menu asks), an SMB server through its manual entry, sign-in history, saved shares, and who its share lists signed in
+  as (Rust's and `forgetShareListsOfMachine`'s copies), an S3 account as every place under it plus, box checked, the
+  secret they share (written FIRST, while a place still names the entry), and a host only mDNS knows about gets the
+  "Can't remove discovered hosts" toast. ❗ An SMB server with a share still mounted offers "Disconnect and forget":
+  Cmdr saves a mounted share's server right back (`src-tauri/src/network/DETAILS.md` § "Servers behind mounted shares"),
+  and a share that won't unmount keeps the host. Nothing is unmounted unasked. The password box shows only where one may
+  be stored, known without a Keychain read.
 - **F2 / ⌘E / the palette's Edit server** open the sheet on the row's saved entry (`editServerRow`); on a share list, on
   the saved server whose Servers row opens it (Rust's `saved_server_of_share_list`, the list's own match). A row with
   nothing saved says why, ❌ never nothing.
@@ -279,11 +281,13 @@ The share list's `..` is the standard parent row (`computeHasParent`: the volume
 counts it like any list's. Enter, `⌘↑`, and Backspace on it, or on the error screen where there's no row, load the
 Servers list (`FilePane`'s `leaveShareList`, ❗ `smb://`, never the TS grammar's `parentOf`, which reads `smb:/`) with
 the cursor on that server's row, found BY PATH (`LoadDirectoryArgs.selectPath`, Rust's `find_path_index`): the row reads
-the server's friendly name, its path is the share list's. A restored share-list tab comes back as the Servers list on
-that row the same way (`../pane/restored-landing.svelte.ts`), with nothing listed at launch. History Back restores the
-cursor like any folder's. Escape doesn't: on a file list it never means "parent". It names the Servers list in the MCP
-mirror (`smb://`) and says "Back to Servers" to a screen reader (`fileExplorer.network.share.parentRowName`, through
-`ListWords.parentRowName`).
+the server's friendly name, its path is the share list's. A path no row has (a Bonjour twin's share list, whose server
+is saved by IP and listed under the IP's path) lands on the row that stands for the host it resolves to, by identity
+(`src-tauri/src/network/DETAILS.md` § "The Servers list's rows"). A restored share-list tab comes back as the Servers
+list on that row the same way (`../pane/restored-landing.svelte.ts`), with nothing listed at launch. History Back
+restores the cursor like any folder's. Escape doesn't: on a file list it never means "parent". It names the Servers list
+in the MCP mirror (`smb://`) and says "Back to Servers" to a screen reader (`fileExplorer.network.share.parentRowName`,
+through `ListWords.parentRowName`).
 
 ## `..` out of a share's top folder
 

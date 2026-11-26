@@ -83,8 +83,6 @@ export type SettingsSurface =
   | 'enter-menu'
   /** The volume breadcrumb's SMB/network-shares entry. */
   | 'volume-breadcrumb'
-  /** Deep-links to `network.enabled`. No door passes it today. */
-  | 'servers-hub'
   /** A share refused under "Always require SMB encryption" (the pane's error screen or reconnect view), deep-linking to that switch. */
   | 'smb-encryption-refusal'
   /** A pane's ADB refusal with no platform tools to talk to, deep-linking to the Android section. */
