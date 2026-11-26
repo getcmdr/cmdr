@@ -492,7 +492,7 @@
         getTotalCount: () => effectiveTotalCount,
         getHiddenCount: () => hiddenCount,
         getLoading: () => loading,
-        // A `..` out of an SMB share's top folder, or a share list's back to the hub, is no drop target.
+        // A `..` out of an SMB share's top folder, or a share list's back to the Servers list, is no drop target.
         getParentRow: () => ({
             hasParent,
             parentPath: hasParent && canonicalPath && !shareParent.leadsOutHere && caps.kind !== 'share-list'

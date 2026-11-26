@@ -117,7 +117,7 @@ export function checkTransferDestinationGuard(
     }
   }
   // A server's share list holds shares, not a folder. ❗ The `network` kind too: a drop on a
-  // share's ROW targets `smb://<server>/<share>`, which routes there, and so does the hub.
+  // share's ROW targets `smb://<server>/<share>`, which routes there, and so does the Servers list.
   if (destCaps.kind === 'share-list' || destCaps.kind === 'network') {
     return {
       ok: false,

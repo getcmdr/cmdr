@@ -68,7 +68,7 @@ export function cursorRowAnchor(
 
 /**
  * {@link contextMenuAnchor} for the row `rowSelector` finds inside `container`, else
- * `surface`: the same rule for any list that isn't a file list (the servers hub).
+ * `surface`: the same rule for any list that isn't a file list.
  */
 export function rowAnchorIn(
   container: HTMLElement | null,

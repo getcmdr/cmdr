@@ -211,7 +211,7 @@ export function initPersistenceSubscriber(deps: PersistenceSubscriberDeps): Pers
   return {
     persistLastUsedPath: (record) => {
       // ❌ Never a share list as `network`'s last folder: picking Servers would reopen, and
-      // list, the last server (#324). Servers always lands on the hub.
+      // list, the last server (#324). Servers always lands on the Servers list.
       if (capabilitiesForPane(record.volumeId, record.path).kind === 'share-list') return
       void saveLastUsedPathForVolume(record.volumeId, record.path)
       // Feed the folder-importance visit signal from the same navigation-commit

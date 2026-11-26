@@ -343,8 +343,8 @@ the pane and replies with where it came to rest, on the same wire shape as `mcp-
 
 1. Await the switch's `corrected`, so the folder the switch reopens (the one last used on the volume) is decided.
 2. Wait for the pane to go quiet (`mcp-nav-landing.ts`). It requires a NEW listing only when the landing differs from
-   where the pane was and the volume lists at all (`expectsNewListing`): re-selecting in place and the servers hub list
-   nothing new, and waiting for a listing there would burn the whole budget.
+   where the pane was and the volume lists at all (`expectsNewListing`): re-selecting in place and a search snapshot
+   list nothing new, and waiting for a listing there would burn the whole budget.
 3. Flush the pane state, then reply with `classifyVolumeLanding`'s outcome. Any folder on the selected volume counts as
    `navigated`.
 

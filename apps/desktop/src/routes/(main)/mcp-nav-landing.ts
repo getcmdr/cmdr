@@ -184,8 +184,8 @@ export function classifyLanding(args: { target: PanePlace; landed: PanePlace; re
  *
  * Not when its destination, once the background correction has decided it, is where the
  * pane already was: the pane's props don't change, so nothing re-lists (re-selecting
- * the volume a pane shows). Not on a volume with no backend listing either (the servers
- * hub). Everywhere else a new listing is the only evidence of arrival, and waiting for it
+ * the volume a pane shows). Not on a view with no backend listing either (a search
+ * snapshot). Everywhere else a new listing is the only evidence of arrival, and waiting for it
  * is what spans an undialed phone's connect.
  */
 export function expectsNewListing(args: { before: PanePlace; landed: PanePlace; hasBackendListing: boolean }): boolean {

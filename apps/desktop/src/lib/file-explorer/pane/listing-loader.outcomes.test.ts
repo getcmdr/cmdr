@@ -183,7 +183,7 @@ describe('createListingLoader — error / MTP / cancel handling', () => {
   })
 
   it.each(['shareListSignIn', 'shareListUnavailable'])(
-    'shows a server’s refused share list ($0) in place, never walking up to the hub, which lists nothing',
+    'shows a server’s refused share list ($0) in place, never walking up to the Servers list, away from the server it refused',
     async (kind) => {
       const { loader, state } = makeHarness({ volumeId: 'network', volumePath: 'smb://' })
       h.pathExistsChecked.mockResolvedValue({ data: false, timedOut: false })

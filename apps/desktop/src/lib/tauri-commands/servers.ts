@@ -3,7 +3,7 @@
 //
 // ❗ The frontend branches on protocol NOWHERE above this line. The per-protocol
 // commands (`./sftp`, `./webdav`) stay for what only that protocol has (host
-// keys, key files, a WebDAV URL); everything the hub, the switcher, and the
+// keys, key files, a WebDAV URL); everything the Servers list, the switcher, and the
 // sign-in sheet do goes through here.
 //
 // What each outcome means and which side owns it:

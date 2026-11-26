@@ -253,11 +253,11 @@ that made it, so two frames can hold the same id. `channels.ts` makes it page-wi
 ## Right-click menus
 
 - **What**: the native popups the app opens (`show_file_context_menu`, the breadcrumb's, a tab's, the date header's Sort
-  by, the function key bar's, the viewer's text, a queue row's, a servers hub host's), drawn in the visitor's OS's rows
-  and look (`context-menu.ts`: macOS 27's for a Mac visitor, Windows 11's in-page ones for a Windows visitor, as D5 has
-  them there) on the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, the flavor the bar has) with the
-  bar's look and keys. The app already cancels the browser's own menu (`#lib/context-menu-ownership.ts`), so a
-  right-click reaches the same `show_*` command it does on desktop.
+  by, the function key bar's, the viewer's text, a queue row's, a Servers row's), drawn in the visitor's OS's rows and
+  look (`context-menu.ts`: macOS 27's for a Mac visitor, Windows 11's in-page ones for a Windows visitor, as D5 has them
+  there) on the app's own in-page context menu (`#lib/ui/ContextMenu.svelte`, the flavor the bar has) with the bar's
+  look and keys. The app already cancels the browser's own menu (`#lib/context-menu-ownership.ts`), so a right-click
+  reaches the same `show_*` command it does on desktop.
 - **Decision**: the rows are the desktop's own, through WASM. `crates/cmdr-menu`'s `context` holds every popup's rows
   and what a pick asks for; `cmdr-listing-wasm`'s `context_menu.rs` answers each `show_*` command with them and stashes
   what the menu went up over, as `commands/menu.rs` stashes it in `MenuState` (`crates/cmdr-listing-wasm/DETAILS.md` §

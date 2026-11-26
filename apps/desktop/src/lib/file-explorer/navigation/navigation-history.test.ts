@@ -233,7 +233,7 @@ describe('NavigationHistory', () => {
   })
 
   describe('network volume navigation', () => {
-    it('walks the hub and share lists as plain paths', () => {
+    it('walks the Servers list and share lists as plain paths', () => {
       let h = createHistory('network', 'smb://')
       h = pushH(h, { volumeId: 'network', path: 'smb://server1' })
       h = pushH(h, { volumeId: 'network', path: 'smb://server2' })

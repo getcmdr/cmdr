@@ -11,7 +11,7 @@
 //! this reads.
 //!
 //! ❗ **The list holds every place; the SWITCHER holds the pinned ones.** A
-//! volume id with no row is one the app denies exists, and a hub Enter, a
+//! volume id with no row is one the app denies exists, and Enter on a Servers row, a
 //! restored tab, and a favorite all reach for a row by id. So `pinned` rides on
 //! the row and `navigation/volume-grouping.ts` applies the user's cap.
 //!
@@ -254,7 +254,7 @@ pub(crate) fn location_from_place(place: ServerPlace) -> LocationInfo {
 /// instead of what the backend actually offers.
 ///
 /// ❗ **The pin filters the SWITCHER, not this list.** The volume list is what
-/// says a volume id exists: the hub's Enter, a restored tab, a favorite, and the
+/// says a volume id exists: Enter on a Servers row, a restored tab, a favorite, and the
 /// pane's own lookup all reach for a row by id, and an unpinned server with no
 /// row is an id that resolves to nothing and a pane that lands on the boot disk.
 /// So every place gets a row carrying its own `pinned`, and
@@ -276,7 +276,7 @@ pub(crate) fn append_server_volumes(volumes: &mut Vec<LocationInfo>) {
 ///   mount row carries no connection state, and the switcher's "live or pinned"
 ///   rule would drop it (`navigation/volume-grouping.ts`).
 /// - One that isn't gets a `saved` row at its last mount path, carrying its own
-///   pin, the way an SFTP place does, so a pin, a tab, and a hub Enter all have
+///   pin, the way an SFTP place does, so a pin, a tab, and a Servers row's Enter all have
 ///   an id to land on. ❗ Not while its volume is REGISTERED: a mount the local
 ///   listing hasn't caught up with (a `discoveryPending` payload) must not read
 ///   as a place to dial.

@@ -43,7 +43,7 @@ describe('file.rename on the Servers volume', () => {
     expect(h.editServerInView).not.toHaveBeenCalled()
   })
 
-  it('keeps F2 on a share list, and any rename on the hub, as Edit server', async () => {
+  it('keeps F2 on a share list, and any rename on the Servers list, as Edit server', async () => {
     h.path = 'smb://testnas'
     expect(dispatch(undefined).startRename).not.toHaveBeenCalled()
     h.path = 'smb://'

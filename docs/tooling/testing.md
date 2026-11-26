@@ -211,7 +211,7 @@ restores itself when the test finishes. The returned handle also drives change: 
 AND notifies the `ResizeObserver`s watching matching elements (which is how Svelte's `bind:clientHeight` family
 re-reads), and `scroll(selector, top)` sets `scrollTop` before dispatching the `scroll` event the component listens for.
 
-Reach for it whenever a component sizes itself from its container: both file-list views and `ServersHub`. Without it a
+Reach for it whenever a component sizes itself from its container: both file-list views and the tab bar. Without it a
 virtualized list computes a zero-row window and renders NOTHING, with no error — so a spec asserting "no Ext cell" or
 "no hourglass" passes against an empty DOM. See `../testing.md` § "A component that measures itself, rendering nothing".
 

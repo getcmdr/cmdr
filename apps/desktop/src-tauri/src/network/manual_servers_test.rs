@@ -303,7 +303,7 @@ fn re_adding_a_host_without_an_account_keeps_the_one_it_had() {
 }
 
 /// ❗ **An entry written before names existed reads as unnamed.** Its
-/// `displayName` holds the derived address, which no person chose, so the hub
+/// `displayName` holds the derived address, which no person chose, so the Servers list
 /// must keep ranking a Bonjour name above it.
 #[test]
 fn an_entry_whose_name_is_its_own_address_is_unnamed() {

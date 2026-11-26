@@ -292,7 +292,7 @@ bundle), Microsoft, file managers, the catalog.
 
 - `Sortera efter relevans`, indefinite like its siblings.
 
-## Server hub: connection state, refusals, forget dialogs (`servers.paneState.*`, `servers.refusal.*`, `fileExplorer.navigation.connectionTooltip*`, `fileExplorer.navigation.disconnect*`, `fileExplorer.navigation.forget*`, `fileExplorer.network.browser.*Host*`, `servers.hub.forgetShare*`)
+## Servers: connection state, refusals, forget dialogs (`servers.paneState.*`, `servers.refusal.*`, `fileExplorer.navigation.connectionTooltip*`, `fileExplorer.navigation.disconnect*`, `fileExplorer.navigation.forget*`, `fileExplorer.network.browser.*Host*`, `servers.hub.forgetShare*`)
 
 - trust → `lita på`, `betrodd` / `betrott` / `betrodda` (SecurityInterface). Host key: bare `nyckel`,
   `nyckeln från {host}`. Reconnect loop `arbetar på att …`.
@@ -303,14 +303,14 @@ bundle), Microsoft, file managers, the catalog.
 - `Den här servern använder en nyckel …` (as `authMethodUnsupported`), ❌ `loggar in med`. `retryTotalSeconds` /
   `.retryTotalMinutes` are bare blocks for `retryKeepsTrying`.
 
-## Server hub: table and statuses (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.serverPinnedToast`/`.serverUnpinnedToast`/`.pinRefusedToast`/`.networkVolume`, `shortcuts.scope.servers`/`.places`)
+## Servers: table and statuses (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.serverPinnedToast`/`.serverUnpinnedToast`/`.pinRefusedToast`/`.networkVolume`, `shortcuts.scope.servers`/`.places`)
 
 - Status cells agree with `servern` (`Ansluten`, `Sparad`, `Hittad i närheten`, `Utloggad`); a gender change rewrites
   the column. `Platser` is broader than `delade mappar` (buckets too). nearby → `i närheten`, ❌ `upptäckt`.
 - `Servern är fortfarande sparad` names the noun (`volymväljaren` is en too). `som {username}` / `som gäst`;
   `Använd gäståtkomst` (❌ `Använd gäst`, a person). Picking a server → `Välj`, ❌ `Markera`.
 
-## Server hub: connect sheet, host key, root and start folder (`servers.sheet.*`, `servers.hostKey.*`, `goToPath.dialog.opensServer`/`.addsServer`, `commands.serversConnect.label`, `servers.refusal.startFolderOutsideRoot`/`.rootNotFound`/`.startFolderNotFound`/`.saveUnconfirmed`, `servers.paneState.reconnecting`/`.signedOutNothingToAsk`)
+## Servers: connect sheet, host key, root and start folder (`servers.sheet.*`, `servers.hostKey.*`, `goToPath.dialog.opensServer`/`.addsServer`, `commands.serversConnect.label`, `servers.refusal.startFolderOutsideRoot`/`.rootNotFound`/`.startFolderNotFound`/`.saveUnconfirmed`, `servers.paneState.reconnecting`/`.signedOutNothingToAsk`)
 
 - `lösenfras` (❌ `lösenordsfras`, an OID name); `Nyckelns lösenfras` / `Nyckelns fingeravtryck` as a pair.
 - `lita på` needs an object: `Lita på nyckeln och anslut`, `Jag har kontrollerat nyckeln`.

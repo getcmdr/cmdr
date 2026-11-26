@@ -4516,7 +4516,7 @@ export const commands = {
    *  across an await, which a command's future can't (it must be `Send`), and the save it starts
    *  must run on the app's runtime: a save past its deadline finishes there, detached.
    *
-   *  ❗ Emits `volumes-changed` on a save, as `update_saved_server` does: the servers hub and the
+   *  ❗ Emits `volumes-changed` on a save, as `update_saved_server` does: the Servers list and the
    *  switcher re-read the saved list on it.
    */
   suggestedOpsApproveServer: (groupId: number, revision: number) =>
@@ -5041,7 +5041,7 @@ export const commands = {
     __TAURI_INVOKE<{
       /**
        *  The name the person knows the server by (the discovery list's `name`):
-       *  what the hub groups a share under, and what the Keychain keys it by.
+       *  what its share list files a share under, and what the Keychain keys it by.
        */
       serverName: string
       shareName: string
@@ -5466,7 +5466,7 @@ export const commands = {
   /**
    *  Whether a share from `host` is mounted, found the way [`disconnect_network_host`] finds what
    *  to unmount: the kernel's mount table snapshot (`statfs`-free, so it can't stall), matched by
-   *  every name the host dials on its port. What the servers hub's row menu asks before it offers
+   *  every name the host dials on its port. What a Servers row's menu asks before it offers
    *  Disconnect, so the item never answers "no mounted shares". Reads no password.
    */
   smbHostHasMounts: (host: NetworkHost) => __TAURI_INVOKE<boolean>('smb_host_has_mounts', { host }),
@@ -5720,7 +5720,7 @@ export const commands = {
   /**
    *  Every server the user has saved, across all three stores.
    *
-   *  ❗ Cached state only, ❌ never the wire: the hub re-reads this on every
+   *  ❗ Cached state only, ❌ never the wire: the Servers list re-lists from this on every
    *  `volumes-changed`, and a probe here would turn a refresh into a round of
    *  network traffic.
    */
@@ -5857,8 +5857,8 @@ export const commands = {
    *  `apply_auto_reconnect`. An unsaved place has nothing to persist and answers
    *  `false`.
    *
-   *  ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-   *  the saved list its row menu shows.
+   *  ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+   *  the saved servers its row menu shows.
    */
   setPlaceAutoReconnect: (volumeId: string, autoReconnect: boolean) =>
     __TAURI_INVOKE<boolean>('set_place_auto_reconnect', { volumeId, autoReconnect }),
@@ -5925,7 +5925,7 @@ export const commands = {
    *  ❗ A saved edit republishes the volume list, whatever it changed. The rows
    *  carry the label and the landing, and neither an unconnected place's edit nor
    *  a start-folder-only one moves anything in the registry that would announce
-   *  it. The servers hub re-reads the saved list on the same broadcast. A second
+   *  it. The Servers list re-lists on the same broadcast. A second
    *  request beside the live install's own coalesces in the debounce.
    */
   updateSavedServer: (server: ServerTarget, editing: string | null) =>
@@ -5961,8 +5961,8 @@ export const commands = {
    *  ❗ Its own command rather than a [`ServerTarget`] arm: an SMB host is a
    *  manual-server entry, not an account with a place to dial.
    *
-   *  ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-   *  the saved list.
+   *  ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+   *  the saved servers.
    */
   updateSavedSmbHost: (id: string, name: string, username: string | null, address: string | null) =>
     __TAURI_INVOKE<SavedServerOutcome>('update_saved_smb_host', { id, name, username, address }),
@@ -6000,8 +6000,8 @@ export const commands = {
    *  no bucket would save the account ROOT as a new place. A bucket's name is the
    *  bucket's own, so an account is the only S3 thing a person names.
    *
-   *  ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-   *  the saved list and the switcher relabel the account root.
+   *  ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+   *  the saved servers and the switcher relabel the account root.
    */
   updateSavedS3Account: (
     id: string,
@@ -7086,7 +7086,7 @@ export type AdbInstallStatus = {
 export type AddFavoriteError =
   /**
    *  `path` isn't a folder on a disk, a share, a server, or a phone: an archive-inner or
-   *  `.git`-portal path, a search-results snapshot, the servers hub, or a path no volume
+   *  `.git`-portal path, a search-results snapshot, the Servers list, or a path no volume
    *  contains. See [`favorite_volume_for`].
    */
   | { type: 'notAPlace' }
@@ -13142,7 +13142,7 @@ export type KnownDialog = {
 export type KnownNetworkShare = {
   /**
    *  The name the person knows the server by (the discovery list's `name`):
-   *  what the hub groups a share under, and what the Keychain keys it by.
+   *  what its share list files a share under, and what the Keychain keys it by.
    */
   serverName: string
   shareName: string
@@ -14436,7 +14436,7 @@ export type LocationInfo = {
    *  How live this volume's SESSION is: the switcher dot, the pane's connect
    *  views, and the reconnect subscription all read it. Set for every volume a
    *  connecting backend serves (SMB, SFTP, WebDAV, ADB) plus a saved-but-not-
-   *  connected server; `None` for a local disk, a favorite, and the hub row.
+   *  connected server; `None` for a local disk, a favorite, and the `Servers` row.
    *  ❗ Not an "is this SMB" test — that is `Volume::backend_kind()`, backend-side.
    */
   connectionState: ConnectionState | null
@@ -14452,7 +14452,7 @@ export type LocationInfo = {
    *  unconditionally.
    *
    *  ❗ The listing publishes EVERY saved place regardless, because a volume id
-   *  with no row is one the app denies exists (a hub Enter and a restored tab
+   *  with no row is one the app denies exists (Enter on a Servers row and a restored tab
    *  both land on an id). Hiding is `navigation/volume-grouping.ts`'s job, and
    *  this field is what it reads.
    */
@@ -14505,7 +14505,7 @@ export type LocationInfo = {
    *  The account a mounted SMB share is signed in as right now, as the mount
    *  table records it (`GUEST` for a guest mount). `None` for everything else.
    *
-   *  ❗ The LIVE account, which the hub shows while a share is connected: the saved
+   *  ❗ The LIVE account, which the Servers list shows while a share is connected: the saved
    *  row's account is for the next connect, and showing it read "Connected … as
    *  otheruser" over a mount signed in as testuser.
    */
@@ -20050,7 +20050,7 @@ export type SavedS3Place = {
 }
 
 /**
- *  An endpoint plus an identity, as the hub lists it.
+ *  An endpoint plus an identity, as the Servers list reads it.
  *
  *  ❗ **An SMB host's places are its SAVED shares** (`known_shares.rs` share rows,
  *  `docs/specs/saved-smb-shares.md`): each carries the volume id its last mount
@@ -20064,18 +20064,18 @@ export type SavedServer = {
    */
   id: string
   /**
-   *  Which protocol, so the hub can show a Type column without parsing an
+   *  Which protocol, so the Servers list can show it without parsing an
    *  address.
    */
   protocol: ServerProtocol
   /**
-   *  What the hub calls it: a name a person chose, or a stand-in when nobody
+   *  What the Servers list calls it: a name a person chose, or a stand-in when nobody
    *  did (an account's `username@host`, an SMB host's address). `name_source`
    *  says which, so the frontend never re-derives one.
    */
   displayName: string
   /**
-   *  Whether a person named it, which is what lets the hub prefer a Bonjour
+   *  Whether a person named it, which is what lets the Servers list prefer a Bonjour
    *  name over a stand-in nobody chose.
    */
   nameSource: ServerNameSource
@@ -20094,7 +20094,7 @@ export type SavedServer = {
    *  SMB host: its SHARES carry their own pins.
    */
   pinned: boolean
-  // ISO 8601, so a hub can sort by recency. `None` when nothing recorded one.
+  // ISO 8601, so the Servers list can sort by recency. `None` when nothing recorded one.
   lastConnectedAt: string | null
   /**
    *  The "Reconnect automatically" switch: redial on its own when a session
@@ -20113,7 +20113,7 @@ export type SavedServer = {
   /**
    *  An SMB host saved without contact ("Add anyway", an approved Ask Cmdr card)
    *  that no mount has gone through since: nothing lists its shares until the user
-   *  connects, and the hub says "Not connected yet". Always `false` for the other
+   *  connects, and the Servers list says "Not connected yet". Always `false` for the other
    *  protocols, whose unconnected save contacts nothing anyway. ❗ Absent reads
    *  `false`, like the store field it mirrors.
    */
@@ -21432,7 +21432,7 @@ export type ServerMeta = {
 /**
  *  Whether a person NAMED this server, or the label is a stand-in.
  *
- *  ❗ The hub's Name column ranks three names (a name a person chose, the Bonjour
+ *  ❗ The Servers list's Name column ranks three names (a name a person chose, the Bonjour
  *  name mDNS found, a stand-in nobody chose), and the top rank is a FACT this
  *  enum publishes, ❌ never a guess at the string's shape. Only the store that
  *  wrote the label knows where it came from.
@@ -25418,7 +25418,7 @@ export type VolumeContextAction = {
  *
  *  Rust emits only `Eject` and `EjectAll`, from the native breadcrumb menu. Every other variant
  *  is picked in the frontend, from a row's in-app menu (the volume switcher's and
- *  the favorites menu's → submenus, the servers hub's right-click:
+ *  the favorites menu's → submenus, a Servers row's right-click:
  *  `apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`), and from the
  *  palette. It lives here so the one vocabulary those surfaces and the handlers
  *  share is generated, not retyped.
@@ -25439,7 +25439,7 @@ export type VolumeContextActionKind =
   | 'disconnect'
   // Put a saved place in the switcher.
   | 'pin'
-  // Take it back out. ❗ The place stays saved; the hub still lists it.
+  // Take it back out. ❗ The place stays saved; the Servers list still lists it.
   | 'unpin'
   // Open the sign-in sheet on this server's stored fields.
   | 'edit'

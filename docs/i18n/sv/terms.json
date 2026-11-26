@@ -1414,7 +1414,7 @@
   "fingerprint": {
     "chosen": "fingeravtryck",
     "confidence": "high",
-    "decision": "Server hub: connect sheet",
+    "decision": "Servers: connect sheet",
     "forms": "neuter; Nyckelns fingeravtryck",
     "sources": "macOS Security.framework Certificate.loctable (Fingeravtryck)"
   },
@@ -1763,7 +1763,7 @@
     "accept": ["nyckel", "värdnycklar"],
     "chosen": "värdnyckel",
     "confidence": "tentative",
-    "decision": "Server hub: connect sheet",
+    "decision": "Servers: connect sheet",
     "forms": "only where English writes host key (Betrodda värdnycklar); where English says key, Swedish says nyckel; never a genitive on {host}: nyckeln från {host}",
     "sources": "compound of värd (Certificate Assistant Värdnamn) and nyckel"
   },
@@ -2264,7 +2264,7 @@
     ],
     "chosen": "export",
     "confidence": "tentative",
-    "decision": "Server hub: connect sheet",
+    "decision": "Servers: connect sheet",
     "forms": "en-word: en export, exporten, exporter, exporterna; field label Export; compound NFS-export",
     "sources": "Swedish Synology / TrueNAS guides (NFS-exporten, NFS-export: zmanda.com/sv, tech-insider.org/sv, web search 2026-10-22); MS terminology has only the verb; no NAS UI in the pile"
   },
@@ -2545,7 +2545,7 @@
     ],
     "chosen": "fäst",
     "confidence": "high",
-    "decision": "Server hub: table and statuses",
+    "decision": "Servers: table and statuses",
     "exceptions": {
       "main.dockPinNudge.body": "The Dock takes Apple's own verbs, not fäst; Vill du ha den kvar … bredvid Finder reads naturally in the question."
     },
@@ -2969,7 +2969,7 @@
     "accept": ["startmapp"],
     "chosen": "rotmapp",
     "confidence": "high",
-    "decision": "Server hub: connect sheet",
+    "decision": "Servers: connect sheet",
     "forms": "rotmappen; start folder → startmapp (tentative)",
     "sources": "Thunar (Rotmappen har ingen förälder), Total Commander (Gå till rotmappen), MS (root folder → rotmapp)"
   },
@@ -3096,7 +3096,7 @@
     "accept": ["servrar"],
     "chosen": "server",
     "confidence": "high",
-    "decision": "Server hub: table and statuses",
+    "decision": "Servers: table and statuses",
     "forms": "plural servrar",
     "sources": "macOS Finder (Anslut till server, Anslutna servrar)"
   },
@@ -3104,7 +3104,7 @@
     "accept": ["adress"],
     "chosen": "serveradress",
     "confidence": "high",
-    "forms": "the sheet's field and hub column → Adress",
+    "forms": "the sheet's field → Adress",
     "sources": "macOS Finder ConnectToWindow (Serveradress)"
   },
   "service": {
@@ -3576,7 +3576,7 @@
     ],
     "chosen": "lita på",
     "confidence": "high",
-    "decision": "Server hub: connection state",
+    "decision": "Servers: connection state",
     "forms": "button Lita på nyckeln och anslut / Lita på certifikatet och anslut (Trust and connect always names its object, since lita på needs one); trusted → betrodd / betrott / betrodda",
     "sources": "macOS SecurityInterface.framework (Lita på), Certificate Assistant (Betrodd rot)"
   },
@@ -3950,7 +3950,7 @@
         "why": "style.md bans fel as a bare label; problem is the calm noun"
       }
     ],
-    "sources": "catalog (crashReporter.dialog.body.unknown stötte på ett problem, fileExplorer.network.browser.status.error Problem, errors.listing.deviceProblem.title Problem med enheten); style.md voice rule",
+    "sources": "catalog (crashReporter.dialog.body.unknown stötte på ett problem, errors.listing.deviceProblem.title Problem med enheten); style.md voice rule",
     "exceptions": {
       "errors.listing.unexpectedSystemResponse.suggestion": "pre-existing: “run First Aid … to check for file system problems” is rendered as kör Skivkontroll … för att kontrollera filsystemet, which keeps the meaning without the noun"
     }

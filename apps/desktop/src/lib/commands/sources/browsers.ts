@@ -33,7 +33,7 @@ export const browsersCommands: CommandSource[] = [
   // Servers
   // ============================================================================
   {
-    // Takes the focused pane to the servers hub, wherever it is. The one command
+    // Takes the focused pane to the Servers list, wherever it is. The one command
     // here that needs no server under the cursor.
     id: 'servers.show',
     nameKey: 'commands.serversShow.label',
@@ -67,8 +67,8 @@ export const browsersCommands: CommandSource[] = [
     whileDialogOpen: BLOCKED_BY_DIALOGS,
   },
   {
-    // An SMB server's account, as its hub row menu and its share list's account menu offer
-    // it: the hub's cursor row, else the server whose share list is up.
+    // An SMB server's account, as its Servers row menu and its share list's account menu offer
+    // it: the Servers row under the cursor, else the server whose share list is up.
     id: 'servers.signInAs',
     nameKey: 'commands.serversSignInAs.label',
     scope: 'Main window',
@@ -96,9 +96,9 @@ export const browsersCommands: CommandSource[] = [
     paletteCondition: 'focusedPaneOnSmbShare',
   },
   {
-    // ⌘K, Finder's binding for the same thing. ❗ Window-wide, ❌ not the hub's
+    // ⌘K, Finder's binding for the same thing. ❗ Window-wide, ❌ not the Servers
     // scope: adding a server is about no server in particular, so it works from
-    // a file list as readily as from the hub.
+    // a file list as readily as from the Servers list.
     id: 'servers.connect',
     nameKey: 'commands.serversConnect.label',
     scope: 'Main window',
@@ -107,7 +107,7 @@ export const browsersCommands: CommandSource[] = [
     whileDialogOpen: BLOCKED_BY_DIALOGS,
   },
   {
-    // ⌘E lives in the hub's own scope, a sibling of the file list's, so it can
+    // ⌘E lives in the Servers scope, a sibling of the file list's, so it can
     // never meet a file-list binding.
     id: 'servers.edit',
     nameKey: 'commands.serversEdit.label',

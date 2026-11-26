@@ -1896,7 +1896,7 @@
     "accept": ["IP-adressen"],
     "chosen": "IP-adres",
     "confidence": "high",
-    "sources": "Microsoft Terminology (IP address → IP-adres), catalog (fileExplorer.network.browser.tooltip.resolving)"
+    "sources": "Microsoft Terminology (IP address → IP-adres)"
   },
   "item": {
     "accept": ["onderdelen"],
@@ -2045,7 +2045,7 @@
     "proseAccept": ["toont", "noemen", "op te sommen", "opsommen"],
     "chosen": "lijst",
     "confidence": "high",
-    "forms": "the Servers list → de lijst Servers (the hub's name after the noun); server list → serverlijst; stops listing it → haalt … uit de lijst; the verb list (apps, shares, names) → tonen, opsommen, noemen in prose",
+    "forms": "the Servers list → de lijst Servers (the list's name after the noun); server list → serverlijst; stops listing it → haalt … uit de lijst; the verb list (apps, shares, names) → tonen, opsommen, noemen in prose",
     "sources": "catalog (servers.pinHint.body, settings.servers intro: in de lijst Servers), Microsoft Terminology (list → lijst)",
     "exceptions": {
       "fileOperations.validation.notPortable.reservedName": "\"list\" is the verb here (a share lists the item under another name): toont, not the noun lijst."

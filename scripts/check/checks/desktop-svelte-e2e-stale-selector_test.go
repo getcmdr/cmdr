@@ -67,7 +67,7 @@ func requireNoE2EStaleSelectorHits(t *testing.T, err error, sites ...string) {
 func TestE2EStaleSelector_FlagsThePreFixServersHubCapture(t *testing.T) {
 	// Verbatim from `43a711b1d^:apps/desktop/test/e2e-playwright/i18n-capture-surfaces.ts`.
 	// The capture waited on the network browser's connect row for five days after the
-	// servers hub replaced it, because nothing runs the capture routinely.
+	// former servers hub replaced it, because nothing runs the capture routinely.
 	_, err := runE2EStaleSelectorOn(t, map[string]string{
 		e2eSelSrcDir + "lib/ServersHub.svelte": `<div class="servers-hub"><div class="add-row"></div></div>
 <div data-dialog-id={dialogId}></div>

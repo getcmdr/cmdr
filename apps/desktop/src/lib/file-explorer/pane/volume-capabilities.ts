@@ -91,7 +91,7 @@ import { isShareListLocation } from '#lib/servers/share-list-path.js'
  * three are capability kinds only, never tint kinds.
  *
  * `share-list` is kind-from-path too, on the `network` volume only: `smb://<server>`
- * is a server's share list, `smb://` the hub (`capabilitiesForPane`).
+ * is a server's share list, `smb://` the Servers list (`capabilitiesForPane`).
  */
 export type VolumeKind =
   | 'local' // real filesystem volume (root, attached, cloud_drive, main_volume)
@@ -339,7 +339,7 @@ const CAPABILITY_TABLE: Readonly<Record<VolumeKind, VolumeCapabilities>> = Objec
   'share-list': Object.freeze({
     kind: 'share-list',
     // A server's shares on the `network` volume (`SmbServerVolume` in Rust): a real
-    // listing of one folder row per share, with a `..` back to the hub. A share is
+    // listing of one folder row per share, with a `..` back to the Servers list. A share is
     // MOUNTED, never entered, written into, or copied out of, so every write and
     // source cell is off, and each verb refuses at its own per-kind seam
     // (`file-operation-commands.ts::readOnlyRefusal`, `transfer-entry.ts`'s two
@@ -743,7 +743,7 @@ export function paneFolderIsPolledForDeletion(volumeId: string, path: string): b
  *
  * The fourth is a server's share list: the `network` volume at `smb://<server>`
  * (exactly one authority, no share). ❗ This is the ONE place that reads such a path
- * as a share list (`isShareListLocation` is its rule); `smb://` stays the hub, and a
+ * as a share list (`isShareListLocation` is its rule); `smb://` stays the Servers list, and a
  * share's own `smb://<server>/<share>` is no listing at all (it's mounted).
  */
 export function capabilitiesForPane(volumeId: string, path: string | undefined): VolumeCapabilities {

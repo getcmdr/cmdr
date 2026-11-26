@@ -79,7 +79,7 @@ export function createEdgeFlowHandlers(deps: EdgeFlowHandlersDeps): EdgeFlowHand
       }
       returnFromCancel(pane, { goTo: lastShown }, selectionOnReturn(lastShown, cancelled))
     }
-    // Otherwise the load was one the pane had already left (for the Servers hub,
+    // Otherwise the load was one the pane had already left (for another volume,
     // say), and stopping it was the whole job.
     deps.followFocusedPane()
   }

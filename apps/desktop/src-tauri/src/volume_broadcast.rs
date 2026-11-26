@@ -305,7 +305,7 @@ pub fn emit_server_place_moved(moved: ServerPlaceMoved) {
 ///
 /// Rust emits only `Eject` and `EjectAll`, from the native breadcrumb menu. Every other variant
 /// is picked in the frontend, from a row's in-app menu (the volume switcher's and
-/// the favorites menu's → submenus, the servers hub's right-click:
+/// the favorites menu's → submenus, a Servers row's right-click:
 /// `apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`), and from the
 /// palette. It lives here so the one vocabulary those surfaces and the handlers
 /// share is generated, not retyped.
@@ -327,7 +327,7 @@ pub enum VolumeContextActionKind {
     Disconnect,
     /// Put a saved place in the switcher.
     Pin,
-    /// Take it back out. ❗ The place stays saved; the hub still lists it.
+    /// Take it back out. ❗ The place stays saved; the Servers list still lists it.
     Unpin,
     /// Open the sign-in sheet on this server's stored fields.
     Edit,

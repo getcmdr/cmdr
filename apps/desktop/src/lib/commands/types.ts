@@ -20,7 +20,7 @@ export type CommandScope =
   | 'Main window/File list' // File list navigation/actions
   | 'Main window/Brief mode' // Brief mode specific
   | 'Main window/Full mode' // Full mode specific
-  | 'Main window/Servers' // The servers hub (the saved-and-nearby list)
+  | 'Main window/Servers' // The Servers list (one row per saved, nearby, or mounted server)
   | 'Main window/Places' // The places under one account (an SMB host's shares)
   | 'Main window/Volume chooser' // Volume dropdown
   | 'Main window/Favorites menu' // The ⌃D favorites menu, the volume dropdown's sibling

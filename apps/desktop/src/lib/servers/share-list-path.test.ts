@@ -27,7 +27,7 @@ describe('sameShareList', () => {
     expect(sameShareList('smb://testnas', 'smb://testnas:4450')).toBe(false)
   })
 
-  it('names no share list for the hub or a share', () => {
+  it('names no share list for the Servers list or a share', () => {
     expect(sameShareList('smb://', 'smb://')).toBe(false)
     expect(sameShareList('smb://testnas/public', 'smb://testnas/public')).toBe(false)
   })

@@ -187,13 +187,13 @@ fn a_server_row_has_its_scheme_root() {
     assert_eq!(json["root"], root.as_str());
 }
 
-/// The hub row is a navigation target with no locations, so it has no root to
+/// The `Servers` row is a navigation target with no locations, so it has no root to
 /// offer, and an absent field says so.
 #[test]
 fn a_row_the_resolver_doesnt_know_has_no_root() {
-    let mut hub = summary("network", VolumeKind::Virtual, None, None);
-    hub.mount_path = None;
-    assert!(wire(&map(&[hub], &facts(vec![])).volumes[0]).get("root").is_none());
+    let mut servers = summary("network", VolumeKind::Virtual, None, None);
+    servers.mount_path = None;
+    assert!(wire(&map(&[servers], &facts(vec![])).volumes[0]).get("root").is_none());
 }
 
 /// ❗ The phone favorite (`mtp://pixel/Internal storage`) rode `volumes` as a

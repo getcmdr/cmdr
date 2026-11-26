@@ -1,6 +1,6 @@
 //! One command family for "a server", protocol-agnostic wherever the UI is.
 //!
-//! The hub, the switcher, the sign-in sheet, and the pane banner all speak about
+//! The Servers list, the switcher, the sign-in sheet, and the pane banner all speak about
 //! servers rather than about SFTP, WebDAV, and SMB, so this is the surface they
 //! call. It is a FACADE over the per-protocol commands (`commands/sftp.rs`,
 //! `commands/webdav.rs`, `commands/network.rs`), which keep their tests, their
@@ -48,7 +48,7 @@ use crate::saved_servers::{SavedServer, ServerTarget};
 
 /// Every server the user has saved, across all three stores.
 ///
-/// ❗ Cached state only, ❌ never the wire: the hub re-reads this on every
+/// ❗ Cached state only, ❌ never the wire: the Servers list re-lists from this on every
 /// `volumes-changed`, and a probe here would turn a refresh into a round of
 /// network traffic.
 #[tauri::command]
@@ -281,8 +281,8 @@ fn set_place_pinned_inner(volume_id: &str, pinned: bool) -> bool {
 /// `apply_auto_reconnect`. An unsaved place has nothing to persist and answers
 /// `false`.
 ///
-/// ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-/// the saved list its row menu shows.
+/// ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+/// the saved servers its row menu shows.
 #[tauri::command]
 #[specta::specta]
 pub fn set_place_auto_reconnect(volume_id: String, auto_reconnect: bool) -> bool {
@@ -474,7 +474,7 @@ fn forget_smb_entries(names: &[String], shares: &[String]) -> bool {
 /// ❗ A saved edit republishes the volume list, whatever it changed. The rows
 /// carry the label and the landing, and neither an unconnected place's edit nor
 /// a start-folder-only one moves anything in the registry that would announce
-/// it. The servers hub re-reads the saved list on the same broadcast. A second
+/// it. The Servers list re-lists on the same broadcast. A second
 /// request beside the live install's own coalesces in the debounce.
 #[tauri::command]
 #[specta::specta]
@@ -517,8 +517,8 @@ pub fn saved_server_id(server: ServerTarget) -> Option<String> {
 /// no bucket would save the account ROOT as a new place. A bucket's name is the
 /// bucket's own, so an account is the only S3 thing a person names.
 ///
-/// ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-/// the saved list and the switcher relabel the account root.
+/// ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+/// the saved servers and the switcher relabel the account root.
 #[tauri::command]
 #[specta::specta]
 pub async fn update_saved_s3_account(
@@ -569,8 +569,8 @@ pub async fn save_s3_account_root(account_id: String) -> bool {
 /// ❗ Its own command rather than a [`ServerTarget`] arm: an SMB host is a
 /// manual-server entry, not an account with a place to dial.
 ///
-/// ❗ Emits `volumes-changed`, which is what makes an open servers hub re-read
-/// the saved list.
+/// ❗ Emits `volumes-changed`, which is what makes an open Servers list re-list
+/// the saved servers.
 #[tauri::command]
 #[specta::specta]
 pub async fn update_saved_smb_host(

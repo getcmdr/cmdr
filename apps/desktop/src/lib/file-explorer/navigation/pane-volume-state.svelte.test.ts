@@ -74,7 +74,7 @@ describe('createPaneVolumeState', () => {
     })
   })
 
-  it('has no volume for the servers hub or search results', () => {
+  it('has no volume for the Servers list or search results', () => {
     volumeId = 'network'
     currentPath = 'smb://'
     const state = setup()

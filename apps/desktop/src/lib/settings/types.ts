@@ -607,7 +607,6 @@ export interface SettingsValues {
   // Network
   'network.enabled': boolean
   'network.firstTriggerDone': boolean
-  /** Internal: the servers hub's "found nearby" group, as the person last left it. */
   'network.directSmbConnection': boolean
   'network.requireSmbEncryption': boolean
   /** `..` in an SMB share's top folder opens the server's shares (each share can override it). */

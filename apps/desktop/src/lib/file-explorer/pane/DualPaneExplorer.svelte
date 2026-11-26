@@ -1233,11 +1233,11 @@
     }
 
     /**
-     * Takes the focused pane to the servers hub.
+     * Takes the focused pane to the Servers list.
      *
      * Through the same `selectVolume` intent a switcher click raises, so the
-     * pinned-tab fork, focus, and history push all apply. `smb://` is the hub
-     * volume's sentinel path, not a mount.
+     * pinned-tab fork, focus, and history push all apply. `smb://` is the
+     * Servers list's path on the `network` volume, not a mount.
      */
     export function showServersInFocusedPane(): void {
         const pane = explorerState.getFocusedPane()
@@ -1269,7 +1269,7 @@
     /**
      * The Servers row under the focused pane's cursor (`serverRowUnderCursor`), or `null` off
      * the Servers list (and on "Add server…"). What the servers commands aim at (the list IS a
-     * pane, so "the focused pane's volume" would answer the synthetic hub row), and what Edit,
+     * pane, so "the focused pane's volume" would answer the switcher's synthetic Servers row), and what Edit,
      * Rename, and F8 act on there.
      */
     export function getFocusedPaneServerRow(): Promise<ServerRow | null> {

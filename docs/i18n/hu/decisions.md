@@ -322,7 +322,7 @@ The kind is `terminál`, Apple's app `Terminal` (`a Terminalban`, Finder `N67`).
 
 Bare `csomagok` stays wider than `Alkalmazáscsomagok`, as English splits them. Frame `Mit tesz az Enter egy … fájlon.`
 
-## A szerverközpont: kapcsolódás (`servers.*`, `fileExplorer.navigation.connectionTooltip*`/`.disconnect*`/`.forget*`)
+## A szerverlista: kapcsolódás (`servers.*`, `fileExplorer.navigation.connectionTooltip*`/`.disconnect*`/`.forget*`)
 
 - `Kapcsolódás ide: {name}…` (Finder `MN1`); quote only where English does. `{name} ezen a szerveren: {server}`.
 - Pane buttons are dialog buttons: `Mégsem`, even `servers.paneState.cancel` (Finder's connect wait).
@@ -335,7 +335,7 @@ Bare `csomagok` stays wider than `Alkalmazáscsomagok`, as English splits them. 
 - Not connected (chosen) → `Nem kapcsolódik: {name}` (AppKit), ❌ not `Nincs csatlakoztatva`. Optional field
   `Nem kötelező` (MS); an optional step `választható`.
 
-## A szerverközpont táblázata (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.server*Toast`/`.pinRefusedToast`/`.networkVolume`, `shortcuts.scope.servers`/`.places`)
+## A szerverlista táblázata (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.server*Toast`/`.pinRefusedToast`/`.networkVolume`, `shortcuts.scope.servers`/`.places`)
 
 Address column `Cím`. Found nearby → `A közelben felfedezve` (IOBluetoothUI). `Szerver rögzítése / rögzítés feloldása`
 (Notes); `kötetválasztó` for both English names; `{name} mostantól ott van a kötetválasztódban.` `Macet` (161 macOS

@@ -371,9 +371,7 @@ function commitVolumeSwitch(
   }
   if (options.shiftFocus) deps.setFocusedPane(pane)
   if (options.terminal) return SETTLED_NOOP
-  // A destination with no listing (the Servers hub, a snapshot) has no better path to find.
-  // ❗ For the hub that's #324: the "best path" would be the other pane's or a remembered
-  // share list, which the correction probes (a dial) and then opens in place of the hub.
+  // A destination with no listing (a search snapshot) has no better path to find.
   if (!deps.locationHasListing({ volumeId, path: targetPath })) return SETTLED_NOOP
   return scheduleVolumePathCorrection(deps, pane, token, volumeId, volumePath, targetPath, options.exact === true)
 }
@@ -420,8 +418,8 @@ export function navigate(intent: NavigateIntent, deps: NavigateDeps): NavigateRe
 function navigateToLocation(deps: NavigateDeps, intent: NavigateIntent, asked: Location): NavigateResult {
   const { pane } = intent
   const location = homedOnItsRow(deps, asked)
-  // A share inside the Network volume has no path to navigate to (see the refusal); the hub
-  // and a server's share list do.
+  // A share inside the Network volume has no path to navigate to (see the refusal); the
+  // Servers list and a server's share list do.
   const smbRefusal = shareListNavigationRefusal(location.path)
   if (smbRefusal) return { status: 'refused', reason: smbRefusal }
   // A snapshot path is the `{ snapshot }` arm's alone, whatever volume the backend
@@ -477,8 +475,8 @@ function navigateInPlace(deps: NavigateDeps, intent: NavigateIntent, path: strin
   const currentVolumeId = deps.getPaneVolumeId(pane)
   const currentVolumeName = deps.getPaneVolumeName(pane)
 
-  // On the network volume only a server's share list lists. The hub lists nothing, so the
-  // switch arm lands it (no load, and the Servers select's "always the hub"); anything else refuses.
+  // On the network volume `smb://` takes the switch arm, `exact` so no correction trades the
+  // Servers list for a better path (#324); a share list lists in place; anything else refuses.
   if (currentVolumeId === 'network' && path === NETWORK_VOLUME_PATH) {
     return switchVolumeArm(deps, { ...intent, exact: true }, currentVolumeId, path)
   }

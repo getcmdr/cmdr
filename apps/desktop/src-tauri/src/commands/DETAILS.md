@@ -87,7 +87,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
   `s3+<scheme>://<host>:<port>` + the access key id, shared by every bucket under the key), `get_known_s3_places` (each
   saved place with its provider, which an edit sheet resends), and `get_s3_unattended_reconnect`. Connecting, saving,
   pinning, and forgetting all go through `servers.rs`. The flow is `network::s3_volume_wiring`.
-- **`servers.rs`**: the protocol-agnostic server family, a FACADE over the three above. The hub, the switcher, the
+- **`servers.rs`**: the protocol-agnostic server family, a FACADE over the three above. The Servers list, the switcher, the
   sign-in sheet, and the pane banner speak about servers rather than about SFTP, WebDAV, and SMB, so this is the
   surface they call: `list_saved_servers` (the union of the two saved-server stores plus SMB hosts from
   `known_shares.rs` and `manual_servers.rs`), `connect_saved_place`, `connect_server`, `cancel_server_connect`,
@@ -150,8 +150,8 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
     `unreachable`, ❌ never a quiet re-save. All three commands are `async`, because a live edit asks the server.
   - ❗ **A saved edit republishes the volume list, whatever it changed** (`update_saved_server` requests
     `volumes-changed` on `Saved`). The rows carry each place's label and landing, and neither an unconnected place's
-    edit nor a start-folder-only one moves anything in the registry that would announce it. The servers hub re-reads
-    `list_saved_servers` on the same broadcast, which is how it learns an edit landed.
+    edit nor a start-folder-only one moves anything in the registry that would announce it. The Servers list re-lists
+    from `list_saved_servers` on the same broadcast, which is how it learns an edit landed.
   - ❗ **A start folder outside the remote root is a typed refusal on both writers a person types into.**
     `update_saved_server` answers `start_folder_outside_root`, and `connect_server` answers
     `ServerConnectOutcome::StartFolderOutsideRoot` BEFORE dialing, so nothing is registered or saved. Landing the pane
@@ -297,7 +297,7 @@ Per-file function inventory and decision rationale. `CLAUDE.md` holds the must-k
     on the open menu. It arms the `Share` offer itself, with this thread's `MainThreadMarker`, because
     `file_system::share` pairs the offer with the click by index through a main-thread thread-local.
     `menu/DETAILS.md` § "Slow facts and the live menu".
-  - No popup here for a volume switcher row, a favorite, or a servers-hub place: their actions are the in-app `Menu`'s
+  - No popup here for a volume switcher row, a favorite, or a Servers row: their actions are the in-app `Menu`'s
     (`apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`), which read Rust's busy set from the pushed
     `volumes-busy-changed` store rather than calling in here.
   - ❗ **The breadcrumb's Eject crosses as the typed `VolumeContextActionKind`**, ❌ never a free string.

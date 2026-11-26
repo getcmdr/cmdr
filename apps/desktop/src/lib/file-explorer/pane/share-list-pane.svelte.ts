@@ -84,7 +84,7 @@ export interface ShareListPane {
    * whether it took the entry (`..`, an SMB server's row, and any other pane's rows it leaves).
    */
   openShare: (entry: FileEntry) => boolean
-  /** A door in this pane opening `host`'s share list (the hub's rows, `..` out of a share). */
+  /** A door in this pane opening `host`'s share list (a Servers row, `..` out of a share). */
   openServer: (host: NetworkHost, arrival?: { mount?: string; land?: ShareParentLanding }) => void
   /** The pane was asked to list `path` (a navigation, Retry, an account door): a share list's refusal may ask. */
   noteListingStarted: (path: string) => void

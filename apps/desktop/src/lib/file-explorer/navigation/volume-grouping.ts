@@ -36,13 +36,13 @@ export function groupByCategory(vols: VolumeInfo[]): VolumeGroup[] {
         groups.push({ category, label, items: mobileItems })
       }
     } else if (category === 'network') {
-      // ❗ The hub row is here whatever `network.enabled` says. That switch gates
+      // ❗ The Servers row is here whatever `network.enabled` says. That switch gates
       // mDNS discovery and SMB, which is what the macOS Local Network permission
-      // is about; SFTP, WebDAV, and S3 need none of it, and the hub says so in its own
-      // list rather than by refusing to open.
+      // is about; SFTP, WebDAV, and S3 need none of it, and the Servers list says so in
+      // its footer rather than by refusing to open.
       const networkVolumes = vols.filter((v) => v.category === 'network' && belongsInSwitcher(v))
 
-      const hubRow: VolumeInfo = {
+      const serversRow: VolumeInfo = {
         id: 'network',
         name: tString('fileExplorer.navigation.networkVolume'),
         path: 'smb://', // Virtual path
@@ -51,7 +51,7 @@ export function groupByCategory(vols: VolumeInfo[]): VolumeGroup[] {
         isEjectable: false,
       }
 
-      groups.push({ category, label, items: [hubRow, ...networkVolumes] })
+      groups.push({ category, label, items: [serversRow, ...networkVolumes] })
     } else {
       const items = vols.filter((v) => v.category === category)
       if (items.length > 0) {
@@ -73,7 +73,7 @@ export function groupByCategory(vols: VolumeInfo[]): VolumeGroup[] {
 
 /**
  * Whether a Network row earns a place in the switcher: the three-things rule,
- * minus the hub row, which `groupByCategory` synthesizes.
+ * minus the Servers row, which `groupByCategory` synthesizes.
  *
  * A place shows when a session stands behind it (live, or being recovered) or
  * when the user pinned it. ❗ Only a server place carries a pin at all: a mounted
@@ -82,8 +82,8 @@ export function groupByCategory(vols: VolumeInfo[]): VolumeGroup[] {
  * mount off the switcher.
  *
  * The listing itself hides nothing (`server_volumes.rs::append_server_volumes`):
- * an unpinned server still has to be an id the hub, a restored tab, and a
- * favorite can all resolve.
+ * an unpinned server still has to be an id a Servers row, a restored tab,
+ * and a favorite can all resolve.
  */
 function belongsInSwitcher(volume: VolumeInfo): boolean {
   if (volume.pinned == null) return true

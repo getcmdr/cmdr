@@ -168,8 +168,8 @@ html:is(.differentiate-without-color, .increase-contrast)
 }
 
 /* The pane footer's top edge, between the list and the status line, shared by every
-   pane's footer (`FilePane`'s and the Servers hub's), so a folder, a share list, and
-   the hub all measure the same (`app.css`, the `--pane-footer-*` tokens). A folder's
+   pane's footer (`FilePane`'s), so a folder, a share list, and the Servers list all
+   measure the same (`app.css`, the `--pane-footer-*` tokens). A folder's
    usage bar fills it with its track; anywhere else it stays this plain rule, decoration
    only (no role, ❌ not the track color), since an empty track would read as "0% full". */
 .pane-footer-edge {

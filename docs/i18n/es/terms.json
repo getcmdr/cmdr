@@ -1438,7 +1438,7 @@
     "accept": ["olvid", "olvíd"],
     "forms": "with the article on a thing under the cursor: Olvidar el servidor, Olvidar la contraseña guardada",
     "confidence": "high",
-    "sources": "catalog (fileExplorer.network.share.forgetPassword, menu.network.forgetServer)",
+    "sources": "catalog (menu.network.forgetSavedPassword, menu.network.forgetServer)",
     "decision": "Servidores"
   },
   "format": {
@@ -1844,7 +1844,7 @@
   "ip-address": {
     "chosen": "dirección IP",
     "confidence": "high",
-    "sources": "macOS es (dirección IP ×21, Dirección IP ×4 in the pile); catalog fileExplorer.network.browser.tooltip.resolving"
+    "sources": "macOS es (dirección IP ×21, Dirección IP ×4 in the pile)"
   },
   "item": {
     "chosen": "elemento",
@@ -1951,7 +1951,7 @@
   "list": {
     "chosen": "lista",
     "accept": ["listas"],
-    "forms": "the hub row → la lista Servidores (unquoted); stop listing X → quitar X de la lista",
+    "forms": "the switcher's Servers row → la lista Servidores (unquoted); stop listing X → quitar X de la lista",
     "confidence": "high",
     "sources": "macOS Finder (visualización como lista); catalog la lista Servidores / la lista de servidores"
   },

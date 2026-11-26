@@ -25,8 +25,8 @@ function firstHomeKey(platform: 'macos' | 'windows' | 'linux'): KeyboardEvent {
 
 /**
  * The keys come from the registry (`nav.home`, `nav.end`, `nav.pageUp`, `nav.pageDown`), so a
- * rebind moves them in every list that uses this: both file views, the places browser, and the
- * servers hub. On macOS too: that's one of the macOS changes the keymap work makes on purpose.
+ * rebind moves them in every list that uses this: both file views, on every listing (the Servers
+ * list's too). On macOS too: that's one of the macOS changes the keymap work makes on purpose.
  */
 describe.each(['macos', 'windows', 'linux'] as const)('a rebind of the navigation commands on %s', (platform) => {
   const context: NavigationContext = { currentIndex: 50, totalCount: 100 }

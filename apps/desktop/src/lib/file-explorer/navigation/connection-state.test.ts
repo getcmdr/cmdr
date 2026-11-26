@@ -13,7 +13,7 @@ const ALL: ConnectionState[] = [
 
 describe('connection-state predicates', () => {
   it('answers false for a volume with no session at all', () => {
-    // A local disk, a favorite, the hub row: `undefined` and `null` both arrive
+    // A local disk, a favorite, the Servers row: `undefined` and `null` both arrive
     // (Rust's `None` serializes to `null`), and neither is a session.
     for (const predicate of [hasReconnectLoop, isLiveSession, showsDisconnect]) {
       expect(predicate(undefined)).toBe(false)

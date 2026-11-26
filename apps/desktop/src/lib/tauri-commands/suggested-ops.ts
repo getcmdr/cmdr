@@ -82,10 +82,10 @@ export async function approveSuggestedGroup(
 }
 
 /** Approve a server card (`addServer` / `editServer`, which have no ops): save it through the
- *  servers hub's own code, with no password and no contact with the server. `revision` is the one
- *  the review showed, as for a file group. Every refusal but `alreadyAnswered` and `unknown` gives
- *  the card back; a save that never answered throws `approvalDidntFinish`, and the card stays
- *  approved because it may have saved. */
+ *  same code the sign-in sheet saves with (`saved_servers/`), with no password and no contact
+ *  with the server. `revision` is the one the review showed, as for a file group. Every refusal
+ *  but `alreadyAnswered` and `unknown` gives the card back; a save that never answered throws
+ *  `approvalDidntFinish`, and the card stays approved because it may have saved. */
 export async function approveSuggestedServer(groupId: number, revision: number): Promise<ServerApprovalResultView> {
   const res = await commands.suggestedOpsApproveServer(groupId, revision)
   if (res.status === 'error') throwSuggestedOpsError(res.error)

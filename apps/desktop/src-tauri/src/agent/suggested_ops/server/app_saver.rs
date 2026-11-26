@@ -1,5 +1,5 @@
-//! The real [`ServerSaver`]: the saved stores as the servers hub reads them, and each save
-//! through the hub's own core. One arm per core, nothing else, so an approved card saves
+//! The real [`ServerSaver`]: the saved stores as the Servers list reads them, and each save
+//! through the core the add and edit server sheets run. One arm per core, nothing else, so an approved card saves
 //! exactly what "Add anyway" or the edit sheet would.
 
 use futures_util::future::BoxFuture;
@@ -8,18 +8,18 @@ use super::{SaveResult, SavedServers, ServerSave, ServerSaver};
 use crate::network::manual_servers::{self, HostEdit};
 use crate::saved_servers::{save_place_edit, save_target, smb_hosts};
 
-/// The servers hub's stores and save cores.
-pub(crate) struct HubSaver {
+/// The app's saved-server stores and save cores.
+pub(crate) struct AppSaver {
     app: tauri::AppHandle,
 }
 
-impl HubSaver {
+impl AppSaver {
     pub fn new(app: tauri::AppHandle) -> Self {
         Self { app }
     }
 }
 
-impl ServerSaver for HubSaver {
+impl ServerSaver for AppSaver {
     fn saved(&self) -> SavedServers {
         SavedServers::now(&self.app)
     }

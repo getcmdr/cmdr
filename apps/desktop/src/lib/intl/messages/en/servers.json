@@ -10,7 +10,7 @@
   },
   "servers.pinHint.body": "Right-click a server and choose “Unpin from switcher”, or use “{command}” from the command palette. It stays in the Servers list.",
   "@servers.pinHint.body": {
-    "description": "Body of that notification: how to take a server out of the volume switcher, and the reassurance that unpinning loses nothing. “Unpin from switcher” must match the context-menu item menu.network.unpin word for word. \"Servers\" is the hub row in the switcher that lists every saved server. The command name arrives translated in {command}; keep the quotation marks your language uses around a UI label.",
+    "description": "Body of that notification: how to take a server out of the volume switcher, and the reassurance that unpinning loses nothing. “Unpin from switcher” must match the context-menu item menu.network.unpin word for word. \"Servers\" is the row in the switcher that opens the list of every saved server. The command name arrives translated in {command}; keep the quotation marks your language uses around a UI label.",
     "placeholders": {
       "command": "the name of the command palette entry that pins or unpins a server, already translated"
     }
@@ -21,12 +21,12 @@
   },
   "servers.hub.colType": "Type",
   "@servers.hub.colType": {
-    "description": "Column heading in the servers hub for which protocol a server speaks (SFTP, WebDAV, SMB). One word.",
+    "description": "Label for which protocol a server speaks (SFTP, WebDAV, SMB), on the card where the AI suggests a server to add. One word.",
     "screenshot": "servers-hub.png"
   },
   "servers.hub.addServer": "Add server…",
   "@servers.hub.addServer": {
-    "description": "The last row of the servers hub, which opens the form for typing a new server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
+    "description": "The last row of the Servers list, which opens the form for typing a new server. VERB phrase, imperative. The ellipsis is the single character … (U+2026) and means \"this opens something\"; keep it.",
     "screenshot": "servers-hub.png"
   },
   "servers.hub.status.connected": "Connected",

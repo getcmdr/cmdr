@@ -9,7 +9,7 @@
  * `navigation/open-favorite.ts`, which enters the volume its row names at its path
  * (a saved place dials from there), or refuses with a worded reason the MCP reply
  * repeats; a real volume opens where `pathForPickedVolume` says (a saved server
- * place on its start folder, anything else at its root); the virtual servers-hub
+ * place on its start folder, anything else at its root); the virtual Servers
  * volume isn't in the
  * volumes list, so it's special-cased. The switch arm shifts STORE focus but not DOM focus — re-
  * anchoring the container would drop a Space press during the multi-select-then-
@@ -28,7 +28,7 @@ import type { NavigateIntent, NavigateResult } from './navigate'
 
 const log = getAppLogger('fileExplorer')
 
-/** The hub's name in `cmdr://volumes`, whatever the UI language: Rust's `volume_listing::SERVERS_VOLUME_NAME`. */
+/** The Servers row's name in `cmdr://volumes`, whatever the UI language: Rust's `volume_listing::SERVERS_VOLUME_NAME`. */
 const SERVERS_MCP_NAME = 'Servers'
 
 export interface VolumeSelectionDeps {
@@ -64,7 +64,7 @@ export interface VolumeSelection {
     volumeId: string,
     picked?: FavoriteOpenedEvent,
   ) => Promise<VolumeSelectOutcome>
-  /** Select a volume by name (MCP `select_volume`). The servers hub is virtual. */
+  /** Select a volume by name (MCP `select_volume`). The Servers volume is virtual. */
   selectVolumeByName: (pane: 'left' | 'right', name: string) => Promise<VolumeSelectOutcome>
 }
 
@@ -130,7 +130,7 @@ export function createVolumeSelection(deps: VolumeSelectionDeps): VolumeSelectio
   }
 
   async function selectVolumeByName(pane: 'left' | 'right', name: string): Promise<VolumeSelectOutcome> {
-    // ❗ The servers hub row is SYNTHETIC: `volume-grouping.ts` builds it, so it
+    // ❗ The Servers row is SYNTHETIC: `volume-grouping.ts` builds it, so it
     // is not in the volume list and no `findIndex` can reach it. An agent names it
     // the way `cmdr://volumes` does (`SERVERS_MCP_NAME`), or the way the UI does.
     if (name === SERVERS_MCP_NAME || name === tString('fileExplorer.navigation.networkVolume')) {

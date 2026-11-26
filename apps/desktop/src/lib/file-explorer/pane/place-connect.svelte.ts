@@ -65,7 +65,7 @@ export interface PlaceConnect {
   /** What the pane renders instead of a listing, or `null` for a normal pane. */
   readonly state: RemoteConnectState | null
   /**
-   * The person picked `volumeId` (the switcher, the hub). ❗ A pick of the place the
+   * The person picked `volumeId` (the switcher, a Servers row). ❗ A pick of the place the
    * pane already stands on, not connected, dials it like Try again: it is the
    * pane's own volume, so nothing else moves, and it used to do nothing at all.
    */
@@ -251,7 +251,7 @@ export function createPlaceConnect(deps: PlaceConnectDeps): PlaceConnect {
         // ❗ And a fresh reading of the volume's STANDING, ❌ never the one
         // captured when the refusal landed. `connectPlace` picks its arm by that
         // standing, and getting it wrong is silent: if a concurrent connect from
-        // the hub or the switcher registered the volume in between, a stale
+        // the Servers list or the switcher registered the volume in between, a stale
         // `saved` would send this down the dial arm and register a SECOND volume
         // under a second id.
         void dial(volumeId, deps.getCurrentVolumeInfo() ?? info)

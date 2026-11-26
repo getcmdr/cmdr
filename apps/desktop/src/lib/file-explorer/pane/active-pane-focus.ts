@@ -1,9 +1,9 @@
 /**
  * The ONE way the explorer puts DOM focus back home: on the focused pane's file list, which
  * names its cursor row through `aria-activedescendant` so a screen reader follows the cursor,
- * or on the explorer container when that pane shows no list (the servers hub, an error, a
- * connect view). Key routing never depends on which of the two holds focus: keys bubble to
- * the container's handlers and go to the store's focused pane either way.
+ * or on the explorer container when that pane shows no list (an error, a connect view). Key
+ * routing never depends on which of the two holds focus: keys bubble to the container's
+ * handlers and go to the store's focused pane either way.
  *
  * ❌ Never focus a file row: rows unmount under virtualization, and focus on a removed node
  * drops to `<body>`, where no pane key arrives. Lists focus with `preventScroll` (the listbox

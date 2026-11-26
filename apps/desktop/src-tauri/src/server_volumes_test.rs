@@ -217,7 +217,7 @@ async fn a_copy_onto_a_saved_server_nobody_connected_is_refused_as_not_connected
 
 // ── The rows the switcher gets ───────────────────────────────────────
 
-/// An unnamed server's row carries the derived label, the same one the hub and
+/// An unnamed server's row carries the derived label, the same one the Servers list and
 /// a live volume use.
 #[test]
 fn an_unnamed_saved_server_gets_a_row_named_username_at_host() {
@@ -278,7 +278,7 @@ fn a_saved_servers_row_carries_its_start_folder_as_the_landing() {
 }
 
 /// ❗ **Every saved server gets a row, and the row carries its own pin.** The
-/// list is the app's registry of what a volume id MEANS: a hub Enter and a
+/// list is the app's registry of what a volume id MEANS: a Servers row's Enter and a
 /// restored tab both land on an id, and an id with no row is a volume the app
 /// denies exists. The pin rides along as a field so the SWITCHER can apply the
 /// cap (`navigation/volume-grouping.ts`) without the list hiding identities from
@@ -530,7 +530,7 @@ fn mount_row(id: &str) -> LocationInfo {
 }
 
 /// ❗ **A saved share that isn't mounted is a `saved` row at its last mount path**,
-/// carrying its own pin, so the switcher, a tab, and the hub can all reach it.
+/// carrying its own pin, so the switcher, a tab, and the Servers list can all reach it.
 #[test]
 fn an_unmounted_saved_share_is_a_saved_row_carrying_its_pin() {
     let mut volumes = Vec::new();

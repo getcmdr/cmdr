@@ -117,7 +117,7 @@ one thing was the bug.
 
 `文件` (Finder's document) and bare `套件` (Finder `顯示套件內容`), wider than `App 套件`, as English contrasts them.
 
-## Servers hub (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.server*Toast`/`.forget*`, `fileExplorer.network.share.*`, `fileExplorer.network.browser.*Host*`)
+## Servers (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.server*Toast`/`.forget*`, `fileExplorer.network.share.*`, `fileExplorer.network.browser.*Host*`)
 
 - Places `位置` (Finder's Locations), ❌ `地點` (geographic in Freeform, Find My).
 - Last used `上次使用` (AP-HK); Never `從未使用`: AP-TW's bare `永不` is future "never".

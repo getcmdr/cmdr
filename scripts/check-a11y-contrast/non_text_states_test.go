@@ -32,13 +32,13 @@ func nonTextFixture(fieldBorder string) *VarTable {
 }
 
 // TestAnalyzeNonTextStatesFlagsARawAccentServerGlyphInLightMode: raw gold is
-// under 3:1 on white, which is why light mode draws the servers hub's SMB
+// under 3:1 on white, which is why light mode draws the Servers list's SMB
 // glyph in `--color-accent-pop`.
 func TestAnalyzeNonTextStatesFlagsARawAccentServerGlyphInLightMode(t *testing.T) {
 	vt := nonTextFixture("#858585")
 	vt.Light["color-server-icon"] = "var(--color-accent)"
 	for _, f := range failingNonText(gatedNonText(vt)) {
-		if f.Mode == ModeLight && f.Selector == "servers hub SMB server glyph on color-bg-primary" {
+		if f.Mode == ModeLight && f.Selector == "Servers list SMB server glyph on color-bg-primary" {
 			return
 		}
 	}

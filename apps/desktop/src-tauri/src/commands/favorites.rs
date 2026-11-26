@@ -44,7 +44,7 @@ const PERSIST_TIMEOUT: Duration = Duration::from_secs(5);
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum AddFavoriteError {
     /// `path` isn't a folder on a disk, a share, a server, or a phone: an archive-inner or
-    /// `.git`-portal path, a search-results snapshot, the servers hub, or a path no volume
+    /// `.git`-portal path, a search-results snapshot, the Servers list, or a path no volume
     /// contains. See [`favorite_volume_for`].
     NotAPlace,
     /// `path` is on a saved place (a server, a phone) that isn't connected right now. Cmdr only
@@ -129,14 +129,14 @@ pub async fn add_favorite(path: String, name: Option<String>) -> Result<(), AddF
 /// 2. A folder on a network mount the registry holds at that mount point is answered there, with
 ///    no round trip to the server ([`favorite_volume_on_network_mount`]). Anything else goes on.
 /// 3. The canonical path→volume resolver, protocol arms first (`mtp://`, `adb://`, `sftp://`,
-///    `webdav://`, `s3://`, `smb://` → the servers hub), the mount table otherwise. A timeout is
+///    `webdav://`, `s3://`, `smb://` → the Servers list), the mount table otherwise. A timeout is
 ///    UNKNOWN, ❌ never a refusal.
 /// 4. The volume must CONTAIN the path, by whole segments. A scheme with no protocol arm
 ///    (`search-results://`) reaches the mount table, which walks UP to `/`, which doesn't contain
 ///    it; that's what refuses the next unarmed scheme too, with no list to extend.
 /// 5. The volume must be REGISTERED, which means the folder was seen live, and its backend admitted
 ///    by [`backend_holds_favorites`]. An unregistered saved place or listed device is
-///    [`AddFavoriteError::PlaceNotConnected`]; anything else unregistered (the servers hub) is
+///    [`AddFavoriteError::PlaceNotConnected`]; anything else unregistered (the Servers list) is
 ///    [`AddFavoriteError::NotAPlace`].
 ///
 /// `path` is the pane's own path, so this costs one resolver call on the add path and nothing
@@ -276,7 +276,7 @@ fn backend_holds_favorites(kind: BackendKind) -> bool {
 }
 
 /// Whether an unregistered resolved row is a place that becomes a volume once connected: a saved
-/// share or server (it carries a session state) or a listed device. The servers hub is neither.
+/// share or server (it carries a session state) or a listed device. The Servers list is neither.
 fn is_a_place_to_connect(volume: &LocationInfo) -> bool {
     volume.connection_state.is_some() || volume.category == LocationCategory::MobileDevice
 }
@@ -493,13 +493,13 @@ mod add_gate_tests {
         ));
     }
 
-    /// The servers hub (`smb://`) isn't registered and isn't a place: a favorite there would name
+    /// The Servers list (`smb://`) isn't registered and isn't a place: a favorite there would name
     /// no volume at all.
     #[test]
-    fn the_servers_hub_is_not_a_place() {
-        let hub = row("network", "smb://", LocationCategory::Network, None);
+    fn the_servers_list_is_not_a_place() {
+        let servers_list = row("network", "smb://", LocationCategory::Network, None);
         assert!(matches!(
-            favorite_volume_from("smb://nas/share", resolved(hub), |_| None),
+            favorite_volume_from("smb://nas/share", resolved(servers_list), |_| None),
             Err(AddFavoriteError::NotAPlace)
         ));
     }

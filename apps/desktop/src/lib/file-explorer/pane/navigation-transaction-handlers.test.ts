@@ -447,7 +447,7 @@ describe('scenario 5: cancel-during-load', () => {
     expect(leftTab().history.currentIndex).toBe(indexBefore)
   })
 
-  it('return-point branch: a cancelled switch away from the Servers hub reopens the hub', async () => {
+  it('return-point branch: a cancelled switch away from the Servers list reopens it', async () => {
     const handle = await mountExplorer()
     const tab = leftTab()
     tab.volumeId = 'network'
@@ -482,7 +482,7 @@ describe('scenario 5: cancel-during-load', () => {
 })
 
 describe('scenario 7: refusal strings (L12) — byte-for-byte contract', () => {
-  it('the servers-hub pane names itself in the refusal the way `select_volume` takes it', async () => {
+  it('the Servers-list pane names itself in the refusal the way `select_volume` takes it', async () => {
     const handle = await mountExplorer()
     const tab = leftTab()
     tab.volumeId = 'network'
@@ -498,7 +498,7 @@ describe('scenario 7: refusal strings (L12) — byte-for-byte contract', () => {
     expect(result.status).toBe('refused')
     if (result.status === 'refused') {
       // ❗ "Servers", not "Network": the refusal tells an agent which name to
-      // pass back, and the hub row answers to the one the switcher shows.
+      // pass back, and the Servers row answers to the one the switcher shows.
       expect(result.reason.message).toBe(
         'Pane is on the Servers volume. Use select_volume to switch to a local volume first.',
       )

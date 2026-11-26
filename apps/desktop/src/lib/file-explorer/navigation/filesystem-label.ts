@@ -66,9 +66,9 @@ const PROTOCOL_LABELS: Record<string, string> = {
 /**
  * The protocol name for an `fsType`, or `null` when it isn't one of ours.
  *
- * Exported because the servers hub's Type column asks the same question about a
- * row that isn't a `VolumeInfo` yet; one map means the switcher and the hub can't
- * disagree about what to call SFTP.
+ * Exported because a Servers row's Details cell and a server suggestion's Type ask the same
+ * question about a row that isn't a `VolumeInfo`; one map means the switcher and the Servers
+ * list can't disagree about what to call SFTP.
  */
 export function protocolLabel(fsType: string): string | null {
   return PROTOCOL_LABELS[fsType.toLowerCase()] ?? null

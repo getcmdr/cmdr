@@ -1,7 +1,7 @@
 /**
  * What loading a stored tab does with a server's share list (`network` at `smb://<server>`).
  *
- * ❗ It comes back as the Servers hub, with the share-list path kept as where the hub's
+ * ❗ It comes back as the Servers list, with the share-list path kept as where its
  * cursor lands: listing the server at launch is a dial and a possible Keychain read
  * nobody asked for (#324). The normalization runs FIRST, so `live_volume_path` and the
  * existence walk are never asked about a server. Same fake store rig as
@@ -56,7 +56,7 @@ beforeEach(() => {
 })
 
 describe("a stored tab on a server's share list", () => {
-  it('comes back as the hub, landing on that server, and asks nothing about the server', async () => {
+  it('comes back as the Servers list, landing on that server, and asks nothing about the server', async () => {
     disk.set('leftTabs', { tabs: [storedTab({})], activeTabId: 'tab-1' })
 
     const paneTabs = await loadPaneTabs('left', pathExists, livePath)
@@ -67,10 +67,10 @@ describe("a stored tab on a server's share list", () => {
     expect(pathExists).not.toHaveBeenCalled()
   })
 
-  it('carries a landing for a background tab too, and none for a tab on the hub itself', async () => {
+  it('carries a landing for a background tab too, and none for a tab on the Servers list itself', async () => {
     disk.set('leftTabs', {
-      tabs: [storedTab({ id: 'hub', path: 'smb://' }), storedTab({ id: 'nas', path: 'smb://testnas:4450' })],
-      activeTabId: 'hub',
+      tabs: [storedTab({ id: 'servers', path: 'smb://' }), storedTab({ id: 'nas', path: 'smb://testnas:4450' })],
+      activeTabId: 'servers',
     })
 
     const paneTabs = await loadPaneTabs('left', pathExists, livePath)
@@ -79,7 +79,7 @@ describe("a stored tab on a server's share list", () => {
     expect(paneTabs.landOnServerByTabId).toEqual({ nas: 'smb://testnas:4450' })
   })
 
-  it('comes back as the hub through the scalar-key migration too', async () => {
+  it('comes back as the Servers list through the scalar-key migration too', async () => {
     disk.set('leftPath', 'smb://testnas')
     disk.set('leftVolumeId', 'network')
 
@@ -89,7 +89,7 @@ describe("a stored tab on a server's share list", () => {
     expect(paneTabs.landOnServerByTabId).toEqual({ [paneTabs.tabs[0].id]: 'smb://testnas' })
   })
 
-  it('comes back as the hub on the scalar pane keys as well', async () => {
+  it('comes back as the Servers list on the scalar pane keys as well', async () => {
     disk.set('leftPath', 'smb://testnas')
     disk.set('leftVolumeId', 'network')
 

@@ -3,7 +3,7 @@
 //!
 //! `Access::Propose`. It stages one zero-op `SaveServer` group on the proposal spine and
 //! nothing else: it saves no server, contacts no host, and takes no secret. The user's click
-//! is what saves (`suggested_ops::server`), through the servers hub's own cores.
+//! is what saves (`suggested_ops::server`), through the add and edit server sheets' own cores.
 //!
 //! Only on a turn the user started: its handler reads the turn's origin and refuses a wake or a
 //! follow-up itself, so the dispatch gate stays tier-only (`DETAILS.md` § Proposing a server).

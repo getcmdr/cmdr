@@ -44,7 +44,7 @@ item once settled, and record the outcome in `terms.json` or `decisions.md`.
   Android phone (the pile has no Android source).
 - **Mixed gender for products** (`errors.provider.*`): Cmdr masculine (`Cmdr попытался`) and macOS feminine
   (`macOS заблокировала`) are each consistent; does either grate?
-- **Server status column** (`servers.hub.status.connected`, `servers.hub.status.saved`): `Подключено` (the connect
+- **Server status words** (`servers.hub.status.connected`, `servers.hub.status.saved`): `Подключено` (the connect
   ruling's state form, shared with `ai.cloud.connected`) sits beside masculine `Сохранен` / `Найден поблизости`. Go all
   masculine for server rows, or neuter everywhere?
 - **Deselect all** (`menu.select.deselectAll`, `commands.selectionDeselectAll.label`): `Снять выделение со всех` follows

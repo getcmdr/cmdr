@@ -278,7 +278,7 @@ export type LocationCategory =
  * and the backoff loop owns recovery, `needs_sign_in` = the backend stopped
  * retrying because a credential is missing, `needs_host_key_approval` = SFTP's
  * server key isn't the trusted one, `saved` = a pinned place that isn't connected
- * and has nothing in flight. A local disk, a favorite, and the hub row carry no
+ * and has nothing in flight. A local disk, a favorite, and the Servers row carry no
  * value at all.
  *
  * ❌ Never test this with `!= null` — that used to mean "is this SMB" and no

@@ -203,7 +203,7 @@ describe('persistence-subscriber', () => {
 
   it('persistLastUsedPath never records a share list as the network volume`s last folder', () => {
     // Picking Servers would otherwise reopen, and LIST, the last server (#324): Servers
-    // lands on the hub, always. Nor is a server a folder whose importance a visit feeds.
+    // lands on the Servers list, always. Nor is a server a folder whose importance a visit feeds.
     const { sub } = create()
     sub.persistLastUsedPath({ volumeId: 'network', path: 'smb://testnas' })
     expect(saveLastUsedPathSpy).not.toHaveBeenCalled()

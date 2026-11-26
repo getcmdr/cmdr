@@ -1,4 +1,4 @@
-//! An S3 account's places as the hub lists them: grouped under one account row,
+//! An S3 account's places as the saved listing groups them: under one account row,
 //! each with its own id and pin, and the account's id the one its root names.
 
 use super::super::{ServerConnectOutcome, outcome_from_s3};
@@ -88,8 +88,8 @@ fn the_name_typed_with_an_add_names_the_account_row_and_its_buckets_keep_theirs(
     assert_eq!(accounts[0].name_source, ServerNameSource::User);
     let mut names: Vec<&str> = accounts[0].places.iter().map(|p| p.name.as_str()).collect();
     names.sort_unstable();
-    // The root IS the account opened, so it reads as the account; the hub words
-    // that row as its own (`servers-hub-rows.ts`).
+    // The root IS the account opened, so it reads as the account; the Servers list
+    // opens it as the account's own row (`network/servers_listing.rs`).
     assert_eq!(names, vec!["Cloudflare R2 test3", "cmdr-s3-test"]);
 }
 

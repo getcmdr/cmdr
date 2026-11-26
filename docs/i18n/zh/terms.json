@@ -1209,10 +1209,7 @@
     "confidence": "high",
     "decision": "Drive-indexing master-switch strings",
     "forms": "turning a settings toggle on → 开启 (在“设置 > …”中开启); a card title or label 启用 (启用索引, 启用网络); the per-drive index menu keeps its own 打开索引",
-    "sources": "macOS/MS",
-    "exceptions": {
-      "servers.hub.emptyMessage": "\"turn on a computer or NAS\" is powering a machine on (开机), not switching a setting on; matches the macOS branch."
-    }
+    "sources": "macOS/MS"
   },
   "encoding": {
     "avoid": [
@@ -1867,7 +1864,7 @@
   "ip-address": {
     "chosen": "IP 地址",
     "confidence": "high",
-    "sources": "MS terminology (IP 地址); KDE Dolphin (smb://[IP 地址]); catalog fileExplorer.network.browser.tooltip.resolving"
+    "sources": "MS terminology (IP 地址); KDE Dolphin (smb://[IP 地址])"
   },
   "info": {
     "chosen": "信息",

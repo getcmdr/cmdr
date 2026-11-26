@@ -5,7 +5,7 @@
 - **Decision**: the cores behind the servers commands (the listing, an add, an edit, a dial) live here, and
   `commands/servers.rs` is a pass-through. **Why**: Ask Cmdr (`agent/`) reads saved servers, dials them
   (`connect_volume`), and saves one a user approved, and `agent/` must not reach into `commands/`. One copy of each
-  core keeps the hub and the agent from drifting apart: a save the agent's approval makes is exactly the one "Add
+  core keeps the Add server sheet and the agent from drifting apart: a save the agent's approval makes is exactly the one "Add
   anyway" makes.
 - The wire types (`wire.rs`) moved with the cores and are re-exported by `commands::servers`. Specta names a type by
   its Rust ident, so the move left `bindings.ts` alone; their doc comments still ship there.

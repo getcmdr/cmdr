@@ -57,7 +57,7 @@ describe('rootFolderOf', () => {
     ).toBe('/Volumes/USB/x.tar')
   })
 
-  it('has no root for the servers hub or a search-results snapshot', () => {
+  it('has no root on the network volume or a search-results snapshot', () => {
     expect(rootFolderOf({ volumes, volumeId: 'network', path: 'smb://nas', containingVolumeId: null })).toBeNull()
     expect(
       rootFolderOf({ volumes, volumeId: 'search-results', path: 'search-results://abc', containingVolumeId: null }),

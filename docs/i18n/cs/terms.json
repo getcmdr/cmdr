@@ -964,7 +964,7 @@
     "forms": "f.: in your local network → ve vaší místní síti; the privacy permission → Místní síť (quote the row as macOS shows it); found nearby → nalezeno v okolí",
     "confidence": "high",
     "sources": "macOS CoreTypes (Ikona s grafikou místní sítě), TCC (se zařízeními ve vaší místní síti); Thunar (místní síťová spojení)",
-    "note": "same U+00A0 issue as full-disk-access; settings.network.nearbyServersGroup.label uses poblíž meanwhile"
+    "note": "same U+00A0 issue as full-disk-access"
   },
   "location": {
     "chosen": "umístění",

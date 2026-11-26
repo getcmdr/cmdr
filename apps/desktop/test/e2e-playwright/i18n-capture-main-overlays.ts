@@ -1,7 +1,7 @@
 /**
  * Main-window overlay captures for the i18n screenshot-capture driver: the
  * file-operation dialogs, the conflict and transfer dialogs, go-to-path, the
- * command palette, the shared `QueryDialog` query UI, and the servers hub.
+ * command palette, the shared `QueryDialog` query UI, and the Servers list.
  *
  * All render into the main window's own capture sink, so each follows the About
  * pattern: enable + setSurface the sink BEFORE opening (to record mount-time `t()`
@@ -280,7 +280,7 @@ export async function captureQueryOverlays(
  * id keeps the old name, which the screenshots are filed under). Same 15 s budget
  * `servers.spec.ts` gives the mount.
  */
-export async function captureServersHub(
+export async function captureServersList(
   main: TauriPage,
   report: Record<string, SurfaceEntry>,
   failed: string[],

@@ -268,7 +268,7 @@ pins (`crash_reporter/platform`, `drag/platform`, `updater/platform`, …) still
 - **AttachedVolume**: a mount with a switcher row that no cloud provider serves (see "Which mounts get a row").
 - **CloudDrive**: iCloud at `~/Library/Mobile Documents/…`, providers at `~/Library/CloudStorage/`, and a mount a cloud
   provider's own filesystem serves (`is_cloud_mount`).
-- **Network**: SFTP and WebDAV places, from the servers arm below. (The synthetic `Servers` hub row carries it too, but
+- **Network**: SFTP and WebDAV places, from the servers arm below. (The synthetic `Servers` row carries it too, but
   that row is minted in `commands/volumes.rs`, not by this module.)
 - **MobileDevice**: MTP and ADB storages, appended by `device_volumes.rs`.
 
@@ -421,7 +421,7 @@ pane picking a `saved` place goes straight to that landing: `apps/desktop/src/li
 `(volumeId, path)`, the switcher shows the same id greyed, and activating either dials the same saved entry.
 
 ❗ **The pin filters the SWITCHER, not this list.** A volume id with no row is one the app denies exists, and Enter on
-a hub row, a restored tab, a favorite inside a server, and the pane's own lookup all reach for a row by id. So every
+a Servers row, a restored tab, a favorite inside a server, and the pane's own lookup all reach for a row by id. So every
 place gets a row carrying its own `pinned`, and `pinned` is `None` on every row the cap was never about (a local disk,
 a favorite, a mounted SMB share). Where the cap is applied and what the switcher does with it:
 `apps/desktop/src/lib/file-explorer/navigation/DETAILS.md` § "The three-things rule, and which side enforces it".

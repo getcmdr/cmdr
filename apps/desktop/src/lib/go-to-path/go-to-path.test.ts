@@ -163,7 +163,7 @@ describe('goToPath handler', () => {
 
     /**
      * ❗ An SMB "Add and open" opens the host it saved and mounts the share the
-     * address named, the same thing the hub's own Add does. It used to land on the
+     * address named, the same thing the Servers list's own Add does. It used to land on the
      * bare Servers list with no share list and no mount (a QA-round regression).
      */
     it('opens an SMB hand-off as the host and its share, in the focused pane', async () => {

@@ -19,10 +19,10 @@ pub(crate) use crate::volumes::{LocationCategory, LocationInfo, NetworkMount};
 pub(crate) use crate::volumes::network_mount_under;
 
 // ============================================================================
-// The hub row
+// The `Servers` row
 // ============================================================================
 
-/// What the synthetic hub row is called: the row that opens the servers hub.
+/// What the synthetic `Servers` volume row is called: the row that opens the Servers list.
 ///
 /// This is the name agents see in every UI language (this row's own `VolumeInfo` in
 /// `commands/volumes.rs`, the MCP volumes resource, and `tools/actions/nav.rs`'s selector), and it

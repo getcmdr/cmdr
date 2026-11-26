@@ -83,8 +83,12 @@ impl AppServersList {
             .open_listing_paths(&self.volume_id)
             .into_iter()
             .filter(|path| {
-                path.to_str()
-                    .is_some_and(|text| matches!(NetworkPath::of(text), NetworkPath::Hub | NetworkPath::ShareList(_)))
+                path.to_str().is_some_and(|text| {
+                    matches!(
+                        NetworkPath::of(text),
+                        NetworkPath::ServersList | NetworkPath::ShareList(_)
+                    )
+                })
             })
             .collect();
         paths.sort();
@@ -112,7 +116,7 @@ impl ServersList for AppServersList {
         for path in self.shown_at() {
             let Some(text) = path.to_str() else { continue };
             let entries = match NetworkPath::of(text) {
-                NetworkPath::Hub => server_entries.get_or_insert_with(|| servers.server_entries()).clone(),
+                NetworkPath::ServersList => server_entries.get_or_insert_with(|| servers.server_entries()).clone(),
                 _ => match servers.cached_share_list_entries(text) {
                     Some(entries) => entries,
                     None => continue,

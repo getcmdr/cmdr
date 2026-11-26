@@ -19,7 +19,7 @@ beforeEach(() => {
 })
 
 describe('shareListNavigationRefusal: the narrowed smb:// rule', () => {
-  it('lets the hub and a server’s share list through', () => {
+  it('lets the Servers list and a server’s share list through', () => {
     expect(shareListNavigationRefusal('smb://')).toBeNull()
     expect(shareListNavigationRefusal('smb://testnas')).toBeNull()
     expect(shareListNavigationRefusal('smb://testnas:4450')).toBeNull()
@@ -43,7 +43,7 @@ describe('shareListNavigationRefusal: the narrowed smb:// rule', () => {
     expect(h.tab('left')).toMatchObject({ volumeId: 'network', path: 'smb://testnas' })
   })
 
-  it('lists a share list in place from the hub, and still refuses anything else there', () => {
+  it('lists a share list in place from the Servers list, and still refuses anything else there', () => {
     h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
     expect(
       navigate({ pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://testnas' } }, source: 'user' }, h.deps)
@@ -57,7 +57,7 @@ describe('shareListNavigationRefusal: the narrowed smb:// rule', () => {
     ).toEqual({ status: 'refused', reason: SMB_PATH_REFUSAL })
   })
 
-  it('lands the hub from a share list by the switch arm, which loads nothing', () => {
+  it('lands the Servers list from a share list by the switch arm', () => {
     h = makeHarness({ left: { path: 'smb://testnas', volumeId: 'network' } })
     const result = navigate(
       { pane: 'left', to: { goTo: { volumeId: 'network', path: 'smb://' } }, source: 'user' },

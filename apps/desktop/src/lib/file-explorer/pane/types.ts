@@ -293,7 +293,7 @@ export interface FilePaneAPI {
    * Open the native context menu on the CURSOR row (`⌃⏎`), anchored just under it
    * rather than at the pointer. Acts on the whole selection when the cursor sits
    * inside it, on that one row otherwise — the same rule a right-click follows,
-   * through the same code. No-op on the servers hub, which has no file rows.
+   * through the same code. No-op on a pane with no file list.
    * Async: it re-reads the cursor row first.
    */
   openContextMenuAtCursor(): Promise<void>
@@ -338,7 +338,7 @@ export interface FilePaneAPI {
   handleKeyUp(e: KeyboardEvent): void
   /**
    * Focuses whichever file list the pane shows (Brief, Full, or search results), without
-   * scrolling. False when it shows none (loading error, servers hub, a connect view): the
+   * scrolling. False when it shows none (loading error, a connect view): the
    * explorer container is the keyboard home then.
    */
   focusList(): boolean

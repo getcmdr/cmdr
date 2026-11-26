@@ -17,10 +17,11 @@
  * commands. ❌ Don't call it in a branch that decided NOT to act — that key belongs
  * to the dispatcher.
  *
- * What it has cost, each found by someone tripping over it: ⌘R in `ServersHub`
- * re-read every host's shares twice; Enter in the file pane opened a file twice (two
- * browser tabs for a Google Drive file); Enter in `ServersHub` opened a host and
- * mounted a share twice; PageDown moved two pages instead of one.
+ * What it has cost, each found by someone tripping over it: ⌘R in the former
+ * Servers hub re-read every host's shares twice; Enter in the file pane opened a
+ * file twice (two browser tabs for a Google Drive file); Enter in the former
+ * Servers hub opened a host and mounted a share twice; PageDown moved two pages
+ * instead of one.
  *
  * Enforced by `cmdr/claim-acted-key`.
  */

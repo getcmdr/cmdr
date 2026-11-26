@@ -1,7 +1,7 @@
 /**
  * A row's actions: the ONE list every door to them shows. The volume switcher renders it as
  * the row's → submenu (right-click opens the same submenu), the favorites menu does the same
- * for a favorite, and the servers hub renders a one-place server's list at the pointer.
+ * for a favorite, and the Servers list renders a one-place server's list at the pointer.
  *
  * ❗ **One list, so no two surfaces can drift** on which items a row has, their order, or
  * which ones a running transfer greys. The busy and ejecting answers are Rust's own
@@ -24,7 +24,7 @@
  * Adding a row's checkbox (a per-row setting): give `RowToggleKind` a member, give
  * `VolumeRowFacts` the value it shows, push a `toggle` entry in `rowToggles`, and handle
  * the kind in the two `flipToggle` maps (`VolumeChooserMenu.svelte` and
- * `../network/servers-hub-actions.ts`), each a `Record<RowToggleKind, …>` that stops
+ * `../network/servers-list-actions.ts`), each a `Record<RowToggleKind, …>` that stops
  * compiling until you do. The surfaces fill the fact from their stores.
  *
  * Adding a fix: give `RowFixKind` a member, push a `fix` entry in `rowFixes` gated on the
@@ -86,7 +86,7 @@ export interface RowToggleEntry {
 }
 
 /**
- * An SMB server's account action: what the hub's host row, the path bar's account menu, the
+ * An SMB server's account action: what its Servers row, the path bar's account menu, the
  * share-row menu, and the palette all offer, run by ONE function
  * (`../network/share-list-sign-in.ts::runServerAccountAction`). A TS kind, ❌ not members of
  * the Rust `VolumeContextActionKind`: no native menu draws these, and an SMB server has no
@@ -117,8 +117,8 @@ export interface RowShareEntry {
 export type RowMenuEntry = RowActionEntry | RowFixEntry | RowToggleEntry
 
 /**
- * One row of a menu on an SMB server's rows (the hub's host and share rows, a share-list row,
- * the path bar's account): a volume row's entries, plus the account actions and a share's verbs.
+ * One row of a menu on an SMB server's rows (its Servers row, a share-list row, the
+ * path bar's account): a volume row's entries, plus the account actions and a share's verbs.
  */
 export type ServerRowMenuEntry = RowMenuEntry | RowAccountEntry | RowShareEntry
 
@@ -338,7 +338,7 @@ function rowToggles(facts: VolumeRowFacts): RowToggleEntry[] {
   return toggles
 }
 
-/** A volume-switcher (or servers-hub) row's menu. Empty when the row offers nothing. */
+/** A volume-switcher (or one-place Servers) row's menu. Empty when the row offers nothing. */
 export function volumeRowMenu(volume: VolumeInfo, facts: VolumeRowFacts): RowMenu {
   const actions: RowActionEntry[] = []
   if (isServerPlaceRow(volume)) {
@@ -385,7 +385,7 @@ function accountEntry(account: ServerAccountAction, labelKey: MessageKey, icon: 
 }
 
 /**
- * An SMB server's account items, the ONE list every door to them shows (the hub's host row,
+ * An SMB server's account items, the ONE list every door to them shows (its Servers row,
  * the path bar's account menu, the share-row menu): Sign in as…, Browse as guest (only while
  * the list is signed in as a user and a guest listing worked, so there's a guest to go back
  * to), and Forget saved password.
@@ -415,11 +415,11 @@ export interface SmbHostRowFacts extends ServerAccountFacts {
 }
 
 /**
- * An SMB host row's menu in the servers hub: Open, Edit… (when saved), Disconnect (while a
+ * An SMB server's row menu in the Servers list: Open, Edit… (when saved), Disconnect (while a
  * share is mounted), the account items, then Forget server (when saved). ❌ No pin: an SMB
- * host has no switcher row to pin. Its actions run through the hub
- * (`../network/servers-hub-actions.ts`), keyed by the hub row, ❌ never a `volumeId`: a host has
- * none.
+ * host has no switcher row to pin. Its actions run through
+ * `../network/servers-list-actions.ts`, keyed by the Servers row's own id, ❌ never a
+ * `volumeId`: a host has none.
  */
 export function smbHostRowMenu(facts: SmbHostRowFacts): ServerRowMenu {
   const actions: ActionsGroupEntry[] = [action('open', 'menu.network.open', 'arrow-right')]
@@ -480,7 +480,7 @@ function entryKey(entry: ServerRowMenuEntry): string {
  * One entry as a house `Menu` row. Its value is unique across the whole menu
  * (`row:<rowKey>:<entry>`, since every row's submenu shares one value space), and
  * `wrap(entry)` is the payload a pick hands back. `rowKey` names the row: a volume's id,
- * or a hub row's `rowId` for a row with no volume (an SMB host).
+ * or a Servers row's `rowId` for a row with no volume (an SMB host).
  */
 function entryItem<E extends ServerRowMenuEntry, T>(rowKey: string, entry: E, wrap: (entry: E) => T): MenuItem<T> {
   const common = { value: `row:${rowKey}:${entryKey(entry)}`, label: entry.label, data: wrap(entry) }
@@ -519,7 +519,7 @@ export function rowMenuItems<A extends ActionsGroupEntry, T>(
 }
 
 /**
- * A row's menu as a TOP-LEVEL menu (the servers hub's right-click, the path bar's account
+ * A row's menu as a TOP-LEVEL menu (a Servers row's right-click, the path bar's account
  * menu): a section per ruled block, which the primitive separates, since a top-level list
  * draws no rules inside a section.
  */
@@ -551,7 +551,7 @@ export async function runRowFix(payload: { volume: VolumeInfo; fix: RowFixKind }
  * path the row's inline button takes, which refuses a busy volume whatever the menu showed;
  * the rest go to the servers family (`runServerRowAction`), shared with the palette.
  *
- * `onOpen` is the surface's own navigation: the switcher moves ITS pane, the hub moves its.
+ * `onOpen` is the surface's own navigation: the switcher moves ITS pane, the Servers list moves its.
  */
 export async function runVolumeRowAction(payload: {
   volume: VolumeInfo

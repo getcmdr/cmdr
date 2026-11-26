@@ -315,7 +315,7 @@ describe('VolumeBreadcrumb server rows', () => {
     expect(document.querySelector('[data-menu-row] .volume-fs')?.textContent).toBe('SFTP')
   })
 
-  /** Right-clicks the place (row 0 is the hub, "Servers") and waits for its submenu to be placed. */
+  /** Right-clicks the place (row 0 is the synthetic "Servers" row) and waits for its submenu to be placed. */
   async function openPlaceSubmenu(): Promise<HTMLElement[]> {
     // The saved-server store is read on open: let it land first.
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -921,7 +921,7 @@ describe('VolumeBreadcrumb share submenu', () => {
     isEjectable: true,
   }
 
-  /** Row 0 is the synthetic Servers hub; the share is the row after it. */
+  /** Row 0 is the synthetic Servers row; the share is the row after it. */
   const SHARE_ROW = 1
 
   beforeEach(() => {
@@ -951,7 +951,7 @@ describe('VolumeBreadcrumb share submenu', () => {
 
   /** Highlights the share row, then opens its submenu. */
   async function openShareSubmenu(): Promise<void> {
-    // Two steps down: the menu leads with the favorites section's row, then the hub.
+    // Two steps down: the menu leads with the favorites section's row, then the Servers row.
     press('ArrowDown')
     press('ArrowDown')
     await tick()

@@ -100,10 +100,10 @@ fn a_path_that_is_no_share_list_reads_as_none() {
     }
 }
 
-/// The volume's own paths: the hub, a share list, and a share inside it.
+/// The volume's own paths: the Servers list, a share list, and a share inside it.
 #[test]
 fn a_network_path_says_what_it_points_at() {
-    assert_eq!(NetworkPath::of("smb://"), NetworkPath::Hub);
+    assert_eq!(NetworkPath::of("smb://"), NetworkPath::ServersList);
     assert_eq!(
         NetworkPath::of("smb://testnas:4450"),
         NetworkPath::ShareList(address("testnas", 4450))
@@ -215,7 +215,7 @@ fn a_manual_server_resolves_from_the_store_by_its_typed_address() {
 }
 
 /// ❗ One server seen by discovery AND typed by hand lists under the discovered host,
-/// which is the row the hub shows and caches the share list under.
+/// which is the row the Servers list shows and the share cache files it under.
 #[test]
 fn a_discovered_host_wins_over_a_manual_one_of_the_same_key() {
     let mut nas = discovered("TestNAS.local", 445);
@@ -268,10 +268,10 @@ fn the_app_path_grammar_keeps_every_written_authority_whole() {
     assert_eq!(
         NetworkPath::of(
             AppPathBuf::parse("smb://", PathFlavor::Posix)
-                .expect("the hub")
+                .expect("the Servers list")
                 .as_str()
         ),
-        NetworkPath::Hub
+        NetworkPath::ServersList
     );
 }
 

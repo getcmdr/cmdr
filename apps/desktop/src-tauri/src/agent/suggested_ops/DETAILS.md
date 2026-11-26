@@ -130,8 +130,8 @@ Either change makes the binding load-bearing for this verb, and the cheapest hon
 ## Approving a server
 
 `server/` is a server card's approval: `approve_server` claims the card, checks it again against what's saved NOW, runs
-one save through a `ServerSaver`, and ends the group by what the save wrote. `HubSaver` (`server/hub.rs`) is the real
-saver, one arm per servers-hub core; tests hand in fakes. The command is `../../commands/agent/suggested_ops_server.rs`, a
+one save through a `ServerSaver`, and ends the group by what the save wrote. `AppSaver` (`server/app_saver.rs`) is the real
+saver, one arm per server-sheet save core; tests hand in fakes. The command is `../../commands/agent/suggested_ops_server.rs`, a
 pass-through that words the answer (`ServerApprovalResultView`) and emits `volumes-changed` on a save, as
 `update_saved_server` does.
 

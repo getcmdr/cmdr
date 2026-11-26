@@ -372,7 +372,7 @@ Deliberate splits (don't unify):
 - Bare `Pakete` (Office documents and .jar/.apk), broader than the `App-Pakete` card; the frame copies
   `settings.archives.zip.description`.
 
-## Der Server-Hub: Verbindungszustände, Trennen und Vergessen (`servers.*`, `fileExplorer.navigation.connectionTooltip*`, `.disconnect*`, `.forget*`, `fileExplorer.network.browser.*Host*`, `fileExplorer.network.share.useGuest`/`.signInAs`)
+## Die Serverliste: Verbindungszustände, Trennen und Vergessen (`servers.*`, `fileExplorer.navigation.connectionTooltip*`, `.disconnect*`, `.forget*`, `fileExplorer.network.browser.*Host*`, `fileExplorer.network.share.useGuest`/`.signInAs`)
 
 - Disconnecting ends the connection: `Cmdr konnte die Verbindung zu {name} nicht trennen.`, aria
   `Verbindung zu {name} trennen` (Apple's FileProvider), never `{name} trennen`.
@@ -667,7 +667,7 @@ Apple's `Dock.app` `DockMenus.strings` supplies almost every phrase (`KEEP_IN_DO
 
 - `Ein`/`Aus` like `settings.*`; caret → `Einfügemarke` (macOS 27 AppKit); `Beginnt mit` like Finder's rename.
 
-## NFS-Server: Freigaben, Benutzer-ID und die Absagen (`servers.sheet.nfs*`, `servers.sheet.identityLockedNfs`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.hub.nfsHint*`)
+## NFS-Server: Freigaben, Benutzer-ID und die Absagen (`servers.sheet.nfs*`, `servers.sheet.identityLockedNfs`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`)
 
 - export → `Freigabe` / `NFS-Freigabe`, never `Export`: German NAS forums, Linux docs, and Synology's DE help all say
   so. The field label is `Freigabe`.

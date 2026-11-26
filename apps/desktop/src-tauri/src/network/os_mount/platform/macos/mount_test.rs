@@ -795,7 +795,7 @@ fn a_host_disconnect_folds_normalization_and_case() {
 
 /// ❗ **Disconnect takes the host's own mounts: its port, under any name the machine
 /// goes by, and nothing from another server on the same machine.** It compared the
-/// hub's label (`localhost:11482`) with `statfs`'s `localhost`, found nothing, and
+/// Servers row's label (`localhost:11482`) with `statfs`'s `localhost`, found nothing, and
 /// said "No mounted shares" while two were mounted (QA 2026-09-25).
 #[test]
 fn a_host_disconnect_takes_its_own_ports_mounts_only() {

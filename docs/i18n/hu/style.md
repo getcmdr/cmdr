@@ -204,7 +204,7 @@ CLDR categories: `one`, `other` (verified with `new Intl.PluralRules('hu')`; mat
 - **Az oszlopcímeknél a betű szerinti Apple-találat veri a katalógus családi mintáját.** A `Last used` azért
   `Utolsó használat` (macOS `Security.prefPane`, ugyanez a szerep: táblázat-oszlopcím) és nem `Utoljára használva`,
   pedig a fájllista dátumoszlopai `-va/-ve` alakúak (`Módosítva`, `Létrehozva`): azoknál nincs Tier-1 forrás a konkrét
-  szóra, itt van. Bizonyíték: `decisions.md` § A szerverközpont táblázata.
+  szóra, itt van. Bizonyíték: `decisions.md` § A szerverlista táblázata.
 - **A `Mac` tárgyesete `Macet`, kötőjel nélkül** (macOS-attesztált, 161 találat), a `Macen` alakkal egy tőről.
 - **A `reconnect` töve a katalógusé (`újracsatlakoz-`), a panelcím KERETE viszont a családé (`ide: {name}…`).** A
   `servers.paneState.reconnecting` ezért `Újracsatlakozás ide: {name}…`: a tő a szállított

@@ -3,12 +3,12 @@
  *
  * The three-things rule (`DETAILS.md` § "The three-things rule, and which side
  * enforces it"):
- * the group holds the hub row, every place connected right now, and every
+ * the group holds the Servers row, every place connected right now, and every
  * pinned place greyed out. ❗ The listing hands over EVERY saved place, pin and
- * all, because a volume id with no row is one the app denies exists: a hub Enter
- * and a restored tab both land on an id. So applying the cap is the switcher's
+ * all, because a volume id with no row is one the app denies exists: Enter on a
+ * Servers row and a restored tab both land on an id. So applying the cap is the switcher's
  * job, and it is this module's half of the contract. The one row it synthesizes
- * is the hub; a "helpful" fetch of `listSavedServers()` here would be a second
+ * is the Servers row; a "helpful" fetch of `listSavedServers()` here would be a second
  * source of truth, and the last cell is what catches it.
  */
 import { describe, expect, it, beforeAll, afterAll } from 'vitest'
@@ -84,7 +84,7 @@ function networkItems(vols: VolumeInfo[]): VolumeInfo[] {
 }
 
 describe('groupByCategory: the Network group', () => {
-  it('always leads with the hub row, even with nothing else on the network', () => {
+  it('always leads with the Servers row, even with nothing else on the network', () => {
     const items = networkItems([])
     expect(items.map((v) => v.id)).toEqual(['network'])
     expect(items[0].path).toBe('smb://')
@@ -132,8 +132,8 @@ describe('groupByCategory: the Network group', () => {
 
   it('hides a saved place nobody pinned', () => {
     // The cap the user holds: 12 saved buckets must not push their own disks off
-    // the switcher. The row is still in the LISTING, so Enter in the hub and a
-    // restored tab both find the volume.
+    // the switcher. The row is still in the LISTING, so Enter in the Servers list and
+    // a restored tab both find the volume.
     const items = networkItems([serverRow({ connectionState: 'saved', pinned: false })])
     expect(items.map((v) => v.id)).toEqual(['network'])
   })
@@ -161,7 +161,7 @@ describe('groupByCategory: the Network group', () => {
     expect(items.map((v) => v.id)).toEqual(['network', 'smb-testshare-media'])
   })
 
-  it('invents no row of its own beyond the hub', () => {
+  it('invents no row of its own beyond the Servers row', () => {
     const items = networkItems([serverRow({ connectionState: 'direct' })])
     expect(items).toHaveLength(2)
     expect(items.some((v) => v.id === 'webdav-unpinned-server')).toBe(false)

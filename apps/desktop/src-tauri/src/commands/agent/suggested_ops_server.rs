@@ -1,13 +1,13 @@
 //! A server card's approve: the user's click, handed to `agent::suggested_ops::server`, which
-//! claims the card, checks it again against what's saved, and saves it through the servers
-//! hub's own cores. This file only bridges it and words the answer for the dialog.
+//! claims the card, checks it again against what's saved, and saves it through the cores the
+//! add and edit server sheets run. This file only bridges it and words the answer for the dialog.
 
 use serde::Serialize;
 use tauri::AppHandle;
 
 use super::now_secs;
 use super::suggested_ops::SuggestedOpsError;
-use crate::agent::suggested_ops::server::{HubSaver, SaveRefusal, ServerApprovalOutcome, approve_server};
+use crate::agent::suggested_ops::server::{AppSaver, SaveRefusal, ServerApprovalOutcome, approve_server};
 use crate::network::manual_servers::AddServerError;
 use crate::network::saved_server_fields::SavedServerOutcome;
 
@@ -47,7 +47,7 @@ pub enum ServerApprovalResultView {
 /// across an await, which a command's future can't (it must be `Send`), and the save it starts
 /// must run on the app's runtime: a save past its deadline finishes there, detached.
 ///
-/// ❗ Emits `volumes-changed` on a save, as `update_saved_server` does: the servers hub and the
+/// ❗ Emits `volumes-changed` on a save, as `update_saved_server` does: the Servers list and the
 /// switcher re-read the saved list on it.
 #[tauri::command]
 #[specta::specta]
@@ -59,7 +59,7 @@ pub async fn suggested_ops_approve_server(
     let db_path = super::db_path(&app).ok_or(SuggestedOpsError::StoreNotOpen)?;
     let now = now_secs();
     let memory = crate::agent::memory::store_for(&app);
-    let saver = HubSaver::new(app);
+    let saver = AppSaver::new(app);
     let outcome = tauri::async_runtime::spawn_blocking(move || {
         let conn = crate::agent::store::open_write_connection(&db_path)
             .map_err(|e| SuggestedOpsError::Store { detail: e.to_string() })?;

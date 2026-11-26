@@ -1,9 +1,9 @@
 /**
- * The servers hub, the switcher's saved-server row, and the pane that dials one.
+ * The Servers list, the switcher's saved-server row, and the pane that dials one.
  *
  * What only an E2E covers here is the WIRE across three surfaces that a unit test
- * sees one at a time: the `network` volume actually mounting the hub, the hub
- * pushing its rows into `cmdr://state` where an agent reads them, the volume
+ * sees one at a time: the `network` volume actually listing the Servers list, its
+ * rows reaching `cmdr://state` where an agent reads them, the volume
  * switcher rendering a `saved` place with its protocol and its greyed dot, and a
  * pane landing on that place rendering the connect view instead of a listing.
  * The merge, the ordering, the status derivation, and the MCP encoding are all
@@ -43,7 +43,7 @@ type PageLike = TauriPage | BrowserPageAdapter
 /** "Macintosh HD" on macOS, "Root" on Linux: where both panes start and end. */
 const LOCAL_VOLUME_NAME = os.platform() === 'linux' ? 'Root' : 'Macintosh HD'
 
-/** The hub row's name, which is also the Rust `SERVERS_VOLUME_NAME` const. */
+/** The switcher's Servers row name, which is also the Rust `SERVERS_VOLUME_NAME` const. */
 const SERVERS_VOLUME_NAME = 'Servers'
 
 const PICKER_DROPDOWN = '[data-menu]'

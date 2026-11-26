@@ -183,7 +183,7 @@ async fn a_pane_lists_a_servers_shares_as_folders() {
     assert_eq!(shares.dials(), vec![("id-testnas".to_string(), Freshness::Cached)]);
 }
 
-/// ⌘R on a share list re-reads past the cache, as the hub's ⌘R does.
+/// ⌘R on a share list re-reads past the cache.
 #[tokio::test]
 async fn a_refresh_lists_past_the_cache() {
     let (volume, shares) = volume(testnas());
@@ -212,7 +212,7 @@ async fn a_read_that_is_no_pane_never_dials() {
     assert!(shares.dials().is_empty(), "no dial: {:?}", shares.dials());
 }
 
-/// What a pane already listed (or the hub's prefetch cached) is fair to share: the
+/// What a pane already listed is fair to share: the
 /// cache answers a plain read, still with no dial.
 #[tokio::test]
 async fn a_read_that_is_no_pane_answers_from_the_cache() {
@@ -416,11 +416,14 @@ fn server_rows_of(entries: &[FileEntry]) -> Vec<(String, String, bool, String)> 
 #[tokio::test]
 async fn the_servers_list_is_every_known_server_as_a_folder_for_every_reader() {
     let (volume, shares) = volume(with_servers(testnas(), servers()));
-    let hub = app("smb://");
+    let servers_list = app("smb://");
 
-    let pane = volume.list_directory_for_pane(&hub, None, None).await.expect("lists");
-    let refresh = volume.list_directory_for_refresh(&hub).await.expect("lists");
-    let other = volume.list_directory(&hub, None).await.expect("lists");
+    let pane = volume
+        .list_directory_for_pane(&servers_list, None, None)
+        .await
+        .expect("lists");
+    let refresh = volume.list_directory_for_refresh(&servers_list).await.expect("lists");
+    let other = volume.list_directory(&servers_list, None).await.expect("lists");
 
     let expected = vec![
         (
@@ -585,7 +588,11 @@ async fn the_listed_account_is_remembered_per_server() {
             username: "testuser".to_string()
         })
     );
-    assert_eq!(volume.listed_account(&app("smb://")), None, "the hub has no account");
+    assert_eq!(
+        volume.listed_account(&app("smb://")),
+        None,
+        "the Servers list has no account"
+    );
 }
 
 /// The host a share list signs in to is the one its listing resolved, by the same id: a
@@ -647,7 +654,10 @@ async fn metadata_never_dials() {
     );
     let (volume, shares) = volume(shares);
 
-    let hub = volume.get_metadata(&app("smb://")).await.expect("the hub is a folder");
+    let servers_list = volume
+        .get_metadata(&app("smb://"))
+        .await
+        .expect("the Servers list is a folder");
     let server = volume
         .get_metadata(&app("smb://testnas"))
         .await
@@ -660,7 +670,7 @@ async fn metadata_never_dials() {
     let inside = volume.get_metadata(&app("smb://testnas/archive/photos")).await;
     let unknown = volume.get_metadata(&app("smb://nobody")).await;
 
-    assert!(hub.is_directory && server.is_directory && cached_share.is_directory);
+    assert!(servers_list.is_directory && server.is_directory && cached_share.is_directory);
     assert_eq!(server.name, "Testnas");
     assert_eq!(cached_share.icon_id, SHARE_ICON_ID);
     assert_eq!(
@@ -711,7 +721,7 @@ async fn it_answers_as_a_read_only_unwatched_unindexed_volume() {
     assert_eq!(
         volume.root().as_str(),
         "smb:///",
-        "the hub, as the app-path grammar spells it"
+        "the Servers list, as the app-path grammar spells it"
     );
     assert_eq!(volume.name(), crate::volume_listing::SERVERS_VOLUME_NAME);
     assert!(matches!(

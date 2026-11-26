@@ -215,9 +215,13 @@ describe('expectsNewListing', () => {
     ).toBe(false)
   })
 
-  it('expects none on a volume that shows no listing, like the servers hub', () => {
+  it('expects none on a view that shows no listing, like a search snapshot', () => {
     expect(
-      expectsNewListing({ before, landed: { volumeId: 'network', path: 'smb://' }, hasBackendListing: false }),
+      expectsNewListing({
+        before,
+        landed: { volumeId: 'search-results', path: 'search-results://1' },
+        hasBackendListing: false,
+      }),
     ).toBe(false)
   })
 })

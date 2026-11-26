@@ -323,9 +323,9 @@ export const COMMAND_IDS = [
   // Share browser
   'share.back',
 
-  // Servers: the hub and the actions on one saved server. Each acts on the
-  // hub's cursor row when the focused pane is the hub, and on the focused
-  // pane's own volume otherwise.
+  // Servers: showing the Servers list and the actions on one saved server. Each
+  // acts on the Servers row under the cursor when the focused pane shows the
+  // Servers list, and on the focused pane's own volume otherwise.
   'servers.show',
   'servers.togglePin',
   'servers.disconnect',

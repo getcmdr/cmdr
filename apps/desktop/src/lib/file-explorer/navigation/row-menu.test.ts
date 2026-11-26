@@ -1,7 +1,7 @@
 /**
  * A row's action list: which entries a volume, server, or favorite row offers, in what
  * order, and which ones a running transfer greys. The ONE list every door shows (the row's
- * → submenu, its right-click, the servers hub's right-click), so it's pinned here rather
+ * → submenu, its right-click, a Servers row's right-click), so it's pinned here rather
  * than per surface.
  */
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest'
@@ -424,8 +424,8 @@ const asUserWithGuest: ServerAccountFacts = {
 }
 
 /**
- * An SMB server's account items: ONE list, which the hub's host row, the path bar's account
- * menu, and the share-row menu all show, so the three doors can't drift.
+ * An SMB server's account items: ONE list, which an SMB server's Servers row, the path bar's
+ * account menu, and the share-row menu all show, so the three doors can't drift.
  */
 describe('serverAccountEntries', () => {
   it('offers Sign in as… and Forget saved password, the latter whatever is stored (no Keychain read to decide)', () => {
@@ -475,7 +475,7 @@ describe('smbHostRowMenu', () => {
     ])
   })
 
-  it('keys every item by the hub row, since a host has no volume', () => {
+  it('keys every item by the Servers row, since a host has no volume', () => {
     const sections = rowMenuSections(
       'manual-nas',
       smbHostRowMenu({ ...signedOut, isSaved: true, hasMounts: false }),

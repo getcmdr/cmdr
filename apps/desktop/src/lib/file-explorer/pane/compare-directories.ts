@@ -59,7 +59,7 @@ const NO_DIFFERENCES: Record<CompareDirectoriesMode, () => string> = {
 
 export async function compareDirectories(deps: CompareDirectoriesDeps, mode: CompareDirectoriesMode): Promise<void> {
   const asked = askedAbout(deps)
-  // A network hub or a search-results snapshot has no folder listing to compare.
+  // A pane with no listing has no folder listing to compare.
   if (!asked) {
     addToast(tString('fileExplorer.compareDirectories.needsTwoFolders'), { level: 'info' })
     return

@@ -1,4 +1,4 @@
-//! What the S3 place list owes the hub: one entry per place, found again the
+//! What the S3 place list owes the Servers list: one entry per place, found again the
 //! way the volume id finds it, and a pin a reconnect can't undo.
 //!
 //! In-memory only: these run before `load_known_s3_places` names a file, so

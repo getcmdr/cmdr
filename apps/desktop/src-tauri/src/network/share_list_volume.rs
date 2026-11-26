@@ -45,10 +45,10 @@ use crate::network::servers_listing::{ServerRow, ServerSources, server_entry};
 use crate::network::share_list_path::{KnownHosts, NetworkPath, ShareListAddress, resolve};
 pub(crate) use crate::network::share_list_sign_in::{Listed, ShareListAccount};
 
-/// The id the Servers hub and every share list are registered under.
+/// The id the Servers list and every share list are registered under.
 pub(crate) const NETWORK_VOLUME_ID: &str = "network";
 
-/// The `network` volume's root: the hub's path, which every share list sits under. The
+/// The `network` volume's root: the Servers list's path, which every share list sits under. The
 /// app-path grammar spells it `smb:///`.
 ///
 /// ❗ Constant, ❌ never the listed server's: the root history records every root a
@@ -60,7 +60,7 @@ const NETWORK_ROOT: &str = "smb://";
 pub(crate) enum Freshness {
     /// The cache answers when it holds the list (a pane opening the share list).
     Cached,
-    /// The cache is dropped first (⌘R on a share list re-reads, as the hub's ⌘R does).
+    /// The cache is dropped first (⌘R on a share list re-reads the server's shares).
     Fresh,
 }
 
@@ -223,7 +223,7 @@ impl SmbServerVolume {
         let address = match NetworkPath::of(path.as_str()) {
             NetworkPath::ShareList(address) => address,
             // Memory only, so every reader gets it (#324 has nothing to gate here).
-            NetworkPath::Hub => return Ok(self.server_entries()),
+            NetworkPath::ServersList => return Ok(self.server_entries()),
             NetworkPath::InShare(_) => return Err(VolumeError::NotConnected(path.as_str().to_string())),
             NetworkPath::Elsewhere => return Err(VolumeError::NotFound(path.as_str().to_string())),
         };
@@ -253,7 +253,7 @@ impl SmbServerVolume {
     fn metadata(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let text = path.as_str();
         match NetworkPath::of(text) {
-            NetworkPath::Hub => Ok(FileEntry::new(
+            NetworkPath::ServersList => Ok(FileEntry::new(
                 crate::volume_listing::SERVERS_VOLUME_NAME.to_string(),
                 text.to_string(),
                 true,
@@ -365,7 +365,7 @@ impl Volume for SmbServerVolume {
     /// standing for a server). A share list carries no dates at all.
     fn supported_dates<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = SupportedDates> + Send + 'a>> {
         let dates = match NetworkPath::of(path.as_str()) {
-            NetworkPath::Hub => SupportedDates::LAST_USE,
+            NetworkPath::ServersList => SupportedDates::LAST_USE,
             _ => SupportedDates::NONE,
         };
         Box::pin(std::future::ready(dates))

@@ -188,7 +188,7 @@ function dedupeById(list: VolumeInfo[]): VolumeInfo[] {
  * time it holds five pinned servers.
  *
  * ❗ Here because this is the ONE place the published list lands, so a pin made
- * from the hub, the switcher's menu, the palette, or a first connect all reach
+ * from the Servers list, the switcher's menu, the palette, or a first connect all reach
  * it. The decision itself is `should-show-pin-hint.ts`; this counts and speaks.
  */
 function notePinnedCount(list: VolumeInfo[]): void {

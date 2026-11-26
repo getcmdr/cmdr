@@ -155,7 +155,7 @@ describe('effectiveVolumeRootFor', () => {
 })
 
 describe("a server's share list", () => {
-  it('has a `..`: the network volume is rooted at the hub, and the share list sits one step in', () => {
+  it('has a `..`: the network volume is rooted at the Servers list, and the share list sits one step in', () => {
     expect(
       computeHasParent({
         hasParentRow: capabilitiesForKind('share-list').hasParentRow,
@@ -165,7 +165,7 @@ describe("a server's share list", () => {
     ).toBe(true)
   })
 
-  it('leads its `..` to the hub, and every other kind to the folder above', () => {
+  it('leads its `..` to the Servers list, and every other kind to the folder above', () => {
     expect(parentRowPath('share-list', 'smb://testnas' as CanonicalPath)).toBe('smb://')
     expect(parentRowPath('local', '/Users/test_user_1/Documents' as CanonicalPath)).toBe('/Users/test_user_1')
   })

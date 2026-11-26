@@ -1163,10 +1163,7 @@
       }
     ],
     "confidence": "confirmed",
-    "sources": "shipped pt catalog (driveIndex.menuEnable Ativar indexação…)",
-    "exceptions": {
-      "servers.hub.emptyMessage": "Turning on a computer or NAS is physical power, so ligar is right here, as the macOS branch (ligue um Mac) already says."
-    }
+    "sources": "shipped pt catalog (driveIndex.menuEnable Ativar indexação…)"
   },
   "encoding": {
     "chosen": "codificação",
@@ -1861,7 +1858,7 @@
     ],
     "confidence": "confirmed",
     "sources": "macOS SecurityPrivacyExtension LOCAL_NETWORK; Apple pt-BR (Nearby → Por Perto)",
-    "decision": "Server hub"
+    "decision": "Servers"
   },
   "location": {
     "chosen": "localização",
@@ -1875,7 +1872,7 @@
     ],
     "confidence": "confirmed",
     "sources": "macOS Finder pt-BR (FI12, BU39 Escolher Localização…)",
-    "decision": "Server hub"
+    "decision": "Servers"
   },
   "locked": {
     "chosen": "bloqueado",
@@ -3103,8 +3100,8 @@
       }
     ],
     "confidence": "high",
-    "sources": "shipped pt catalog (licensing.section.labelStatus, servers.hub.colStatus)",
-    "decision": "Server hub"
+    "sources": "shipped pt catalog (licensing.section.labelStatus)",
+    "decision": "Servers"
   },
   "step": {
     "chosen": "etapa",

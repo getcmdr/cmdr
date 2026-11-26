@@ -89,8 +89,8 @@ describe('en-US parity: interpolating / plural / select fileExplorer keys (golde
     )
   })
 
-  it('the hub row is named exactly what the Rust `SERVERS_VOLUME_NAME` const spells', () => {
-    // `cmdr://volumes` lists the hub under that const, whatever the UI language, so an
+  it('the Servers row is named exactly what the Rust `SERVERS_VOLUME_NAME` const spells', () => {
+    // `cmdr://volumes` lists the Servers row under that const, whatever the UI language, so an
     // English UI must call it the same thing an agent reads there.
     expect(tString('fileExplorer.navigation.networkVolume')).toBe('Servers')
   })

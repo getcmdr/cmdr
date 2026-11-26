@@ -218,7 +218,6 @@ describe("FilePane on a server's share list", () => {
     expect(pane.getListingId()).toBe(lastListingId())
     expect(getTarget().querySelector('[role="listbox"]')).toBeTruthy()
     expect(getTarget().textContent).toContain('..')
-    expect(getTarget().querySelector('.server-row'), 'the hub isn’t up').toBeNull()
     // The path bar carries the server's account door (no listing said who yet, so it offers Sign in as…).
     const account = getTarget().querySelector('[data-pane-chrome] button.share-list-account')
     expect(account?.textContent.trim()).toBe('Sign in as…')

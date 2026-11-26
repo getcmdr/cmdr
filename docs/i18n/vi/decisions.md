@@ -511,7 +511,7 @@ Server dialog (`NetAuthAgent.app`).
 
 - `Đưa … lên trên / xuống dưới trong hàng đợi` over `di chuyển` (Move); in line → `hàng đợi`, never `dòng`.
 
-## Máy chủ NFS (`servers.sheet.nfs*`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.refusal.noNfsV3`, `servers.sheet.identityLockedNfs`, `servers.hub.nfsHint*`)
+## Máy chủ NFS (`servers.sheet.nfs*`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.refusal.noNfsV3`, `servers.sheet.identityLockedNfs`)
 
 - export → `thư mục chia sẻ` over a bare `export` (only `/etc/exports` admins know it) and `mục chia sẻ` (the field
   takes a folder path). No pile source; `tentative`, in the review queue.

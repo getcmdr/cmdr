@@ -87,9 +87,8 @@ record the outcome in `terms.json` or `decisions.md`).
   раз?», «Що це було?».
 - **We voice** (`fileExplorer.listingStalled.title`, `fileExplorer.networkMount.mountingSlow`): «Досі чекаємо…» vs «Ця
   папка досі відкривається».
-- **Status chips** (`fileExplorer.network.browser.status.*`, `servers.hub.status.signedOut`,
-  `fileExplorer.navigation.connectionTooltipNeedsSignIn`): «Вхід виконано» for both logged-in states, «Проблема» for
-  Error, «Ви вийшли» (or «Сеанс завершено»).
+- **Status chips** (`servers.hub.status.signedOut`, `fileExplorer.navigation.connectionTooltipNeedsSignIn`): «Вхід
+  виконано» for both logged-in states, «Проблема» for Error, «Ви вийшли» (or «Сеанс завершено»).
 - **Onboarding voice** (`onboarding.stepFda.con.body`, `onboarding.stepFda.firstAsk.lede`,
   `onboarding.fdaBadge.tooltip`, `onboarding.stepAi.local.tooltip`, `onboarding.stepOptional.indexing.descIntro`,
   `onboarding.stepAi.choiceGroupAria`, `onboarding.stepBeta.checklist.alternativeTo`): «чималу владу», «без цього ніяк»,

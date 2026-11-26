@@ -2737,7 +2737,7 @@
   },
   "fileExplorer.navigation.networkVolume": "Servers",
   "@fileExplorer.navigation.networkVolume": {
-    "description": "Name of the row in the volume switcher that opens the servers hub: the list of every server the user has saved or Cmdr found nearby. Also the current volume’s name in the breadcrumb while the hub is open. The GROUP this row sits in is still called \"Network\" (fileExplorer.navigation.groupNetwork); this is one row inside it.",
+    "description": "Name of the row in the volume switcher that opens the Servers list: the list of every server the user has saved or Cmdr found nearby. Also the current volume’s name in the breadcrumb while the Servers list is open. The GROUP this row sits in is still called \"Network\" (fileExplorer.navigation.groupNetwork); this is one row inside it.",
     "screenshot": "ask-cmdr-tools.png"
   },
   "fileExplorer.navigation.searchResultsVolume": "Search results",
@@ -3099,7 +3099,7 @@
   },
   "fileExplorer.navigation.serverUnpinnedToast": "{name} is out of your volume switcher. It’s still saved.",
   "@fileExplorer.navigation.serverUnpinnedToast": {
-    "description": "Toast confirming that a server no longer shows in the volume switcher. The second sentence matters: nothing was deleted, and the server is still in the servers hub.",
+    "description": "Toast confirming that a server no longer shows in the volume switcher. The second sentence matters: nothing was deleted, and the server is still in the Servers list.",
     "placeholders": {
       "name": "the server’s display name, like \"Testnas\""
     }

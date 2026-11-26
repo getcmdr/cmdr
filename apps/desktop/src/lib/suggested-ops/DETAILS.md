@@ -256,12 +256,12 @@ file list. The backend: `apps/desktop/src-tauri/src/agent/suggested_ops/DETAILS.
 - **The header** keeps the server's name as the title, and where a file group shows its count it says "Add a server" or
   "Change server settings". The reversibility pill reads from `serverSettings` (`reversibilityKey`).
 - **The facts are what the click saves** (`SuggestedServerFacts.svelte`, rows inside the group's own `<dl>`, so they
-  read like From / To): Type (the hub's protocol label), then each `fields` row under the servers sheet's own label
-  where it has one. An edit's changed rows show `old → new` (a screen reader hears "changes to"), unchanged rows plain,
-  and an absent value says "Not set". `addressIsNew` puts an "A new address" pill beside the address: a fact Cmdr read
-  now, beside an AI that may call it "your NAS". An SMB edit says under the facts how many saved shares on that host it
-  changes (`sharesAffected`, counted when the card was read). Unlabelled, like every Cmdr fact; only the rationale goes
-  through `AgentReason`.
+  read like From / To): Type (the Servers list's protocol label), then each `fields` row under the servers sheet's own
+  label where it has one. An edit's changed rows show `old → new` (a screen reader hears "changes to"), unchanged rows
+  plain, and an absent value says "Not set". `addressIsNew` puts an "A new address" pill beside the address: a fact Cmdr
+  read now, beside an AI that may call it "your NAS". An SMB edit says under the facts how many saved shares on that
+  host it changes (`sharesAffected`, counted when the card was read). Unlabelled, like every Cmdr fact; only the
+  rationale goes through `AgentReason`.
 - **❌ No input of any kind.** The card is read-only by design, so a password field can't appear, and none of the
   draft's fields could hold one (`agent/store/proposals/DETAILS.md`).
 - **Nothing pages.** The review exists for `seenRevision` and the change notice only; `ensureOpWindow` returns at once

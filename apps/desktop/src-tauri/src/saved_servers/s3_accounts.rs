@@ -1,5 +1,5 @@
 //! The S3 half of the saved servers: an account's saved places grouped into one
-//! hub row, and the saved entry a target describes.
+//! account, and the saved entry a target describes.
 
 use super::wire::{SavedPlace, SavedServer, ServerNameSource, ServerProtocol};
 use crate::network::s3_known_places;
@@ -14,8 +14,8 @@ use crate::network::s3_known_places;
 ///
 /// ❗ The account row carries the NAME (the one a person typed, else
 /// `key id@host`), and each bucket place reads as its bucket; the root place
-/// reads as the account (`s3_known_places::place_label`), which the hub words
-/// as its own row.
+/// reads as the account (`s3_known_places::place_label`), which the Servers list
+/// opens as the account's own row (`network/servers_listing.rs`).
 pub(super) fn s3_accounts(
     manager: &crate::file_system::volume::manager::VolumeManager,
     app_roots: &std::collections::HashMap<String, String>,
@@ -71,7 +71,7 @@ pub(super) fn s3_accounts(
     accounts
 }
 
-/// What the hub shows as an S3 account's address: the endpoint URL for "Other",
+/// What the Servers list shows as an S3 account's address: the endpoint URL for "Other",
 /// the endpoint host for a preset.
 fn s3_address(provider: &s3_known_places::S3ProviderChoice, host: &str) -> String {
     match provider {

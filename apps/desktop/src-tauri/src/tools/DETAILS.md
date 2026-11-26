@@ -621,7 +621,7 @@ tool-result JSON the model reads.
   - **`root`** is the resolver's own (`VolumeFact::root`, the one root rule below), so a row and a `list_dir` on that
     volume can't disagree about where its paths start: a mount point, a scheme root (`sftp://…`, `mtp://…`), or for a
     volume that isn't connected the root it last had (its `connectionState` says so). Absent only on a row no location
-    lives on (the `Network` hub). It's also the scope a `search` of that drive names. ❌ No `mountPath` here: a saved
+    lives on (the synthetic `Servers` row). It's also the scope a `search` of that drive names. ❌ No `mountPath` here: a saved
     share's LAST mount point read as "where it is" is what sent the model to a dead `/Volumes/testshare`. `cmdr://state`'s
     YAML keeps `mountPath` (an outside client's contract).
   - **The offline vocabulary.** A volume that isn't live, whose index database is on disk with a completed scan,

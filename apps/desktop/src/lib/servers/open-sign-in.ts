@@ -89,7 +89,7 @@ export interface ConnectedPlace {
 /**
  * Opens add mode. `prefill` is an address the caller already has (a pasted link,
  * a go-to-path input), as the user spelled it; `protocol` is the toggle a door
- * about one protocol opens on (the hub's NFS hint).
+ * about one protocol opens on (no door passes one today).
  *
  * `onSmbHandOff` is what SMB's add path lands in: its connect is a share MOUNT
  * rather than a session, so `connectToServer` injects a manual host and the
@@ -98,10 +98,10 @@ export interface ConnectedPlace {
  * `onConnected` is where an SFTP or WebDAV "Add and open" lands: the place it
  * just connected to. ❗ Every door calls it, ❌ never leaves it out: a sheet that
  * closes on a live server while every pane stays put reads as a Connect that did
- * nothing. The caller picks the pane (the focused one, or the hub's own).
+ * nothing. The caller picks the pane (the focused one, or the one showing the Servers list).
  *
  * `onAdded` is where an "Add" (or "Add anyway") lands: saved, with no pane moved.
- * The hub selects the new row; a door with no list on screen leaves it out, and
+ * The Servers list selects the new row; a door with no list on screen leaves it out, and
  * a toast says where the server went instead, so the add is never invisible.
  */
 export async function openAddServerSheet(options: {

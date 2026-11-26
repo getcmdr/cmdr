@@ -58,7 +58,7 @@ export function computeHasParent(input: HasParentInput): boolean {
 
 /**
  * The folder a `..` row leads to. A server's share list (`smb://<server>`) leads to the
- * Servers hub at `smb://`, which the path grammar's slash arithmetic can't produce
+ * Servers list at `smb://`, which the path grammar's slash arithmetic can't produce
  * (`parentOf('smb://testnas')` is `smb:/`, a path no volume answers).
  */
 export function parentRowPath(kind: VolumeKind, canonicalPath: CanonicalPath): string {

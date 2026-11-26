@@ -258,14 +258,14 @@ covers large/compact-notation values (e.g. "2 millions"). Write the branches the
 - **Une commande « à bascule » écrit les deux verbes avec « ou », jamais avec une barre oblique.** L’anglais
   `Pin / unpin server` devient « Épingler ou désépingler le serveur », sur le moule de `commands.tabTogglePin.label` («
   Épingler ou désépingler l’onglet »). Les deux se lisent côte à côte dans la palette de commandes : une barre oblique
-  chez l’une et « ou » chez l’autre ferait croire à deux commandes de nature différente. Preuves : `decisions.md` § Le
-  hub des serveurs : la table et le panneau.
+  chez l’une et « ou » chez l’autre ferait croire à deux commandes de nature différente. Preuves : `decisions.md` § Les
+  serveurs : la table et le panneau.
 - **La fenêtre de réglages de Cmdr, c’est « les Réglages » ; « Réglages Système » nomme l’app d’Apple.** Un lien du type
   « Turn it on in Settings » se rend par « Activez-la dans les Réglages », comme
   `fileExplorer.navigation.driveIndex.tooltipIndexingOff` déjà livrée.
 - **`Reconnexion` est le nom d’état, `reconnecter` le verbe.** `Reconnecting to {name}…` suit exactement le moule du
-  voisin `Connexion à {name}…` : « Reconnexion à {name}… ». Preuves Apple et pièges : `decisions.md` § Le hub des
-  serveurs : la table.
+  voisin `Connexion à {name}…` : « Reconnexion à {name}… ». Preuves Apple et pièges : `decisions.md` § Les serveurs : la
+  table.
 - **Un constat « il n’y a rien à faire » se rend par `…, il n’y a donc rien à <verbe>.`** Moule déjà livré par
   `errors.eject.*` (« … il n’y a donc rien à éjecter. ») et repris par `servers.paneState.signedOutNothingToAsk` (« … il
   n’y a donc rien à saisir. »). Ni excuse ni « erreur » : c’est un constat. Le verbe pour remplir un champ est `saisir`

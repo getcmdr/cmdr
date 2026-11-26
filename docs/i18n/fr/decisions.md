@@ -298,7 +298,7 @@ and the top traps live in `style.md`; don't repeat them here.
 - supports → `prend en charge` over `supporte`; best effort → `il fait au mieux`, never contract French. The last
   sentence is David in the first person.
 
-## Le hub des serveurs : la table et le panneau (`servers.hub.*`, `servers.paneState.*`, `servers.refusal.*`, `servers.pinHint.*`, `settings.servers.*`, `settings.section.servers`, `commands.servers*`, `navigation.groupNetwork`, `navigation.forget*`, `navigation.disconnect*`, `menu.network.*`, `shortcuts.scope.servers`, `shortcuts.scope.places`, `settings.appearance.tintSmb.*`)
+## Les serveurs : la table et le panneau (`servers.hub.*`, `servers.paneState.*`, `servers.refusal.*`, `servers.pinHint.*`, `settings.servers.*`, `settings.section.servers`, `commands.servers*`, `navigation.groupNetwork`, `navigation.forget*`, `navigation.disconnect*`, `menu.network.*`, `shortcuts.scope.servers`, `shortcuts.scope.places`, `settings.appearance.tintSmb.*`)
 
 - Row `Serveurs` in group `Réseau`; Places → `Emplacements` (Finder's sidebar), broader than `Partages`. Columns `Nom`,
   `Type` (Finder's Kind), `Adresse`, `État`, `Dernière utilisation`; never used → `Jamais utilisé`. Empty →
@@ -322,7 +322,7 @@ and the top traps live in `style.md`; don't repeat them here.
   (Finder), never `taper`: `…, il n’y a donc rien à saisir.`
 - `{seconds}` / `{minutes}` only select; `{secondsText}` shows; the values are bare fragments of `retryKeepsTrying`.
 
-## Le hub des serveurs : la feuille (`servers.sheet.*`, `servers.hostKey.*`, `goToPath.dialog.opensServer`, `goToPath.dialog.addsServer`, `commands.serversConnect.label`)
+## Les serveurs : la feuille (`servers.sheet.*`, `servers.hostKey.*`, `goToPath.dialog.opensServer`, `goToPath.dialog.addsServer`, `commands.serversConnect.label`)
 
 - `Protocole`; SMB / SFTP / WebDAV stay. passphrase → `phrase secrète`. remote → `distant`, postposed; `Fichier de clé`.
 - Sheet titles are infinitives (`Ajouter un serveur`, `S’identifier sur {name}`); `Comment se connecter`. Username and
@@ -338,7 +338,7 @@ and the top traps live in `style.md`; don't repeat them here.
 - bucket → `compartiment`, `ID de clé d’accès`, `clé d’accès secrète` (AWS FR console, MS FRA); cold storage →
   `stockage froid`; archived → `archivé`.
 
-## Les serveurs NFS (`servers.sheet.nfs*`, `servers.sheet.identityLockedNfs`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.refusal.noNfsV3`, `servers.hub.nfsHint*`, `stateRecovery.nfsPlaces.*`)
+## Les serveurs NFS (`servers.sheet.nfs*`, `servers.sheet.identityLockedNfs`, `servers.refusal.export*`, `servers.refusal.reservedPortRequired`, `servers.refusal.noNfsV3`, `stateRecovery.nfsPlaces.*`)
 
 - export → `partage` (tentative) over `export`: Synology's and QNAP's French UIs say `dossier partagé`, and `export`
   reads as `exportation`. Never `ses partages` after `{host}`: `la liste des partages`.

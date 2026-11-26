@@ -216,7 +216,7 @@ function keyOf(entry: ServerRowMenuEntry): string {
 }
 
 describe('forget', () => {
-  it('sends a one-place server to the servers family, so the hub asks what the switcher asks', async () => {
+  it('sends a one-place server to the servers family, so the Servers list asks what the switcher asks', async () => {
     await actions().forget(placeRow)
     expect(forgetSavedServer).toHaveBeenCalledWith('sftp-testnas.local-22-test_user_1', 'Testnas')
     expect(forgetSavedSmbHost).not.toHaveBeenCalled()
@@ -444,7 +444,7 @@ describe('runRowEntry', () => {
   const entry = (action: VolumeContextActionKind) =>
     ({ type: 'action', action, label: action, icon: 'pencil' }) as const
 
-  it('opens the place through the hub’s own Enter path', async () => {
+  it('opens the place through the Servers list’s own Enter path', async () => {
     await actions([liveVolume]).runRowEntry(placeRow, entry('open'))
     expect(openRow).toHaveBeenCalledWith(placeRow)
     expect(runVolumeRowAction).not.toHaveBeenCalled()

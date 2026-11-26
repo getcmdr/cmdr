@@ -266,15 +266,15 @@ Two mechanics that bite in Portuguese specifically:
   (`menu.network.disconnect`, `menu.network.forgetSavedPassword`, `menu.network.forgetServer`, `menu.volume.eject`): as
   duas linhas se alternam no mesmo lugar do menu, e qualquer diferença de palavra lê como outro comando. Termo:
   `decisions.md` § Native menus.
-- **`Servidores` e `Rede` convivem no seletor de volumes, e a diferença é o ponto.** A LINHA que abre o hub é
+- **`Servidores` e `Rede` convivem no seletor de volumes, e a diferença é o ponto.** A LINHA que abre a lista é
   `Servidores` (`fileExplorer.navigation.networkVolume`); o GRUPO onde ela fica continua `Rede`
   (`fileExplorer.navigation.groupNetwork`). A seção de atalhos dos lugares dentro de um servidor é `Locais`, o termo do
-  Finder, e não mais `Navegador de compartilhamentos`, que só descrevia o SMB. Evidência: `decisions.md` § Server hub.
+  Finder, e não mais `Navegador de compartilhamentos`, que só descrevia o SMB. Evidência: `decisions.md` § Servers.
 - **Um cabeçalho de coluna estreita não herda a forma longa nem a forma flexionada da Apple.** `Last used` sai como
   `Último uso`: a `Última Usada` do macOS trava no feminino e o sujeito é `o servidor`, e o `Usado pela última vez` do
   Mail (que é justamente um cabeçalho de tabela) tem quatro palavras. A forma nominal não concorda com nada e cabe.
-  Evidência: `decisions.md` § Server hub.
-- **Nenhum estado do hub pode soar como falha.** `Salvo` é o servidor parado e nada aconteceu de errado;
+  Evidência: `decisions.md` § Servers.
+- **Nenhum estado da lista Servidores pode soar como falha.** `Salvo` é o servidor parado e nada aconteceu de errado;
   `Sessão encerrada` concorda com a SESSÃO, não com a pessoa, e diz que só falta iniciar sessão de novo;
   `Aguardando você conferir a chave` põe a pessoa como quem age. O verbo de uma verificação FEITA PELA PESSOA é
   `conferir`; `verificar` fica para o que o Cmdr faz sozinho.

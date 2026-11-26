@@ -186,7 +186,7 @@ fn smb_mount_classifies_without_blocking_enrichment() {
         Some("testshare"),
         "a tab at its root says the share"
     );
-    // ❗ The account the mount signed in as, which the hub shows while it's connected.
+    // ❗ The account the mount signed in as, which the Servers list shows while it's connected.
     assert_eq!(loc.mount_account.as_deref(), Some("test_user_3"));
     assert_eq!(loc.fs_type.as_deref(), Some("smbfs"));
     assert_eq!(loc.category, LocationCategory::AttachedVolume);

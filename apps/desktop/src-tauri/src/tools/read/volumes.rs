@@ -43,7 +43,7 @@ pub struct VolumeSnapshot {
     /// The app-path prefix every location on this volume starts with: a mount
     /// point (`/Volumes/testshare-1`) or a scheme root (`sftp://…`, `mtp://…`). For a
     /// volume that isn't connected, the root it last had. Absent only where no
-    /// location lives (the `Network` hub row).
+    /// location lives (the synthetic `Servers` row).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub root: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -64,7 +64,7 @@ pub struct VolumeSnapshot {
     pub as_of: Option<String>,
     /// How live the volume's session is: `direct` / `os_mount` / `disconnected` /
     /// `needs_sign_in` / `needs_host_key_approval` / `saved`. Absent for anything
-    /// with no session (a local disk, the hub row). ❗ Present on every remote
+    /// with no session (a local disk, the `Servers` row). ❗ Present on every remote
     /// backend, so it is not an "is this SMB" test; `kind` is.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<String>,
@@ -164,7 +164,7 @@ fn to_volume_snapshot(v: &VolumeSummary, facts: &VolumeFacts) -> VolumeSnapshot 
         id: v.id.clone(),
         kind: v.kind.token().to_string(),
         // The resolver's root, so this and a `list_dir` on the volume can't
-        // disagree. A row the resolver doesn't know (the hub) holds no location.
+        // disagree. A row the resolver doesn't know (`Servers`) holds no location.
         root: fact.map(|fact| fact.root.clone()),
         filesystem: v.filesystem.clone(),
         read_only: v.read_only,

@@ -11,7 +11,7 @@
  * showing the share's "232 GB of 328 GB free" on every folder after (QA round 5,
  * R4-1). A figure for the wrong volume is worse than none.
  *
- * Disk images (`.dmg`) and views with no volume (the servers hub, search results)
+ * Disk images (`.dmg`) and views with no volume (the Servers list, search results)
  * show nothing and watch nothing. Two panes on the same volume register
  * independently (keyed by pane id), so one navigating away doesn't unwatch the
  * other.

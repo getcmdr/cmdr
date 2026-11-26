@@ -59,8 +59,8 @@ pub struct MountedShare<'a> {
 /// Records a share Cmdr just mounted, with the volume id the mount itself has.
 ///
 /// A mount that doesn't say which volume it is (not an SMB mount, or one whose
-/// `statfs` didn't answer in time) is still recorded, without a place: the hub
-/// can list it, and the next mount fills the id in.
+/// `statfs` didn't answer in time) is still recorded, without a place: its share
+/// list can show it, and the next mount fills the id in.
 ///
 /// ❗ The first mount of a share whose server MOVED completes the move: its id is the
 /// one favorites and tabs re-key to (`server_move::smb::complete`). It is also the
@@ -124,11 +124,11 @@ pub async fn remember_mount_since(mounted: MountedShare<'_>, set_out: DialTicket
 }
 
 /// Records a share an ADD named (`smb://test_user_6@host/Container`), before anything
-/// mounted it: a row in the hub with no place yet.
+/// mounted it: a saved share with no place yet.
 ///
-/// ❗ Republishes the lists: the hub re-reads the saved stores on `volumes-changed`,
+/// ❗ Republishes the lists: the Servers list and share lists re-list on `volumes-changed`,
 /// and an Add that changed only a share's account changed no volume, so the row
-/// kept its old account until the pane left the hub.
+/// kept its old account until the pane re-listed.
 ///
 /// ❗ Contacts nothing: no mount went through, so the GUID probe skips the row
 /// (`smb_server_guid::rows_to_probe`) until one does. So it claims no connection
@@ -161,7 +161,7 @@ pub fn remember_named_share(host_name: &str, share: &str, username: Option<&str>
 /// is left exactly as it is. The server goes by the address the mount dialed, spelled the way a
 /// manual server is in the discovery list (`manual_servers::discovery_name`, so `localhost:11481`
 /// off 445), since nothing here knows a nicer name for it. ❗ That's the name a Cmdr mount of the
-/// same server files its shares under; a port-less one would list as a second server in the hub. The account's password lives in Finder's Keychain item, not Cmdr's,
+/// same server files its shares under; a port-less one would list as a second server in the Servers list. The account's password lives in Finder's Keychain item, not Cmdr's,
 /// so the first offline pick asks once through the sign-in sheet.
 ///
 /// Reads the mount table for `mount_path`, which the add gate just resolved as live. Runs inside

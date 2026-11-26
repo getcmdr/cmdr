@@ -1,7 +1,6 @@
 //! What the Servers list lists, and what each row says.
 //!
-//! Ported from the hub's merge (`servers-hub-rows.test.ts`, `.s3.test.ts`), flat: a
-//! many-place server's places are no rows of their own, and the pane sorts.
+//! Flat: a many-place server's places are no rows of their own, and the pane sorts.
 
 use std::collections::HashMap;
 

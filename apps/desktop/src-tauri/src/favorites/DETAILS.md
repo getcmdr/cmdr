@@ -258,7 +258,7 @@ and `commands/favorites.rs::favorite_volume_for` is the one place the rule lives
 **Why it has to exist.** The read side resolves every favorite through its stored volume id, the
 same identity a tab carries, so a favorite with no volume behind it could never say where it
 points or dial anything. Without a gate a `search-results://`, archive-inner, `.git`-portal, or
-servers-hub path would be written down with nothing able to reopen it.
+Servers list path would be written down with nothing able to reopen it.
 
 **What it reads**, typed questions only, ❌ not one test on the path string:
 
@@ -278,7 +278,7 @@ servers-hub path would be written down with nothing able to reopen it.
    goes on to step 3, never a refusal.
 3. The canonical resolver (`resolve_path_volume_with_timeout`): protocol arms for `mtp://`,
    `adb://`, `sftp://`, `webdav://`, `s3://` (each from cached state, never dialing), `smb://` → the
-   servers hub, the mount table otherwise.
+   Servers list, the mount table otherwise.
 4. **The volume must CONTAIN the path**, by whole segments (`cmdr_fs::volume::app_paths`). A scheme
    with no protocol arm (`search-results://`) reaches the mount table, which walks UP to `/`, and `/`
    doesn't contain it. That keeps the rule generic instead of a list of schemes to extend.
@@ -288,7 +288,7 @@ servers-hub path would be written down with nothing able to reopen it.
    GitPortal` no. Registered means the folder was seen live. An unregistered saved place or listed
    device (a server that isn't connected, a phone not dialed yet) answers
    `AddFavoriteError::PlaceNotConnected`, so MCP can say "connect first"; anything else
-   unregistered (the servers hub) answers `NotAPlace`.
+   unregistered (the Servers list) answers `NotAPlace`.
 
 It answers `FavoriteVolume { id, root, name }` from the resolved row. On macOS the resolver names an
 SMB share the way its switcher row does ("testshare on testnas.local", `volumes/platform/macos/mounts.rs::smb_share_name`),
@@ -300,8 +300,8 @@ served by `LocalPosixVolume` reports `BackendKind::Local`, which is admitted lik
 favorite. For an SMB-scheme volume, `add_favorite` calls
 `network::smb_saved_shares::remember_favorited_share` before persisting: the server, port, share, and
 account from the live mount's source, the gate's volume id, `pinned: false`, and ❗ an existing row
-left exactly as it is (pin and account included). Visible effect: the share appears in the servers
-hub, unpinned. Its password lives in Finder's Keychain item, so the first offline pick asks once
+left exactly as it is (pin and account included). Visible effect: the share appears in the Servers
+list, unpinned. Its password lives in Finder's Keychain item, so the first offline pick asks once
 through the sign-in sheet. A GVFS share (Linux) reads the same fields off its folder name.
 
 **Why step 2 sits in the gate and not in the shared resolver** (cmdr-reports#40, ERR-GQ6HQ: a share
@@ -335,7 +335,7 @@ ENFORCEMENT, and it's authoritative — the MCP tool and the native menus never 
 The frontend's half is `kindCanBeFavorited` / `paneFolderCanBeFavorited` in
 `src/lib/file-explorer/pane/volume-capabilities.ts`, reading the pane's ROUTED kind. The two give
 the same answer set from different readings (pane kind vs backend kind: `local`, `smb`, `sftp`,
-`webdav`, `s3`, `mtp`, `adb` yes; the servers hub, search results, an archive, and the `.git`
+`webdav`, `s3`, `mtp`, `adb` yes; the Servers list, search results, an archive, and the `.git`
 portal no, each switch exhaustive), so a change to one is a prompt to check the other.
 
 ## MCP consumer

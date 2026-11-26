@@ -878,7 +878,7 @@
     "chosen": "登入資訊",
     "confidence": "high",
     "forms": "cloud and tool credentials → 雲端和工具的登入資訊",
-    "sources": "catalog, 11 uses (fileExplorer.network.browser.tooltip.credsStored, errors.listing.authRequiredEneedauth.explanation); MS has no entry for it",
+    "sources": "catalog, 11 uses (errors.listing.authRequiredEneedauth.explanation); MS has no entry for it",
     "windows": {
       "chosen": "登入資訊",
       "accept": ["認證"],
@@ -1271,7 +1271,7 @@
     ],
     "chosen": "按兩下",
     "confidence": "high",
-    "sources": "MS (double-click → 按兩下); catalog fileExplorer.doubleClickHint.body, fileExplorer.network.browser.tooltip.* (5 values); AP pile silent"
+    "sources": "MS (double-click → 按兩下); catalog fileExplorer.doubleClickHint.body; AP pile silent"
   },
   "download": {
     "chosen": "下載",
@@ -1351,10 +1351,7 @@
     "chosen": "啟用",
     "confidence": "high",
     "forms": "enable (a setting) → 啟用; turn on (a feature) → 開啟 (在「設定」中開啟)",
-    "sources": "MS, standard; AP live Turn On → 開啟 (TW = HK, 299 of ~314)",
-    "exceptions": {
-      "servers.hub.emptyMessage": "Turn on a computer or NAS means power it on: 開機, not switching a setting on."
-    }
+    "sources": "MS, standard; AP live Turn On → 開啟 (TW = HK, 299 of ~314)"
   },
   "encoding": {
     "chosen": "編碼",
@@ -2136,7 +2133,7 @@
   "ip-address": {
     "chosen": "IP 位址",
     "confidence": "high",
-    "sources": "MS TBX IP address → IP 位址 (HKG, TWN); on the server-address ruling 位址; catalog errorReporter.dialog.description, fileExplorer.network.browser.tooltip.resolving"
+    "sources": "MS TBX IP address → IP 位址 (HKG, TWN); on the server-address ruling 位址; catalog errorReporter.dialog.description"
   },
   "item": {
     "accept": ["項"],
@@ -2390,7 +2387,7 @@
     ],
     "chosen": "區域網路",
     "confidence": "confirmed",
-    "decision": "Servers hub",
+    "decision": "Servers",
     "forms": "discovery → 探索 (區域網路探索已關閉); Found nearby → 在附近找到",
     "sources": "AP-TW LOCAL_NETWORK → 區域網路 (HK 本地網絡)"
   },
@@ -2645,7 +2642,7 @@
     ],
     "chosen": "NAS",
     "confidence": "high",
-    "sources": "catalog (servers.hub.emptyMessage, onboarding.stepOptional.networking.desc, settings.network.smbConcurrency.description, errors.listing.hostDown.suggestion all keep Latin NAS, spaced)"
+    "sources": "catalog (onboarding.stepOptional.networking.desc, settings.network.smbConcurrency.description, errors.listing.hostDown.suggestion all keep Latin NAS, spaced)"
   },
   "native": {
     "accept": ["系統連線"],
@@ -4460,7 +4457,7 @@
     ],
     "chosen": "卷宗切換器",
     "confidence": "confirmed",
-    "decision": "Servers hub",
+    "decision": "Servers",
     "sources": "AP-TW = AP-HK switcher → 切換器 (App切換器); catalog"
   },
   "wake": {

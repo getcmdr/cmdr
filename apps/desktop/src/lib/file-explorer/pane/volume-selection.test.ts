@@ -33,8 +33,8 @@ function setup(volumes: VolumeInfo[]) {
 describe('createVolumeSelection', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('selectVolumeByName("Servers") navigates to the synthetic hub volume', async () => {
-    // The hub row is synthesized by `volume-grouping.ts`, so no `findIndex` over the volume list
+  it('selectVolumeByName("Servers") navigates to the synthetic Servers volume', async () => {
+    // The Servers row is synthesized by `volume-grouping.ts`, so no `findIndex` over the volume list
     // can reach it.
     const { ops, navigate, started } = setup([])
     const outcome = await ops.selectVolumeByName('left', 'Servers')
@@ -46,15 +46,15 @@ describe('createVolumeSelection', () => {
     })
   })
 
-  it('selectVolumeByName reaches the hub by either name when the UI speaks another language', async () => {
+  it('selectVolumeByName reaches the Servers list by either name when the UI speaks another language', async () => {
     // Regression: an agent reads `Servers` in `cmdr://volumes`, while a Czech UI calls it `Servery`.
     const { setLocale } = await import('#lib/intl/messages.svelte.js')
     await setLocale('cs')
     try {
       const { ops, started } = setup([])
-      const hub = { kind: 'selected', volumeId: 'network', navigation: started }
-      expect(await ops.selectVolumeByName('left', 'Servers')).toEqual(hub)
-      expect(await ops.selectVolumeByName('left', 'Servery')).toEqual(hub)
+      const servers = { kind: 'selected', volumeId: 'network', navigation: started }
+      expect(await ops.selectVolumeByName('left', 'Servers')).toEqual(servers)
+      expect(await ops.selectVolumeByName('left', 'Servery')).toEqual(servers)
     } finally {
       await setLocale(null)
     }

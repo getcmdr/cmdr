@@ -442,7 +442,7 @@
         align-items: center;
         gap: var(--spacing-sm);
         /* Vertical metrics are the shared `--pane-footer-*` set (`app.css`), so this band
-           and the Servers hub's measure the same. Horizontal inset = the pane's list
+           measures the same on every pane. Horizontal inset = the pane's list
            gutter (`.listbox-region` /`.brief-list`, `--spacing-xs`) plus `.file-entry`'s
            own padding (`--spacing-sm`), so this readout starts exactly above the file
            icons rather than 4px inside them. */

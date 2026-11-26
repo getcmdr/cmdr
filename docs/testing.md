@@ -142,7 +142,7 @@ vitest's 5 s timeout under load (`shortcuts-store.test.ts`).
 - **`#[tauri::command]` boundary**: vitest IPC contract test using `installIpcMock()` from
   `apps/desktop/src/lib/ipc/test-helpers.ts`
 - **Frontend component logic**: vitest + svelte-testing-library in `*.test.ts`
-- **A component that sizes itself from its container** (either file-list view, `ServersHub`): `installLayoutMock()` from
+- **A component that sizes itself from its container** (either file-list view, the tab bar): `installLayoutMock()` from
   `#lib/test-layout`, and for `FullList` the ready-made `mountFullList()`. **Never** assert on rows without one — see §
   "A component that measures itself, rendering nothing"
 - **Wait for what lands a frame late in a frontend test** (active descendant, live announcer): `eventually()` or

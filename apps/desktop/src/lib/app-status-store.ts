@@ -13,8 +13,8 @@ import type { Location } from './tauri-commands'
 import type { RestoredTabPath } from '#lib/ipc/bindings.js'
 import { isShareListLocation } from './servers/share-list-path'
 
-/** The Servers hub's path on the `network` volume, where a restored share-list tab lands. */
-const NETWORK_HUB_PATH = 'smb://'
+/** The Servers list's path on the `network` volume, where a restored share-list tab lands. */
+const SERVERS_LIST_PATH = 'smb://'
 
 const STORE_NAME = 'app-status.json'
 const DEFAULT_PATH = '~'
@@ -132,8 +132,8 @@ export interface LoadedPaneTabs extends PersistedPaneTabs {
    */
   registryPendingTabIds: string[]
   /**
-   * Tabs that were on a server's share list, restored as the Servers hub: the share-list
-   * path each one's hub lands its cursor on (`restoreShareListLocation`). Absent when none.
+   * Tabs that were on a server's share list, restored as the Servers list: the share-list
+   * path each one's Servers list lands its cursor on (`restoreShareListLocation`). Absent when none.
    */
   landOnServerByTabId?: Record<string, string>
 }
@@ -152,7 +152,7 @@ async function followMovedRoot(
   return { location, pending: live.kind === 'notReady' }
 }
 
-/** A restored tab's location, plus the server its Servers hub lands on when it was a share list. */
+/** A restored tab's location, plus the server its Servers list lands on when it was a share list. */
 interface RestoredLocation {
   location: Location
   pending: boolean
@@ -160,17 +160,17 @@ interface RestoredLocation {
 }
 
 /**
- * A stored location on a server's share list comes back as the Servers hub, with the
- * share-list path kept as where the hub's cursor lands. ❗ Never the share list itself:
+ * A stored location on a server's share list comes back as the Servers list, with the
+ * share-list path kept as where the cursor lands. ❗ Never the share list itself:
  * that would list the server at launch, which nobody asked for (#324, and a possible
  * Keychain read). `null` for any other location.
  */
 export function restoreShareListLocation(location: Location): { location: Location; landOnServer: string } | null {
   if (!isShareListLocation(location.volumeId, location.path)) return null
-  return { location: { volumeId: 'network', path: NETWORK_HUB_PATH }, landOnServer: location.path }
+  return { location: { volumeId: 'network', path: SERVERS_LIST_PATH }, landOnServer: location.path }
 }
 
-/** A stored tab's location, restored: share list to hub, snapshot swapped, root followed, then walked. */
+/** A stored tab's location, restored: share list to the Servers list, snapshot swapped, root followed, then walked. */
 async function restoreTabLocation(
   location: Location,
   pathExistsFn: (p: string) => Promise<boolean>,
@@ -258,7 +258,7 @@ export async function loadAppStatus(pathExists: (p: string) => Promise<boolean>)
     const firstRunLayoutApplied = (await store.get('firstRunLayoutApplied')) === true
 
     // A stored snapshot path can't come back; it's swapped for a real folder first. A share
-    // list comes back as the hub, as a tab does (these keys feed no pane: symmetry only).
+    // list comes back as the Servers list, as a tab does (these keys feed no pane: symmetry only).
     const asStored = (path: string, volumeId: string): Location =>
       restoreShareListLocation({ volumeId, path })?.location ?? { volumeId, path }
     const leftStored = asStored(leftPath, leftVolumeId)
@@ -624,7 +624,7 @@ function isValidPersistedPaneTabs(raw: unknown): raw is PersistedPaneTabs {
   return obj.tabs.length > 0 && obj.tabs.every(isValidPersistedTab)
 }
 
-/** The restored tabs' hub landings, by tab id. */
+/** The restored tabs' Servers-list landings, by tab id. */
 function landingsByTabId(restored: { tab: PersistedTab; landOnServer?: string }[]): Record<string, string> {
   const byId: Record<string, string> = {}
   for (const { tab, landOnServer } of restored) if (landOnServer !== undefined) byId[tab.id] = landOnServer

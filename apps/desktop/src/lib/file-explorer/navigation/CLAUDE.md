@@ -34,8 +34,8 @@ Back/forward history, path resolution, paged keyboard shortcuts, and the pane's 
 - **`wordEjectRefusal(e)` words every eject refusal** from `errors.eject.*`; ❌ never `String(e)` or `diskutil` stderr.
   `wordUnmountRefusal` names holders (`Unclassified` as processes, ❌ never apps); empty scans word "something" or
   macOS, ❌ never "nothing is using this drive". Precedence: `DETAILS.md`.
-- **The Network group's rows are the LISTING's**, filtered by `belongsInSwitcher`, plus the hub this dir synthesizes. ❗
-  No `listSavedServers()` fetch in `volume-grouping.ts`; the row carries `pinned` already.
+- **The Network group's rows are the LISTING's**, filtered by `belongsInSwitcher`, plus the Servers row this dir
+  synthesizes. ❗ No `listSavedServers()` fetch in `volume-grouping.ts`; the row carries `pinned` already.
 - **Favorites show in TWO places from ONE controller**: ⌃D and the switcher's section both build rows with
   `createFavoritesMenu` + `FavoriteRowLabel` and open via `open-favorite.ts`; ❌ no second row builder. Mutate ONLY via
   `#lib/tauri-commands/favorites.ts` (bare ids: `stripFavoritePrefix`).

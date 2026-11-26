@@ -82,7 +82,7 @@ function couldNotStart(): RefusalReason {
 }
 
 /**
- * A server card that came back unsaved. The hub's own refusals read as the servers sheet says
+ * A server card that came back unsaved. The save's own refusals read as the servers sheet says
  * them; the three only a suggestion meets (the server moved, it got saved, its name got taken,
  * all since the AI suggested it) have their own words.
  */

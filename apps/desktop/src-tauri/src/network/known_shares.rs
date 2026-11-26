@@ -42,7 +42,7 @@ pub enum AuthOptions {
 #[serde(rename_all = "camelCase")]
 pub struct KnownNetworkShare {
     /// The name the person knows the server by (the discovery list's `name`):
-    /// what the hub groups a share under, and what the Keychain keys it by.
+    /// what its share list files a share under, and what the Keychain keys it by.
     pub server_name: String,
     pub share_name: String,
     /// Currently only "smb".
@@ -107,7 +107,7 @@ pub struct KnownSharesStore {
     /// An opt-out list rather than a flag on [`KnownNetworkShare`], because that type
     /// records Cmdr's OWN connects (server-level history, and the shares Cmdr itself
     /// mounted): a share macOS mounted has no row, and minting one would invent a connection history
-    /// that then shows up in the servers hub. Absence means on, so a store saved
+    /// that then shows up in the Servers list. Absence means on, so a store saved
     /// before the setting existed keeps every share on the fast connection. See
     /// [`direct_connection_enabled`].
     #[serde(default, deserialize_with = "crate::state_recovery::lenient_entries")]
@@ -550,7 +550,7 @@ pub fn saved_shares() -> Vec<KnownNetworkShare> {
 ///
 /// ❗ The ONE place that id is decided, for the servers listing and for every
 /// lookup by it. A share an Add named has no mount yet, and a lookup that only
-/// read the stored id couldn't find the row the hub was showing for it.
+/// read the stored id couldn't find the row its share list was showing for it.
 pub fn place_id(row: &KnownNetworkShare) -> String {
     row.volume_id.clone().unwrap_or_else(|| {
         cmdr_fs::volume::smb_volume_id(

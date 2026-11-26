@@ -1,4 +1,4 @@
-//! What the NFS place list owes the hub: one entry per export, found again the
+//! What the NFS place list owes the Servers list: one entry per export, found again the
 //! way the volume id finds it, a uid that's a setting rather than an identity,
 //! and a pin a reconnect can't undo.
 //!

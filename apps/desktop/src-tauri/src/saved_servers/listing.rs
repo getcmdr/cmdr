@@ -1,4 +1,4 @@
-//! Every server the user has saved, across every store, as the hub lists them.
+//! Every server the user has saved, across every store, as the Servers list reads them.
 
 use super::nfs_places::nfs_servers;
 use super::s3_accounts::s3_accounts;
@@ -9,7 +9,7 @@ use crate::network::{known_shares, manual_servers, sftp_known_servers, webdav_kn
 
 /// The listing, over a manual-server list the caller supplies.
 ///
-/// ❗ Cached state only, ❌ never the wire: the hub re-reads this on every
+/// ❗ Cached state only, ❌ never the wire: the Servers list re-lists from this on every
 /// `volumes-changed`, and a probe here would turn a refresh into a round of
 /// network traffic.
 ///
@@ -24,7 +24,7 @@ pub(crate) fn listing(
 ) -> Vec<SavedServer> {
     let manager = crate::file_system::volume::manager::get_volume_manager();
     // The app roots, from the module that mints them for the volume listing, so
-    // the hub's rows and the switcher's rows spell one prefix.
+    // the Servers list's rows and the switcher's rows spell one prefix.
     let app_roots: std::collections::HashMap<String, String> = crate::server_volumes::server_places()
         .into_iter()
         .map(|place| (place.id, place.app_root))
@@ -103,7 +103,7 @@ pub(crate) fn listing(
     servers
 }
 
-/// Every saved server as the hub lists it, plus each SMB host with the store rows
+/// Every saved server as the Servers list reads it, plus each SMB host with the store rows
 /// behind it (its address and port live there, not on the row), read from the
 /// stores as they are now. For a caller that CHECKS against what's saved (Ask
 /// Cmdr's server proposals) rather than showing it.

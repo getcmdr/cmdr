@@ -173,7 +173,7 @@ fn switching_reconnect_automatically_on_an_sftp_place_round_trips_through_the_li
     assert!(!listed().pinned, "and left the pin where it was");
     assert!(
         crate::volume_broadcast::volumes_changed_requests() > before,
-        "❗ the hub re-reads the saved list on `volumes-changed`, so an open hub repaints"
+        "❗ the Servers list re-lists on `volumes-changed`, so an open one repaints"
     );
 
     assert!(set_place_auto_reconnect_inner(&volume_id, true));
@@ -428,7 +428,7 @@ async fn saving_a_start_folder_under_the_root_stores_it_normalized() {
 /// ❗ **A saved edit republishes the volume list, whatever it changed.** The
 /// switcher's name and landing come from that list, and neither an unconnected
 /// place's edit nor a start-folder-only one moves anything in the registry that
-/// would announce it. The hub re-reads the saved list on the same broadcast. A
+/// would announce it. The Servers list re-lists on the same broadcast. A
 /// refusal wrote nothing, so it asks for nothing.
 #[tokio::test]
 #[allow(

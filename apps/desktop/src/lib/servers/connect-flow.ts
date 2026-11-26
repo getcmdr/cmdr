@@ -2,7 +2,7 @@
  * Bringing a place to life, whatever standing it is in.
  *
  * ❗ **The one caller of `connectSavedPlace` and the reconnect manager's lazy
- * start.** The switcher, the hub, the pane banner, and the sheet's Connect
+ * start.** The switcher, the Servers list, the pane banner, and the sheet's Connect
  * button all come through here, because the move depends on the volume's
  * standing and picking it wrong is silent: re-dialing a registered volume
  * registers a SECOND one, and dialing a volume the backoff loop already owns

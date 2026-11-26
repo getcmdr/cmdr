@@ -415,13 +415,13 @@ resolver deliberately does NOT guard on `defaultPrevented`: preventing a browser
 different statements, and conflating them would silently kill shortcuts behind handlers that legitimately do the first.
 
 Why it matters, in full: a handler that only prevents the default still lets central dispatch run the very same command
-a moment later. When both ends land in the same place, the work happens TWICE and nothing looks wrong. `ServersHub`'s ⌘R
-ran `clearShareState` + `fetchShares` for every host, then `pane.refresh` dispatched into `refreshPane` →
-`refreshNetworkHosts()` → `ServersHub.refresh()`, which is that same handler's body again. The paged cursor keys are the
-same shape and hid better: `nav.pageDown`'s handler is `sendKeyToFocusedPane('PageDown')`, so one press moved two pages
-(measured: 54 rows with 27 on screen), while `Home` and `End` doubled invisibly by being idempotent. ❌ Don't reach for
-a "did you handle it?" return value instead: `pane-key-router` hands the search view every key and returns either way,
-so a boolean has nobody to tell. `claimKey(e)` IS the claim.
+a moment later. When both ends land in the same place, the work happens TWICE and nothing looks wrong. The former
+Servers hub's ⌘R ran `clearShareState` + `fetchShares` for every host, then `pane.refresh` dispatched into `refreshPane`
+→ `refreshNetworkHosts()` → the hub's `refresh()`, which is that same handler's body again. The paged cursor keys are
+the same shape and hid better: `nav.pageDown`'s handler is `sendKeyToFocusedPane('PageDown')`, so one press moved two
+pages (measured: 54 rows with 27 on screen), while `Home` and `End` doubled invisibly by being idempotent. ❌ Don't
+reach for a "did you handle it?" return value instead: `pane-key-router` hands the search view every key and returns
+either way, so a boolean has nobody to tell. `claimKey(e)` IS the claim.
 
 So local handlers don't test raw key flags; they ask the registry:
 
@@ -460,8 +460,7 @@ Callers today: `../file-explorer/pane/selection-keys.ts` (`Space` / `Insert` / `
 `nav.parent` — and `⌘Backspace` falls through to `file.delete` for free, since it isn't `nav.parent`'s combo),
 `../file-explorer/pane/cursor-nav-keys.ts` (the ten cursor commands, as one gate in front of the per-view math),
 `../file-explorer/navigation/keyboard-shortcuts.ts` (`nav.home` / `nav.end` / `nav.pageUp` / `nav.pageDown` for both
-views and the servers hub), and `../file-explorer/pane/share-mount.svelte.ts` (`share.back`, while a share's mount is
-up).
+views), and `../file-explorer/pane/share-mount.svelte.ts` (`share.back`, while a share's mount is up).
 
 A handler that needs "the platform's primary modifier" (a row's toggle click, the viewer's copy, select all, and search)
 asks `holdsPrimaryModifier(event)` (`primary-modifier.ts`: ⌘ on macOS, Ctrl elsewhere), ❌ never `metaKey` alone or

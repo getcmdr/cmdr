@@ -88,7 +88,7 @@ pub(crate) enum VolumeKind {
         )
     )]
     Network,
-    /// A synthetic entry with no backing device (the servers hub row). Also
+    /// A synthetic entry with no backing device (the `Servers` row). Also
     /// shared-listing-path-only today, so on Linux it's unconstructed — see `Smb`.
     #[cfg_attr(
         target_os = "linux",
@@ -136,7 +136,7 @@ pub(crate) struct VolumeSummary {
     pub index_status: Option<&'static str>,
     /// How live the volume's session is (`direct` / `os_mount` / `disconnected` /
     /// `needs_sign_in` / `needs_host_key_approval` / `saved`). `None` for anything
-    /// with no session: a local disk, the hub row.
+    /// with no session: a local disk, the `Servers` row.
     pub connection_state: Option<&'static str>,
     /// Whether the DEVICE behind the row can be opened right now (`ready` /
     /// `waiting_for_authorization` / `unavailable_offline` /
@@ -148,7 +148,7 @@ pub(crate) struct VolumeSummary {
     pub device_readiness: Option<&'static str>,
     /// Where the volume is mounted, the path a search scope names to cover this
     /// drive. `None` for a volume with no filesystem path (MTP storages, the
-    /// synthetic servers hub row), which is also exactly where a search can't reach.
+    /// synthetic `Servers` row), which is also exactly where a search can't reach.
     pub mount_path: Option<String>,
     /// What the volume reports about its room, from the space poller's cache.
     /// `None` when nothing is watching this volume — see [`space_summary`] for
@@ -323,7 +323,7 @@ fn index_status_token(status: &cmdr_index::VolumeIndexStatus) -> &'static str {
 
 /// Snapshot every volume for the `cmdr://state` `volumes:` section: local / SMB
 /// locations (with SMB connection state and per-volume index freshness) and MTP
-/// device storages, plus the synthetic servers hub row. The impure half;
+/// device storages, plus the synthetic `Servers` row. The impure half;
 /// [`build_volumes_yaml`] formats the result.
 pub(crate) async fn snapshot_volumes() -> Vec<VolumeSummary> {
     #[cfg(not(target_os = "linux"))]
@@ -424,7 +424,7 @@ async fn read_all_within<T: Send + 'static, F: FnOnce() -> T + Send + 'static>(
 }
 
 /// Whether a listed row sits on a real mount point (`/…`, `C:/…`, `//server/share/…`)
-/// rather than a scheme root (`mtp://…`, `sftp://…`, the `smb://` hub).
+/// rather than a scheme root (`mtp://…`, `sftp://…`, the Servers list's `smb://`).
 #[cfg(not(target_os = "linux"))]
 fn on_a_real_path(path: &str) -> bool {
     cmdr_fs::volume::path_grammar::is_local_path(path, cmdr_fs::volume::path_grammar::PathFlavor::HOST)
@@ -479,7 +479,7 @@ pub(crate) async fn snapshot_volumes_from(locations: &[crate::volume_listing::Lo
                 space: space_summary(&loc.id),
             });
         }
-        // The servers hub row is a synthetic navigation target, not a device: no
+        // The `Servers` row is a synthetic navigation target, not a device: no
         // filesystem, ejectability, or index.
         out.push(VolumeSummary {
             name: crate::volume_listing::SERVERS_VOLUME_NAME.to_string(),

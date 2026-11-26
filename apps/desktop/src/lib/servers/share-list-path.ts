@@ -1,6 +1,6 @@
 /**
  * Writing and reading the path of a server's share list: `smb://<key>[:<port>]` on the
- * `network` volume, where `smb://` alone is the Servers hub.
+ * `network` volume, where `smb://` alone is the Servers list.
  *
  * ❗ **The key never changes for one server.** A discovered server's is its Bonjour
  * name, a manual one's the address the person typed, both lowercased. ❌ Not the IP and
@@ -55,7 +55,7 @@ export function shareListPath(host: NetworkHost): string {
 }
 
 /**
- * The server a share-list path names, or `null` for any other path: the hub (`smb://`),
+ * The server a share-list path names, or `null` for any other path: the Servers list (`smb://`),
  * a share (`smb://<key>/<share>`, which is mounted, never listed here), another scheme,
  * or a spelling that doesn't read. Folds case, an explicit `:445`, and the trailing `/`
  * Rust's grammar spells a scheme root with.

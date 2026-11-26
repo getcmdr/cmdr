@@ -71,8 +71,8 @@ pub(crate) fn share_list_path(host: &NetworkHost) -> String {
 /// Where a path on the `network` volume points.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum NetworkPath {
-    /// `smb://`, the Servers hub.
-    Hub,
+    /// `smb://`, the Servers list.
+    ServersList,
     /// `smb://<key>[:<port>]`, a server's share list.
     ShareList(ShareListAddress),
     /// `smb://<key>[:<port>]/<share>[/…]`: a share, or a path inside one. A share is
@@ -97,13 +97,13 @@ pub(crate) struct SharePath {
 
 impl NetworkPath {
     /// Reads `path` as the frontend spells it (`smb://testnas`) or as the app-path grammar
-    /// does, which ends a scheme root in `/` (`smb://testnas/`, the hub `smb:///`).
+    /// does, which ends a scheme root in `/` (`smb://testnas/`, the Servers list `smb:///`).
     pub(crate) fn of(path: &str) -> Self {
         let Some(rest) = path.strip_prefix(SCHEME) else {
             return Self::Elsewhere;
         };
         if rest.is_empty() || rest == "/" {
-            return Self::Hub;
+            return Self::ServersList;
         }
         let (authority, inside) = match rest.split_once('/') {
             Some((authority, "")) => (authority, None),
@@ -252,8 +252,8 @@ impl KnownHosts {
 
 /// The server `address` names among `hosts`, or `None` when nothing known goes by it.
 ///
-/// Fresh evidence first, a discovered host before a manual one (the hub's own pick, so
-/// the pane lists under the host id the hub caches under); then the manual store; then a
+/// Fresh evidence first, a discovered host before a manual one (the Servers list's own
+/// pick, so the pane lists under the host id its row names); then the manual store; then a
 /// server a share is mounted from, which is all that knows a share macOS mounted by an
 /// address Cmdr never saw (`..` out of that share leads here). A host
 /// only the display cache still lists comes last, and ❗ with its IP dropped: its name ↔

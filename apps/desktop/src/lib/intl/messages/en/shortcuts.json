@@ -91,7 +91,7 @@
 
   "shortcuts.scope.servers": "Servers",
   "@shortcuts.scope.servers": {
-    "description": "Group heading in the Keyboard shortcuts list for keys that work in the servers hub: the list of every server the user saved plus the ones Cmdr found nearby. A short section title.",
+    "description": "Group heading in the Keyboard shortcuts list for keys that work in the Servers list: the list of every server the user saved plus the ones Cmdr found nearby. A short section title.",
     "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
 

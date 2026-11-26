@@ -3,7 +3,7 @@
  *
  * The SMB server glyph (a monitor with a filled screen). A bare inline svg with no ARIA of its
  * own: callers reach it through `Icon` (`name="monitor-filled"`), decorative beside the server's
- * name in the servers hub, or labelled where it stands alone.
+ * name in a Servers row, or labelled where it stands alone.
  */
 import { describe, it, expect } from 'vitest'
 import { mount, tick } from 'svelte'

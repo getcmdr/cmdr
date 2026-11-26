@@ -12,7 +12,7 @@ pub use cmdr_fs::server_meta::ServerProtocol;
 
 /// Whether a person NAMED this server, or the label is a stand-in.
 ///
-/// ❗ The hub's Name column ranks three names (a name a person chose, the Bonjour
+/// ❗ The Servers list's Name column ranks three names (a name a person chose, the Bonjour
 /// name mDNS found, a stand-in nobody chose), and the top rank is a FACT this
 /// enum publishes, ❌ never a guess at the string's shape. Only the store that
 /// wrote the label knows where it came from.
@@ -80,7 +80,7 @@ pub struct SavedPlace {
     pub auto_reconnect: Option<bool>,
 }
 
-/// An endpoint plus an identity, as the hub lists it.
+/// An endpoint plus an identity, as the Servers list reads it.
 ///
 /// ❗ **An SMB host's places are its SAVED shares** (`known_shares.rs` share rows,
 /// `docs/specs/saved-smb-shares.md`): each carries the volume id its last mount
@@ -92,14 +92,14 @@ pub struct SavedServer {
     /// Stable across launches. For a one-place protocol it IS the place's volume
     /// id; for an SMB host it is the manual-server id shape.
     pub id: String,
-    /// Which protocol, so the hub can show a Type column without parsing an
+    /// Which protocol, so the Servers list can show it without parsing an
     /// address.
     pub protocol: ServerProtocol,
-    /// What the hub calls it: a name a person chose, or a stand-in when nobody
+    /// What the Servers list calls it: a name a person chose, or a stand-in when nobody
     /// did (an account's `username@host`, an SMB host's address). `name_source`
     /// says which, so the frontend never re-derives one.
     pub display_name: String,
-    /// Whether a person named it, which is what lets the hub prefer a Bonjour
+    /// Whether a person named it, which is what lets the Servers list prefer a Bonjour
     /// name over a stand-in nobody chose.
     pub name_source: ServerNameSource,
     /// What the user typed, near enough to paste back: `host:port` for SFTP, the
@@ -111,7 +111,7 @@ pub struct SavedServer {
     /// Whether this account's place belongs in the switcher. Always `false` for an
     /// SMB host: its SHARES carry their own pins.
     pub pinned: bool,
-    /// ISO 8601, so a hub can sort by recency. `None` when nothing recorded one.
+    /// ISO 8601, so the Servers list can sort by recency. `None` when nothing recorded one.
     pub last_connected_at: Option<String>,
     /// The "Reconnect automatically" switch: redial on its own when a session
     /// DROPS (never a connect at startup). `None` for SMB, which has no such
@@ -125,7 +125,7 @@ pub struct SavedServer {
     pub places: Vec<SavedPlace>,
     /// An SMB host saved without contact ("Add anyway", an approved Ask Cmdr card)
     /// that no mount has gone through since: nothing lists its shares until the user
-    /// connects, and the hub says "Not connected yet". Always `false` for the other
+    /// connects, and the Servers list says "Not connected yet". Always `false` for the other
     /// protocols, whose unconnected save contacts nothing anyway. ❗ Absent reads
     /// `false`, like the store field it mirrors.
     #[serde(default)]

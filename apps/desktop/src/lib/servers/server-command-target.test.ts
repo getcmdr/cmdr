@@ -90,7 +90,7 @@ describe('serverCommandTarget', () => {
     })
   })
 
-  it('takes the server whose share list the pane shows, when the pane isn’t the hub', () => {
+  it('takes the server whose share list the pane shows, when the pane isn’t on the Servers list', () => {
     expect(serverCommandTarget(sources({ shareListHost: nas }))).toEqual({
       kind: 'smb-server',
       host: nas,
@@ -105,8 +105,14 @@ describe('serverCommandTarget', () => {
   })
 
   it('answers nothing for the synthetic Servers volume, which is not a server', () => {
-    const hub = volume({ id: 'network', name: 'Servers', path: 'smb://', fsType: 'smbfs', connectionState: null })
-    expect(serverCommandTarget(sources({ paneVolume: hub }))).toBeNull()
+    const serversVolume = volume({
+      id: 'network',
+      name: 'Servers',
+      path: 'smb://',
+      fsType: 'smbfs',
+      connectionState: null,
+    })
+    expect(serverCommandTarget(sources({ paneVolume: serversVolume }))).toBeNull()
   })
 
   it('answers nothing for a mounted SMB share: its session is an OS mount the family doesn’t speak', () => {

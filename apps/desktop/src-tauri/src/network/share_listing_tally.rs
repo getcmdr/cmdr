@@ -2,8 +2,8 @@
 //! evidence #324's pins read ("opening the Servers list lists nobody's shares").
 //!
 //! [`smb_client::list_shares`](super::smb_client::list_shares) is the one door every share
-//! listing goes through (a pane's share list, its sign-in ladder, the Servers view's prefetch,
-//! the sign-in sheet's attempt), so it notes each ask here: `asked` for every call, `dialed`
+//! listing goes through (a pane's share list, its sign-in ladder, the sign-in sheet's
+//! attempt), so it notes each ask here: `asked` for every call, `dialed`
 //! for the ones the share cache didn't answer. Each ask counts under its hostname AND its
 //! resolved IP (lowercased), so a spec finds it by whichever address it knows.
 //!

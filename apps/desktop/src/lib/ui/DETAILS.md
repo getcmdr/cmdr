@@ -603,7 +603,7 @@ onboarding wizard, a toast, and the `Menu` consumers' `restoreFocus`) goes throu
   `preventScroll`). A bare `.focus()` on the remembered list would scroll the view off the cursor (the listbox is taller
   than its scroller), and after the palette's "Switch pane" or ⌥F1 → `Tab` it would land on the pane that's no longer
   focused. A remembered list that unmounted meanwhile (a view toggle) still restores, because the origin is the home,
-  not the node. `focusHome()` is the same move for code with no origin (the Ask Cmdr rail's Escape, the servers hub).
+  not the node. `focusHome()` is the same move for code with no origin (the Ask Cmdr rail's Escape).
 - **A home control that keeps focus** (`FocusHome.keepsFocus`: pane chrome) is remembered as itself (`home-control`), so
   a menu opened from the volume button goes back to that button on close, the menu-button pattern. When it's gone by
   then (a navigation re-rendered the path), focus goes home.

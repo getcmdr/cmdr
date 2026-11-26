@@ -30,7 +30,7 @@ fn named_manual_entry(address: &str, name: &str) -> ManualServerEntry {
     }
 }
 
-/// ❗ **The listing is the union of three stores**, in one shape the hub renders
+/// ❗ **The listing is the union of three stores**, in one shape the Servers list reads
 /// without branching on protocol.
 #[test]
 fn the_listing_unions_the_sftp_the_webdav_and_the_smb_stores() {
@@ -60,7 +60,7 @@ fn the_listing_unions_the_sftp_the_webdav_and_the_smb_stores() {
 }
 
 /// ❗ **Whether a person NAMED a server is a FACT the listing publishes**,
-/// because the hub ranks three names and can't tell them apart by looking at the
+/// because the Servers list ranks three names and can't tell them apart by looking at the
 /// strings. An account label is the user's; an SMB host's label is the address
 /// they typed, worn as a stand-in, so a Bonjour name outranks it.
 #[test]
@@ -78,8 +78,8 @@ fn an_account_label_is_the_users_name_and_an_smb_hosts_address_is_a_stand_in() {
     assert_eq!(find(&servers, smb_host).name_source, ServerNameSource::Fallback);
 }
 
-/// ❗ **A host saved off someone else's mount says so**, which is what keeps the hub's
-/// share prefetch off it (#324), and it ranks as a stand-in under any Bonjour name.
+/// ❗ **A host saved off someone else's mount says so**, which is what keeps anything
+/// from listing its shares unasked (#324), and it ranks as a stand-in under any Bonjour name.
 #[test]
 fn a_host_saved_from_a_mount_is_listed_as_such_and_as_a_stand_in() {
     let smb_host = "192.0.2.44";
@@ -98,7 +98,7 @@ fn a_host_saved_from_a_mount_is_listed_as_such_and_as_a_stand_in() {
 }
 
 /// ❗ **An SMB host a person named is listed by that name, as theirs**, so the
-/// hub keeps it over a Bonjour name the way it keeps a named SFTP account.
+/// Servers list keeps it over a Bonjour name the way it keeps a named SFTP account.
 #[test]
 fn a_named_smb_host_is_listed_by_its_name_as_the_users_own() {
     let smb_host = "192.0.2.43";
@@ -207,7 +207,7 @@ fn an_smb_host_with_no_saved_share_lists_no_places_and_is_never_pinned() {
 }
 
 /// ❗ **An account nobody named is listed by its derived label, and says so**:
-/// the hub shows `username@host`, and knows no person chose it.
+/// the Servers list shows `username@host`, and knows no person chose it.
 #[test]
 fn an_unnamed_account_is_listed_by_its_derived_label_as_a_stand_in() {
     let sftp_host = "192.0.2.64";
@@ -230,7 +230,7 @@ fn an_unnamed_account_is_listed_by_its_derived_label_as_a_stand_in() {
 
 /// ❗ **A saved share is a place under its host** (cmdr-reports#7: "user +
 /// server + share"), carrying the account it opens as and the id its last mount
-/// had, so the hub can open it and a pin points at the real volume.
+/// had, so its share list can open it and a pin points at the real volume.
 #[test]
 fn a_saved_share_is_a_place_under_its_host_with_its_account() {
     let smb_host = "192.0.2.46";
@@ -272,7 +272,7 @@ fn a_saved_share_on_a_host_nobody_typed_in_brings_its_host() {
 }
 
 /// A share an Add named but nothing mounted yet is listed with a stand-in id and
-/// its `smb://` address, which is how the hub knows to open it through the host.
+/// its `smb://` address, which is how its share list knows to open it through the host.
 #[test]
 fn a_share_no_mount_went_through_is_listed_by_its_address() {
     let servers = listing(

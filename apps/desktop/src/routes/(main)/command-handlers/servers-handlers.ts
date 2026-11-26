@@ -1,5 +1,5 @@
 /**
- * The servers family: showing the hub, and the actions that mirror a server row's
+ * The servers family: showing the Servers list, and the actions that mirror a server row's
  * context menu for people who reach for the keyboard.
  *
  * ❗ **Every action arm goes through the function its row menu runs**: a place's
@@ -8,8 +8,8 @@
  * place names what each costs, so a menu item and a palette command can't drift on
  * the confirmation or the toast.
  *
- * Which server they act on is `serverCommandTarget`'s call: the hub's cursor row
- * wherever there is one, else the server whose share list the pane shows, else the
+ * Which server they act on is `serverCommandTarget`'s call: the Servers row under
+ * the cursor wherever there is one, else the server whose share list the pane shows, else the
  * focused pane's own volume. A command that finds none says nothing — the palette
  * lists every command whatever the pane is on, and a toast for "you weren't
  * pointing at a server" is noise.
@@ -69,7 +69,7 @@ type PlaceTarget = Extract<ServerCommandTarget, { kind: 'place' }>
 
 /**
  * An SMB server's account action from the palette, run where its row menu runs it. One
- * that lists from a hub row opens the server's share list, as the row menu's does; on the
+ * that lists from a Servers row opens the server's share list, as the row menu's does; on the
  * share list itself the list follows the listing.
  */
 async function runAccountAction(explorerRef: ExplorerAPI | undefined, action: ServerAccountAction): Promise<void> {

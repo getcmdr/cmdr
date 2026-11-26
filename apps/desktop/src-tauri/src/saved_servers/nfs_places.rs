@@ -1,5 +1,5 @@
 //! The NFS half of the saved servers: a server's saved exports grouped into one
-//! hub row, and the saved entry a target describes.
+//! server, and the saved entry a target describes.
 
 use super::wire::{SavedPlace, SavedServer, ServerNameSource, ServerProtocol, ServerTarget};
 use super::{ServerConnectOutcome, outcome_from_nfs};
@@ -66,7 +66,7 @@ pub(super) fn nfs_servers(
     servers
 }
 
-/// What the hub shows as an NFS server's address: the host, and the port only
+/// What the Servers list shows as an NFS server's address: the host, and the port only
 /// when the address named one. An IPv6 literal goes in brackets before a port.
 fn address(entry: &KnownNfsPlace) -> String {
     match entry.port {

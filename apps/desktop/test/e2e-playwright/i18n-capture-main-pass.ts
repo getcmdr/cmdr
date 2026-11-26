@@ -27,7 +27,7 @@ import {
   captureFileOperationDialogs,
   captureGoToPath,
   captureQueryOverlays,
-  captureServersHub,
+  captureServersList,
   captureTransferDialog,
 } from './i18n-capture-main-overlays.js'
 import {
@@ -261,7 +261,7 @@ export const MAIN_PASS_STEPS: readonly MainPassStep[] = [
 
   // Main-window overlays, each staged by a registry command: the file-operation
   // dialogs, the conflict and transfer dialogs, go-to-path, the palette and query UI,
-  // and the servers hub. The first step does the group's full reset; the rest rely
+  // and the Servers list. The first step does the group's full reset; the rest rely
   // on running right after it (`i18n-capture-main-overlays.ts`).
   {
     name: 'file-operation-dialogs',
@@ -296,7 +296,7 @@ export const MAIN_PASS_STEPS: readonly MainPassStep[] = [
   {
     name: 'servers-hub',
     run: async (main, { report, failed }) => {
-      await captureServersHub(main, report, failed)
+      await captureServersList(main, report, failed)
     },
   },
 

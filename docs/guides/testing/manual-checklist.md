@@ -64,19 +64,20 @@ Use this checklist before each release to verify features that cannot be automat
 - [ ] Network volumes appear (if mounted)
 - [ ] Ejecting a volume gracefully switches pane to default
 
-### The servers hub
+### The Servers list
 
 - [ ] The volume switcher's Network group holds one row called "Servers"
-- [ ] It lists saved servers and nearby hosts together, with Name, Type, Address, Status, and Last used
-- [ ] "Add server…" is the last row; arrow keys reach it and Enter opens the dialog
+- [ ] It lists saved servers and nearby hosts together, one row per server, in the standard file list (Name, Details,
+      Last used), in both Brief and Full views, with the pane's own sort and filter
+- [ ] "Add server…" is the last row under any sort or filter; arrow keys reach it and Enter opens the dialog
 - [ ] Enter on an SFTP or WebDAV row takes the pane to the server (it dials in the pane, with a Cancel)
-- [ ] Enter on an SMB host opens its places list; Escape / Backspace / ⌘↑ go back to the hub
-- [ ] In the hub, Escape, Backspace, and ⌘↑ do nothing
+- [ ] Enter on an SMB server opens its share list; `..`, Backspace, and ⌘↑ go back to the Servers list, with the cursor
+      on that server's row
 - [ ] Right-click an SFTP or WebDAV row: Disconnect, Forget saved password, Forget server
-- [ ] Turning off Settings > File systems > SMB/Network shares > network discovery leaves the hub open, replaces the
-      nearby hosts with "Local network discovery is off.", and the link opens Settings at that switch
-- [ ] Palette: "Show servers", "Pin / unpin server", "Disconnect server", "Forget saved password" act on the row under
-      the hub's cursor, or on the focused pane's own server
+- [ ] Turning off Settings > File systems > SMB/Network shares > network discovery leaves the Servers list open with
+      only the servers you added, and its footer says the nearby search is off
+- [ ] Palette: "Show servers", "Pin / unpin server", "Disconnect server", "Forget saved password" act on the Servers row
+      under the cursor, or on the focused pane's own server
 - [ ] Connect with hostname, IP, IP:port, smb:// URL
 - [ ] Error shown for unreachable server
 - [ ] Error shown for unsupported protocol (afp://, nfs://)

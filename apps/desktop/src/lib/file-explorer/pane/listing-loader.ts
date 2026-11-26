@@ -944,11 +944,10 @@ export function createListingLoader(deps: ListingLoaderDeps): ListingLoader {
   }
 
   /**
-   * The pane leaves its listing for a view that has none (a share list's `..` to the
-   * Servers hub), without starting another. ❗ A load still in flight must not land
-   * afterwards: its `onPathChange` would commit the share list again over the hub,
-   * since both are `smb://` paths on one volume and the drop-foreign-listings policy
-   * can't tell them apart.
+   * The pane leaves its listing for a view that has none, without starting another. ❗ A
+   * load still in flight must not land afterwards: its `onPathChange` would commit its path
+   * again over the new view, since on the `network` volume both are `smb://` paths and the
+   * drop-foreign-listings policy can't tell them apart.
    */
   function leaveListing(): void {
     rejectPendingLoad(new NavigationSuperseded())

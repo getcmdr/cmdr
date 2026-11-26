@@ -320,9 +320,9 @@ Choose an app… → `Seleccionar app…`.
 
 ## Servidores (`servers.*`, `fileExplorer.navigation.connectionTooltip*`/`disconnect*`/`forget*`/`server*Toast`/`pinRefusedToast`/`networkVolume`, `commands.servers*`, `shortcuts.scope.servers`/`places`, `goToPath.dialog.opensServer`/`addsServer`, `menu.network.pinToSwitcher`/`unpin`, `settings.section.servers`/`adb`, `settings.summary.servers`/`adb`, `settings.servers.*`, `settings.adb.*`, `settings.appearance.tintSmb.*`)
 
-- **Hub**: `Servidores` names the row (`la lista Servidores`, unquoted), `Red` only the group. Places → `Ubicaciones`
-  (Finder; it covers buckets, ❌ `Recursos compartidos`). `Último uso` (❌ `Última conexión`: English chose "used").
-  discovery → `detección` (❌ `descubrimiento`, a finding).
+- **Servers**: `Servidores` names the row (`la lista Servidores`, unquoted), `Red` only the group. Places →
+  `Ubicaciones` (Finder; it covers buckets, ❌ `Recursos compartidos`). `Último uso` (❌ `Última conexión`: it says
+  "used"). discovery → `detección` (❌ `descubrimiento`, a finding).
 - **Pin**: `fijar` / `desfijar` (❌ Safari's `anclar`; move all five together); `Desfijar del selector` twins
   `Fijar en el selector`, quoted bare in `pinHint.body`. Trusted → `de confianza` (❌ `fiable`, a certificate verdict).
 - **Keys**: SSH key → `clave` (❌ `llave`: passkeys, `llavero`); fingerprint → `huella digital` (❌ bare `huella`, Touch

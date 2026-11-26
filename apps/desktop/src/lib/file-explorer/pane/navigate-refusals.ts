@@ -43,7 +43,7 @@ export const NETWORK_VOLUME_PATH = 'smb://'
 
 /**
  * `resolve_location` maps EVERY `smb://` path to the virtual `network` volume, where the
- * hub (`smb://`) and a server's share list (`smb://<server>`) are places and a share
+ * Servers list (`smb://`) and a server's share list (`smb://<server>`) are places and a share
  * (`smb://<server>/<share>`) is not: it's mounted, as its own volume. A share's path used
  * to commit the switch and report success while the pane sat on the host list, which is
  * a worse answer than saying so.
@@ -56,7 +56,7 @@ export const SMB_PATH_REFUSAL: NavigateRefusal = {
 
 /**
  * The narrowed `smb://` rule, for when a server's share list is a listing: on the
- * `network` volume the hub (`smb://`) and a server's share list (`smb://<server>`,
+ * `network` volume the Servers list (`smb://`) and a server's share list (`smb://<server>`,
  * the pane routing's `isShareListLocation`) are places a pane can go, and a share
  * (`smb://<server>/<share>`) keeps {@link SMB_PATH_REFUSAL}: a share is mounted, ❌ never
  * navigated to. `null` for a path off the `smb://` namespace, which this doesn't judge.

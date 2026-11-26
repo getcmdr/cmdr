@@ -272,7 +272,7 @@ inflection.
   marker with full-width parens and no space, and never invent a second marker: the two states have to read as one item.
 - **A table column heading that holds a date or time carries the time noun.** Apple's Chinese column headings are
   `上次打开日期`, `上次使用时间`, `修改日期`, so "Last used" over a date column is `上次使用时间`, not the bare
-  `上次使用` (which Apple uses mid-sentence). Evidence: `decisions.md` § Servers hub.
+  `上次使用` (which Apple uses mid-sentence). Evidence: `decisions.md` § Servers list.
 - **Status labels are `已…` adjectives, unless the user didn't cause the state.** `已连接` / `已保存` / `已退出登录`
   read as one set in a Status column. A state the app merely observed takes a plain verb phrase instead (`在附近发现`),
   because `已…` would make it sound like an action that just finished.

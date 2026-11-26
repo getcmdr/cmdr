@@ -517,7 +517,7 @@ pub async fn disconnect_network_host(host: NetworkHost) -> Vec<String> {
 
 /// Whether a share from `host` is mounted, found the way [`disconnect_network_host`] finds what
 /// to unmount: the kernel's mount table snapshot (`statfs`-free, so it can't stall), matched by
-/// every name the host dials on its port. What the servers hub's row menu asks before it offers
+/// every name the host dials on its port. What a Servers row's menu asks before it offers
 /// Disconnect, so the item never answers "no mounted shares". Reads no password.
 #[tauri::command]
 #[specta::specta]

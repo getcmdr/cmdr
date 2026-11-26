@@ -396,7 +396,7 @@ Only the layout facts that none of those carry live here:
   tier that runs the restricted-window settings path (typed commands + main-window bridge) under the real capability
   ACL, which vitest can't reproduce.
 - **`keyboard-focus.spec.ts` pins which pane the next ↓ moves after every focus-moving flow** (launch, `Tab`, view
-  toggle, rename, dialogs, menus, palette, a click, the servers hub). It asserts with `expectArrowDownMovesCursorIn`
+  toggle, rename, dialogs, menus, palette, a click, the Servers list). It asserts with `expectArrowDownMovesCursorIn`
   (`helpers/cursor.ts`), ❌ never on which element holds focus or on `aria-selected`: both may change while keys may
   not. `ask-cmdr.spec.ts` (rail Escape) and `search-open-in-pane.spec.ts` carry the same probe for their flows, and
   `app.spec.ts`'s toast test pins the toast-close flow.

@@ -3,7 +3,7 @@
 //!
 //! ❗ The server is the name a person typed in the Add server sheet when they named it
 //! ("private on Home NAS", #913), else the address it goes by (with the port off 445).
-//! The address stays in Finder's Get Info and in the hub's server row; a name is a label
+//! The address stays in Finder's Get Info and in the server's Servers row; a name is a label
 //! only, ❌ never an identity (`server_identity`).
 
 use crate::network::known_shares::KnownNetworkShare;

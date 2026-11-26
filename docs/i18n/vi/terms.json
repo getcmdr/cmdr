@@ -363,7 +363,7 @@
     "chosen": "bộ chứa",
     "forms": "All buckets → Tất cả bộ chứa",
     "confidence": "tentative",
-    "sources": "catalog servers.sheet.s3Bucket and servers.hub.openAccountHint; no AWS console ships Vietnamese"
+    "sources": "catalog servers.sheet.s3Bucket; no AWS console ships Vietnamese"
   },
   "button": {
     "chosen": "nút",
@@ -1713,7 +1713,7 @@
   "ip-address": {
     "chosen": "địa chỉ IP",
     "confidence": "high",
-    "sources": "MS terminology (IP address → địa chỉ IP); GNOME Nautilus (smb://[địa chỉ IP]); catalog fileExplorer.network.browser.tooltip.resolving"
+    "sources": "MS terminology (IP address → địa chỉ IP); GNOME Nautilus (smb://[địa chỉ IP])"
   },
   "item": {
     "chosen": "mục",

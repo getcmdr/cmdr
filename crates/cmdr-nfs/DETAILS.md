@@ -326,10 +326,10 @@ folder edited on a connected place moves the live params (`NfsVolume::set_start_
 ## Not built
 
 Deliberately out, so a reader doesn't take the gap for a bug: NFSv4, Kerberos, NLM locks, NFS over UDP, and WebNFS
-public handles; Bonjour discovery of NFS servers (the hub says so in one line instead); `._` sidecars, read or written;
-a link whose target is absolute or leaves the export (shown as a link, opening it is `NotSupported`); background
-indexing and thumbnails past what `read_range` gives; server-side copy (v3 has none); and `MKNOD`, `LINK`, and
-`SYMLINK`.
+public handles; Bonjour discovery of NFS servers (the Servers list says so in one line instead); `._` sidecars, read or
+written; a link whose target is absolute or leaves the export (shown as a link, opening it is `NotSupported`);
+background indexing and thumbnails past what `read_range` gives; server-side copy (v3 has none); and `MKNOD`, `LINK`,
+and `SYMLINK`.
 
 ## The public surface is capped
 

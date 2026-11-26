@@ -110,8 +110,8 @@
     }
   ],
   "notShareLists": [
-    { "why": "The hub", "path": "smb://" },
-    { "why": "The hub, as Rust spells it", "path": "smb:///" },
+    { "why": "The Servers list", "path": "smb://" },
+    { "why": "The Servers list, as Rust spells it", "path": "smb:///" },
     { "why": "Two separators after the server", "path": "smb://testnas//" },
     { "why": "A share is mounted, ❌ never a share list", "path": "smb://testnas/archive" },
     { "why": "Another scheme", "path": "sftp://testnas" },

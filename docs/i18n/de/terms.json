@@ -1174,7 +1174,7 @@
     ],
     "chosen": "trennen",
     "confidence": "high",
-    "decision": "Der Server-Hub: Verbindungszustände, Trennen und Vergessen",
+    "decision": "Die Serverliste: Verbindungszustände, Trennen und Vergessen",
     "forms": "button Trennen; Disconnected from X → Verbindung zu X getrennt; Disconnect server / Disconnect {name} → Verbindung zum Server trennen / Verbindung zu {name} trennen (the connection is cut, not the server); in progress → wird gerade getrennt; Can't disconnect while … → Trennen nicht möglich, während …",
     "sources": "macOS Finder (Disconnect → Trennen; TL_HELP_EJCT … von Servern trennen); FileProvider (Verbindung zu „%@“ konnte nicht getrennt werden.)"
   },
@@ -1546,7 +1546,7 @@
     "chosen": "vergessen",
     "confidence": "high",
     "forms": "Forget server → Server vergessen; Forget saved password → Gespeichertes Passwort vergessen; dialog titles byte-identical to the menu items",
-    "sources": "catalog (fileExplorer.network.share.forgetPassword, menu.network.forgetServer)"
+    "sources": "catalog (menu.network.forgetSavedPassword, menu.network.forgetServer)"
   },
   "format": {
     "accept": ["formatiert", "Formate"],
@@ -1908,7 +1908,7 @@
     ],
     "chosen": "Hostschlüssel",
     "confidence": "high",
-    "decision": "Der Server-Hub: Verbindungszustände, Trennen und Vergessen",
+    "decision": "Die Serverliste: Verbindungszustände, Trennen und Vergessen",
     "forms": "labels and Settings → Hostschlüssel (Vertrauenswürdige Hostschlüssel); running prose → plain der Schlüssel, with von {host} instead of a genitive",
     "sources": "ActionKit (Der Fingerabdruck des Hostschlüssels ist %@.)"
   },
@@ -4245,13 +4245,13 @@
     "accept": ["Hostnamen"],
     "chosen": "Hostname",
     "confidence": "high",
-    "sources": "MS terminology (hostname → Hostname); catalog (servers.sheet.addressHelpSftp, fileExplorer.network.browser.tooltip.resolving)"
+    "sources": "MS terminology (hostname → Hostname); catalog (servers.sheet.addressHelpSftp)"
   },
   "ip-address": {
     "accept": ["IP-Adressen"],
     "chosen": "IP-Adresse",
     "confidence": "high",
-    "sources": "MS terminology (IP address → IP-Adresse); catalog (fileExplorer.network.browser.tooltip.resolving)"
+    "sources": "MS terminology (IP address → IP-Adresse)"
   },
   "list": {
     "accept": ["Listen", "Serverliste"],
@@ -4354,7 +4354,7 @@
         "why": "the style guide bans Fehler as a bare label; Problem is the calm noun"
       }
     ],
-    "sources": "catalog (fileExplorer.network.browser.status.error Problem, errors.listing.diskReadProblem.title); style.md voice rule",
+    "sources": "catalog (errors.listing.diskReadProblem.title); style.md voice rule",
     "exceptions": {
       "fileExplorer.navigation.driveIndex.tooltipFailed": "pre-existing: „because of a problem saving“ is rendered as the plain cause (… nicht gespeichert werden konnte), which drops the noun without losing meaning"
     }

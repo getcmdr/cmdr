@@ -210,7 +210,7 @@ describe('handleCommandExecute — blockedByCapabilities (search-results / netwo
     const openNewFolderDialog = vi.fn()
     const openNewFileDialog = vi.fn()
     const startRename = vi.fn()
-    // Off the Servers list: Rename there is "Edit server…" (`hub-row-edit.test.ts`).
+    // Off the Servers list: Rename there is "Edit server…" (`servers-row-edit.test.ts`).
     const getFocusedPaneServerRow = () => Promise.resolve(null)
     const ctx = makeCtx({
       pasteFromClipboard,
@@ -323,7 +323,7 @@ describe('handleCommandExecute — blockedByCapabilities (search-results / netwo
 
     expect(addToast).not.toHaveBeenCalled()
     expect(g.pasteFromClipboard).toHaveBeenCalledOnce()
-    // `file.rename` there is "Edit server…" (`hub-row-edit.test.ts`), and F7 "Add server"
+    // `file.rename` there is "Edit server…" (`servers-row-edit.test.ts`), and F7 "Add server"
     // (`file-handlers.servers-list.test.ts`), ❌ not the explorer's rename or New folder.
   })
 })

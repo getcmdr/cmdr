@@ -1,12 +1,12 @@
 /**
- * Where a pane goes when the user picks a volume ITSELF: a switcher row, a hub
- * row, the palette's and MCP's volume select, and a server row's Open.
+ * Where a pane goes when the user picks a volume ITSELF: a switcher row, a
+ * Servers row, the palette's and MCP's volume select, and a server row's Open.
  *
  * A pane headed somewhere specific (a restored tab, a favorite, go-to-path, a
  * history walk) never comes through here, so it keeps its path.
  *
- * Its own module, importing nothing but a type, so the switcher, the hub, and
- * the volume-selection factory can share it without pulling in the path probes.
+ * Its own module, importing nothing but a type, so the switcher, the Servers list,
+ * and the volume-selection factory can share it without pulling in the path probes.
  */
 
 import type { VolumeInfo } from '../types'

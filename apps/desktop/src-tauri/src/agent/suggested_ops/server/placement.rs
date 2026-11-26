@@ -148,7 +148,7 @@ fn text(value: &Option<String>) -> String {
 /// The store entry an SFTP, WebDAV, or NFS add saves: the draft, plus the add form's defaults
 /// for the switches it can't carry ("Reconnect automatically" on, no key file), except the SSH
 /// agent, which stays OFF: on, the first connect would offer every key in the user's agent to
-/// a host the AI picked. The user turns it on in the hub. `None` for an NFS draft with no
+/// a host the AI picked. The user turns it on in the edit server sheet. `None` for an NFS draft with no
 /// identity, which the form never saves, and for the two protocols keyed elsewhere (SMB by
 /// host, S3 by account).
 fn target_of(draft: &ServerDraft) -> Option<ServerTarget> {

@@ -89,7 +89,7 @@ out), so answers are exactly what Tauri's `invoke` resolves with.
   `cmdr_menu::context::click::context_click`: an `emit` to `main`, `queue`, or the viewer the menu went up over, an
   `invoke` (`add_favorite`, as `handle_menu_event` calls it directly), or `nothing` for a row the last popup didn't
   offer live. What the demo has no OS for: no slot, no image-search group, a breadcrumb volume never busy and always
-  "Eject", a servers hub host with nothing mounted.
+  "Eject", a server on the Servers list with nothing mounted.
 
 The volume is built `with_held_folders_only()`, so a folder the tree doesn't hold ends in the typed `notFound`
 `listing-error` a disk's missing folder does (and a file, `NotADirectory`). The tree: dates are JS milliseconds and

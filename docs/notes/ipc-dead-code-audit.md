@@ -100,7 +100,7 @@ All three are fixed: the AI key in `0397ad6a2`, focus-settings in `df944874e`, a
 - **`stop_drive_index`** (no wrapper): no frontend caller since the typed bindings; `disableDriveIndex` stops a drive.
 - **`get_volume_index_status`** (no wrapper): the badges read `getVolumeIndexStatusById`.
 - **`get_host_auth_mode`, `get_known_shares`** (no wrappers, + stubs): callers went in `2c805eff5` (2026-02-14); the
-  servers hub reads `listSavedServers`. `smb_cache::get_cached_shares_auth_mode` went with them.
+  Servers list's row actions read `listSavedServers`. `smb_cache::get_cached_shares_auth_mode` went with them.
 - **`has_smb_credentials`** (no wrapper, + stub): deliberately never probed, since every read can raise a Keychain
   prompt (`a0566ad6f`, 2026-09-25); the sheet reads `hasServerSecret`.
 

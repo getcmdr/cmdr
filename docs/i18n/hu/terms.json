@@ -883,7 +883,7 @@
     ],
     "confidence": "high",
     "sources": "macOS Finder (N84 Kapcsolódás szerverre…, MN1 Kapcsolódás ide: ^0…); AppKit SavePanel (Connected = Kapcsolódva); Home (Csatlakozás…)",
-    "note": "The two stems are a deliberate split: the pane title keeps Apple's kapcsolód-, the sheet's button and its siblings keep csatlakoz- because Connect is shared with fileExplorer.network.connect.",
+    "note": "The two stems are a deliberate split: the pane title keeps Apple's kapcsolód-, the sheet's button and its siblings keep csatlakoz-.",
     "decision": "A szerverlap"
   },
   "data": {
@@ -1637,7 +1637,7 @@
     ],
     "confidence": "high",
     "sources": "macOS BluetoothUIServer (Forget = Elfelejtés)",
-    "decision": "A szerverközpont: kapcsolódás"
+    "decision": "A szerverlista: kapcsolódás"
   },
   "format": {
     "chosen": "formátum",
@@ -2216,7 +2216,7 @@
     "chosen": "IP-cím",
     "forms": "hyphenated compound: IP-cím, IP-címek",
     "confidence": "high",
-    "sources": "Microsoft terminology (IP address → IP-cím); catalog (fileExplorer.network.browser.tooltip.resolving)"
+    "sources": "Microsoft terminology (IP address → IP-cím)"
   },
   "item": {
     "chosen": "elem",
@@ -2284,7 +2284,7 @@
     ],
     "confidence": "high",
     "sources": "macOS Security.prefPane Localizable.loctable (Last Used = Utolsó használat)",
-    "decision": "A szerverközpont táblázata"
+    "decision": "A szerverlista táblázata"
   },
   "later": {
     "chosen": "Később",

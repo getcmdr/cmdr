@@ -101,7 +101,7 @@ fn share_at_root(volume_id: &str, read: impl FnOnce(&str) -> Option<SmbMountInfo
 /// The server a mount is from, as the share list opens it.
 ///
 /// A host discovery knows is preferred, a resolved one first, so the list reads the
-/// same cached shares and sign-in the servers hub does (both key on the host). With
+/// same cached shares and sign-in the Servers row's share list does (both key on the host). With
 /// none, the host is made from the mount's own server the way "Add server" makes one,
 /// so `..` works with discovery off too.
 fn host_for_mount(info: &SmbMountInfo, hosts: &[NetworkHost]) -> NetworkHost {

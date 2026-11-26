@@ -47,7 +47,7 @@ export const MOUNT_SLOW_AFTER_MS = 10_000
 /** The server the share list is open on, and what the person calls it. */
 export interface ShareMountServer {
   host: NetworkHost
-  /** The hub's label for it, when it has one; `host.name` otherwise. */
+  /** Its Servers row's label, when it has one; `host.name` otherwise. */
   label: string | undefined
 }
 
@@ -118,7 +118,7 @@ function dialedAddress(server: string, port: number): string {
 }
 
 /**
- * What the person calls the host (the hub's label, else its name), or `null` when that's
+ * What the person calls the host (its Servers row's label, else its name), or `null` when that's
  * only its address: the dialed `host:port` shows under it, and one address twice says nothing.
  */
 function friendlyServerName(host: NetworkHost, label: string | undefined, dialed: string): string | null {

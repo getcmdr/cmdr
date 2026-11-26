@@ -31,7 +31,7 @@ export function handleVolumeContextAction(payload: VolumeContextAction, deps: Vo
   }
   // Everything a SERVER row's menu offers (Open, Edit…, Disconnect,
   // the pin pair, the two Forgets) is dispatched from one module,
-  // shared with the hub and the palette.
+  // shared with the Servers list and the palette.
   void runServerRowAction({
     ...payload,
     // ❗ Open needs a pane to move, and the `navigate()`

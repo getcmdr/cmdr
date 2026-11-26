@@ -293,7 +293,7 @@ export function smbAddressFrom(address: string): string {
  * placeholder, or `null` while the address doesn't parse yet.
  *
  * ❗ The MIRROR of the backend's stand-in labels, so the placeholder promises
- * what the hub will show: an SMB host goes by its address (with the port when it
+ * what the Servers list will show: an SMB host goes by its address (with the port when it
  * isn't 445, `manual_servers::display_name`), an account by `username@host`
  * (`saved_server_fields::server_label`). The backend stays the one that decides. An SMB
  * address already saved under a name someone gave it (`saved`) reads as that name.
@@ -311,7 +311,7 @@ export function nameFallbackOf(form: ServerForm, saved: readonly SavedServer[] =
   if (parsed.kind === 'unparsed') return null
   if (form.protocol === 'smb') {
     // An address already saved under a name the person gave it is called that,
-    // as the hub calls it (Go to path and ⌘K open this sheet on any `smb://`).
+    // as the Servers list calls it (Go to path and ⌘K open this sheet on any `smb://`).
     const named = savedSmbHostOf(form, saved)
     return named?.nameSource === 'user' ? named.displayName : smbLabelOf(parsed)
   }

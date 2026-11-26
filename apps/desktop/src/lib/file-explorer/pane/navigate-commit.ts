@@ -142,9 +142,9 @@ export interface NavigateDeps {
    */
   getVolumeConnectionStateById: (volumeId: string) => ConnectionState | null | undefined
   /**
-   * Whether a pane at this location shows a listing: the Servers hub and a search snapshot
-   * don't, a server's share list (the same `network` volume at `smb://<server>`) does, so
-   * it's asked per location (`capabilitiesForPane`), ❌ never per volume.
+   * Whether a pane at this location shows a listing: a search snapshot doesn't, the Servers
+   * list and a server's share list (the `network` volume at `smb://` and `smb://<server>`)
+   * do, so it's asked per location (`capabilitiesForPane`), ❌ never per volume.
    */
   locationHasListing: (location: Location) => boolean
   /** Background "best path" resolver (`determineNavigationPath`), gated by the token. */

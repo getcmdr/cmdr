@@ -84,7 +84,7 @@ export const REPRESENTATIVE_SCREENSHOTS: RepresentativeMapping[] = [
   },
   {
     // SMB browsing, connect, and reconnect states all live in the network flow
-    // that starts at the servers hub.
+    // that starts at the Servers list.
     prefix: 'fileExplorer.network.',
     screenshot: 'servers-hub.png',
     note:

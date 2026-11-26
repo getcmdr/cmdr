@@ -361,7 +361,7 @@ describe('nextcloudAddress', () => {
 /**
  * ❗ Go to path or ⌘K opening the Add sheet on an address that's already saved
  * under a name the person gave it: the placeholder named the address, while the
- * hub calls it "My NAS" (QA round 4).
+ * Servers list calls it "My NAS" (QA round 4).
  */
 describe('nameFallbackOf, for an address already saved', () => {
   const myNas: SavedServer = {

@@ -28,7 +28,7 @@
         {
             id: 'smb-server',
             caption: 'monitor-filled',
-            usage: 'An SMB server row in the servers hub, in `--color-server-icon`.',
+            usage: 'An SMB server row in the Servers list, in `--color-server-icon`.',
         },
     ]
 
@@ -55,7 +55,7 @@
 <SectionCard id="graphics-row-icons" label="Row icons">
     <GlyphGrid items={ROW_ICONS}>
         {#snippet intro()}
-            Row icons as a file list or the servers hub draws them: the real size beside a 3× zoom. Folder and share
+            Row icons as a file list draws them (the Servers list too): the real size beside a 3× zoom. Folder and share
             icons are the OS's own pixels, so they follow the platform, the theme, and the folder-color setting.
         {/snippet}
         {#snippet glyph(item: RowIcon)}

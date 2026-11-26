@@ -1,5 +1,5 @@
-//! Approving a server proposal: the user's click on a server card, saved through the servers
-//! hub's own cores, or given back with the reason.
+//! Approving a server proposal: the user's click on a server card, saved through the cores
+//! the add and edit server sheets run, or given back with the reason.
 //!
 //! [`approve_server`] runs, in order: the claim (the store's, one `BEGIN IMMEDIATE`, the revision
 //! as its binding); the anti-spoofing checks again against what's saved NOW (an add saved since,
@@ -12,8 +12,8 @@
 //! ❌ The `main.db` write transaction is never held across the save: the claim commits, the save
 //! runs, then the completion writes.
 
+mod app_saver;
 mod card;
-mod hub;
 mod placement;
 mod saved;
 
@@ -22,9 +22,9 @@ pub(crate) mod test_fixtures;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use app_saver::AppSaver;
 pub(crate) use card::server_card;
 pub use card::{ServerField, ServerFieldView, ServerProposalView};
-pub(crate) use hub::HubSaver;
 pub(crate) use placement::{AddClash, SFTP_PORT, SMB_PORT};
 pub(crate) use saved::SavedServers;
 
@@ -53,7 +53,7 @@ const LOG_TARGET: &str = "agent::suggested_ops";
 /// unknown, so the next launch calls it `interrupted`, ❌ never pending again.
 const SAVE_DEADLINE: Duration = Duration::from_secs(60);
 
-/// One save, as exactly one of the servers hub's own cores runs it.
+/// One save, as exactly one of the server sheets' own cores runs it.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ServerSave {
     /// An SFTP, WebDAV, NFS, or S3 add: `saved_servers::save_target`, which dials nothing for a

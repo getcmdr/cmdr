@@ -3,7 +3,7 @@
  * Edit, and Open.
  *
  * Lives beside the switcher rather than inside `VolumeBreadcrumb.svelte` because
- * three surfaces run the same actions (the switcher row's submenu, the hub row's
+ * three surfaces run the same actions (the switcher row's submenu, a Servers row's
  * menu, and the palette's `servers.*` commands). WHICH actions a row offers is
  * `row-menu.ts`'s answer; this module is what running one costs.
  *
@@ -174,7 +174,7 @@ export function forgetServerQuestion(message: string, checkboxLabel?: string): C
  * Moves a place's pin, from the "Pin / unpin server" command.
  *
  * ❗ Not confirmed, unlike the two forgets: unpinning loses nothing (the server
- * stays saved and stays in the hub), and the same command puts it back.
+ * stays saved and stays in the Servers list), and the same command puts it back.
  */
 export async function setServerPinned(volumeId: string, volumeName: string, pinned: boolean): Promise<void> {
   try {

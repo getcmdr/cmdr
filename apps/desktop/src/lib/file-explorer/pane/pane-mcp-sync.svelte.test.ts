@@ -130,7 +130,7 @@ describe('buildMcpFileList', () => {
     expect(getFileRange).toHaveBeenCalledWith('listing-1', 0, 9, true)
   })
 
-  it("names the Servers hub as a share list's parent, ❌ not the `smb:/` slash arithmetic gives", async () => {
+  it("names the Servers list as a share list's parent, ❌ not the `smb:/` slash arithmetic gives", async () => {
     const sync = createPaneMcpSync(
       deps({
         getHasParent: () => true,

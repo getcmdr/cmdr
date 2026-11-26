@@ -146,7 +146,7 @@ renamed invoices are one approval, one queue row, and one undo, which puts every
 
 `propose_server` stages one zero-op `SaveServer` group (`../../agent/store/proposals/DETAILS.md` § A server group): a server to
 add, or, with `editing`, a change to a saved one. It saves nothing and contacts nothing; the user's approval saves
-through the servers hub's own cores (`saved_servers/`). It reuses `propose_suggestions`' sweep, amend (`sweepId` plus
+through the add and edit server sheets' own cores (`saved_servers/`). It reuses `propose_suggestions`' sweep, amend (`sweepId` plus
 `groupId`, `pending` only), and report shape, one group long. Order: origin, shape, values, saved-server checks, then
 the write; any refusal writes nothing.
 
@@ -162,7 +162,7 @@ the write; any refusal writes nothing.
 - **An approved SFTP add saves with the SSH agent OFF** (`useAgent: false`), the one default it doesn't take. On, the
   first connect to the host would offer every key in the user's agent to it, and the AI picked that host: a host an
   injected filename chose would learn which public keys the user holds, and could be one that logs or relays them.
-  The user turns the agent on in the servers hub when they trust the host. The card lists no switches, so it shows
+  The user turns the agent on in the edit server sheet when they trust the host. The card lists no switches, so it shows
   none for this either.
 - **The field map** (a field outside its row is `unboundField`; an add without a required one is `missingField`;
   defaults are the add form's, `apps/desktop/src/lib/servers/server-form.ts`):

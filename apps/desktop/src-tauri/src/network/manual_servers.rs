@@ -611,7 +611,7 @@ fn save_parsed_at(
         host.id
     );
     // The saved lists changed (the host's account, maybe its name), even where no
-    // volume did: the hub re-reads them on `volumes-changed`.
+    // volume did: the Servers list re-lists them on `volumes-changed`.
     crate::volume_broadcast::emit_volumes_changed();
 
     ManualConnectResult {

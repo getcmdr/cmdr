@@ -185,7 +185,7 @@ describe('capabilitiesForKind — the frozen per-kind defaults', () => {
     },
     'share-list': {
       kind: 'share-list',
-      // A server's shares, listed by the backend like folders, with a `..` back to the hub.
+      // A server's shares, listed by the backend like folders, with a `..` back to the Servers list.
       hasBackendListing: true,
       // A share is mounted, never written into or copied out of.
       canWrite: false,
@@ -683,7 +683,7 @@ describe("withBackendCapabilities — the backend's answer wins over the per-kin
 })
 
 describe('capabilitiesForPane — kind-from-path resolution', () => {
-  it('routes a server on the network volume to the share-list kind, and keeps the hub the network kind', () => {
+  it('routes a server on the network volume to the share-list kind, and keeps the Servers list the network kind', () => {
     volumes.list = []
     expect(capabilitiesForPane('network', 'smb://testnas').kind).toBe('share-list')
     expect(capabilitiesForPane('network', 'smb://testnas:4450').kind).toBe('share-list')
@@ -1134,7 +1134,7 @@ describe('paneFolderCanBeFavorited — the pane-level add gate', () => {
     expect(paneFolderCanBeFavorited('disk1', '/r')).toBe(true)
   })
 
-  it('says no on the search-results snapshot and on the servers hub', () => {
+  it('says no on the search-results snapshot and on the Servers list', () => {
     volumes.list = []
     expect(paneFolderCanBeFavorited('search-results', 'search-results://abc')).toBe(false)
     expect(paneFolderCanBeFavorited('network', 'smb://')).toBe(false)

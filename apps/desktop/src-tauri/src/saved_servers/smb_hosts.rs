@@ -23,7 +23,7 @@ const DEFAULT_SMB_PORT: u16 = 445;
 
 /// One saved SMB host, with the store rows the listing filed under it.
 pub(crate) struct SmbHostGroup {
-    /// The row the hub shows.
+    /// The server its Servers row shows.
     pub server: SavedServer,
     /// What it dials. With [`port`](Self::port), its identity.
     pub host: String,
@@ -341,7 +341,7 @@ fn unlisted_host(row: &KnownNetworkShare) -> SmbHostGroup {
             id: manual_servers::generate_server_id(&host, port),
             protocol: ServerProtocol::Smb,
             display_name: row.server_name.clone(),
-            // ❗ The mount's spelling, which nobody chose: the hub lets a
+            // ❗ The mount's spelling, which nobody chose: the Servers list lets a
             // discovered Bonjour name outrank it.
             name_source: ServerNameSource::Fallback,
             address: manual_servers::discovery_name(&host, port),
@@ -389,8 +389,8 @@ fn is_host_of(group: &SmbHostGroup, row: &KnownNetworkShare, hosts: &[NetworkHos
 /// A saved share, as a place under its host.
 ///
 /// ❗ Its id is the one its last mount had. One no mount went through gets the id
-/// a mount by its host's name would mint, only so the hub has something stable to
-/// key it by: nothing in the volume list carries it, which is how the hub knows
+/// a mount by its host's name would mint, only so the listing has something stable to
+/// key it by: nothing in the volume list carries it, which is how the app knows
 /// to open such a share through its host's share list instead.
 fn share_place(row: &KnownNetworkShare, manager: &crate::file_system::volume::manager::VolumeManager) -> SavedPlace {
     let volume_id = crate::network::known_shares::place_id(row);

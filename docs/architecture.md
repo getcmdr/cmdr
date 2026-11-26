@@ -18,11 +18,11 @@ All under `apps/desktop/src/lib/`.
   across a run of files
 - `file-explorer/selection/`: Space/Shift/Cmd selection, range operations
 - `file-explorer/navigation/`: Back/forward history, breadcrumb, path utilities
-- `file-explorer/network/`: the servers hub (`ServersHub.svelte`: every saved and nearby server, with its merge, order,
-  and MCP encoding in `servers-hub-*.ts`), a server's share list (a file listing at `smb://<server>`, the pane's side
-  `pane/share-list-pane.svelte.ts`, its sign-in `share-list-sign-in.ts`, mounting a share `pane/share-mount.svelte.ts`),
-  SMB's side of the sign-in sheet (`smb-sign-in.ts`), the "Connect directly" upgrade, the per-volume reconnect cycle,
-  and the mDNS discovery store
+- `file-explorer/network/`: the Servers list's words and row actions (a file listing at `smb://` whose rows Rust builds
+  in `src-tauri/src/network/servers_listing.rs`: `server-row-words.ts`, `servers-list-actions.ts`), a server's share
+  list (a file listing at `smb://<server>`, the pane's side `pane/share-list-pane.svelte.ts`, its sign-in
+  `share-list-sign-in.ts`, mounting a share `pane/share-mount.svelte.ts`), SMB's side of the sign-in sheet
+  (`smb-sign-in.ts`), the "Connect directly" upgrade, the per-volume reconnect cycle, and the mDNS discovery store
 - `security-notices/`: the toast that tells the person Cmdr turned an access attempt away (a web page at the MCP server,
   a refused server reply, an update that isn't genuine), one per source, quiet once closed. See
   `apps/desktop/src/lib/security-notices/CLAUDE.md`
@@ -208,10 +208,11 @@ All under `apps/desktop/src-tauri/src/`.
   `apps/desktop/src-tauri/src/about/CLAUDE.md`
 - `file_viewer/`: the app's host for the file viewer (its seams, `cmdr-media://`, "Open with", the pull-to-temp); the
   core (three backends, search, Markdown, media tokens) is `crates/cmdr-viewer`
-- `network/`: SMB's app-side half: mDNS discovery, share listing (smb2 + smbutil/smbclient fallback), mounting,
-  Keychain, the auto-upgrade passes, and the frontend's connection events. The backend under it is `crates/cmdr-smb/`
-- `saved_servers/`: the servers and shares the user saved: the hub's listing, an add without a dial, an edit (in place
-  or a move, `server_move.rs`), and dialing one (one flight per place), plus the wire vocabulary. Below
+- `network/`: SMB's app-side half: the Servers list's rows (`servers_listing.rs`, live through `servers_relist.rs`),
+  mDNS discovery, share listing (smb2 + smbutil/smbclient fallback), mounting, Keychain, the auto-upgrade passes, and
+  the frontend's connection events. The backend under it is `crates/cmdr-smb/`
+- `saved_servers/`: the servers and shares the user saved: the saved half of the Servers list, an add without a dial, an
+  edit (in place or a move, `server_move.rs`), and dialing one (one flight per place), plus the wire vocabulary. Below
   `commands/servers.rs` and Ask Cmdr, which both go through it. See `apps/desktop/src-tauri/src/saved_servers/CLAUDE.md`
 - `clipboard/`: File clipboard (Cmd+C/X/V) with NSPasteboard (macOS) and `CF_HDROP` (Windows) interop; tracks cut state
   and validates at paste

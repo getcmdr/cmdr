@@ -13,7 +13,7 @@ import { protocolLabel } from '../navigation/filesystem-label'
 import type { ConnectionState, FileEntry } from '../types'
 import { signedInAsLabel } from './signed-in-as-label'
 
-/** The word each status wears, the Servers hub's own. */
+/** The word each status wears in the Servers list. */
 const STATUS_KEYS: Record<ServerStatus, MessageKey> = {
   connected: 'servers.hub.status.connected',
   saved: 'servers.hub.status.saved',

@@ -433,7 +433,7 @@ pub fn run() {
             // through the volume host's event seam, wired in `volume_host`.
             network::os_mount_notice::set_app_handle(app.handle().clone());
 
-            // The `network` volume: the Servers hub and each server's share list. It lists
+            // The `network` volume: the Servers list and each server's share list. It lists
             // nothing until a pane opens a share list, so registering it dials nothing.
             network::share_list_volume::register(app.handle());
 

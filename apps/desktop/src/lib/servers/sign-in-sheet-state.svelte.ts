@@ -2,7 +2,7 @@
  * The one sign-in sheet, and the promise a caller awaits for its answer.
  *
  * ❗ **One sheet, mounted once** from `routes/(main)/+layout.svelte`. Every
- * credential ask in the app goes through `openSignInSheet`: the hub's Add row,
+ * credential ask in the app goes through `openSignInSheet`: the Servers list's Add row,
  * ⌘K, the pane's "Sign in…" banner, a saved row's Edit, and go-to-path handing
  * over a pasted address. A second dialog for the next protocol is what this
  * exists to prevent.

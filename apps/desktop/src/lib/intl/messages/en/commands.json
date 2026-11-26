@@ -1358,7 +1358,7 @@
   },
   "commands.serversShow.label": "Show servers",
   "@commands.serversShow.label": {
-    "description": "Command name that takes the focused pane to the servers hub, the list of every saved and nearby server. VERB phrase, imperative. Appears in the command palette.",
+    "description": "Command name that takes the focused pane to the Servers list, the list of every saved and nearby server. VERB phrase, imperative. Appears in the command palette.",
     "screenshot": "settings-keyboard-shortcuts-page-7.png"
   },
   "commands.serversTogglePin.label": "Pin / unpin server",

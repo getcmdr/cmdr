@@ -46,7 +46,7 @@ describe('uncaught error logging', () => {
     // ❗ WebKit's `error.stack` is FRAMES ONLY: no `Name: message` header, unlike
     // V8's. Cmdr ships on WKWebView, so taking the stack verbatim logged every
     // uncaught error as an anonymous pile of minified frames. That cost a real
-    // diagnosis: a Svelte flush throw in the servers hub logged nothing but
+    // diagnosis: a Svelte flush throw in the former Servers hub logged nothing but
     // offsets.
     const boom = new Error('each_key_duplicate')
     boom.stack = 'flush@app.js:1:17123\n@app.js:1:6396'

@@ -598,7 +598,7 @@ fn select_volume_result_says_the_folder_is_stalled() {
 
 // === pane_reports_volume: a switch landed when the pane reports the volume's id ===
 
-fn servers_hub() -> SelectableVolume {
+fn servers_volume() -> SelectableVolume {
     SelectableVolume {
         id: "network".to_string(),
         name: crate::volume_listing::SERVERS_VOLUME_NAME.to_string(),
@@ -607,20 +607,20 @@ fn servers_hub() -> SelectableVolume {
 }
 
 #[test]
-fn the_servers_hub_lands_whatever_language_the_pane_names_it_in() {
-    // Regression: Czech pushes "Servery", so comparing names failed every select of the hub.
-    assert!(pane_reports_volume(Some("network"), Some("Servery"), &servers_hub()));
+fn the_servers_volume_lands_whatever_language_the_pane_names_it_in() {
+    // Regression: Czech pushes "Servery", so comparing names failed every select of `Servers`.
+    assert!(pane_reports_volume(Some("network"), Some("Servery"), &servers_volume()));
     assert!(pane_reports_volume(
         Some("network"),
         Some("Servery > testshare"),
-        &servers_hub()
+        &servers_volume()
     ));
 }
 
 #[test]
 fn another_volume_is_not_the_one_selected_even_under_the_same_name() {
-    assert!(!pane_reports_volume(Some("root"), Some("Servers"), &servers_hub()));
-    assert!(!pane_reports_volume(None, None, &servers_hub()));
+    assert!(!pane_reports_volume(Some("root"), Some("Servers"), &servers_volume()));
+    assert!(!pane_reports_volume(None, None, &servers_volume()));
 }
 
 #[test]

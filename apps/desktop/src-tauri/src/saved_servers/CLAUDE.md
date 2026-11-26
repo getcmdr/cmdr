@@ -1,13 +1,13 @@
 # Saved servers
 
-The servers and shares the user saved, below every caller: the servers hub's commands (`commands/servers.rs`, thin IPC
+The servers and shares the user saved, below every caller: the server commands (`commands/servers.rs`, thin IPC
 over this) and Ask Cmdr read, save, edit, and dial them through the same functions. The stores themselves live in
 `network/` (`sftp_known_servers.rs`, `manual_servers.rs`, `known_shares.rs`, …); this module is what a caller does with
 them.
 
 ## Module map
 
-- `listing.rs` (+ `smb_hosts.rs`, `s3_accounts.rs`, `nfs_places.rs`): every saved server as the hub lists it, one row
+- `listing.rs` (+ `smb_hosts.rs`, `s3_accounts.rs`, `nfs_places.rs`): every saved server as the Servers list reads it, one row
   per account or host; `saved_now` adds each SMB host's address and rows, for a caller that checks against them.
   `saved.rs`: the saved entry a place's volume id names (`saved_by_id`).
 - `saves.rs`: an add without a dial (`save_target`) or an edit (`save_edit`: in place, or a move through
@@ -19,7 +19,7 @@ them.
 ## Must-knows
 
 - **❌ Nothing here names `commands` or `agent`**: both sit above it (`agent/` must not reach into `commands/`).
-- **The listing reads cached state only, ❌ never the wire**: the hub re-reads it on every `volumes-changed`.
+- **The listing reads cached state only, ❌ never the wire**: the Servers list re-lists from it on every `volumes-changed`.
 - **Find a saved entry by the listing's own id funnel** (`saved_by_id`, `target_ids::place_id`), ❌ never by comparing
   a typed address: the stores normalize (a WebDAV URL gains its trailing slash).
 - **An SMB host is its address AND port**, ❌ never its name or its address alone (`DETAILS.md` § "SMB hosts").

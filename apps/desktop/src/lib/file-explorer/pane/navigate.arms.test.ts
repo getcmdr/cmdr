@@ -67,8 +67,8 @@ describe('pinned-tab fork (L7 — unified, both arms)', () => {
     expect(active.path).toBe('/Volumes/Ext')
   })
 
-  it('opening a server from the hub on a pinned tab opens its share list in a NEW unpinned tab', () => {
-    // Pinned means pinned: a share list is a new path like any folder, so the hub stays put.
+  it('opening a server from the Servers list on a pinned tab opens its share list in a NEW unpinned tab', () => {
+    // Pinned means pinned: a share list is a new path like any folder, so the Servers list stays put.
     h = makeHarness({ left: { path: 'smb://', volumeId: 'network' } })
     getActiveTab(h.mgr('left')).pinned = true
     const pinnedId = getActiveTab(h.mgr('left')).id
@@ -427,7 +427,7 @@ describe('{ volumeId, path } volume-(re)select — ALWAYS the switch arm (guards
     expect(h.paneState.left.paneRef?.navigateToPath).not.toHaveBeenCalled()
   })
 
-  it('selecting Servers from a share list lands on the hub, never on a better path (#324)', () => {
+  it('selecting Servers from a share list lands on the Servers list, never on a better path (#324)', () => {
     // The other pane on a share list would be a "valid other-pane path" to the correction,
     // which would then probe it (a dial) and move this pane onto that server's listing.
     h = makeHarness({

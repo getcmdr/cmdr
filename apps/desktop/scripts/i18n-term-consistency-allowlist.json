@@ -147,7 +147,7 @@
     "hu": [
       {
         "source": "Not connected yet",
-        "reason": "Two surfaces with two verbs, per the `connect` ruling in `docs/i18n/hu/terms.json`. The servers hub status cell (`servers.hub.status.notConnectedYet`) sits in one column with `Kapcsolódva` (AppKit SavePanel's `Nem kapcsolódik` stem), so it reads `Még nincs kapcsolódva`. The error titles (`errors.listing.notConnected.title`, `errors.write.notConnected.title`) cover a phone as well as a server, where the attach verb `csatlakoztat` fits, so they keep `Még nincs csatlakoztatva`."
+        "reason": "Two surfaces with two verbs, per the `connect` ruling in `docs/i18n/hu/terms.json`. The Servers list's status words (`servers.hub.status.notConnectedYet`) sit in one column with `Kapcsolódva` (AppKit SavePanel's `Nem kapcsolódik` stem), so it reads `Még nincs kapcsolódva`. The error titles (`errors.listing.notConnected.title`, `errors.write.notConnected.title`) cover a phone as well as a server, where the attach verb `csatlakoztat` fits, so they keep `Még nincs csatlakoztatva`."
       },
       {
         "source": "Ask for each",

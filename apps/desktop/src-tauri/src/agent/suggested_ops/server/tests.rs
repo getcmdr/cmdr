@@ -555,7 +555,7 @@ async fn an_s3_bucket_add_saves_under_its_saved_account() {
 
 // ── Through the real stores ──────────────────────────────────────────────────
 
-/// The real stores and the hub's own cores, minus SMB, whose store is a file under the app's
+/// The real stores and the server sheets' own cores, minus SMB, whose store is a file under the app's
 /// data dir (its contact-free save is pinned in `network/manual_servers_contact_test.rs`).
 struct CoreSaver;
 
@@ -581,7 +581,7 @@ impl ServerSaver for CoreSaver {
 }
 
 /// ❗ **An approved card is saved exactly as the servers list then shows it, and contacts
-/// nothing**: per protocol, an add read back through the hub's own listing, with no dial filed
+/// nothing**: per protocol, an add read back through the Servers list's own saved listing, with no dial filed
 /// and no volume registered. The addresses are documentation blocks (RFC 5737), so a dial that
 /// slipped through would show as a filed attempt, never as a quiet success.
 #[tokio::test]
@@ -592,7 +592,7 @@ async fn each_protocol_saves_through_the_real_stores_lists_back_and_dials_nothin
     let conn = migrated_conn();
     let dials = crate::network::connect_wiring::dials_filed();
     let manager = crate::file_system::volume::manager::get_volume_manager();
-    // An S3 bucket is proposed under an account the user saved: save one the way the hub does.
+    // An S3 bucket is proposed under an account the user saved: save one the way the Add server sheet does.
     crate::saved_servers::save_target(ServerTarget::S3 {
         display_name: "Archive".into(),
         provider: S3ProviderChoice::Wasabi {

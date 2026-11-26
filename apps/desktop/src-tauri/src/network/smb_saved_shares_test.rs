@@ -75,9 +75,9 @@ async fn a_share_that_never_mounted_has_nothing_to_dial() {
     assert!(matches!(answer, ServerConnectOutcome::Unreachable), "got {answer:?}");
 }
 
-/// ❗ **An Add's share row republishes the lists.** The Servers hub re-reads the
+/// ❗ **An Add's share row republishes the lists.** The lists re-read the
 /// saved stores on `volumes-changed`, and an Add that only changed a share's
-/// account changed no volume: the hub kept "private as otheruser" until the pane
+/// account changed no volume: the list kept "private as otheruser" until the pane
 /// left and came back (QA round 7).
 #[test]
 fn an_added_share_row_tells_the_lists_to_redraw() {
@@ -119,7 +119,7 @@ fn a_favorited_share_row_is_an_unpinned_place_the_mount_described() {
 }
 
 /// A share Cmdr mounts on a port off 445 is filed under the manual server's discovery name
-/// (`localhost:11481`), so a favorited one must be too, or the hub lists a second, port-less
+/// (`localhost:11481`), so a favorited one must be too, or the Servers list lists a second, port-less
 /// "localhost" that doesn't group with it.
 #[test]
 fn a_favorited_share_off_445_files_under_the_same_server_name_a_cmdr_mount_uses() {

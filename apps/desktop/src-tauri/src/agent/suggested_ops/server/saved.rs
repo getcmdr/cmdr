@@ -1,5 +1,5 @@
 //! The saved servers a server proposal is checked against, as plain facts: read once per check
-//! through `saved_servers` (the hub's own listing and lookups), in memory, ❌ never the network.
+//! through `saved_servers` (the Servers list's own saved listing and lookups), in memory, ❌ never the network.
 //!
 //! Each saved place becomes a [`ServerDraft`], the spine's own shape, so what a proposal stores
 //! as an edit's `previous` is exactly what this read, and the checks compare like with like.
@@ -15,18 +15,18 @@ use crate::network::{nfs_known_places, saved_server_fields};
 use crate::saved_servers::smb_hosts::SmbHostGroup;
 use crate::saved_servers::{SavedEntry, SavedServer, ServerNameSource, ServerProtocol};
 
-/// Every saved server, one per hub row.
+/// Every saved server, one per saved-listing row.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SavedServers {
     pub(crate) rows: Vec<SavedRow>,
 }
 
-/// One hub row: an SFTP or WebDAV account, an S3 account, an NFS server, or an SMB host.
+/// One saved-listing row: an SFTP or WebDAV account, an S3 account, an NFS server, or an SMB host.
 #[derive(Debug, Clone)]
 pub(crate) struct SavedRow {
     /// The row's id in the servers listing.
     pub id: String,
-    /// What the hub calls it, a stand-in (an address) included: what a new name mustn't wear.
+    /// What the Servers list calls it, a stand-in (an address) included: what a new name mustn't wear.
     pub name: String,
     pub protocol: DraftProtocol,
     /// The places under it, each by the id `list_volumes` shows.
@@ -45,7 +45,7 @@ pub(crate) struct SavedPlaceDraft {
 }
 
 impl SavedServers {
-    /// What's saved now, through the hub's own reads.
+    /// What's saved now, through the Servers list's own reads.
     pub(crate) fn now<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Self {
         let (rows, smb_hosts) = crate::saved_servers::saved_now(app);
         Self::from_listing(rows, smb_hosts, crate::saved_servers::saved_by_id)

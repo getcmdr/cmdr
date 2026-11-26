@@ -11,7 +11,7 @@
 //! What the demo has no OS for: a [`cmdr_menu::context::Slot`] (Open with, Share, the provider's
 //! actions, the tag colors, Services) is left out, the image-search group stays hidden (no media
 //! index), a breadcrumb volume is never busy and always says Eject (the demo's volumes are local
-//! disks), and a servers hub host has nothing mounted.
+//! disks), and a server on the Servers list has nothing mounted.
 
 use std::collections::HashSet;
 

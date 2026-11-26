@@ -19,7 +19,7 @@ describe("tabLabelFor: a server's share list", () => {
     expect(tabLabelFor({ volumeId: 'network', path: 'smb://testnas:4450' })).toBe('testnas')
   })
 
-  it('leaves the hub and every other tab to `deriveTabLabel`', () => {
+  it('leaves the Servers list and every other tab to `deriveTabLabel`', () => {
     expect(tabLabelFor({ volumeId: 'network', path: 'smb://' })).toBe('Servers')
     expect(tabLabelFor({ volumeId: 'root', path: '/Users/test_user_1/Documents' })).toBe('Documents')
   })

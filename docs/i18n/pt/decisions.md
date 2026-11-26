@@ -211,7 +211,7 @@ The non-obvious why behind `terms.json` rulings. Forms: `terms.json`; voice: `st
 - `como {username}` / `como convidado`; the button is `Usar como convidado`. `notConnected` → `Não conectado a {name}`
   (review queue).
 
-## Server hub (`servers.hub.*`, `commands.servers*`, `shortcuts.scope.*`)
+## Servers (`servers.hub.*`, `commands.servers*`, `shortcuts.scope.*`)
 
 - `Status` over Apple's `Estado`, matching `licensing.section.labelStatus` (review queue). nearby → `por perto`;
   `Próximo` means "next". `local network` lowercase; `Rede Local` names the macOS permission.

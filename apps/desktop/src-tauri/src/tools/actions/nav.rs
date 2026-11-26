@@ -160,7 +160,7 @@ pub(super) fn resolve_volume_selector(
 }
 
 /// Whether a pane's pushed state shows the selected volume. By id: a display name follows the UI
-/// language (the servers hub pushes `Servery` in Czech), so it can't say which volume this is. The
+/// language (the `Servers` volume pushes `Servery` in Czech), so it can't say which volume this is. The
 /// name is only the fallback for a selection with no id, which is a name-only call off macOS.
 pub(super) fn pane_reports_volume(
     pushed_id: Option<&str>,
@@ -177,9 +177,8 @@ pub(super) fn pane_reports_volume(
 /// Wait for the pane's pushed state to show the selected volume, so a `cmdr://state` read right
 /// after the tool returns reports it.
 ///
-/// The pane is at rest by the time this runs, so it usually matches on the first look.
-/// The servers hub is why it stays: it pushes its own state (`NetworkMountView`), which
-/// can trail the FE's reply.
+/// The pane is at rest by the time this runs, so it usually matches on the first look;
+/// the poll covers a state push that trails the FE's reply.
 async fn wait_for_pane_volume(
     store: &PaneStateStore,
     pane: &str,

@@ -1,4 +1,4 @@
-//! The servers and shares the user saved, below every caller: the servers hub's
+//! The servers and shares the user saved, below every caller: the server
 //! commands (`commands::servers`, thin IPC over this) and Ask Cmdr
 //! (`tools::connect`) read, save, edit, and dial them through the same
 //! functions. Module map and must-knows: `CLAUDE.md`.

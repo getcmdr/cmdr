@@ -141,7 +141,7 @@ pub fn is_named(name: &str) -> bool {
 /// username).
 ///
 /// ❗ Every read of a name goes through here, by way of the stores' `label()`:
-/// the volume listing, the hub's rows, and the name a live volume is built with.
+/// the volume listing, the Servers list's rows, and the name a live volume is built with.
 /// No port, scheme, or path, because a label that looked exactly like the address
 /// is what sent a person to edit the wrong field.
 pub fn server_label(name: &str, username: &str, host: &str) -> String {

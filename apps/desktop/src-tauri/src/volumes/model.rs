@@ -78,7 +78,7 @@ pub struct LocationInfo {
     /// How live this volume's SESSION is: the switcher dot, the pane's connect
     /// views, and the reconnect subscription all read it. Set for every volume a
     /// connecting backend serves (SMB, SFTP, WebDAV, ADB) plus a saved-but-not-
-    /// connected server; `None` for a local disk, a favorite, and the hub row.
+    /// connected server; `None` for a local disk, a favorite, and the `Servers` row.
     /// ❗ Not an "is this SMB" test — that is `Volume::backend_kind()`, backend-side.
     pub connection_state: Option<ConnectionState>,
     /// Whether the DEVICE behind this row is reachable, which is a different
@@ -92,7 +92,7 @@ pub struct LocationInfo {
     /// unconditionally.
     ///
     /// ❗ The listing publishes EVERY saved place regardless, because a volume id
-    /// with no row is one the app denies exists (a hub Enter and a restored tab
+    /// with no row is one the app denies exists (Enter on a Servers row and a restored tab
     /// both land on an id). Hiding is `navigation/volume-grouping.ts`'s job, and
     /// this field is what it reads.
     pub pinned: Option<bool>,
@@ -133,7 +133,7 @@ pub struct LocationInfo {
     /// The account a mounted SMB share is signed in as right now, as the mount
     /// table records it (`GUEST` for a guest mount). `None` for everything else.
     ///
-    /// ❗ The LIVE account, which the hub shows while a share is connected: the saved
+    /// ❗ The LIVE account, which the Servers list shows while a share is connected: the saved
     /// row's account is for the next connect, and showing it read "Connected … as
     /// otheruser" over a mount signed in as testuser.
     pub mount_account: Option<String>,

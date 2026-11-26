@@ -128,7 +128,7 @@ export type SignInAttemptOutcome =
    * with its own retry.
    */
   | { kind: 'handed_off' }
-  /** An add that only saved ("Add", "Add anyway"): the new server's id, for the hub to select it. */
+  /** An add that only saved ("Add", "Add anyway"): the new server's id, for the Servers list to select it. */
   | { kind: 'added'; serverId: string }
   | { kind: 'needs_host_key'; prompt: HostKeyPrompt }
   | { kind: 'needs_certificate'; prompt: CertificatePrompt }
@@ -162,7 +162,7 @@ export type SignInSheetRequest =
        */
       prefill?: string
       /**
-       * The protocol a door that's about one protocol opens on (the hub's NFS hint), with
+       * The protocol a door that's about one protocol opens on (no door passes one today), with
        * nothing typed. ❗ The door's choice, made by the person clicking it, like a prefill's
        * scheme; typing still never moves the toggle.
        */

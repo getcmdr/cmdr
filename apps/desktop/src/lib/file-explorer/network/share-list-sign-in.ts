@@ -9,10 +9,10 @@
  * every door follows: a sheet opened over an in-pane sign-in state leaves the pane on it, focus on its
  * Sign in (a refused mount's too: `../pane/share-mount.svelte.ts`).
  *
- * ❗ **One ask at a time, guarded HERE** (`sheetRound`), since three doors (the hub's row
- * menu, the path bar's account, the palette) and the share list itself all open the sheet:
- * a second `openSignInSheet` closes the first as `cancelled`, and a caller reading that as
- * "the person said no" walks away from under a sheet that's still up. A round asked for
+ * ❗ **One ask at a time, guarded HERE** (`sheetRound`), since three doors (a Servers
+ * row's menu, the path bar's account, the palette) and the share list itself all open the
+ * sheet: a second `openSignInSheet` closes the first as `cancelled`, and a caller reading
+ * that as "the person said no" walks away from under a sheet that's still up. A round asked for
  * while one is up answers `null` and asks nothing.
  *
  * Every door to an account action runs `runServerAccountAction`, so the three can't drift
@@ -267,9 +267,9 @@ export function serverAccountFacts(host: NetworkHost): ServerAccountFacts {
 }
 
 /**
- * Runs an account action picked at any door: the hub's row menu, the path bar's account
+ * Runs an account action picked at any door: a Servers row's menu, the path bar's account
  * menu, or the palette. Answers whether a listing landed, so a door that isn't on the share
- * list (a hub row) opens it, the way activating the row does. A refusal about the server is
+ * list (a Servers row) opens it, the way activating the row does. A refusal about the server is
  * toasted in the share list's own words; a cancelled sheet, or one already up, says nothing.
  *
  * ❗ "Browse as guest" runs only where a guest listing worked: it drops the account FIRST, so

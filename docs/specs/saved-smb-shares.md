@@ -16,8 +16,8 @@ the account, and each SHARE is a place under it. What changes is that a share pl
 - **The row's volume id is the one the mount had** (read off `statfs`, like every other SMB id), ❌ never re-derived
   from the stored name. A share mounted by IP and one mounted by Bonjour name get different ids, and only the mount
   knows which one it got. Each mount through Cmdr refreshes it.
-- **A share Cmdr never mounted has no volume id yet** (one named in `smb://user@host/share` at Add time). It is still a
-  row in the hub; opening it goes through the host's share list, which mounts it and fills the id in.
+- **A share Cmdr never mounted has no volume id yet** (one named in `smb://user@host/share` at Add time). Opening it
+  goes through the host's share list, which mounts it and fills the id in.
 
 ## The store
 
@@ -25,7 +25,7 @@ the account, and each SHARE is a place under it. What changes is that a share pl
 `shareName` stay what they are today: the host's sign-in history. Share rows (non-empty `shareName`) gain:
 
 - `address`: what the mount dialed (an IP or hostname), where `serverName` is the name the person knows the host by (the
-  hub's grouping key, and the Keychain's).
+  Keychain's key).
 - `port` (absent means 445), `volumeId`, `mountPath` (where the last mount sat), `pinned`.
 - `serverGuid`: the GUID the share's server answered NEGOTIATE with (`network::server_guid::ServerGuid`'s text form,
   never all zeros), which proves two rows of one share name (a NAS by its LAN and its Tailscale address) are one share.
@@ -49,10 +49,10 @@ Writers, all upserts on the share's key:
 3. **Opening a saved share place** (below) mounts through the same writer.
 4. **Favoriting a folder on a share nothing has saved** (a Finder or login mount) records the share from the live
    mount's source, with the mount's volume id, under the server name a Cmdr mount of it would use
-   (`manual_servers::discovery_name`, so `localhost:11481` off 445, or the hub lists a second, port-less server),
-   `pinned: false`, and only when no row holds the share yet, so an existing row's pin and account stay as the person
-   set them. Favoriting is an explicit "remember this place", the same class of intent as 1 and 2, and without it a
-   favorite on that share could never dial once it unmounts (`smb_saved_shares::remember_favorited_share`).
+   (`manual_servers::discovery_name`, so `localhost:11481` off 445, or the Servers list shows a second, port-less
+   server), `pinned: false`, and only when no row holds the share yet, so an existing row's pin and account stay as the
+   person set them. Favoriting is an explicit "remember this place", the same class of intent as 1 and 2, and without it
+   a favorite on that share could never dial once it unmounts (`smb_saved_shares::remember_favorited_share`).
 
 ❌ Not written by the mount watcher, the startup adopter, the pane-open upgrade, or "Connect directly": those see mounts
 nobody asked Cmdr to save (Finder's, macOS's at login), and minting rows for them would invent a history. Their volume
@@ -64,11 +64,13 @@ Nothing to rewrite. Every new field is `serde(default)`. Before this, the store'
 so no share rows exist yet; shares mounted earlier become rows the next time Cmdr mounts them. `manual-servers.json` got
 its name and account fields in the two steps before this one.
 
-## The hub
+## The Servers list and the share list
 
-- A share row sits right under its server, indented: its name, "as test_user_6" when it has an account, status Connected
-  while it's mounted (off the volume list by id), else Saved. While it's connected, "as …" names the account the live
-  mount signed in as (the mount table's user, `LocationInfo::mount_account`); the saved account is for the next connect.
+The Servers list is flat, one row per server; a saved share is a row in its server's share list.
+
+- A share row shows its name, "as test_user_6" when it has an account, status Connected while it's mounted (off the
+  volume list by id), else Saved. While it's connected, "as …" names the account the live mount signed in as (the mount
+  table's user, `LocationInfo::mount_account`); the saved account is for the next connect.
 - A server row names the SERVER-level account ("My NAS as testuser", "as guest"), the same one its share list's header
   names: the account its listing signed in as (`network-store.svelte.ts`'s `getListedAccount`), else the one it's set to
   be used with, else nothing. ❌ Never a share's mount (each share row says its own), and ❌ never a Keychain read. "My

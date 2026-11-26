@@ -75,7 +75,7 @@ describe('shareListServerOf', () => {
     expect(shareListServerOf('smb://100.64.0.9')).toEqual({ host: mountedOnly, label: '100.64.0.9' })
   })
 
-  it('prefers the discovered host, whose id the hub caches shares and sign-in under', () => {
+  it('prefers the discovered host, whose id the share list caches shares and sign-in under', () => {
     noteShareParent('smb-test-label-both', {
       host: { ...bonjour, id: 'made-elsewhere' },
       serverLabel: 'Testnas',

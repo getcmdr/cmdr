@@ -1264,10 +1264,7 @@
     "chosen": "Activer",
     "confidence": "high",
     "forms": "turn it on in Settings → Activez-la dans les Réglages; Couldn’t turn on X → Activation de X impossible; button Activer Ask Cmdr",
-    "sources": "macOS; catalog",
-    "exceptions": {
-      "servers.hub.emptyMessage": "turn on a computer or NAS means powering it on (allumer), not enabling a setting"
-    }
+    "sources": "macOS; catalog"
   },
   "encoding": {
     "chosen": "encodage",
@@ -1489,7 +1486,7 @@
   "fingerprint": {
     "chosen": "empreinte",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la feuille",
+    "decision": "Les serveurs : la feuille",
     "forms": "feminine; Key fingerprint → Empreinte de la clé; certificate → Empreinte du certificat (SHA-256)",
     "sources": "macOS Security Certificate.loctable (Fingerprints → Empreintes); Safari (empreinte numérique)"
   },
@@ -1890,7 +1887,7 @@
     "chosen": "adresse IP",
     "confidence": "high",
     "forms": "feminine: une adresse IP",
-    "sources": "MS terminology FRA (IP address → adresse IP); catalog (fileExplorer.network.browser.tooltip.resolving)"
+    "sources": "MS terminology FRA (IP address → adresse IP)"
   },
   "item": {
     "avoid": [
@@ -1930,7 +1927,7 @@
     "accept": ["phrase secrète"],
     "chosen": "fichier de clé",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la feuille",
+    "decision": "Les serveurs : la feuille",
     "forms": "Key passphrase → Phrase secrète de la clé; mot de passe stays the account’s",
     "sources": "AuthenticationServices Localizable.strings (Passphrase → Phrase secrète, macOS 26.6.2 build 25G83, 2026-09-07)"
   },
@@ -1943,7 +1940,7 @@
     ],
     "chosen": "trousseau",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "forms": "the store → le trousseau (Mémoriser dans le trousseau); the app Keychain Access → Trousseaux d’accès (Apple’s plural); ai.secretError says Trousseau macOS",
     "sources": "Keychain Access.app InfoPlist.loctable CFBundleDisplayName (macOS 26.6.2 build 25G83, 2026-09-06)",
     "note": "Linux desktop branches: KDE's password store KDE Wallet → le portefeuille KDE (kwalletd6.po fr: Use the KDE wallet … → Utiliser le portefeuille KDE …, KDE Wallet Service → Service de portefeuilles de KDE; kwalletmanager.po: Wallet → Portefeuille), so Mémoriser dans le portefeuille KDE; KDE keeps KWalletManager as the app's name; GNOME's Passwords and Keys (Seahorse) → Mots de passe et clés, its keyring → trousseau (seahorse.po). Verified read-only on l10n.gnome.org seahorse.main fr.po and websvn.kde.org trunk/l10n-kf6 fr (kwallet/kwalletd6.po, kwalletmanager.po), 2026-11-18."
@@ -2587,7 +2584,7 @@
     ],
     "chosen": "épingler",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "exceptions": {
       "main.dockPinNudge.body": "Pinned next to Finder is carried by qu'il reste (the icon stays when the app is closed)."
     },
@@ -2760,7 +2757,7 @@
     "accept": ["reconnecte", "reconnexion", "reconnecté"],
     "chosen": "se reconnecter",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "exceptions": {
       "errors.listing.deviceProblem.suggestion": "The advice is physical (Débranchez puis rebranchez), which French says with brancher."
     },
@@ -2824,7 +2821,7 @@
     ],
     "chosen": "distant",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la feuille",
+    "decision": "Les serveurs : la feuille",
     "forms": "postposed (serveur distant, dossier distant)",
     "sources": "macOS Directory Utility, ScreenSharing, WorkflowKit"
   },
@@ -3005,7 +3002,7 @@
     ],
     "chosen": "dossier racine",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la feuille",
+    "decision": "Les serveurs : la feuille",
     "forms": "a saved server’s ceiling, a volume’s top folder → dossier racine; the folder a server opens in → dossier initial (tentative)",
     "sources": "MS terminology FRA id 2130701; Double Commander; Xfce Thunar"
   },
@@ -3152,7 +3149,7 @@
   "server": {
     "chosen": "serveur",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "forms": "the switcher row and shortcut scope → Serveurs (inside the Réseau group)",
     "sources": "macOS Finder (Serveur :, Serveurs favoris :, serveurs récents)"
   },
@@ -3395,7 +3392,7 @@
     "accept": ["statut"],
     "chosen": "état",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "forms": "columns and labels → État (keep the accent on the capital), État Git; the drive’s colored indicator → le statut jaune",
     "sources": "Feedback Assistant CommonStrings.loctable (STATUS_SECTION_TITLE → État); Bluetooth settings (État : %@)"
   },
@@ -3725,7 +3722,7 @@
     ],
     "chosen": "approuver",
     "confidence": "high",
-    "decision": "Le hub des serveurs : la table",
+    "decision": "Les serveurs : la table",
     "forms": "a key or certificate → approuver (Approuver la nouvelle clé, Clés d’hôte approuvées, Approuvée le <date>); trusting Cmdr the app (a person’s trust) → faire confiance",
     "sources": "Security.framework authorization.prompts.loctable, SecErrorMessages.loctable (macOS 26.6.2 build 25G83, 2026-09-06)"
   },

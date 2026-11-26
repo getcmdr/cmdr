@@ -196,7 +196,7 @@ fn failed(error: S3ConnectError) -> S3Connection {
 /// volume at once. `display_name` is the ACCOUNT's name as an add typed it
 /// (blank leaves it alone: `s3_known_places::adopt_typed_name`); renaming an
 /// account is `s3_known_places::rename_account`. A name reaches the switcher and
-/// the hub at once (both read the store) and a live volume on its next connect.
+/// the Servers list at once (both read the store) and a live volume on its next connect.
 pub async fn save_without_connecting(place: KnownS3Place, display_name: &str) -> SavedServerOutcome {
     let Some(volume_id) = place.volume_id() else {
         // Nothing saved under an endpoint no dial could reach: there's no field

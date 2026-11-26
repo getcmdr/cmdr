@@ -32,7 +32,7 @@ const log = getAppLogger('uncaught')
  * ❗ **The message is always there, whatever the engine put in the stack.** WebKit's
  * `error.stack` is FRAMES ONLY, where V8's opens with `Name: message`. Cmdr ships on
  * WKWebView, so taking the stack verbatim logged every uncaught error as an anonymous pile of
- * minified offsets — which is exactly what a Svelte flush throw in the servers hub looked like,
+ * minified offsets — which is exactly what a Svelte flush throw in the former Servers hub looked like,
  * and it cost a real diagnosis. (verified on macOS 26.6.2 / WKWebView and Linux WebKitGTK,
  * reading E2E logs, 2026-09-07)
  */

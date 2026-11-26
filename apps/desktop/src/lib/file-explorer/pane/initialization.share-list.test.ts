@@ -1,8 +1,8 @@
 /**
  * Startup wiring for a tab that was on a server's share list: the store hands it back
- * as the Servers hub plus the server it lands on (`app-status-store.ts`), and this
- * carries that landing past `toPersistedTab`'s strip onto the live tab, where the hub's
- * first render of THAT tab takes it (`hub-landing.svelte.ts`).
+ * as the Servers list plus the server it lands on (`app-status-store.ts`), and this
+ * carries that landing past `toPersistedTab`'s strip onto the live tab, where the tab's
+ * first listing takes it (`restored-landing.svelte.ts`).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { getActiveTab, getAllTabs } from '../tabs/tab-state-manager.svelte'
@@ -65,7 +65,7 @@ beforeEach(() => {
 })
 
 describe('loadPersistedState: a tab that was on a share list', () => {
-  it('opens on the hub, active and background tabs alike, each carrying the server its hub lands on', async () => {
+  it('opens on the Servers list, active and background tabs alike, each carrying the server it lands on', async () => {
     const { loadPersistedState } = await import('./initialization')
     const state = await loadPersistedState()
 

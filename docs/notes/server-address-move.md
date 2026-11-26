@@ -81,8 +81,9 @@ Everything that names a place by its id or spells a path with its address prefix
    silently trusted because the server "is the same one", which is exactly the claim a host-key check exists to verify.
 10. **The drive index and media prefs**: nothing. SFTP, WebDAV, and S3 are never indexed (`cmdr-index` `handle/mod.rs`'s
     scheme gate), and the media-index network prefs are SMB-only.
-11. **MCP, the hub, and the switcher**: they read the live listing, which `volumes-changed` republishes after the move.
-    Nothing caches a server-keyed answer on the frontend for these protocols (`forgetShareListsOfMachine` is SMB's).
+11. **MCP, the Servers list, and the switcher**: they read the live listing, which `volumes-changed` republishes after
+    the move. Nothing caches a server-keyed answer on the frontend for these protocols (`forgetShareListsOfMachine` is
+    SMB's).
 12. **S3's record of unfinished writes** (`<data dir>/backend-state/s3/unfinished-uploads`, keyed by endpoint plus key
     id): re-keyed to the new endpoint right after the store's write (`cmdr_s3::volume::follow_account_move`), so the
     next connect's sweep aborts an upload or settles a cut-off PUT a crash left at the old address. Left behind, no

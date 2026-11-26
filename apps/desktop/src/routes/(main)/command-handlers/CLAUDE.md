@@ -27,10 +27,10 @@ The family-grouped handler modules behind the dispatch core (`../command-dispatc
 - **The `servers.*` row actions go through what their row menu runs**: a place's through `runServerRowAction`, an SMB
   server's account actions through `runServerAccountAction` and its Disconnect through `disconnectSmbHost`, so menu and
   palette can't drift on a confirmation or a toast. Which server they act on is
-  `#lib/servers/server-command-target.ts`'s call, ❌ never `getFocusedPaneVolumeId()` alone: the hub IS a pane, so that
-  reading answers the synthetic hub row (`#lib/servers/DETAILS.md` § Which server a command acts on). Finding no server
-  says NOTHING: the palette lists every command whatever the pane is on. ❗ `servers.edit` and `servers.connect` open
-  their sheet and return; awaiting it holds the pipeline open.
+  `#lib/servers/server-command-target.ts`'s call, ❌ never `getFocusedPaneVolumeId()` alone: the Servers list IS a pane,
+  so that reading answers the switcher's synthetic Servers row (`#lib/servers/DETAILS.md` § Which server a command acts
+  on). Finding no server says NOTHING: the palette lists every command whatever the pane is on. ❗ `servers.edit` and
+  `servers.connect` open their sheet and return; awaiting it holds the pipeline open.
 - **`file.copyPath` / `file.copyFilename` act on the whole selection first** (`copySelectionOr` over
   `readSelectedPathsForCopy()`, one line per item), and only with nothing selected fall back to the cursor row. ❌ Never
   resolve the selection by row index after an `await`: rows renumber under a watcher insert. Copy-path's cursor fallback

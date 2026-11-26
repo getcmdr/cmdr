@@ -40,7 +40,7 @@ display-only keys, swaps) are the native bar's, so macOS's; the rows themselves 
   `smb-` id: `menu.volume.detachShare`, macOS "Eject", Windows "Disconnect", Linux "Unmount").
 - **Every context menu is data in `cmdr-menu`** (`crates/cmdr-menu/DETAILS.md` § Context menus): its rows for a set of
   facts, their labels, accelerator sources, and enabled state, and what a pick asks for (`context_click`). The demo
-  draws the same rows. A volume switcher row's, a favorite's, and a servers-hub place's actions are NOT among them:
+  draws the same rows. A volume switcher row's, a favorite's, and a Servers row's actions are NOT among them:
   they're the in-app `Menu`'s, one list in `apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`.
 - `context_rows.rs`: rows into muda: `build_popup` for every popup with no OS-filled group, and `append_rows` with a
   slot filler for the file menu. The header row becomes the disabled `CONTEXT_MENU_TARGET_ID` item.
@@ -1337,7 +1337,7 @@ The **server items** have no menu of their own: they close Go as a pair below a 
 `SERVERS_SHOW_ID` → `servers.show`, key `menu.go.showServers`). Go is where Finder keeps ⌘K "Connect to Server…", so a
 Mac user looks there first. Two items don't earn a top-level menu, and the menu bar is the discoverable door the `⌥F1`
 volume selector's bottom row alone wasn't. Both are menu faces of existing palette commands, `FileScoped` because each
-acts in the main window: the first opens the add-server sheet, the second takes the focused pane to the servers hub.
+acts in the main window: the first opens the add-server sheet, the second takes the focused pane to the Servers list.
 macOS SF Symbols are `network` and `server.rack`, both in the Go icon list. What the commands do:
 `apps/desktop/src/routes/(main)/command-handlers/servers-handlers.ts`.
 

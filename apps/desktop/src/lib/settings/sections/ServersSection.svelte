@@ -4,9 +4,9 @@
      * the server certificates this Mac has trusted, and the other servers a person
      * let SMB links sign in to, each with a Forget button.
      *
-     * ❗ **Saved servers are NOT here.** They live in the hub, the switcher's
-     * "Servers" row, which is a pane state so a person can navigate, sort, and act
-     * on them the way they do files. This page keeps only what the hub can't show.
+     * ❗ **Saved servers are NOT here.** They live in the Servers list (the switcher's
+     * "Servers" row), a pane state so a person can navigate, sort, and act
+     * on them the way they do files. This page keeps only what the Servers list can't show.
      *
      * ❗ The page has no CONTROL of its own, so its sidebar row and its "host
      * key" and "certificate" search hits come from the `SearchableRow`s in

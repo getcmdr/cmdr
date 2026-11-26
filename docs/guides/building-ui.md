@@ -90,7 +90,7 @@ in our chrome. One question carrying the answer alone is the one to think twice 
 
 **A row's actions inside a house `Menu` go in its → submenu, never a native popup over it.** Right-click opens that same
 submenu (the primitive does it), so the two doors can't show two lists. The volume switcher's and the favorites menu's
-rows work this way, and the servers hub reuses the same list at the pointer for a one-place server, because it's one
+rows work this way, and the Servers list reuses the same list at the pointer for a one-place server, because it's one
 list (`apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`) and a second, native copy would drift from it.
 
 The trade, honestly: native gives OS look and feel, VoiceOver, responder-chain actions, escape from the window bounds,

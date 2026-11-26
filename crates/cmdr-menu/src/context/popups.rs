@@ -1,5 +1,5 @@
 //! The small context menus: breadcrumb, `..` parent row, function key bar, tab, the viewer's text, a file list header's date Sort by, and a queue row. (A volume switcher
-//! row's, a favorite's, and a servers-hub row's actions are the in-app `Menu`'s, not a popup:
+//! row's, a favorite's, and a Servers row's actions are the in-app `Menu`'s, not a popup:
 //! `apps/desktop/src/lib/file-explorer/navigation/row-menu.ts`.)
 
 use cmdr_sort::SortColumn;

@@ -83,7 +83,7 @@ fn a_relist_with_rows_on_other_schemes_diffs_by_path() {
     assert!(!pending_changes(listing.engine(), listing.id()).is_empty());
 }
 
-/// ❗ A backend's change to `smb://` (the hub's root, as the host seam spells it) reaches
+/// ❗ A backend's change to `smb://` (the Servers list's root, as the host seam spells it) reaches
 /// the listing showing it, and only that volume's.
 #[test]
 fn a_change_to_the_servers_root_reaches_the_listing_showing_it() {
@@ -97,7 +97,7 @@ fn a_change_to_the_servers_root_reaches_the_listing_showing_it() {
         .path(SERVERS)
         .entries(vec![row("Kept", "smb://kept")])
         .insert(listing.engine(), "cross-scheme-other");
-    // The hub as the host seam hands an open listing's path back, which is what a
+    // The Servers list as the host seam hands an open listing's path back, which is what a
     // backend reports a change under.
     let root = listing.engine().open_listing_paths("network-intake");
     assert_eq!(root.len(), 1);

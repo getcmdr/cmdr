@@ -161,8 +161,8 @@ describe('createListingLoader — navigateToFallback / handleCancelLoading / nav
   })
 
   it('leaveListing ends the listing and lets no load still in flight land afterwards', async () => {
-    // A share list's `..` to the hub: both are `smb://` paths on one volume, so a share-list
-    // listing landing after the pane left would commit the share list again over the hub.
+    // Both are `smb://` paths on one volume, so a share-list listing landing after the pane
+    // left would commit the share list again.
     const { loader, state, spies } = makeHarness({ volumeId: 'network', volumePath: 'smb://' })
     await loader.loadDirectory({ path: 'smb://testnas' })
     const leftListing = state.listingId

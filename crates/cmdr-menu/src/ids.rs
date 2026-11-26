@@ -220,7 +220,7 @@ pub const GO_HOME_ID: &str = "go_home";
 
 /// "Connect to server…" (⌘K, Go menu): opens the add-server sheet, the same `servers.connect` the palette runs.
 pub const SERVERS_CONNECT_ID: &str = "servers_connect";
-/// "Show servers" (Go menu): takes the focused pane to the servers hub (`servers.show`). No default shortcut.
+/// "Show servers" (Go menu): takes the focused pane to the Servers list (`servers.show`). No default shortcut.
 pub const SERVERS_SHOW_ID: &str = "servers_show";
 
 /// "Add to favorites", menu bar + palette: maps to the `favorites.add` command, which favorites the

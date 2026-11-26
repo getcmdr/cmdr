@@ -340,10 +340,9 @@ export interface ExplorerAPI {
   selectAddedServerInFocusedPane: (serverId: string) => boolean
   /**
    * The Servers row under the focused pane's cursor, an SMB host's included, or `null`
-   * off the Servers list: the hub's cursor row while it renders, else the listing's
-   * (`network/server-row-of-entry.ts`, resolved by the row's own id). What the servers
-   * commands aim at (`serverCommandTarget`), what Edit and Rename there edit
-   * (`editHubRow`), and what F8 forgets.
+   * off the Servers list: the cursor entry's (`network/server-row-of-entry.ts`, resolved
+   * by the row's own id). What the servers commands aim at (`serverCommandTarget`), what
+   * Edit and Rename there edit (`editServerInView`), and what F8 forgets.
    */
   getFocusedPaneServerRow: () => Promise<ServerRow | null>
   injectError: (pane: 'left' | 'right', friendly: FriendlyError) => void

@@ -342,7 +342,7 @@ them.
   is `忘记` (`forgetConfirmButton`), the checkbox `同时清除保存的密码`. "Nothing gets unmounted" `卸载`
   (`removeHostConfirm`): `推出` would read as disconnecting.
 
-## Servers hub (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.*Pin*`, `shortcuts.scope.servers`/`places`)
+## Servers list (`servers.hub.*`, `commands.servers*`, `fileExplorer.navigation.*Pin*`, `shortcuts.scope.servers`/`places`)
 
 - `上次使用时间` (Keychain Access). Type `类型` (protocol), never `种类` (file kind). Signed out never `被拒绝` /
   `认证失败`.

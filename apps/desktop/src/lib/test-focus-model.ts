@@ -34,7 +34,7 @@ import { computeAccessibleName, getRole } from 'dom-accessibility-api'
 export interface FocusModelOptions {
   /**
    * Focus may sit on `root` itself with no active descendant: the explorer container, which
-   * holds focus when the focused pane shows no list (the servers hub, an error, a connect
+   * holds focus when the focused pane shows no list (an error, a connect
    * view). An `aria-activedescendant` the focused element does carry is still checked.
    */
   focusMayBeContainer?: boolean

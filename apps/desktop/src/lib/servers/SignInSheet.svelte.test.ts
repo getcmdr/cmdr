@@ -491,7 +491,7 @@ describe('SignInSheet: add mode', () => {
 
     typeInto(address, 'test_user_6@192.168.50.20')
     await tick()
-    // ❗ The stand-in the hub would show, which for SMB is the host alone.
+    // ❗ The stand-in the Servers list would show, which for SMB is the host alone.
     expect(name.placeholder).toBe('Leave empty to use 192.168.50.20')
   })
 

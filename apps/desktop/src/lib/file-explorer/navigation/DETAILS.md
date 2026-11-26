@@ -690,7 +690,7 @@ share the mount table walks UP and answers the boot disk. Per reach:
   `../pane/device-connect.svelte.ts` for a phone) dials, shows Cancel, and enters the folder. Nothing favorite-specific.
 - **`unplugged`, `access_off`, `forgotten`, `not_found`**: the pane STAYS PUT (an id with no row is a volume the app
   says doesn't exist) and one info toast for that pane (`FavoriteRefusalToastContent.svelte`) says why, with one action
-  where there is one: Open settings (the MTP or ADB section), Show servers (this pane onto the servers hub), Remove
+  where there is one: Open settings (the MTP or ADB section), Show servers (this pane onto the Servers list), Remove
   favorite. Words and action: `favorite-reach.ts`, also what MCP replies with.
 - **No `favoriteTarget`** (a listing from before the reach pass): ask Rust for the containing volume; none is
   `not_found`.
@@ -709,7 +709,7 @@ else the generic folder.
 
 **The `0` row's three states.** Enabled; disabled saying "This folder is already a favorite"; disabled saying this
 folder can't be a favorite because favorites point at folders on disks, shares, servers, and phones
-(`kindCanBeFavorited` says yes to every pane kind but the servers hub, search results, an archive, and the `.git`
+(`kindCanBeFavorited` says yes to every pane kind but the Servers list, search results, an archive, and the `.git`
 portal). Both refusals open with the same "this folder" subject, so a reader learns which one they hit without
 re-reading. The reason IS the tooltip — a greyed row that says nothing is a dead end. ❗ Capability first
 (`paneFolderCanBeFavorited`, `pane/volume-capabilities.ts`), THEN the already-a-favorite test: on an archive or
@@ -990,11 +990,11 @@ pulse.
 
 ## `volume-grouping.ts`
 
-Logic for organizing volumes into display groups. No own reactive state, but group LABELS and the synthetic hub row's
-NAME are resolved from the message catalog (`tString('fileExplorer.navigation.group*' / '.networkVolume')`), which reads
-the active locale. `VolumeBreadcrumb` calls `groupByCategory` from a `$derived`, so the labels track a locale switch. To
-change a section heading or the hub row's name, edit the catalog, not this file — and see `../network/DETAILS.md` §
-Gotchas for the four other places that name has to match, one of which is Rust.
+Logic for organizing volumes into display groups. No own reactive state, but group LABELS and the synthetic Servers
+row's NAME are resolved from the message catalog (`tString('fileExplorer.navigation.group*' / '.networkVolume')`), which
+reads the active locale. `VolumeBreadcrumb` calls `groupByCategory` from a `$derived`, so the labels track a locale
+switch. To change a section heading or the Servers row's name, edit the catalog, not this file — and see
+`../network/DETAILS.md` § Gotchas for the four other places that name has to match, one of which is Rust.
 
 `groupByCategory(vols)`: groups volumes by category in display order:
 
@@ -1003,30 +1003,30 @@ Gotchas for the four other places that name has to match, one of which is Rust.
 3. Cloud drives
 4. Mobile devices: filtered from unified volume list (`category === 'mobile_device'`), minus an ADB row that can't be
    used yet while the same phone has an MTP row (`deviceRowDefersToMtpTwin`, `#lib/adb/DETAILS.md`)
-5. Network: always includes the synthetic `'network'` hub row (`smb://`, labelled "Servers") plus any mounted SMB shares
-   and every SFTP or WebDAV place the listing carried. ❗ The row is there whatever `network.enabled` says, and opening
-   it always navigates. That switch gates mDNS discovery and SMB, which is what the macOS Local Network permission is
-   about; SFTP and WebDAV need none of it, so refusing to open the Servers list would hide a person's saved servers over
-   a permission they don't need. Its footer says the nearby search is off instead (`../network/DETAILS.md` § "The
-   Servers list as a listing").
+5. Network: always includes the synthetic `'network'` Servers row (`smb://`, labelled "Servers") plus any mounted SMB
+   shares and every SFTP or WebDAV place the listing carried. ❗ The row is there whatever `network.enabled` says, and
+   opening it always navigates. That switch gates mDNS discovery and SMB, which is what the macOS Local Network
+   permission is about; SFTP and WebDAV need none of it, so refusing to open the Servers list would hide a person's
+   saved servers over a permission they don't need. Its footer says the nearby search is off instead
+   (`../network/DETAILS.md` § "The Servers list as a listing").
 
 `getIconForVolume(volume)`: returns the appropriate icon path for a volume based on its category.
 
 ### The three-things rule, and which side enforces it
 
-The Network group holds three things and nothing else: the hub row, every place connected right now, and every PINNED
-place (greyed, hollow dot). `volume-grouping.ts::belongsInSwitcher` is where it is applied, over the `pinned` field the
-listing puts on each server row plus `isLiveSession` / `hasReconnectLoop`.
+The Network group holds three things and nothing else: the Servers row, every place connected right now, and every
+PINNED place (greyed, hollow dot). `volume-grouping.ts::belongsInSwitcher` is where it is applied, over the `pinned`
+field the listing puts on each server row plus `isLiveSession` / `hasReconnectLoop`.
 
 ❗ **The listing hides nothing** (`src-tauri/src/server_volumes.rs::append_server_volumes` publishes every saved place).
-A volume id with no row is one the app denies exists, and four things resolve one: Enter on a hub row, a restored tab, a
-favorite inside a server, and the pane's own lookup. A pin governs the switcher, not identity.
+A volume id with no row is one the app denies exists, and four things resolve one: Enter on a Servers row, a restored
+tab, a favorite inside a server, and the pane's own lookup. A pin governs the switcher, not identity.
 
 ❗ **A row with no `pinned` at all shows unconditionally.** Only a server place carries one. A mounted SMB share was
 never subject to the cap, and on Linux it carries no `connectionState` either, so a rule spelled "live or pinned" would
 drop every CIFS mount off the switcher.
 
-The frontend synthesizes exactly ONE row of its own, the hub. `volume-grouping.test.ts` is what catches a future
+The frontend synthesizes exactly ONE row of its own, the Servers row. `volume-grouping.test.ts` is what catches a future
 "helpful" `listSavedServers()` fetch here: the row already says whether it is pinned, and a second source of truth is
 how the two drift.
 
@@ -1043,8 +1043,9 @@ say about them.
   not "the fifth just landed": nothing records last launch's count, and a person whose list was already long is exactly
   who the hint is for. The flag is what keeps it from nagging.
 - **It is raised from `#lib/stores/volume-store`**, where the published list lands, because that is the ONE place every
-  pin reaches whatever moved it: the hub, the row menu, the palette, or a first connect (which auto-pins). ❌ Not from a
-  component: the group is rendered by two breadcrumbs, and a hint tied to one of them would fire twice or not at all.
+  pin reaches whatever moved it: the Servers list, the row menu, the palette, or a first connect (which auto-pins). ❌
+  Not from a component: the group is rendered by two breadcrumbs, and a hint tied to one of them would fire twice or not
+  at all.
 - **The toast names the palette command through its own catalog key**, ❌ never a second copy of the words: a translated
   toast pointing at an English command name sends the reader looking for something they can't find.
 

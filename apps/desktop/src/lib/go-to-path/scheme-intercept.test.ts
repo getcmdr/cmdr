@@ -251,11 +251,11 @@ describe('actOnSchemeInput: what the jump does', () => {
   /**
    * ❗ Go to path is a NAVIGATION command, so an SMB address has to land the
    * person somewhere. Its connect is a share MOUNT rather than a session, so
-   * there is no volume to navigate to and the host's places list is the
+   * there is no volume to navigate to and the host's share list is the
    * destination — which is exactly where ⌘K's own hand-off goes. Two entry points
    * into one sheet ending differently for one input is the bug.
    */
-  it('sends an SMB address on to the hub, the same place ⌘K does', async () => {
+  it('sends an SMB address on to its share list, the same place ⌘K does', async () => {
     ipc.mock('connect_to_server', () => ({ host: { id: 'h1', name: 'testnas' }, sharePath: null }))
     let handedOver = 0
     const outcome = await actOnSchemeInput(
