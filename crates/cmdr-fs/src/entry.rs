@@ -249,6 +249,10 @@ pub struct FileEntry {
     /// share: the server's description of it, shown as the server set it. `None` on
     /// every other entry.
     pub share_meta: Option<crate::share_meta::ShareMeta>,
+    /// What a server's row on the Servers list (`smb://` on the `network` volume)
+    /// says about its server: protocol, address, status, account, and the row's own
+    /// id. Facts only; the frontend words them. `None` on every other entry.
+    pub server_meta: Option<crate::server_meta::ServerMeta>,
     /// `true` for a file whose bytes sit in a cold storage class and can't be
     /// read until someone restores them: S3 Glacier Flexible Retrieval or Deep
     /// Archive, from the listing's `StorageClass`. The pane shows it as
@@ -294,6 +298,7 @@ impl FileEntry {
             git_meta: None,
             restic_meta: None,
             share_meta: None,
+            server_meta: None,
             in_cold_storage: false,
         }
     }

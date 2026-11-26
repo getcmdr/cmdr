@@ -6,22 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::network::s3_known_places::S3ProviderChoice;
 use crate::network::saved_server_fields;
 
-/// Which protocol an account speaks.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "snake_case")]
-pub enum ServerProtocol {
-    /// An SMB host. ❗ The host row is never pinned; its saved shares are, see [`SavedServer`].
-    Smb,
-    /// An SFTP server, one account per entry.
-    Sftp,
-    /// A WebDAV server, one account per entry.
-    Webdav,
-    /// An S3 account (an endpoint plus an access key id), whose places are its
-    /// saved buckets and, when saved, its root.
-    S3,
-    /// An NFS server, whose places are its saved exports.
-    Nfs,
-}
+/// Which protocol an account speaks: `cmdr_fs`'s, since a Servers row's facts
+/// (`cmdr_fs::server_meta::ServerMeta`) carry it too.
+pub use cmdr_fs::server_meta::ServerProtocol;
 
 /// Whether a person NAMED this server, or the label is a stand-in.
 ///

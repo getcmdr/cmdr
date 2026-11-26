@@ -1116,7 +1116,7 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
   `shareListSignIn` reason with the `sign_in_to_server` action and no retry, and the rest into
   `shareListUnavailable` (`crates/cmdr-fs/src/volume/friendly_error/kinds.rs::share_list_refused` has the table);
   the frontend words both through `renderShareListError`. The security-log call stays in `smb_client::list_shares`.
-- **The account it listed as** rides `listing-complete` as `shareListAccount` (`ShareListAccount`, the frontend's
+- **The account it listed as** rides `listing-complete` as `shareListAccount` (`cmdr_fs::server_meta::ShareListAccount`, the frontend's
   `SignedInAs` shape), read from the volume's per-host memory (`SmbServerVolume::listed_account`); a cached list
   doesn't say, and a refusal clears it.
 - **The path**: the frontend writes it (`apps/desktop/src/lib/servers/share-list-path.ts`, which says why the key is a
@@ -1145,6 +1145,40 @@ is mounted, ❌ never entered here). Every door in the frontend opens one by pat
 - **The engine needed no change for the path**: `smb://<server>/` is its own scheme root in Rust (`smb:///` is another),
   and the listing engine never checks a listed path against the volume's root (verified by
   `the_engine_lists_a_share_list_as_folder_rows`, 2026-11-26).
+
+## The Servers list's rows
+
+`servers_listing.rs::server_rows` decides the Servers list (`smb://` on the `network` volume): one flat row per saved
+server, then one per host only mDNS knows. It's a pure fold over `ServerRowInputs` (the saved listing, `fresh_discovered_hosts`,
+the volume list's connection states, the kernel's SMB mount table, and a snapshot of the accounts share lists signed
+in as), so ❌ nothing in it dials, reads the Keychain, or `statfs`es a mount; a test injects every input. Nothing lists
+`smb://` through it yet: the frontend's hub still runs its own merge (`servers-hub-rows.ts`), and the two stay in step
+until the volume lists these rows (plan: `docs/specs/servers-list-as-listing-plan.md`).
+
+- **What a row carries**: its name, `cmdr_fs::server_meta::ServerMeta` (facts, no words: the row's own id, protocol,
+  address, `ServerStatus`, account, saved, the one place a one-place server opens, its pin), the last-used time, a
+  reserved icon id (`network:server-smb` for SMB, `network:server` for the rest, drawn by the frontend, ❌ no OS icon
+  fetch), and `ServerOpens`, where Enter leads: an SMB server's share-list address (`ShareListAddress::of_host`, the
+  host's Bonjour name or the typed address, the same key `..` from that share list lands on), a one-place server's
+  place, or an S3 account's root (its id, plus the root's app root when the root is saved).
+- **Ids AND targets are unique, first writer wins**: the saved listing unions several stores, so one server can
+  arrive twice, and the listing engine keys entries by path, which comes from `ServerOpens`. Pinned by
+  `never_emits_two_rows_under_one_id_whatever_the_sources_repeat` and `never_emits_two_rows_that_lead_to_one_place`.
+- **The merge** (a saved SMB host claims every discovered host matching its id, address, or label, a discovered one
+  speaks for the row; the name ranks a person's name, then the Bonjour name, then the stand-in) compares lowercase
+  strings, ❌ not `server_identity`: it pairs a saved LABEL with a Bonjour name, which no address-and-port identity
+  answers. **Decision**: kept the hub's semantics, so every ported regression anchor holds unchanged.
+- **Status**: a one-place server's (and an S3 account's most urgent place's) off the volume list's `ConnectionState`;
+  an SMB server is `Connected` while a share from it is in the mount table (Cmdr's mount or the OS's), by
+  `server_identity::mount_is_from` (address AND port, discovery pairing names with IPs), which wins over "Not connected
+  yet"; else "Not connected yet" for a host saved without contact (#777), "Found nearby" only when a DISCOVERED host
+  matches (❌ never the manual host Cmdr injects for it), "Saved" otherwise.
+- **The account**: an SMB server's is the one its share list signed in as (by the matched host's id, then the row's),
+  else the one it's set to be used with; an S3 account's is its key; a one-place server names none (its name says it).
+- ❌ **Never merge two rows by server GUID**: a Samba GUID is the NetBIOS name (#1518), so one NAS at two addresses is
+  two rows (`keeps_one_nas_at_two_addresses_as_two_rows`).
+- **Not here**: the order (the pane sorts), the hub's place rows under a many-place server (a saved share's facts move
+  to its share list), and every word (the frontend's).
 
 ## "Show “..” in the top folder"
 

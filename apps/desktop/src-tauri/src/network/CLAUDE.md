@@ -6,11 +6,12 @@ Frontend: `apps/desktop/src/lib/servers/CLAUDE.md` and `apps/desktop/src/lib/fil
 
 ## Module map
 
-SMB (discovery, share listing with CLI fallbacks, mounting through `mod.rs::mount_share`, OS-mount → direct upgrade at
-launch, on mount, and on pane open), SFTP, WebDAV, S3, and NFS (host keys, a saved-server store each, ❗ one entry per
+SMB (discovery, share listing with CLI fallbacks, mounting through `mod.rs::mount_share`, the OS-mount → direct
+upgrade), SFTP, WebDAV, S3, and NFS (host keys, a saved-server store each, ❗ one entry per
 PLACE for S3 and NFS, a `*_volume_wiring.rs` that dials and registers), and their shared seams (`connect_wiring.rs`,
 `server_list_file.rs`, `saved_server_fields.rs`, `one_shot_credentials.rs`, `credential_store.rs`). Every typed event:
-`events.rs`. Share lists: `share_list_volume.rs` (❗ only a pane's open dials, #324).
+`events.rs`. Share lists: `share_list_volume.rs` (❗ only a pane's open dials, #324); Servers rows:
+`servers_listing.rs`.
 
 ## Must-knows
 

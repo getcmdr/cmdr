@@ -6,6 +6,7 @@ import type {
   GitEntryMeta,
   ListingErrorReason,
   ResticSnapshotMeta,
+  ServerMeta,
   ShareListError,
   ShareMeta,
   TagRef,
@@ -111,6 +112,13 @@ export interface FileEntry {
    * share: the server's own description of it, shown as the server set it.
    */
   shareMeta?: ShareMeta
+  /**
+   * What a server's row on the Servers list (`smb://` on the `network` volume) says
+   * about its server, as facts: the row's own id, protocol, address, status, and
+   * account. Rust decides the rows (`network/servers_listing.rs`); the frontend words
+   * them.
+   */
+  serverMeta?: ServerMeta
   /**
    * The file's bytes sit in cold storage (S3 Glacier Flexible Retrieval or Deep
    * Archive) and can't be read until someone restores them. The row shows an

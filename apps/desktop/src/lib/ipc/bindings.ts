@@ -305,6 +305,12 @@ export const commands = {
          */
         shareMeta: ShareMeta | null
         /**
+         *  What a server's row on the Servers list (`smb://` on the `network` volume)
+         *  says about its server: protocol, address, status, account, and the row's own
+         *  id. Facts only; the frontend words them. `None` on every other entry.
+         */
+        serverMeta: ServerMeta | null
+        /**
          *  `true` for a file whose bytes sit in a cold storage class and can't be
          *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
          *  Archive, from the listing's `StorageClass`. The pane shows it as
@@ -481,6 +487,12 @@ export const commands = {
          *  every other entry.
          */
         shareMeta: ShareMeta | null
+        /**
+         *  What a server's row on the Servers list (`smb://` on the `network` volume)
+         *  says about its server: protocol, address, status, account, and the row's own
+         *  id. Facts only; the frontend words them. `None` on every other entry.
+         */
+        serverMeta: ServerMeta | null
         /**
          *  `true` for a file whose bytes sit in a cold storage class and can't be
          *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
@@ -5096,7 +5108,8 @@ export const commands = {
       /**
        *  Share rows: the GUID the share's server answered NEGOTIATE with, in
        *  `crate::network::server_guid::ServerGuid`'s text form: the proof two rows (one NAS by its LAN
-       *  and its Tailscale address) are one server. Written only through
+       *  and its Tailscale address) are one server, when the server minted it (a Samba one is its
+       *  NetBIOS name and proves nothing, `GuidOrigin`). Written only through
        *  [`record_server_guid`], never by a row an add or a mount files.
        */
       serverGuid?: string | null
@@ -11276,6 +11289,12 @@ export type FileEntry = {
    */
   shareMeta: ShareMeta | null
   /**
+   *  What a server's row on the Servers list (`smb://` on the `network` volume)
+   *  says about its server: protocol, address, status, account, and the row's own
+   *  id. Facts only; the frontend words them. `None` on every other entry.
+   */
+  serverMeta: ServerMeta | null
+  /**
    *  `true` for a file whose bytes sit in a cold storage class and can't be
    *  read until someone restores them: S3 Glacier Flexible Retrieval or Deep
    *  Archive, from the listing's `StorageClass`. The pane shows it as
@@ -13152,7 +13171,8 @@ export type KnownNetworkShare = {
   /**
    *  Share rows: the GUID the share's server answered NEGOTIATE with, in
    *  `crate::network::server_guid::ServerGuid`'s text form: the proof two rows (one NAS by its LAN
-   *  and its Tailscale address) are one server. Written only through
+   *  and its Tailscale address) are one server, when the server minted it (a Samba one is its
+   *  NetBIOS name and proves nothing, `GuidOrigin`). Written only through
    *  [`record_server_guid`], never by a row an add or a mount files.
    */
   serverGuid?: string | null
@@ -21332,6 +21352,40 @@ export type ServerFieldView = {
   previous: string | null
 }
 
+// The facts a Servers row carries about its server.
+export type ServerMeta = {
+  /**
+   *  The row's own id, which every action on the row resolves its saved entry by:
+   *  the saved server's id, else the discovered host's. ❌ Never re-derived from a
+   *  host, name, or address at action time.
+   */
+  rowId: string
+  // Which protocol the server speaks.
+  protocol: ServerProtocol
+  /**
+   *  Where the server is, as the Details cell shows it: resolved where mDNS
+   *  resolved it, with the port when it isn't the protocol's own.
+   */
+  address: string
+  // How live the row is.
+  status: ServerStatus
+  /**
+   *  The account the row is signed in as, `None` when nothing known says. An SMB
+   *  server: the account its share list signed in as, else the one it's set to be
+   *  used with. A one-place server: `None` (its name says the account already).
+   */
+  account: ShareListAccount | null
+  // Whether the person saved it (`false`: a host Cmdr only found nearby).
+  saved: boolean
+  /**
+   *  The volume id of the place Enter opens: a one-place server's. `None` for an
+   *  SMB host (it opens its share list) and an S3 account (it opens its root).
+   */
+  place: string | null
+  // Whether that place is pinned to the switcher. Always `false` without a place.
+  pinned: boolean
+}
+
 /**
  *  Whether a person NAMED this server, or the label is a stand-in.
  *
@@ -21397,9 +21451,9 @@ export type ServerProposalView = {
   sharesAffected: number | null
 }
 
-// Which protocol an account speaks.
+// Which protocol a saved server speaks.
 export type ServerProtocol =
-  // An SMB host. ❗ The host row is never pinned; its saved shares are, see [`SavedServer`].
+  // An SMB host. ❗ The host row is never pinned; its saved shares are.
   | 'smb'
   // An SFTP server, one account per entry.
   | 'sftp'
@@ -21438,6 +21492,27 @@ export type ServerRequestError =
 export type ServerSaveNote =
   // An SMB add saved the host but not its share row.
   'shareNotSaved'
+
+// How live a server's row is, for its status dot and the words beside it.
+export type ServerStatus =
+  /**
+   *  A live session Cmdr owns, or an SMB share from it mounted (Cmdr's mount or
+   *  the OS's).
+   */
+  | 'connected'
+  // Saved and idle: nothing in flight, and nothing is wrong.
+  | 'saved'
+  /**
+   *  An SMB host saved without contact ("Add anyway", an approved Ask Cmdr card):
+   *  nothing has dialed it, and nothing lists its shares until the person connects.
+   */
+  | 'not_connected_yet'
+  // mDNS is seeing it right now.
+  | 'found_nearby'
+  // The session dropped because a credential is what's missing.
+  | 'signed_out'
+  // An SFTP host key is waiting for the person to look at it.
+  | 'waiting_for_key'
 
 /**
  *  Which server to dial, in add mode.
@@ -21760,7 +21835,10 @@ export type ShareLinkExpiry =
   // Seven days: the default, and the longest a SigV4 signature may live.
   | 'sevenDays'
 
-// The account a share list was listed as, for the pane's "as `<account>`".
+/**
+ *  The account a server's share list was listed as, for "as `<account>`": on the
+ *  share list's path bar, and on the server's row in the Servers list.
+ */
 export type ShareListAccount =
   // An anonymous session.
   | { kind: 'guest' }

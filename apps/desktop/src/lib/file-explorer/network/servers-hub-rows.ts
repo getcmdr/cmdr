@@ -19,6 +19,10 @@
  * and an S3 account's saved buckets) lists each place as a row of its own, right under
  * its server: the list says "user + server + share", which is what a person means to
  * save (cmdr-reports#7). The server row itself has no place to act on.
+ *
+ * ❗ Rust holds a flat port of this merge for the Servers list as a listing
+ * (`src-tauri/src/network/servers_listing.rs`). Until that list replaces the hub, a
+ * fix to the merge here goes there too.
  */
 
 import type { ServerProtocol } from '#lib/ipc/bindings.js'

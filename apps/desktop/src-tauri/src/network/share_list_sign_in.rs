@@ -20,25 +20,15 @@
 use std::future::Future;
 
 use cmdr_smb::{ShareListError, ShareListResult};
-use serde::{Deserialize, Serialize};
 
 use crate::network::keychain::SmbCredentials;
 use crate::network::os_mount::MountError;
 use crate::network::share_list_path::KnownHosts;
 use crate::network::smb_client::GuestAttempt;
 
-/// The account a share list was listed as, for the pane's "as `<account>`".
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-pub enum ShareListAccount {
-    /// An anonymous session.
-    Guest,
-    /// Signed in as this account.
-    User {
-        /// The account's username.
-        username: String,
-    },
-}
+/// The account a share list was listed as: `cmdr_fs`'s, since a Servers row's facts
+/// (`cmdr_fs::server_meta::ServerMeta`) carry it too.
+pub use cmdr_fs::server_meta::ShareListAccount;
 
 /// What one pane listing came to, and the account it used, when that's known (a cached
 /// list doesn't say who listed it).
