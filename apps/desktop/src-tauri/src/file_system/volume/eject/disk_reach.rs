@@ -52,6 +52,9 @@ pub(crate) fn mark_shared_disks(rows: &mut [LocationInfo], disk_of: impl Fn(&str
         .iter()
         .enumerate()
         .filter(|(_, row)| row.is_ejectable && matches!(row.category, crate::volumes::LocationCategory::AttachedVolume))
+        // A share is ejectable (it unmounts) but sits on no disk, and asking about a dead one can
+        // hang.
+        .filter(|(_, row)| !crate::volumes::is_network_fs_type(row.fs_type.as_deref()))
         .map(|(index, _)| index)
         .collect();
     if candidates.len() < 2 {
@@ -160,6 +163,19 @@ mod tests {
         });
         let shares: Vec<bool> = rows.iter().map(|row| row.shares_disk_with_others).collect();
         assert_eq!(shares, [true, true, false, false, false]);
+    }
+
+    #[test]
+    fn a_network_mount_sits_on_no_disk() {
+        // A share is ejectable (it unmounts), but it has no disk to share, and asking
+        // DiskArbitration about a dead one can stall the listing's deadline.
+        let share = |path: &str| LocationInfo {
+            fs_type: Some("smbfs".to_string()),
+            ..row(path, true)
+        };
+        let mut rows = [share("/Volumes/public"), share("/Volumes/photos")];
+        mark_shared_disks(&mut rows, |_| panic!("a network mount has no disk to ask about"));
+        assert!(rows.iter().all(|row| !row.shares_disk_with_others));
     }
 
     #[test]

@@ -499,8 +499,8 @@ flat ~30s (one smbfs kernel timeout). (Incident: live NAS QA, 2026-07-13.)
    reproduced against a wedged mount.
 2. **Skip blocking enrichment for network mounts.** `build_attached_location` runs the blocking NSURL / NSWorkspace /
    DiskArbitration enrichment (`resolve_local`) ONLY for local mounts. Network mounts (`is_network_fs_type`) derive
-   everything from the getfsstat snapshot: id/name from `f_mntfromname` (SMB → "share on server"), `is_ejectable = false`
-   (cosmetically moot: the eject affordance keys on `connectionState` and `volume/eject/` forces it true for SMB), no icon,
+   everything from the getfsstat snapshot: id/name from `f_mntfromname` (SMB → "share on server"), `is_ejectable = true`
+   without asking (a share ejects by unmounting, like Finder's eject; `file_system/volume/DETAILS.md` § "Eject"), no icon,
    never a disk image. So a dead network mount contributes its entry and never blocks discovery of the healthy volumes
    beside it.
 3. **Off-main + timeout-guarded callers.** `init_volume_manager` registers root synchronously (cheap, `/` never hangs)
@@ -719,8 +719,9 @@ Three limits are deliberate:
 - ❗ Only an explicit "not internal" counts. A disk macOS gives no answer for stays without a button.
 - An internal volume with fixed media (a second APFS volume, an internal data disk) offers none, although Finder does:
   Cmdr can't mount it back, and its eject takes the whole physical disk, which there is the boot disk.
-- The boot volume never ejects, even on a Mac booted from an external disk. Network mounts are never asked: they end
-  through their session, and the lookup can hang on a dead one (§ "Hung mounts").
+- The boot volume never ejects, even on a Mac booted from an external disk. Network mounts are never asked: they're
+  ejectable as they stand (an eject unmounts them), and the lookup can hang on a dead one (§ "Hung mounts"). For the
+  same reason `eject::mark_shared_disks` skips them: a share sits on no disk.
 
 **Decision**: Populate `mount_is_read_only` for attached volumes from the `statfs` `MNT_RDONLY` flag (`read_only_from_statfs`).
 **Why**: It powers the 🔒 indicator and the copy/move write guard for ANY read-only mount (a read-only `.dmg`, a locked

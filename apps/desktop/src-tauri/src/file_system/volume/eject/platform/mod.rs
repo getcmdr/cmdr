@@ -12,6 +12,7 @@ mod imp;
 const _: fn(UnmountVerb) -> &'static str = tool_command;
 const _: fn(UnmountVerb, &str) -> ToolOutcome = run_tool_blocking;
 const _: fn(&str) -> bool = is_ejectable;
+const _: fn(&str) -> bool = is_network_mount;
 const _: bool = SMB_DISCONNECT_UNMOUNTS;
 
 /// The command `verb` runs, as a log line names it.
@@ -25,6 +26,12 @@ pub(super) use imp::run_tool_blocking;
 /// disk image), so an eject runs the tool's `Eject` verb. Blocking, and can hang on a dead
 /// backing store: the caller bounds it (`deadlines::EJECTABILITY_CHECK_DEADLINE`).
 pub(super) use imp::is_ejectable;
+
+/// Whether the volume at `mount_path` sits on a network filesystem mount (macOS: `smbfs`, NFS,
+/// AFP, WebDAV), which Finder ejects by unmounting it. macOS reports every such mount as not
+/// ejectable, so without this a share macOS mounted read "This drive isn't removable".
+/// Non-blocking: the mount table alone.
+pub(super) use imp::is_network_mount;
 
 /// The teardown of a volume [`is_ejectable`] said yes to, where no per-disk flight runs: Linux's
 /// tool against the volume alone, Windows' drive flight. macOS runs its per-disk flight instead

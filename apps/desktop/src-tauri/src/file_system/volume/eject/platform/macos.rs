@@ -31,3 +31,10 @@ pub(crate) fn run_tool_blocking(verb: UnmountVerb, mount_path: &str) -> ToolOutc
 pub(crate) fn is_ejectable(mount_path: &str) -> bool {
     crate::volumes::resolve_path_volume_fast(mount_path).is_some_and(|v| v.is_ejectable)
 }
+
+/// Read from the non-blocking mount table (`volumes::mount_type_and_source_for`), so a dead
+/// share can't stall it.
+pub(crate) fn is_network_mount(mount_path: &str) -> bool {
+    crate::volumes::mount_type_and_source_for(crate::volumes::os_mount_path(mount_path))
+        .is_some_and(|(fs_type, _)| crate::volumes::is_network_fs_type(Some(&fs_type)))
+}

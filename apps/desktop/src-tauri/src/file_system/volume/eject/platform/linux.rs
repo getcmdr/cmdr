@@ -34,6 +34,13 @@ pub(in crate::file_system::volume::eject) async fn eject_ejectable(
     Ok(super::super::EjectOutcome::Unmounted)
 }
 
+/// Always `false`: a network mount Cmdr didn't make here is root's or GVFS's (one FUSE mount
+/// serving every share), and `umount` on either takes down more than the row asked for, or
+/// can't run at all. A share Cmdr serves itself is an SMB volume, which goes by its backend kind.
+pub(crate) fn is_network_mount(_mount_path: &str) -> bool {
+    false
+}
+
 pub(crate) fn is_ejectable(mount_path: &str) -> bool {
     crate::volumes::list_locations()
         .into_iter()

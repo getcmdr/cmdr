@@ -48,7 +48,7 @@ async fn ejecting_a_phone_retires_its_volume_keeps_its_row_and_the_next_dial_ope
     let action = decide_eject_action(&EjectContext {
         volume_id: &volume_id,
         is_ejectable: false,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: false,
         device_provider: Some(provider.id()),
     })

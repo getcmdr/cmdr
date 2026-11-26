@@ -347,11 +347,10 @@ fn build_attached_location(
         // Network mount: derive everything from the non-blocking snapshot. Never
         // touch NSURL / NSWorkspace / DiskArbitration here — those are exactly the
         // calls that hang on a dead mount (which is also why the ID gets no UUID
-        // to key on). `is_ejectable` is cosmetically moot for network mounts (the
-        // eject affordance keys on `connectionState`, and the eject flow forces
-        // it true), so a safe `false` costs nothing.
+        // to key on). Ejectable without asking: a network mount ejects the way
+        // Finder ejects it, by unmounting (`eject::unmounts_like_a_share`).
         let id = volume_id_for(path, Some(&fs_type), smb_info(mount).as_ref(), None);
-        (id, network_name(mount), false, None, false)
+        (id, network_name(mount), true, None, false)
     } else {
         // Local mount: safe to run the blocking enrichment.
         let meta = resolve_local(path);

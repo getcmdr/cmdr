@@ -916,6 +916,15 @@ drive's root is a plain folder that was never in the table, so it keeps answerin
 mounted. It's the same non-probing read `settle` uses, so a hung mount can't block it and an unreadable table counts as
 still mounted.
 
+**A share ejects by unmounting, whatever serves it.** `eject_now` routes a volume to `diskutil unmount` when
+`unmounts_like_a_share` says so: an SMB volume in any state, or (macOS) any volume whose mount the non-blocking table
+lists on a network filesystem (`smbfs`, NFS, AFP, WebDAV; `platform::is_network_mount`). The second half is a share macOS
+mounted that Cmdr hasn't moved onto its own connection yet: a `LocalPosixVolume` (`BackendKind::Local`) on an `smbfs`
+mount. NSURL calls every network mount not ejectable, so before this it answered `NotEjectable` ("This drive isn't
+removable") for the Eject its row offered. The listing marks network rows `is_ejectable` for the same reason, so the
+picker's offer and this route agree (`volumes/DETAILS.md` § "Hung mounts"). Linux and Windows answer `false`: a GVFS
+FUSE mount serves every share, so `umount` there takes more than the row.
+
 **An ID the registry no longer knows stays `VolumeNotFound`.** It could be a volume that finished unmounting a moment
 ago, or an ID that never existed (an MCP caller's typo), and with no mount root left there's nothing typed to ask, so
 answering `Ok` would hand automation a false success. The UI's own controls reach it only in a narrow race, and its copy

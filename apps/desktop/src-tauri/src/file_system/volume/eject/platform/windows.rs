@@ -66,6 +66,12 @@ pub(crate) fn is_ejectable(mount_path: &str) -> bool {
     crate::volumes::resolve_path_volume_fast(mount_path).is_some_and(|v| v.is_ejectable)
 }
 
+/// Always `false`: Windows has no unmount tool, and a mapped share is an SMB volume, which goes
+/// by its backend kind.
+pub(crate) fn is_network_mount(_mount_path: &str) -> bool {
+    false
+}
+
 /// An ejectable drive's eject: its unit, then its drive flight, both on the blocking pool.
 ///
 /// 1. The unit (`volumes::eject_target`: every volume the request takes down) is read under

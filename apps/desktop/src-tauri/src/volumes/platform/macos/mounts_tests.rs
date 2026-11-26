@@ -190,7 +190,10 @@ fn smb_mount_classifies_without_blocking_enrichment() {
     assert_eq!(loc.mount_account.as_deref(), Some("test_user_3"));
     assert_eq!(loc.fs_type.as_deref(), Some("smbfs"));
     assert_eq!(loc.category, LocationCategory::AttachedVolume);
-    assert!(!loc.is_ejectable, "network mounts take the safe non-blocking default");
+    assert!(
+        loc.is_ejectable,
+        "a share ejects the way Finder ejects it, so the switcher offers it"
+    );
     assert!(loc.icon.is_none());
     assert!(!loc.is_disk_image);
 }
@@ -203,6 +206,7 @@ fn nfs_mount_classifies_without_blocking_enrichment() {
     assert_eq!(loc.name, "export");
     assert!(loc.mount_is_read_only, "MNT_RDONLY flag propagates from getfsstat");
     assert_eq!(loc.fs_type.as_deref(), Some("nfs"));
+    assert!(loc.is_ejectable, "an NFS mount ejects like an SMB one: it unmounts");
 }
 
 #[test]

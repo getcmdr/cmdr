@@ -9,7 +9,7 @@ fn device_volume_routes_to_its_provider() {
     let ctx = EjectContext {
         volume_id: "mtp-AA:BB:CC:65537",
         is_ejectable: false,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: false,
         device_provider: Some("mtp"),
     };
@@ -27,7 +27,7 @@ fn device_provider_wins_over_every_other_flag() {
     let ctx = EjectContext {
         volume_id: "adb-serial",
         is_ejectable: true,
-        is_smb: true,
+        is_network_mount: true,
         is_remote_session: false,
         device_provider: Some("adb"),
     };
@@ -42,7 +42,7 @@ fn smb_volume_routes_to_unmount() {
     let ctx = EjectContext {
         volume_id: "smb-testnas-445-public",
         is_ejectable: false,
-        is_smb: true,
+        is_network_mount: true,
         is_remote_session: false,
         device_provider: None,
     };
@@ -50,11 +50,43 @@ fn smb_volume_routes_to_unmount() {
 }
 
 #[test]
+fn a_share_still_on_the_os_mount_unmounts_like_finder_ejects_it() {
+    // A share macOS mounted that Cmdr hasn't moved onto its own connection yet is a local
+    // volume on an `smbfs` mount, and macOS calls it not ejectable. Before this, its Eject
+    // answered "This drive isn't removable".
+    let on_network_fs = || true;
+    assert!(unmounts_like_a_share(
+        cmdr_fs::volume::BackendKind::Local,
+        on_network_fs
+    ));
+    let ctx = EjectContext {
+        volume_id: "smb-testnas.local-445-public",
+        is_ejectable: false,
+        is_network_mount: true,
+        is_remote_session: false,
+        device_provider: None,
+    };
+    assert_eq!(decide_eject_action(&ctx).unwrap(), EjectAction::DiskutilUnmount);
+}
+
+#[test]
+fn an_smb_volume_unmounts_without_asking_the_mount_table() {
+    assert!(unmounts_like_a_share(cmdr_fs::volume::BackendKind::Smb, || panic!(
+        "an SMB volume is a share whatever its mount says"
+    )));
+}
+
+#[test]
+fn a_local_disk_is_no_share() {
+    assert!(!unmounts_like_a_share(cmdr_fs::volume::BackendKind::Local, || false));
+}
+
+#[test]
 fn ejectable_disk_routes_to_eject() {
     let ctx = EjectContext {
         volume_id: "volumes-usb-drive",
         is_ejectable: true,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: false,
         device_provider: None,
     };
@@ -123,7 +155,7 @@ fn remote_session_routes_to_a_disconnect() {
     let ctx = EjectContext {
         volume_id: "sftp-testnas-22-test_user_3",
         is_ejectable: false,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: true,
         device_provider: None,
     };
@@ -143,7 +175,7 @@ fn a_remote_session_that_the_os_calls_ejectable_still_disconnects() {
     let ctx = EjectContext {
         volume_id: "webdav-example-443-test_user_3",
         is_ejectable: true,
-        is_smb: true,
+        is_network_mount: true,
         is_remote_session: true,
         device_provider: None,
     };
@@ -159,7 +191,7 @@ fn a_device_provider_still_wins_over_a_remote_session() {
     let ctx = EjectContext {
         volume_id: "mtp-phone",
         is_ejectable: false,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: true,
         device_provider: Some("mtp"),
     };
@@ -174,7 +206,7 @@ fn non_ejectable_local_volume_errors() {
     let ctx = EjectContext {
         volume_id: "root",
         is_ejectable: false,
-        is_smb: false,
+        is_network_mount: false,
         is_remote_session: false,
         device_provider: None,
     };
@@ -301,7 +333,7 @@ fn smb_wins_over_ejectable_flag() {
     let ctx = EjectContext {
         volume_id: "smb-foo",
         is_ejectable: true,
-        is_smb: true,
+        is_network_mount: true,
         is_remote_session: false,
         device_provider: None,
     };

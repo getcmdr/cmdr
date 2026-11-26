@@ -122,9 +122,9 @@ pub fn resolve_path_volume_fast(path: &str) -> Option<VolumeInfo> {
 
         let smb = get_smb_mount_info(&mount_point);
         let name = resolved_volume_name(smb.as_ref(), || get_volume_name(&url, &mount_point));
-        // Local mounts only, as `get_attached_volumes` answers it: a network mount ends through
-        // its session, and the lookup can hang on a dead one.
-        let is_ejectable = !is_network_fs_type(Some(&fs_type)) && is_volume_ejectable(&url, &mount_point);
+        // As `get_attached_volumes` answers it: a network mount ejects by unmounting, like
+        // Finder's eject, without the NSURL lookup that can hang on a dead one.
+        let is_ejectable = is_network_fs_type(Some(&fs_type)) || is_volume_ejectable(&url, &mount_point);
         let supports_trash = supports_trash_for_mount(Some(&source), Some(&fs_type));
         // Same two answers `get_attached_volumes` gives this mount, from the same
         // predicate: a switcher whose checkmark lands on a CLOUD row while the pane

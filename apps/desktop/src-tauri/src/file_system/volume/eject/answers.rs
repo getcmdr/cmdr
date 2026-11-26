@@ -92,8 +92,10 @@ pub struct EjectContext<'a> {
     /// NSURL-derived ejectability for physical/DMG volumes. Always `false` for
     /// SMB and device volumes (those route via their own branches).
     pub is_ejectable: bool,
-    /// True if this is an SMB volume (any state: Direct, OsMount, Disconnected).
-    pub is_smb: bool,
+    /// True for a share: an SMB volume (any state: Direct, OsMount, Disconnected), or a volume
+    /// on a network filesystem mount, which Finder ejects by unmounting
+    /// (`eject::unmounts_like_a_share`). Wins over `is_ejectable`.
+    pub is_network_mount: bool,
     /// True if the volume is a remote server session Cmdr dials itself (SFTP,
     /// WebDAV), which detaches by dropping that session
     /// (`BackendKind::detaches_by_session_drop`).
@@ -120,7 +122,7 @@ pub fn decide_eject_action(ctx: &EjectContext) -> Result<EjectAction, EjectDecis
             volume_id: ctx.volume_id.to_string(),
         });
     }
-    if ctx.is_smb {
+    if ctx.is_network_mount {
         return Ok(EjectAction::DiskutilUnmount);
     }
     if ctx.is_ejectable {

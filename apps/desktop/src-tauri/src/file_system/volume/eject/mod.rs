@@ -12,8 +12,9 @@
 //!   server stays SAVED; forgetting it is `forget_server`, a different act. ❗
 //!   Asked BEFORE the mount questions, since `is_ejectable` is a question about a
 //!   mount and a dialed server has no mount-table row to answer it.
-//! - **SMB volume** (registered `SmbVolume` in `VolumeManager`): runs `diskutil
-//!   unmount`. FSEvents fires `NSWorkspaceDidUnmount`, which calls
+//! - **A share** (a registered `SmbVolume`, or any volume on a network filesystem
+//!   mount, such as a share macOS mounted; `unmounts_like_a_share`): runs `diskutil
+//!   unmount`, Finder's eject for a share. FSEvents fires `NSWorkspaceDidUnmount`, which calls
 //!   `Volume::on_unmount` (drops the smb2 session, stops the watcher) and the
 //!   volume manager unregisters it. Same pattern as `disconnect_smb_volume`.
 //! - **Physical or disk-image volume** (NSURL reports `isEjectable`): runs
@@ -134,7 +135,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
     // first: MTP storages aren't registered under a mount path at all.
     let provider = crate::device_volumes::provider_for_volume_id(volume_id).await;
 
-    let (mount_path, is_smb, is_remote_session) = if provider.is_some() {
+    let (mount_path, is_network_mount, is_remote_session) = if provider.is_some() {
         (String::new(), false, false)
     } else {
         let volume = get_volume_manager()
@@ -152,8 +153,12 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
             );
             return Ok(EjectOutcome::AlreadyGone);
         }
-        let is_smb = volume.backend_kind() == cmdr_fs::volume::BackendKind::Smb;
-        (mount_path, is_smb, volume.backend_kind().detaches_by_session_drop())
+        let is_network_mount = unmounts_like_a_share(volume.backend_kind(), || platform::is_network_mount(&mount_path));
+        (
+            mount_path,
+            is_network_mount,
+            volume.backend_kind().detaches_by_session_drop(),
+        )
     };
 
     // For physical volumes, ejectability comes from NSURL (macOS) /
@@ -161,7 +166,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
     // resolver instead of enumerating all volumes. Under a deadline: a disk image
     // backed by a file on a hung share can block this for good, and a stalled
     // check answers `NotResponding`, ❌ never a guessed "not ejectable".
-    let is_ejectable = if provider.is_some() || is_smb || is_remote_session {
+    let is_ejectable = if provider.is_some() || is_network_mount || is_remote_session {
         false
     } else {
         deadlines::within_deadline(
@@ -176,7 +181,7 @@ async fn eject_now(volume_id: String, scope: EjectScope) -> Result<EjectOutcome,
     let action = decide_eject_action(&EjectContext {
         volume_id,
         is_ejectable,
-        is_smb,
+        is_network_mount,
         is_remote_session,
         device_provider: provider.as_ref().map(|p| p.id()),
     })
@@ -694,6 +699,15 @@ async fn resolve_is_ejectable(mount_path: String) -> bool {
     tokio::task::spawn_blocking(move || platform::is_ejectable(&mount_path))
         .await
         .unwrap_or(false)
+}
+
+/// Whether a volume leaves the way Finder ejects a share, with `diskutil unmount`: an SMB volume
+/// in any state, or any volume whose mount is on a network filesystem. The second half is a share
+/// macOS mounted that Cmdr hasn't moved onto its own connection yet: a local volume on an `smbfs`
+/// mount, which macOS reports as not ejectable, so asking NSURL would refuse the Eject the
+/// switcher offered. `on_network_fs` reads the mount table, asked only when the kind can't say.
+fn unmounts_like_a_share(backend: cmdr_fs::volume::BackendKind, on_network_fs: impl FnOnce() -> bool) -> bool {
+    backend == cmdr_fs::volume::BackendKind::Smb || on_network_fs()
 }
 
 #[cfg(test)]
