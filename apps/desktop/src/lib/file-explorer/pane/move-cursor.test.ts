@@ -9,14 +9,14 @@ function makePaneRefStub(overrides: Partial<Record<string, ReturnType<typeof vi.
   const whenLoadSettles = overrides.whenLoadSettles ?? vi.fn().mockResolvedValue(undefined)
   const isInNetworkView = overrides.isInNetworkView ?? vi.fn().mockReturnValue(false)
   const getNetworkItemCount = overrides.getNetworkItemCount ?? vi.fn().mockReturnValue(0)
-  const getEffectiveTotalCount = overrides.getEffectiveTotalCount ?? vi.fn().mockReturnValue(10)
+  const getCursorRowCount = overrides.getCursorRowCount ?? vi.fn().mockReturnValue(10)
   const setCursorIndex = overrides.setCursorIndex ?? vi.fn().mockResolvedValue(undefined)
   const syncStateToMcpNow = overrides.syncStateToMcpNow ?? vi.fn().mockResolvedValue(undefined)
   const ref = {
     whenLoadSettles,
     isInNetworkView,
     getNetworkItemCount,
-    getEffectiveTotalCount,
+    getCursorRowCount,
     setCursorIndex,
     syncStateToMcpNow,
   } as unknown as FilePaneAPI
@@ -25,7 +25,7 @@ function makePaneRefStub(overrides: Partial<Record<string, ReturnType<typeof vi.
     whenLoadSettles,
     isInNetworkView,
     getNetworkItemCount,
-    getEffectiveTotalCount,
+    getCursorRowCount,
     setCursorIndex,
     syncStateToMcpNow,
   }
@@ -65,21 +65,29 @@ describe('moveCursorToTarget', () => {
 
   describe('numeric index', () => {
     it('sets the cursor when the index is in range', async () => {
-      const pane = makePaneRefStub({ getEffectiveTotalCount: vi.fn().mockReturnValue(5) })
+      const pane = makePaneRefStub({ getCursorRowCount: vi.fn().mockReturnValue(5) })
       const { deps } = makeDeps(pane.ref)
       await moveCursorToTarget('left', 3, 'tool', deps)
       expect(pane.setCursorIndex).toHaveBeenCalledWith(3)
     })
 
     it('throws when the index is out of range against the file-listing count', async () => {
-      const pane = makePaneRefStub({ getEffectiveTotalCount: vi.fn().mockReturnValue(5) })
+      const pane = makePaneRefStub({ getCursorRowCount: vi.fn().mockReturnValue(5) })
       const { deps } = makeDeps(pane.ref)
       await expect(moveCursorToTarget('left', 5, 'tool', deps)).rejects.toThrow('Index 5 is out of range')
       expect(pane.setCursorIndex).not.toHaveBeenCalled()
     })
 
+    it('reaches a trailing action row: the range is the cursor rows, one past the entries', async () => {
+      // Four entry rows plus the kind's trailing row ("Add server…") at index 4.
+      const pane = makePaneRefStub({ getCursorRowCount: vi.fn().mockReturnValue(5) })
+      const { deps } = makeDeps(pane.ref)
+      await moveCursorToTarget('left', 4, 'tool', deps)
+      expect(pane.setCursorIndex).toHaveBeenCalledWith(4)
+    })
+
     it('throws on a negative index', async () => {
-      const pane = makePaneRefStub({ getEffectiveTotalCount: vi.fn().mockReturnValue(5) })
+      const pane = makePaneRefStub({ getCursorRowCount: vi.fn().mockReturnValue(5) })
       const { deps } = makeDeps(pane.ref)
       await expect(moveCursorToTarget('left', -1, 'tool', deps)).rejects.toThrow('Index -1 is out of range')
     })
@@ -88,10 +96,10 @@ describe('moveCursorToTarget', () => {
       const pane = makePaneRefStub({
         isInNetworkView: vi.fn().mockReturnValue(true),
         getNetworkItemCount: vi.fn().mockReturnValue(2),
-        getEffectiveTotalCount: vi.fn().mockReturnValue(500),
+        getCursorRowCount: vi.fn().mockReturnValue(500),
       })
       const { deps } = makeDeps(pane.ref)
-      // Pre-fix this read getEffectiveTotalCount and let an out-of-range host
+      // Pre-fix this read the file listing's count and let an out-of-range host
       // index through, which the host browser then silently clamped.
       await expect(moveCursorToTarget('left', 2, 'tool', deps)).rejects.toThrow('Index 2 is out of range')
     })

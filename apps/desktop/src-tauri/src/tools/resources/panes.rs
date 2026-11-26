@@ -38,6 +38,11 @@ pub(crate) fn format_file_compact(
     };
 
     let mut parts = vec![format!("i:{} {} {}", index, file_type, file.name)];
+    // A kind's trailing action row: its command as locale-independent tokens, two spaces
+    // after the name like every row's facts (`mcp-row-name.ts`).
+    if let Some(command) = &file.action {
+        parts[0].push_str(&format!("  kind=action command={command}"));
+    }
 
     if include_details {
         if let Some(size) = file.size {

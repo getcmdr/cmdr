@@ -98,6 +98,8 @@
     import type { RenameStepDirection } from '../rename/rename-step'
     import { formatByteSizeTiered } from '#lib/units/index.js'
     import type { ListWords } from './list-words'
+    import { cursorRowCount, trailingRowIndex, trailingRowWithin, type TrailingRow } from './trailing-row'
+    import TrailingActionRow from './TrailingActionRow.svelte'
 
     interface Props {
         listingId: string
@@ -212,6 +214,10 @@
         listLabel?: string
         /** The cursor row just landed as the active descendant after focus or a navigation. */
         onCursorRowLanded?: () => void
+        /** The kind's last action row, drawn after every entry (`trailing-row.ts`). */
+        trailingRow?: TrailingRow
+        /** Runs the trailing row (a double-click or double tap on it). */
+        onActivateTrailingRow?: () => void
     }
 
     const {
@@ -261,7 +267,13 @@
         loadingOverlay,
         listLabel,
         onCursorRowLanded,
+        trailingRow,
+        onActivateTrailingRow,
     }: Props = $props()
+
+    /** Every row the list draws: the entries (`..` included, `totalCount`) and the trailing row. */
+    const rowCount = $derived(cursorRowCount(totalCount, trailingRow))
+    const trailingIndex = $derived(trailingRowIndex(totalCount, trailingRow))
 
     // Unique per mounted list, so the two panes (and a search-results list) never render the same row id.
     const listId = $props.id()
@@ -509,7 +521,7 @@
             bufferSize,
             containerSize: rowAreaHeight,
             scrollOffset: spacerScrollTop,
-            totalItems: totalCount,
+            totalItems: rowCount,
         }),
     )
 
@@ -527,7 +539,7 @@
     const firstVisibleGlobalIndex = $derived(rowHeight > 0 ? Math.floor(spacerScrollTop / rowHeight) : 0)
     const lastVisibleGlobalIndex = $derived(
         rowHeight > 0 && rowAreaHeight > 0
-            ? Math.min(totalCount - 1, Math.floor((spacerScrollTop + rowAreaHeight - 1) / rowHeight))
+            ? Math.min(rowCount - 1, Math.floor((spacerScrollTop + rowAreaHeight - 1) / rowHeight))
             : -1,
     )
     const isParentRowVisible = $derived(hasParent && firstVisibleGlobalIndex === 0)
@@ -642,16 +654,26 @@
     }
 
     /** Fetches the entries the current virtual window needs. */
+    // The window over the ENTRY rows: the trailing row is no entry, so the cache never fetches it.
+    const entryWindowEnd = $derived(Math.min(virtualWindow.endIndex, totalCount))
+
     function fetchVisibleRange(force = false): void {
-        void cache.fetch({ startIndex: virtualWindow.startIndex, endIndex: virtualWindow.endIndex, force })
+        void cache.fetch({ startIndex: virtualWindow.startIndex, endIndex: entryWindowEnd, force })
     }
 
     const visibleFiles = $derived.by(() =>
-        cache.windowRows({ startIndex: virtualWindow.startIndex, endIndex: virtualWindow.endIndex }),
+        cache.windowRows({ startIndex: virtualWindow.startIndex, endIndex: entryWindowEnd }),
+    )
+
+    /** The trailing row's index while the window reaches it, else `null`. */
+    const renderedTrailingIndex = $derived(
+        trailingRowWithin(trailingIndex, virtualWindow.startIndex, virtualWindow.endIndex),
     )
 
     // What `aria-activedescendant` may name: the cursor row, only while it's rendered.
-    const cursorRow = $derived(renderedCursorRow(listId, cursorIndex, visibleFiles))
+    const cursorRow = $derived(
+        renderedCursorRow(listId, cursorIndex, visibleFiles, { index: renderedTrailingIndex }),
+    )
     // The listbox, not the scroller around it: focus and `aria-activedescendant` share one element.
     let listboxElement: HTMLDivElement | undefined = $state()
     /** The renamed row's empty name slot, which `RenameOverlay` lays the field over. */
@@ -697,6 +719,11 @@
     // Selects and initiates drag tracking. `planRowMouseDown` (full-list-mouse.ts)
     // owns the decision and the drag payload; this only performs it.
     function handleMouseDown(event: MouseEvent, index: number) {
+        // The trailing row only takes the cursor: no modifier selects it, and it never drags.
+        if (index === trailingIndex) {
+            onSelect({ index })
+            return
+        }
         const plan = planRowMouseDown({
             event,
             index,
@@ -747,6 +774,10 @@
         hold: handleMouseDown,
         activate: (actualIndex) => {
             cancelClickToRename()
+            if (actualIndex === trailingIndex) {
+                onActivateTrailingRow?.()
+                return
+            }
             const entry = cache.getEntryAt(actualIndex)
             if (entry) onNavigate(entry)
         },
@@ -807,7 +838,7 @@
     // read sees the clamped value; declared before the refresh effect below so its
     // fetch already uses the corrected window.
     $effect(() => {
-        dependOn(totalCount, rowAreaHeight, rowHeight)
+        dependOn(rowCount, rowAreaHeight, rowHeight)
         untrack(() => {
             if (!scrollContainer || scrollContainer.scrollTop === scrollTop) return
             scrollTop = scrollContainer.scrollTop
@@ -960,7 +991,7 @@
                         {...fileRowAttributes({
                             listId,
                             globalIndex,
-                            totalCount,
+                            totalCount: rowCount,
                             isMarked: selectedIndices.has(globalIndex),
                             name: fileRowName({
                                 entry: file,
@@ -1177,6 +1208,22 @@
                         {/if}
                     </div>
                 {/each}
+                {#if trailingRow && renderedTrailingIndex !== null}
+                    {@const trailingAt = renderedTrailingIndex}
+                    <TrailingActionRow
+                        row={trailingRow}
+                        {listId}
+                        index={trailingAt}
+                        {rowCount}
+                        isUnderCursor={trailingAt === cursorIndex}
+                        isStriped={stripedRows && trailingAt % 2 === 1}
+                        {rowHeight}
+                        onPress={() => { onSelect({ index: trailingAt }) }}
+                        onPointerDown={(e: PointerEvent) => { rowActivation.onPointerDown(e, trailingAt) }}
+                        onClick={() => { rowActivation.onClick(trailingAt) }}
+                        onDoubleClick={() => { rowActivation.onDoubleClick(trailingAt) }}
+                    />
+                {/if}
             </div>
         </div>
         </div>

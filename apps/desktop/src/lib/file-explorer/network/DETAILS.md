@@ -446,8 +446,11 @@ seams below is reached on screen. ❌ No view holds an `if server`:
   menu is `ServersListRowMenu.svelte`, beside the path where a share list's account chip sits, a member of the chip's
   ONE `openMenu`: the hub's own menus and actions (`createHubActions`), opened per row by its id.
 - **MCP**: `../pane/mcp-row-name.ts` adds `protocol=` / `status=` / `address=` / `account=` to a row's name.
-- **Not here yet**: the trailing "+ Add server…" row (M7), the routing, the landing, the discovery hold, and Copy path
-  between panes off a listing row (M8).
+- **"Add server…"**: the list ends in a trailing action row (`../pane/list-kind-words.ts::trailingRowFor`, running
+  `servers.connect`, the sheet F7 opens), drawn by the views' generic trailing row (`../views/DETAILS.md` § "The
+  trailing action row"): last under any sort and filter, never selected or counted. `cmdr://state` lists it last as
+  `+ Add server…  kind=action command=servers.connect`.
+- **Not here yet**: the routing, the landing, the discovery hold, and Copy path between panes off a listing row (M8).
 
 **Gotchas for the switch**: the engine's date sort puts a row with no date (a server never used) FIRST ascending and
 last descending, as for any file; and under the "Folders always by name" directory mode the Last used sort keeps servers

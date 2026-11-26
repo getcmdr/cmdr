@@ -219,8 +219,12 @@ export interface FilePaneAPI {
   getNetworkCursorEntry(): NetworkCursorEntry | null
   setCursorIndex(index: number): Promise<void>
   getCursorIndex(): number
-  /** Total cursor-addressable rows (incl. the `..` row; snapshot count for snapshot panes). */
+  /** The entry rows (incl. the `..` row; snapshot count for snapshot panes), never a trailing action row. */
   getEffectiveTotalCount(): number
+  /** Every row the cursor reaches: the entry rows plus a kind's trailing action row (`trailing-row-pane.ts`). */
+  getCursorRowCount(): number
+  /** The trailing action row's index when `name` names it (MCP `move_cursor`), else `null`. */
+  trailingRowIndexNamed(name: string): number | null
   /** Awaitable, immediate MCP state push (skips the debounce). See FilePane.svelte. */
   syncStateToMcpNow(): Promise<void>
   /**

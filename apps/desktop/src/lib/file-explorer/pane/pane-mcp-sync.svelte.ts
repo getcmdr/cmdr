@@ -71,6 +71,12 @@ export interface PaneMcpSyncDeps {
    */
   getRowCount: () => number
   /**
+   * The kind's trailing action row as its mirror line when the mirrored window (`visibleEnd`,
+   * exclusive) reaches it, else `null` (`trailing-row-pane.ts`). It's listed last at its screen
+   * index, and `totalFiles` (`getRowCount`) never counts it: it's no file.
+   */
+  getTrailingEntry?: (visibleEnd: number) => PaneFileEntry | null
+  /**
    * The search-results snapshot's entries when this pane is showing one, else
    * `null`. A snapshot pane has no listing to fetch rows from, so its rows come
    * from here instead (`snapshot-mcp-rows.ts`).
@@ -230,6 +236,21 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
     }
   }
 
+  /** Appends the kind's trailing action row when `reachesIt` and the mirrored window ends past it. */
+  function withTrailingRow(files: PaneFileEntry[], where: { reachesIt: boolean }): PaneFileEntry[] {
+    const trailing = where.reachesIt ? deps.getTrailingEntry?.(deps.getVisibleRangeEnd()) : null
+    if (trailing) files.push(trailing)
+    return files
+  }
+
+  /**
+   * A listing with no rows (a filter matching nothing) still shows its trailing action row, at
+   * index 0. That branch mirrors no `..`, so only a parentless pane's index matches the screen.
+   */
+  function emptyListingMirrorsTrailingRow(): boolean {
+    return deps.getSyncsToMcp() && deps.getListingId() !== '' && !deps.getHasParent()
+  }
+
   /** Build file list for MCP state sync */
   async function buildMcpFileList(): Promise<PaneFileEntry[]> {
     const files: PaneFileEntry[] = []
@@ -239,7 +260,7 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
     if (snapshotEntries) {
       return snapshotMcpRows(snapshotEntries, deps.getVisibleRangeStart(), deps.getVisibleRangeEnd(), MAX_MIRRORED_ROWS)
     }
-    if (skipMcpFileSync()) return files
+    if (skipMcpFileSync()) return withTrailingRow(files, { reachesIt: emptyListingMirrorsTrailingRow() })
 
     const listingId = deps.getListingId()
     const hasParent = deps.getHasParent()
@@ -283,12 +304,16 @@ export function createPaneMcpSync(deps: PaneMcpSyncDeps) {
     // mid-flight: the listing shrank under the count the frontend is iterating.
     // A short list is the right MCP state for that moment.
     const maxToFetch = Math.max(0, Math.min(backendEnd - backendStart, MAX_MIRRORED_ROWS, totalCount - backendStart))
+    let fetched = 0
     if (maxToFetch > 0) {
       const range = await getFileRange(listingId, backendStart, maxToFetch, includeHidden)
       const inFlux = inFluxAnswerFor(deps.getVolumeId())
       for (const entry of range) files.push(toMcpFileEntry(entry, inFlux))
+      fetched = range.length
     }
-    return files
+    // Last, right after the final entry: only when the window holds every entry up to it, so
+    // its index in the mirror is its index on screen.
+    return withTrailingRow(files, { reachesIt: backendStart + fetched === totalCount })
   }
 
   /**

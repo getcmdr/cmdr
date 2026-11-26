@@ -245,6 +245,21 @@ fn test_format_file_compact_appends_tags_marker() {
 }
 
 #[test]
+fn test_format_file_compact_action_row() {
+    // A kind's trailing action row (the Servers list's "Add server…"): its command as tokens.
+    let row = PaneFileEntry {
+        name: "+ Add server…".to_string(),
+        action: Some("servers.connect".to_string()),
+        ..Default::default()
+    };
+    let formatted = format_file_compact(&row, 4, true, false, true, DisplayedDate::Modified);
+    assert_eq!(
+        formatted,
+        "i:4 f + Add server…  kind=action command=servers.connect [cur]"
+    );
+}
+
+#[test]
 fn test_build_pane_yaml() {
     let state = PaneState {
         path: "/Users/test".to_string(),

@@ -65,7 +65,8 @@
         VolumeChangePayload,
     } from './types'
     import { paneFooterVisibility } from './pane-footer'
-    import { listWordsFor } from './list-kind-words'
+    import { listWordsFor, trailingRowFor } from './list-kind-words'
+    import { createTrailingRowPane } from './trailing-row-pane'
     import { getMutationTick, getSnapshot, snapshotIdFromPanePath } from '#lib/search/snapshot-store.svelte.js'
     import RemoteConnectView from './RemoteConnectView.svelte'
     import { createPlaceConnect } from './place-connect.svelte'
@@ -300,6 +301,8 @@
             // WHICH rows are selected without changing how many.
             debouncedServicesSelection.call()
         },
+        // A kind's trailing action row is no entry: the cursor reaches it, no gesture selects it.
+        getSelectableEnd: () => trailing.selectableEnd(),
     })
 
     // Operation snapshot: tracks which files were selected when an operation started,
@@ -710,6 +713,10 @@
      */
     // The list's words where the pane's kind has its own (a share list's "Description", "8 shares").
     const listWords = $derived(listWordsFor(caps.kind))
+    // And its last action row, if any ("Add server…"): `trailing-row-pane.ts` answers every question about it.
+    const trailingRow = $derived(trailingRowFor(caps.kind))
+    const trailing = createTrailingRowPane({ getRow: () => trailingRow, getEntryRows: () => effectiveTotalCount,
+        getCursorIndex: () => cursorIndex, runCommand: (commandId) => onCommand?.(commandId) })
     const paneViewKind = $derived<PaneViewKind>(
         isNetworkView ? 'network' : isSearchResultsView ? 'search-results' : 'normal',
     )
@@ -969,6 +976,12 @@
     export function getEffectiveTotalCount(): number {
         return effectiveTotalCount
     }
+    export function getCursorRowCount(): number {
+        return trailing.cursorRows()
+    }
+    export function trailingRowIndexNamed(name: string): number | null {
+        return trailing.indexNamed(name)
+    }
 
     export function autoScrollDuringDrag(
         position: DragAutoScrollPointer,
@@ -1101,11 +1114,12 @@
     export function whenRowStateReady(timeoutMs: number): Promise<boolean> { return rowState.whenReady(timeoutMs) }
     export function getRowState() { return rowState }
     export function applyRowResult(result: ResortResult): () => void {
+        const previousEntryRows = effectiveTotalCount
         totalCount = result.totalCount
         hiddenCount = result.hiddenCount
         effectiveSortBy = result.effectiveSortBy
         if (result.newSelectedIndices !== null) selection.setSelectedIndices(toFrontendIndices(result.newSelectedIndices, hasParent))
-        cursorIndex = result.newCursorIndex === null ? Math.max(0, Math.min(cursorIndex, effectiveTotalCount - 1)) : result.newCursorIndex + (hasParent ? 1 : 0)
+        cursorIndex = result.newCursorIndex === null ? trailing.cursorAcrossRebuild({ cursorIndex, previousEntryRows }) : result.newCursorIndex + (hasParent ? 1 : 0)
         return () => { void setCursorIndex(cursorIndex); refreshView() }
     }
 
@@ -1208,7 +1222,7 @@
      */
     export function toggleSelectionAndMoveDownAtCursor(): void {
         selection.toggleAt(cursorIndex, hasParent)
-        if (cursorIndex < effectiveTotalCount - 1) {
+        if (cursorIndex < trailing.cursorRows() - 1) {
             const listRef = viewMode === 'brief' ? briefListRef : fullListRef
             cursorNav.applyNavigation({ newIndex: cursorIndex + 1, listRef, shiftKey: false })
         }
@@ -1499,6 +1513,7 @@
         // Rows on screen (`..` included; the snapshot's own count on a search pane),
         // against the backend listing count above.
         getRowCount: () => effectiveTotalCount,
+        getTrailingEntry: trailing.mcpEntry,
         // A search-results pane's rows live in the frontend snapshot, not a listing.
         getSnapshotEntries: () => searchSnapshot?.entries ?? null,
         // And so does their ORDER. The tab's own `sortBy` / `sortOrder` belong to
@@ -1735,7 +1750,7 @@
         extendSelection: ({ fromIndex, toIndex, overflow, hasParent: parent }) =>
             { selection.handleShiftKeyboardNavigation(fromIndex, toIndex, overflow, parent); },
         getHasParent: () => hasParent,
-        getEffectiveTotalCount: () => effectiveTotalCount,
+        getEffectiveTotalCount: () => trailing.cursorRows(),
         getBriefListRef: () => briefListRef,
         getFullListRef: () => fullListRef,
     })
@@ -1772,6 +1787,7 @@
             searchResultsViewRef?.openCursorItem()
             return
         }
+        if (trailing.activateUnderCursor()) return
         const entry = getEntryUnderCursor()
         if (!entry) {
             throw new Error('No entry under cursor')
@@ -1794,6 +1810,12 @@
         if (isNetworkView) {
             if ('expectedPath' in gate) return 'changedWhileAsking'
             networkMountViewRef?.openCursorItem()
+            return 'opened'
+        }
+        if (trailing.isUnderCursor()) {
+            // An action, not a file: a gate a person agreed to names a path it never had.
+            if ('expectedPath' in gate) return 'changedWhileAsking'
+            trailing.run()
             return 'opened'
         }
         const entry = entryForTool()
@@ -1835,6 +1857,7 @@
         getViewMode: () => viewMode,
         getHasParent: () => hasParent,
         getEntryUnderCursor,
+        activateTrailingRow: trailing.activateUnderCursor,
         handleNetworkKeyDown: (e) => networkMountViewRef?.handleKeyDown(e),
         handleSearchResultsKeyDown: (e) => { searchPaneKeys.handleSearchResultsKeyDown(e); },
         handleBriefModeKeys: (e) => { cursorNav.handleBriefModeKeys(e); },
@@ -2375,6 +2398,8 @@
                 totalCount={listingPresentation.totalCount}
                 hiddenCount={listingPresentation.hiddenCount}
                 {listWords}
+                {trailingRow}
+                onActivateTrailingRow={trailing.run}
                 {includeHidden}
                 {cacheGeneration}
                 {softRefreshTick}
@@ -2429,6 +2454,8 @@
                 totalCount={listingPresentation.totalCount}
                 hiddenCount={listingPresentation.hiddenCount}
                 {listWords}
+                {trailingRow}
+                onActivateTrailingRow={trailing.run}
                 {includeHidden}
                 {cacheGeneration}
                 {softRefreshTick}

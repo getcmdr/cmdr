@@ -7,7 +7,8 @@
  *   counts shares.
  * - The Servers list (`network` at `smb://`): its Ext column is each server's Details
  *   (prose), its date is "Last used", it has no Size, its footer counts servers with the
- *   nearby search's state (`network-store.svelte.ts`, read live), and an empty list names F7.
+ *   nearby search's state (`network-store.svelte.ts`, read live), an empty list names F7, and
+ *   it ends in an "Add server…" row (`trailingRowFor`).
  */
 
 import { tString } from '#lib/intl/messages.svelte.js'
@@ -16,6 +17,7 @@ import { getNetworkEnabled } from '#lib/settings/reactive-settings.svelte.js'
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import { getDiscoveryState } from '../network/network-store.svelte'
 import type { ListWords } from '../views/list-words'
+import type { TrailingRow } from '../views/trailing-row'
 import type { VolumeKind } from './volume-capabilities'
 
 /** The list's words on a pane of `kind`, or `undefined` for a folder's own. */
@@ -44,6 +46,20 @@ export function listWordsFor(kind: VolumeKind): ListWords | undefined {
   }
   return undefined
 }
+
+/**
+ * The last action row a pane of `kind` draws after its entries (`../views/trailing-row.ts`), or
+ * `undefined` for none. The Servers list ends in "Add server…", which opens the same sheet F7 does.
+ */
+export function trailingRowFor(kind: VolumeKind): TrailingRow | undefined {
+  if (kind === 'network') {
+    return { label: tString('servers.hub.addServer'), commandId: 'servers.connect', mcpName: ADD_SERVER_MCP_NAME }
+  }
+  return undefined
+}
+
+/** The Add server row's name in `cmdr://state`, English whatever the locale. */
+const ADD_SERVER_MCP_NAME = '+ Add server…'
 
 /** "5 servers", plus where the nearby search stands: still looking, or turned off. */
 function serverCountKey(): MessageKey {

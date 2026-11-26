@@ -36,6 +36,8 @@ pub(crate) use ack::{
 };
 
 #[cfg(test)]
+mod action_row_tests;
+#[cfg(test)]
 mod tests;
 
 use serde_json::{Value, json};
@@ -270,7 +272,7 @@ pub(super) fn resolve_pane_target_paths(state: &PaneState, names: Option<&[Strin
         let mut paths = Vec::with_capacity(names.len());
         let mut missing = Vec::new();
         for name in names {
-            match state.files.iter().find(|f| &f.name == name) {
+            match state.files.iter().find(|f| &f.name == name && !f.is_action()) {
                 Some(entry) => paths.push(entry.path.clone()),
                 None => missing.push(name.clone()),
             }
@@ -306,6 +308,8 @@ pub(super) fn resolve_pane_target_paths(state: &PaneState, names: Option<&[Strin
         .cursor_index
         .checked_sub(state.loaded_start)
         .and_then(|i| state.files.get(i))
+        // A kind's trailing action row ("Add server…") is no item to act on.
+        .filter(|entry| !entry.is_action())
         .ok_or_else(|| {
             ToolError::invalid_params("nothing is selected and the cursor isn't on a listed item; pass 'names'")
         })?;

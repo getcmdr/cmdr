@@ -247,9 +247,15 @@ export function renderedCursorRow(
   listId: string,
   cursorIndex: number,
   rows: Iterable<{ file: FileEntry; globalIndex: number }>,
+  /** The kind's trailing action row (`trailing-row.ts`): its index while it's rendered, else `null`. */
+  trailing?: { index: number | null },
 ): CursorRowRef | undefined {
   for (const row of rows) {
     if (row.globalIndex === cursorIndex) return { id: fileRowId(listId, cursorIndex), key: row.file.path }
   }
+  if (trailing?.index === cursorIndex) return { id: fileRowId(listId, cursorIndex), key: TRAILING_ROW_KEY }
   return undefined
 }
+
+/** The trailing row's `CursorRowRef.key`: no entry's path is empty. */
+const TRAILING_ROW_KEY = ''

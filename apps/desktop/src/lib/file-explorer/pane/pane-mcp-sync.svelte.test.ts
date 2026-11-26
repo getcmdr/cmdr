@@ -158,6 +158,66 @@ describe('buildMcpFileList', () => {
     expect(files).toHaveLength(2)
   })
 
+  it("lists a kind's trailing action row last, at its screen index, once the window reaches it", async () => {
+    const trailing = {
+      name: '+ Add server…',
+      path: '',
+      isDirectory: false,
+      size: null,
+      recursiveSize: null,
+      modified: null,
+      recursiveSizeUpdating: null,
+      action: 'servers.connect',
+    }
+    const getTrailingEntry = vi.fn((visibleEnd: number) => (visibleEnd > 3 ? trailing : null))
+    const sync = createPaneMcpSync(
+      deps({
+        getTotalCount: () => 3,
+        getRowCount: () => 3,
+        getVisibleRangeStart: () => 0,
+        getVisibleRangeEnd: () => 4,
+        getTrailingEntry,
+      }),
+    )
+
+    const files = await sync.buildMcpFileList()
+
+    expect(files.map((file) => file.name)).toEqual(['file-0.bin', 'file-1.bin', 'file-2.bin', '+ Add server…'])
+    expect(getTrailingEntry).toHaveBeenCalledWith(4)
+  })
+
+  it('leaves it out while the window stops short of the last entry, and lists it alone on an empty list', async () => {
+    const trailing = {
+      name: '+ Add server…',
+      path: '',
+      isDirectory: false,
+      size: null,
+      recursiveSize: null,
+      modified: null,
+      recursiveSizeUpdating: null,
+      action: 'servers.connect',
+    }
+    const getTrailingEntry = () => trailing
+    const partial = createPaneMcpSync(
+      deps({ getTotalCount: () => 300, getVisibleRangeStart: () => 0, getVisibleRangeEnd: () => 50, getTrailingEntry }),
+    )
+    expect((await partial.buildMcpFileList()).at(-1)?.name).toBe('file-49.bin')
+
+    // A filter matching nothing: no entries, the trailing row at index 0.
+    getFileRange.mockClear()
+    const empty = createPaneMcpSync(
+      deps({
+        getTotalCount: () => 0,
+        getRowCount: () => 0,
+        getVisibleRangeStart: () => 0,
+        getVisibleRangeEnd: () => 1,
+        getTrailingEntry,
+      }),
+    )
+    expect(await empty.buildMcpFileList()).toEqual([trailing])
+    expect(getFileRange).not.toHaveBeenCalled()
+  })
+
   it('asks the backend nothing for a pane that does not mirror to MCP', async () => {
     const sync = createPaneMcpSync(deps({ getSyncsToMcp: () => false }))
 

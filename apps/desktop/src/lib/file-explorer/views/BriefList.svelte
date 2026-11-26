@@ -89,6 +89,8 @@
     import type { RenameStepDirection } from '../rename/rename-step'
     import { formatByteSizeTiered } from '#lib/units/index.js'
     import type { ListWords } from './list-words'
+    import { cursorRowCount, trailingRowIndex, trailingRowWithin, type TrailingRow } from './trailing-row'
+    import TrailingActionRow from './TrailingActionRow.svelte'
     import { createRowActivation } from './row-activation'
     import { sortFallbackNote } from '../pane/sort-fallback'
 
@@ -175,6 +177,10 @@
         listLabel?: string
         /** The cursor row just landed as the active descendant after focus or a navigation. */
         onCursorRowLanded?: () => void
+        /** The kind's last action row, drawn after every entry (`trailing-row.ts`). */
+        trailingRow?: TrailingRow
+        /** Runs the trailing row (a double-click or double tap on it). */
+        onActivateTrailingRow?: () => void
     }
 
     const {
@@ -220,7 +226,13 @@
         loadingOverlay,
         listLabel,
         onCursorRowLanded,
+        trailingRow,
+        onActivateTrailingRow,
     }: Props = $props()
+
+    /** Every row the list draws: the entries (`..` included, `totalCount`) and the trailing row. */
+    const rowCount = $derived(cursorRowCount(totalCount, trailingRow))
+    const trailingIndex = $derived(trailingRowIndex(totalCount, trailingRow))
 
     // Unique per mounted list, so the two panes never render the same row id.
     const listId = $props.id()
@@ -334,7 +346,7 @@
     }
 
     // Total number of columns needed (FE-derived; backend uses the same formula).
-    const totalColumns = $derived(Math.ceil(totalCount / itemsPerColumn))
+    const totalColumns = $derived(Math.ceil(rowCount / itemsPerColumn))
 
     /**
      * Cap applied to each column AFTER chrome is added.
@@ -508,7 +520,12 @@
         const retained = entries.length > 0 && cachedEntriesListingId !== listingId
         const parentRow = retained ? cachedEntriesParentRow : live
 
-        const columns: { columnIndex: number; files: { file: FileEntry; globalIndex: number }[] }[] = []
+        const columns: {
+            columnIndex: number
+            files: { file: FileEntry; globalIndex: number }[]
+            /** The trailing row's index when this column draws it, else `null`. */
+            trailingAt: number | null
+        }[] = []
         for (let col = virtualWindow.startIndex; col < virtualWindow.endIndex; col++) {
             const startFileIndex = col * itemsPerColumn
             const endFileIndex = Math.min(startFileIndex + itemsPerColumn, totalCount)
@@ -528,8 +545,9 @@
                     columnFiles.push({ file: entry, globalIndex: i })
                 }
             }
-            if (columnFiles.length > 0) {
-                columns.push({ columnIndex: col, files: columnFiles })
+            const trailingAt = trailingRowWithin(trailingIndex, startFileIndex, startFileIndex + itemsPerColumn)
+            if (columnFiles.length > 0 || trailingAt !== null) {
+                columns.push({ columnIndex: col, files: columnFiles, trailingAt })
             }
         }
         return columns
@@ -541,6 +559,7 @@
             listId,
             cursorIndex,
             visibleColumns.flatMap((column) => column.files),
+            { index: visibleColumns.find((column) => column.trailingAt !== null)?.trailingAt ?? null },
         ),
     )
     const listFocus = createListFocus({
@@ -631,6 +650,11 @@
     // Handle file mousedown - selects and initiates drag tracking
     function handleMouseDown(event: MouseEvent, index: number) {
         if (event.button !== 0) return
+        // The trailing row only takes the cursor: no modifier selects it, and it never drags.
+        if (index === trailingIndex) {
+            onSelect({ index })
+            return
+        }
 
         const entry = getEntryAt(index)
         if (!entry) return
@@ -700,6 +724,10 @@
         hold: handleMouseDown,
         activate: (index) => {
             cancelClickToRename()
+            if (index === trailingIndex) {
+                onActivateTrailingRow?.()
+                return
+            }
             const entry = getEntryAt(index)
             if (entry) onNavigate(entry)
         },
@@ -772,7 +800,7 @@
             const visibleColumns = countVisibleColumns()
             const result = handleNavigationShortcut(event, {
                 currentIndex: cursorIndex,
-                totalCount,
+                totalCount: rowCount,
                 itemsPerColumn,
                 visibleColumns,
             })
@@ -787,7 +815,7 @@
             return { newIndex, overflow: newIndex === cursorIndex }
         }
         if (key === 'ArrowDown') {
-            const newIndex = Math.min(totalCount - 1, cursorIndex + 1)
+            const newIndex = Math.min(rowCount - 1, cursorIndex + 1)
             return { newIndex, overflow: newIndex === cursorIndex }
         }
         if (key === 'ArrowLeft') {
@@ -796,7 +824,7 @@
         }
         if (key === 'ArrowRight') {
             const raw = cursorIndex + itemsPerColumn
-            return { newIndex: raw < totalCount ? raw : totalCount - 1, overflow: raw >= totalCount }
+            return { newIndex: raw < rowCount ? raw : rowCount - 1, overflow: raw >= rowCount }
         }
         return undefined
     }
@@ -963,7 +991,7 @@
         const startCol = virtualWindow.startIndex
         const endCol = virtualWindow.endIndex
         const startItem = startCol * itemsPerColumn
-        const endItem = Math.min(endCol * itemsPerColumn, totalCount)
+        const endItem = Math.min(endCol * itemsPerColumn, rowCount)
         onVisibleRangeChange?.({ start: startItem, end: endItem })
     })
 </script>
@@ -1096,7 +1124,7 @@
                                 {...fileRowAttributes({
                                     listId,
                                     globalIndex,
-                                    totalCount,
+                                    totalCount: rowCount,
                                     isMarked: selectedIndices.has(globalIndex),
                                     name: fileRowName({
                                         entry: file,
@@ -1163,6 +1191,22 @@
                                 {/if}
                             </div>
                         {/each}
+                        {#if trailingRow && column.trailingAt !== null}
+                            {@const trailingAt = column.trailingAt}
+                            <TrailingActionRow
+                                row={trailingRow}
+                                {listId}
+                                index={trailingAt}
+                                {rowCount}
+                                isUnderCursor={trailingAt === cursorIndex}
+                                isStriped={stripedRows && trailingAt % 2 === 1}
+                                {rowHeight}
+                                onPress={() => { onSelect({ index: trailingAt }) }}
+                                onPointerDown={(e: PointerEvent) => { rowActivation.onPointerDown(e, trailingAt) }}
+                                onClick={() => { rowActivation.onClick(trailingAt) }}
+                                onDoubleClick={() => { rowActivation.onDoubleClick(trailingAt) }}
+                            />
+                        {/if}
                     </div>
                 {/each}
             </div>

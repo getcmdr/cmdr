@@ -5,8 +5,21 @@ import { SvelteSet } from 'svelte/reactivity'
 // CRITICAL: Always use mutations (.add(), .delete(), .clear()) - never reassign.
 // SvelteSet only tracks mutations for reactivity.
 
-export function createSelectionState(options?: { onChanged?: () => void }) {
+export interface SelectionStateOptions {
+  onChanged?: () => void
+  /**
+   * The first index no gesture may select: a kind's trailing action row
+   * (`../views/trailing-row.ts`), which the cursor reaches but which is no entry. Omitted,
+   * every index a gesture names is selectable.
+   */
+  getSelectableEnd?: () => number
+}
+
+export function createSelectionState(options?: SelectionStateOptions) {
   const onChanged = options?.onChanged
+  /** Whether a gesture may select `index`: never `..` (index 0 when `hasParent`), never past the entries. */
+  const selectable = (index: number, hasParent: boolean) =>
+    !(hasParent && index === 0) && index < (options?.getSelectableEnd?.() ?? Number.POSITIVE_INFINITY)
 
   const selectedIndices: SvelteSet<number> = new SvelteSet()
   let selectionAnchorIndex = $state<number | null>(null)
@@ -19,8 +32,8 @@ export function createSelectionState(options?: { onChanged?: () => void }) {
     const end = Math.max(a, b)
     const indices: number[] = []
     for (let i = start; i <= end; i++) {
-      // Skip ".." entry
-      if (hasParent && i === 0) continue
+      // Skip ".." and the trailing row
+      if (!selectable(i, hasParent)) continue
       indices.push(i)
     }
     return indices
@@ -87,8 +100,8 @@ export function createSelectionState(options?: { onChanged?: () => void }) {
   }
 
   function toggleAt(index: number, hasParent: boolean): boolean {
-    // Can't select ".." entry
-    if (hasParent && index === 0) return false
+    // Can't select ".." or the trailing row
+    if (!selectable(index, hasParent)) return false
 
     let result: boolean
     if (selectedIndices.has(index)) {
@@ -131,6 +144,7 @@ export function createSelectionState(options?: { onChanged?: () => void }) {
     const target = oldIsParent ? true : !selectedIndices.has(oldCursor)
 
     const apply = (i: number) => {
+      if (!selectable(i, hasParent)) return
       if (target) selectedIndices.add(i)
       else selectedIndices.delete(i)
     }
@@ -197,6 +211,7 @@ export function createSelectionState(options?: { onChanged?: () => void }) {
   // change, so the MCP state sync and `selectedCount`-driven UI tick once.
   function applyIndices(idxs: number[], mode: 'add' | 'remove', hasParent: boolean): void {
     for (const i of idxs) {
+      if (mode === 'add' && !selectable(i, hasParent)) continue
       if (hasParent && i === 0) continue
       if (mode === 'add') selectedIndices.add(i)
       else selectedIndices.delete(i)

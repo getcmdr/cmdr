@@ -78,6 +78,20 @@ pub struct PaneFileEntry {
     /// agent sees the same colored dots the UI shows. Empty in the common case.
     #[serde(default)]
     pub tags: Vec<cmdr_fs::entry::TagRef>,
+    /// The command a kind's trailing action row runs (`servers.connect` for the Servers
+    /// list's "Add server…", `views/trailing-row.ts`), `None` for every real row. Such a row
+    /// is no file: `cmdr://state` lists it as `kind=action`, and no file tool ever takes it
+    /// as a target (`is_action`).
+    #[serde(default)]
+    pub action: Option<String>,
+}
+
+impl PaneFileEntry {
+    /// Whether this is a kind's trailing action row rather than an entry: never an
+    /// operation's source or target, and never found by name for one.
+    pub fn is_action(&self) -> bool {
+        self.action.is_some()
+    }
 }
 
 /// State of a single pane.

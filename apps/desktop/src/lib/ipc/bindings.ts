@@ -17493,6 +17493,13 @@ export type PaneFileEntry = {
    *  agent sees the same colored dots the UI shows. Empty in the common case.
    */
   tags?: TagRef[]
+  /**
+   *  The command a kind's trailing action row runs (`servers.connect` for the Servers
+   *  list's "Add server…", `views/trailing-row.ts`), `None` for every real row. Such a row
+   *  is no file: `cmdr://state` lists it as `kind=action`, and no file tool ever takes it
+   *  as a target (`is_action`).
+   */
+  action?: string | null
 }
 
 // Where a pane's listing stands, as the pane shows it.

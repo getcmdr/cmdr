@@ -448,6 +448,12 @@ export function createPaneCommands(access: PaneAccess, dialogs: DialogState) {
       await paneRef.setCursorIndex(idx)
       return true
     }
+    // A kind's trailing action row ("Add server…") is no listing entry: the pane knows its index.
+    const trailingIndex = paneRef.trailingRowIndexNamed(name)
+    if (trailingIndex !== null) {
+      await paneRef.setCursorIndex(trailingIndex)
+      return true
+    }
     return moveCursorByNameInFileListing(paneRef, name)
   }
 

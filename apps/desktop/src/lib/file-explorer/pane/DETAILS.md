@@ -148,8 +148,10 @@ suite:
   pane) and `list-kind-words.ts` (the list's words and the F-key bar's on the kind). § "A server's share list
   (kind-from-path)". Its open seam runs `network-row-open.ts` first: a row on the `network` volume that leads off it (a
   Servers row's place, an S3 account's root, a saved share's place) goes there before any generic open.
-  `mcp-row-name.ts`: a row's facts as `cmdr://state` name tokens. The Servers list's seams together:
-  `../network/DETAILS.md` § "The Servers list as a listing".
+  `mcp-row-name.ts`: a row's facts as `cmdr://state` name tokens. `trailing-row-pane.ts`: the pane's every answer about
+  a kind's trailing action row (cursor rows, selection's end, Enter, `open_under_cursor`, `move_cursor` by name, the
+  cursor across a rebuild, its MCP line), `../views/DETAILS.md` § "The trailing action row". The Servers list's seams
+  together: `../network/DETAILS.md` § "The Servers list as a listing".
 - `share-mount.svelte.ts`: mounting a share from a server's share list (the wait, Cancel, the sign-in a refused mount
   asks for, the refusal, and its `mountErrorInfo` for the MCP mirror), rendered by FilePane through `RemoteConnectView`
   (§ "The connect views").

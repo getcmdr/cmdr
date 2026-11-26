@@ -126,6 +126,14 @@ pub(super) fn empty_operation_error(
             "Nothing to {verb}: no files are selected in the {pane} pane and the cursor is on the parent entry (..). Use select or move_cursor first."
         ));
     }
+    if let Some(entry) = window_index.and_then(|i| state.files.get(i))
+        && entry.is_action()
+    {
+        return Some(format!(
+            "Nothing to {verb}: no files are selected in the {pane} pane and the cursor is on the \"{}\" action row, not a file. Use select or move_cursor first.",
+            entry.name
+        ));
+    }
     // An empty folder renders no file rows at all (the FE shows an empty-state overlay
     // instead, and skips even the `..` row), so the push carries zero files while
     // `total_files` still counts the parent entry. Nothing is actionable either way.
@@ -309,7 +317,7 @@ fn resolve_rename_target(
         let entry = state
             .files
             .iter()
-            .find(|f| f.name == name)
+            .find(|f| f.name == name && !f.is_action())
             .ok_or_else(|| ToolError::invalid_params(format!("'{name}' isn't in the listing")))?;
         return Ok((entry.name.clone(), entry.path.clone()));
     }
@@ -317,6 +325,7 @@ fn resolve_rename_target(
         .cursor_index
         .checked_sub(state.loaded_start)
         .and_then(|i| state.files.get(i))
+        .filter(|entry| !entry.is_action())
         .ok_or_else(|| ToolError::invalid_params("the cursor isn't on a listed item; pass 'name'"))?;
     if entry.name == ".." {
         return Err(ToolError::invalid_params(

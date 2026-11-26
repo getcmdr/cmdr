@@ -108,7 +108,7 @@ describe('who moved the panes', () => {
     const pane = {
       whenLoadSettles: () => Promise.resolve(),
       isInNetworkView: () => false,
-      getEffectiveTotalCount: () => 3,
+      getCursorRowCount: () => 3,
       setCursorIndex,
       syncStateToMcpNow: () => Promise.resolve(),
     } as unknown as FilePaneAPI

@@ -1,18 +1,18 @@
 # File explorer views
 
-Virtual-scrolling file list components rendering 100k+ directories without DOM performance issues.
+Virtual-scrolling file lists that render 100k+ entries.
 
 ## Module map
 
 `BriefList.svelte` / `FullList.svelte` are the two views (horizontal columns / vertical rows), with `FullListHeader`
 (and its date `DateSortChevron`), `full-list-cache.svelte.ts`, `full-list-git-column.svelte.ts`, `full-list-mouse.ts`,
 and `full-list-column-fit.ts` (a narrow pane drops the date, then Ext) beside Full, and `brief-column-widths.svelte.ts`
-beside Brief. `virtual-scroll.ts` is pure window math, `measure-column-widths.ts` is pixel-accurate width measurement
-via `@chenglou/pretext`, and the `*-utils.ts` trio holds the rendering helpers. `list-focus.svelte.ts` gives both
-listboxes their focus and `aria-activedescendant` (❌ focus never on a row), and `file-row-a11y.ts` is what every row
-says (id, name, marked, position); ❌ no per-view copy. `mark-run.ts` gives the marked-file bar its run ends from the
-marked set by global index, ❌ never from rendered neighbors (the virtual window's edge would fake an end).
-`EmptyFolderState.svelte`: both views' empty state.
+beside Brief. `virtual-scroll.ts` is window math, `measure-column-widths.ts` measures widths (`@chenglou/pretext`), and
+the `*-utils.ts` trio holds rendering helpers. `list-focus.svelte.ts` gives both listboxes their focus and
+`aria-activedescendant` (❌ focus never on a row), and `file-row-a11y.ts` is what every row says (id, name, marked,
+position); ❌ no per-view copy. `mark-run.ts` gives the marked-file bar its run ends by global index, ❌ never from
+rendered neighbors (the virtual window's edge would fake an end). `EmptyFolderState.svelte`: both views' empty state.
+`trailing-row.ts`: a kind's last action row, counted only there.
 
 ## Must-knows
 

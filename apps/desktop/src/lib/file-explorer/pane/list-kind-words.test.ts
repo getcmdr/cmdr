@@ -10,7 +10,7 @@ const discovery = vi.hoisted((): { state: string; enabled: boolean } => ({ state
 vi.mock('../network/network-store.svelte', () => ({ getDiscoveryState: () => discovery.state }))
 vi.mock('#lib/settings/reactive-settings.svelte.js', () => ({ getNetworkEnabled: () => discovery.enabled }))
 
-import { functionKeyWordsFor, listWordsFor } from './list-kind-words'
+import { functionKeyWordsFor, listWordsFor, trailingRowFor } from './list-kind-words'
 
 describe('listWordsFor', () => {
   beforeEach(() => {
@@ -65,5 +65,21 @@ describe('functionKeyWordsFor', () => {
 
   it('leaves every key a folder’s own elsewhere', () => {
     expect(functionKeyWordsFor('local')).toEqual({})
+  })
+})
+
+describe('trailingRowFor', () => {
+  it('ends the Servers list in "Add server…", which opens the Add server sheet', () => {
+    expect(trailingRowFor('network')).toEqual({
+      label: 'Add server…',
+      commandId: 'servers.connect',
+      mcpName: '+ Add server…',
+    })
+  })
+
+  it('gives every other kind no trailing row, a share list included', () => {
+    expect(trailingRowFor('share-list')).toBeUndefined()
+    expect(trailingRowFor('local')).toBeUndefined()
+    expect(trailingRowFor('search-results')).toBeUndefined()
   })
 })

@@ -47,7 +47,7 @@ export async function moveCursorToTarget(
     // or its failure is on screen) rather than the file listing; without that
     // count the check was skipped there and the host browser silently CLAMPED
     // an out-of-range index, so the tool reported a move it hadn't made.
-    const total = paneRef.isInNetworkView() ? paneRef.getNetworkItemCount() : paneRef.getEffectiveTotalCount()
+    const total = paneRef.isInNetworkView() ? paneRef.getNetworkItemCount() : paneRef.getCursorRowCount()
     if (to < 0 || to >= total) {
       throw new Error(
         `Index ${String(to)} is out of range in the ${pane} pane (${String(total)} ${pluralize(total, 'item')})`,

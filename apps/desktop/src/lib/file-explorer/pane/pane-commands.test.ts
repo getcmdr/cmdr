@@ -106,6 +106,7 @@ function buildPaneRef(
     applyIndices: vi.fn(),
     setCursorIndex: vi.fn(() => Promise.resolve()),
     findNetworkItemIndex: vi.fn(() => -1),
+    trailingRowIndexNamed: vi.fn((): number | null => null),
     whenLoadSettles: vi.fn(() => Promise.resolve()),
     syncStateToMcpNow: vi.fn(() => Promise.resolve()),
     // Key-route spies
@@ -813,6 +814,17 @@ describe('moveCursorByName network-vs-listing dispatch', () => {
     const found = await cmds.moveCursorByName(refOf(ref), 'file')
     expect(findFileIndexSpy).toHaveBeenCalledOnce()
     expect(ref.setCursorIndex).toHaveBeenCalledWith(2)
+    expect(found).toBe(true)
+  })
+
+  it("lands on a kind's trailing action row by its name, which no listing holds", async () => {
+    const ref = buildPaneRef({ isInNetworkView: false, hasParent: false })
+    vi.mocked(ref.trailingRowIndexNamed).mockReturnValue(4)
+    const cmds = create(buildAccess({ paneRefs: { left: ref } }))
+    const found = await cmds.moveCursorByName(refOf(ref), '+ Add server…')
+    expect(ref.trailingRowIndexNamed).toHaveBeenCalledWith('+ Add server…')
+    expect(ref.setCursorIndex).toHaveBeenCalledWith(4)
+    expect(findFileIndexSpy).not.toHaveBeenCalled()
     expect(found).toBe(true)
   })
 

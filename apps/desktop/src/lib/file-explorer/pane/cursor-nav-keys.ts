@@ -73,7 +73,7 @@ export interface CursorNavKeysDeps {
   /** Toggle-and-fill keyboard selection across a jump. */
   extendSelection: (args: ExtendSelectionArgs) => void
   getHasParent: () => boolean
-  /** Total cursor-addressable rows (includes the `..` row). */
+  /** Total cursor-addressable rows: the `..` row, the entries, and a kind's trailing action row. */
   getEffectiveTotalCount: () => number
   getBriefListRef: () => ListViewAPI | undefined
   getFullListRef: () => ListViewAPI | undefined

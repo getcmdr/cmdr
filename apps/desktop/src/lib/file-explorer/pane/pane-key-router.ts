@@ -44,6 +44,11 @@ export interface PaneKeyRouterDeps {
   getHasParent: () => boolean
   /** The entry the cursor sits on, read off the active list view. */
   getEntryUnderCursor: () => FileEntry | undefined
+  /**
+   * Runs the kind's trailing action row when the cursor is on it (`trailing-row-pane.ts`),
+   * answering whether it did. Enter there runs it, ❌ never falls through to a cursor move.
+   */
+  activateTrailingRow?: () => boolean
   /** Forward to `NetworkMountView`, which owns its own cursor. */
   handleNetworkKeyDown: (event: KeyboardEvent) => void
   /** Forward to the search-results pane's key handling. */
@@ -150,6 +155,10 @@ export function createPaneKeyRouter(deps: PaneKeyRouterDeps): PaneKeyRouter {
    */
   function handleOpenOrParentKey(e: KeyboardEvent): boolean {
     if (eventMatchesCommand(e, 'nav.open')) {
+      if (deps.activateTrailingRow?.()) {
+        claimKey(e)
+        return true
+      }
       const entry = deps.getEntryUnderCursor()
       if (entry) {
         claimKey(e)

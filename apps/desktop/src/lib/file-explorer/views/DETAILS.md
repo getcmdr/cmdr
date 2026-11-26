@@ -579,6 +579,8 @@ splitter at its 25 % limit (~240 px pane), `icon 1fr ext size date` left Name 0 
   whose Ext holds prose (`ListWords.extIsProse`) gets the measurer's `extProse`, capping Ext at `PROSE_CAP_SAMPLE`
   instead of `EXT_CAP_SAMPLE`. All default off, so a folder's layout is untouched (pinned in
   `measure-column-widths.test.ts` and `FullList.narrow-pane.test.ts`).
+- A kind's trailing action row (below, § "The trailing action row") is no column's business: it spans the row as one "+"
+  and its words, and no measurer sees it.
 - A kind that names its date column itself (`ListWords.dateHeader`, the Servers list's "Last used") hands the words to
   the header, the measurer, and each row's accessible name ("(Last used) {date}"); the column still shows and sorts by
   `displayedDateColumn`'s date. A row's status dot (`file-list-utils.ts::rowBadgeFor`, a Servers row's or a saved
@@ -806,3 +808,35 @@ facts on `FileEntry.resticMeta` (`ResticSnapshotMeta`), on the dated rows and `l
   `showExtensionInName` user still reaches it); Brief, with no Ext cell, puts it above the folder's size tooltip.
 - **The row's accessible name says the host** right after the name, as "(Backed up from) testnas" (WCAG 2.5.3: the Ext
   cell is visible text), and only while the Ext column shows.
+
+## The trailing action row
+
+A pane's kind may end its list in one action row, the `..` row's mirror image: the Servers list's "Add server…"
+(`../pane/list-kind-words.ts::trailingRowFor`). Both views take it as the generic `trailingRow` prop (label, command id,
+MCP name; `trailing-row.ts`) and draw it as `TrailingActionRow.svelte`; ❌ no view knows which kind asked.
+
+- **Decision**: it lives in the views, ❌ never as a listing entry. **Why**: an entry would be sorted, filtered, and
+  type-to-jump-matched by the engine's one comparator and filter point, so pinning it last would need a special case
+  there. Outside the engine, sort, the quick filter, and type-to-jump can't touch it by construction, and a filter that
+  matches nothing still leaves it as the next step.
+- **Its index is the entry rows' count** (`..` included): `parentOffset + rowCount`. Every consumer reads the counts
+  from `trailing-row.ts` (`cursorRowCount`, `trailingRowIndex`, `trailingRowWithin`), ❌ never its own `+ 1`: the
+  virtual scroller's total and Full's spacer, Brief's column count and the column that draws it, the key ranges (↓, End,
+  PageDown, Brief's →), `aria-setsize` on every option, and the visible range reported for the MCP mirror. The prefetch
+  window stays over the entries (Full's `entryWindowEnd`): it's nothing to fetch.
+- **The cursor reaches it, and that's all a press does**: its mousedown is a plain `onSelect({ index })` (a ⇧- or
+  ⌘-click selects nothing), and `row-activation.ts`'s activate calls `onActivateTrailingRow` for it, ❌ never
+  `onNavigate`. It carries no `data-drop-target-path` and starts no drag. `renderedCursorRow` names it as the active
+  descendant (key `''`: no entry's path is empty).
+- **The pane's side** is `../pane/trailing-row-pane.ts`: the cursor's row count, selection's end
+  (`selection-state.svelte.ts`'s `getSelectableEnd`, so Space, Insert, ⇧-ranges, ⌘A, invert, and the Selection dialog
+  never take it), Enter and MCP `open_under_cursor` running its command through the pane's `onCommand`, `move_cursor` by
+  its MCP name, and the cursor across a re-sort (`clampCursorAcrossRebuild`: a cursor on it stays on it, a vanished row
+  never lands on it). A `directory-diff` keeps a cursor on it by itself: every change is above it.
+- **MCP**: `pane-mcp-sync.svelte.ts` lists it last at its screen index, only once the mirrored window holds every entry
+  before it; `totalFiles` never counts it. Its `PaneFileEntry.action` (the command id) renders as
+  `kind=action command=…`, and `PaneFileEntry::is_action` keeps every MCP file tool off it, by cursor and by name.
+- **Brief's widths** come from the entries only, so in a column of its own it takes the provisional width, and in the
+  last entries' column its words may clip to that column's width.
+- Pinned by `trailing-row.views.test.ts`, `TrailingActionRow.a11y.test.ts`, `../pane/trailing-row-pane.test.ts`,
+  `../pane/selection-state.trailing-row.test.ts`, and `../pane/file-pane-trailing-row.svelte.test.ts` (a stub kind).

@@ -38,6 +38,31 @@ function move(previousIndex: number, index: number, name = `f${String(previousIn
 }
 
 describe('reconcileCursorAndSelection', () => {
+  // A kind's trailing action row ("Add server…") sits at the entries' count, past every
+  // backend row, so every add, remove, and move lands above it: a cursor on it stays on it.
+  it('keeps a cursor on a trailing action row on it as a re-list adds, removes, and reorders rows above', () => {
+    // Three servers, the trailing row at 3; a host arrives at the top.
+    const grown = reconcileCursorAndSelection({
+      changes: [add(0)],
+      hasParent: false,
+      cursorIndex: 3,
+      selectedIndices: [],
+      operationSelectedNames: null,
+      count: 4,
+    })
+    expect(grown.cursorIndex).toBe(4)
+    // One is forgotten, another moves.
+    const shrunk = reconcileCursorAndSelection({
+      changes: [remove(1), move(2, 0)],
+      hasParent: false,
+      cursorIndex: 4,
+      selectedIndices: [],
+      operationSelectedNames: null,
+      count: 3,
+    })
+    expect(shrunk.cursorIndex).toBe(3)
+  })
+
   it('leaves cursor and selection untouched when the diff has no structural changes', () => {
     const result = reconcileCursorAndSelection({
       changes: [modify(2)],

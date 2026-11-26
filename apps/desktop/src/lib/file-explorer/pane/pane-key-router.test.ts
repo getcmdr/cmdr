@@ -185,6 +185,26 @@ describe('createPaneKeyRouter', () => {
       expect(e.stopPropagation).toHaveBeenCalled()
     })
 
+    it("runs a kind's trailing action row on Enter, opens no entry, and stops there", () => {
+      // The cursor on "Add server…": no entry under it, and the row's command runs.
+      state.cursorEntry = undefined
+      deps.activateTrailingRow = vi.fn(() => true)
+      onlyCommand('nav.open')
+      const e = keyEvent()
+      router().handleKeyDown(e)
+      expect(deps.activateTrailingRow).toHaveBeenCalledOnce()
+      expect(deps.openEntry).not.toHaveBeenCalled()
+      expect(deps.handleFullModeKeys).not.toHaveBeenCalled()
+      expect(e.stopPropagation).toHaveBeenCalled()
+    })
+
+    it('opens the entry when the cursor is off the trailing row', () => {
+      deps.activateTrailingRow = vi.fn(() => false)
+      onlyCommand('nav.open')
+      router().handleKeyDown(keyEvent())
+      expect(deps.openEntry).toHaveBeenCalledWith(entry)
+    })
+
     it('stops propagation for ⌘↓ so the document dispatcher cannot double-open', () => {
       onlyCommand('nav.open')
       const e = keyEvent({ metaKey: true })
