@@ -940,6 +940,9 @@ macro_rules! ipc_command_manifest {
                     crate::commands::e2e::hold_about_verdict,
                     // Holds or releases Ask Cmdr's tool calls (the i18n capture's running lines).
                     crate::commands::e2e::hold_tool_calls,
+                    // How often a server's shares were asked for (`servers-list-flows.spec.ts`, #324).
+                    crate::commands::e2e::share_listing_asks,
+                    crate::commands::e2e::reset_share_listing_asks,
                 ]
             }
             // The dialog gallery's fixtures, which outlive `debug_assertions`: an E2E build is a

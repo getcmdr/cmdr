@@ -77,8 +77,12 @@ pub async fn list_shares(
     if credentials.is_none()
         && let Some(cached) = cached_listing(host_id, guest)
     {
+        #[cfg(any(test, feature = "playwright-e2e"))]
+        super::share_listing_tally::note(hostname, ip_address, false);
         return Ok(cached);
     }
+    #[cfg(any(test, feature = "playwright-e2e"))]
+    super::share_listing_tally::note(hostname, ip_address, true);
 
     // Use provided timeout or default
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_LIST_SHARES_TIMEOUT_MS));

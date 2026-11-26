@@ -51,8 +51,28 @@ nothing contacts it until they connect, so it's listed only when they open it (#
 `listSavedServers()` fresh per decision (`readSavedServers`, one read shared by every host that asks while it's out),
 because a host becomes the person's the moment they add it or mount one of its shares, and nothing tells the store when.
 A read that breaks answers "none saved": not knowing whose a host is must never be what signs Cmdr in to it. Pinned by
-`network-store.prefetch.test.ts`. The backend has no other caller: `smb_client::list_shares` is reached only through the
-three listing commands, all frontend-invoked (verified by reading its call sites, 2026-09-30).
+`network-store.prefetch.test.ts`. The backend has no other caller that lists unasked: `smb_client::list_shares` is
+reached through the three listing commands, all frontend-invoked, and the share-list volume's sign-in ladder
+(`share_list_sign_in.rs`), which runs only for a pane that opened a share list (verified by reading its call sites,
+2026-11-26). E2E builds count every call per address (`apps/desktop/src-tauri/src/network/share_listing_tally.rs`),
+which `servers-list-flows.spec.ts` reads: opening Servers asks a saved server (the prefetch) and never a found one.
+
+**How long a share list's first read takes** (the wait the prefetch hides; measured 2026-11-26 for getcmdr/cmdr#1517 §
+"Decisions", 7: `stall_probe::listing listing_done path=smb://<server>/ read_dir_ms`, a `read_dir_ms` of 0 or 1 excluded
+as a share-cache answer). The threshold is the pane's wait reveal, 800 ms (`WAIT_REVEAL_AFTER_MS`):
+
+- Real servers, a dev log (macOS, a home LAN plus Tailscale): a Raspberry Pi saved by name (signs in with Cmdr's stored
+  password) n=13, p50 88, p90 643, max 1,174 ms; a QNAP NAS saved by LAN IP n=3: 83, 87, 517; the same Pi by its IP (a
+  saved share; guest refused and no Cmdr credentials, so every read runs `smbutil view` with the macOS Keychain, about
+  1.15 s of it) n=5: 88, 1,183, 1,189, 1,418, 1,422; the NAS by its mDNS name (found) 80, 425, 450; the NAS by its
+  Tailscale IP (mounted only) 452, 495, 554. Saved servers pooled: n=21, p50 88, p90 1,189, max 1,422. Without the Pi by
+  IP: n=16, p90 643. The prod and other dev logs held no share-list reads (older builds).
+- Docker fixtures (Linux E2E lane, `servers-list-flows.spec.ts`): Guest 307, Guest by IP 517 and 586, Unicode 739 and
+  740, 50 Shares 844 and 1,048 ms (n=7, p90 1,048).
+
+Verdict by the threshold: the saved servers' p90 is at or over 800 ms, so the prefetch stays for SAVED servers only. The
+slowest real reads (the Pi by IP) are the `smbutil` Keychain fallback, so prefetching such a server reads the macOS
+Keychain on every Servers visit.
 
 Key exported functions: `getNetworkHosts()` (sorted copy), `fetchShares(host)` (explicit, throws on error),
 `refreshSharesIfStale(host)`, `refreshAllStaleShares()` (call on entering network view),

@@ -86,6 +86,9 @@ pub mod os_mount;
 // Cross-platform: `same_server` and `credential_key` are used on both macOS and Linux
 // (mount dedup, `smb_upgrade`, keychain keying).
 pub mod server_identity;
+// How often a server's shares were asked for: E2E evidence only, so a shipped build counts nothing.
+#[cfg(any(test, feature = "playwright-e2e"))]
+pub mod share_listing_tally;
 pub mod smb_client;
 pub mod smb_sign_in_diagnostics;
 // Why an smb2 connect didn't get in: who was refused, and at which step. Shared by

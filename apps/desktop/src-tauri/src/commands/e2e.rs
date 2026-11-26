@@ -115,6 +115,23 @@ pub fn parked_listing_arms() -> usize {
     crate::test_mode::parked_listing_arms()
 }
 
+/// How often this session asked for `address`'s share list since the last reset (a hostname or
+/// an IP), the evidence #324's E2E pins read (`network/share_listing_tally.rs`).
+#[cfg(feature = "playwright-e2e")]
+#[tauri::command]
+#[specta::specta]
+pub fn share_listing_asks(address: String) -> crate::network::share_listing_tally::ShareListingAsks {
+    crate::network::share_listing_tally::asks_for(&address)
+}
+
+/// Starts [`share_listing_asks`] from zero.
+#[cfg(feature = "playwright-e2e")]
+#[tauri::command]
+#[specta::specta]
+pub fn reset_share_listing_asks() {
+    crate::network::share_listing_tally::reset();
+}
+
 /// Whether `listing_id` has a live watch, so a spec can wait for the arm to land before
 /// expecting what its reconcile re-read brings in.
 #[cfg(feature = "playwright-e2e")]
