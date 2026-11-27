@@ -1,5 +1,7 @@
 /**
- * The words under a suggestion whose approval refused to start.
+ * The words under a suggestion whose approval refused to start, and which of the store's answers
+ * are such a refusal (`isRefusalToStart`, `isServerRefusal`) or a decision that didn't happen
+ * (`decisionNoticeFor`).
  *
  * A refusal the write engine gave (a phone nobody connected, a drive that left, no space) is
  * the same `WriteOperationError` a clicked operation would have hit, so it reads through the
@@ -10,14 +12,85 @@
  */
 
 import { tString } from '#lib/intl/messages.svelte.js'
+import type { MessageKey } from '#lib/intl/keys.gen.js'
 import { escapeHtml } from '#lib/tooltip/tooltip.js'
 import type { TransferOperationType } from '#lib/file-explorer/types.js'
 import type { ServerField, ServerProposalView } from '#lib/ipc/bindings.js'
-import type { SuggestedGroupView } from '#lib/tauri-commands/index.js'
+import type { ApprovalResultView, ServerApprovalResultView, SuggestedGroupView } from '#lib/tauri-commands/index.js'
 import { getUserFriendlyMessage } from '#lib/file-operations/transfer/transfer-error-messages.js'
 import { wordConnectRefusal, type RefusalSubject } from '#lib/servers/connect-refusals.js'
 import { readSavedServerOutcome } from '#lib/servers/server-outcomes.js'
-import type { GroupRefusal, ServerRefusal } from './suggested-ops-trigger.svelte'
+import { asSuggestedOpsError } from './suggested-ops-failure'
+
+/** Why the last Approve or Reject didn't happen, as the notice the dialog shows. */
+export type DecisionNotice = Extract<MessageKey, 'suggestedOps.decisionNotRecorded' | 'suggestedOps.approvalUnsure'>
+
+/** Why a file group's approval didn't start. */
+export type FileGroupRefusal = Extract<
+  ApprovalResultView,
+  { kind: 'refused' | 'nothingToRun' | 'sourcesGone' | 'nothingSelected' | 'couldNotStart' }
+>
+
+/** Why a server card's save gave it back: nothing was written. */
+export type ServerRefusal = Extract<
+  ServerApprovalResultView,
+  { kind: 'refused' | 'addServer' | 'serverChanged' | 'alreadySaved' | 'nameTaken' }
+>
+
+/**
+ * Why an approval didn't start. The group is pending again, and the dialog shows this under it.
+ * A server card's answer rides under its own `kind`: its `refused` carries a saved-server
+ * outcome, not a write error.
+ */
+export type GroupRefusal = FileGroupRefusal | { kind: 'server'; answer: ServerRefusal }
+
+/** The answers that give a group back with a reason, as opposed to closing it or re-reading. */
+export function isRefusalToStart(result: ApprovalResultView): result is FileGroupRefusal {
+  switch (result.kind) {
+    case 'refused':
+    case 'nothingToRun':
+    case 'sourcesGone':
+    case 'nothingSelected':
+    case 'couldNotStart':
+      return true
+    case 'started':
+    case 'alreadyAnswered':
+    case 'listChanged':
+    case 'unknown':
+      return false
+  }
+}
+
+/** The answers that give a server card back with a reason: the save wrote nothing. */
+export function isServerRefusal(result: ServerApprovalResultView): result is ServerRefusal {
+  switch (result.kind) {
+    case 'refused':
+    case 'addServer':
+    case 'serverChanged':
+    case 'alreadySaved':
+    case 'nameTaken':
+      return true
+    case 'saved':
+    case 'listChanged':
+    case 'alreadyAnswered':
+    case 'unknown':
+      return false
+  }
+}
+
+/** Only a dead approval worker leaves "did it start?" open. A store refusal happens before the
+ *  claim transaction commits, so nothing ran and pressing again is safe. */
+export function decisionNoticeFor(error: unknown): DecisionNotice {
+  switch (asSuggestedOpsError(error)?.type) {
+    case 'approvalDidntFinish':
+      return 'suggestedOps.approvalUnsure'
+    case 'storeNotOpen':
+    case 'store':
+    case 'unexpected':
+    case undefined:
+      return 'suggestedOps.decisionNotRecorded'
+  }
+}
 
 /** What sits under the group. `message` is HTML (the pipeline escapes every name and path), so
  *  it renders through `{@html}`, the boundary the queue's failed row uses too. `suggestion` is

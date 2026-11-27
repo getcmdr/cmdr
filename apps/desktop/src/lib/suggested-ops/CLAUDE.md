@@ -7,8 +7,9 @@ and per-op selection. Backend: `apps/desktop/src-tauri/src/commands/agent/sugges
 
 ## Module map
 
-- `suggested-ops-trigger.svelte.ts`: the state: sweeps, one `GroupReview` per group (window, shown rows, selection, live
-  facts, change notice), approve, reject. `suggested-ops-selection.svelte.ts`: a selection's flips and wire.
+- `suggested-ops-trigger.svelte.ts`: open, page, select, approve, reject. Over `suggested-ops-reviews.svelte.ts` (the
+  state, one `GroupReview` per group) and `suggested-ops-live-facts.svelte.ts` (disk re-checks);
+  `suggested-ops-selection.svelte.ts`: flips and wire.
 - `SuggestedOpsDialog.svelte` → `SuggestedOpsGroup.svelte` (one `SectionCard` per group; `SizedLabel` evens its button)
   → `SuggestedOpFiles.svelte` (the `ColumnList`, Show more / Show all), or for a server card
   `SuggestedServerFacts.svelte` (what the click saves, no files). `AgentReason`: the labelled AI words; `VolumePill`: a

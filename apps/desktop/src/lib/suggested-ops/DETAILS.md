@@ -113,7 +113,10 @@ newer suggestion covers this file" / "Another suggestion already changed this fi
 disabled. `isRetiredOp` (`suggested-ops-selection.svelte.ts`) is the one test: `flippedOn` answers `false` for it in
 every mode, so the count, the header box, and the wire all leave it out. An `allExcept` counts down from
 `totalOpCount - retiredOpCount`, and a taken-over row the disk also calls gone counts once. The store never moves such a
-row whatever the wire says, so this is about honest counts, not safety.
+row whatever the wire says, so this is about honest counts, not safety. The live-facts re-check never touches a row's
+status (it only fills `liveFacts` / `missing` / `takenNames`; the status comes with the page, so it changes on a
+reload), so a taken-over row whose file comes back stays unticked (test "stays unticked and counted once through every
+re-check").
 
 **A refused approval whose files are all gone** answers `sourcesGone`, worded apart from `nothingToRun` ("couldn't
 read"): the backend tells the two apart from the stats themselves
@@ -126,6 +129,13 @@ NOW. The snapshot stays as the comparison point and the fallback, always labelle
 ## Scale: windows, live facts, and the wire
 
 A group of 60,000 ops is legitimate, so nothing may grow with it.
+
+**Where it lives.** `suggested-ops-reviews.svelte.ts` holds `suggestedOpsState` and the review registry (`GroupReview`,
+`newGroupReview`, `reviewOf`, `rowSource`) at the bottom of the stack; `suggested-ops-live-facts.svelte.ts` (the rounds
+below) and `suggested-ops-trigger.svelte.ts` (opening, paging, selection, decisions) both import it, never each other
+(`import/no-cycle`). The trigger re-exports the registry, so the dialog, the gallery, and their mocks keep one import
+path. What each approval answer means (`isRefusalToStart`, `isServerRefusal`, `decisionNoticeFor`) sits beside its
+wording in `suggested-ops-refusal.ts`.
 
 **The windows.** Each group has its own `GroupReview` in `suggestedOpsState.reviews`. `COUNT(*)` gives the total and
 only the rows the list draws are fetched (`OP_WINDOW_SIZE`, centred on the request so scrolling either way stays

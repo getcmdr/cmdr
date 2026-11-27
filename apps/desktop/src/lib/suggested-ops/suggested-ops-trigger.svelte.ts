@@ -15,13 +15,16 @@
  * - **A group that changed under an open review is ANNOUNCED, never swapped.** The rows the
  *   user is reading stay put and a notice offers the reload, because re-ordering a list
  *   somebody is halfway through deciding on is how a wrong row gets approved.
+ *
+ * This module opens, pages, selects, and decides. The state and its reviews live in
+ * `suggested-ops-reviews.svelte.ts`, the disk re-checks in `suggested-ops-live-facts.svelte.ts`,
+ * and what each store answer means in `suggested-ops-refusal.ts`.
  */
 
 import type { UnlistenFn } from '@tauri-apps/api/event'
 import { tick } from 'svelte'
-import { SvelteMap, SvelteSet } from 'svelte/reactivity'
+import { SvelteSet } from 'svelte/reactivity'
 import { getAppLogger } from '#lib/logging/logger.js'
-import type { MessageKey } from '#lib/intl/keys.gen.js'
 import {
   approveSuggestedGroup,
   approveSuggestedServer,
@@ -30,24 +33,32 @@ import {
   onWriteSettled,
   pageSuggestedOps,
   rejectSuggestedGroup,
-  liveSuggestedOpFacts,
-  type ApprovalResultView,
-  type LiveFileState,
-  type ServerApprovalResultView,
   type SuggestedGroupView,
-  type SuggestedOpLiveFactsAnswer,
   type SuggestedOpPage,
   type SuggestedOpView,
-  type SuggestedSweepView,
 } from '#lib/tauri-commands/index.js'
-import { asSuggestedOpsError } from './suggested-ops-failure'
+import { endFactsRound, ensureLiveFacts, recheckLiveFacts } from './suggested-ops-live-facts.svelte'
+import { decisionNoticeFor, isRefusalToStart, isServerRefusal } from './suggested-ops-refusal'
 import {
-  type OpSelection,
-  flippedOn,
-  isRetiredOp,
-  selectionWire,
-  storedSelection,
-} from './suggested-ops-selection.svelte'
+  INITIAL_ROWS,
+  type OpWindow,
+  type SuggestedOpRowAsk,
+  newGroupReview,
+  reviewOf,
+  suggestedOpsState,
+} from './suggested-ops-reviews.svelte'
+import { flippedOn, isRetiredOp, selectionWire, storedSelection } from './suggested-ops-selection.svelte'
+
+// The registry the dialog, its gallery, and their tests reach through this module.
+export {
+  INITIAL_ROWS,
+  newGroupReview,
+  reviewOf,
+  suggestedOpsState,
+  type GroupReview,
+  type LiveFact,
+  type SuggestedOpRowSource,
+} from './suggested-ops-reviews.svelte'
 
 const log = getAppLogger('suggestedOps')
 
@@ -55,161 +66,12 @@ const log = getAppLogger('suggestedOps')
  *  reads from memory and only a jump costs a round trip. */
 export const OP_WINDOW_SIZE = 200
 
-/** Rows each group's list shows before the user asks for more. */
-export const INITIAL_ROWS = 10
-
 /** How many more rows "Show more" adds. */
 export const SHOW_MORE_STEP = 20
-
-/** The rows currently held for one group. */
-interface OpWindow {
-  /** Index of `ops[0]` within the whole group. */
-  offset: number
-  ops: SuggestedOpView[]
-  /** Every op row the group has, from `COUNT(*)`. The list sizes itself from this. */
-  total: number
-}
-
-/** What Cmdr found on disk for one op just now, or that it couldn't tell. */
-export type LiveFact = LiveFileState
-
-/** Everything the dialog holds about one group while the user reads it. */
-export interface GroupReview {
-  window: OpWindow | null
-  windowLoading: boolean
-  /** True when the group's last page read threw. The list says so and offers a retry, rather
-   *  than leaving its rows on a loading placeholder nothing will ever fill. */
-  windowError: boolean
-  /** How many rows the list shows: `INITIAL_ROWS`, grown by "Show more" or "Show all". */
-  shown: number
-  /** Which ops are ticked. Survives scrolling: it is keyed by op id, not by row position. */
-  selection: OpSelection
-  /** The group `revision` whose rows are on screen. Approve sends it, so the store refuses to
-   *  run a version the user hasn't read. Set when the review first reads, and on a reload. */
-  seenRevision: number | null
-  /** Set when the agent amended this group, or a re-read found its op count moved. */
-  changedUnderReview: boolean
-  /** What the disk says now, per op id, for the rows that have been on screen. */
-  liveFacts: SvelteMap<number, LiveFact>
-  /** The ops whose file the disk says is gone, by op id. They can't run, so they read unticked
-   *  and count for nothing, and approve sends them turned off. Holds the op itself, since its
-   *  window may have moved on by the time the user approves. */
-  missing: SvelteMap<number, SuggestedOpView>
-  /** Ops whose NEW name is already taken where the file lands (#774), by op id. */
-  takenNames: SvelteSet<number>
-  /** Set when the group's source volume can't be asked at all, so its rows stay on the
-   *  snapshot and the dialog says why once, above the list. */
-  sourceUnreachable: 'notConnected' | 'gone' | null
-  /** The rows the list last drew, so a page that lands late still gets its live facts. */
-  range: { start: number; end: number }
-}
-
-/** Why the last Approve or Reject didn't happen, as the notice the dialog shows. */
-export type DecisionNotice = Extract<MessageKey, 'suggestedOps.decisionNotRecorded' | 'suggestedOps.approvalUnsure'>
-
-/** Why a file group's approval didn't start. */
-export type FileGroupRefusal = Extract<
-  ApprovalResultView,
-  { kind: 'refused' | 'nothingToRun' | 'sourcesGone' | 'nothingSelected' | 'couldNotStart' }
->
-
-/** Why a server card's save gave it back: nothing was written. */
-export type ServerRefusal = Extract<
-  ServerApprovalResultView,
-  { kind: 'refused' | 'addServer' | 'serverChanged' | 'alreadySaved' | 'nameTaken' }
->
-
-/**
- * Why an approval didn't start. The group is pending again, and the dialog shows this under it.
- * A server card's answer rides under its own `kind`: its `refused` carries a saved-server
- * outcome, not a write error.
- */
-export type GroupRefusal = FileGroupRefusal | { kind: 'server'; answer: ServerRefusal }
-
-interface SuggestedOpsState {
-  open: boolean
-  /** True while the sweep list is loading (the dialog shows a spinner). */
-  loading: boolean
-  /** True when the read threw: the dialog says so rather than showing an empty list, which
-   *  would read as "the agent has suggested nothing". */
-  loadError: boolean
-  sweeps: SuggestedSweepView[]
-  /** One review per pending group, keyed by group id. */
-  reviews: SvelteMap<number, GroupReview>
-  /** The group whose decision is in flight, so its buttons can disable without freezing the
-   *  rest of the dialog. */
-  busyGroupId: number | null
-  /** Why the last decision didn't happen, or `null`. Set AFTER the re-read, so it speaks about
-   *  the list the user is now looking at, and cleared when the next decision starts. */
-  decisionNotice: DecisionNotice | null
-  /** Groups whose last approval refused to start, keyed by group id. Each one is pending again
-   *  and keeps its reason under it until the user answers it again or closes the dialog. */
-  refusals: SvelteMap<number, GroupRefusal>
-  /** Where op pages and their live facts come from: `null` reads the suggestion store. The
-   *  dialog gallery seeds its own, so a fixture group bigger than the rows it seeded still pages
-   *  as you scroll (the store has no such group and would answer a total of 0, emptying the list). */
-  rowSource: SuggestedOpRowSource | null
-}
-
-/** One read a `SuggestedOpRowSource` answers: rows `offset` to `offset + limit` of a group. */
-export interface SuggestedOpRowAsk {
-  groupId: number
-  offset: number
-  limit: number
-}
-
-/** A stand-in for the store's two row reads, with the same answers (`suggestedOpsState.rowSource`). */
-export interface SuggestedOpRowSource {
-  page: (ask: SuggestedOpRowAsk) => Promise<SuggestedOpPage>
-  liveFacts: (ask: SuggestedOpRowAsk) => Promise<SuggestedOpLiveFactsAnswer>
-}
-
-export const suggestedOpsState = $state<SuggestedOpsState>({
-  open: false,
-  loading: false,
-  loadError: false,
-  sweeps: [],
-  reviews: new SvelteMap<number, GroupReview>(),
-  busyGroupId: null,
-  decisionNotice: null,
-  refusals: new SvelteMap<number, GroupRefusal>(),
-  rowSource: null,
-})
 
 function readPage(ask: SuggestedOpRowAsk): Promise<SuggestedOpPage> {
   const source = suggestedOpsState.rowSource
   return source ? source.page(ask) : pageSuggestedOps(ask.groupId, ask.offset, ask.limit)
-}
-
-function readLiveFacts(ask: SuggestedOpRowAsk): Promise<SuggestedOpLiveFactsAnswer> {
-  const source = suggestedOpsState.rowSource
-  return source ? source.liveFacts(ask) : liveSuggestedOpFacts(ask.groupId, ask.offset, ask.limit)
-}
-
-/** Op ids whose live facts were already asked for, per group, in the current round. Not state:
- *  nothing renders it, it only keeps a scroll from asking twice. Dropping a group's set starts a
- *  new round (`recheckLiveFacts`), and the set's identity is the round: an answer whose set was
- *  dropped while it was in flight is stale and goes unread. */
-// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only; nothing renders from it
-const factsRequested = new Map<number, Set<number>>()
-
-/** A fresh review, reactive field by field. */
-export function newGroupReview(): GroupReview {
-  const review = $state<GroupReview>({
-    window: null,
-    windowLoading: false,
-    windowError: false,
-    shown: INITIAL_ROWS,
-    selection: storedSelection(),
-    seenRevision: null,
-    changedUnderReview: false,
-    liveFacts: new SvelteMap<number, LiveFact>(),
-    missing: new SvelteMap<number, SuggestedOpView>(),
-    takenNames: new SvelteSet<number>(),
-    sourceUnreachable: null,
-    range: { start: 0, end: INITIAL_ROWS },
-  })
-  return review
 }
 
 /** Every group still waiting, flattened out of its sweep. */
@@ -219,11 +81,6 @@ export function pendingGroups(): SuggestedGroupView[] {
 
 function groupById(groupId: number): SuggestedGroupView | undefined {
   return pendingGroups().find((group) => group.groupId === groupId)
-}
-
-/** The review for a group, or `undefined` once it's gone. */
-export function reviewOf(groupId: number): GroupReview | undefined {
-  return suggestedOpsState.reviews.get(groupId)
 }
 
 /** Every op row the group has: the page's `COUNT(*)` once one landed, the header's until then. */
@@ -348,7 +205,7 @@ export function closeSuggestedOps(): void {
 function forgetLastReview(): void {
   suggestedOpsState.decisionNotice = null
   suggestedOpsState.reviews.clear()
-  factsRequested.clear()
+  endFactsRound()
   suggestedOpsState.refusals.clear()
 }
 
@@ -466,21 +323,9 @@ export async function refreshSuggestions(): Promise<void> {
   ])
 }
 
-/**
- * Ask the disk again about every drawn row of these groups (default: every group under review),
- * because something may have moved their files since they were last asked.
- *
- * The last answer stays on screen until the new one lands, so a row never blinks back to its
- * snapshot, and an answer to an older round that lands late is dropped (`factsRequested`).
- */
-export async function recheckLiveFacts(groupIds: number[] = [...suggestedOpsState.reviews.keys()]): Promise<void> {
-  for (const groupId of groupIds) factsRequested.delete(groupId)
-  await Promise.all(groupIds.map((groupId) => ensureLiveFacts(groupId)))
-}
-
 function dropReview(groupId: number): void {
   suggestedOpsState.reviews.delete(groupId)
-  factsRequested.delete(groupId)
+  endFactsRound(groupId)
 }
 
 /**
@@ -497,7 +342,7 @@ export async function reloadGroup(groupId: number): Promise<void> {
   review.missing.clear()
   review.takenNames.clear()
   review.sourceUnreachable = null
-  factsRequested.delete(groupId)
+  endFactsRound(groupId)
   await refreshSuggestions()
   // The rows about to load are the new version: that's the one the user now reads.
   review.seenRevision = groupById(groupId)?.revision ?? review.seenRevision
@@ -576,95 +421,6 @@ function windowHolds(held: OpWindow | null, start: number, end: number): boolean
   if (held === null) return false
   const last = Math.max(start, Math.min(end, start + OP_WINDOW_SIZE) - 1)
   return start >= held.offset && last < held.offset + held.ops.length
-}
-
-/**
- * Check the drawn rows on disk: size and modified time now, or that the file is gone.
- *
- * Only the rows on screen, only once each per round: a 60,000-op group shown whole still costs
- * one stat per row the user actually scrolls past. One call covers the span of drawn rows not
- * yet asked about. A held answer is not an excuse to skip a row: `recheckLiveFacts` starts a
- * new round exactly when the held one may be stale.
- *
- * Every answer short of a fact leaves rows on their creation snapshot, which the dialog labels
- * as such. A source that can't be asked at all (not connected, gone) is recorded once on the
- * review and not asked again; the dialog says it once for the group. Anything else is logged,
- * and the rows un-marked so the next scroll asks again.
- */
-export async function ensureLiveFacts(groupId: number): Promise<void> {
-  const review = reviewOf(groupId)
-  const held = review?.window
-  if (!review || !held || review.sourceUnreachable !== null) return
-  let asked = factsRequested.get(groupId)
-  if (!asked) {
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only, see `factsRequested`
-    asked = new Set<number>()
-    factsRequested.set(groupId, asked)
-  }
-  const span = unaskedSpan(review, held, asked)
-  if (!span) return
-  for (const opId of span.opIds) asked.add(opId)
-  try {
-    const answer = await readLiveFacts({ groupId, offset: span.offset, limit: span.opIds.length })
-    // The group was answered, the dialog closed, or a newer round asked again meanwhile: this
-    // answer may predate a move, so the newer round's is the one to show.
-    if (reviewOf(groupId) !== review || factsRequested.get(groupId) !== asked) return
-    if (takeLiveAnswer(review, held, answer)) return
-  } catch (e) {
-    log.warn("Couldn't check the suggested files on disk: {error}", { error: e })
-  }
-  for (const opId of span.opIds) asked.delete(opId)
-}
-
-/** The drawn rows nobody has asked about yet, as one contiguous span of the held page. */
-function unaskedSpan(
-  review: GroupReview,
-  held: OpWindow,
-  asked: Set<number>,
-): { offset: number; opIds: number[] } | null {
-  const from = Math.max(review.range.start, held.offset)
-  const to = Math.min(review.range.end, held.offset + held.ops.length)
-  let first = -1
-  let last = -1
-  for (let index = from; index < to; index++) {
-    const opId = held.ops[index - held.offset].opId
-    if (asked.has(opId)) continue
-    if (first < 0) first = index
-    last = index
-  }
-  if (first < 0) return null
-  return { offset: first, opIds: held.ops.slice(first - held.offset, last + 1 - held.offset).map((op) => op.opId) }
-}
-
-/** Record an answer. `false` means it held nothing to keep, so the rows should be asked again. */
-function takeLiveAnswer(review: GroupReview, held: OpWindow, answer: SuggestedOpLiveFactsAnswer): boolean {
-  if (answer.kind === 'facts') {
-    for (const { opId, state, newName } of answer.facts) {
-      review.liveFacts.set(opId, state)
-      // The op itself, from the page the span was cut from, so approve can still turn it off
-      // once the list has scrolled that page away.
-      const op = state.kind === 'missing' ? held.ops.find((candidate) => candidate.opId === opId) : undefined
-      if (op) review.missing.set(opId, op)
-      else review.missing.delete(opId)
-      if (newName === 'taken') review.takenNames.add(opId)
-      else review.takenNames.delete(opId)
-    }
-    return true
-  }
-  switch (answer.reason.type) {
-    case 'sourceNotConnected':
-      review.sourceUnreachable = 'notConnected'
-      return true
-    case 'sourceGone':
-      review.sourceUnreachable = 'gone'
-      return true
-    case 'unknownGroup':
-    case 'storeNotOpen':
-    case 'store':
-    case 'unexpected':
-      log.warn("Couldn't check the suggested files on disk: {reason}", { reason: answer.reason })
-      return false
-  }
 }
 
 /** The op at a whole-group index, or `null` when its window isn't loaded yet. */
@@ -765,40 +521,6 @@ function markChangedUnderReview(groupId: number): void {
   if (review) review.changedUnderReview = true
 }
 
-/** The answers that give a server card back with a reason: the save wrote nothing. */
-function isServerRefusal(result: ServerApprovalResultView): result is ServerRefusal {
-  switch (result.kind) {
-    case 'refused':
-    case 'addServer':
-    case 'serverChanged':
-    case 'alreadySaved':
-    case 'nameTaken':
-      return true
-    case 'saved':
-    case 'listChanged':
-    case 'alreadyAnswered':
-    case 'unknown':
-      return false
-  }
-}
-
-/** The answers that give a group back with a reason, as opposed to closing it or re-reading. */
-function isRefusalToStart(result: ApprovalResultView): result is FileGroupRefusal {
-  switch (result.kind) {
-    case 'refused':
-    case 'nothingToRun':
-    case 'sourcesGone':
-    case 'nothingSelected':
-    case 'couldNotStart':
-      return true
-    case 'started':
-    case 'alreadyAnswered':
-    case 'listChanged':
-    case 'unknown':
-      return false
-  }
-}
-
 /**
  * Record the user's "no" for a group, then re-read.
  *
@@ -833,18 +555,4 @@ export async function rejectGroup(groupId: number): Promise<void> {
 async function answerFailedDecision(error: unknown): Promise<void> {
   await refreshSuggestions()
   suggestedOpsState.decisionNotice = decisionNoticeFor(error)
-}
-
-/** Only a dead approval worker leaves "did it start?" open. A store refusal happens before the
- *  claim transaction commits, so nothing ran and pressing again is safe. */
-function decisionNoticeFor(error: unknown): DecisionNotice {
-  switch (asSuggestedOpsError(error)?.type) {
-    case 'approvalDidntFinish':
-      return 'suggestedOps.approvalUnsure'
-    case 'storeNotOpen':
-    case 'store':
-    case 'unexpected':
-    case undefined:
-      return 'suggestedOps.decisionNotRecorded'
-  }
 }

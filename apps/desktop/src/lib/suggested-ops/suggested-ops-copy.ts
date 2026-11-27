@@ -10,7 +10,7 @@
 import type { MessageKey } from '#lib/intl/keys.gen.js'
 import type { ProposalVerb, Reversibility, RunsAs } from '#lib/ipc/bindings.js'
 import type { SuggestedOpView } from '#lib/tauri-commands/index.js'
-import type { LiveFact } from './suggested-ops-trigger.svelte'
+import type { LiveFact } from './suggested-ops-reviews.svelte'
 
 /** The primary button for each verb, taking `{count}`. Named per verb so the button says what
  *  happens ("Move 4 files"), and stays the same whether or not the list is scrolled. */

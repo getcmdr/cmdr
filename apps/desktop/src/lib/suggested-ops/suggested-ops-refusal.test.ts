@@ -8,8 +8,7 @@ import { describe, it, expect } from 'vitest'
 import type { ServerProposalView, WriteOperationError } from '#lib/ipc/bindings.js'
 import { getUserFriendlyMessage } from '#lib/file-operations/transfer/transfer-error-messages.js'
 import { wordConnectRefusal } from '#lib/servers/connect-refusals.js'
-import { refusalReason } from './suggested-ops-refusal'
-import type { ServerRefusal } from './suggested-ops-trigger.svelte'
+import { refusalReason, type ServerRefusal } from './suggested-ops-refusal'
 
 const sourceGone: WriteOperationError = { type: 'source_not_found', path: '/Users/someone/Downloads/one.dmg' }
 
