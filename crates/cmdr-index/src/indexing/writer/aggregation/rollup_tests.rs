@@ -15,7 +15,7 @@ use cmdr_fs::pluralize::pluralize;
 use super::tests::{dir_row, file_row, set_epoch};
 use crate::indexing::store::{IndexStore, ROOT_ID};
 use crate::indexing::stress_test_helpers::check_db_consistency;
-use crate::indexing::writer::tests::{settle_the_writer, setup_db};
+use crate::indexing::writer::tests::{flush_and_wait_for_a_drain_slice, settle_the_writer, setup_db};
 use crate::indexing::writer::{AggSource, IndexWriter, WriteMessage};
 
 /// One parent holding `width` child dirs, each with one file of `size` bytes.
@@ -451,7 +451,7 @@ fn a_sliced_drain_with_live_changes_between_the_slices_ends_exact() {
     for message in live {
         writer.send(message).unwrap();
         // Each flush is an iteration, so each one ends in a one-folder slice.
-        writer.flush_blocking().unwrap();
+        flush_and_wait_for_a_drain_slice(&writer);
     }
     assert!(
         gauges.owed.load(Ordering::Relaxed) > 0,
@@ -461,7 +461,7 @@ fn a_sliced_drain_with_live_changes_between_the_slices_ends_exact() {
     // Keep the slices coming until nothing is owed.
     let mut flushes = 0;
     while gauges.owed.load(Ordering::Relaxed) > 0 {
-        writer.flush_blocking().unwrap();
+        flush_and_wait_for_a_drain_slice(&writer);
         flushes += 1;
         assert!(flushes <= 20 * WIDTH, "every slice makes progress");
     }

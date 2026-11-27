@@ -28,6 +28,26 @@ pub(crate) fn wait_for_writer_to_settle(writer: &IndexWriter, before: u64) {
     );
 }
 
+/// Flush, then wait for the roll-up slice that flush's iteration ends in. A slice that yields
+/// with roll-ups still owed doesn't tick `idle_epoch`, but every drain with something owed runs at
+/// least one recompute, so the recompute count is the slice's mark.
+///
+/// Why not `flush_blocking` alone: the flush replies before the end-of-iteration settle, which runs
+/// only if the queue is empty at that point. A caller that fires its next flush on the reply's
+/// heels often lands it first, and that iteration skips its slice (seen under load in the Linux
+/// container, where a 40-wide sliced drain ran out of 800 flushes).
+#[track_caller]
+pub(crate) fn flush_and_wait_for_a_drain_slice(writer: &IndexWriter) {
+    let gauges = writer.rollup_gauges();
+    let before = gauges.recomputes.load(Ordering::SeqCst);
+    writer.flush_blocking().expect("flush what the test sent");
+    wait_until(
+        WRITER_SETTLES_WITHIN,
+        "the writer's next roll-up slice: a recompute, or nothing left owed",
+        || gauges.recomputes.load(Ordering::SeqCst) > before || gauges.owed.load(Ordering::SeqCst) == 0,
+    );
+}
+
 /// Block until the writer has committed everything AND run its end-of-iteration hooks, which is
 /// where a burst of subtree aggregates pays for the ancestor roll-ups it queued
 /// (`writer/pending_rollups.rs`).
