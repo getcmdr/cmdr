@@ -195,7 +195,7 @@ The full top-level inventory is here:
   silently makes it fail on its own prose. The `sync(2)` half is clippy's (`clippy.toml`). Anything with a subject of
   its own lives next to that subject (`overwrite_tests.rs`, `ledger_tests.rs`, `delete/delete_cancel_tests.rs`).
 - **The scan is four files, and only one of them knows what a write operation is.** `scan_walker.rs` holds the shared
-  local-FS recursion (`WalkContext`, `walk_dir_recursive`, `walk_sources_with_per_path`, and the hardlink dedup): one
+  local-FS walk (`WalkContext`, `walk_dir_recursive`, `walk_sources_with_per_path`, and the hardlink dedup): one
   descent, parameterized by callbacks, so the copy scan, the delete scan, and the dry run share a symlink stance, cancel
   checkpoints, and the authoritative-listing fast path. It names no operation type. `scan.rs` turns a local walk into
   totals (`scan_sources`); `scan_oracle.rs` totals one subtree on any volume (`scan_subtree_with_oracle`).
@@ -2526,7 +2526,7 @@ the batch still has a good name. So the transfer parks on the person, per item: 
   off the carried-source ledger; a top-level skip returns before the sweep; the local cross-FS move deletes only what
   its transaction recorded.
 - **A refused FOLDER** (its `create_directory`, deep in a volume walk) asks from its parent level
-  (`merge.rs::skip_if_folder_refused`); a Skip leaves its whole subtree out, counts every file under it (one
+  (`merge_leaves.rs::skip_if_folder_refused`); a Skip leaves its whole subtree out, counts every file under it (one
   `scan_for_copy` of the source subtree, paid only then), and records the folder as one skipped source, which the sweep
   spares whole. It reads as `notAllowed`: a refused folder create carries no evidence its length is why, so that copy
   names length among the reasons.

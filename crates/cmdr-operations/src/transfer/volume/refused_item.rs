@@ -3,7 +3,7 @@
 //!
 //! Who asks is whoever may wait on a person: the merge WALKER for the leaves it
 //! submitted (a leaf is a future only the walker polls, so it must never wait
-//! on the dispatch mutex itself, `merge.rs::LeafPool`), and the top-level
+//! on the dispatch mutex itself, `merge_leaves.rs::LeafPool`), and the top-level
 //! dispatch for a source whose own name was refused (a spawned task in the
 //! concurrent driver, the closure in the serial one). Each asks only about a
 //! refusal AT the item it owns, so a deep refusal answered Stop doesn't get

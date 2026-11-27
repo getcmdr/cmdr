@@ -41,7 +41,9 @@ Where a symbol lives and who calls it: `codegraph_search` / `codegraph_explore`.
   `sequential_extract.rs`, so the server-side copy never imports `stream_pipe.rs` back (it would close a module cycle).
   The vocabulary both halves and both drivers speak (`FileWindow`, `MergeCtx`, `MergeProbe`, `CreatedPaths`) sits beside
   them in `merge_ctx.rs`. `merge.rs` walks a tree (`copy_directory_streaming`, `resolve_merge_child`): a directory child
-  is a level the walk descends into (§ "The walk keeps its depth on the heap"), a file child goes to `stream_pipe.rs`.
+  is a level the walk descends into (§ "The walk keeps its depth on the heap"), a file child goes to `stream_pipe.rs`
+  through `merge_leaves.rs` (the walker's `LeafPool`, its one-file leaves `copy_leaf` and `copy_link_leaf`, and the
+  refused-name half: a name the destination won't take is asked about on the walker, ❌ never in a leaf).
   `sequential_extract.rs` reuses the same walk in plan mode, which is why the merge/conflict/rollback code is not
   reimplemented for one-pass archives. `folder_metadata.rs` holds what the walk notes about the folders it created,
   stamped once the subtree landed, and `landed_flags.rs` the flags a FILE waits to wear until its landing (both §

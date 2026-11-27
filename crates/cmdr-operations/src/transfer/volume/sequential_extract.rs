@@ -212,7 +212,7 @@ pub(super) async fn extract_sequential_subtree(
         state.metadata_losses.note_file(lost.union(written.refused()));
         let bytes = written.bytes;
 
-        // A landed overwrite is recorded the way `merge.rs::copy_leaf` records
+        // A landed overwrite is recorded the way `merge_leaves.rs::copy_leaf` records
         // it: an op that overwrote isn't rollbackable, and the journal can only
         // say so if it's told.
         if planned.replaces.overwrites() {

@@ -508,7 +508,7 @@ put a file on disk, because on disk that zero-byte placeholder is indistinguisha
 produced, and only the caller knows whether its write ever happened. The top-level drivers already covered it (the
 resolved write path is their in-flight partial, cleaned by the post-loop); a DEEP merge child did not, so a leaf that
 gave up (an unreadable source, a cancel between chunks) left a `clash (1).txt` that `CreatedPaths` never learned about —
-`merge.rs::copy_leaf` records on SUCCESS — and no rollback or sweep could reach. `copy_leaf` calls
+`merge_leaves.rs::copy_leaf` records on SUCCESS — and no rollback or sweep could reach. `copy_leaf` calls
 `take_back_reservation` on its failure path, which deletes the placeholder ONLY while it is still empty: a size means
 somebody else wrote there, and deleting a stranger's bytes to tidy up our own reservation would be the worse bug. Two
 shapes never reach that path: a leaf whose FUTURE is dropped (the driver's cancel-drain deadline, or a failing sibling's
