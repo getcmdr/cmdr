@@ -355,6 +355,13 @@ impl Volume for LocalWindowsVolume {
         }))
     }
 
+    /// The node a walk reaches at `path`, through every link and junction on the way: its
+    /// file id through a handle that follows them (`FileId::at`).
+    fn reached_node<'a>(&'a self, path: &'a AppPath) -> Pin<Box<dyn Future<Output = Option<FileId>> + Send + 'a>> {
+        let at = self.locate(path).ok();
+        Box::pin(blocking("reached_node", move || FileId::at(&at?.os, Follow::Links)))
+    }
+
     fn notify_mutation<'a>(
         &'a self,
         volume_id: &'a str,

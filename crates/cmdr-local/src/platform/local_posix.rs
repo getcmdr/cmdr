@@ -585,6 +585,19 @@ impl Volume for LocalPosixVolume {
         })
     }
 
+    fn reached_node<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Option<cmdr_fs::file_identity::FileId>> + Send + 'a>> {
+        // One `stat`, following links, as the walk reaches the path.
+        let abs_path = self.os_path(path);
+        Box::pin(async move {
+            spawn_blocking(move || cmdr_fs::file_identity::FileId::at(&abs_path, cmdr_fs::file_identity::Follow::Links))
+                .await
+                .expect("spawn_blocking reached_node closure doesn't panic and the task is uncancelable")
+        })
+    }
+
     fn notify_mutation<'a>(
         &'a self,
         volume_id: &'a str,

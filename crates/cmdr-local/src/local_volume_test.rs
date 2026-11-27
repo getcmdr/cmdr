@@ -285,6 +285,22 @@ async fn node_identity_follows_the_folder_not_its_name() {
     ));
 }
 
+/// `reached_node` answers for what a walk reaches through a link: a link to a folder
+/// reaches that folder, which is how the copy tells a link back up its own path
+/// (ERR-BGEKC). A missing path can't say.
+#[tokio::test]
+async fn reached_node_follows_a_link_to_the_folder_it_reaches() {
+    let test_dir = AppTestDir::new("reached_node_test");
+    let volume = volume_at(&test_dir);
+    volume.create_directory(&at(&volume, "real")).await.unwrap();
+    cmdr_fs::testing::symlink("real", test_dir.native().join("link")).unwrap();
+
+    let folder = volume.reached_node(&at(&volume, "real")).await;
+    assert!(folder.is_some(), "a local disk names its nodes");
+    assert_eq!(volume.reached_node(&at(&volume, "link")).await, folder);
+    assert_eq!(volume.reached_node(&at(&volume, "missing")).await, None);
+}
+
 // ── Copy: the scan and the streams ────────────────────────────────────
 
 #[tokio::test]

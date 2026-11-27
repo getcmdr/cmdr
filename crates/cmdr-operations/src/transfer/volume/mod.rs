@@ -243,6 +243,10 @@ mod hidden_link_backend_tests;
 #[cfg(test)]
 mod hostile_names_tests;
 /// The same rule on a backend whose `is_directory` follows a link (ADB, SFTP).
+mod link_cycle;
+/// A followed link never leads the copy back into a folder it's already in (ERR-BGEKC).
+#[cfg(test)]
+mod link_cycle_tests;
 #[cfg(test)]
 mod link_following_backend_tests;
 /// What each walker does with a listing row's own path: a `..` row is refused, a name
