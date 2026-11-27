@@ -248,6 +248,11 @@ pub fn run() {
     // `crash_reporter::init` resolves the data dir; see `crash_reporter/CLAUDE.md`.
     crash_reporter::install_panic_hook();
 
+    // Before anything opens a file: a Dock-launched macOS app's soft open-file limit is
+    // usually 256, which SQLite, watchers, sessions, and walks together outgrow. Logged once
+    // the logger is up, below. See `cmdr_fs::open_file_limit`.
+    let open_file_limit = cmdr_fs::open_file_limit::raise();
+
     // Every OS-default dir hangs off the build's own identifier (#820): record it first.
     let context = tauri::generate_context!();
     config::set_app_identifier(&context.config().identifier);
@@ -327,6 +332,7 @@ pub fn run() {
 
             logging::startup::init();
             claim.log(); // what the claim found, now that a logger can record it
+            open_file_limit.log(); // the raise at the top of `run`
 
             // With a PAC file configured, run its slow first evaluation now, in the background,
             // so the launch's first requests (heartbeat, license, update check) don't miss its

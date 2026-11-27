@@ -39,7 +39,9 @@ pub(crate) fn deep_tree(dir: &Path) -> PathBuf {
 
 /// The open files a walk may hold, well under [`DEPTH`]: a GUI-launched macOS
 /// app's soft limit is often 256, so a walk that holds a folder handle per level
-/// meets "too many open files" long before `PATH_MAX`.
+/// meets "too many open files" long before `PATH_MAX`. Startup raises that limit
+/// (`cmdr_fs::open_file_limit`), but a walk must not lean on the raise, which can
+/// be refused or capped by a low hard limit.
 const OPEN_FILES: libc::rlim_t = 128;
 
 /// Runs `walk` on a thread of `stack` bytes, with this test process's soft

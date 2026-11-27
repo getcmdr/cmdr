@@ -1278,9 +1278,11 @@ polling the outermost one polls every level below it, one stack frame per level.
   (`locked_sources.rs::LockedScan::note_merge`), in the same pre-order its list is asked in.
 - **A local walk holds ONE folder handle at a time**: each level's listing is drained into a `Vec` (paths only: a Unix
   `DirEntry` keeps its directory open) and closed before the walk goes deeper, ❌ never a `ReadDir` per level. A
-  GUI-launched macOS app's soft `RLIMIT_NOFILE` is often 256, and Cmdr doesn't raise it, so a handle per level met "too
-  many open files" (`EMFILE`) at a few hundred levels, before `PATH_MAX` (verified on macOS 27, the deep cells with the
-  soft limit cut to 128, 2026-11-27). The deep cells run under that cut (`local_deep_tree_tests.rs::on_a_thread`).
+  GUI-launched macOS app's soft `RLIMIT_NOFILE` is often 256, so a handle per level met "too many open files" (`EMFILE`)
+  at a few hundred levels, before `PATH_MAX` (verified on macOS 27, the deep cells with the soft limit cut to 128,
+  2026-11-27). Startup now raises the soft limit to up to 10,240 (`cmdr_fs::open_file_limit`), but the one-handle rule
+  stands: the raise can be refused or capped by a low hard limit, and every other subsystem shares the same budget. The
+  deep cells run under that cut (`local_deep_tree_tests.rs::on_a_thread`).
 
 Every walk the 2026-11-27 audit listed now keeps its depth on the heap; the one recursion left that it found is
 `cmdr-mtp`'s whole-subtree delete (`MtpDeleteScope::Tree`), which nothing in the app calls. ❌ A new walk that recurses
