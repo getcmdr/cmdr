@@ -463,6 +463,7 @@ const ERROR_KEYS: Record<AskCmdrErrorKind, MessageKey> = {
   budgetExhausted: 'askCmdr.error.budgetExhausted',
   repeatedToolCall: 'askCmdr.error.repeatedToolCall',
   unfinishedReply: 'askCmdr.error.unfinishedReply',
+  notAnAiApi: 'askCmdr.error.notAnAiApi',
   provider: 'askCmdr.error.provider',
 }
 

@@ -36,12 +36,14 @@ use crate::managed_policy::AiDestination;
 mod routing;
 
 mod classify;
+mod silent_stream;
 pub(crate) use classify::map_genai_error;
 #[cfg(test)]
 use classify::parse_retry_after;
 pub(super) use classify::provider_error_message;
 #[cfg(test)]
 use classify::{ai_error_for_status, provider_error_detail};
+pub(crate) use silent_stream::SilentStreamProbe;
 
 #[cfg(test)]
 use routing::is_openai_chat_reasoning_model;
@@ -69,6 +71,9 @@ pub struct AiBackend {
     /// serves. The actual write is still gated on the `logLlmCalls` setting inside
     /// [`crate::ai::llm_log`], so a context alone never forces a write.
     log_ctx: Option<LlmLogContext>,
+    /// What a chat stream that ended with nothing at all asks next ([`SilentStreamProbe`]).
+    /// `None` for the local server, which Cmdr launched itself.
+    silent_stream_probe: Option<Arc<SilentStreamProbe>>,
 }
 
 /// Test-only constructors and overrides (`remote_for_tests`, `with_chat_reasoning_replay`, …).
@@ -103,6 +108,7 @@ impl AiBackend {
             replays_chat_reasoning: false,
             top_level_cache_marker: false,
             log_ctx: None,
+            silent_stream_probe: None,
         }
     }
 
@@ -121,6 +127,11 @@ impl AiBackend {
         let model = remote_model_iden(&model, host);
         let replays_chat_reasoning = host.is_some_and(replays_chat_reasoning_for_host);
         let destination = AiDestination::Remote(endpoint_url);
+        let silent_stream_probe = Some(Arc::new(SilentStreamProbe {
+            base_url: endpoint.clone(),
+            api_key: api_key.clone(),
+            destination: destination.clone(),
+        }));
         let resolver = make_resolver(endpoint, AuthData::from_single(api_key), ForceAdapter::None);
         let client = Client::builder()
             .with_reqwest(policy_guarded_http_client())
@@ -136,7 +147,18 @@ impl AiBackend {
             replays_chat_reasoning,
             top_level_cache_marker,
             log_ctx: None,
+            silent_stream_probe,
         }
+    }
+
+    /// The check a chat stream that ended with nothing at all earns ([`SilentStreamProbe`]), for
+    /// a remote endpoint on an OpenAI-shaped protocol (chat completions or the Responses API).
+    /// `None` for the local server and the native Anthropic and Gemini protocols, whose model
+    /// lists answer in their own shapes.
+    pub(crate) fn silent_stream_probe(&self, adapter: AdapterKind) -> Option<Arc<SilentStreamProbe>> {
+        matches!(adapter, AdapterKind::OpenAI | AdapterKind::OpenAIResp)
+            .then(|| self.silent_stream_probe.clone())
+            .flatten()
     }
 
     /// The backstop behind `resolve_backend`'s own check: asks the policy on a fresh read whether
@@ -385,6 +407,10 @@ pub enum AiError {
     /// looks like from our side — the `<provider>-smoke` lanes branch on this variant to
     /// tell a stale pin apart from an outage.
     NotFound(String),
+    /// Something at the endpoint answered, but not an AI API: a web page or plain text where an
+    /// API would answer JSON (`super::endpoint_answer`). The base URL points at a website, a
+    /// sign-in page, or a proxy. The string is the technical line (`HTTP 404, text/html`).
+    NotAnAiApi(String),
     /// The call succeeded but the model produced no visible text. Common on reasoning models
     /// when `max_tokens` is fully consumed by reasoning before any answer is emitted.
     EmptyResponse,
@@ -408,6 +434,7 @@ impl Display for AiError {
             Self::RequestTooLarge(msg) => write!(f, "AI provider won't take a request this big: {msg}"),
             Self::Overloaded { detail, .. } => write!(f, "AI provider is overloaded right now: {detail}"),
             Self::NotFound(msg) => write!(f, "AI provider has no such model or endpoint: {msg}"),
+            Self::NotAnAiApi(msg) => write!(f, "the AI endpoint doesn't answer like an AI API: {msg}"),
             Self::EmptyResponse => write!(f, "AI returned no text"),
             Self::ServerError(msg) => write!(f, "AI server error: {msg}"),
             Self::ParseError(msg) => write!(f, "AI response parse error: {msg}"),

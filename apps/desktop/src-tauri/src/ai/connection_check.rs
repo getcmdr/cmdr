@@ -568,7 +568,7 @@ fn scrub_secrets(body: &str, api_key: &str) -> String {
 
 /// Replace the token in any `Bearer <token>` substring with `<redacted>`, leaving the rest
 /// of the text intact. Case-insensitive on the `Bearer` keyword.
-fn scrub_bearer_tokens(text: &str) -> Cow<'_, str> {
+pub(in crate::ai) fn scrub_bearer_tokens(text: &str) -> Cow<'_, str> {
     static BEARER_RE: OnceLock<Regex> = OnceLock::new();
     let re = BEARER_RE.get_or_init(|| Regex::new(r"(?i)\bBearer\s+\S+").expect("valid bearer regex"));
     re.replace_all(text, "Bearer <redacted>")

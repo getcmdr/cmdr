@@ -706,6 +706,8 @@ state is unambiguous:
   whose message carries NO parts takes this same path: it's what a degenerate provider turn
   reduces to once `llm/genai_impl.rs` drops a nameless tool call, and persisting it would
   show a blank bubble and call it an answer.
+  A stream that said nothing at all first asks the endpoint what answers there, and a web page
+  ends the turn as `NotAnAiApi` instead (`../../ai/DETAILS.md`, the `client.rs` entry).
 - **(b)** the user row is written on the FIRST `End`, not at send. A first `respond` that
   never reached `End` records nothing, so a re-send re-assembles byte-identically.
 - **(c)** completed turns (each written on its own `End`, tool results on their own rows)

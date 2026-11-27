@@ -557,6 +557,7 @@ export type MessageKey =
   | 'askCmdr.error.modelNotInPlan.unnamed'
   | 'askCmdr.error.noCloudConsent'
   | 'askCmdr.error.noKey'
+  | 'askCmdr.error.notAnAiApi'
   | 'askCmdr.error.notConfigured'
   | 'askCmdr.error.provider'
   | 'askCmdr.error.providerBusy.named'

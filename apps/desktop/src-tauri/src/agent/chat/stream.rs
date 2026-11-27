@@ -231,6 +231,9 @@ pub enum AgentErrorKindView {
     /// back with a problem, after being told repeating it changes nothing.
     RepeatedToolCall,
     UnfinishedReply,
+    /// The endpoint answered with something that isn't an AI API (a web page). The rail points
+    /// at the endpoint in Settings, since every send gets the same answer until it changes.
+    NotAnAiApi,
     Provider,
 }
 
@@ -259,6 +262,7 @@ impl AgentErrorKindView {
             AgentErrorKindView::BudgetExhausted => "budget_exhausted",
             AgentErrorKindView::RepeatedToolCall => "repeated_tool_call",
             AgentErrorKindView::UnfinishedReply => "unfinished_reply",
+            AgentErrorKindView::NotAnAiApi => "not_an_ai_api",
             AgentErrorKindView::Provider => "provider",
         }
     }
@@ -279,6 +283,7 @@ impl From<AgentErrorKind> for AgentErrorKindView {
             AgentErrorKind::BudgetExhausted => Self::BudgetExhausted,
             AgentErrorKind::RepeatedToolCall => Self::RepeatedToolCall,
             AgentErrorKind::UnfinishedReply => Self::UnfinishedReply,
+            AgentErrorKind::NotAnAiApi => Self::NotAnAiApi,
             AgentErrorKind::Provider => Self::Provider,
             AgentErrorKind::ManagedByOrganization(_) => Self::ManagedByOrganization,
         }

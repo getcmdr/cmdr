@@ -84,15 +84,22 @@ impl AgentLlm for GenaiAgentLlm {
                 .await
                 .map_err(AgentLlmError::from)?;
 
+            // A stream that ends saying nothing at all asks the endpoint what answers there
+            // (`crate::ai::client::SilentStreamProbe`), so a web page at the base URL reads as
+            // that, not as a reply that didn't finish.
+            let silent_check = self
+                .backend
+                .silent_stream_probe(adapter)
+                .map(|probe| async move { probe.diagnose().await.map(AgentLlmError::from) }.boxed());
+
             // Cancellation: end the stream when the token fires, which drops the
             // underlying reqwest body (billing stops) — the same model `crate::ai`
-            // relies on. `response` is the raw genai event stream (already tapped for
-            // logging inside `AiBackend`).
+            // relies on — and the silent-stream check with it. `response` is the raw genai
+            // event stream (already tapped for logging inside `AiBackend`).
             let cancel_signal = cancel.clone();
-            let stream = map_stream(
-                response.take_until(async move { cancel_signal.cancelled().await }),
-                origin,
-            );
+            let stream = map_stream(response, origin, silent_check)
+                .take_until(async move { cancel_signal.cancelled().await })
+                .boxed();
 
             Ok(stream)
         }
@@ -107,20 +114,41 @@ impl AgentLlm for GenaiAgentLlm {
 /// would otherwise start several times. The rail keys its tool lines by call id, and a
 /// repeated key took the whole window down (`ERR-FRMAR`, a local Ministral 3B on
 /// llama-server).
-fn map_stream<S>(events: S, origin: ReasoningOrigin) -> AgentDeltaStream
+///
+/// A stream that ends having said NOTHING (keep-alives aside: no text, no tool call, no
+/// reasoning, no `End`, no error) runs `silent_check` and ends with its answer, when it has one.
+/// That's what a 2xx answer that isn't server-sent events reduces to (`ERR-V6AR3`).
+fn map_stream<S>(
+    events: S,
+    origin: ReasoningOrigin,
+    silent_check: Option<BoxFuture<'static, Option<AgentLlmError>>>,
+) -> AgentDeltaStream
 where
     S: futures_util::Stream<Item = genai::Result<ChatStreamEvent>> + Send + 'static,
 {
     let mut started = std::collections::HashSet::<String>::new();
-    events
-        .filter_map(move |item| {
-            let delta = map_stream_event(item, &origin).filter(|delta| match delta {
-                Ok(AgentDelta::ToolCallStarted { call_id, .. }) => started.insert(call_id.clone()),
-                _ => true,
-            });
-            futures_util::future::ready(delta)
-        })
-        .boxed()
+    let mut heard = false;
+    let said_something = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let said = said_something.clone();
+    let mapped = events.filter_map(move |item| {
+        let delta = map_stream_event(item, &origin).filter(|delta| match delta {
+            Ok(AgentDelta::ToolCallStarted { call_id, .. }) => started.insert(call_id.clone()),
+            _ => true,
+        });
+        if !heard && !matches!(delta, None | Some(Ok(AgentDelta::KeepAlive))) {
+            heard = true;
+            said.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
+        futures_util::future::ready(delta)
+    });
+    let tail = futures_util::stream::once(async move {
+        match silent_check {
+            Some(check) if !said_something.load(std::sync::atomic::Ordering::Relaxed) => check.await.map(Err),
+            _ => None,
+        }
+    })
+    .filter_map(futures_util::future::ready);
+    mapped.chain(tail).boxed()
 }
 
 // region: --- Request build (agent -> genai)
@@ -540,6 +568,7 @@ impl From<AiError> for AgentLlmError {
             AiError::ModelNotInPlan(detail) => AgentLlmError::ModelNotInPlan(detail),
             AiError::Overloaded { detail, retry_after } => AgentLlmError::Overloaded { detail, retry_after },
             AiError::NotFound(detail) => AgentLlmError::Provider(detail),
+            AiError::NotAnAiApi(detail) => AgentLlmError::NotAnAiApi(detail),
             AiError::EmptyResponse => AgentLlmError::Provider("the model returned no text".to_string()),
             AiError::ServerError(detail) => AgentLlmError::Provider(detail),
             AiError::ParseError(detail) => AgentLlmError::Provider(detail),

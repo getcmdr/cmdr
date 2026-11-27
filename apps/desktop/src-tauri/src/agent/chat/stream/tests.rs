@@ -27,6 +27,7 @@ fn every_error_kind_maps_to_its_own_wire_kind() {
         AgentErrorKind::BudgetExhausted,
         AgentErrorKind::RepeatedToolCall,
         AgentErrorKind::UnfinishedReply,
+        AgentErrorKind::NotAnAiApi,
         AgentErrorKind::Provider,
         AgentErrorKind::ManagedByOrganization(crate::managed_policy::ManagedAiRefusal::AiOff),
     ]
@@ -49,6 +50,7 @@ fn every_error_kind_maps_to_its_own_wire_kind() {
             "budgetExhausted",
             "repeatedToolCall",
             "unfinishedReply",
+            "notAnAiApi",
             "provider",
             "managedByOrganization",
         ]

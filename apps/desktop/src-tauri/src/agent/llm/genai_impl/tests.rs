@@ -1,6 +1,7 @@
 use super::*;
 use serde_json::json;
 
+mod gateway_shapes;
 mod overloaded;
 mod replay_fixtures;
 
@@ -435,7 +436,7 @@ async fn a_tool_call_streamed_in_fragments_starts_once() {
         tool_chunk("def", wire),
     ]);
 
-    let started: Vec<String> = map_stream(events, origin(AdapterKind::OpenAI, "gpt-4.1-mini"))
+    let started: Vec<String> = map_stream(events, origin(AdapterKind::OpenAI, "gpt-4.1-mini"), None)
         .filter_map(|delta| async move {
             match delta {
                 Ok(AgentDelta::ToolCallStarted { call_id, .. }) => Some(call_id),

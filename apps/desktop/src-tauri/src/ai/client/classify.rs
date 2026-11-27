@@ -1,6 +1,7 @@
 //! Turns a failed provider call into a typed [`AiError`]: by HTTP status, plus the response's
-//! request-limit headers for a 429 and `Retry-After` for a 503, never by the provider's wording. Pure functions;
-//! `client_unit_test.rs` pins them without a network.
+//! request-limit headers for a 429 and `Retry-After` for a 503, never by the provider's wording. Pure functions,
+//! apart from the one warn that logs what answered when it isn't an AI API; `client_unit_test.rs` pins them without
+//! a network.
 
 use std::fmt::Display;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -48,6 +49,33 @@ fn ai_error_for_response(status: u16, headers: &reqwest::header::HeaderMap, deta
         },
         other => other,
     }
+}
+
+/// A provider's failed response as an [`AiError`]: [`ai_error_for_response`] on its status and
+/// headers, except a 404 or 405 whose body isn't JSON. That's no AI API at this address at all
+/// (a website's "Not Found" page, a proxy's notice), so it says so instead of passing the page
+/// off as a missing model (`ERR-V6AR3`). A JSON 404 stays [`AiError::NotFound`]: an API
+/// answered, about the model.
+pub(super) fn ai_error_for_failed_response(
+    status: reqwest::StatusCode,
+    headers: &reqwest::header::HeaderMap,
+    body: &str,
+) -> AiError {
+    if matches!(status.as_u16(), 404 | 405) {
+        let content_type = headers
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default();
+        if let Some(answer) = crate::ai::endpoint_answer::non_json_answer(content_type, body) {
+            let summary = crate::ai::endpoint_answer::summary(status.as_u16(), content_type);
+            log::warn!(
+                "the AI endpoint doesn't answer like an AI API ({answer:?}, {summary}), detail={:?}",
+                cmdr_fs::log_detail::LogDetail(&crate::ai::connection_check::scrub_bearer_tokens(body))
+            );
+            return AiError::NotAnAiApi(summary);
+        }
+    }
+    ai_error_for_response(status.as_u16(), headers, provider_error_detail(status, body))
 }
 
 /// A `Retry-After` value as a wait from `now`: whole seconds, or an HTTP date (RFC 9110 §10.2.3;
@@ -125,7 +153,7 @@ pub(crate) fn map_genai_error(e: genai::Error) -> AiError {
             status, body, headers, ..
         }) = error.downcast_ref::<G>()
     {
-        return ai_error_for_response(status.as_u16(), headers, provider_error_detail(status, body));
+        return ai_error_for_failed_response(*status, headers, body);
     }
 
     let webc = match &e {
@@ -139,7 +167,7 @@ pub(crate) fn map_genai_error(e: genai::Error) -> AiError {
             W::Reqwest(req) if req.is_connect() => return AiError::Unavailable,
             W::Reqwest(req) => return AiError::ServerError(format!("network error: {req}")),
             W::ResponseFailedStatus { status, body, headers } => {
-                return ai_error_for_response(status.as_u16(), headers, provider_error_detail(status, body));
+                return ai_error_for_failed_response(*status, headers, body);
             }
             W::ResponseFailedNotJson { content_type, body } => {
                 return AiError::ParseError(format!(
