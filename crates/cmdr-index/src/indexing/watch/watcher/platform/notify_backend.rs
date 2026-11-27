@@ -135,7 +135,13 @@ impl NotifyBackend {
         // Create a std channel for notify events, then forward to the tokio mpsc.
         let (notify_tx, notify_rx) = std::sync::mpsc::channel();
 
-        let watcher = notify::RecommendedWatcher::new(notify_tx, notify::Config::default())
+        // ❌ Never follow links: inotify walks each recursive root to arm a watch
+        // per directory (and again under every new folder), and a link to `/` in
+        // a user folder (a Wine prefix's `dosdevices/z:`) would arm the whole disk
+        // and run out of `max_user_watches` (#1538). The scanner doesn't descend
+        // links either, so the watch covers exactly what the index holds.
+        let config = notify::Config::default().with_follow_symlinks(false);
+        let watcher = notify::RecommendedWatcher::new(notify_tx, config)
             .map_err(|e| WatcherError::StreamCreate(format!("inotify: {e}")))?;
         let watcher = Arc::new(std::sync::Mutex::new(watcher));
 

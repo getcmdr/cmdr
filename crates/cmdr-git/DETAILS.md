@@ -223,7 +223,9 @@ the old set didn't.
 
 ❗ **`NoCache`, ❌ never the default `FileIdMap`.** The map pairs a rename's two halves by file id, and pays for it by
 walking and `stat`ing the whole watched tree at arm time, which for a recursive gitdir is every loose object.
-`is_repo_state_path` reads paths only, so the pairing buys nothing.
+`is_repo_state_path` reads paths only, so the pairing buys nothing. The config also turns off `follow_symlinks`, which
+only inotify reads: it walks the recursive gitdir to arm a watch per directory, and a link there mustn't take the walk
+elsewhere (#1538).
 
 ❗ **A linked worktree watches the COMMON gitdir.** Its `.git` is a FILE (gitlink) pointing at its own gitdir
 (`<common>/worktrees/<name>/`), which holds only `HEAD`, `index`, `logs/HEAD`, and the merge/fetch heads; every branch,

@@ -136,7 +136,9 @@ impl GitWatcherBackend for NotifyWatcherBackend {
             None,
             handler,
             NoCache,
-            notify::Config::default(),
+            // inotify walks the recursive gitdir to arm it; a link in there
+            // mustn't take that walk elsewhere (#1538).
+            notify::Config::default().with_follow_symlinks(false),
         )
         .map_err(|e| FriendlyGitError::with_source(FriendlyGitErrorKind::CorruptRepo, e.to_string(), e))?;
         // A failed watch costs live updates, ❌ not the chip: the handshake still
