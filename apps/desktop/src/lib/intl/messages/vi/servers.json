@@ -363,6 +363,10 @@
   "@servers.sheet.connecting": {
     "sourceHash": "72021eb"
   },
+  "servers.sheet.useMacosSavedPassword": "Dùng mật khẩu macOS đã lưu",
+  "@servers.sheet.useMacosSavedPassword": {
+    "sourceHash": "ef94b27"
+  },
   "servers.sheet.protocolLegend": "Giao thức",
   "@servers.sheet.protocolLegend": {
     "sourceHash": "cf08833"

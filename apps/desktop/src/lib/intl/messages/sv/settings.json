@@ -1377,15 +1377,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "Visa ”..” i varje servers rotmapp",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "”..” tar dig tillbaka till listan Servrar. I en S3-bucket leder ”..” till kontots lista över bucketar.",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "överordnad mapp, föräldermapp, upp, tillbaka, översta mappen, rot, serverlista, bucketlista, två punkter, punkt punkt",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

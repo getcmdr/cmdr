@@ -1376,15 +1376,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "Mostrar “..” en la carpeta raíz de cada servidor",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "“..” te devuelve a la lista Servidores. En un bucket de S3, te lleva a la lista de buckets de la cuenta.",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "carpeta superior, subir, arriba, atrás, volver, raíz, lista de servidores, lista de buckets, punto punto, dos puntos",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

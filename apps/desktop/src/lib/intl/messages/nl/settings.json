@@ -1379,15 +1379,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "‘..’ in de hoofdmap van elke server tonen",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "‘..’ brengt je terug naar de lijst Servers. In een S3-bucket brengt ‘..’ je naar de lijst met buckets van het account.",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "bovenliggende map, omhoog, terug, bovenste map, root, serverlijst, bucketlijst, twee puntjes, puntpunt",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

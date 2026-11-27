@@ -363,6 +363,10 @@
   "@servers.sheet.connecting": {
     "sourceHash": "72021eb"
   },
+  "servers.sheet.useMacosSavedPassword": "使用 macOS 已儲存的密碼",
+  "@servers.sheet.useMacosSavedPassword": {
+    "sourceHash": "ef94b27"
+  },
   "servers.sheet.protocolLegend": "通訊協定",
   "@servers.sheet.protocolLegend": {
     "sourceHash": "cf08833"

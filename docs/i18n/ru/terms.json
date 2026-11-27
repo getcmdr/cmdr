@@ -1953,7 +1953,8 @@
       "commands.navParent.label": "Navigation uses the conventional spatial label «на уровень выше»; folder is implicit, not renamed.",
       "menu.go.parentFolder": "Native navigation label expresses parent relation as «на уровень выше».",
       "settings.behavior.doubleClickPaneNavigatesToParent.label": "The parent folder is expressed by the spatial navigation phrase «на уровень выше».",
-      "errors.write.archiveEntryNameRefused.message.tooDeep": "Depth is expressed directly; the hierarchy is implicit in an archive entry."
+      "errors.write.archiveEntryNameRefused.message.tooDeep": "Depth is expressed directly; the hierarchy is implicit in an archive entry.",
+      "fileExplorer.errorPane.goUp": "Same spatial phrase as commands.navParent.label: the button repeats the command's words."
     },
     "confidence": "high",
     "sources": "macOS Finder (InfoPlist Folder → Папка); MS; Nautilus"

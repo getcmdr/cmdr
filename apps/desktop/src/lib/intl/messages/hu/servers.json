@@ -363,6 +363,10 @@
   "@servers.sheet.connecting": {
     "sourceHash": "72021eb"
   },
+  "servers.sheet.useMacosSavedPassword": "A macOS által mentett jelszó használata",
+  "@servers.sheet.useMacosSavedPassword": {
+    "sourceHash": "ef94b27"
+  },
   "servers.sheet.protocolLegend": "Protokoll",
   "@servers.sheet.protocolLegend": {
     "sourceHash": "cf08833"

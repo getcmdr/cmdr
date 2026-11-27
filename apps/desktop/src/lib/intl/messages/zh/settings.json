@@ -1375,15 +1375,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "在每台服务器的顶层文件夹中显示“..”",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "“..”会带你返回“服务器”列表。在 S3 存储桶中，“..”会带你前往该账户的存储桶列表。",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "上层、上一级、向上、返回、后退、根目录、根、服务器列表、存储桶列表、两个点、点点",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

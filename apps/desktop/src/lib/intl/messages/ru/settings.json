@@ -1373,15 +1373,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "Показывать «..» в корневой папке каждого сервера",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "«..» вернет вас в список «Серверы». В бакете S3 «..» ведет к списку бакетов учетной записи.",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "родительская папка, вверх, назад, уровень выше, корень, список серверов, список бакетов, две точки",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

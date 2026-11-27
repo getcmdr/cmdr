@@ -1373,15 +1373,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "Hiển thị “..” trong thư mục gốc của mỗi máy chủ",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "“..” đưa bạn quay lại danh sách Máy chủ. Trong một bộ chứa S3, “..” đưa bạn tới danh sách bộ chứa của tài khoản.",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "thư mục cha, đi lên, quay lại, lên trên, gốc, danh sách máy chủ, danh sách bộ chứa, hai dấu chấm, chấm chấm",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },

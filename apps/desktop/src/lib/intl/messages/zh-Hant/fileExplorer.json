@@ -235,7 +235,7 @@
   "@fileExplorer.errorPane.openSystemSettings": {
     "sourceHash": "f735c5c"
   },
-  "fileExplorer.errorPane.goUp": "Go to parent folder",
+  "fileExplorer.errorPane.goUp": "前往上層資料夾",
   "@fileExplorer.errorPane.goUp": {
     "sourceHash": "7d4c500"
   },

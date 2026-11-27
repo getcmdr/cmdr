@@ -364,6 +364,10 @@
   "@servers.sheet.connecting": {
     "sourceHash": "72021eb"
   },
+  "servers.sheet.useMacosSavedPassword": "Utiliser le mot de passe enregistré par macOS",
+  "@servers.sheet.useMacosSavedPassword": {
+    "sourceHash": "ef94b27"
+  },
   "servers.sheet.protocolLegend": "Protocole",
   "@servers.sheet.protocolLegend": {
     "sourceHash": "cf08833"

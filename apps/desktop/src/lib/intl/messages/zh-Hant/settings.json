@@ -1375,15 +1375,15 @@
   "@settings.network.showShareParentRow.keywords": {
     "sourceHash": "3d7f35d"
   },
-  "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
+  "settings.network.showServerParentRow.label": "在每個伺服器的最上層資料夾顯示「..」",
   "@settings.network.showServerParentRow.label": {
     "sourceHash": "a79a327"
   },
-  "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
+  "settings.network.showServerParentRow.description": "「..」會帶你回到「伺服器」列表。在 S3 儲存貯體中，「..」會帶你前往該帳號的儲存貯體列表。",
   "@settings.network.showServerParentRow.description": {
     "sourceHash": "e36dc67"
   },
-  "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
+  "settings.network.showServerParentRow.keywords": "上層, 上一層, 往上, 返回, 根目錄, 伺服器列表, 儲存貯體列表, 兩個點, 點點",
   "@settings.network.showServerParentRow.keywords": {
     "sourceHash": "0a7bade"
   },
