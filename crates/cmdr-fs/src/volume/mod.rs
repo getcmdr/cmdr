@@ -489,6 +489,22 @@ pub trait Volume: Send + Sync {
         Box::pin(async { Ok(None) })
     }
 
+    /// Which node a walk reaches at `path`, following every link on the way,
+    /// the last name's included, or `None` when the backend can't say (or the
+    /// path can't be read).
+    ///
+    /// The copy engine asks it before following a link into a folder: a link
+    /// whose folder is one the walk is already inside makes the tree endless
+    /// (ERR-BGEKC). Defaults to `None`, which leaves such a link followed, the
+    /// honest answer for a backend whose links never reach the engine as links;
+    /// the local backends answer with one `stat` ([`crate::file_identity::FileId::at`]).
+    fn reached_node<'a>(
+        &'a self,
+        _path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Option<crate::file_identity::FileId>> + Send + 'a>> {
+        Box::pin(async { None })
+    }
+
     // ========================================
     // E2E test support (feature-gated)
     // ========================================

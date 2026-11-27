@@ -42,6 +42,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
 use super::landing::{DestFolder, NewName, where_it_lands};
+use super::link_cycle::{leads_back_up, skip_link_back_up};
 use super::listed_name::{ListedName, into_std, listed_path, shown_under, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
@@ -1028,6 +1029,12 @@ async fn merge_level<'a>(
             _ => None,
         };
         let descends = entry.is_directory && link_target.is_none();
+
+        // A link this walk would follow back into a folder it's already inside makes the tree endless (ERR-BGEKC).
+        if descends && entry.is_symlink && pool.drive(leads_back_up(source_volume.as_ref(), &child_source)).await {
+            skip_link_back_up(entry, child_source, created, progress, child_row);
+            continue;
+        }
 
         if descends {
             // Dir-vs-dir (and dir-into-nothing) always recurses to merge — no

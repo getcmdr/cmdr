@@ -2,8 +2,8 @@
 
 Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shared: `../CLAUDE.md`.
 
-- **A facade: outside code reaches it only as `transfer::volume::<item>`**; a new caller re-exports from `mod.rs`, ❌
-  never widens a submodule.
+- **A facade: outside code uses only `transfer::volume::<item>`**, re-exported from `mod.rs`; ❌ never widen a
+  submodule.
 
 ## Merge and conflicts
 
@@ -17,11 +17,11 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
   NOT reversible. A BLANKET one ❌ never crosses types (`../../../CLAUDE.md`); an answered one sets the dest ASIDE.
 - **A MOVE's source sweep deletes the walk's LEDGER, ❌ never the tree** (`source_sweep.rs`): Skips, newcomers, and
   changes stay. A drop re-runs it WHOLE, ❌ no blind retry. Barrier first: `held_sweeps.rs`.
-- **❌ Never fabricate a destination size for the conflict dialog**: `None` (a fake `0` makes "Overwrite all smaller"
-  unconditional).
+- **❌ Never fabricate a destination size for the conflict dialog**: `None` (a fake `0` breaks "Overwrite all smaller").
 - **Skip the dest pre-check ONLY for a dir THIS op created** (`DirectoryCreation::Created`), ❌ never one that looks
   empty. Every name asks `landing.rs`, and an unanswerable probe fails the item. § "Look-alike names and new-name
   spelling".
+- **A link the walk FOLLOWS asks `link_cycle.rs`**: one back up its path is endless (ERR-BGEKC).
 - **A listed name joins ONLY as a `listed_name.rs::ListedName`**, ❌ never a raw `join` (`../x` escapes). § "Listed
   names are untrusted".
 
@@ -33,11 +33,10 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
   engine-side `chmod` or xattr write; wrappers forward `metadata`. Extract quarantine: a stream decorator, and folders
   at creation, ❌ never in `folder_metadata.rs`. § "Copies keep the source's metadata".
 - **Every file copy asks `may_copy_on_server_from`, then `copy_on_server`**: the BACKEND picks, ❌ never by path, ❌
-  nothing stages before a yes. All but a cancel or a taken name falls back to streaming.
+  nothing stages before a yes. Anything but a cancel or a taken name streams instead.
 - **A same-volume move whose `rename_work` says copy takes the copy-then-delete engine**, ❌ never `rename`.
-- **A stop's cleanup ❌ never waits on the share** (`../leftover_cleanup.rs`); leftovers are REPORTED by fate.
-- **Only `cleanup.rs::remove_tree` recurses** (its `TreeRemoval` names who authorized it); cleanup and rollback list
-  before deleting.
+- **A stop's cleanup ❌ never waits on the share** (`../leftover_cleanup.rs`); leftovers are REPORTED.
+- **Only `cleanup.rs::remove_tree` recurses** (`TreeRemoval` names who authorized it); cleanup and rollback list first.
 - **An unknown "is this a directory?" is ❌ never guessed**: a missing `source_hints` entry is UNKNOWN;
   `strategy.rs::resolve_source_is_directory` answers. ❌ No `.unwrap_or(false)`, no probing where a hint EXISTS.
 - **A same-volume move that renames is a rename-merge with top-level hints only**, ❌ never a subtree walk.
@@ -52,7 +51,7 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
   polling its leaves (`LeafPool::drive`: one may hold the share's reconnect), or returns undrained.
 - **A failure carries its path AND side** (`transfer_error.rs::PathedVolumeError`), set where the item is known. Source
   streams go through `source_reads::watch`, ❌ never bare. § "Naming the item that failed".
-- **Two test traps**: a `*_tests.rs` here is a `#[path]` CHILD (`super::` one level shallower), and a `FaultyVolume`
-  cell must **assert `fault_fired(op)`**.
+- **Test traps**: a `*_tests.rs` here is a `#[path]` CHILD (`super::` one level shallower); a `FaultyVolume` cell
+  **asserts `fault_fired(op)`**.
 
 Flows and decisions: `DETAILS.md`.

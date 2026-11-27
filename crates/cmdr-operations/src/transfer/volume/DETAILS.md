@@ -59,6 +59,8 @@ Where a symbol lives and who calls it: `codegraph_search` / `codegraph_explore`.
   it proves, `source_sweep.rs`), whose rule lives in `../DETAILS.md` § Durability, "Cross-volume move".
 - **`link_carry.rs` decides which symlinks a copy lands as symlinks** (§ "A copy carries a link as the link"), read by
   `preflight.rs`, `strategy.rs`, and `merge.rs`; `stream_pipe.rs::land_link` lands one.
+- **`link_cycle.rs` stops the merge walk following a link back up its own path** (§ "A followed link never leads back up
+  its own path").
 - **`refused_item.rs` turns a failure into the refused-name question** for the item its caller owns (a merge walker's
   leaf, or a top-level source), through `../../refused_name.rs`. `../../../DETAILS.md` § "A name the destination
   refuses".
@@ -2163,3 +2165,24 @@ nested, whatever it points at. `link_carry.rs` decides; `stream_pipe.rs::land_li
 Pinned by `link_carry_tests.rs`, `conformance::assert_a_link_lands_verbatim` (local, in-memory, and the SFTP Docker
 cell), `operations_host/restic_copy_out_tests.rs` (a real repo, both destination shapes), and
 `operations_host/backend_suites/sftp_transfer_semantics_test.rs::sftp_integration_a_copy_onto_the_server_lands_links_as_links`.
+
+## A followed link never leads back up its own path
+
+**Decision**: before the merge walk follows a link into a folder (the destination can't hold links, so the copy takes
+what it points at, § above), `link_cycle.rs::leads_back_up` asks whether the folder it reaches is the link's own folder
+or one above it, by node (`Volume::reached_node`, a following `stat` on the local backends). If so, the link is one
+counted skip, credited as the scan counted it, and a move's sweep leaves it in the source.
+
+- **Why**: such a link holds itself, so every pass through it copies the same folder one level deeper, and the walk only
+  ends at the kernel's limit on links per path, a full disk, or Cancel (ERR-BGEKC: a Final Cut library copied onto a NAS
+  reached three times the scan's totals in 46 s, `337%` on the dialog, before the person cancelled; the totals were
+  right, the walk wasn't).
+- **Each ancestor is read through its own path**, so links on the way are followed too: two links leading to each
+  other's folders are caught at the second, after the first was followed once (a NAS copy should hold the files).
+- **Unknown means "follow"**: a backend with no node ids (the trait default) follows as before. Only the local backends
+  answer today; an SFTP source onto SMB still follows blind. Ancestors stop at the volume's root, so a link to a folder
+  above the volume that holds it isn't caught.
+- **The cost**: one `stat` per ancestor, paid only at a link the walk would follow into a folder.
+
+Pinned by `link_cycle_tests.rs` (a link to `..` and to `.`, a pair, a move, and a link elsewhere still followed) and
+`crates/cmdr-local/src/local_volume_test.rs::reached_node_follows_a_link_to_the_folder_it_reaches`.
