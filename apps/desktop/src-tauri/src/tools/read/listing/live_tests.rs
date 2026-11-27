@@ -205,21 +205,6 @@ fn a_missing_folder_and_a_link_loop_are_not_found() {
     );
 }
 
-#[test]
-fn a_file_and_a_link_to_one_are_not_a_folder() {
-    let dir = TestDir::new("live-file");
-    let root = physical(&dir);
-    std::fs::write(dir.join("notes.zip"), b"PK").expect("file");
-    symlink(dir.join("notes.zip"), dir.join("link")).expect("link");
-    for name in ["notes.zip", "link"] {
-        assert_eq!(
-            gate_local(&target(&root, &format!("{root}/{name}")), &answered()),
-            Err(LiveMiss::NotAFolder),
-            "{name}"
-        );
-    }
-}
-
 // ── The bounded run ───────────────────────────────────────────────────────────
 
 /// Millisecond budgets, so a deadline test takes a moment.

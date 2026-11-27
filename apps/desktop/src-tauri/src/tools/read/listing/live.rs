@@ -22,8 +22,8 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
 
+use cmdr_fs::app_path::AppPath;
 use cmdr_fs::entry::FileEntry;
-use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::volume::app_paths::{path_is_under, path_under, rebase};
 use cmdr_fs::volume::{Volume, VolumeError};
 use tokio::time::{Instant, sleep_until};
@@ -281,12 +281,6 @@ pub(crate) fn gate_local(target: &LiveTarget, policy: &GatePolicy) -> Result<Str
             path: physical,
         });
     }
-    // A file is no folder to list. Asked here, of the resolved leaf the gate has
-    // already cleared, because each OS's listing words it differently: macOS
-    // answers `ENOTDIR`, Windows' a path that isn't there.
-    if std::fs::metadata(as_sent_std_path(&physical)).is_ok_and(|meta| !meta.is_dir()) {
-        return Err(LiveMiss::NotAFolder);
-    }
     // Judged in the volume's own spelling, the path space its scanner walks.
     let listed = rebase(&physical, &root, &target.root).unwrap_or(physical);
     skipped_by_the_index(target, &listed)?;
@@ -408,8 +402,6 @@ fn volume_miss(error: &VolumeError, path: Option<&Path>, policy: &GatePolicy, lo
     match error {
         VolumeError::NotFound(_) => LiveMiss::NotFound,
         VolumeError::NotADirectory(_) | VolumeError::NestedArchive(_) => LiveMiss::NotAFolder,
-        // A local folder read as a file answers `ENOTDIR`, typed by its class.
-        VolumeError::IoError { .. } if error.os_class() == Some(OsErrorClass::NotADirectory) => LiveMiss::NotAFolder,
         VolumeError::PermissionDenied { .. }
             if local_fs && path.is_some_and(|path| (policy.denial_is_privacy)(path)) =>
         {
@@ -549,6 +541,9 @@ pub(crate) async fn read_live(
         Ok(entries) => return Ok(entries),
         Err(error) => error,
     };
+    if names_a_file(volume.as_ref(), &folder, &error).await {
+        return Err(LiveMiss::NotAFolder);
+    }
     // A privacy question is the OS's, asked of a local folder's native path only.
     let native = local_fs.then(|| folder.to_native().ok()).flatten();
     if !(local_fs && matches!(error, VolumeError::PermissionDenied { .. })) {
@@ -560,6 +555,18 @@ pub(crate) async fn read_live(
         .await
         .unwrap_or(LiveMiss::Unreachable(Stall::Failed));
     Err(miss)
+}
+
+/// Whether a listing that failed with `error` failed because `folder` is a file.
+/// Each backend words that its own way (macOS answers `ENOTDIR`, Windows' local
+/// listing a path that isn't there), so a vague answer asks the volume what is
+/// there: one stat, paid only by a failed read. A file read as a folder answered
+/// `unreachable` and sent the model off to say the boot disk had disconnected.
+async fn names_a_file(volume: &dyn Volume, folder: &AppPath, error: &VolumeError) -> bool {
+    if !matches!(error, VolumeError::NotFound(_) | VolumeError::IoError { .. }) {
+        return false;
+    }
+    volume.get_metadata(folder).await.is_ok_and(|entry| !entry.is_directory)
 }
 
 // ── The answer ────────────────────────────────────────────────────────────────
