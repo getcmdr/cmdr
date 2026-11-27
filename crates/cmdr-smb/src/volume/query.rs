@@ -385,6 +385,27 @@ impl SmbVolume {
         })
     }
 
+    /// The node a walk reaches at `path`: the share's volume serial and the
+    /// file's index number (`FileInternalInformation`), off one stat compound.
+    /// The server resolves a Unix symlink on its side, so a link answers with
+    /// the folder it reaches, which is what a copy walk compares against the
+    /// folders it's inside (Samba lists such a link as a plain folder). `None`
+    /// when the stat fails or the server won't name the node: the walk's
+    /// depth backstop covers that.
+    pub(super) async fn reached_node_impl(&self, path: &AppPath) -> Option<cmdr_fs::file_identity::FileId> {
+        let smb_path = self.to_smb_path(path).ok()?;
+        let SessionLease { tree, mut conn, .. } = self.clone_session().await.ok()?;
+        let start = std::time::Instant::now();
+        let stat = tree.stat_with_identity(&mut conn, &smb_path).await;
+        slow_calls::note(&self.inner.share_name, "reached_node", start.elapsed());
+        let (_, identity) = stat.ok()?;
+        let identity = identity?;
+        Some(cmdr_fs::file_identity::FileId::from_stored(
+            u64::from(identity.volume_serial),
+            u128::from(identity.index_number),
+        ))
+    }
+
     /// The share's own free/total, polled by whichever pane is showing it.
     pub(super) async fn get_space_info_impl(&self) -> Result<SpaceInfo, VolumeError> {
         // Polled every 5 s per share for as long as a pane shows it (~480 lines

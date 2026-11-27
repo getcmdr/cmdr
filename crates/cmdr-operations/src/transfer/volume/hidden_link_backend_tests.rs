@@ -36,6 +36,9 @@ use tempfile::TempDir;
 /// A `LocalVolume` that lists the way a Samba share does.
 struct HiddenLinkVolume {
     inner: LocalVolume,
+    /// Every path reaches the same node: a share whose node numbers repeat
+    /// (one spanning filesystems under one volume serial).
+    one_node_for_everything: bool,
 }
 
 impl Volume for HiddenLinkVolume {
@@ -84,6 +87,16 @@ impl Volume for HiddenLinkVolume {
     ) -> Pin<Box<dyn Future<Output = Result<EntryKind, VolumeError>> + Send + 'a>> {
         self.inner.entry_kind(path)
     }
+    /// The node a path reaches, through a link, as SMB's index numbers name it.
+    fn reached_node<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Option<cmdr_fs::file_identity::FileId>> + Send + 'a>> {
+        if self.one_node_for_everything {
+            return Box::pin(async { Some(cmdr_fs::file_identity::FileId::from_stored(1, 1)) });
+        }
+        self.inner.reached_node(path)
+    }
     fn scan_for_copy_batch_with_boundary<'a>(
         &'a self,
         paths: &'a [AppPathBuf],
@@ -94,9 +107,14 @@ impl Volume for HiddenLinkVolume {
 }
 
 fn samba_volume() -> (Arc<dyn Volume>, TempDir) {
+    samba_volume_naming(false)
+}
+
+fn samba_volume_naming(one_node_for_everything: bool) -> (Arc<dyn Volume>, TempDir) {
     let dir = TempDir::new().unwrap();
     let volume: Arc<dyn Volume> = Arc::new(HiddenLinkVolume {
         inner: LocalVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),
+        one_node_for_everything,
     });
     (volume, dir)
 }
@@ -303,4 +321,84 @@ async fn a_cross_volume_move_of_a_folder_holding_a_hidden_link_spares_the_target
         dest.exists(app_path!("/album/link/inside.txt")).await,
         "the copy carried the target's file"
     );
+}
+
+/// A copy OFF the share of a folder holding a link back up its own path, which
+/// the listing shows as a plain folder: the walk checks every folder it descends
+/// by node, so the loop is one counted skip, ❌ never a tree copied one level
+/// deeper per pass (#1541, the gap the size count's guard found).
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_copy_off_the_share_skips_a_hidden_link_back_up_its_own_path() {
+    let engine = TestOperations::new();
+    let (source, dir) = samba_volume();
+    let root = dir.path();
+    write_file(root, "album/keep.txt", b"KEEP");
+    write_file(root, "album/sub/a.txt", b"A");
+    link(root, "album/sub/up", "album");
+    let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
+    let events = Arc::new(CollectorEventSink::new());
+    let state = make_state(&engine);
+    let sources = crate::testing::app_paths_of(&[PathBuf::from("/album")]);
+    let dest_root = crate::testing::app_path_of(Path::new("/"));
+    let config = config(ConflictResolution::Skip);
+
+    let run = copy_volumes_with_progress(
+        Arc::clone(&events) as _,
+        "op-hidden-loop-copy",
+        &state,
+        source,
+        &sources,
+        Arc::clone(&dest) as Arc<dyn Volume>,
+        &dest_root,
+        &config,
+    );
+    let result = tokio::time::timeout(std::time::Duration::from_secs(30), run)
+        .await
+        .expect("the copy ends: a hidden link loop never walks forever");
+
+    assert!(result.is_ok(), "expected Ok, got {result:?}");
+    assert!(dest.exists(app_path!("/album/keep.txt")).await);
+    assert!(dest.exists(app_path!("/album/sub/a.txt")).await);
+    assert!(!dest.exists(app_path!("/album/sub/up")).await, "the loop isn't walked");
+    assert_eq!(
+        events.complete.lock().unwrap()[0].files_skipped,
+        1,
+        "the link is one counted skip"
+    );
+}
+
+/// A share whose node numbers repeat names a real folder with an ancestor's
+/// node. The walk asks `entry_kind` before it leaves such a folder out, and a
+/// real folder is copied whole, never dropped as a loop on a guess.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_real_folder_that_repeats_an_ancestors_node_is_still_copied() {
+    let engine = TestOperations::new();
+    let (source, dir) = samba_volume_naming(true);
+    let root = dir.path();
+    write_file(root, "album/sub/deeper/a.txt", b"A");
+    let dest = Arc::new(InMemoryVolume::new("Dest").with_space_info(10_000_000, 10_000_000));
+    let events = Arc::new(CollectorEventSink::new());
+    let state = make_state(&engine);
+    let sources = crate::testing::app_paths_of(&[PathBuf::from("/album")]);
+    let dest_root = crate::testing::app_path_of(Path::new("/"));
+    let config = config(ConflictResolution::Skip);
+
+    let result = copy_volumes_with_progress(
+        Arc::clone(&events) as _,
+        "op-repeated-node-copy",
+        &state,
+        source,
+        &sources,
+        Arc::clone(&dest) as Arc<dyn Volume>,
+        &dest_root,
+        &config,
+    )
+    .await;
+
+    assert!(result.is_ok(), "expected Ok, got {result:?}");
+    assert!(
+        dest.exists(app_path!("/album/sub/deeper/a.txt")).await,
+        "every real folder landed"
+    );
+    assert_eq!(events.complete.lock().unwrap()[0].files_skipped, 0);
 }

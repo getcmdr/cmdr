@@ -44,7 +44,7 @@ use super::super::volume_outage::through_outages;
 use super::conflict::{ResolvedConflict, resolve_volume_conflict};
 use super::folder_metadata::{FolderMetadata, SourceFolderDates};
 use super::landing::{DestFolder, NewName, where_it_lands};
-use super::link_cycle::{leads_back_up, skip_link_back_up};
+use super::link_cycle::{Descending, RootLinks, WalkPath, descend_into, skip_link_back_up, walk_root};
 use super::listed_name::{ListedName, into_std, listed_path, shown_under, std_of};
 use super::merge_ctx::{CreatedPaths, FileWindow, MergeCtx, MergeProbe};
 use super::naming::take_back_reservation;
@@ -678,6 +678,7 @@ pub(super) async fn copy_directory_streaming(
         progress,
         merge,
         plan,
+        root: source_path,
     };
     // The walk holds its destination as an app path from here down, every
     // child joined typed (`listed_name.rs::ListedName`).
@@ -690,6 +691,7 @@ pub(super) async fn copy_directory_streaming(
                 // The walk starts at the source's own row and looks every child
                 // up under it, level by level.
                 folder: progress.node(),
+                path: walk_root(source_volume.as_ref(), source_path).await,
             },
         )
         .await;
@@ -734,6 +736,9 @@ struct Walk<'a, 'm> {
     progress: &'a Arc<SourceProgress>,
     merge: Option<&'m MergeCtx<'m>>,
     plan: Option<&'m super::sequential_extract::ExtractPlan>,
+    /// The source folder the walk started at, for the links at it and above it
+    /// (`link_cycle.rs::RootLinks`).
+    root: &'m AppPath,
 }
 
 /// One folder level of the walk: one on the walk's stack per level it is inside.
@@ -758,6 +763,9 @@ struct LevelAt {
     /// Observation only: whether it's `None`, or what the tree makes of a child,
     /// changes nothing below.
     folder: Option<NodeId>,
+    /// The folders above it by node, and the links followed to reach it: what a
+    /// child folder is checked against before the walk descends into it.
+    path: WalkPath,
 }
 
 /// A prepared level: its sorted listing and how far the walker is through it,
@@ -816,6 +824,7 @@ impl<'a> Walk<'a, '_> {
             open: None,
             then: None,
         }];
+        let mut root_links = RootLinks::default();
         loop {
             let frame = inside
                 .last_mut()
@@ -828,7 +837,7 @@ impl<'a> Walk<'a, '_> {
                     }
                     Err(e) => Err(e),
                 },
-                Some(level) => match self.advance(pool, &frame.at, level).await {
+                Some(level) => match self.advance(pool, &frame.at, level, &mut root_links).await {
                     Ok(Advance::Descend(at, then)) => {
                         inside.push(Frame {
                             at,
@@ -1063,6 +1072,7 @@ impl<'a> Walk<'a, '_> {
         pool: &mut LeafPool<'a>,
         at: &LevelAt,
         level: &mut Level,
+        root_links: &mut RootLinks,
     ) -> Result<Advance, PathedVolumeError> {
         let Walk {
             source_volume,
@@ -1072,6 +1082,7 @@ impl<'a> Walk<'a, '_> {
             progress,
             merge,
             plan,
+            root,
         } = *self;
         let source_path: &AppPath = &at.source;
         let dest_path_app: &AppPath = &at.dest;
@@ -1203,19 +1214,33 @@ impl<'a> Walk<'a, '_> {
             };
             let descends = entry.is_directory && link_target.is_none();
 
-            // A link this walk would follow back into a folder it's already inside makes the tree endless (ERR-BGEKC).
-            if descends
-                && entry.is_symlink
-                && pool
-                    .drive(leads_back_up(source_volume.as_ref(), &child_source))
+            // A folder this walk is already inside makes the tree endless
+            // (ERR-BGEKC): every folder it would descend is checked by node, a
+            // link the listing didn't mark included (Samba lists one as a folder).
+            let child_path = if descends {
+                let into = pool
+                    .drive(descend_into(
+                        source_volume.as_ref(),
+                        &child_source,
+                        entry.is_symlink,
+                        &at.path,
+                        root,
+                        root_links,
+                    ))
                     .await
-                    .at_source(&*child_source)?
-            {
-                skip_link_back_up(entry, child_source, created, progress, child_row);
-                continue;
-            }
+                    .at_source(&*child_source)?;
+                match into {
+                    Descending::LoopsBack => {
+                        skip_link_back_up(entry, child_source, created, progress, child_row);
+                        continue;
+                    }
+                    Descending::Into(path) => Some(path),
+                }
+            } else {
+                None
+            };
 
-            if descends {
+            if let Some(path) = &child_path {
                 // Dir-vs-dir (and dir-into-nothing) always descends to merge — no
                 // resolver call for the folder itself. A dir landing on a same-named
                 // LEAF is a type mismatch, which the resolver (below) handles.
@@ -1232,6 +1257,7 @@ impl<'a> Walk<'a, '_> {
                             source: child_source,
                             dest: child_dest,
                             folder: child_row,
+                            path: path.clone(),
                         },
                         OnEnd {
                             dates: SourceFolderDates::of_entry(entry),
@@ -1309,7 +1335,7 @@ impl<'a> Walk<'a, '_> {
                 }
             }
 
-            if descends {
+            if let Some(path) = child_path {
                 // Only a resolver decision sends a folder on from here. With no
                 // merge context nobody freed the name, and descending would merge
                 // into the leaf that holds it (THROUGH it, for a link): refuse.
@@ -1327,6 +1353,7 @@ impl<'a> Walk<'a, '_> {
                         source: child_source,
                         dest: write_dest,
                         folder: child_row,
+                        path,
                     },
                     OnEnd {
                         dates: SourceFolderDates::of_entry(entry),

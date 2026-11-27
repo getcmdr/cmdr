@@ -2208,29 +2208,45 @@ cell), `operations_host/restic_copy_out_tests.rs` (a real repo, both destination
 
 ## A followed link never leads back up its own path
 
-**Decision**: before the merge walk follows a link into a folder (the destination can't hold links, so the copy takes
-what it points at, § above), `link_cycle.rs::leads_back_up` asks whether the folder it reaches is the link's own folder
-or one above it, by node (`Volume::reached_node`, a following `stat` on the local backends). If so, the link is one
-counted skip, credited as the scan counted it, and a move's sweep leaves it in the source.
+**Decision**: before the merge walk descends into ANY folder, `link_cycle.rs::descend_into` asks whether the folder it
+reaches is one the walk is already inside, by node (`Volume::reached_node`, one call), against the shared
+`cmdr_fs::volume::descent::Descent` each level carries on the walk's stack (`LevelAt::path`). If so, the folder is a
+link back up its own path (the destination can't hold links, so the copy follows them, § above): one counted skip,
+credited as the scan counted it, and a move's sweep leaves it in the source.
+
+- **Every folder, ❌ not only the ones the listing marks**: Samba lists a Unix symlink as the folder it points to, so a
+  copy off a share followed `loop -> ..` until the kernel's link limit (pinned red, then green, by
+  `hidden_link_backend_tests.rs::a_copy_off_the_share_skips_a_hidden_link_back_up_its_own_path`). SMB names nodes by the
+  share's volume serial and the index number (`stat_with_identity`), resolved through the link on the server.
+- **A node match on a folder the listing didn't mark is confirmed** by `entry_kind` before it's left out: a share
+  spanning filesystems can repeat a node number, and a real folder is never dropped on a guess (pinned by
+  `a_real_folder_that_repeats_an_ancestors_node_is_still_copied`).
 
 - **Why**: such a link holds itself, so every pass through it copies the same folder one level deeper, and the walk only
   ends at the kernel's limit on links per path, a full disk, or Cancel (ERR-BGEKC: a Final Cut library copied onto a NAS
   reached three times the scan's totals in 46 s, `337%` on the dialog, before the person cancelled; the totals were
   right, the walk wasn't).
-- **Each ancestor is read through its own path**, so links on the way are followed too: two links leading to each
-  other's folders are caught at the second, after the first was followed once (a NAS copy should hold the files).
-- **Who names nodes**: the local backends (a following `stat`) and NFS (`fsid` + `fileid` off a following LOOKUP). SFTP
-  can't (protocol v3 has no inode), nor can the trait default. Ancestors stop at the volume's root, so a link to a
-  folder above the volume that holds it isn't caught by node.
-- **The backstop for a loop nobody can name**: the same ancestor walk counts the links on the way (`entry_kind`, which
-  every backend answers), and past `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) the copy stops with the link-loop error: an
-  `IoError` carrying `OsErrorClass::LinkLoop`'s code, which `transfer_error.rs::map_volume_error` reports as
-  `SymlinkLoop` (a kernel `ELOOP` lands there too). **Why 8, ❌ not a path limit**: each pass through a loop copies the
-  same folder once more, so the count bounds what such a loop writes before it stops, and no real tree follows eight
-  links down one path. Depth itself costs the walk nothing (§ "The walk keeps its depth on the heap"), so a path limit
-  (macOS's 1,024-byte `PATH_MAX` allows ~512 levels) would let a loop copy hundreds of passes first. A link to its own
-  parent adds two levels a pass, so 8 stops the shortest loop near 16 levels.
-- **The cost**: a `stat` and an `lstat` per ancestor, paid only at a link the walk would follow into a folder.
+- **Each folder's node is read through its own path** as the walk descends into it, so links on the way are followed
+  too: two links leading to each other's folders are caught at the second, after the first was followed once (a NAS copy
+  should hold the files). The root's ancestors are read once per walk (`link_cycle.rs::walk_root`), so a link to a
+  folder above the selection is caught too; they stop at the volume's root.
+- **Who names nodes**: the local backends (a following `stat`), NFS (`fsid` + `fileid` off a following LOOKUP), and SMB.
+  SFTP can't (protocol v3 has no inode), nor can the trait default.
+- **The backstop for a loop nobody can name**: each level carries the count of links the walk followed below its root to
+  reach it, plus the links at the root and above (`entry_kind`, which every backend answers, asked once at the first
+  marked link), and past `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) the copy stops with the link-loop error: an `IoError`
+  carrying `OsErrorClass::LinkLoop`'s code, which `transfer_error.rs::map_volume_error` reports as `SymlinkLoop` (a
+  kernel `ELOOP` lands there too). **Why 8, ❌ not a path limit**: each pass through a loop copies the same folder once
+  more, so the count bounds what such a loop writes before it stops, and no real tree follows eight links down one path.
+  Depth itself costs the walk nothing (§ "The walk keeps its depth on the heap"), so a path limit (macOS's 1,024-byte
+  `PATH_MAX` allows ~512 levels) would let a loop copy hundreds of passes first. A link to its own parent adds two
+  levels a pass, so 8 stops the shortest loop near 16 levels. On a source whose listings hide links and that names no
+  node (an SMB server that won't report index numbers), where no link is ever marked, `Descent`'s shared depth backstop
+  stops it instead, with the same error.
+- **The cost**: one `reached_node` per folder descended (a `stat` on a local disk; one round trip on NFS and SMB;
+  nothing on a source that names no nodes), plus one per ancestor of the root, once. A link check reads the ids already
+  on the walk's stack, ❌ never the ancestors again: that was two calls per ancestor per link, ~800 round trips for one
+  link 400 levels down an SFTP tree.
 
 Pinned by `link_cycle_tests.rs` (a link to `..` and to `.`, a pair, a move, a link elsewhere still followed, and the
 backstop on a source with no node ids),
