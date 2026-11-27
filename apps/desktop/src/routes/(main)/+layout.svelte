@@ -72,12 +72,7 @@
     import SignInSheet from '#lib/servers/SignInSheet.svelte'
     import { closeSignInSheet, currentSignInRequest } from '#lib/servers/sign-in-sheet-state.svelte.js'
     import { initAutoSendToastListener, cleanupAutoSendToastListener } from '#lib/error-reporter/auto-send-toast.svelte.js'
-    // Dialog gallery harness (Debug > Soft dialogs). Gated below on
-    // `import.meta.env.DEV || __CMDR_E2E_BUILD__`, both of which Vite inlines to
-    // build-time booleans, so the harness and every dialog it imports drop out of
-    // production builds. The E2E flag is what lets the i18n screenshot driver and
-    // the E2E lane open gallery states on their shared binary; see `dialog-gallery/DETAILS.md`.
-    import DialogGallery from '#lib/dialog-gallery/DialogGallery.svelte'
+    import { loadDialogGallery } from '#lib/dialog-gallery/load-dialog-gallery.js'
     import QuitConfirmationDialog from '#lib/quit/QuitConfirmationDialog.svelte'
     import { quitPrompt, initQuitPrompt, cleanupQuitPrompt } from '#lib/quit/quit-prompt.svelte.js'
     import type { Snippet } from 'svelte'
@@ -87,6 +82,9 @@
     }
 
     const { children }: Props = $props()
+
+    // Dialog gallery harness (Debug > Soft dialogs): `null` in a release build, so none of it ships.
+    const dialogGallery = loadDialogGallery()
 
     // Gates the children render until settings are loaded and applied. File-explorer
     // components (FilePane, BriefList, ...) read getSetting() synchronously at mount; if
@@ -422,8 +420,10 @@
         <MoveToApplicationsDialog blocker={updateBlockerNotice.blocker} onClose={dismissMoveToApplicationsNudge} />
     {/if}
 </DialogBoundary>
-{#if import.meta.env.DEV || __CMDR_E2E_BUILD__}
-    <DialogGallery />
+{#if dialogGallery}
+    {#await dialogGallery then { default: DialogGallery }}
+        <DialogGallery />
+    {/await}
 {/if}
 <div class="page-wrapper">
     {#if settingsReady}

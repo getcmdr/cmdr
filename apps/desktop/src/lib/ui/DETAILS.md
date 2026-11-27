@@ -2442,7 +2442,7 @@ When you add a new primitive to `lib/ui/`:
 2. Add a dedicated section in this file describing the API and key decisions.
 3. Add a section file at `apps/desktop/src/routes/dev/components/sections/<Name>.svelte` showing the primitive's states
    flat (no toggles, just everything visible at once). Import it from the catalog page and add a sidebar entry in
-   `apps/desktop/src/routes/debug/+page.svelte` under the "Components" parent.
+   `apps/desktop/src/routes/debug/DebugPage.svelte` under the "Components" parent.
 4. Add a Vitest behavior test (`<Name>.test.ts`) and a tier-3 a11y test (`<Name>.a11y.test.ts`) colocated next to the
    component.
 

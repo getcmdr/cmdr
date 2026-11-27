@@ -46,8 +46,8 @@ it; feature must-knows live in each directory's colocated `CLAUDE.md`, and the m
   (`InfoTip`, or `StatusGlyph` if unfocusable). `cmdr/prefer-ui-primitive`; opt out per element, with reason. New
   primitive: `docs/guides/building-ui.md`.
 - Remote content (`fetch`, `iframe`)? Ask first: `withGlobalTauri: true` makes it a dev security risk.
-- ❌ No `import.meta.env.DEV` in a `.svelte` script (it blinds knip): `isDevBuild()` from `#lib/app-mode`. `{#if}`
-  markup keeps the literal. `DETAILS.md` § Dev gates.
+- ❌ No `import.meta.env.DEV` in a `.svelte` script (blinds knip): `isDevBuild()` (`#lib/app-mode`). Dev-only subtree: a
+  `.ts` loader, ❌ not `{#if}`-gated imports. `DETAILS.md` § Dev gates.
 - **`app.html`'s boot guard is ES5 on purpose**: one ES6 token kills it silently on old Safari, and `pnpm dev` won't
   hot-reload the shell. `lib/utils/DETAILS.md` § Old-WebKit boot guard.
 

@@ -187,7 +187,7 @@ func formatUiPrimitiveCoverageFailure(r uiPrimitiveCoverageResult) string {
 			name := primitiveName(f)
 			sb.WriteString(fmt.Sprintf("    - %s\n", f))
 			sb.WriteString(fmt.Sprintf("        Add apps/desktop/src/routes/dev/components/sections/%sSection.svelte that imports %q,\n", name, "#lib/ui/"+name+".svelte"))
-			sb.WriteString("        then wire it into routes/dev/components/+page.svelte and the Debug sidebar (routes/debug/+page.svelte).\n")
+			sb.WriteString("        then wire it into routes/dev/components/+page.svelte and the Debug sidebar (routes/debug/DebugPage.svelte).\n")
 		}
 	}
 	if len(r.deadAllowlist) > 0 {
