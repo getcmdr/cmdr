@@ -515,9 +515,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} szerver, keresés a közelben kikapcsolva} other {{countText} szerver, keresés a közelben kikapcsolva}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} szerver, hálózatkezelés kikapcsolva} other {{countText} szerver, hálózatkezelés kikapcsolva}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Még nincs szerver. Nyomd meg az F7-et egy szerver hozzáadásához.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1193,7 +1193,7 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
-  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "fileExplorer.list.parentRowNameBackTo": "Vissza ide: {placeName}",
   "@fileExplorer.list.parentRowNameBackTo": {
     "sourceHash": "dfaa8c1"
   },

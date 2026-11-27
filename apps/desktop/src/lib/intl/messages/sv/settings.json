@@ -2706,9 +2706,9 @@
   "@settings.section.smbNetworkShares": {
     "sourceHash": "d971dec"
   },
-  "settings.section.servers": "Servrar (SFTP, WebDAV)",
+  "settings.section.servers": "Servrar (SFTP, WebDAV, NFS, S3)",
   "@settings.section.servers": {
-    "sourceHash": "58704f8"
+    "sourceHash": "1598634"
   },
   "settings.section.adb": "Android (ADB)",
   "@settings.section.adb": {

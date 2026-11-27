@@ -516,9 +516,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} máy chủ, đã tắt tìm máy chủ ở gần}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} máy chủ, đã tắt kết nối mạng}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Chưa có máy chủ nào. Nhấn F7 để thêm.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1195,7 +1195,7 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
-  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "fileExplorer.list.parentRowNameBackTo": "Quay lại {placeName}",
   "@fileExplorer.list.parentRowNameBackTo": {
     "sourceHash": "dfaa8c1"
   },

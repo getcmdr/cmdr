@@ -520,9 +520,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} server, zoeken in de buurt staat uit} other {{countText} servers, zoeken in de buurt staat uit}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} server, netwerk staat uit} other {{countText} servers, netwerk staat uit}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Nog geen servers. Druk op F7 om er een toe te voegen.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1200,7 +1200,7 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
-  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "fileExplorer.list.parentRowNameBackTo": "Terug naar {placeName}",
   "@fileExplorer.list.parentRowNameBackTo": {
     "sourceHash": "dfaa8c1"
   },

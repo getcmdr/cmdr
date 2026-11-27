@@ -516,9 +516,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} serveur, recherche à proximité désactivée} many {{countText} serveurs, recherche à proximité désactivée} other {{countText} serveurs, recherche à proximité désactivée}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} serveur, réseau désactivé} many {{countText} serveurs, réseau désactivé} other {{countText} serveurs, réseau désactivé}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Aucun serveur pour l’instant. Appuyez sur F7 pour en ajouter un.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1196,7 +1196,7 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
-  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "fileExplorer.list.parentRowNameBackTo": "Retour à {placeName}",
   "@fileExplorer.list.parentRowNameBackTo": {
     "sourceHash": "dfaa8c1"
   },

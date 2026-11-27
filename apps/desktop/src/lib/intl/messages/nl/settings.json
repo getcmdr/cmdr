@@ -2708,10 +2708,10 @@
   "@settings.section.smbNetworkShares": {
     "sourceHash": "d971dec"
   },
-  "settings.section.servers": "Servers (SFTP, WebDAV)",
+  "settings.section.servers": "Servers (SFTP, WebDAV, NFS, S3)",
   "@settings.section.servers": {
-    "sourceHash": "58704f8",
-    "sameAsSourceJustification": "Dutch keeps this subsection title as-is: the plural of \"server\" is \"servers\" in Dutch (macOS AppKit Menus.loctable renders \"Servers\"→\"Servers\"), and \"SFTP\" and \"WebDAV\" are protocol names Apple leaves untranslated (verified on macOS 26.6.2, build 25G83, 2026-09-07)."
+    "sourceHash": "1598634",
+    "sameAsSourceJustification": "Dutch keeps this subsection title as-is: the plural of \"server\" is \"servers\" in Dutch (macOS AppKit Menus.loctable renders \"Servers\"→\"Servers\", verified on macOS 26.6.2, build 25G83, 2026-09-07), and SFTP, WebDAV, NFS, and S3 are protocol and service names the key's description says to keep as-is."
   },
   "settings.section.adb": "Android (ADB)",
   "@settings.section.adb": {

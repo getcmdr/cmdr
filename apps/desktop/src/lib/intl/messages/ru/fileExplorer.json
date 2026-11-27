@@ -515,9 +515,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} сервер, поиск поблизости выключен} few {{countText} сервера, поиск поблизости выключен} many {{countText} серверов, поиск поблизости выключен} other {{countText} сервера, поиск поблизости выключен}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} сервер, сетевые функции выключены} few {{countText} сервера, сетевые функции выключены} many {{countText} серверов, сетевые функции выключены} other {{countText} сервера, сетевые функции выключены}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Серверов пока нет. Нажмите F7, чтобы добавить сервер.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1193,7 +1193,7 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
-  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "fileExplorer.list.parentRowNameBackTo": "Назад к списку «{placeName}»",
   "@fileExplorer.list.parentRowNameBackTo": {
     "sourceHash": "dfaa8c1"
   },
