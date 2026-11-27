@@ -2642,6 +2642,7 @@ mod error;
 pub mod http_session;
 mod ids;
 mod in_memory;
+pub mod link_walk;
 pub mod listing_progress;
 pub mod liveness;
 mod locked_container;

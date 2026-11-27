@@ -1259,13 +1259,14 @@ polling the outermost one polls every level below it, one stack frame per level.
   copy scans (`cmdr-smb` `scan_recursive`, `cmdr-mtp` `bulk_ops.rs::scan_entries`), the volume delete's scan
   (`delete/volume_scan.rs::scan_volume_recursive`, `delete/DETAILS.md`), and the scan preview's oracle-aware walk
   (`scan_oracle.rs::scan_subtree_with_oracle`, whose frames carry their ancestors' progress as a summed `baseline`
-  rather than a closure wrapping each parent's) keep their depth on the heap too.
+  rather than a closure wrapping each parent's), and MTP's path lookup on a cache miss and its cache cleanup (`cmdr-mtp`
+  `connection/resolve.rs::resolve_path_to_handle`, `cache.rs::remove_path`, `connection/DETAILS.md`), and drag-out's
+  folder fulfillment (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs::populate_directory`, which shares this
+  walk's link policy, `cmdr_fs::volume::link_walk`) keep their depth on the heap too.
 - **Not yet** (each still nests a frame per level, audited 2026-11-27): the local engines' synchronous walks
   (`scan_walker.rs::walk_dir_recursive` and `walk_cached_entries`, `scan_dry_run.rs`,
-  `move_op/mod.rs::merge_move_directory`, `move_op/source_sweep.rs::count_unscanned_entries`), MTP's path resolution on
-  a cache miss (`connection/resolve.rs::resolve_path_to_handle`) and cache cleanup (`cache.rs::remove_path`), and the
-  desktop's `native_drag/fulfillment.rs::populate_directory`. A local tree is bounded by `PATH_MAX` (~512 levels on
-  macOS), which a sync frame holds in release.
+  `move_op/mod.rs::merge_move_directory`, `move_op/source_sweep.rs::count_unscanned_entries`). A local tree is bounded
+  by `PATH_MAX` (~512 levels on macOS), which a sync frame holds in release.
 
 The pre-copy scan the walk waits on follows the same rule: the shared `cmdr_fs::volume::scan_walk` (ADB, NFS, restic,
 S3, SFTP, WebDAV, `skip_if_folder_refused`'s count) keeps its depth on the heap too (`cmdr-fs/DETAILS.md`).
@@ -2223,11 +2224,12 @@ cell), `operations_host/restic_copy_out_tests.rs` (a real repo, both destination
 
 ## A followed link never leads back up its own path
 
-**Decision**: before the merge walk descends into ANY folder, `link_cycle.rs::descend_into` asks whether the folder it
-reaches is one the walk is already inside, by node (`Volume::reached_node`, one call), against the shared
-`cmdr_fs::volume::descent::Descent` each level carries on the walk's stack (`LevelAt::path`). If so, the folder is a
-link back up its own path (the destination can't hold links, so the copy follows them, § above): one counted skip,
-credited as the scan counted it, and a move's sweep leaves it in the source.
+**Decision**: before the merge walk descends into ANY folder, `cmdr_fs::volume::link_walk::descend_into` (the policy
+drag-out to Finder shares) asks whether the folder it reaches is one the walk is already inside, by node
+(`Volume::reached_node`, one call), against the shared `cmdr_fs::volume::descent::Descent` each level carries on the
+walk's stack (`LevelAt::path`). If so, the folder is a link back up its own path (the destination can't hold links, so
+the copy follows them, § above): one counted skip, credited as the scan counted it, and a move's sweep leaves it in the
+source.
 
 - **Every folder, ❌ not only the ones the listing marks**: Samba lists a Unix symlink as the folder it points to, so a
   copy off a share followed `loop -> ..` until the kernel's link limit (pinned red, then green, by
@@ -2243,8 +2245,8 @@ credited as the scan counted it, and a move's sweep leaves it in the source.
   right, the walk wasn't).
 - **Each folder's node is read through its own path** as the walk descends into it, so links on the way are followed
   too: two links leading to each other's folders are caught at the second, after the first was followed once (a NAS copy
-  should hold the files). The root's ancestors are read once per walk (`link_cycle.rs::walk_root`), so a link to a
-  folder above the selection is caught too; they stop at the volume's root.
+  should hold the files). The root's ancestors are read once per walk (`cmdr_fs::volume::link_walk::walk_root`), so a
+  link to a folder above the selection is caught too; they stop at the volume's root.
 - **Who names nodes**: the local backends (a following `stat`), NFS (`fsid` + `fileid` off a following LOOKUP), and SMB.
   SFTP can't (protocol v3 has no inode), nor can the trait default.
 - **The backstop for a loop nobody can name**: each level carries the count of links the walk followed below its root to

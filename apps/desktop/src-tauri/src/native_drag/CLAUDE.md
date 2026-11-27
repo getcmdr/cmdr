@@ -35,9 +35,8 @@ each in `DETAILS.md`.
   queue AFTER the drop). Pinned by `session_counters_wait_for_in_flight_to_drain`.
 - **Main-thread invariant**: fulfillment never does synchronous main-thread work (no `run_on_main_thread`), so
   `block_on`-ing it on the queue thread can't deadlock against a busy main thread.
-- **Folder fulfillment is a hand-rolled recursive walk**, NOT the cross-volume copy engine: the copy engine derives
-  landed names from source basenames and can't target a Finder-renamed root. The happy-path test asserts the landed
-  filename EQUALS the Finder-chosen leaf (regression guard).
+- **Folder fulfillment is a hand-rolled walk**, NOT the copy engine (which can't target a Finder-renamed root; the
+  happy-path test pins the landed leaf). Heap-held and `link_walk`-guarded, ❌ never recursive (`DETAILS.md`).
 
 ## Gotchas
 

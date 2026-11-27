@@ -38,9 +38,21 @@ When Finder accepts a promise drop, it calls the delegate per item:
 
 `fulfill(source_volume_id, source_path, dest_path)`: resolve the volume → busy-register the source (eject guard) →
 `note_pending_write_for_cmdr(dest)` (suppress the downloads toast) → stream to the EXACT Finder leaf. A **file** goes
-`open_read_stream` → `write_from_stream(dest, …)`; a **folder** is a hand-rolled recursive walk (`create_dir` → list →
-mkdir → per-file stream), because the cross-volume copy engine derives landed names from source basenames and can't
-target a Finder-renamed root.
+`open_read_stream` → `write_from_stream(dest, …)`; a **folder** is a hand-rolled walk (`create_dir` → list → mkdir →
+per-file stream), because the cross-volume copy engine derives landed names from source basenames and can't target a
+Finder-renamed root.
+
+**The folder walk keeps its depth on the heap, and never follows a link back up.** `populate_directory` holds the
+folders it's inside on a `Vec` and runs them from one loop, depth first in listing order. It polls on the promise
+queue's own thread (`block_on`), a GCD thread with 512 KiB of stack, where a future per level overflowed a 400-level
+folder in a debug build (verified on macOS 27, `fulfillment_walk_test.rs`, 2026-11-27; #1541). Before every folder it
+asks `cmdr_fs::volume::link_walk::descend_into`, the copy walk's own policy (`crates/cmdr-fs/DETAILS.md` § "A walk never
+loops through a link it can't see"): a listing's `is_directory` follows links on some backends, and a Samba share lists
+`loop -> ..` as a plain folder, so a walk that trusted it wrote the same folder into Finder's again and again. A folder
+that leads back up is left out, with nothing created for it; past the shared backstops the fulfillment fails with the
+link-loop error and the cleanup contract removes what it made. Pinned by
+`a_folder_four_hundred_levels_deep_lands_whole_on_the_promise_queues_stack` and
+`a_hidden_link_back_up_the_dragged_folder_is_left_out`.
 
 **Listed names are untrusted**: the folder walk joins each listed child name under the destination only as a
 `ChildName`, so a hostile server or device listing `../x` fails the fulfillment (the cleanup contract below removes what

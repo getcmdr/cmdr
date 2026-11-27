@@ -19,10 +19,10 @@
 //! - **File**: `open_read_stream` → `write_from_stream(dest, …)` to the EXACT
 //!   Finder-chosen leaf path. Finder uniquifies collisions ("sunset 2.jpg") and
 //!   we honor that leaf, never the source basename.
-//! - **Folder**: `create_dir` at the dest, then a recursive walk (list → mkdir →
+//! - **Folder**: `create_dir` at the dest, then a walk (list → mkdir →
 //!   per-file `write_from_stream`). The cross-volume copy engine derives landed
 //!   names from source basenames and can't be pointed at a Finder-renamed root,
-//!   so the recursion is hand-rolled on the same per-file primitive.
+//!   so the walk is hand-rolled on the same per-file primitive.
 //!
 //! ## Cleanup contract (load-bearing)
 //!
@@ -48,7 +48,9 @@
 //! deadlock. It doesn't, by construction — there is no `run_on_main_thread`
 //! anywhere below.
 
-use cmdr_fs::app_path::AppPath;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
+use cmdr_fs::entry::FileEntry;
+use cmdr_fs::volume::link_walk::{Descending, RootLinks, WalkPath, descend_into, walk_root};
 use std::path::{Path, PathBuf};
 
 use crate::file_system::volume::Volume;
@@ -320,33 +322,148 @@ async fn fulfill_directory(volume: &dyn Volume, source_path: &Path, dest_path: &
     result
 }
 
-/// The happy-path recursive populate. No cleanup (the caller removes the whole
-/// created tree on error).
+/// The happy-path populate. No cleanup (the caller removes the whole created
+/// tree on error).
+///
+/// The folders the walk is inside live on a `Vec`, outermost first, and one
+/// loop runs them all, depth first in listing order: ❌ never a future per level.
+/// This polls on the promise queue's own thread (`block_on`), a GCD thread with
+/// a 512 KiB stack, which a future per level overflowed on a deep enough folder
+/// (#1541). Every folder it descends asks `cmdr_fs::volume::link_walk` first, as
+/// the copy walk does: a listing's `is_directory` follows links on some backends
+/// (a Samba share lists `loop -> ..` as a plain folder), and following one back
+/// up its own path would write the same folder into Finder's again and again. A
+/// folder that leads back up is left out, with nothing created for it.
 async fn populate_directory(volume: &dyn Volume, source_path: &Path, dest_path: &Path) -> Result<(), FulfillError> {
-    create_local_dir(dest_path)
-        .await
-        .map_err(|e| FulfillError::from_volume_error(&e, dest_path))?;
-
-    let entries = volume
-        .list_directory(&AppPath::legacy_unchecked(source_path), None)
-        .await
-        .map_err(|e| FulfillError::from_volume_error(&e, dest_path))?;
-
-    for entry in entries {
+    let mut walk = DragWalk {
+        volume,
+        root: None,
+        root_links: RootLinks::default(),
+    };
+    let mut inside: Vec<DragFolder> = Vec::new();
+    let mut opening = Some(FolderToOpen {
+        source: source_path.to_path_buf(),
+        dest: dest_path.to_path_buf(),
+        reached: Reached::Root,
+    });
+    loop {
+        if let Some(next) = opening.take()
+            && let Some(folder) = walk.open(next).await?
+        {
+            inside.push(folder);
+        }
+        let Some(folder) = inside.last_mut() else {
+            return Ok(());
+        };
+        let Some(entry) = folder.entries.next() else {
+            inside.pop();
+            continue;
+        };
         // ❗ The phone or server named this child: `../x` or `/x` joined raw
         // would write outside the folder Finder made.
-        let name = ChildName::new(&entry.name).map_err(|e| FulfillError::from_volume_error(&e.into(), dest_path))?;
-        let child_source = name.under(source_path);
-        let child_dest = name.under(dest_path);
+        let name = ChildName::new(&entry.name).map_err(|e| FulfillError::from_volume_error(&e.into(), &folder.dest))?;
+        let child_source = name.under(&folder.source);
+        let child_dest = name.under(&folder.dest);
         if entry.is_directory {
-            // `Box::pin` because this is an async-recursive call into the same
-            // function (Rust needs the future boxed to size it).
-            Box::pin(populate_directory(volume, &child_source, &child_dest)).await?;
+            opening = Some(FolderToOpen {
+                source: child_source,
+                dest: child_dest,
+                reached: Reached::Below {
+                    parent: folder.path.clone(),
+                    marked_link: entry.is_symlink,
+                },
+            });
         } else {
             stream_one_file(volume, &child_source, &child_dest).await?;
         }
     }
-    Ok(())
+}
+
+/// What every folder of one drag-out walk reads.
+struct DragWalk<'v> {
+    volume: &'v dyn Volume,
+    /// The walk's root as the volume spells it, once its folder is open.
+    root: Option<AppPathBuf>,
+    root_links: RootLinks,
+}
+
+/// A source folder the walk is about to open, and the Finder-side folder it fills.
+struct FolderToOpen {
+    source: PathBuf,
+    dest: PathBuf,
+    reached: Reached,
+}
+
+/// How the walk got to a folder: it's the root, or a child its parent listed.
+enum Reached {
+    Root,
+    Below {
+        parent: WalkPath,
+        /// The parent's listing called it a link.
+        marked_link: bool,
+    },
+}
+
+/// One folder the walk is inside: what is left of its listing, and where it sits.
+struct DragFolder {
+    source: PathBuf,
+    dest: PathBuf,
+    path: WalkPath,
+    entries: std::vec::IntoIter<FileEntry>,
+}
+
+impl DragWalk<'_> {
+    /// Asks whether to go into `folder` (`None`: it leads back up the walk's
+    /// path, so it's left out), then creates its Finder-side folder and lists it.
+    async fn open(&mut self, folder: FolderToOpen) -> Result<Option<DragFolder>, FulfillError> {
+        let FolderToOpen { source, dest, reached } = folder;
+        let source_app = AppPath::legacy_unchecked(&source);
+        let path = match reached {
+            Reached::Below { parent, marked_link } => {
+                let root = self.root.as_ref().expect("the root opens before any folder below it");
+                let descending = descend_into(
+                    self.volume,
+                    &source_app,
+                    marked_link,
+                    &parent,
+                    root,
+                    &mut self.root_links,
+                )
+                .await
+                .map_err(|e| FulfillError::from_volume_error(&e, &dest))?;
+                match descending {
+                    Descending::Into(path) => path,
+                    Descending::LoopsBack => {
+                        log::info!(
+                            target: "drag_out",
+                            "leaving out {}, a link back to a folder this drag is already inside",
+                            LogPrivate::path(&source)
+                        );
+                        return Ok(None);
+                    }
+                }
+            }
+            Reached::Root => {
+                let path = walk_root(self.volume, &source_app).await;
+                self.root = Some(source_app.clone().into_owned());
+                path
+            }
+        };
+        create_local_dir(&dest)
+            .await
+            .map_err(|e| FulfillError::from_volume_error(&e, &dest))?;
+        let entries = self
+            .volume
+            .list_directory(&source_app, None)
+            .await
+            .map_err(|e| FulfillError::from_volume_error(&e, &dest))?;
+        Ok(Some(DragFolder {
+            source,
+            dest,
+            path,
+            entries: entries.into_iter(),
+        }))
+    }
 }
 
 /// Creates a single local directory (the dest tree's leaf-by-leaf mkdir). Uses
@@ -386,3 +503,7 @@ async fn remove_dir_all_best_effort(dest_path: &Path) -> std::io::Result<()> {
 #[cfg(test)]
 #[path = "fulfillment_test.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "fulfillment_walk_test.rs"]
+mod walk_tests;
