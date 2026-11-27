@@ -665,3 +665,192 @@ async fn a_move_sweeps_what_the_walk_carried_and_keeps_its_skips() {
         ])
     );
 }
+
+fn refused_name() -> VolumeError {
+    VolumeError::InvalidName("STATUS_OBJECT_NAME_INVALID".into())
+}
+
+/// The destination refuses a folder's own name two levels down, and the
+/// person answers Skip: the folder is left out whole (its files counted as
+/// skipped), and the walk goes on at that folder's next sibling, the one place a
+/// child's failure turns back into "go on".
+#[tokio::test]
+async fn a_refused_folder_name_skipped_two_levels_down_resumes_at_its_next_sibling() {
+    let rig = rig(1, |dest| {
+        dest.failing_call_at(FaultyOp::CreateDirectory, "/t/c/cc", 1, refused_name())
+    })
+    .await;
+    let state = state();
+    let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Skip, false));
+
+    let result = copy(&rig, &state, Arc::clone(&events), ConflictResolution::Skip).await;
+
+    assert!(rig.dest.fault_fired(FaultyOp::CreateDirectory));
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(
+        prompts(&events.inner),
+        lines(&["/t/c/cc"]),
+        "the refused name is asked about"
+    );
+    let mut expected = lines(UP_TO_Y);
+    expected.extend(lines(&[
+        "RenameFrom /t/a/deep/y.txt.cmdr-tmp-*",
+        "Rename /t/a/deep/y.txt",
+        "RenameFrom /t/a/a1.txt.cmdr-tmp-*",
+        "Rename /t/a/a1.txt",
+        "CreateDirectory /t/c",
+        "CreateDirectory /t/c/cc",
+        // The skipped folder's next sibling, then the walk's own next entry.
+        "RenameFrom /t/c/c1.txt.cmdr-tmp-*",
+        "Rename /t/c/c1.txt",
+        "RenameFrom /t/z.txt.cmdr-tmp-*",
+        "Rename /t/z.txt",
+    ]));
+    assert_eq!(shape(&rig.dest, DEST_CALLS), expected);
+    let mut landed = tree_of(UNTOUCHED_DEST);
+    for (path, bytes) in [
+        ("/t/a/a1.txt", "a1-src"),
+        ("/t/a/deep/y.txt", "y-src"),
+        ("/t/a/deep/z/", ""),
+        ("/t/c/", ""),
+        ("/t/c/c1.txt", "c1-src"),
+        ("/t/z.txt", "z-src"),
+    ] {
+        landed.insert(path.into(), bytes.into());
+    }
+    assert_eq!(tree(&rig.dest_inner, "/t").await, landed);
+    // The four clashes, and the one file under the folder left out.
+    assert_eq!(completed(&events.inner), (9, 5, 22));
+}
+
+/// The same refusal on a folder that took a same-named leaf's place (an
+/// answered Overwrite set the leaf aside): no refused-name question there, since
+/// the destination stored that name a moment ago, so the copy fails whole.
+#[tokio::test]
+async fn a_refusal_inside_a_folder_that_took_a_leafs_place_fails_the_copy_unasked() {
+    let rig = rig(1, |dest| {
+        dest.failing_call_at(FaultyOp::CreateDirectory, "/t/b", 1, refused_name())
+    })
+    .await;
+    let state = state();
+    let events = Arc::new(ConflictResponderSink::new(&state, ConflictResolution::Overwrite, false));
+
+    let result = copy(&rig, &state, Arc::clone(&events), ConflictResolution::Stop).await;
+
+    assert!(rig.dest.fault_fired(FaultyOp::CreateDirectory));
+    assert_eq!(
+        format!("{result:?}"),
+        r#"Err(WriteFailure { error: InvalidName { path: "/t/b", message: "STATUS_OBJECT_NAME_INVALID" } })"#
+    );
+    // The clashes up to it, and no refused-name question after them.
+    assert_eq!(
+        prompts(&events.inner),
+        lines(&["/t/a/deep/x.txt", "/t/a/a2.txt", "/t/b"])
+    );
+    let mut expected = lines(UP_TO_Y);
+    expected.extend(lines(&[
+        "RenameFrom /t/a/deep/x.txt",
+        "Rename /t/a/deep/x.txt.cmdr-temp-*",
+        "RenameFrom /t/a/deep/x.txt.cmdr-tmp-*",
+        "Rename /t/a/deep/x.txt",
+        "Delete /t/a/deep/x.txt.cmdr-temp-*",
+        "RenameFrom /t/a/deep/y.txt.cmdr-tmp-*",
+        "Rename /t/a/deep/y.txt",
+        "RenameFrom /t/a/a1.txt.cmdr-tmp-*",
+        "Rename /t/a/a1.txt",
+        "RenameFrom /t/a/a2.txt",
+        "Rename /t/a/a2.txt.cmdr-temp-*",
+        "RenameFrom /t/a/a2.txt.cmdr-tmp-*",
+        "Rename /t/a/a2.txt",
+        "Delete /t/a/a2.txt.cmdr-temp-*",
+        // The leaf set aside, the refused create, and the leaf put back.
+        "RenameFrom /t/b",
+        "Rename /t/b.cmdr-temp-*",
+        "CreateDirectory /t/b",
+        "RenameFrom /t/b.cmdr-temp-*",
+        "Rename /t/b",
+    ]));
+    assert_eq!(shape(&rig.dest, DEST_CALLS), expected);
+    let mut landed = tree_of(UNTOUCHED_DEST);
+    for (path, bytes) in [
+        ("/t/a/a1.txt", "a1-src"),
+        ("/t/a/a2.txt", "a2-src"),
+        ("/t/a/deep/x.txt", "x-src"),
+        ("/t/a/deep/y.txt", "y-src"),
+        ("/t/a/deep/z/", ""),
+    ] {
+        landed.insert(path.into(), bytes.into());
+    }
+    assert_eq!(tree(&rig.dest_inner, "/t").await, landed, "the leaf is back in place");
+}
+
+/// A move whose sweep can't delete a file two levels down: that file, and
+/// every folder above it, stays in the source; the rest of what moved goes.
+#[tokio::test]
+async fn a_sweep_failure_two_levels_down_keeps_every_folder_above_it() {
+    let (source_inner, dest_inner) = seeded().await;
+    let rig = Rig {
+        source: FaultyVolume::wrapping(Arc::clone(&source_inner))
+            .failing_call_at(
+                FaultyOp::Delete,
+                "/t/a/deep/y.txt",
+                1,
+                VolumeError::IoError {
+                    message: "the file is busy".into(),
+                    raw_os_error: None,
+                },
+            )
+            .arc(),
+        dest: FaultyVolume::wrapping(Arc::clone(&dest_inner))
+            .with_max_concurrent_ops(1)
+            .arc(),
+        source_inner,
+        dest_inner,
+    };
+    let state = state();
+
+    let result = move_volumes_with_progress(
+        Arc::new(CollectorEventSink::new()),
+        "op-walk-move-busy",
+        &state,
+        Arc::clone(&rig.source) as Arc<dyn Volume>,
+        &crate::testing::app_paths_of(&[PathBuf::from("/t")]),
+        Arc::clone(&rig.dest) as Arc<dyn Volume>,
+        &app("/"),
+        &config(ConflictResolution::Skip),
+    )
+    .await;
+
+    assert!(rig.source.fault_fired(FaultyOp::Delete));
+    assert_eq!(
+        format!("{result:?}"),
+        r#"Err(WriteFailure { error: SourceNotRemoved { path: "/t/a/deep/y.txt", landed_at: "/t", cause: IoError { path: "/t/a/deep/y.txt", message: "the file is busy" } } })"#
+    );
+    // No folder above the file that stayed is asked to go; the rest still does.
+    assert_eq!(
+        shape(&rig.source, &[FaultyOp::Delete]),
+        lines(&[
+            "Delete /t/a/deep/z",
+            "Delete /t/a/deep/y.txt",
+            "Delete /t/a/a1.txt",
+            "Delete /t/c/cc/c2.txt",
+            "Delete /t/c/cc",
+            "Delete /t/c/c1.txt",
+            "Delete /t/c",
+            "Delete /t/z.txt",
+        ])
+    );
+    assert_eq!(
+        tree(&rig.source_inner, "/t").await,
+        tree_of(&[
+            ("/t/a/", ""),
+            ("/t/a/a2.txt", "a2-src"),
+            ("/t/a/deep/", ""),
+            ("/t/a/deep/x.txt", "x-src"),
+            ("/t/a/deep/y.txt", "y-src"),
+            ("/t/b/", ""),
+            ("/t/b/b1.txt", "b1-src"),
+            ("/t/m.txt", "m-src"),
+        ])
+    );
+}
