@@ -398,6 +398,7 @@ describe('toolOutcomeText', () => {
       needsDiskAccess: true,
       unreachable: true,
       notFound: true,
+      notAFolder: true,
       excluded: true,
       permissionDenied: true,
       cancelled: true,
