@@ -530,7 +530,7 @@ impl SmbVolume {
                     Err(e) => Err(ListingStop::Smb(e)),
                 };
                 match listed {
-                    Ok(entries) => return Ok(entries),
+                    Ok(listing) => return Ok(listing.into_entries()),
                     Err(ListingStop::Cancelled) => {
                         return Err(VolumeError::Cancelled("Listing cancelled".into()));
                     }

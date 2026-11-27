@@ -12,6 +12,7 @@ use super::session::SessionLease;
 use cmdr_fs::app_path::{AppNameBuf, AppPath, AppPathBuf, ListedFolder, Namer, PathArithmetic, is_escape};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
+use cmdr_fs::volume::descent::{Descent, MAX_WALK_DEPTH, Refusal};
 use cmdr_fs::volume::scan_walk::{conflicts_against, fold_batch_at};
 use cmdr_fs::volume::{
     BatchScanResult, CopyScanResult, NotAChildName, ScanBoundary, ScanConflict, SourceItemInfo, VolumeError,
@@ -22,6 +23,22 @@ use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
 
+/// Logs a folder the walk leaves out. A loop is ordinary on a share whose links
+/// list as folders; a depth refusal means a loop the server names no nodes for.
+fn note_refused_folder(path: &AppPath, refusal: Refusal) {
+    match refusal {
+        Refusal::LinkLoop => debug!(
+            "SmbVolume::scan: leaving out {}, a link back to a folder the walk is inside",
+            LogPrivate::dir_path(path.as_str())
+        ),
+        Refusal::TooDeep => warn!(
+            // allowed-pluralize-noun: MAX_WALK_DEPTH is the constant 128, never one.
+            "SmbVolume::scan: stopping at {}, more than {MAX_WALK_DEPTH} levels down",
+            LogPrivate::dir_path(path.as_str())
+        ),
+    }
+}
+
 /// What one top-level path of a batch scan turned out to be.
 enum StatOutcome {
     /// The volume root: always a directory, never stat'ed.
@@ -31,7 +48,9 @@ enum StatOutcome {
 }
 
 impl SmbVolume {
-    /// Recursively scans an SMB path, returning file/dir counts and total bytes.
+    /// Scans an SMB path and everything under it, returning file/dir counts and
+    /// total bytes. Iterative, and it never goes into a folder the walk is
+    /// already inside (`cmdr_fs::volume::descent`): Samba lists a link as a folder.
     ///
     /// ❗ Every entry passes `boundary`, and a directory passes it BEFORE its
     /// listing goes out. A share that has spun its disks down answers a listing in
@@ -109,47 +128,60 @@ impl SmbVolume {
                 }
             }
 
-            // It's a directory: list and recurse
-            result.dir_count += 1;
-            boundary.dir(&for_boundary(caller_path)).await?;
-            // The listing asks for the folder by the path its display spelling
-            // converts back to, as every pane listing does.
-            let listed_smb = self.smb_path_of(&self.to_display_path(smb_path))?;
-            // A listing a dropped share cut off runs again once the scan's
-            // owner has waited it out; nothing below counts until it answers.
-            let entries = boundary
-                .through_outages(&for_boundary(caller_path), || {
-                    self.list_smb_directory(&listed_smb, None, None)
-                })
-                .await?;
-            let folder = ListedFolder::new(caller_path);
+            // It's a directory: walk it, one folder at a time off a work stack.
+            // ❌ Never recursion: a link loop Samba lists as a plain folder made
+            // the recursive walk overflow the stack and abort the app (#1538
+            // follow-up), and a real tree deep enough would too.
+            let mut pending = vec![(smb_path.to_string(), caller_path.to_owned(), Descent::root(None))];
+            while let Some((folder_smb, folder_caller, descent)) = pending.pop() {
+                boundary.check().await?;
+                result.dir_count += 1;
+                boundary.dir(&for_boundary(&folder_caller)).await?;
+                // The listing asks for the folder by the path its display spelling
+                // converts back to, as every pane listing does.
+                let listed_smb = self.smb_path_of(&self.to_display_path(&folder_smb))?;
+                // A listing a dropped share cut off runs again once the scan's
+                // owner has waited it out; nothing below counts until it answers.
+                let listing = boundary
+                    .through_outages(&for_boundary(&folder_caller), || {
+                        self.list_smb_directory_with_nodes(&listed_smb)
+                    })
+                    .await?;
+                // The folder's own id, from its `.` row, so a link straight back
+                // to it (or to the walk's root) is caught on the first lap.
+                let descent = descent.named(listing.own_node);
+                let folder = ListedFolder::new(&folder_caller);
 
-            for entry in &entries {
-                // An OS junk file the transfer leaves out is no part of it (#314, #1305).
-                if boundary.leaves_out(&entry.name, entry.is_directory) {
-                    continue;
+                let mut subfolders = Vec::new();
+                for (entry, node) in &listing.rows {
+                    // An OS junk file the transfer leaves out is no part of it (#314, #1305).
+                    if boundary.leaves_out(&entry.name, entry.is_directory) {
+                        continue;
+                    }
+                    let child_caller = child_of(&folder, &entry.name)?;
+                    if entry.is_directory {
+                        match descent.child(*node) {
+                            Ok(child) => {
+                                let child_smb = if folder_smb.is_empty() {
+                                    entry.name.clone()
+                                } else {
+                                    format!("{}/{}", folder_smb, entry.name)
+                                };
+                                subfolders.push((child_smb, child_caller, child));
+                            }
+                            Err(refusal) => note_refused_folder(&child_caller, refusal),
+                        }
+                    } else {
+                        result.file_count += 1;
+                        result.total_bytes += entry.size.unwrap_or(0);
+                        result.dedup_bytes += entry.size.unwrap_or(0);
+                        boundary
+                            .file(&for_boundary(&child_caller), entry.size.unwrap_or(0))
+                            .await?;
+                    }
                 }
-                let child_smb = if smb_path.is_empty() {
-                    entry.name.clone()
-                } else {
-                    format!("{}/{}", smb_path, entry.name)
-                };
-
-                let child_caller = child_of(&folder, &entry.name)?;
-                if entry.is_directory {
-                    let sub = self.scan_recursive(&child_smb, &child_caller, boundary).await?;
-                    result.file_count += sub.file_count;
-                    result.dir_count += sub.dir_count;
-                    result.total_bytes += sub.total_bytes;
-                    result.dedup_bytes += sub.dedup_bytes;
-                } else {
-                    result.file_count += 1;
-                    result.total_bytes += entry.size.unwrap_or(0);
-                    result.dedup_bytes += entry.size.unwrap_or(0);
-                    boundary
-                        .file(&for_boundary(&child_caller), entry.size.unwrap_or(0))
-                        .await?;
-                }
+                // Reversed, so the stack walks them in listing order.
+                pending.extend(subfolders.into_iter().rev());
             }
 
             Ok(result)

@@ -740,6 +740,8 @@ mod host_seam_test;
 #[cfg(test)]
 mod integration_test;
 #[cfg(test)]
+mod link_loop_integration_test;
+#[cfg(test)]
 mod links_integration_test;
 #[cfg(test)]
 mod previous_session_integration_test;

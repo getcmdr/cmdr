@@ -208,9 +208,11 @@ to one. Pinned by `pace_tests::a_volume_ceiling_caps_the_scan_below_the_full_bud
 
 ## Where a walk descends (`Volume::index_walk`)
 
-All three walks ask `walk_descends` (`mod.rs`) before queueing a child directory: never a NAS system dir (below), and
-otherwise wherever the volume's `index_walk(dir, is_symlink)` answers `Descend`. A `RowOnly` directory keeps its row and
-is never listed, so its size reads as unknown; the cover walk stamps it `Declined`, as it does a NAS system dir.
+All three walks ask `walk_descends` (`mod.rs`) before queueing a child directory: never a NAS system dir (below), never
+past `MAX_WALK_DEPTH` levels below the volume's root (a Samba `loop -> ..` lists as a plain folder; `cmdr-fs/DETAILS.md`
+§ "A walk never loops through a link it can't see"), and otherwise wherever the volume's `index_walk(dir, is_symlink)`
+answers `Descend`. A `RowOnly` directory keeps its row and is never listed, so its size reads as unknown; the cover walk
+stamps it `Declined`, as it does a NAS system dir.
 
 - **Default: descend a real directory, never a link** (`IndexWalk::unless_link`). A link is the one row it is, as in the
   local walker and the reconcile diff: walking one counts its target once per alias (a phone's `/sdcard`,
