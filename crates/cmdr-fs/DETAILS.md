@@ -503,8 +503,11 @@ its own, so the kernel's 40-link limit never applies).
 - **A walk that FOLLOWS links into folders asks `link_walk.rs`**, ❌ never `Descent` alone: `descend_into` adds what
   such a walk needs on top, the node check on every folder it descends (`Volume::reached_node`, one call), the depth
   backstop only where listings hide links (`BackendKind::listings_mark_links`), a confirming `entry_kind` before an
-  unmarked folder is left out as a loop, and `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) for a source that names no nodes.
-  Each walk decides what a `LoopsBack` costs it (the copy counts a skip; drag-out leaves the folder out).
+  unmarked folder is left out as a loop, and `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) for a source that names no nodes. A
+  repeated node the stat calls a plain folder (a loop the server presents as a directory, or untrustworthy ids) is
+  walked on as a folder with no node, so the depth backstop bounds it, ❌ never on to the path limit; a real tree 128+
+  levels deep under a repeated id is far rarer. Pinned by `link_walk_test.rs`. Each walk decides what a `LoopsBack`
+  costs it (the copy counts a skip; drag-out leaves the folder out).
 
 Users: `cmdr-smb`'s `scan_recursive` (ids, depth where none), the network index's `walk_descends` (depth only, since its
 `FileEntry` rows carry no node id; `FileEntry::inode` means hardlink dedup to its consumers, so it isn't borrowed), and

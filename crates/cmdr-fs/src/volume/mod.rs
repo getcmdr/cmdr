@@ -2764,6 +2764,8 @@ mod in_memory_stream_test;
 #[cfg(test)]
 mod in_memory_test;
 #[cfg(test)]
+mod link_walk_test;
+#[cfg(test)]
 mod list_alloc_ceiling_test;
 #[cfg(test)]
 mod listing_progress_test;
