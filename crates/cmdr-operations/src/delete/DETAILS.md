@@ -303,6 +303,16 @@ bails would fire it once per stacked frame. It returns `Err(Cancelled)` silently
 through `emit_cancelled_if_aborted`. **Any new per-level-cancel scan owes the same split**, whichever operation adds it.
 Pinned by `delete_cancel_during_scan_emits_write_cancelled`.
 
+## A refused delete says what's already gone
+
+A permanent delete the OS stops partway (a root-owned folder inside an app bundle answers `EACCES`) can't be undone, so
+the dialog says how many files are gone (`permissionDeniedMessage`'s `deletedSoFar`, off the event's
+`progress_at_stop`). That reads the status cache, which progress frames update only every `progress_interval`, so the
+local walker flushes its counts into the cache before it returns a leaf's refusal (`remove_one_leaf`'s caller). Without
+it a refusal inside the first frame reported nothing deleted (ERR-RB2XQ, cmdr-reports#122; pinned by
+`a_refused_delete_reports_every_file_it_already_removed`). Cmdr has no elevated delete on purpose: a privileged helper
+is a security-sensitive surface for a rare case, and Finder (with an admin password) or `sudo` is the way through.
+
 ## What a batch trash reports (`trash_files_with_progress`)
 
 `trashItemAtURL` is atomic per top-level item, so a batch has three endings, not two, and each one has to be readable

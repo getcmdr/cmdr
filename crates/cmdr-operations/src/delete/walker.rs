@@ -2,7 +2,7 @@
 //! The volume-aware twin is `volume_walker.rs`.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use super::super::error_classification::IoResultExt;
@@ -18,6 +18,56 @@ use super::super::types::{
 // ============================================================================
 // Delete implementation
 // ============================================================================
+
+/// Removes one leaf of a local delete (a file, or a link as itself) and journals it. An item
+/// already gone counts as done; a refusal is the delete's error.
+fn remove_one_leaf(
+    state: &WriteOperationState,
+    operation_id: &str,
+    path: &Path,
+    progress_bytes: u64,
+) -> Result<(), WriteOperationError> {
+    // Defensive: register with the downloads watcher's ignore set so a
+    // future "deleted from Downloads" event source wouldn't surprise us.
+    // No-ops outside ~/Downloads.
+    state.scope().host().announce(path);
+    // A lock the OS would delete through (Windows' read-only file) stops the delete
+    // here, as Locked, the way the OS's own refusal stops it on macOS.
+    if crate::local_disk::locked_against_removal(path) {
+        return Err(WriteOperationError::FileLocked {
+            path: path.display().to_string(),
+        });
+    }
+    // A leaf is a file or a link, the link removed as itself: a Windows folder link
+    // needs `RemoveDirectoryW`, which `remove_file` isn't (#1386).
+    match crate::local_disk::remove_leaf(path) {
+        // Journal the deleted leaf so "when did I delete dog.jpg" is searchable.
+        // Delete is never rollbackable (the op finalizes `permanent_delete`), so
+        // these rows exist purely for search — one per leaf, deliberately.
+        Ok(()) => super::super::journal::record_local_leaf(
+            state.scope(),
+            cmdr_operation_log::types::EntryType::File,
+            path,
+            None,
+            Some(progress_bytes as i64),
+            None,
+            false,
+            cmdr_operation_log::types::ItemOutcome::Done,
+            None,
+        ),
+        // Gone between the scan and its unlink: its absence is what this delete
+        // is for, so carry on (`already_gone.rs`). No journal row: we removed nothing.
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            log::info!(
+                target: "already_gone",
+                "op={operation_id}: {} vanished before its unlink; counting it as done",
+                cmdr_fs::log_private::LogPrivate::path(path)
+            );
+        }
+        Err(error) => Err::<(), _>(error).with_path(path)?,
+    }
+    Ok(())
+}
 
 pub(crate) fn delete_files_with_progress_inner(
     events: &dyn OperationEventSink,
@@ -137,44 +187,21 @@ pub(crate) fn delete_files_with_progress_inner(
         // `ScanResult::dedup_bytes`.
         let progress_bytes = file_info.progress_bytes;
 
-        // Defensive: register with the downloads watcher's ignore set so a
-        // future "deleted from Downloads" event source wouldn't surprise us.
-        // No-ops outside ~/Downloads.
-        state.scope().host().announce(&file_info.path);
-        // A lock the OS would delete through (Windows' read-only file) stops the delete
-        // here, as Locked, the way the OS's own refusal stops it on macOS.
-        if crate::local_disk::locked_against_removal(&file_info.path) {
-            return Err(WriteOperationError::FileLocked {
-                path: file_info.path.display().to_string(),
-            });
-        }
-        // A leaf is a file or a link, the link removed as itself: a Windows folder link
-        // needs `RemoveDirectoryW`, which `remove_file` isn't (#1386).
-        match crate::local_disk::remove_leaf(&file_info.path) {
-            // Journal the deleted leaf so "when did I delete dog.jpg" is searchable.
-            // Delete is never rollbackable (the op finalizes `permanent_delete`), so
-            // these rows exist purely for search — one per leaf, deliberately.
-            Ok(()) => super::super::journal::record_local_leaf(
-                state.scope(),
-                cmdr_operation_log::types::EntryType::File,
-                &file_info.path,
+        if let Err(error) = remove_one_leaf(state, operation_id, &file_info.path, progress_bytes) {
+            // The status cache is what the `write-error` reads for `progress_at_stop`, and
+            // progress frames reach it only every `progress_interval`: without this, a
+            // refusal inside the first frame said nothing was deleted while files were
+            // already gone for good (ERR-RB2XQ, cmdr-reports#122).
+            state.scope().status().update(
+                operation_id,
+                WriteOperationPhase::Deleting,
                 None,
-                Some(progress_bytes as i64),
-                None,
-                false,
-                cmdr_operation_log::types::ItemOutcome::Done,
-                None,
-            ),
-            // Gone between the scan and its unlink: its absence is what this delete
-            // is for, so carry on (`already_gone.rs`). No journal row: we removed nothing.
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                log::info!(
-                    target: "already_gone",
-                    "op={operation_id}: {} vanished before its unlink; counting it as done",
-                    cmdr_fs::log_private::LogPrivate::path(&file_info.path)
-                );
-            }
-            Err(error) => Err::<(), _>(error).with_path(&file_info.path)?,
+                files_done,
+                scan_result.file_count,
+                bytes_done,
+                scan_result.dedup_bytes,
+            );
+            return Err(error);
         }
 
         files_done += 1;

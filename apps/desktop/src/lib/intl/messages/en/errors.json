@@ -2619,6 +2619,16 @@
   "errors.write.permissionDenied.message.copy": "You don’t have permission to copy files here.",
   "errors.write.permissionDenied.message.move": "You don’t have permission to move files here.",
   "errors.write.permissionDenied.message.delete": "You don’t have permission to delete files here.",
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr had already deleted {done} of {total} files when it stopped.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "description": "Second sentence of the error dialog when a permanent delete was refused partway, appended after the sentence saying which folder refused. A permanent delete can't be undone, so this tells the person how many files are already gone for good. Plain text. Shown only when at least one file was deleted.",
+    "placeholders": {
+      "done": "how many files were already deleted, a formatted number like \"312\"",
+      "total": "how many files the delete set out to remove, a formatted number like \"1,529\""
+    },
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+  },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {You don’t have permission to move files to the Recycle Bin here.} other {You don’t have permission to move files to the trash here.}}",
   "@errors.write.permissionDenied.message.trash": {
     "description": "Body of the copy/move/delete error dialog when the user lacks permission (trash variant). Plain text. Uses a contraction (\"don't\"). This is a raw errors.* string (no ICU), so phrase the move-to-trash action naturally for this language. The Windows branch names the Recycle Bin, Windows' own name for it. The screenshot shows the macOS wording.",

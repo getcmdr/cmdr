@@ -33,6 +33,7 @@ import type { ProgressAtStop } from '#lib/tauri-commands/index.js'
 import { w, type FriendlyErrorMessage } from './transfer-error-catalog'
 import { volumeGoneMessage } from './transfer-error-volume-gone'
 import { formatInteger } from '#lib/intl/number-format.js'
+import { joinSentences } from '#lib/intl/sentence-join.js'
 import { hasCapability } from '#lib/platform/index.js'
 import { shortcutAsText } from '#lib/shortcuts/reactive-shortcuts.svelte.js'
 import { colorizeSize } from '#lib/file-explorer/selection/selection-info-utils.js'
@@ -424,16 +425,32 @@ function readOnlyMessage(error: Extract<WriteOperationError, { type: 'read_only_
 function permissionDeniedMessage(
   error: Extract<WriteOperationError, { type: 'permission_denied' }>,
   op: TransferOperationType,
+  progress: ProgressAtStop | null,
 ): FriendlyErrorMessage {
   const sourceSide = error.side === 'source' && (op === 'copy' || op === 'move')
   const unnamedMessageKey = sourceSide ? (op === 'move' ? 'sourceMove' : 'sourceCopy') : op
+  const refused = error.refusedFolder
+    ? w('permissionDenied.message.named', { folder: escapeHtml(error.refusedFolder) })
+    : w(`permissionDenied.message.${unnamedMessageKey}`)
   return {
     title: w('permissionDenied.title'),
-    message: error.refusedFolder
-      ? w('permissionDenied.message.named', { folder: escapeHtml(error.refusedFolder) })
-      : w(`permissionDenied.message.${unnamedMessageKey}`),
+    message: joinSentences([refused, ...deletedSoFar(op, progress)]),
     suggestion: w(`permissionDenied.suggestion.${permissionSuggestionKey(error.refusal, op, sourceSide)}`),
   }
+}
+
+/**
+ * A permanent delete the OS stopped partway can't be undone, so the dialog says what's already
+ * gone (ERR-RB2XQ). Nothing when nothing was, or for any other operation.
+ */
+function deletedSoFar(op: TransferOperationType, progress: ProgressAtStop | null): string[] {
+  if (op !== 'delete' || progress === null || progress.filesDone === 0) return []
+  return [
+    w('permissionDenied.deletedSoFar', {
+      done: formatInteger(progress.filesDone),
+      total: formatInteger(progress.filesTotal),
+    }),
+  ]
 }
 
 /** The advice half of `permissionDeniedMessage`: the errno's answer first, then the operation's. */
@@ -871,7 +888,7 @@ export function getUserFriendlyMessage(
 
   switch (error.type) {
     case 'permission_denied':
-      return permissionDeniedMessage(error, operationType)
+      return permissionDeniedMessage(error, operationType, progressAtStop)
     // The move kept every original, which is the whole message. Named when the
     // destination volume had a name to capture.
     case 'move_not_confirmed':

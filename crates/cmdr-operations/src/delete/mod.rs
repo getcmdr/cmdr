@@ -69,6 +69,9 @@ mod link_delete_tests;
 mod local_link_delete_tests;
 #[cfg(test)]
 mod preview_binding_tests;
+/// A delete the OS stops partway counts what it already removed.
+#[cfg(test)]
+mod refused_progress_tests;
 // The nested-mount pins (macOS, `#[ignore]`d, run by `pnpm check disk-images`). The
 // `macos` gate is load-bearing: the harness is macOS-only.
 /// The volume delete's scan refuses a climbing row and deletes a `foo\..` file as one name.

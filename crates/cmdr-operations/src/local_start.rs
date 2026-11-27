@@ -8,7 +8,7 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 
 use cmdr_fs::log_private::LogPrivate;
@@ -173,9 +173,11 @@ impl Operations {
 
                 let op_id_for_blocking = op_id.to_string();
                 let completed = Arc::new(AtomicUsize::new(0));
+                let errored = Arc::new(AtomicBool::new(false));
                 let events_for_handler: Arc<dyn OperationEventSink> = Arc::new(CompletionTally {
                     inner: Arc::clone(&events),
                     done: Arc::clone(&completed),
+                    errored: Arc::clone(&errored),
                 });
                 // Kept out of the handler's move so the safety net below can still
                 // read the operation's captured sides: a transfer that returned an
@@ -210,6 +212,9 @@ impl Operations {
                     Ok(Ok(())) => {} // Handler already emitted write-complete or write-cancelled
                     Ok(Err(ref e)) if matches!(e, WriteOperationError::Cancelled { .. }) => {
                         // Handler already emitted write-cancelled
+                    }
+                    Ok(Err(_)) if errored.load(Ordering::Relaxed) => {
+                        // Handler already emitted write-error (trash, copy): one per failure.
                     }
                     Ok(Err(e)) => {
                         // Handler error (validation, I/O, etc.): emit write-error as safety net
@@ -545,6 +550,9 @@ pub(crate) fn one_local_side(volumes: &dyn OperationVolumes, source: &Path) -> O
 struct CompletionTally {
     inner: Arc<dyn OperationEventSink>,
     done: Arc<AtomicUsize>,
+    /// The handler emitted its own `write-error`, so the safety net stays quiet: a second one
+    /// is a second WARN, retained failure, and frontend event for one failure.
+    errored: Arc<AtomicBool>,
 }
 
 impl SinkDecorator for CompletionTally {
@@ -554,6 +562,10 @@ impl SinkDecorator for CompletionTally {
     fn emit_complete(&self, event: WriteCompleteEvent) {
         self.done.fetch_max(event.files_processed, Ordering::Relaxed);
         self.inner.emit_complete(event);
+    }
+    fn emit_error(&self, event: WriteErrorEvent) {
+        self.errored.store(true, Ordering::Relaxed);
+        self.inner.emit_error(event);
     }
 }
 
