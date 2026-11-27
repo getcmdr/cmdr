@@ -25,6 +25,7 @@
         setPendingShortcutHighlight,
     } from '#lib/settings/pending-shortcut-highlight.svelte.js'
     import { getMatchingSections } from '#lib/settings/settings-search.js'
+    import { isSettingsSection } from '#lib/settings/settings-section-lookup.js'
     import {
         CONTENT_FADE_BAND_PX,
         contentScrollTopFor,
@@ -294,9 +295,12 @@
                 selectedSection = parsed
                 log.debug('Opened settings to URL section: {section}', { section: parsed.join(' > ') })
             } else {
+                // A page a rename retired would render blank, so it keeps the default.
                 const lastSection = await loadLastSettingsSection()
-                selectedSection = lastSection
-                log.debug('Restored last settings section: {section}', { section: lastSection.join(' > ') })
+                if (isSettingsSection(lastSection)) {
+                    selectedSection = lastSection
+                    log.debug('Restored last settings section: {section}', { section: lastSection.join(' > ') })
+                }
             }
 
             initialized = true

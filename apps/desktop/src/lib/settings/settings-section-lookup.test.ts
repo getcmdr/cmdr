@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { resolveSettingsSection } from './settings-section-lookup'
+import { isSettingsSection, resolveSettingsSection } from './settings-section-lookup'
+
+describe('isSettingsSection', () => {
+  it('knows a registry page, a subsection, and a dedicated page', () => {
+    expect(isSettingsSection(['Appearance'])).toBe(true)
+    expect(isSettingsSection(['AI', 'Ask Cmdr'])).toBe(true)
+    expect(isSettingsSection(['Keyboard shortcuts'])).toBe(true)
+  })
+
+  it("doesn't know a page a rename retired, which the window would restore as a blank page", () => {
+    expect(isSettingsSection(['File systems', 'Servers (SFTP, WebDAV)'])).toBe(false)
+    expect(isSettingsSection([])).toBe(false)
+  })
+})
 
 describe('resolveSettingsSection', () => {
   it('finds a top-level section and a subsection by their sidebar names', () => {
