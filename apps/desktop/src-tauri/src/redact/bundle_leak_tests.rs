@@ -227,6 +227,40 @@ fn a_failed_move_ships_no_part_of_a_file_name_holding_a_comma() {
     assert!(r(&derived).contains("Test"), "{}", r(&derived));
 }
 
+/// A refused trash's OS sentence names the item (`“Test App.app” couldn’t be moved…`) with no
+/// key beside it. The backend's `write_operations` line marks the path in front of it, whose leaf
+/// teaches the echo scrub the name. The frontend's `Trash error` line echoed the same JSON
+/// unmarked, and a path inside external text teaches nothing, so the name shipped (ERR-RB2XQ,
+/// cmdr-reports#122). The frontend now leaves `message` to the backend's line
+/// (`write-error-for-log.ts`); the old echo is pinned so the site fix stays the fix.
+#[test]
+fn a_refused_trash_ships_no_part_of_the_name_its_os_sentence_repeats() {
+    use cmdr_fs::error_detail::ErrorDetail;
+    use cmdr_operations::WriteOperationError;
+    use cmdr_operations::testing::TrashRefusalKind;
+
+    let path = "/Applications/Test App.app";
+    let words = ": the Trash refused it (TrashNotWritable): “Test App.app” couldn’t be moved to the trash because you don’t have permission to access it.";
+    let error = WriteOperationError::TrashRefused {
+        item_count: 1,
+        reason: TrashRefusalKind::TrashNotWritable,
+        // `refused_summary`'s shape: each refused path, marked, then the OS's words about it.
+        message: ErrorDetail::path_then(path, words),
+        online_only: false,
+    };
+    let backend = format!(
+        "WARN write_operations: op op-1 (Trash) failed: detail={:?}",
+        error.log_detail()
+    );
+    assert_ships_none(&backend, &["Test App"]);
+
+    let frontend_echo = format!(
+        "WARN FE:transferProgress: Trash error: detail={:?}",
+        serde_json::to_string(&error).expect("the error serializes")
+    );
+    assert!(r(&frontend_echo).contains("Test App"), "{}", r(&frontend_echo));
+}
+
 #[test]
 fn leak_shapes_redact_idempotently() {
     let context = context();

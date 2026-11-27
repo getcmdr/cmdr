@@ -31,6 +31,7 @@ import type { ItemKinds, OsJunkFiles, SpaceShortfall } from '#lib/ipc/bindings.j
 import { getAppLogger } from '#lib/logging/logger.js'
 import { pluralize } from '#lib/utils/pluralize.js'
 import { logLevelFor } from './transfer-error-log-level'
+import { writeErrorForLog } from './write-error-for-log'
 import { OS_JUNK_FILES_SETTING, defaultOsJunkFiles } from './os-junk-files'
 
 const log = getAppLogger('transferProgress')
@@ -183,7 +184,8 @@ export async function startTransferOperation(config: TransferStartConfig): Promi
     // nothing more): an expected refusal at warn, so it never auto-sends a
     // report; a `serious` kind, or a rejection that isn't typed at all, at error.
     if (typed && logLevelFor(error) === 'warn') {
-      log.warn('Failed to start {op} operation: {error}', { op: config.operationType, error })
+      // Without the OS's words, which the backend's line marks (`writeErrorForLog`).
+      log.warn('Failed to start {op} operation: {error}', { op: config.operationType, error: writeErrorForLog(error) })
     } else {
       log.error('Failed to start {op} operation: {error}', { op: config.operationType, error: err })
     }

@@ -228,9 +228,10 @@ export function wordEjectRefusal(error: unknown): string {
     log.warn('Eject refused with an untyped value: {error}', { error })
     return raw('errors.eject.unexpected')
   }
-  const detail = ejectTechnicalDetail(typed)
-  if (detail === null) log.warn('Eject refused: {reason}', { reason: typed.type })
-  else log.warn('Eject refused: {reason} ({detail})', { reason: typed.type, detail })
+  // The reason alone. The technical detail is the tool's stderr (`diskutil` names the volume in
+  // it), which here would be unmarked prose with no key beside it; the backend's `eject` WARN
+  // logs that same stderr beside the marked mount path, whose leaf a report scrubs from it.
+  log.warn('Eject refused: {reason}', { reason: typed.type })
   warnIfCmdrHeldTheDrive(typed)
   return renderEjectError(typed)
 }

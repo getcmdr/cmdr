@@ -13,6 +13,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest'
 import { flushSync } from 'svelte'
 import { withPlatform } from '#lib/platform/test-platform.js'
+import { describeForLog } from '#lib/logging/describe-for-log.js'
+import { markLogValue } from '#lib/logging/log-markers.js'
 import type { MountError, NetworkHost, ShareInfo } from '../types'
 import { MountFailure } from '../network/mount-error'
 import { renderMountError } from '../network/mount-error-messages'
@@ -347,7 +349,7 @@ describe('a mount that stopped short', () => {
     expect(h.openSignInSheet, 'no credential answers it').not.toHaveBeenCalled()
   })
 
-  it('logs a refusal as readable text, not "[object Object]"', async () => {
+  it('logs a refusal as its typed JSON with the server marked, never "[object Object]"', async () => {
     h.mountNetworkShare.mockRejectedValue(refused({ type: 'share_not_found', server: ADDRESS, share: 'testshare' }))
     const { mount } = create()
 
@@ -355,7 +357,11 @@ describe('a mount that stopped short', () => {
 
     const [template, properties] = h.warn.mock.calls[0] as [string, Record<string, unknown>]
     expect(template).toContain('{error}')
-    expect(String(properties.error)).toContain('share_not_found')
+    // The bridge renders every property through `describeForLog`, so the value goes in raw:
+    // pre-stringified, its `server` reached a report unmarked.
+    const rendered = describeForLog(properties.error)
+    expect(rendered).toContain('share_not_found')
+    expect(rendered).toContain(markLogValue('host', ADDRESS))
   })
 
   it('words a mount call that broke down without a typed refusal as the catch-all', async () => {

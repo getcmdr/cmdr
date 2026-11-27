@@ -30,7 +30,8 @@ export function sessionOpFailureKey(op: SessionOp, error: ViewerError | null): M
  * is warn, since an error log auto-sends a report; a dead session or an untyped failure is ours.
  */
 export function logSessionOpFailure(log: Logger, op: SessionOp, error: ViewerError | null): void {
-  const detail = { op, error: error ? JSON.stringify(error) : 'untyped' }
+  // Raw, so `describeForLog` marks its `path`; pre-stringified it reached the bridge unmarked.
+  const detail = { op, error: error ?? 'untyped' }
   if (error && logLevelFor(error) === 'warn') {
     log.warn('Viewer {op} failed: {error}', detail)
   } else {

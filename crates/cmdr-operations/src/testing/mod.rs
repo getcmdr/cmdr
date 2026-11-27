@@ -103,7 +103,7 @@ pub use super::transfer_tree::TransferTreeAncestor;
 // matches field by field, needs.
 pub use super::types::{
     AppearedDuringMove, CancelRollback, LostMetadata, LostMetadataClass, MetadataLeftBehind, ProgressAxis,
-    RollbackSupport, SourcesGoneNext, TransferWaitReason,
+    RollbackSupport, SourcesGoneNext, TransferWaitReason, TrashRefusalKind,
 };
 
 // The backend suites (`operations_host/backend_suites/`): the volume engine's

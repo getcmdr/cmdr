@@ -85,6 +85,14 @@ reader is `src-tauri/src/redact/DETAILS.md` § "Marked spans"). Two producers he
   `bridge-redaction-cases.json` against Rust's `{:?}`, and feeds that file's golden bridge lines (pinned against the
   real bridge by `log-bridge.test.ts`) to the report redactor: no name ships, and each value hashes as the same value
   logged from Rust does.
+- **Prose inside a payload can't be marked here.** `describeForLog` marks a value by its KEY; the OS's or a tool's words
+  (`message`, `detail`, stderr) arrive as one plain string, and a name in them with no key beside it (macOS's
+  `“Test App.app” couldn’t be moved…`) ships in clear, since a path inside external text never teaches the report's echo
+  scrub a name (`src-tauri/src/redact/DETAILS.md` § "External-text fields"). The backend marks those words in its own
+  line, so a frontend echo of a failure the backend already logged leaves them out: `writeErrorForLog` for a
+  `WriteOperationError` (the op id joins it to the `write_operations` line), the reason alone for an eject refusal
+  (ERR-RB2XQ). And a typed payload goes in RAW, ❌ never `JSON.stringify`d first: a string reaches `describeForLog` with
+  its identity keys unmarked too.
 - **The devtools console strips markers** (raw and escaped, `stripLogMarkers`) from string parts; nothing marks before
   the bridge, so any there is foreign litter. The log file keeps the bridge's markers; the terminal and Help > View
   debug log decode them (`docs/tooling/logging.md` § "Marked values").
