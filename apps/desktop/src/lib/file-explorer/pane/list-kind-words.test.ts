@@ -2,7 +2,7 @@
  * A share list's rows carry no dates and no sizes (the `network` volume is unindexed and a
  * share row's path is no filesystem path), so its kind words drop both columns. The Servers
  * list keeps its date as "Last used", heads its Ext column "Details", and its footer counts
- * servers with the nearby search's state. Every other kind keeps a folder's own words.
+ * servers with the nearby search's state (or says networking is off). Every other kind keeps a folder's own words.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -34,17 +34,24 @@ describe('listWordsFor', () => {
     expect(words?.emptyText).toContain('F7')
   })
 
-  it('counts servers, saying when the nearby search is still looking or is off', () => {
+  it('counts servers, saying when the nearby search is still looking or networking is off', () => {
     expect(listWordsFor('network')?.countRows?.(1)).toBe('1 server')
     discovery.state = 'searching'
     expect(listWordsFor('network')?.countRows?.(1_200)).toBe('1,200 servers, looking for more nearby…')
     discovery.enabled = false
-    expect(listWordsFor('network')?.countRows?.(5)).toBe('5 servers, nearby search is off')
+    expect(listWordsFor('network')?.countRows?.(5)).toBe('5 servers, networking is off')
   })
 
   it('gives a folder on any other kind its own words', () => {
     expect(listWordsFor('local')).toBeUndefined()
     expect(listWordsFor('smb')).toBeUndefined()
+  })
+
+  it('names the `..` row after where a top folder’s `..` leads, on any kind', () => {
+    expect(listWordsFor('share-list', 'Back to Servers')?.parentRowName).toBe('Back to Servers')
+    expect(listWordsFor('share-list')?.parentRowName).toBeUndefined()
+    expect(listWordsFor('smb', 'Back to Testnas')).toEqual({ parentRowName: 'Back to Testnas' })
+    expect(listWordsFor('sftp', null)).toBeUndefined()
   })
 })
 

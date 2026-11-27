@@ -1657,7 +1657,7 @@
   },
   "settings.network.showServerParentRow.label": "Show “..” in each server’s top folder",
   "@settings.network.showServerParentRow.label": {
-    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SFTP, WebDAV, NFS, and S3 server (and in an S3 bucket’s top folder); opening it goes back to where the server was opened from: the Servers list, or for a bucket, its account’s bucket list. Keep “..” exactly as written: it’s the parent-folder row the file list shows. In Settings > File systems > Servers (SFTP, WebDAV), Behavior card."
+    "description": "Label for the switch (on by default) that puts a “..” row in the top folder of every SFTP, WebDAV, NFS, and S3 server (and in an S3 bucket’s top folder); opening it goes back to where the server was opened from: the Servers list, or for a bucket, its account’s bucket list. Keep “..” exactly as written: it’s the parent-folder row the file list shows. In Settings > File systems > Servers (SFTP, WebDAV, NFS, S3), Behavior card."
   },
   "settings.network.showServerParentRow.description": "“..” takes you back to the Servers list. In an S3 bucket, it takes you to the account’s list of buckets.",
   "@settings.network.showServerParentRow.description": {
@@ -1665,7 +1665,7 @@
   },
   "settings.network.showServerParentRow.keywords": "parent, up, back, top folder, root, server list, bucket list, double dot",
   "@settings.network.showServerParentRow.keywords": {
-    "description": "Search keywords for the “Show “..” in each server’s top folder” setting (settings.network.showServerParentRow.label) in Settings > File systems > Servers (SFTP, WebDAV). What it does: in a server’s top folder, a “..” row leads back to the Servers list (or a bucket’s account). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Show “..” in each server’s top folder” setting (settings.network.showServerParentRow.label) in Settings > File systems > Servers (SFTP, WebDAV, NFS, S3). What it does: in a server’s top folder, a “..” row leads back to the Servers list (or a bucket’s account). Never shown. Search already matches its label and description, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.network.shareCacheDuration.label": "Share cache duration",
   "@settings.network.shareCacheDuration.label": {
@@ -3334,9 +3334,9 @@
     "description": "Settings subsection title under File systems: SMB/Network shares. \"SMB\" is a protocol name; keep it. Sidebar and page heading.",
     "screenshot": "settings-appearance.png"
   },
-  "settings.section.servers": "Servers (SFTP, WebDAV)",
+  "settings.section.servers": "Servers (SFTP, WebDAV, NFS, S3)",
   "@settings.section.servers": {
-    "description": "Settings subsection title under File systems: the page listing the SSH host keys this computer trusts. \"SFTP\" and \"WebDAV\" are protocol names; keep both as-is, parentheses included. Sidebar and page heading.",
+    "description": "Settings subsection title under File systems: the page for SFTP, WebDAV, NFS, and S3 servers (whether their top folder shows a “..” row, plus the SSH host keys and HTTPS certificates this computer trusts). \"SFTP\", \"WebDAV\", \"NFS\", and \"S3\" are protocol names; keep all four as-is, parentheses and order included. Sidebar and page heading.",
     "screenshot": "settings-summary-file-systems.png"
   },
   "settings.section.adb": "Android (ADB)",
@@ -3508,7 +3508,7 @@
   },
   "settings.summary.servers": "The SSH host keys you’ve trusted.",
   "@settings.summary.servers": {
-    "description": "One-line summary shown on the \"Servers (SFTP, WebDAV)\" card in the File systems overview. A host key is the fingerprint a server proves its identity with; \"SSH\" is a protocol name (keep it).",
+    "description": "One-line summary shown on the \"Servers (SFTP, WebDAV, NFS, S3)\" card in the File systems overview. A host key is the fingerprint a server proves its identity with; \"SSH\" is a protocol name (keep it).",
     "screenshot": "settings-summary-file-systems.png"
   },
   "settings.summary.adb": "Browse an Android phone that has USB debugging turned on.",
@@ -4398,7 +4398,7 @@
   },
   "settings.network.trustedHostKeys.keywords": "host key, fingerprint, trust, trusted, known hosts, server, forget",
   "@settings.network.trustedHostKeys.keywords": {
-    "description": "Search keywords for the “Trusted host keys” row (settings.servers.card.trustedHostKeys) in Settings > File systems > Servers (SFTP, WebDAV). What it does: the list of servers whose identity (host key, fingerprint) you’ve trusted, where you can forget one. Never shown. Search already matches its label, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Trusted host keys” row (settings.servers.card.trustedHostKeys) in Settings > File systems > Servers (SFTP, WebDAV, NFS, S3). What it does: the list of servers whose identity (host key, fingerprint) you’ve trusted, where you can forget one. Never shown. Search already matches its label, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.servers.card.trustedCertificates": "Trusted certificates",
   "@settings.servers.card.trustedCertificates": {
@@ -4406,7 +4406,7 @@
   },
   "settings.network.trustedCertificates.keywords": "certificate, self-signed, fingerprint, trust, trusted, NAS, server, forget",
   "@settings.network.trustedCertificates.keywords": {
-    "description": "Search keywords for the “Trusted certificates” row (settings.servers.card.trustedCertificates) in Settings > File systems > Servers (SFTP, WebDAV). What it does: the list of servers whose HTTPS certificate you told Cmdr to trust, where you can forget one. Never shown. Search already matches its label, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
+    "description": "Search keywords for the “Trusted certificates” row (settings.servers.card.trustedCertificates) in Settings > File systems > Servers (SFTP, WebDAV, NFS, S3). What it does: the list of servers whose HTTPS certificate you told Cmdr to trust, where you can forget one. Never shown. Search already matches its label, so add OTHER words people might type: synonyms, everyday words, any count, not a 1:1 translation. Comma-separated; no brand names, protocols, or file formats (those match in every language). Chinese, Japanese, Korean: short, common words, since a query must appear unbroken in one keyword, with no typo tolerance."
   },
   "settings.servers.trustedCertificates.description": "{platform, select, macos {When macOS doesn’t trust a server’s certificate, Cmdr asks before it trusts it for you, and remembers your answer here. Home servers often make their own.} windows {When Windows doesn’t trust a server’s certificate, Cmdr asks before it trusts it for you, and remembers your answer here. Home servers often make their own.} other {When your system doesn’t trust a server’s certificate, Cmdr asks before it trusts it for you, and remembers your answer here. Home servers often make their own.}}",
   "@settings.servers.trustedCertificates.description": {

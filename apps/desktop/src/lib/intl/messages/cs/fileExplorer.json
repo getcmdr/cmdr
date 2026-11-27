@@ -515,9 +515,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} server, hledání v okolí je vypnuté} few {{countText} servery, hledání v okolí je vypnuté} many {{countText} serveru, hledání v okolí je vypnuté} other {{countText} serverů, hledání v okolí je vypnuté}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} server, síťové funkce jsou vypnuté} few {{countText} servery, síťové funkce jsou vypnuté} many {{countText} serveru, síťové funkce jsou vypnuté} other {{countText} serverů, síťové funkce jsou vypnuté}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Zatím žádné servery. Stiskněte F7 a přidejte nějaký.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1192,6 +1192,10 @@
   "fileExplorer.list.parentRowName": "Nadřazená složka",
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
+  },
+  "fileExplorer.list.parentRowNameBackTo": "Zpět na seznam „{placeName}“",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
   },
   "fileExplorer.list.parentRowSize": "tato složka {size}",
   "@fileExplorer.list.parentRowSize": {

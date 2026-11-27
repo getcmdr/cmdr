@@ -124,7 +124,7 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
     },
   },
 
-  // `File systems › Servers (SFTP, WebDAV)`: this one switch, then the trusted host keys,
+  // `File systems › Servers (SFTP, WebDAV, NFS, S3)`: this one switch, then the trusted host keys,
   // certificates, and link sign-ins (`sections/ServersSection.rows.ts`). The saved servers
   // live in the Servers list rather than here (`src/lib/file-explorer/network/DETAILS.md`
   // § "Acting on a Servers row" says why a pane state and not a Settings list).
@@ -132,7 +132,7 @@ export const fileSystemsSettings: SettingDefinitionSource[] = [
     // In a server's top folder (SFTP, WebDAV, NFS, an S3 account or bucket), `..` goes back to
     // where it was opened: the Servers list, or a bucket's account (`pane/top-folder-parent-pane.svelte.ts`).
     id: 'network.showServerParentRow',
-    section: ['File systems', 'Servers (SFTP, WebDAV)'],
+    section: ['File systems', 'Servers (SFTP, WebDAV, NFS, S3)'],
     labelKey: 'settings.network.showServerParentRow.label',
     descriptionKey: 'settings.network.showServerParentRow.description',
     cardKey: 'settings.network.card.behavior',

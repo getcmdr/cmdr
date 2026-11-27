@@ -38,7 +38,7 @@ describe('sectionDomId', () => {
     [['AI', 'MCP server'], 'ai-mcp-server'],
     [['Updates & privacy'], 'updates-and-privacy'],
     [['Behavior', 'Navigation & file ops'], 'behavior-navigation-and-file-ops'],
-    [['File systems', 'Servers (SFTP, WebDAV)'], 'file-systems-servers-sftp-webdav'],
+    [['File systems', 'Servers (SFTP, WebDAV, NFS, S3)'], 'file-systems-servers-sftp-webdav-nfs-s3'],
     [['File systems', 'MTP (Android/Kindle/cameras)'], 'file-systems-mtp-android-kindle-cameras'],
     [['File systems', 'Android (ADB)'], 'file-systems-android-adb'],
   ])('maps %j to %s', (path, id) => {

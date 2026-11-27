@@ -712,8 +712,6 @@
      * this in the chain, with byte-identical precedence: a runtime
      * state always wins over the kind view, exactly as the string-compare chain did.
      */
-    // The list's words where the pane's kind has its own (a share list's "Description", "8 shares").
-    const listWords = $derived(listWordsFor(caps.kind))
     // And its last action row, if any ("Add server…"): `trailing-row-pane.ts` answers every question about it.
     const trailingRow = $derived(trailingRowFor(caps.kind))
     const trailing = createTrailingRowPane({ getRow: () => trailingRow, getEntryRows: () => effectiveTotalCount,
@@ -846,9 +844,13 @@
     const topParent = createTopFolderParentPane({
         getVolume: () => currentVolumeInfo,
         getCurrentPath: () => currentPath,
+        getVolumeName: (id) => getStoreVolumes().find((candidate) => candidate.id === id)?.name ?? null,
         openServer: (host, arrival) => { shareList.openServer(host, arrival) },
         goTo: (parent) => { goToTopFolderParent(parent) },
     })
+    // The list's words where the pane's kind has its own (a share list's "Description", "8 shares"),
+    // and `..` named after where it leads out of a server's top folder ("Back to Servers").
+    const listWords = $derived(listWordsFor(caps.kind, topParent.rowName))
 
     /**
      * Opens where `..` leads out of a server's top folder, the cursor on the row it came from:

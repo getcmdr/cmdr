@@ -163,8 +163,8 @@
                 <NetworkSection {searchQuery} />
             </section>
         {/if}
-        {#if shouldShowSection(['File systems', 'Servers (SFTP, WebDAV)'])}
-            <section data-section-id={sectionDomId(['File systems', 'Servers (SFTP, WebDAV)'])}>
+        {#if shouldShowSection(['File systems', 'Servers (SFTP, WebDAV, NFS, S3)'])}
+            <section data-section-id={sectionDomId(['File systems', 'Servers (SFTP, WebDAV, NFS, S3)'])}>
                 <ServersSection {searchQuery} />
             </section>
         {/if}

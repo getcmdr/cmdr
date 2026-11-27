@@ -513,9 +513,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} 部伺服器，附近搜尋已關閉}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} 部伺服器，網路功能已停用}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "還沒有伺服器。按 F7 就能加入一部伺服器。",
   "@fileExplorer.network.servers.emptyList": {
@@ -1189,6 +1189,10 @@
   "fileExplorer.list.parentRowName": "上層資料夾",
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
+  },
+  "fileExplorer.list.parentRowNameBackTo": "回到 {placeName}",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
   },
   "fileExplorer.list.parentRowSize": "這個資料夾 {size}",
   "@fileExplorer.list.parentRowSize": {

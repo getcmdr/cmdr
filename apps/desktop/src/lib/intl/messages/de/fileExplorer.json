@@ -517,9 +517,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} Server, Suche in der Nähe ist ausgeschaltet} other {{countText} Server, Suche in der Nähe ist ausgeschaltet}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} Server, Netzwerk ist deaktiviert} other {{countText} Server, Netzwerk ist deaktiviert}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Noch keine Server. Drücke F7, um einen hinzuzufügen.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1196,6 +1196,10 @@
   "fileExplorer.list.parentRowName": "Übergeordneter Ordner",
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
+  },
+  "fileExplorer.list.parentRowNameBackTo": "Zurück zu {placeName}",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
   },
   "fileExplorer.list.parentRowSize": "dieser Ordner {size}",
   "@fileExplorer.list.parentRowSize": {

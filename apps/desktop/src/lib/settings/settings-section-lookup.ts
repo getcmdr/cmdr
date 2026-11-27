@@ -19,6 +19,15 @@ function everySection(): { name: string; path: readonly string[] }[] {
 }
 
 /**
+ * Whether `path` is a page the sidebar has, so a saved page a rename retired lands on the default
+ * instead of a blank page.
+ */
+export function isSettingsSection(path: readonly string[]): boolean {
+  const key = path.join('\u0000')
+  return everySection().some((section) => section.path.join('\u0000') === key)
+}
+
+/**
  * The path of the section with this name, ignoring case, or of the one section whose name holds it.
  * `undefined` for no section, and for several: guessing would open the wrong page and call it right.
  */

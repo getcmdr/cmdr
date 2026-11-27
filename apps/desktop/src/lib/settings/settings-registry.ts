@@ -246,7 +246,7 @@ export function settingRendersHere(setting: SettingDefinition): boolean {
  * Two sources, and the asymmetry is the point. A SETTING creates its section's
  * node and lands in `section.settings`. A SEARCHABLE ROW creates the node only,
  * and only when it says `anchorsSection` — that's for a page whose whole content
- * is action rows (`Servers (SFTP, WebDAV)`), which no setting would otherwise
+ * is action rows (`Servers (SFTP, WebDAV, NFS, S3)`), which no setting would otherwise
  * put in the sidebar. So `section.settings` stays controls only, and a row still
  * never decides what renders.
  *

@@ -513,9 +513,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} 台服务器，附近搜索已关闭}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, other {{countText} 台服务器，网络已关闭}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "还没有服务器。按 F7 键添加一台。",
   "@fileExplorer.network.servers.emptyList": {
@@ -1189,6 +1189,10 @@
   "fileExplorer.list.parentRowName": "上层文件夹",
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
+  },
+  "fileExplorer.list.parentRowNameBackTo": "返回 {placeName}",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
   },
   "fileExplorer.list.parentRowSize": "这个文件夹 {size}",
   "@fileExplorer.list.parentRowSize": {

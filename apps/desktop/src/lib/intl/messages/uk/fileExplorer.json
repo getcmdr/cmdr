@@ -515,9 +515,9 @@
   "@fileExplorer.network.servers.serverCountSearching": {
     "sourceHash": "5fbcf02"
   },
-  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} сервер, пошук поблизу вимкнено} few {{countText} сервери, пошук поблизу вимкнено} many {{countText} серверів, пошук поблизу вимкнено} other {{countText} сервера, пошук поблизу вимкнено}}",
+  "fileExplorer.network.servers.serverCountDiscoveryOff": "{count, plural, one {{countText} сервер, роботу з мережею вимкнено} few {{countText} сервери, роботу з мережею вимкнено} many {{countText} серверів, роботу з мережею вимкнено} other {{countText} сервера, роботу з мережею вимкнено}}",
   "@fileExplorer.network.servers.serverCountDiscoveryOff": {
-    "sourceHash": "9cff4c3"
+    "sourceHash": "cfaccb6"
   },
   "fileExplorer.network.servers.emptyList": "Серверів ще немає. Натисніть F7, щоб додати сервер.",
   "@fileExplorer.network.servers.emptyList": {
@@ -1192,6 +1192,10 @@
   "fileExplorer.list.parentRowName": "Батьківська папка",
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
+  },
+  "fileExplorer.list.parentRowNameBackTo": "Назад до списку «{placeName}»",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
   },
   "fileExplorer.list.parentRowSize": "ця папка: {size}",
   "@fileExplorer.list.parentRowSize": {

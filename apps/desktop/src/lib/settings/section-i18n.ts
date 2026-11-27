@@ -37,7 +37,7 @@ const SECTION_TITLE_KEY: Partial<Record<string, MessageKey>> = {
   'MCP server': 'settings.section.mcpServer',
   'File systems': 'settings.section.fileSystems',
   'SMB/Network shares': 'settings.section.smbNetworkShares',
-  'Servers (SFTP, WebDAV)': 'settings.section.servers',
+  'Servers (SFTP, WebDAV, NFS, S3)': 'settings.section.servers',
   'MTP (Android/Kindle/cameras)': 'settings.section.mtp',
   'Android (ADB)': 'settings.section.adb',
   Git: 'settings.section.git',

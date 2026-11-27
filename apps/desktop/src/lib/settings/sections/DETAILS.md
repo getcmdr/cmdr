@@ -202,7 +202,7 @@ sections compose).
   `network.smbConcurrency` lives ONLY in Advanced now (`section: ['Advanced']`), not on this page. The info block's own
   heading is `<h4>` (the card's `<h3>` is the group heading). Card frames are gated via `anyVisible(shouldShow, ...)`
   (same pattern as FSW above).
-- **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV)`: a Behavior card with its one setting
+- **`ServersSection.svelte`**: `File systems > Servers (SFTP, WebDAV, NFS, S3)`: a Behavior card with its one setting
   (`network.showServerParentRow`, `..` in a server's top folder), then a "Trusted host keys" `SectionCard` listing
   `listTrustedSftpHostKeys()`, a row per key (host with port, algorithm, fingerprint, the date it was trusted) with a
   confirmed Forget, and a "Trusted certificates" card the same shape over `listTrustedWebdavCertificates()`, and an "SMB
