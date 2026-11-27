@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { renderListingError } from './listing-error'
+import { offersErrorReport, renderListingError } from './listing-error'
 import { getListingErrorMessage, type ListingErrorReason } from './listing-error-messages'
 import { getGitErrorMessage } from './git-error-messages'
 import { getProviderSuggestion } from './provider-error-messages'
@@ -145,5 +145,17 @@ describe('renderListingError', () => {
       expect(rendered.title).toBe(getListingErrorMessage(locked.reason as ListingErrorReason).title)
       expect(rendered.title).toContain('archive')
     })
+  })
+})
+
+describe('an archive inside an archive', () => {
+  it('says Cmdr cannot open it yet, without a second copy of the path the pane already shows', () => {
+    const message = getListingErrorMessage({ reason: 'nestedArchive', path: '/data/outer.zip/inner.tar.gz' })
+    expect(message.title).toContain('inside archives')
+    expect(message.message).not.toContain('inner.tar.gz')
+  })
+
+  it('offers no error report: it is a known limit (#1549), not a bug', () => {
+    expect(offersErrorReport('nestedArchive')).toBe(false)
   })
 })

@@ -78,6 +78,8 @@ const REFUSALS: ReadonlySet<ListingErrorReason['reason']> = new Set([
   'smbEncryptionUnavailable',
   // A server's share list wants an account: a normal step, the pane's sign-in.
   'shareListSignIn',
+  // Not a refusal but a known limit (getcmdr/cmdr#1549): a report would only say what the screen does.
+  'nestedArchive',
 ])
 
 /** Whether the error screen offers "Send error report…". An untyped failure does: it may be a bug. */

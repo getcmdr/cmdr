@@ -1141,7 +1141,7 @@
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "This file is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
   "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
   "@errors.listing.nestedArchive.title": {
     "description": "Title of the listing error panel when someone opens an archive (like a .zip or .tar.gz) that sits inside another archive, which Cmdr can’t browse yet. Plain text. \"Cmdr\" is the app name; do NOT translate.",
@@ -1149,7 +1149,7 @@
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
   "@errors.listing.nestedArchive.explanation": {
-    "description": "Body of the listing error panel for an archive inside another archive. Markdown. The literal `{path}` is a do-not-translate placeholder replaced at runtime with the inner archive’s path. \"Cmdr\" is the app name; do NOT translate.",
+    "description": "Body of the listing error panel for an archive inside another archive. Markdown. The panel shows the file’s path right under the title, so this text doesn’t repeat it. \"Cmdr\" is the app name; do NOT translate.",
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
