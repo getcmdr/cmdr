@@ -511,7 +511,7 @@ specific to volumes:
 represent the case. Only the same-volume path can reach one at all: `move_between_volumes` routes `Arc::ptr_eq` there
 FIRST, the both-local branch hands off to `local_move_start` (whose own rule lives in `../DETAILS.md`), and a genuine
 cross-volume move names two different volumes, so no two paths there name one item. Without the drop a folder reaches
-`rename_merge_directory`, which threads the destination down through recursion and renames every leaf onto itself or
+`rename_merge_directory`, which merges the destination into itself level by level and renames every leaf onto itself or
 shuffles it aside to `name (1)`. Dropped items still emit `write-source-item-done` as `Done` with
 `source_removed: false`, and they count in `files_total` and `files_processed` so the tally matches what was asked for.
 Pinned by `self_collision_tests.rs`.
@@ -1228,7 +1228,8 @@ Pinned by `copy_tree_order_tests.rs` (a reversed-listing source: the merge, both
 
 ## The walk keeps its depth on the heap
 
-**Decision**: the merge walk (`merge.rs::Walk::run`) and a move's source sweep (`source_sweep.rs::sweep_moved_folder`)
+**Decision**: the merge walk (`merge.rs::Walk::run`), a move's source sweep (`source_sweep.rs::sweep_moved_folder`), the
+aside sweep (`cleanup.rs::remove_tree`), and the same-volume rename-merge (`rename_merge.rs::rename_merge_directory`)
 each keep one frame per folder level on a `Vec`, walk it depth first in tree order, and run every level from one loop.
 ❌ Never a future per level (an `async fn` that awaits itself through `Box::pin`): the heap holds the frames, but
 polling the outermost one polls every level below it, one stack frame per level.
@@ -1243,7 +1244,10 @@ polling the outermost one polls every level below it, one stack frame per level.
   (`Level`), and what its parent does once it ends (`OnEnd`), which is the code that followed each recursive call. A
   created child folder gets its dates noted; a failure of a folder descended into as itself goes to the refused-name
   question (`skip_if_folder_refused`), and a Skip there lets the parent go on; any other failure ends the parent too, so
-  it climbs. A sweep level's outcome folds into its parent's through `note_outcome`, which never climbs.
+  it climbs. A sweep level's outcome folds into its parent's through `note_outcome`, which never climbs; an aside
+  sweep's through `RemovalLevel::note`, the same way. A rename-merge level answers the child it merges into
+  (`MergeInto`) from whichever of its three folder branches met it (dir vs dir, a case-folded late collision, a Proceed
+  onto a folder), each of which was its parent's last step for that child; a failure anywhere ends the whole merge.
 - **Order and timing are the recursion's**: a level prepares before its first child, a child folder's whole subtree ends
   (its leaves submitted, its dates or refusal settled) before its next sibling starts, and a child's frame drops (a
   sweep level's lock guard with it) before its parent moves on. `merge_walk_tests.rs` photographs every call each volume
@@ -1252,14 +1256,14 @@ polling the outermost one polls every level below it, one stack frame per level.
 - **Memory is the recursion's too**: one listing per level on the current path, ❌ never the whole tree. A wide level
   costs its listing, as it always did; a deep tree costs one small frame per level.
 - **The same rule beyond this module**: the shared pre-copy scan (`cmdr_fs::volume::scan_walk`), SMB's and MTP's own
-  copy scans (`cmdr-smb` `scan_recursive`, `cmdr-mtp` `bulk_ops.rs::scan_entries`), and the volume delete's scan
-  (`delete/volume_scan.rs::scan_volume_recursive`, `delete/DETAILS.md`) keep their depth on the heap too.
-- **Not yet** (each still nests a frame per level, audited 2026-11-27): here, `cleanup.rs::remove_tree` (an aside folder
-  an Overwrite across types discards) and `rename_merge.rs::rename_merge_directory` (a same-volume move into folders
-  both sides hold); elsewhere, the local engines' synchronous walks (`scan_walker.rs::walk_dir_recursive` and
-  `walk_cached_entries`, `scan_dry_run.rs`, `move_op/mod.rs::merge_move_directory`,
-  `move_op/source_sweep.rs::count_unscanned_entries`), `scan_oracle.rs::scan_subtree_with_oracle`, MTP's path resolution
-  on a cache miss (`connection/resolve.rs::resolve_path_to_handle`) and cache cleanup (`cache.rs::remove_path`), and the
+  copy scans (`cmdr-smb` `scan_recursive`, `cmdr-mtp` `bulk_ops.rs::scan_entries`), the volume delete's scan
+  (`delete/volume_scan.rs::scan_volume_recursive`, `delete/DETAILS.md`), and the scan preview's oracle-aware walk
+  (`scan_oracle.rs::scan_subtree_with_oracle`, whose frames carry their ancestors' progress as a summed `baseline`
+  rather than a closure wrapping each parent's) keep their depth on the heap too.
+- **Not yet** (each still nests a frame per level, audited 2026-11-27): the local engines' synchronous walks
+  (`scan_walker.rs::walk_dir_recursive` and `walk_cached_entries`, `scan_dry_run.rs`,
+  `move_op/mod.rs::merge_move_directory`, `move_op/source_sweep.rs::count_unscanned_entries`), MTP's path resolution on
+  a cache miss (`connection/resolve.rs::resolve_path_to_handle`) and cache cleanup (`cache.rs::remove_path`), and the
   desktop's `native_drag/fulfillment.rs::populate_directory`. A local tree is bounded by `PATH_MAX` (~512 levels on
   macOS), which a sync frame holds in release.
 
@@ -1267,7 +1271,10 @@ The pre-copy scan the walk waits on follows the same rule: the shared `cmdr_fs::
 S3, SFTP, WebDAV, `skip_if_folder_refused`'s count) keeps its depth on the heap too (`cmdr-fs/DETAILS.md`).
 
 Pinned by `deep_tree_tests.rs`: a 400-level copy and move on a 2 MiB worker, past both old ceilings, off a local folder
-and off a source the shared scan walks.
+and off a source the shared scan walks, and a 400-level same-volume merge; a 3,000-level aside sweep, and
+`scan_oracle_tests.rs`'s 3,000-level oracle scan, over `deep_chain_test_support.rs::ChainVolume` (a chain no local path
+limit caps, as a remote's isn't; a frame-per-level `remove_tree` held 400 levels in a debug build, so only a deeper
+chain proves it).
 
 ## What the drivers report while they run
 

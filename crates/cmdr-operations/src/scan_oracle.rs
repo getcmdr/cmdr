@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use cmdr_fs::os_junk_files::OsJunkFiles;
 use cmdr_fs::volume::host::listings::ListingHost;
-use cmdr_fs::volume::{CopyScanResult, ScanRecorder, Volume, VolumeError};
+use cmdr_fs::volume::{CopyScanResult, ListingProgress, ScanRecorder, Volume, VolumeError};
 
 /// Totals returned by `scan_subtree_with_oracle`.
 ///
@@ -34,16 +34,16 @@ pub(super) struct SubtreeTotals {
     pub per_path: Vec<(PathBuf, CopyScanResult)>,
 }
 
-/// Scans a subtree using the fresh-listing oracle at every recursion level,
-/// falling back to `volume.list_directory` on cache miss.
+/// Scans a subtree using the fresh-listing oracle at every level, falling back
+/// to `volume.list_directory` on cache miss.
 ///
 /// This is the oracle-aware analogue of the per-volume `scan_for_copy`. It's
 /// designed for `run_volume_scan_preview` to call when the parent directory of
 /// the selected sources is watcher-backed: top-level files come from the
-/// cached listing directly, top-level directories recurse here.
+/// cached listing directly, top-level directories are walked here.
 ///
 /// Cancellation: the future polls `is_cancelled` between entries. Symlinks
-/// (cached `is_symlink == true`) are counted as one entry and not recursed,
+/// (cached `is_symlink == true`) are counted as one entry and not descended,
 /// matching the local-FS walker's policy.
 ///
 /// `pause` parks the walk at those same boundaries when the owning operation is
@@ -55,9 +55,15 @@ pub(super) struct SubtreeTotals {
 ///
 /// `listings` is the oracle: the engine host's view of what the open panes keep
 /// fresh.
+///
+/// The folders the walk is inside live on a `Vec`, outermost first, and one
+/// loop runs them all, depth first in listing order: ❌ never a future (or a
+/// progress closure wrapping its parent's) per level, which overflowed a scan
+/// worker's stack on a deep enough tree (#1541,
+/// `transfer/volume/DETAILS.md` § "The walk keeps its depth on the heap").
 #[allow(
     clippy::too_many_arguments,
-    reason = "one recursion's inputs: where to walk, what stops it, and who hears about it"
+    reason = "one walk's inputs: where to walk, what stops it, and who hears about it"
 )]
 pub(super) async fn scan_subtree_with_oracle(
     listings: &dyn ListingHost,
@@ -66,133 +72,178 @@ pub(super) async fn scan_subtree_with_oracle(
     path: &Path,
     is_cancelled: &(dyn Fn() -> bool + Sync),
     pause: Option<&super::scan_bridge::ScanPause>,
-    on_progress: Option<&(dyn Fn(cmdr_fs::volume::ListingProgress) + Sync)>,
+    on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     recorder: Option<&dyn ScanRecorder>,
     seen_inodes: &mut HashSet<u64>,
     os_junk: OsJunkFiles,
 ) -> Result<SubtreeTotals, VolumeError> {
-    use cmdr_fs::volume::ListingProgress;
-
-    if let Some(recorder) = recorder {
-        recorder.dir(path);
-    }
-
-    if is_cancelled() {
-        return Err(VolumeError::Cancelled("Operation cancelled by user".into()));
-    }
-    if let Some(pause) = pause {
-        pause.park_while_paused_async().await;
-    }
-
-    // Load entries from oracle or the volume itself.
-    let entries: Vec<FileEntry> = match listings.authoritative_listing(volume_id, path) {
-        Some(e) => e,
-        None => {
-            volume
-                .list_directory(&AppPath::legacy_unchecked(path), on_progress)
-                .await?
-        }
+    let scan = OracleScan {
+        listings,
+        volume,
+        volume_id,
+        is_cancelled,
+        pause,
+        on_progress,
+        recorder,
+        os_junk,
     };
-
-    let mut totals = SubtreeTotals::default();
-    // Running tally for the on_progress callback so dirs/bytes climb alongside
-    // file count as we walk this subtree. `dir_count` on the SubtreeTotals
-    // counts descendant dirs only; this `tally.dirs` mirrors that semantic,
-    // but the callback's running count tells the FE "we've seen N dirs so far
-    // in this subtree" which is the intuitive display.
-    let mut tally = ListingProgress::default();
-
-    for entry in entries {
-        if is_cancelled() {
-            return Err(VolumeError::Cancelled("Operation cancelled by user".into()));
-        }
-        // An OS junk file the transfer leaves out is no part of it (#314, #1305).
-        if os_junk.leaves_out_str(&entry.name, entry.is_directory && !entry.is_symlink) {
+    let mut inside = vec![scan.open(path, ListingProgress::default()).await?];
+    loop {
+        let level = inside
+            .last_mut()
+            .expect("the walk returns once its root ends, so it is always inside a folder");
+        if let Some(child) = scan.advance(level, seen_inodes).await? {
+            let baseline = level.baseline_below();
+            let child = scan.open(&child, baseline).await?;
+            inside.push(child);
             continue;
         }
-        // After the cancel check, never before: cancel outranks pause.
-        if let Some(pause) = pause {
+        let ended = inside.pop().expect("the folder that ended is on top");
+        match inside.last_mut() {
+            Some(parent) => scan.fold_child(parent, ended.totals),
+            None => return Ok(ended.totals),
+        }
+    }
+}
+
+/// What every level of one oracle scan reads.
+struct OracleScan<'s> {
+    listings: &'s dyn ListingHost,
+    volume: &'s dyn Volume,
+    volume_id: &'s str,
+    is_cancelled: &'s (dyn Fn() -> bool + Sync),
+    pause: Option<&'s super::scan_bridge::ScanPause>,
+    on_progress: Option<&'s (dyn Fn(ListingProgress) + Sync)>,
+    recorder: Option<&'s dyn ScanRecorder>,
+    os_junk: OsJunkFiles,
+}
+
+/// One folder the scan is inside: what is left of its listing, its totals so
+/// far, and the counts its progress reports stand on.
+struct ScanLevel {
+    entries: std::vec::IntoIter<FileEntry>,
+    /// `dir_count` counts descendant folders only.
+    totals: SubtreeTotals,
+    /// Running tally for the `on_progress` callback, so dirs and bytes climb
+    /// alongside the file count as the walk reads this subtree. Unlike
+    /// `totals.dir_count` it tells the frontend "N dirs so far in this
+    /// subtree", the intuitive display.
+    tally: ListingProgress,
+    /// What every folder above has tallied, frozen while this one is read: each
+    /// report adds it, so the display stays cumulative across sibling dirs.
+    baseline: ListingProgress,
+    /// The child folder being walked, with the dates its `per_path` row carries
+    /// once it ends.
+    descended: Option<DescendedChild>,
+}
+
+struct DescendedChild {
+    path: PathBuf,
+    modified_at: Option<u64>,
+    created_at: Option<u64>,
+}
+
+impl ScanLevel {
+    /// The baseline a child folder's reports stand on: this level's, plus what
+    /// this level has tallied so far.
+    fn baseline_below(&self) -> ListingProgress {
+        shifted(self.baseline, self.tally)
+    }
+}
+
+/// `progress` as the whole walk counts it, on top of `baseline`.
+fn shifted(baseline: ListingProgress, progress: ListingProgress) -> ListingProgress {
+    ListingProgress {
+        files: baseline.files + progress.files,
+        dirs: baseline.dirs + progress.dirs,
+        bytes: baseline.bytes + progress.bytes,
+        ..progress
+    }
+}
+
+impl OracleScan<'_> {
+    fn cancelled(&self) -> Result<(), VolumeError> {
+        if (self.is_cancelled)() {
+            return Err(VolumeError::Cancelled("Operation cancelled by user".into()));
+        }
+        Ok(())
+    }
+
+    fn report(&self, baseline: ListingProgress, progress: ListingProgress) {
+        if let Some(cb) = self.on_progress {
+            cb(shifted(baseline, progress));
+        }
+    }
+
+    /// Records `path`, then reads it from the oracle or the volume.
+    async fn open(&self, path: &Path, baseline: ListingProgress) -> Result<ScanLevel, VolumeError> {
+        if let Some(recorder) = self.recorder {
+            recorder.dir(path);
+        }
+        self.cancelled()?;
+        if let Some(pause) = self.pause {
             pause.park_while_paused_async().await;
         }
-        // The child as its listing row names it, typed (a row holding a `..` name, a
-        // hostile `../x`, stops the scan rather than walk it); the recursion and
-        // the recorder still key on `std::path`, so they get the read's own buffer.
-        let child_path: PathBuf = into_std(listed_path(&entry)?.into_owned());
-        if entry.is_directory && !entry.is_symlink {
-            // Recurse — oracle re-applies inside this call. The recursive
-            // emit reports counts local to the child subtree (starting fresh),
-            // so wrap `on_progress` with a baseline of the current `tally` so
-            // the FE display stays cumulative across sibling dirs.
-            let baseline = tally;
-            let child_totals = match on_progress {
-                Some(cb) => {
-                    let shifted = move |p: ListingProgress| {
-                        cb(ListingProgress {
-                            files: baseline.files + p.files,
-                            dirs: baseline.dirs + p.dirs,
-                            bytes: baseline.bytes + p.bytes,
-                            ..p
-                        })
-                    };
-                    Box::pin(scan_subtree_with_oracle(
-                        listings,
-                        volume,
-                        volume_id,
-                        &child_path,
-                        is_cancelled,
-                        pause,
-                        Some(&shifted),
-                        recorder,
-                        seen_inodes,
-                        os_junk,
-                    ))
+        // Load entries from oracle or the volume itself. The listing's own
+        // progress reports stand on the baseline too.
+        let entries: Vec<FileEntry> = match self.listings.authoritative_listing(self.volume_id, path) {
+            Some(e) => e,
+            None => {
+                let listing_progress = |p: ListingProgress| self.report(baseline, p);
+                let on_progress = self
+                    .on_progress
+                    .map(|_| &listing_progress as &(dyn Fn(ListingProgress) + Sync));
+                self.volume
+                    .list_directory(&AppPath::legacy_unchecked(path), on_progress)
                     .await?
-                }
-                None => {
-                    Box::pin(scan_subtree_with_oracle(
-                        listings,
-                        volume,
-                        volume_id,
-                        &child_path,
-                        is_cancelled,
-                        pause,
-                        None,
-                        recorder,
-                        seen_inodes,
-                        os_junk,
-                    ))
-                    .await?
-                }
-            };
-            totals.file_count += child_totals.file_count;
-            // The directory itself plus all its descendant dirs.
-            totals.dir_count += 1 + child_totals.dir_count;
-            totals.total_bytes += child_totals.total_bytes;
-            totals.dedup_bytes += child_totals.dedup_bytes;
-            tally.files += child_totals.file_count;
-            tally.dirs += 1 + child_totals.dir_count;
-            // The scan-phase climbing display is dedup'd so it converges with
-            // the inode-dedup'd index estimate (the copy headline shows the
-            // write footprint separately).
-            tally.bytes += child_totals.dedup_bytes;
-            totals.per_path.push((
-                child_path,
-                CopyScanResult {
-                    file_count: child_totals.file_count,
-                    dir_count: child_totals.dir_count,
-                    total_bytes: child_totals.total_bytes,
-                    dedup_bytes: child_totals.dedup_bytes,
-                    top_level_is_directory: true,
-                    top_level_modified_at: entry.modified_at,
-                    top_level_created_at: entry.created_at,
-                },
-            ));
-            if let Some(cb) = on_progress {
-                cb(tally);
             }
-        } else {
+        };
+        Ok(ScanLevel {
+            entries: entries.into_iter(),
+            totals: SubtreeTotals::default(),
+            tally: ListingProgress::default(),
+            baseline,
+            descended: None,
+        })
+    }
+
+    /// Counts `level`'s files from where it left off, and answers the first
+    /// folder it lists, which the walk opens next; `None` once every entry is
+    /// counted.
+    async fn advance(
+        &self,
+        level: &mut ScanLevel,
+        seen_inodes: &mut HashSet<u64>,
+    ) -> Result<Option<PathBuf>, VolumeError> {
+        while let Some(entry) = level.entries.next() {
+            self.cancelled()?;
+            // An OS junk file the transfer leaves out is no part of it (#314, #1305).
+            if self
+                .os_junk
+                .leaves_out_str(&entry.name, entry.is_directory && !entry.is_symlink)
+            {
+                continue;
+            }
+            // After the cancel check, never before: cancel outranks pause.
+            if let Some(pause) = self.pause {
+                pause.park_while_paused_async().await;
+            }
+            // The child as its listing row names it, typed (a row holding a `..` name, a
+            // hostile `../x`, stops the scan rather than walk it); the walk and the
+            // recorder still key on `std::path`, so they get the read's own buffer.
+            let child_path: PathBuf = into_std(listed_path(&entry)?.into_owned());
+            if entry.is_directory && !entry.is_symlink {
+                // The oracle re-applies inside the child, whose counts start fresh
+                // and fold in here once it ends (`fold_child`).
+                level.descended = Some(DescendedChild {
+                    path: child_path.clone(),
+                    modified_at: entry.modified_at,
+                    created_at: entry.created_at,
+                });
+                return Ok(Some(child_path));
+            }
             let size = entry.size.unwrap_or(0);
-            if let Some(recorder) = recorder {
+            if let Some(recorder) = self.recorder {
                 recorder.file(&child_path, size);
             }
             // Hardlink dedup for the source-footprint number. `FileEntry.inode`
@@ -203,11 +254,12 @@ pub(super) async fn scan_subtree_with_oracle(
                 Some(ino) if !seen_inodes.insert(ino) => 0,
                 _ => size,
             };
+            let ScanLevel { totals, tally, .. } = level;
             totals.file_count += 1;
             totals.total_bytes += size;
             totals.dedup_bytes += dedup_contribution;
             tally.files += 1;
-            // Dedup'd climbing display — see the dir branch above.
+            // Dedup'd climbing display, as for a folder (`fold_child`).
             tally.bytes += dedup_contribution;
             totals.per_path.push((
                 child_path,
@@ -221,11 +273,46 @@ pub(super) async fn scan_subtree_with_oracle(
                     top_level_created_at: entry.created_at,
                 },
             ));
-            if let Some(cb) = on_progress {
-                cb(tally);
-            }
+            self.report(level.baseline, level.tally);
         }
+        Ok(None)
     }
 
-    Ok(totals)
+    /// A child folder of `parent` ended with `child`'s totals: they join the
+    /// parent's, the folder itself counted with its descendants.
+    fn fold_child(&self, parent: &mut ScanLevel, child: SubtreeTotals) {
+        let descended = parent
+            .descended
+            .take()
+            .expect("a child ends only after its parent descended into it");
+        let ScanLevel { totals, tally, .. } = parent;
+        totals.file_count += child.file_count;
+        // The directory itself plus all its descendant dirs.
+        totals.dir_count += 1 + child.dir_count;
+        totals.total_bytes += child.total_bytes;
+        totals.dedup_bytes += child.dedup_bytes;
+        tally.files += child.file_count;
+        tally.dirs += 1 + child.dir_count;
+        // The scan-phase climbing display is dedup'd so it converges with
+        // the inode-dedup'd index estimate (the copy headline shows the
+        // write footprint separately).
+        tally.bytes += child.dedup_bytes;
+        totals.per_path.push((
+            descended.path,
+            CopyScanResult {
+                file_count: child.file_count,
+                dir_count: child.dir_count,
+                total_bytes: child.total_bytes,
+                dedup_bytes: child.dedup_bytes,
+                top_level_is_directory: true,
+                top_level_modified_at: descended.modified_at,
+                top_level_created_at: descended.created_at,
+            },
+        ));
+        self.report(parent.baseline, parent.tally);
+    }
 }
+
+#[cfg(test)]
+#[path = "scan_oracle_tests.rs"]
+mod tests;

@@ -579,59 +579,160 @@ pub(super) async fn remove_tree(
     remove_tree_inner(volume, path, why.side()).await.map(|_| ())
 }
 
-/// Recursion body. `Ok(true)` means "content remains under here", so the caller
-/// must keep this directory. `side` is the volume's role in the transfer.
+/// The sweep's body. `Ok(true)` means "content remains under here", so the
+/// caller must keep this directory. `side` is the volume's role in the transfer.
+///
+/// The folders the sweep is inside live on a `Vec`, outermost first, and one
+/// loop runs them all: ❌ never a future per level, which overflowed a copy
+/// worker's stack on a deep enough aside (#1541, `DETAILS.md` § "The walk keeps
+/// its depth on the heap"). Each level's outcome folds into its parent's exactly
+/// where the recursive call's result once did.
 async fn remove_tree_inner(
     volume: &Arc<dyn Volume>,
     path: &AppPath,
     side: PathRole,
 ) -> Result<bool, PathedVolumeError> {
-    let refused = |at: &AppPath, error| PathedVolumeError::new(side, at, error);
-    let kind = match volume.entry_kind(path).await {
-        Ok(kind) => kind,
-        Err(_) => {
-            // Path may not exist (already deleted or never fully created). Nothing to do.
-            return Ok(false);
-        }
-    };
-
-    if kind != EntryKind::Directory {
-        volume.delete(path).await.map_err(|e| refused(path, e))?;
-        return Ok(false);
-    }
-
-    // List directory contents and delete children first
-    let children = volume.list_directory(path, None).await.map_err(|e| refused(path, e))?;
-
-    let mut first_child_failure: Option<PathedVolumeError> = None;
-    let mut content_remains = false;
-    for child in &children {
-        // The row's own path, typed (`listed_name.rs::listed_path`). One naming no
-        // place under here (a hostile `../x`) is never deleted: it stays, and so
-        // does this folder.
-        let child_path = match listed_path(child) {
-            Ok(child_path) => child_path,
-            Err(e) => {
-                content_remains = true;
-                first_child_failure.get_or_insert(refused(path, e));
-                continue;
+    let sweep = TreeSweep { volume, side };
+    let mut inside: Vec<RemovalLevel> = Vec::new();
+    let mut opening = Some(path.to_owned());
+    loop {
+        let ended = match opening.take() {
+            Some(path) => match sweep.open(path).await {
+                Opened::Folder(level) => {
+                    inside.push(level);
+                    continue;
+                }
+                Opened::Ended(outcome) => outcome,
+            },
+            None => {
+                let level = inside
+                    .last_mut()
+                    .expect("the sweep returns once its root ends, so it is always inside a folder");
+                if let Some(child) = sweep.advance(level).await {
+                    opening = Some(child);
+                    continue;
+                }
+                let level = inside.pop().expect("the folder that ended is on top");
+                sweep.finish(level).await
             }
         };
-        // Labelled with `child_path` at the frame that knows the child: one level
-        // up and every leaf failure would answer with this directory's name instead.
-        let outcome = if child.is_directory || child.is_symlink {
-            // A link re-asks `entry_kind` one frame down, which deletes it as the
-            // leaf it is.
-            Box::pin(remove_tree_inner(volume, &child_path, side)).await
-        } else {
-            volume
-                .delete(&child_path)
-                .await
-                .map_err(|e| refused(&child_path, e))
-                .map(|()| false)
+        match inside.last_mut() {
+            Some(parent) => parent.note(ended),
+            None => return ended,
+        }
+    }
+}
+
+/// What every level of one [`remove_tree`] reads.
+struct TreeSweep<'s> {
+    volume: &'s Arc<dyn Volume>,
+    side: PathRole,
+}
+
+/// One folder [`remove_tree`] is inside: its listing, how far through it the
+/// sweep is, and what stays so far.
+struct RemovalLevel {
+    path: AppPathBuf,
+    children: Vec<FileEntry>,
+    next: usize,
+    content_remains: bool,
+    first_child_failure: Option<PathedVolumeError>,
+}
+
+/// What opening one path of the sweep came to.
+enum Opened {
+    /// A folder, listed, whose children go next.
+    Folder(RemovalLevel),
+    /// Anything else, settled already: gone, deleted as the leaf it is, or
+    /// refused (`Ok(true)` would be content left, as for a folder).
+    Ended(Result<bool, PathedVolumeError>),
+}
+
+impl TreeSweep<'_> {
+    fn refused(&self, at: &AppPath, error: VolumeError) -> PathedVolumeError {
+        PathedVolumeError::new(self.side, at, error)
+    }
+
+    /// Asks what `path` is: a folder gets listed, a file or link is deleted as
+    /// the leaf it is.
+    async fn open(&self, path: AppPathBuf) -> Opened {
+        let kind = match self.volume.entry_kind(&path).await {
+            Ok(kind) => kind,
+            // Path may not exist (already deleted or never fully created). Nothing to do.
+            Err(_) => return Opened::Ended(Ok(false)),
         };
+        if kind != EntryKind::Directory {
+            let deleted = self.volume.delete(&path).await;
+            return Opened::Ended(deleted.map(|()| false).map_err(|e| self.refused(&path, e)));
+        }
+        // List directory contents and delete children first.
+        match self.volume.list_directory(&path, None).await {
+            Ok(children) => Opened::Folder(RemovalLevel {
+                path,
+                children,
+                next: 0,
+                content_remains: false,
+                first_child_failure: None,
+            }),
+            Err(e) => Opened::Ended(Err(self.refused(&path, e))),
+        }
+    }
+
+    /// Deletes `level`'s plain files from where it left off, and answers the
+    /// first child that might be a folder, which the sweep opens next; `None`
+    /// once every child is settled.
+    async fn advance(&self, level: &mut RemovalLevel) -> Option<AppPathBuf> {
+        while let Some(child) = level.children.get(level.next) {
+            level.next += 1;
+            // The row's own path, typed (`listed_name.rs::listed_path`). One naming no
+            // place under here (a hostile `../x`) is never deleted: it stays, and so
+            // does this folder.
+            let child_path = match listed_path(child) {
+                Ok(child_path) => child_path.into_owned(),
+                Err(e) => {
+                    level.content_remains = true;
+                    let failure = self.refused(&level.path, e);
+                    level.first_child_failure.get_or_insert(failure);
+                    continue;
+                }
+            };
+            if child.is_directory || child.is_symlink {
+                // A link re-asks `entry_kind` when it's opened, which deletes it as
+                // the leaf it is.
+                return Some(child_path);
+            }
+            // Labelled with `child_path`, the child's own: one level up and every
+            // leaf failure would answer with this directory's name instead.
+            let deleted = self.volume.delete(&child_path).await;
+            level.note(deleted.map(|()| false).map_err(|e| self.refused(&child_path, e)));
+        }
+        None
+    }
+
+    /// Every child of `level` is settled: the folder goes if nothing stays.
+    async fn finish(&self, level: RemovalLevel) -> Result<bool, PathedVolumeError> {
+        // Something under here refused to go: keep this directory, and report the
+        // leaf that refused.
+        if level.content_remains {
+            return match level.first_child_failure {
+                Some(child) => Err(child),
+                None => Ok(true),
+            };
+        }
+        // Delete the now-empty directory, as a directory (`Volume::delete_directory`).
+        match self.volume.delete_directory(&level.path, None).await {
+            Ok(()) => Ok(false),
+            Err(e) => Err(self.refused(&level.path, e)),
+        }
+    }
+}
+
+impl RemovalLevel {
+    /// Folds one child's outcome in: content left keeps this folder, and the
+    /// FIRST failure is the one reported, with the child's own path.
+    fn note(&mut self, outcome: Result<bool, PathedVolumeError>) {
         match outcome {
-            Ok(remains) => content_remains |= remains,
+            Ok(remains) => self.content_remains |= remains,
             Err(e) => {
                 log::warn!(
                     target: "delete",
@@ -640,25 +741,10 @@ async fn remove_tree_inner(
                     LogError(&e.error)
                 );
                 // The child is still there, so this directory isn't empty either.
-                content_remains = true;
-                first_child_failure.get_or_insert(e);
+                self.content_remains = true;
+                self.first_child_failure.get_or_insert(e);
             }
         }
-    }
-
-    // Something under here refused to go: keep this directory, and report the
-    // leaf that refused.
-    if content_remains {
-        return match first_child_failure {
-            Some(child) => Err(child),
-            None => Ok(true),
-        };
-    }
-
-    // Delete the now-empty directory, as a directory (`Volume::delete_directory`)
-    match volume.delete_directory(path, None).await {
-        Ok(()) => Ok(false),
-        Err(e) => Err(refused(path, e)),
     }
 }
 
