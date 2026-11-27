@@ -83,9 +83,9 @@ pub async fn walk_root(volume: &dyn Volume, root: &AppPath) -> WalkPath {
 /// dropped on a guess.
 ///
 /// `Err`, the link-loop error (an `IoError` carrying `OsErrorClass::LinkLoop`'s
-/// code): more than [`MAX_LINKS_FOLLOWED_DOWN_ONE_PATH`] links on the way, or
-/// (on a source whose listings hide links) a folder with no node past the
-/// shared depth backstop. The backstops for a source with no node ids (an SFTP
+/// code): more than [`MAX_LINKS_FOLLOWED_DOWN_ONE_PATH`] links on the way, or,
+/// past the shared depth backstop, a folder with no node on a source whose
+/// listings hide links or a repeated node no `entry_kind` confirms as a link. The backstops for a source with no node ids (an SFTP
 /// server), whose loops the node check can't see.
 pub async fn descend_into(
     volume: &dyn Volume,
@@ -107,12 +107,22 @@ pub async fn descend_into(
         Err(Refusal::LinkLoop) if marked_link || volume.entry_kind(child).await? == EntryKind::Symlink => {
             return Ok(Descending::LoopsBack);
         }
-        // The same node with no link to reach it: a real folder (a repeated node
-        // number), walked like any other.
-        Err(Refusal::LinkLoop) => here
-            .descent
-            .child_seen_through(None)
-            .unwrap_or_else(|_| here.descent.clone()),
+        // The same node with no link to reach it: a loop the server presents as a
+        // plain folder (older Samba's `loop -> ..`), or a server whose ids can't
+        // be trusted. Walked on, since a real folder is never dropped on a guess,
+        // but as a folder with no node, so the depth backstop bounds it: ❌ never
+        // on to the path limit. A real tree 128+ levels deep under a repeated id
+        // is far rarer than either.
+        Err(Refusal::LinkLoop) => match here.descent.child(None) {
+            Ok(descent) => descent,
+            Err(_) => {
+                log::info!(
+                    "walk: stopping at {}, a repeated node past the walk backstop",
+                    LogPrivate::path(child.as_str())
+                );
+                return Err(link_loop_error());
+            }
+        },
         Err(Refusal::TooDeep) => {
             log::info!(
                 "walk: stopping at {}, deeper than the walk backstop with no node to check",
