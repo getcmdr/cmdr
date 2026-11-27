@@ -149,17 +149,22 @@ impl LockedScan {
         scan
     }
 
+    /// In the order a recursion would note them (each child, then what merges
+    /// under it, then its next sibling), with the levels it's inside on a `Vec`:
+    /// ❌ never a call per level, which overflows a debug build's 2 MiB thread
+    /// short of the ~511 levels a macOS path allows (#1541), nor a `ReadDir`
+    /// held per level (one file descriptor each, against a soft limit often 256).
     fn note_merge(&mut self, source_dir: &Path, dest_dir: &Path) {
-        if !is_real_directory(source_dir) || !is_real_directory(dest_dir) {
-            return;
-        }
-        let Ok(entries) = std::fs::read_dir(source_dir) else {
-            return;
-        };
-        for entry in entries.flatten() {
-            let child = entry.path();
+        let mut inside: Vec<MergeLevel> = Vec::from_iter(MergeLevel::of(source_dir, dest_dir));
+        while let Some(level) = inside.last_mut() {
+            let Some(child) = level.children.next() else {
+                inside.pop();
+                continue;
+            };
             self.note(&child);
-            self.note_merge(&child, &dest_dir.join(entry.file_name()));
+            let Some(name) = child.file_name() else { continue };
+            let child_dest = level.dest_dir.join(name);
+            inside.extend(MergeLevel::of(&child, &child_dest));
         }
     }
 
@@ -169,6 +174,28 @@ impl LockedScan {
             RemovalLock::Locked => self.locked.push(path.to_path_buf()),
             RemovalLock::SystemLocked => self.system_locked.push(path.to_path_buf()),
         }
+    }
+}
+
+/// One folder a same-drive move merges into one of the same name: its children,
+/// drained so the listing's handle is closed, and where they'd land.
+struct MergeLevel {
+    children: std::vec::IntoIter<PathBuf>,
+    dest_dir: PathBuf,
+}
+
+impl MergeLevel {
+    /// `None` unless both are real folders, and `source_dir` can be listed.
+    fn of(source_dir: &Path, dest_dir: &Path) -> Option<Self> {
+        if !is_real_directory(source_dir) || !is_real_directory(dest_dir) {
+            return None;
+        }
+        let entries = std::fs::read_dir(source_dir).ok()?;
+        let children: Vec<PathBuf> = entries.flatten().map(|entry| entry.path()).collect();
+        Some(Self {
+            children: children.into_iter(),
+            dest_dir: dest_dir.to_path_buf(),
+        })
     }
 }
 
