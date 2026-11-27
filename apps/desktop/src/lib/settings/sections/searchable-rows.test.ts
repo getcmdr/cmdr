@@ -17,7 +17,8 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { withCapabilities, withEveryCapability } from '#lib/platform/test-platform.js'
 import { tString } from '#lib/intl/messages.svelte.js'
-import { buildSectionTree, settingsRegistry, type SettingsSection } from '../settings-registry'
+import { settingsRegistry } from '../settings-registry'
+import { isSettingsSection } from '../settings-section-lookup'
 import {
   clearSearchIndex,
   getMatchingSections,
@@ -126,43 +127,11 @@ describe('every row is reachable by the copy it renders', () => {
   }
 })
 
-describe('a row that anchors its section', () => {
-  /**
-   * ❗ The flag is only for a page NO setting would create. On a page that has
-   * controls it would be a lie a reader has to check the registry to catch, and
-   * the sibling `after` would silently do nothing.
-   */
-  it('names a page that carries no setting at all', () => {
+describe("a row's page", () => {
+  /** A row never adds a page, so a row on a page no setting creates would be unreachable. */
+  it('is a page the sidebar has', () => {
     for (const row of searchableRows) {
-      if (row.anchorsSection === undefined) continue
-      const settingsOnThatPage = settingsRegistry.filter(
-        (setting) => setting.section.join('/') === row.section.join('/'),
-      )
-      expect(settingsOnThatPage).toEqual([])
-    }
-  })
-
-  it('puts the page in the tree, right after the sibling it names', () => {
-    const tree = buildSectionTree()
-    for (const row of searchableRows) {
-      const anchor = row.anchorsSection
-      if (anchor === undefined) continue
-
-      let level = tree
-      let node: SettingsSection | undefined
-      for (const name of row.section) {
-        node = level.find((section) => section.name === name)
-        expect(node).toBeDefined()
-        level = node?.subsections ?? []
-      }
-
-      // Its siblings are the level the page itself sits in.
-      let siblings = tree
-      for (const name of row.section.slice(0, -1)) {
-        siblings = siblings.find((section) => section.name === name)?.subsections ?? []
-      }
-      const names = siblings.map((section) => section.name)
-      expect(names.indexOf(row.section[row.section.length - 1])).toBe(names.indexOf(anchor.after) + 1)
+      expect(isSettingsSection(row.section), row.id).toBe(true)
     }
   })
 })

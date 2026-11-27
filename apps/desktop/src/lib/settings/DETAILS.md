@@ -639,13 +639,6 @@ empty-card bug for non-registry and mirrored rows.
 **Decision / why: a non-setting row is a `SearchableRow`, never a setting.** See § "Searchable rows" below; a card that
 renders one puts its id in the card's `anyVisible(...)` guard exactly like a setting's.
 
-**Decision / why: a page with no control is anchored by one of its ROWS.** A page that renders only lists (a Forget
-button per row) and no setting at all has nothing in the registry to put it in the sidebar. The row that describes such
-a list says `anchorsSection` instead, and `buildSectionTree` creates the node for it. No page needs it today:
-`File systems > Servers (SFTP, WebDAV, NFS, S3)`, the one that did, carries `network.showServerParentRow`. See §
-"Searchable rows" below for the field. ❌ Don't reach for it when the page HAS a control: that control's `section`
-already carries the page, and a second source of the node is how two disagree.
-
 **Decision / why: "subsection" stays the level-2 nav term.** The card axis is named `cardKey` (not `subsection`),
 because `subsection` already means the level-2 nav entry (`SettingsSection.subsections`, the page you click). The
 terminology group → subsection → card holds; cards are not a fourth `section[]` element (that would spawn a spurious nav
@@ -691,19 +684,15 @@ A `SearchableRow` (`types.ts`) gives such a row a searchable identity without mo
 - **What they never do**: decide what renders. Sections stay free-form Svelte and own their markup. That separation is
   why the empty-card bug can't come back through this: a row is one more id in the SAME `shouldShow` predicate the frame
   and the rows already share, never a second source of truth for visibility.
-- **Anchoring a page (`anchorsSection`)**: the one exception to "a row adds no nav entry". A page whose whole content is
-  action rows has no setting to create its node, so one of its rows opts in with
-  `anchorsSection: { after: '<sibling subsection>' }` and `buildSectionTree` creates the node, still pushing nothing
-  into `section.settings`. `after` exists because sibling order is otherwise registry order and an anchored page has no
-  registry position; an `after` naming no sibling puts the page last. No page uses it today. `searchable-rows.test.ts`
-  fails if an anchoring row names a page that DOES carry a setting, or if the sibling order drifts.
+- **So every page needs a setting**: a row's page must already be in the tree, or the row is unreachable
+  (`searchable-rows.test.ts` fails on one). A page of action rows alone would need a way for a row to create its node;
+  the `anchorsSection` field that did was removed once no page used it (git has it).
 
 **Decision / why not a hidden setting.** The predecessor was `indexing.indexSize`: a `hidden: true` registry entry with
 its own `SettingsValues` key, `type: 'boolean'`, `default: false`, that nothing ever read or wrote, modeled only because
 `SettingId = keyof SettingsValues`. It worked, and it lied — a fake setting in the store's type surface, invisible to
 every reader as anything else. One instance was tolerable; the ~15 rows users can reasonably search for were not. ❌ The
-same reasoning forbids a fake setting for a whole PAGE: `anchorsSection` on a real row does that job without a
-`SettingsValues` key.
+same reasoning forbids a fake setting to put a whole PAGE in the sidebar.
 
 **Decision / why `row:` prefixed ids.** Row ids and setting ids share one namespace (`shouldShow` takes a `string`), so
 a collision would silently make a row masquerade as a setting. The prefix makes them disjoint by construction: no

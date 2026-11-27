@@ -138,21 +138,6 @@ export interface SearchableRow {
    * nothing to show for it.
    */
   needsCapability?: Capability
-  /**
-   * This row is what puts its PAGE in the sidebar, right after the named sibling.
-   *
-   * Rows add no nav entry by default: they sit on pages some setting already
-   * created. A page whose whole content is action rows (`Servers (SFTP,
-   * WebDAV)`: the trusted host keys, each with a Forget) has no such setting, so
-   * one of its rows opts in and `buildSectionTree` creates the node. ❌ Never a
-   * `hidden` setting nothing reads.
-   *
-   * `after` names the sibling subsection this page follows, because sibling order
-   * is otherwise registry order and an anchored page has no registry position. An
-   * `after` that matches no sibling puts the page last. `DETAILS.md` § "Searchable
-   * rows".
-   */
-  anchorsSection?: { after: string }
 }
 
 /**
