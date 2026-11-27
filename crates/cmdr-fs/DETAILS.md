@@ -490,13 +490,21 @@ its own, so the kernel's 40-link limit never applies).
   (`Refusal::LinkLoop`), so a loop stops on its first lap, and a link to a sibling (not a loop) still counts. A folder
   learns its own id from its listing (`named`, the SMB `.` row), so a link straight back to the walk's root is caught
   too. Free where the listing carries ids: SMB asks for index numbers (`ListOptions::index_numbers`, same round trips).
-- **By depth, as the backstop.** `MAX_WALK_DEPTH` (128) levels below the root, for a walk with no ids. `too_deep(depth)`
-  is the same line for a walk that holds only a path (the network index's `walk_descends`).
+- **By depth, as the backstop.** `MAX_WALK_DEPTH` (128) levels below the root, only for a folder with no id: a folder
+  whose node was checked goes in at any depth, ❌ never capped, since a real tree can run deeper than 128 levels
+  (#1541). `child_seen_through` drops the cap for a walk that sees every link and bounds them itself (the copy walk's
+  links-followed count). `too_deep(depth)` is the same line for a walk that holds only a path (the network index's
+  `walk_descends`).
+- **Generic over the id** (`Descent<N>`, `u64` by default): SMB's scan keys on index numbers, the copy walk on `FileId`
+  (device plus node), from `Volume::reached_node`. `root_under` seeds a walk with its root's ancestors, so a link to a
+  folder above the walk's root is a loop too.
 - **A walk using it is iterative**, ❌ never recursive: a recursive async walk overflows its stack long before 128
   levels (a 2 MiB tokio worker between 48 and 63 levels for the transfer walk).
 
-Users: `cmdr-smb`'s `scan_recursive` (ids and depth) and the network index's `walk_descends` (depth only, since its
-`FileEntry` rows carry no node id; `FileEntry::inode` means hardlink dedup to its consumers, so it isn't borrowed).
+Users: `cmdr-smb`'s `scan_recursive` (ids, depth where none), the network index's `walk_descends` (depth only, since its
+`FileEntry` rows carry no node id; `FileEntry::inode` means hardlink dedup to its consumers, so it isn't borrowed), and
+the cross-volume copy walk (`cmdr-operations` `transfer/volume/link_cycle.rs`, every folder it descends,
+`transfer/volume/DETAILS.md` § "A followed link never leads back up its own path").
 
 ## File identity
 

@@ -4,7 +4,7 @@
 //! A link to its own folder or one above it makes the tree endless: each pass
 //! through it copies the same folder one level deeper, so the copy wrote the
 //! selection three times over before the person cancelled, and its counts ran to
-//! three times the scan's total. `link_cycle.rs::leads_back_up` decides;
+//! three times the scan's total. `link_cycle.rs::descend_into` decides;
 //! `DETAILS.md` § "A followed link never leads back up its own path".
 #![cfg(unix)] // POSIX links on a `LocalPosixVolume`.
 

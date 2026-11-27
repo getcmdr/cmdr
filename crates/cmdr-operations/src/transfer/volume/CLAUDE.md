@@ -21,7 +21,7 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
 - **Skip the dest pre-check ONLY for a dir THIS op created** (`DirectoryCreation::Created`), ❌ never one that looks
   empty. Every name asks `landing.rs`, and an unanswerable probe fails the item. § "Look-alike names and new-name
   spelling".
-- **A link the walk FOLLOWS asks `link_cycle.rs`**: one back up its path is endless (ERR-BGEKC).
+- **EVERY folder the walk descends asks `link_cycle.rs`**: one back up its path is endless (ERR-BGEKC).
 - **A listed name joins ONLY as a `listed_name.rs::ListedName`**, ❌ never a raw `join` (`../x` escapes). § "Listed
   names are untrusted".
 

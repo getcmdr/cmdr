@@ -210,6 +210,13 @@ impl Volume for SmbVolume {
         Box::pin(async move { self.entry_kind_impl(path).await })
     }
 
+    fn reached_node<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Option<cmdr_fs::file_identity::FileId>> + Send + 'a>> {
+        Box::pin(async move { self.reached_node_impl(path).await })
+    }
+
     /// Whether the share has named streams, which is what an xattr is here. A plain
     /// Samba has none, and this hides the tag colors there rather than offering a
     /// click that can only fail.
