@@ -759,9 +759,9 @@
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "Tento soubor je zabalený uvnitř jiného archivu. Cmdr otevírá archivy, které leží na disku nebo na serveru, a otevírání archivů uvnitř jiných archivů je zatím v plánu.",
   "@errors.listing.nestedArchive.explanation": {
-    "sourceHash": "81360ce"
+    "sourceHash": "e838896"
   },
   "errors.listing.nestedArchive.suggestion": "Zkopírujte ho z tohoto archivu do složky a pak otevřete kopii.",
   "@errors.listing.nestedArchive.suggestion": {

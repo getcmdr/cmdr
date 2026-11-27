@@ -759,9 +759,9 @@
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "這個檔案包在另一個封存檔裡。Cmdr 能開啟磁碟機或伺服器上的封存檔，開啟封存檔裡的封存檔還在計畫中。",
   "@errors.listing.nestedArchive.explanation": {
-    "sourceHash": "81360ce"
+    "sourceHash": "e838896"
   },
   "errors.listing.nestedArchive.suggestion": "先把它從這個封存檔複製到一個資料夾，再開啟這份副本。",
   "@errors.listing.nestedArchive.suggestion": {

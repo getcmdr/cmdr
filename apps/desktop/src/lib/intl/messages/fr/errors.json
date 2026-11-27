@@ -759,9 +759,9 @@
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "Ce fichier se trouve dans une autre archive. Cmdr ouvre les archives placées sur un disque ou un serveur, et l’ouverture d’archives contenues dans d’autres archives est encore au programme.",
   "@errors.listing.nestedArchive.explanation": {
-    "sourceHash": "81360ce"
+    "sourceHash": "e838896"
   },
   "errors.listing.nestedArchive.suggestion": "Copiez-la hors de cette archive dans un dossier, puis ouvrez la copie.",
   "@errors.listing.nestedArchive.suggestion": {

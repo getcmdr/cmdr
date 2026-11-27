@@ -759,9 +759,9 @@
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "Este archivo está dentro de otro archivo comprimido. Cmdr abre los archivos comprimidos que están en una unidad o en un servidor, y abrir los que están dentro de otros archivos comprimidos aún está en la lista de pendientes.",
   "@errors.listing.nestedArchive.explanation": {
-    "sourceHash": "81360ce"
+    "sourceHash": "e838896"
   },
   "errors.listing.nestedArchive.suggestion": "Cópialo de este archivo comprimido a una carpeta y luego abre la copia.",
   "@errors.listing.nestedArchive.suggestion": {

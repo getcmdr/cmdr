@@ -759,9 +759,9 @@
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
-  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.explanation": "Tệp này được nén bên trong một tệp nén khác. Cmdr mở được các tệp nén nằm trên ổ đĩa hoặc máy chủ, còn việc mở tệp nén nằm trong tệp nén khác vẫn đang trong kế hoạch.",
   "@errors.listing.nestedArchive.explanation": {
-    "sourceHash": "81360ce"
+    "sourceHash": "e838896"
   },
   "errors.listing.nestedArchive.suggestion": "Hãy sao chép tệp nén đó ra khỏi tệp nén này vào một thư mục, rồi mở bản sao.",
   "@errors.listing.nestedArchive.suggestion": {
