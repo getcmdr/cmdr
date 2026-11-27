@@ -1882,17 +1882,20 @@ modules under `volume/` carry the arithmetic, each behind a trait or a function 
 lines:
 
 - **`scan_walk.rs`** (`ScanSource`: `scan_stat` + `scan_list`) answers `scan_for_copy`, `scan_for_copy_batch`, and
-  `scan_for_conflicts`. Both reads (and `PatchSource::patch_stat`) take an `AppPath`, as the `Volume` reads they forward
-  to do, so an impl passes its path straight on: a bridged argument there would be a temporary the returned future
-  borrows. The walk bridges its `std::path` arithmetic where it calls back, inside its own futures. A backend whose
-  operations bill per object answers `keeps_files` true (S3), and `scan_trees` hands back every file's size and date in
-  `BatchScanResult::files` for a cost estimate; everyone else gets `None` and holds no list. The walk lists and ❌ never
-  stats a child, so a 1,000-file folder costs one round trip per DIRECTORY; `dedup_bytes` tracks `total_bytes` because a
-  backend reaching this walk has no link count. ❌ Nothing here consults `authoritative_listing`: that shortcut needs a
-  watcher behind it, and these backends have none. ❗ A symlinked directory counts as the ONE entry it is and is never
-  walked: following one double-counts its target (Android's `/sdcard` and `/storage/emulated/0` are the same bytes) and
-  a link aimed at an ancestor never terminates. `scan_preview.rs` makes the same promise app-side, so a copy estimate
-  reads the same whichever walker produced it.
+  `scan_for_conflicts`. Its walk keeps the folders it's inside on a `Vec`, ❌ never a future per level: that nests a
+  poll per level, and a deep tree overflowed the 2 MiB worker a copy's scan runs on (#1541; pinned by
+  `scan_walk_test.rs::a_tree_thousands_of_levels_deep_scans_on_a_small_stack`, 2,000 levels on 256 KiB). Both reads (and
+  `PatchSource::patch_stat`) take an `AppPath`, as the `Volume` reads they forward to do, so an impl passes its path
+  straight on: a bridged argument there would be a temporary the returned future borrows. The walk bridges its
+  `std::path` arithmetic where it calls back, inside its own futures. A backend whose operations bill per object answers
+  `keeps_files` true (S3), and `scan_trees` hands back every file's size and date in `BatchScanResult::files` for a cost
+  estimate; everyone else gets `None` and holds no list. The walk lists and ❌ never stats a child, so a 1,000-file
+  folder costs one round trip per DIRECTORY; `dedup_bytes` tracks `total_bytes` because a backend reaching this walk has
+  no link count. ❌ Nothing here consults `authoritative_listing`: that shortcut needs a watcher behind it, and these
+  backends have none. ❗ A symlinked directory counts as the ONE entry it is and is never walked: following one
+  double-counts its target (Android's `/sdcard` and `/storage/emulated/0` are the same bytes) and a link aimed at an
+  ancestor never terminates. `scan_preview.rs` makes the same promise app-side, so a copy estimate reads the same
+  whichever walker produced it.
 - **`mkdir_all.rs`** (`MakesDirectories`) answers `create_directory_all`, leaf first so the common case costs one
   request. ❗ Its `DirectoryCreation` answer is the load-bearing part: the transfer driver spends a `Created` by
   skipping its per-file destination conflict probe, so anything short of certainty (a lost race included) answers

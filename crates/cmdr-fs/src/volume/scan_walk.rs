@@ -403,10 +403,16 @@ pub fn scan_conflicts_at<'a>(
     })
 }
 
-/// One directory's contents, folded into `into`, recursing into children.
+/// One directory's contents, folded into `into`, and every folder under it,
+/// depth first in listing order.
 ///
 /// Split from [`scan_tree`] so the top-level stat is paid once rather than once
 /// per level: a child's type and size are already in its parent's listing.
+///
+/// The folders the walk is inside live on a `Vec`, ❌ never in a future per
+/// level: that nests a poll per level, and a deep enough tree overflowed the
+/// 2 MiB tokio worker a copy's scan runs on (#1541). Only the listings on the
+/// current path are held.
 fn walk_directory<'a>(
     source: &'a dyn ScanSource,
     dir: &'a AppPath,
@@ -415,31 +421,42 @@ fn walk_directory<'a>(
     files: &'a mut Option<Vec<ScannedFile>>,
 ) -> Walking<'a, ()> {
     Box::pin(async move {
-        into.dir_count += 1;
-        let native = for_boundary(dir);
-        boundary.dir(&native).await?;
-        // How this level's names join, decided once for all of them.
-        let folder = ListedFolder::new(dir);
-        // A listing a dropped session cut off runs again once the owner has
-        // waited it out; its entries are counted only after it answers.
-        for entry in boundary
-            .through_outages(&native, || unless_stopped(source, boundary, source.scan_list(dir)))
-            .await?
-        {
-            // An OS junk file the transfer leaves out is no part of it (#314, #1305).
-            if boundary.leaves_out(&entry.name, entry.is_directory && !entry.is_symlink) {
-                continue;
+        let mut inside: Vec<(AppPathBuf, std::vec::IntoIter<FileEntry>)> = Vec::new();
+        let mut opening = Some(dir.to_owned());
+        loop {
+            if let Some(dir) = opening.take() {
+                into.dir_count += 1;
+                let native = for_boundary(&dir);
+                boundary.dir(&native).await?;
+                // A listing a dropped session cut off runs again once the owner has
+                // waited it out; its entries are counted only after it answers.
+                let entries = boundary
+                    .through_outages(&native, || unless_stopped(source, boundary, source.scan_list(&dir)))
+                    .await?;
+                inside.push((dir, entries.into_iter()));
             }
-            let child = child_of(&folder, dir, &entry.name)?;
-            // ❗ A symlinked directory is ONE entry, never a subtree. Following
-            // one double-counts its target (Android's `/sdcard` and
-            // `/storage/emulated/0` are the same bytes) and a link pointing at
-            // an ancestor turns the scan into a hang. `scan_preview.rs` makes
-            // the same promise app-side, so a copy estimate reads the same
-            // whichever walker produced it.
-            if entry.is_directory && !entry.is_symlink {
-                walk_directory(source, &child, boundary, into, files).await?;
-            } else {
+            let Some((dir, entries)) = inside.last_mut() else {
+                return Ok(());
+            };
+            // How this level's names join, decided once per stretch of entries
+            // (a level resumes once after each child folder).
+            let folder = ListedFolder::new(dir);
+            for entry in entries.by_ref() {
+                // An OS junk file the transfer leaves out is no part of it (#314, #1305).
+                if boundary.leaves_out(&entry.name, entry.is_directory && !entry.is_symlink) {
+                    continue;
+                }
+                let child = child_of(&folder, dir, &entry.name)?;
+                // ❗ A symlinked directory is ONE entry, never a subtree. Following
+                // one double-counts its target (Android's `/sdcard` and
+                // `/storage/emulated/0` are the same bytes) and a link pointing at
+                // an ancestor turns the scan into a hang. `scan_preview.rs` makes
+                // the same promise app-side, so a copy estimate reads the same
+                // whichever walker produced it.
+                if entry.is_directory && !entry.is_symlink {
+                    opening = Some(child);
+                    break;
+                }
                 let size = entry.size.unwrap_or(0);
                 keep(files, &entry);
                 into.file_count += 1;
@@ -447,8 +464,10 @@ fn walk_directory<'a>(
                 into.dedup_bytes += size;
                 boundary.file(&for_boundary(&child), size).await?;
             }
+            if opening.is_none() {
+                inside.pop();
+            }
         }
-        Ok(())
     })
 }
 

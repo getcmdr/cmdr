@@ -45,18 +45,28 @@ fn bottom_folder() -> String {
     format!("deep{}", "/d".repeat(DEPTH))
 }
 
-/// `deep` and its levels under a fresh folder, as a local volume rooted there.
-fn deep_source(label: &str) -> (TestDir, Arc<dyn Volume>) {
+/// `deep` and its levels under a fresh folder.
+fn deep_folder(label: &str) -> TestDir {
     let dir = TestDir::new(label);
     let bottom = dir.join(bottom_folder());
     std::fs::create_dir_all(&bottom).unwrap();
     std::fs::write(bottom.join("bottom.txt"), b"bottom").unwrap();
-    let volume = Arc::new(LocalPosixVolume::local_folder(
+    dir
+}
+
+/// The folder as a local volume, which scans with its own walk.
+fn local(dir: &TestDir) -> Arc<dyn Volume> {
+    Arc::new(LocalPosixVolume::local_folder(
         "Local",
         dir.to_path_buf(),
         crate::host::testing::pane_order_host(),
-    ));
-    (dir, volume)
+    ))
+}
+
+/// The folder behind a backend that scans through the shared `scan_walk`, as
+/// ADB, NFS, S3, SFTP, and WebDAV sources do, before the copy walks it.
+fn scanned_by_the_shared_walk(dir: &TestDir) -> Arc<dyn Volume> {
+    super::link_following_backend_tests::scan_walking_volume(dir)
 }
 
 fn app(path: &str) -> AppPathBuf {
@@ -101,9 +111,8 @@ fn holds_the_whole_tree(dest: &InMemoryVolume) {
     });
 }
 
-#[test]
-fn a_four_hundred_level_tree_copies_on_a_copy_workers_stack() {
-    let (_dir, source) = deep_source("deep-tree-copy");
+/// Copies `/deep` off `source` on a copy worker and checks every level landed.
+fn copies_whole(source: Arc<dyn Volume>) {
     let dest = no_links_dest();
     let events = Arc::new(CollectorEventSink::new());
     let run = {
@@ -131,11 +140,9 @@ fn a_four_hundred_level_tree_copies_on_a_copy_workers_stack() {
     assert_eq!(events.complete.lock_ignore_poison()[0].files_processed, 1);
 }
 
-/// The move walks the same tree, then its sweep takes every level out of the
-/// source, deepest first.
-#[test]
-fn a_four_hundred_level_tree_moves_on_a_copy_workers_stack() {
-    let (dir, source) = deep_source("deep-tree-move");
+/// Moves `/deep` off `source` (over `dir`) on a copy worker: the walk, then the
+/// sweep taking every level out of the source, deepest first.
+fn moves_whole(source: Arc<dyn Volume>, dir: &TestDir) {
     let dest = no_links_dest();
     let run = {
         let dest = Arc::clone(&dest);
@@ -163,4 +170,29 @@ fn a_four_hundred_level_tree_moves_on_a_copy_workers_stack() {
         !dir.join("deep").exists(),
         "the sweep took the moved tree out of the source"
     );
+}
+
+#[test]
+fn a_four_hundred_level_tree_copies_on_a_copy_workers_stack() {
+    let dir = deep_folder("deep-tree-copy");
+    copies_whole(local(&dir));
+}
+
+#[test]
+fn a_four_hundred_level_tree_moves_on_a_copy_workers_stack() {
+    let dir = deep_folder("deep-tree-move");
+    moves_whole(local(&dir), &dir);
+}
+
+/// The shared pre-copy scan walks the whole tree before the copy does.
+#[test]
+fn a_four_hundred_level_tree_copies_off_a_source_the_shared_scan_walks() {
+    let dir = deep_folder("deep-tree-copy-shared-scan");
+    copies_whole(scanned_by_the_shared_walk(&dir));
+}
+
+#[test]
+fn a_four_hundred_level_tree_moves_off_a_source_the_shared_scan_walks() {
+    let dir = deep_folder("deep-tree-move-shared-scan");
+    moves_whole(scanned_by_the_shared_walk(&dir), &dir);
 }

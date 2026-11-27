@@ -163,6 +163,17 @@ impl Volume for LinkFollowingVolume {
     }
 }
 
+/// The same rig over `root`, scanning through the shared `scan_walk` the way an
+/// ADB, NFS, S3, SFTP, or WebDAV source does: what `deep_tree_tests.rs` copies
+/// a deep tree off.
+pub(super) fn scan_walking_volume(root: &Path) -> Arc<dyn Volume> {
+    Arc::new(LinkFollowingVolume {
+        inner: LocalVolume::local_folder("V", root.to_path_buf(), crate::host::testing::pane_order_host()),
+        link_takes_freed_name: None,
+        shared_scan_walk: true,
+    })
+}
+
 /// A real local folder behind the trait's defaults, so it can name no node either
 /// (`Volume::reached_node`): the rig `link_cycle_tests.rs` plays an SFTP source on.
 pub(super) fn following_volume() -> (Arc<dyn Volume>, TempDir) {

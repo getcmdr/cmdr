@@ -1255,7 +1255,11 @@ polling the outermost one polls every level below it, one stack frame per level.
   `rename_merge.rs::rename_merge_directory` (a same-volume move into folders both sides hold) still nest a future per
   level.
 
-Pinned by `deep_tree_tests.rs`: a 400-level copy and move on a 2 MiB worker, past both old ceilings.
+The pre-copy scan the walk waits on follows the same rule: the shared `cmdr_fs::volume::scan_walk` (ADB, NFS, restic,
+S3, SFTP, WebDAV, `skip_if_folder_refused`'s count) keeps its depth on the heap too (`cmdr-fs/DETAILS.md`).
+
+Pinned by `deep_tree_tests.rs`: a 400-level copy and move on a 2 MiB worker, past both old ceilings, off a local folder
+and off a source the shared scan walks.
 
 ## What the drivers report while they run
 

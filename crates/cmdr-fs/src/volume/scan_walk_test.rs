@@ -128,6 +128,37 @@ impl ScanSource for FakeTree {
 /// Every fake file's date is this plus its size, so a cell can tell them apart.
 const DATED_FROM: u64 = 1_700_000_000;
 
+/// A tree thousands of levels deep scans on a small stack: the walk keeps the
+/// folders it's inside on the heap, so depth costs it no stack (#1541). A walk
+/// that nests a future per level aborts this test binary instead.
+#[test]
+fn a_tree_thousands_of_levels_deep_scans_on_a_small_stack() {
+    const DEPTH: usize = 2_000;
+    let mut tree = FakeTree::new();
+    let mut level = String::from("/top");
+    for _ in 0..DEPTH {
+        tree = tree.with_dir(&level, &[("d", true, 0)]);
+        level.push_str("/d");
+    }
+    tree = tree.with_dir(&level, &[("bottom.txt", false, 7)]);
+
+    let scanned = std::thread::Builder::new()
+        .stack_size(256 * 1024)
+        .spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
+            runtime.block_on(async { scan_tree(&tree, Path::new("/top"), &ScanBoundary::silent()).await })
+        })
+        .unwrap()
+        .join()
+        .expect("the scan ends without overflowing its stack")
+        .expect("the scan");
+
+    assert_eq!(
+        (scanned.file_count, scanned.dir_count, scanned.total_bytes),
+        (1, DEPTH + 1, 7)
+    );
+}
+
 #[tokio::test]
 async fn a_backend_that_keeps_files_gets_every_files_size_and_date() {
     let mut tree = FakeTree::new()
