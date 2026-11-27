@@ -74,18 +74,18 @@ pub async fn go_to_latest_download() -> Result<LatestDownload, GoToLatestError> 
     // The ring answers with its newest entry still on disk (a download renamed
     // or deleted since is skipped). When none is (cold start, or every entry
     // gone), walk the Downloads dir: bounded by `SCAN_MAX_DEPTH`, but still
-    // I/O over possibly thousands of entries.
-    let path = tauri::async_runtime::spawn_blocking(|| {
-        super::runtime::with_watcher(|w| w.latest_download().or_else(|| w.scan_latest_fallback())).flatten()
-    })
-    .await
-    .unwrap_or_else(|err| {
-        log::warn!(
-            target: "downloads::watcher",
-            "go-to-latest lookup spawn_blocking failed: {err}",
-        );
-        None
-    });
+    // I/O over possibly thousands of entries. It runs on a detached lookup, not
+    // under the runtime's lock, which the main thread's focus refresh takes.
+    let lookup = super::runtime::with_watcher(|w| w.latest_lookup());
+    let path = tauri::async_runtime::spawn_blocking(move || lookup.and_then(|lookup| lookup.find()))
+        .await
+        .unwrap_or_else(|err| {
+            log::warn!(
+                target: "downloads::watcher",
+                "go-to-latest lookup spawn_blocking failed: {err}",
+            );
+            None
+        });
     let Some(path) = path else {
         // Distinguish "watcher dormant" from "watcher running but ring +
         // scan turned up nothing." Without the runtime we have no resolved
@@ -154,7 +154,9 @@ impl std::fmt::Display for WatcherGateError {
 #[tauri::command]
 #[specta::specta]
 pub async fn recheck_downloads_watcher_gate(app: AppHandle) -> Result<(), WatcherGateError> {
-    super::runtime::refresh_runtime(&app).map_err(|e| WatcherGateError::WatcherStartFailed { message: e.to_string() })
+    super::runtime::refresh_runtime_and_wait(&app)
+        .await
+        .map_err(|e| WatcherGateError::WatcherStartFailed { message: e.to_string() })
 }
 
 /// Result of [`set_global_go_to_latest_shortcut`]: the new status the Settings row

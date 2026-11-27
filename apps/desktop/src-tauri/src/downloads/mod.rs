@@ -72,6 +72,7 @@ mod links_test;
 #[cfg(test)]
 pub(crate) mod own_write_recorder;
 pub mod runtime;
+mod slot;
 pub mod watcher;
 #[cfg(test)]
 mod watcher_test;

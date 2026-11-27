@@ -410,19 +410,38 @@ impl DownloadsWatcher {
         self.ignore_set.is_pending(path)
     }
 
-    /// Most-recently observed download that is STILL an eligible file on disk,
-    /// or `None` if no ring entry is. The "go to latest download" action reads
-    /// this first; if `None` it falls back to [`Self::scan_latest_fallback`].
-    /// Stats up to the ring's capacity (10) local paths, so call it off the
-    /// IPC thread (`go_to_latest_download` runs it in `spawn_blocking`).
-    pub fn latest_download(&self) -> Option<PathBuf> {
-        self.latest_ring.latest_where(is_eligible)
+    /// What "go to latest download" reads, copied out so its disk I/O runs
+    /// outside the runtime's lock (the main thread's focus refresh takes it).
+    pub fn latest_lookup(&self) -> LatestLookup {
+        LatestLookup {
+            ring: Arc::clone(&self.latest_ring),
+            downloads_root: self.downloads_root.clone(),
+        }
+    }
+}
+
+/// A detached view of a watcher's ring and root. See [`DownloadsWatcher::latest_lookup`].
+/// Every method touches the disk: call them off the IPC thread.
+pub struct LatestLookup {
+    ring: Arc<LatestRing>,
+    downloads_root: PathBuf,
+}
+
+impl LatestLookup {
+    /// The download the user means: [`Self::latest_seen`], else [`Self::scanned`].
+    pub fn find(&self) -> Option<PathBuf> {
+        self.latest_seen().or_else(|| self.scanned())
     }
 
-    /// Scan the Downloads dir recursively for the most-recently modified
-    /// eligible file. O(N) over the dir contents; called only when the ring
-    /// is empty (cold start before any event has arrived).
-    pub fn scan_latest_fallback(&self) -> Option<PathBuf> {
+    /// The most recently observed download that is STILL an eligible file on
+    /// disk, or `None` if no ring entry is. Stats up to the ring's 10 paths.
+    pub fn latest_seen(&self) -> Option<PathBuf> {
+        self.ring.latest_where(is_eligible)
+    }
+
+    /// The most recently modified eligible file in Downloads: the cold-start
+    /// answer when no download has landed this session. A bounded walk.
+    pub fn scanned(&self) -> Option<PathBuf> {
         scan_latest(&self.downloads_root)
     }
 }

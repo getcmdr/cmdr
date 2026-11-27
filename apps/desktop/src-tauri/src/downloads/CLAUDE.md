@@ -10,8 +10,8 @@ appears (a direct create of a final name, or a rename from a partial suffix to o
 - **`latest_ring.rs`**: `LatestRing`, capacity 10; reads skip gone files
 - **`watcher.rs`**: `DownloadsWatcher` (debouncer + ignore set + ring); pure `classify_event()` /
   `translate_debounced()`. Tests: `watcher_test.rs` and `links_test.rs` (a Downloads with links out of itself)
-- **`runtime.rs`**: the process-wide watcher slot; `refresh_runtime(&app)` aligns it with the FDA gate; owns
-  `note_pending_write_for_cmdr`
+- **`runtime.rs`**: `refresh_runtime(&app)` aligns the watcher with the FDA gate; owns `note_pending_write_for_cmdr`.
+  **`slot.rs`**: `WatcherSlot`, the `Stopped` / `Arming` / `Running` state machine behind it
 - **`commands.rs`**: IPC. **`global_shortcut.rs`**: `GlobalShortcutManager<R: Registrar>` over the plugin
 
 Lifecycle, scope rationale, and limits: `DETAILS.md`.
@@ -20,6 +20,9 @@ Lifecycle, scope rationale, and limits: `DETAILS.md`.
 
 - **The watcher is alive iff `fda_gate::is_fda_pending_runtime() == false`.** `refresh_runtime` runs at startup, on
   every main-window `Focused(true)`, and from the Settings pane (`recheck_downloads_watcher_gate`).
+- **❌ Never arm or stop the watcher on the caller's thread**: two callers are the main thread, and an arm can take
+  seconds (#1538). `WatcherSlot::align` decides instantly and hands the work to another thread. `with_watcher` holds
+  the lock the main thread waits on: ❌ no I/O inside it. § "Decision: arming never runs on the caller's thread".
 - **Own writes: `note_pending_write_for_cmdr(&final_path)` right before each write syscall**, unconditionally (the root
   filter lives in `IgnoreSet`). ❌ Don't reduce its root check to one `starts_with` (declared AND resolved spellings).
   ❌ Never `canonicalize` a registered path: a network `realpath` stalls the write. § "Cmdr-own-write hook contract".

@@ -17,6 +17,26 @@ at:
 `refresh_runtime` aligns the handle with `desired_running(fda_pending)` and is idempotent. Dropping the handle releases
 the OS watch; the watcher holds no FDA-protected state beyond that, so the closed-gate side is a pure no-op.
 
+### Decision: arming never runs on the caller's thread (#1538)
+
+The startup and focus callers are on the main thread, and arming is slow work even without a tree walk: it canonicalizes
+the root (a relocated Downloads can be on a network mount) and asks `fseventsd` for a stream, which took 4–11 s on a
+host whose daemon had gone bad (§ "Testing"). So the handle lives in a `slot::WatcherSlot` with three states,
+`Stopped`, `Arming { generation }`, and `Running`:
+
+- `WatcherSlot::align(should_run)` decides under the lock, with no I/O, and hands back a `Job` (`Arm(ArmTicket)` or
+  `Stop(watcher)`) for another thread. `refresh_runtime` runs it on a `downloads-watcher` thread and returns;
+  `refresh_runtime_and_wait` (the Settings recheck IPC) runs it on the blocking pool and returns the arm's error.
+- A refresh while `Arming` starts nothing, so rapid focus changes arm once.
+- A gate that closes while arming sets `Stopped` at once; the arm's `ArmTicket::finish` sees its generation is no longer
+  current and stops the watcher it built. Close-then-reopen mints a new generation, so only the newest arm installs.
+- A ticket dropped unfinished (a panicking arm, a thread that never spawned) resets `Arming` to `Stopped`, so the next
+  focus retries.
+
+Guarded by `slot::tests` (an arm blocked on a channel proves the refresh returns first). `with_watcher` runs under the
+same lock the main thread takes, so its closures stay cheap: `go_to_latest_download` copies out a `LatestLookup` (ring
+`Arc` + root) and stats and scans outside it.
+
 ## Cmdr-own-write hook contract
 
 Write operations announce each path immediately before its filesystem syscall, through the engine's `OwnWrites` seam,
@@ -136,7 +156,7 @@ add visible toast latency. Revisit if real-world feedback says CLI downloads mat
 
 `go_to_latest_download` resolves the target in two tiers:
 
-- **Primary — the event-driven `LatestRing`** (`watcher.latest_download()`): the most-recent eligible final-form file the
+- **Primary — the event-driven `LatestRing`** (`LatestLookup::latest_seen`): the most-recent eligible final-form file the
   watcher observed this session that is STILL eligible on disk (`LatestRing::latest_where(is_eligible)`, newest first).
   The ring is process-lifetime — it survives across hotkey presses and clears only on restart — and nothing evicts a
   download renamed, moved, or deleted after landing, so the read re-checks each entry. Without that, ⌃⌥⌘J revealed a
