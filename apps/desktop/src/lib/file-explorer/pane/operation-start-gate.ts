@@ -28,6 +28,7 @@ import { tString } from '#lib/intl/messages.svelte.js'
 import { getAppLogger } from '#lib/logging/logger.js'
 import { blockingSoftDialog } from '#lib/ui/open-dialogs.svelte.js'
 import type { SoftDialogId } from '#lib/ui/dialog-registry.js'
+import type { RowsUnsettledBy } from './pane-row-state'
 
 const log = getAppLogger('fileExplorer')
 
@@ -73,9 +74,18 @@ export function announceOperationBlocked(blockedBy: SoftDialogId, mcpRequestId: 
  * and drag. Same two audiences as `announceOperationBlocked`: a toast for the person who
  * pressed the key, a failed round-trip for an MCP agent. Nothing is in the way that the
  * agent could close, so there's no `blockedBy`.
+ *
+ * `heldBy` is what the pane's row state named as holding the rows when the wait gave up
+ * (`PaneRowState.unsettledBy`), for the log only: without it, a refusal with an idle backend
+ * can't be told apart from one under real churn (ERR-VC6Q7). Empty means the rows moved.
  */
-export function announceRowsStillSettling(mcpRequestId: string | undefined): void {
-  log.info("Not starting: the source pane's rows moved or didn't settle in time")
+export function announceRowsStillSettling(
+  mcpRequestId: string | undefined,
+  heldBy: readonly RowsUnsettledBy[] = [],
+): void {
+  log.info("Not starting: the source pane's rows moved or didn't settle in time (held by: {heldBy})", {
+    heldBy: heldBy.length > 0 ? heldBy.join(', ') : 'nothing; the rows moved',
+  })
   addToast(tString('fileOperations.transferProgress.rowsStillSettlingToast'), { level: 'info' })
   if (mcpRequestId) {
     void emit('mcp-response', {

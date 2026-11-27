@@ -768,6 +768,13 @@ exist. Nothing else about the event path changes: it keeps the server's bytes. O
 `paths::below_share_root`, serves both this and `to_display_path`: two copies would drift, and the two directions
 disagreeing is exactly what patches a cache key nothing is watching.
 
+**Gotcha: a burst of events under one extra top-level folder after a delete is a NAS recycle bin, not a DFS prefix.**
+QNAP (`@Recycle`) and Synology (`#recycle`) move a deleted file to `<bin>/<its original path>` at the share root, so the
+watch reports the delete's mirror image (the file plus each parent folder) one folder deeper. Those are real paths: ❌
+don't strip a "leading folder" off event names. ERR-VC6Q7 read them as a DFS bug; the batches mirrored each deleted path
+exactly, on two shares alike, and a Samba `msdfs root = yes` share reports plain share-relative names (verified on Samba
+4.20 / Alpine 3.21 through smb2 0.43.1, another client's mkdir, write, rename, and delete, 2026-11-27).
+
 **An anchored mount is the SAME volume as its share.** The ID keys on `(server, port, share)` and leaves the anchor out,
 so the nested mount and the namespace root share one ID, one session, one index, and one set of saved paths, and a
 redundant upgrade attempt short-circuits on `is_already_direct` rather than opening a second connection. Where the

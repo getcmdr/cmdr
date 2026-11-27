@@ -69,3 +69,38 @@ describe('whenReady', () => {
     await expect(waiting).resolves.toBe(false)
   })
 })
+
+// ERR-VC6Q7: five F6 presses ran out the settle budget with nothing changing on the
+// backend, and the log couldn't say what held the rows. `unsettledBy` names it.
+describe('unsettledBy', () => {
+  it('names nothing when the rows are settled', () => {
+    expect(readyRowState().unsettledBy()).toEqual([])
+  })
+
+  it('names every condition holding the rows at once', () => {
+    const rowState = readyRowState({ loading: () => true, operationActive: () => true })
+    rowState.beginAsyncWork()
+
+    expect(rowState.unsettledBy()).toEqual(['loading', 'asyncWork', 'operation'])
+    expect(rowState.isReady()).toBe(false)
+  })
+
+  it('names a diff whose predecessor never arrived', () => {
+    const rowState = readyRowState()
+    rowState.receive([
+      { fromSequence: 3, sequence: 4, totalCount: 1, hiddenCount: 0, changes: [], effectiveSortBy: null },
+    ])
+
+    expect(rowState.unsettledBy()).toEqual(['diffGap'])
+  })
+
+  it('names rows that never finished their first load', () => {
+    const rowState = createPaneRowState({
+      getListingId: () => 'listing-1',
+      getLoading: () => false,
+      getOperationActive: () => false,
+    })
+
+    expect(rowState.unsettledBy()).toEqual(['notInitialized'])
+  })
+})

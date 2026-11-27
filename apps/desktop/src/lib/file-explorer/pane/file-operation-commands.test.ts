@@ -78,7 +78,7 @@ vi.mock('./transfer-operations', async (importOriginal) => {
 
 vi.mock('#lib/logging/logger.js', async () => {
   const { spies } = await import('./file-operation-commands.test-harness')
-  return { getAppLogger: () => ({ error: vi.fn(), warn: spies.logWarn, info: vi.fn(), debug: spies.logDebug }) }
+  return { getAppLogger: () => ({ error: vi.fn(), warn: spies.logWarn, info: spies.logInfo, debug: spies.logDebug }) }
 })
 
 import { createFileOperationCommands } from './file-operation-commands'
@@ -749,6 +749,7 @@ describe('openTransferDialog while the source rows settle', () => {
       selectedIndices: [3, 4],
       isRowStateReady: () => false,
       whenRowStateReady: () => Promise.resolve(false),
+      unsettledBy: () => ['asyncWork', 'operation'],
     })
     const access = buildAccess({ focusedPane: 'left', paneRefs: { left: paneRef }, volumes: [volume()] })
     const dialogs = buildDialogs()
@@ -761,6 +762,8 @@ describe('openTransferDialog while the source rows settle', () => {
       'The list here is still updating, so nothing started. Try again in a moment.',
       { level: 'info' },
     )
+    // ERR-VC6Q7: five refusals with an idle backend, and the log couldn't say what held the rows.
+    expect(spies.logInfo).toHaveBeenCalledWith(expect.stringContaining('{heldBy}'), { heldBy: 'asyncWork, operation' })
   })
 
   it('rebuilds from the new rows when they move while the dialog is being prepared', async () => {

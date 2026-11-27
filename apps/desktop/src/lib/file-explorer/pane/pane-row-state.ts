@@ -8,6 +8,24 @@ export interface RowStateToken {
   includeHidden: boolean
 }
 
+/**
+ * What can hold a pane's rows unsettled, as `unsettledBy` names it for the log line a refused
+ * press leaves (ERR-VC6Q7: five F6 refusals with an idle backend, and nothing said why).
+ * `operation` is an operation's selection snapshot or a pending rename cursor; `diffGap` a
+ * buffered diff whose predecessor hasn't arrived; `viewChange` a sort, filter, or hidden-files
+ * switch still in flight.
+ */
+export type RowsUnsettledBy =
+  | 'disposed'
+  | 'notInitialized'
+  | 'loading'
+  | 'noListing'
+  | 'viewChange'
+  | 'asyncWork'
+  | 'operation'
+  | 'diffGap'
+  | 'hiddenMismatch'
+
 /** One owner for the pane's applied row space, reconfiguration queue, and async continuations. */
 export function createPaneRowState(deps: {
   getListingId: () => string
@@ -31,18 +49,25 @@ export function createPaneRowState(deps: {
   /** Callers of `whenReady` still waiting, each answered once with `true` (settled) or `false`. */
   const readyWaiters = new Set<(ready: boolean) => void>()
 
+  /** Every condition holding the rows right now, in a fixed order; empty means settled. */
+  function unsettledBy(): RowsUnsettledBy[] {
+    const holding: RowsUnsettledBy[] = []
+    if (disposed) holding.push('disposed')
+    if (!initialized) holding.push('notInitialized')
+    if (deps.getLoading()) holding.push('loading')
+    if (deps.getListingId() === '') holding.push('noListing')
+    if (pendingViews > 0) holding.push('viewChange')
+    if (asyncWork > 0) holding.push('asyncWork')
+    if (deps.getOperationActive()) holding.push('operation')
+    if (buffered.size > 0) holding.push('diffGap')
+    if (appliedHidden !== undefined && deps.getIncludeHidden && appliedHidden !== deps.getIncludeHidden()) {
+      holding.push('hiddenMismatch')
+    }
+    return holding
+  }
+
   function isReady(): boolean {
-    return (
-      initialized &&
-      !disposed &&
-      !deps.getLoading() &&
-      pendingViews === 0 &&
-      asyncWork === 0 &&
-      deps.getListingId() !== '' &&
-      !deps.getOperationActive() &&
-      buffered.size === 0 &&
-      (appliedHidden === undefined || !deps.getIncludeHidden || appliedHidden === deps.getIncludeHidden())
-    )
+    return unsettledBy().length === 0
   }
 
   /** Answers every `whenReady` waiter once the rows are settled, or `false` once the pane is gone. */
@@ -93,6 +118,7 @@ export function createPaneRowState(deps: {
     getSequence: () => sequence,
     getGeneration: () => generation,
     isReady,
+    unsettledBy,
     /**
      * Resolves `true` the moment the rows are settled (at once if they already are), or
      * `false` after `timeoutMs` or once the pane is disposed. Event-driven: every transition
