@@ -2627,7 +2627,11 @@ included; the hidden couplings it found are why waves B and C differ from round 
 - **First, the type-level gate** (Â§ "Keeping it that way"), two commits before any producer: `FileEntry.path` and
   `.name` become typed (the last untyped carriers; IPC parameters went typed in 10c), then `as_str`, `into_string`, and
   the `Display` replacement go into `clippy.toml`'s `disallowed-methods` with a reasoned `expect` at each IPC, store,
-  and log exit.
+  and log exit. The JSON exits too (#1524 follow-up): `AppPathBuf`'s `Serialize` still writes `as_str` and its
+  `Deserialize` reads through `from_wire`, while the app's literal-reading doors read text through `from_text`, so while
+  escapes aren't live a name literally holding an escape-range code point that crosses to the frontend and back can name
+  another file. Make the serde pair `to_text` / `from_text` (`crates/cmdr-fs/DETAILS.md` § App paths, the `to_text`
+  bullet), with a lossless fallback for a name that isn't Unicode, which `to_text` refuses.
 - **Scope**: every escape producer, each in its own commit: every `from_native_unicode` / `from_native_os_unicode` that
   9, 10a, and 10b left becomes `from_native` / `from_native_os`; `cmdr-local`'s readers and walks spell a non-UTF-8 name
   (Linux bytes, Windows unpaired surrogates) losslessly, `FileEntry.name == path.file_name()`, with the frontend's name
