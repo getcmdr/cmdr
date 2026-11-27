@@ -755,7 +755,7 @@
   "@errors.listing.archiveUnreadable.suggestion": {
     "sourceHash": "67b7e70"
   },
-  "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
+  "errors.listing.nestedArchive.title": "Cmdr 还不能打开压缩文件里的压缩文件",
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
@@ -763,7 +763,7 @@
   "@errors.listing.nestedArchive.explanation": {
     "sourceHash": "81360ce"
   },
-  "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
+  "errors.listing.nestedArchive.suggestion": "先把它从这个压缩文件拷贝到一个文件夹，再打开这份副本。",
   "@errors.listing.nestedArchive.suggestion": {
     "sourceHash": "11d55a6"
   },
@@ -2336,7 +2336,7 @@
   "@errors.volume.isADirectory": {
     "sourceHash": "224ae5e"
   },
-  "errors.volume.nestedArchive": "“{path}” is an archive inside another archive, and Cmdr can’t open those yet.",
+  "errors.volume.nestedArchive": "“{path}”是套在另一个压缩文件里的压缩文件，Cmdr 还不能打开这类压缩文件。",
   "@errors.volume.nestedArchive": {
     "sourceHash": "d648960"
   },

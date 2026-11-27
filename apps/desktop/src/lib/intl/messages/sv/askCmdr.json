@@ -481,7 +481,7 @@
   "@askCmdr.tool.outcome.miss.notFound": {
     "sourceHash": "56ee722"
   },
-  "askCmdr.tool.outcome.miss.notAFolder": "that’s a file",
+  "askCmdr.tool.outcome.miss.notAFolder": "det är en fil",
   "@askCmdr.tool.outcome.miss.notAFolder": {
     "sourceHash": "d2f52a3"
   },

@@ -755,7 +755,7 @@
   "@errors.listing.archiveUnreadable.suggestion": {
     "sourceHash": "67b7e70"
   },
-  "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
+  "errors.listing.nestedArchive.title": "Cmdr 還無法開啟封存檔裡的封存檔",
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
@@ -763,7 +763,7 @@
   "@errors.listing.nestedArchive.explanation": {
     "sourceHash": "81360ce"
   },
-  "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
+  "errors.listing.nestedArchive.suggestion": "先把它從這個封存檔複製到一個資料夾，再開啟這份副本。",
   "@errors.listing.nestedArchive.suggestion": {
     "sourceHash": "11d55a6"
   },
@@ -2337,7 +2337,7 @@
   "@errors.volume.isADirectory": {
     "sourceHash": "224ae5e"
   },
-  "errors.volume.nestedArchive": "“{path}” is an archive inside another archive, and Cmdr can’t open those yet.",
+  "errors.volume.nestedArchive": "「{path}」是包在另一個封存檔裡的封存檔，Cmdr 還無法開啟這類封存檔。",
   "@errors.volume.nestedArchive": {
     "sourceHash": "d648960"
   },

@@ -755,7 +755,7 @@
   "@errors.listing.archiveUnreadable.suggestion": {
     "sourceHash": "67b7e70"
   },
-  "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
+  "errors.listing.nestedArchive.title": "Cmdr zatím neumí otevírat archivy uvnitř archivů",
   "@errors.listing.nestedArchive.title": {
     "sourceHash": "7ede157"
   },
@@ -763,7 +763,7 @@
   "@errors.listing.nestedArchive.explanation": {
     "sourceHash": "81360ce"
   },
-  "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
+  "errors.listing.nestedArchive.suggestion": "Zkopírujte ho z tohoto archivu do složky a pak otevřete kopii.",
   "@errors.listing.nestedArchive.suggestion": {
     "sourceHash": "11d55a6"
   },
@@ -2337,7 +2337,7 @@
   "@errors.volume.isADirectory": {
     "sourceHash": "224ae5e"
   },
-  "errors.volume.nestedArchive": "“{path}” is an archive inside another archive, and Cmdr can’t open those yet.",
+  "errors.volume.nestedArchive": "„{path}“ je archiv uvnitř jiného archivu a Cmdr takové archivy zatím neumí otevřít.",
   "@errors.volume.nestedArchive": {
     "sourceHash": "d648960"
   },
