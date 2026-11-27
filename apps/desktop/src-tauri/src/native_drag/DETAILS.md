@@ -50,9 +50,12 @@ asks `cmdr_fs::volume::link_walk::descend_into`, the copy walk's own policy (`cr
 loops through a link it can't see"): a listing's `is_directory` follows links on some backends, and a Samba share lists
 `loop -> ..` as a plain folder, so a walk that trusted it wrote the same folder into Finder's again and again. A folder
 that leads back up is left out, with nothing created for it; past the shared backstops the fulfillment fails with the
-link-loop error and the cleanup contract removes what it made. Pinned by
-`a_folder_four_hundred_levels_deep_lands_whole_on_the_promise_queues_stack` and
-`a_hidden_link_back_up_the_dragged_folder_is_left_out`.
+link-loop error and the cleanup contract removes what it made. That's a deliberate trade: a share with no node ids
+past 128 levels, or a ninth followed link down one path on a source that names no nodes (SFTP), refuses a tree that
+might be real, because nothing tells it from a loop. Pinned by
+`a_folder_four_hundred_levels_deep_lands_whole_on_the_promise_queues_stack`,
+`a_hidden_link_back_up_the_dragged_folder_is_left_out`,
+`a_share_with_no_node_ids_stops_the_drag_past_the_depth_backstop`, and `a_ninth_link_down_one_path_stops_the_drag`.
 
 **Listed names are untrusted**: the folder walk joins each listed child name under the destination only as a
 `ChildName`, so a hostile server or device listing `../x` fails the fulfillment (the cleanup contract below removes what
