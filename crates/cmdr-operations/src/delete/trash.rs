@@ -177,6 +177,9 @@ pub(crate) struct TrashItemError {
     pub path: PathBuf,
     /// The OS's words, or the typed refusal, which marks its own paths in a log line.
     pub message: ErrorDetail,
+    /// The OS's error codes for this refusal (`MutationError::TrashRefused::codes`), for the
+    /// batch's [`refused_codes`].
+    pub codes: Option<String>,
     /// Why the OS refused this one, kept as a value so the batch's terminal error can
     /// carry it. Without it the whole batch collapses to one sentence and the dialog
     /// has nothing to offer but "try again".
@@ -245,6 +248,7 @@ pub(crate) fn trash_files_with_progress(
                     // A vanished source is not a permission problem; offering a grant
                     // as the fix would send the user somewhere useless.
                     reason: TrashRefusalKind::Other,
+                    codes: None,
                     // We couldn't stat it at all, so there are no flags to read.
                     online_only: false,
                 });
@@ -344,6 +348,10 @@ pub(crate) fn trash_files_with_progress(
                         MutationError::TrashRefused { reason, .. } => *reason,
                         _ => TrashRefusalKind::Other,
                     },
+                    codes: match &e {
+                        MutationError::TrashRefused { codes, .. } => codes.clone(),
+                        _ => None,
+                    },
                     // The batch path reports through `WriteOperationError`, whose
                     // own typed variant carries the words; this is the
                     // technical detail beside it, kept typed so a log line marks its paths.
@@ -394,6 +402,8 @@ pub(crate) fn trash_files_with_progress(
     // dropping the old whole-machine global sync (`sync(2)`) removes the stall
     // it caused on unrelated apps. See `CLAUDE.md` § "Durability".
 
+    note_unwritable_trash(&errors);
+
     // If all items failed, emit error
     if items_done == 0 && !errors.is_empty() {
         let error_summary = refused_summary(&errors);
@@ -404,6 +414,7 @@ pub(crate) fn trash_files_with_progress(
         let failure = WriteOperationError::TrashRefused {
             item_count: errors.len(),
             reason,
+            codes: refused_codes(&errors),
             message: error_summary,
             // One evicted item is enough to make the FDA advice wrong for this
             // batch, the same all-or-nothing stance the routing takes.
@@ -476,6 +487,39 @@ pub(crate) fn trash_files_with_progress(
 /// reasons read from the item and where it sits (Locked, a folder that takes no
 /// writes, a sticky folder, a Trash that takes no writes, a program holding the item
 /// open) come next: each names a concrete fix the user can make.
+/// Each distinct OS code chain the refused items carried, once, in the order they met them, at
+/// most [`MAX_REFUSED_CODE_CHAINS`]: a batch refused alike (one Trash that takes no writes) reads
+/// as one chain, and a mixed one stays short enough to fit the report's `detail=` window.
+fn refused_codes(errors: &[TrashItemError]) -> Option<String> {
+    let mut distinct: Vec<&str> = Vec::new();
+    for codes in errors.iter().filter_map(|e| e.codes.as_deref()) {
+        if !distinct.contains(&codes) {
+            distinct.push(codes);
+        }
+        if distinct.len() == MAX_REFUSED_CODE_CHAINS {
+            break;
+        }
+    }
+    (!distinct.is_empty()).then(|| distinct.join("; "))
+}
+
+/// How many distinct code chains a batch refusal names.
+const MAX_REFUSED_CODE_CHAINS: usize = 3;
+
+/// Once per batch an item of which refused as [`TrashRefusalKind::TrashNotWritable`]: what that
+/// Trash folder says about itself, so a report tells the migration case (a Trash still owned by
+/// an old account's uid) from a mode or flag change. Non-identifying by construction: numbers,
+/// and whether it's the home Trash or a drive's `.Trashes/<uid>` (cmdr-reports#121).
+fn note_unwritable_trash(errors: &[TrashItemError]) {
+    let Some(item) = errors.iter().find(|e| e.reason == TrashRefusalKind::TrashNotWritable) else {
+        return;
+    };
+    let Some(trash) = trash_dir_for_path(&item.path) else {
+        return;
+    };
+    log::info!(target: "trash", "the Trash took no writes: {}", platform::trash_folder_facts(&trash));
+}
+
 fn strongest_refusal(errors: &[TrashItemError]) -> TrashRefusalKind {
     const RANKED: [TrashRefusalKind; 7] = [
         TrashRefusalKind::NotPermitted,

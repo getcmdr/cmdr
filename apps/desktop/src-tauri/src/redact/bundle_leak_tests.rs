@@ -244,6 +244,8 @@ fn a_refused_trash_ships_no_part_of_the_name_its_os_sentence_repeats() {
     let error = WriteOperationError::TrashRefused {
         item_count: 1,
         reason: TrashRefusalKind::TrashNotWritable,
+        // The shape that shipped, before the codes had a field of their own.
+        codes: None,
         // `refused_summary`'s shape: each refused path, marked, then the OS's words about it.
         message: ErrorDetail::path_then(path, words),
         online_only: false,
@@ -259,6 +261,36 @@ fn a_refused_trash_ships_no_part_of_the_name_its_os_sentence_repeats() {
         serde_json::to_string(&error).expect("the error serializes")
     );
     assert!(r(&frontend_echo).contains("Test App"), "{}", r(&frontend_echo));
+}
+
+/// A report caps a `detail=` value at `REPORT_DETAIL_MAX_CHARS`, and a refused trash's NSError
+/// codes rode at the END of its `message`, behind the item's path and the OS's sentence: every
+/// `trash_refused` WARN in ERR-J3GAK (cmdr-reports#121) was cut before them. As their own field,
+/// ahead of `message`, they make the cut under any path.
+#[test]
+fn a_refused_trash_keeps_its_os_error_codes_under_the_report_cap() {
+    use cmdr_fs::error_detail::ErrorDetail;
+    use cmdr_operations::WriteOperationError;
+    use cmdr_operations::testing::TrashRefusalKind;
+
+    let codes = "NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000";
+    let path = "/Users/me/Projects/Clients/2026/Quarterly Reports/Exports/access_and_usage_2026-11-24.csv";
+    let error = WriteOperationError::TrashRefused {
+        item_count: 14,
+        reason: TrashRefusalKind::TrashNotWritable,
+        codes: Some(codes.to_string()),
+        message: ErrorDetail::path_then(
+            path,
+            ": the Trash refused it (TrashNotWritable): “access_and_usage_2026-11-24.csv” couldn’t be moved to the trash because you don’t have permission to access it.",
+        ),
+        online_only: false,
+    };
+    let backend = format!(
+        "WARN write_operations: op op-1 (Trash) failed: detail={:?}",
+        error.log_detail()
+    );
+    let reported = context().redact_line(&backend).into_owned();
+    assert!(reported.contains(codes), "{reported}");
 }
 
 #[test]

@@ -327,7 +327,11 @@ and where it sits can, asked in this order:
   there, so only the ownership rule (`sticky_rule_refuses`) sees it. Finder gets through by asking for an admin password
   (its usual prompt, not re-tested for this case).
 - **The item's trash folder (`trash_dir_for_path`) failing `access(W_OK)`** → `TrashNotWritable`, as after a migration
-  leaves `~/.Trash` owned by someone else. The only one offered a permanent delete: the source folder is fine.
+  leaves `~/.Trash` owned by someone else. The only one offered a permanent delete: the source folder is fine. Once per
+  such batch, `note_unwritable_trash` logs that folder's facts at info (`platform::trash_folder_facts`, macOS: home or
+  volume trash, owner uid against our euid, mode, symlink, `st_flags`), numbers only, so a report tells the migration
+  case from a mode or flag change (cmdr-reports#121). The dialog's advice says how to repair the folder, beside the
+  permanent delete.
 - **Else** it stays `NotPermitted`.
 
 (verified on macOS 27.0 with `trashItemAtURL`: a `chflags uchg` file and a file in a `0555` folder, 2026-10-14; a
@@ -336,9 +340,15 @@ over `NSOSStatusErrorDomain -5000`, 2026-11-10.) Rank in `strongest_refusal`: `N
 `Locked`, `FolderNotWritable`, `OwnedByAnotherUser`, `TrashNotWritable`, `InUse` (Windows), `NoTrashForVolume`, `Other`.
 Regression anchors: ERR-JQK62, ERR-KKQHK.
 
-**The refusal's `detail` carries the `NSError` codes**, underlying chain included (`error_codes`:
-`[NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000]`), after the OS's sentence. The sentence is identical across
-every cause above; the codes are what a report can tell apart.
+**The refusal carries the `NSError` codes as their own field**, underlying chain included (`error_codes`:
+`NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000`), in `MutationError::TrashRefused::codes`, and a batch's
+`WriteOperationError::TrashRefused::codes` holds each distinct chain once (`refused_codes`, at most three). The sentence
+is identical across every cause above; the codes are what a report can tell apart. ❗ They stay a field AHEAD of
+`message`: a report caps a `detail=` value at 200 chars, and appended to the sentence, behind the item's path, they were
+cut from every line (ERR-J3GAK, cmdr-reports#121; pinned by
+`a_refused_trash_keeps_its_os_error_codes_under_the_report_cap`). The refusal's own text names them before the words too
+(`the Trash refused it (Reason; codes): …`). Windows' `HRESULT` still rides in its `detail` (`codes: None` there and on
+Linux).
 
 **Decision/Why no `NSWorkspace.recycleURLs` fallback.** It looked like a way through for an unexplained 513 ("it goes
 via Finder"), but on macOS 27.0 it refused both reproducible 513 cases above with the same 513, while plain files with

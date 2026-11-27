@@ -107,6 +107,13 @@ pub enum MutationError {
         /// What `NSFileManager` (or the Linux `trash` crate) reported, for the
         /// technical-details disclosure.
         detail: String,
+        /// The OS's error codes, the underlying ones too (`NSCocoaErrorDomain 513 <
+        /// NSOSStatusErrorDomain -5000`): what tells two refusals with the same
+        /// sentence apart (cmdr-reports#104). Typed, so a batch refusal can carry
+        /// them ahead of its words (`WriteOperationError::TrashRefused::codes`).
+        /// `None` where the platform gives none.
+        #[serde(default)]
+        codes: Option<String>,
     },
     /// The volume refused, and said why in its own vocabulary.
     Volume {
@@ -179,7 +186,16 @@ impl ErrorLogText for MutationError {
                 out.value(LogPrivate::name(name))
             }
             Self::TrashNotSupported => out.write_str("this platform has no Trash"),
-            Self::TrashRefused { reason, detail } => write!(out, "the Trash refused it ({reason:?}): {detail}"),
+            Self::TrashRefused {
+                reason,
+                detail,
+                codes: Some(codes),
+            } => write!(out, "the Trash refused it ({reason:?}; {codes}): {detail}"),
+            Self::TrashRefused {
+                reason,
+                detail,
+                codes: None,
+            } => write!(out, "the Trash refused it ({reason:?}): {detail}"),
             Self::Volume { error } => {
                 out.write_str("volume: ")?;
                 out.error(error)

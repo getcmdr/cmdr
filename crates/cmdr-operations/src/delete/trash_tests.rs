@@ -346,6 +346,7 @@ fn test_trash_item_error_captures_path_and_message() {
         path: PathBuf::from("/some/file.txt"),
         message: "Permission denied".into(),
         reason: TrashRefusalKind::NotPermitted,
+        codes: None,
         online_only: false,
     };
     assert_eq!(error.path.display().to_string(), "/some/file.txt");
@@ -363,6 +364,7 @@ fn a_refused_batch_summary_marks_each_path() {
         path: PathBuf::from(path),
         message: message.into(),
         reason: TrashRefusalKind::NotPermitted,
+        codes: None,
         online_only: false,
     };
     let errors = [
@@ -380,6 +382,61 @@ fn a_refused_batch_summary_marks_each_path() {
     }
 }
 
+/// A batch's codes are each distinct chain once, in the order the items met them, so 14 files
+/// refused alike read as one chain (cmdr-reports#121), and a batch none of whose items had
+/// codes says so with `None`, ❌ never an empty string.
+#[test]
+fn a_batch_carries_each_distinct_os_code_chain_once() {
+    let item = |codes: Option<&str>| TrashItemError {
+        path: PathBuf::from("/some/file.txt"),
+        message: String::new().into(),
+        reason: TrashRefusalKind::TrashNotWritable,
+        codes: codes.map(str::to_string),
+        online_only: false,
+    };
+    let denied = "NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000";
+    let unsupported = "NSCocoaErrorDomain 3328";
+
+    assert_eq!(refused_codes(&[]), None);
+    assert_eq!(refused_codes(&[item(None), item(None)]), None);
+    assert_eq!(
+        refused_codes(&[item(Some(denied)), item(None), item(Some(denied))]).as_deref(),
+        Some(denied)
+    );
+    assert_eq!(
+        refused_codes(&[item(Some(unsupported)), item(Some(denied)), item(Some(unsupported))]).as_deref(),
+        Some("NSCocoaErrorDomain 3328; NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000")
+    );
+}
+
+/// What an unwritable Trash says about itself: the owner against our euid and the mode, which
+/// tell the migration case (a Trash owned by an old account's uid) from a mode change, and
+/// nothing that names anyone (cmdr-reports#121). macOS only: the one OS with a trash folder.
+#[cfg(target_os = "macos")]
+#[test]
+fn an_unwritable_trash_folder_describes_its_owner_and_mode() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = TestDir::new("trash_folder_facts");
+    let trash = dir.join(".Trash");
+    fs::create_dir(&trash).expect("a stand-in trash folder");
+    fs::set_permissions(&trash, fs::Permissions::from_mode(0o500)).expect("close it");
+    // SAFETY: `geteuid` takes no arguments, touches no memory of ours, and can't fail.
+    let euid = unsafe { libc::geteuid() };
+
+    let facts = platform::trash_folder_facts(&trash);
+    fs::set_permissions(&trash, fs::Permissions::from_mode(0o700)).expect("reopen it");
+
+    assert!(
+        facts.starts_with(&format!(
+            "kind=home owner_uid={euid} euid={euid} mode=500 symlink=false flags=0x"
+        )),
+        "{facts}"
+    );
+    assert!(!facts.contains("trash_folder_facts"), "no path in it: {facts}");
+    assert_eq!(platform::trash_folder_facts(&dir.join("gone")), "unreadable (errno 2)");
+}
+
 /// A batch reports the reason that opens the most doors, not the most common one:
 /// eight vanished files beside one permission refusal is still a batch where a
 /// permission grant might be the answer.
@@ -389,6 +446,7 @@ fn a_batch_reports_the_reason_that_offers_the_user_the_most() {
         path: PathBuf::from("/some/file.txt"),
         message: String::new().into(),
         reason,
+        codes: None,
         online_only: false,
     };
 
@@ -484,6 +542,7 @@ fn a_batch_ranks_the_item_level_refusals_between_permission_and_no_trash() {
         path: PathBuf::from("/some/file.txt"),
         message: String::new().into(),
         reason,
+        codes: None,
         online_only: false,
     };
 
@@ -538,9 +597,10 @@ fn a_batch_ranks_the_item_level_refusals_between_permission_and_no_trash() {
     );
 }
 
-/// The refusal's technical detail carries the `NSError` codes beside the OS's words,
-/// so a report can tell refusals with the same sentence apart. Regression anchor:
-/// ERR-KKQHK (cmdr-reports#104), whose bundle held only the sentence.
+/// The refusal carries the `NSError` codes beside the OS's words, so a report can tell
+/// refusals with the same sentence apart, and its text names them BEFORE the words, where a
+/// report's `detail=` cap can't reach. Regression anchors: ERR-KKQHK (cmdr-reports#104), whose
+/// bundle held only the sentence, and ERR-J3GAK (cmdr-reports#121), whose cap cut the codes.
 #[cfg(target_os = "macos")]
 #[test]
 fn a_refusal_names_its_error_codes() {
@@ -552,13 +612,20 @@ fn a_refusal_names_its_error_codes() {
     let result = move_to_trash_sync(&file);
     set_locked(&file, false);
 
-    let Err(MutationError::TrashRefused { detail, .. }) = result else {
+    let Err(refusal @ MutationError::TrashRefused { .. }) = result else {
         panic!("expected a refusal, got {result:?}");
     };
+    let MutationError::TrashRefused { codes, detail, .. } = &refusal else {
+        unreachable!("matched just above");
+    };
+    let codes = codes.as_deref().expect("macOS names the codes");
+    assert!(codes.starts_with("NSCocoaErrorDomain 513"), "{codes}");
     assert!(
-        detail.ends_with("]") && detail.contains("[NSCocoaErrorDomain 513"),
-        "the codes ride along: {detail}"
+        !detail.contains("NSCocoaErrorDomain"),
+        "the words stay the OS's alone: {detail}"
     );
+    let text = refusal.to_string();
+    assert!(text.find(codes) < text.find(detail.as_str()), "codes first: {text}");
 }
 
 /// A sticky folder (`/tmp`'s `+t`) refuses a move of an item someone else owns even

@@ -52,7 +52,8 @@ fn log_field(key: &str) -> cmdr_fs::log_json::JsonField {
     use cmdr_fs::log_private::LogKind;
     match key {
         // The variant tag and the typed vocabularies: fixed words, never user data.
-        "type" | "side" | "reason" | "refusal" | "filesystem" | "fate" => Words,
+        // `codes` is an OS error-domain chain (`NSCocoaErrorDomain 513 < …`): domain names and numbers.
+        "type" | "side" | "reason" | "refusal" | "filesystem" | "fate" | "codes" => Words,
         "message" => Detail,
         "volumeName" | "deviceName" => Mark(LogKind::Volume),
         "name" | "exampleName" => Mark(LogKind::Name),

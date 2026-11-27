@@ -68,6 +68,12 @@ const variantDetailFormatters: VariantDetailFormatters = {
     if (error.message) lines.push(`Details: ${error.message}`)
     return lines
   },
+  // The codes tell two refusals with the same sentence apart; the sentence is the only place
+  // the OS says which item and why, since the dialog's prose words the reason alone.
+  trash_refused: (error) => [
+    ...(error.codes ? [`Codes: ${error.codes}`] : []),
+    ...(error.message ? [`Details: ${error.message}`] : []),
+  ],
   insufficient_space: (error) => [
     `Required: ${formatByteSize(error.required)}`,
     `Available: ${formatByteSize(error.available)}`,

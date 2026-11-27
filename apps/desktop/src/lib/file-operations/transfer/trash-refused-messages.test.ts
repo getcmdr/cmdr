@@ -94,6 +94,17 @@ describe('a refused trash', () => {
     expect(refused('trashNotWritable').suggestion).toContain('Shift+F8')
   })
 
+  // The usual cause is a Trash still owned by an old account's user (a migration), which
+  // nothing in Cmdr can change, so the advice says what fixes it and where that folder is,
+  // not only how to get around it (cmdr-reports#121).
+  it('says how to repair a trash folder that takes no writes', () => {
+    onTestFinished(withPlatform('macos'))
+    const { suggestion } = refused('trashNotWritable')
+    expect(suggestion).toContain('make your user account the owner of the trash folder again')
+    expect(suggestion).toContain('the hidden .Trash folder in your home folder')
+    expect(suggestion.indexOf('owner')).toBeLessThan(suggestion.indexOf('⇧F8'))
+  })
+
   it('names the delete-permanently key in the reader’s own spelling', () => {
     onTestFinished(withPlatform('macos'))
     expect(refused('noTrashForVolume').suggestion).toContain('with ⇧F8.')

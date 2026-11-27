@@ -20,10 +20,16 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
     trash::delete(path).map_err(|e| MutationError::TrashRefused {
         reason: TrashRefusalKind::Other,
         detail: e.to_string(),
+        codes: None,
     })?;
     // The `trash` crate doesn't surface the in-trash location, so no restore
     // location is recorded (trash rollback is then unavailable on Linux).
     Ok(None)
+}
+
+/// Never reached: [`trash_dir_for_path`] names no folder here.
+pub(in super::super) fn trash_folder_facts(_trash: &Path) -> String {
+    "no trash folder to read".to_string()
 }
 
 /// Always `None`: the `trash` crate doesn't surface a trash location, and the XDG
