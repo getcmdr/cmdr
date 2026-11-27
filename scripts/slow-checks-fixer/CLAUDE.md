@@ -1,10 +1,10 @@
 # Slow-checks fixer agent
 
-A headless Claude Code run on the M1 box that picks up each red nightly "Slow checks" run on `main`. The workflow's
-`report` job opens (or comments on) one `slow-checks` issue; launchd starts `run.sh` hourly as the restricted `agents`
-user, and when that issue names a red run nobody has handled, the agent diagnoses each failing job and then reruns an
-outside blip, lands a clear fix through `pnpm land`, or writes up what needs David. A green run closes the issue
-(`.github/workflows/slow-checks.yml`).
+A headless Claude Code run on the M1 box that picks up each red nightly "Slow checks" run on `main`, and each red CodeQL
+run there. Each workflow's `report` job opens (or comments on) one issue, `slow-checks` or `codeql`, through
+`.github/actions/red-run-issue`; launchd starts `run.sh` hourly as the restricted `agents` user, and when an issue names
+a red run nobody has handled, the agent diagnoses each failing job and then reruns an outside blip, lands a clear fix
+through `pnpm land`, or writes up what needs David. A green run closes the issue.
 
 - `run.sh`: the launcher (finds the issue and run, mints the App token, claims the issue, readies a worktree with a warm
   `target/` and the failing jobs' logs, starts `claude -p` and watches the claim, removes it all after). `claim.sh`: the

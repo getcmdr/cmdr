@@ -412,48 +412,47 @@ jobs:
   # nothing (`!cancelled()`); a timed-out job reads as `failure`. Branch dispatches stay out
   # (`refs/heads/main`), since a branch's red says nothing about `main`. Each new issue is picked up
   # by the slow-checks fixer agent on the M1 (`scripts/slow-checks-fixer/CLAUDE.md`), which writes
-  # its notes into the issue body so they cost no email either.
+  # its notes into the issue body so they cost no email either. The open/comment/close logic is
+  # `.github/actions/red-run-issue`, shared with `codeql.yml`.
   report:
     name: Open or close the red-run issue
     needs: [dependency-checks, fuzz, miri, property-mutants, pre-release, website-docker, smb-soak]
     if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # A job-level block replaces the workflow-level one, so it restates the reads it needs.
     permissions:
+      contents: read # check out the shared action
       issues: write # open, comment on, and close the `slow-checks` issue
 
     steps:
+      - name: Checkout the red-run action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/red-run-issue
+
+      - name: List the failing jobs
+        id: failed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed=$(jq -r 'to_entries[] | select(.value.result == "failure") | "- `\(.key)`"' <<<"$NEEDS")
+          if [[ -n "$failed" ]]; then
+            printf 'list<<EOF\nFailing jobs:\n%s\nEOF\n' "$failed" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Open, update, or close the issue
+        uses: ./.github/actions/red-run-issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          NEEDS: ${{ toJSON(needs) }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          failed=$(jq -r 'to_entries[] | select(.value.result == "failure") | "- `\(.key)`"' <<<"$NEEDS")
-          open=$(gh issue list --label slow-checks --state open --limit 1 --json number --jq '.[0].number // empty')
-          if [[ -n "$failed" ]]; then
-            body="Slow checks went red on \`main\`: $RUN_URL
-
-          Failing jobs:
-          $failed
-
-          Read the failing step's log, fix the cause, and land it. The next fully green run closes this issue."
-            if [[ -n "$open" ]]; then
-              gh issue comment "$open" --body "$body"
-              echo "Commented on #$open."
-            else
-              gh issue create --title "Slow checks are red on main" --label bug,claude-created,slow-checks --body "$body"
-            fi
-          elif [[ -n "$open" ]]; then
-            # The green run's link goes into the body, not a comment: a body edit emails nobody, and a
-            # close with `--comment` sent two emails at once on top of the close itself.
-            body=$(gh issue view "$open" --json body --jq .body)
-            gh issue edit "$open" --body "$body
-
-          Every slow-checks job passed: $RUN_URL"
-            gh issue close "$open" --reason completed
-            echo "Closed #$open."
-          else
-            echo "Green, and no issue is open."
-          fi
+        with:
+          label: slow-checks
+          title: Slow checks are red on main
+          what: Slow checks
+          findings: ${{ steps.failed.outputs.list }}
+          instructions:
+            Read the failing step's log, fix the cause, and land it. The next fully green run closes this issue.
+          green-note: 'Every slow-checks job passed:'
+          repeat: comment

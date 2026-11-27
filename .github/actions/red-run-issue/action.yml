@@ -1,0 +1,94 @@
+name: Red-run issue
+description: >-
+  Opens one issue when a workflow goes red on `main` (or comments on the open one), and closes it on a green run, so the
+  issue's state is the workflow's. The slow-checks fixer on the M1 picks each red run up from it
+  (`scripts/slow-checks-fixer/CLAUDE.md`). The caller's job needs `issues: write` and passes `GH_TOKEN` and `GH_REPO`.
+
+inputs:
+  label:
+    description: The one label that marks this workflow's issue (the fixer looks it up by it).
+    required: true
+  title:
+    description: The issue's title.
+    required: true
+  what:
+    description: What went red, as the body's first words ("Slow checks", "CodeQL").
+    required: true
+  findings:
+    description: >-
+      Markdown lines saying what's red (failing jobs, blocking alerts). Empty means green.
+    required: false
+    default: ''
+  instructions:
+    description: The body's last paragraph on a red run, telling whoever picks it up what to do.
+    required: true
+  green-note:
+    description: The line added to the body when a green run closes the issue.
+    required: true
+  repeat:
+    description: >-
+      What a red run does while the issue is open. `comment` comments every time (a nightly workflow: one email a day,
+      and each red night is a new run for the fixer). `when-changed` comments only when `findings` differ from the last
+      report (a workflow that runs on every push, where an unchanged red would email on each one).
+    required: false
+    default: comment
+
+runs:
+  using: composite
+  steps:
+    - name: Open, update, or close the issue
+      shell: bash
+      env:
+        LABEL: ${{ inputs.label }}
+        TITLE: ${{ inputs.title }}
+        WHAT: ${{ inputs.what }}
+        FINDINGS: ${{ inputs.findings }}
+        INSTRUCTIONS: ${{ inputs.instructions }}
+        GREEN_NOTE: ${{ inputs.green-note }}
+        REPEAT: ${{ inputs.repeat }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+        # Only an issue the workflow itself opened: anyone with triage rights can add a label.
+        open=$(gh issue list --label "$LABEL" --state open --author app/github-actions --limit 1 --json number \
+          --jq '.[0].number // empty')
+        if [[ -n "$FINDINGS" ]]; then
+          # A hidden digest of the findings, so a repeat can tell whether anything changed. The fixer finds each red
+          # run by its "went red" link, so the wording of the first line stays.
+          digest=$(printf '%s' "$FINDINGS" | sha256sum | cut -c1-16)
+          body="$WHAT went red on \`main\`: $RUN_URL
+
+        $FINDINGS
+
+        $INSTRUCTIONS
+
+        <!-- findings: $digest -->"
+          if [[ -z "$open" ]]; then
+            gh issue create --title "$TITLE" --label "bug,claude-created,$LABEL" --body "$body"
+            exit 0
+          fi
+          if [[ "$REPEAT" == "when-changed" ]]; then
+            # The newest digest the workflow wrote, in the body or its own comments (nobody else's: the repo is public).
+            last=$( { gh issue view "$open" --json body --jq .body
+              gh api --paginate "repos/{owner}/{repo}/issues/$open/comments" \
+                --jq '.[] | select(.user.login == "github-actions[bot]") | .body'; } |
+              sed -n 's/.*<!-- findings: \([0-9a-f]*\) -->.*/\1/p' | tail -1)
+            if [[ "$last" == "$digest" ]]; then
+              echo "Still red with the same findings as #$open reports; no comment."
+              exit 0
+            fi
+          fi
+          gh issue comment "$open" --body "$body"
+          echo "Commented on #$open."
+        elif [[ -n "$open" ]]; then
+          # The green run's link goes into the body, not a comment: a body edit emails nobody, and a close with
+          # `--comment` sent two emails at once on top of the close itself.
+          body=$(gh issue view "$open" --json body --jq .body)
+          gh issue edit "$open" --body "$body
+
+        $GREEN_NOTE $RUN_URL"
+          gh issue close "$open" --reason completed
+          echo "Closed #$open."
+        else
+          echo "Green, and no issue is open."
+        fi

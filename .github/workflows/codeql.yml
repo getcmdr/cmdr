@@ -10,8 +10,9 @@ name: CodeQL
 # with the CodeQL 2.27.1 CLI on an M-series Mac, 2026-10-08; 12–20 min on a runner), so it never
 # runs on a PR, and a push to `main` analyzes it only when Rust sources changed. The weekly run and
 # a manual dispatch always cover all three, which also picks up new queries from CodeQL releases. A
-# Rust finding therefore surfaces after landing, and the release gate's open-alert check holds the
-# next release until it's fixed or accepted.
+# Rust finding therefore surfaces after landing: the `report` job files a `codeql` issue that the
+# slow-checks fixer picks up, and the release gate's open-alert check holds the next release until
+# it's fixed or accepted.
 #
 # PRs run it so OpenSSF Scorecard's SAST check sees CodeQL on every merged PR (Renovate's included);
 # Scorecard checks that CodeQL ran, not which languages. `workflows-hardening` fails if the trigger
@@ -144,3 +145,73 @@ jobs:
         run: |
           echo "::error::CodeQL found high or critical issues; the step above lists them."
           exit 1
+
+  # A red run on `main` opens one issue labeled `codeql` (or comments on the open one) listing the
+  # open high and critical alerts, and the slow-checks fixer on the M1 picks it up
+  # (`scripts/slow-checks-fixer/CLAUDE.md`). Without it a Rust finding sat red on `main` for four
+  # days (2026-11-23 to 2026-11-27), seen only by the release gate. Pushes run this many times a
+  # day, so a repeat comments only when the alert list changes (`repeat: when-changed`). It closes
+  # only on a green run with no such alert open on `main`, the release gate's own rule: a push that
+  # skipped Rust is green without saying anything about Rust's open alerts. PR runs and branch
+  # dispatches stay out (`refs/heads/main`); a cancelled run says nothing.
+  report:
+    name: Open or close the red-run issue
+    needs: analyze
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # A job-level block replaces the workflow-level one, so it restates the reads it needs.
+    permissions:
+      contents: read # check out the shared action
+      security-events: read # list the open code-scanning alerts
+      issues: write # open, comment on, and close the `codeql` issue
+
+    steps:
+      - name: Checkout the red-run action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/actions/red-run-issue
+
+      # `act=report` passes findings on; `act=close` passes none, so the action closes the issue;
+      # `act=wait` (green, but an older Rust analysis's alerts are still open) does nothing.
+      - name: List the blocking alerts
+        id: alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.analyze.result }}
+        run: |
+          alerts=$(gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/code-scanning/alerts?tool_name=CodeQL&state=open&ref=refs/heads/main&per_page=100" \
+            --jq '.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical" or .rule.severity == "error")
+                  | "- [#\(.number)](\(.html_url)) `\(.rule.id)` at `\(.most_recent_instance.location.path):\(.most_recent_instance.location.start_line)`"' |
+            sort)
+          if [[ "$RESULT" == "failure" ]]; then
+            [[ -n "$alerts" ]] || alerts="- No open alert: the analysis itself failed. Read the run's log."
+            echo act=report >> "$GITHUB_OUTPUT"
+            printf 'list<<EOF\nOpen high or critical alerts on `main`:\n%s\nEOF\n' "$alerts" >> "$GITHUB_OUTPUT"
+          elif [[ "$RESULT" == "success" && -z "$alerts" ]]; then
+            echo act=close >> "$GITHUB_OUTPUT"
+          else
+            echo act=wait >> "$GITHUB_OUTPUT"
+            echo "Analyze ended '$RESULT' with these alerts open; leaving the issue as it is:"
+            echo "$alerts"
+          fi
+
+      - name: Open, update, or close the issue
+        if: steps.alerts.outputs.act != 'wait'
+        uses: ./.github/actions/red-run-issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        with:
+          label: codeql
+          title: CodeQL is red on main
+          what: CodeQL
+          findings: ${{ steps.alerts.outputs.list }}
+          instructions:
+            Fix each real finding in code. A false positive goes in `.github/codeql/accepted-findings.json` with a
+            reason a reviewer can check, which David approves. The next green run with no such alert open closes this
+            issue.
+          green-note: 'CodeQL passed with no high or critical alert open on `main`:'
+          repeat: when-changed
