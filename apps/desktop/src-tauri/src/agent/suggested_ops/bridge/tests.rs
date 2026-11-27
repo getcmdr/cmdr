@@ -27,11 +27,14 @@ use cmdr_operations::{
 
 /// A scratch path as the proposal store holds it: app text (`C:/…` on Windows), as the
 /// drive index hands the agent a path, ❌ never the native `C:\…` spelling, which the
-/// approval's command edge refuses.
+/// approval's command edge refuses. Its TEXT (`to_text`), ❌ never `into_string`: while escapes
+/// aren't live that spells an escape-range name as escapes the store reads back as another file.
 fn stored_text(path: &std::path::Path) -> String {
     AppPathBuf::from_native(path)
         .expect("a scratch path is an app path")
-        .into_string()
+        .to_text()
+        .expect("a Unicode scratch path has text")
+        .into_owned()
 }
 
 /// A trash group over two sources on a real file DB, plus a second connection for the
@@ -437,43 +440,40 @@ async fn one_present_file_leaves_something_to_run() {
     assert_eq!(preflight.nothing_left(), None);
 }
 
-/// #1524's item-4 twin, and the tripwire for escapes going live: preflight stats the path the
-/// review's live facts stat (the app path's native crossing). A name holding an escape-range code
-/// point is where the stored text and that crossing could part: while escapes aren't live
-/// (`ESCAPES_LIVE`) the text keeps it literally and the two agree. Once they go live, this fails
-/// until `stored_spellings` crosses through the bridge.
+/// #1524's item-4 twin: preflight stats the path the review's live facts stat, the stored text
+/// decoded through the app path (`wire_path::read_on_volume`, then the engine's own crossing),
+/// ❌ never the text as a `PathBuf`. The cases are where the two could part: a name holding an
+/// escape-range code point (stored literally while escapes aren't live, as escapes once they
+/// are: `stored_text` writes the text either way), and a trailing `/`, which the app path drops
+/// and a stat of a file refuses.
 #[cfg(unix)]
 #[tokio::test]
-async fn preflight_finds_a_file_whose_name_holds_an_escape_range_code_point() {
+async fn preflight_stats_the_path_the_live_facts_stat() {
     let dir = TestDir::new("bridge_escape_range_name");
     let odd = char::from_u32(0x10_FEFF).expect("a scalar value");
     let file = dir.join(format!("caf{odd}.txt"));
     std::fs::write(&file, b"here").expect("seed");
-    // As the drive index lists it: the name's own text.
-    let stored = file.to_str().expect("a UTF-8 scratch path").to_string();
-    let typed = crate::commands::wire_path::start_paths([stored.as_str()]).expect("an app path");
-    let op = ProposalOp {
-        id: 1,
-        group_id: 1,
-        seq: 0,
-        source_path: stored,
-        destination: None,
-        status: OpStatus::Pending,
-        snapshot_size: None,
-        snapshot_mtime: None,
-        snapshot_inode: None,
-    };
-
-    let spelled = super::stored_spellings(std::slice::from_ref(&op));
     let volume = cmdr_local::LocalVolume::local_folder("Root", "/", crate::volume_host::host());
-    let preflight = super::capture_expected_sources(&volume, &spelled).await;
 
-    assert_eq!(
-        spelled[0],
-        typed[0].to_native().expect("a local path"),
-        "the spelling the volume opens"
-    );
-    assert_eq!(preflight.nothing_left(), None, "the file is there, so it's bound");
+    for stored in [stored_text(&file), format!("{}/", stored_text(&file))] {
+        let live = crate::commands::wire_path::read_on_volume(&stored).expect("the live facts' app path");
+        let typed = crate::commands::wire_path::start_paths([stored.as_str()]).expect("the start's app path");
+
+        let spelled = super::stored_spellings(&typed);
+        let preflight = super::capture_expected_sources(&volume, &spelled).await;
+
+        assert_eq!(
+            spelled[0],
+            live.to_native().expect("a local path"),
+            "{stored:?}: the file the live facts stat"
+        );
+        assert_eq!(spelled[0], file, "{stored:?}: the file on disk");
+        assert_eq!(
+            preflight.nothing_left(),
+            None,
+            "{stored:?}: the file is there, so it's bound"
+        );
+    }
 }
 
 /// Registers the local-FS "root" volume the bridge resolves a group's sources through, rooted
@@ -894,13 +894,16 @@ async fn a_rename_the_review_started_settles_its_group_and_its_thread_line() {
     )
     .expect("preflight");
     let ops = page_ops(&conn, group_id, 10, 0).expect("ops");
-    let sources = super::stored_spellings(&ops);
+    let typed =
+        crate::commands::wire_path::start_paths(ops.iter().map(|op| op.source_path.as_str())).expect("app paths");
+    let sources = super::stored_spellings(&typed);
     let volume = crate::file_system::volume::manager::get_volume_manager()
         .get("root")
         .expect("root volume");
     let expected = super::capture_expected_sources(volume.as_ref(), &sources)
         .await
         .expected;
+    let parent = crate::commands::wire_path::start_path(&parent).expect("the parent's app path");
     let rows = super::rename_rows(&parent, &ops, &sources, &expected).expect("rows");
     let ClaimOutcome::Claimed(claimed) = crate::agent::suggested_ops::approve(&conn, group_id, 200).expect("approve")
     else {

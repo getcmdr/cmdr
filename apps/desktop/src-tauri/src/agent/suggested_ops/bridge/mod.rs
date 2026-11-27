@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cmdr_fs::app_path::AppPathBuf;
+use cmdr_fs::app_path::{AppPath, AppPathBuf};
 
 use rusqlite::Connection;
 
@@ -147,7 +147,7 @@ pub async fn approve_and_execute(
         .filter_map(|op| Some((decorator::op_key(&op.source_path)?, op.id)))
         .collect();
     // The starts take app paths; the binding (`ExpectedSources`) keys the engine's own
-    // `std::path` spelling of each, the stored text as it always was.
+    // `std::path` spelling of each ([`stored_spellings`]).
     let typed_sources = match crate::commands::wire_path::start_paths(ops.iter().map(|op| op.source_path.as_str())) {
         Ok(typed) => typed,
         Err(refused) => {
@@ -156,7 +156,7 @@ pub async fn approve_and_execute(
             )));
         }
     };
-    let sources = stored_spellings(&ops);
+    let sources = stored_spellings(&typed_sources);
 
     let volume_id = source_volume_of(conn, group_id)?;
     // Before `install` no source volume resolves, and the start refusal says why.
@@ -468,7 +468,7 @@ async fn start_for(
                 .destination
                 .clone()
                 .ok_or(ApprovalRefusal::TargetMissing { verb: group.verb })?;
-            let rows = rename_rows(parent.as_str(), ops, spellings, &expected)?;
+            let rows = rename_rows(&parent, ops, spellings, &expected)?;
             // Routed: where a rename copies (an S3 folder), the batch runs as one move.
             engine
                 .start_renames(events, group.source_volume_id.clone(), rows, Initiator::Agent)
@@ -492,12 +492,13 @@ async fn start_for(
 /// the same answer the binding gives every other verb: an unreadable source is not the source
 /// anybody reviewed.
 fn rename_rows(
-    parent: &str,
+    parent: &AppPath,
     ops: &[ProposalOp],
     sources: &[PathBuf],
     expected: &ExpectedSources,
 ) -> Result<Vec<BulkRenameRow>, ApprovalRefusal> {
-    let parent = PathBuf::from(parent);
+    // Crossed as the sources are, so a row's source and destination parents agree.
+    let parent = engine_spelling(parent);
     let mut rows = Vec::with_capacity(ops.len());
     for (op, source) in ops.iter().zip(sources) {
         let Some(new_name) = op.destination.as_deref() else {
@@ -546,14 +547,20 @@ fn transfer_names(ops: &[ProposalOp], sources: &[PathBuf], expected: &ExpectedSo
 /// the binding keys by, and what the rename rows and transfer names carry. The ONE place it's
 /// derived, so every key agrees.
 ///
-/// ⚠️ The stored text, which is the engine's own spelling (`AppPath::as_std_legacy`) and the path
-/// the review's live facts stat while escapes aren't live (`ESCAPES_LIVE`): a stored name keeps an
-/// escape-range code point literally, so the two can't part
-/// (`tests.rs::preflight_finds_a_file_whose_name_holds_an_escape_range_code_point`). Once escapes
-/// go live (plan milestone 10f) an escaped name decodes to native bytes there and this must cross
-/// through the bridge instead, or approval calls a present file gone.
-fn stored_spellings(ops: &[ProposalOp]) -> Vec<PathBuf> {
-    ops.iter().map(|op| PathBuf::from(&op.source_path)).collect()
+/// `typed` are the start paths, read from the stored text through the door the review's live
+/// facts read it through (`wire_path::read_on_volume`), and each crosses as the engine's starts
+/// cross it ([`engine_spelling`]), so preflight stats the very file the review showed and the
+/// engine looks its binding up by the same key. ❌ Never the stored text as a `PathBuf`: it keeps a
+/// trailing `/` the app path drops (a file's stat refuses it), and once escapes go live it holds
+/// escapes only the crossing decodes to the name's bytes
+/// (`tests.rs::preflight_stats_the_path_the_live_facts_stat`).
+fn stored_spellings(typed: &[AppPathBuf]) -> Vec<PathBuf> {
+    typed.iter().map(|path| engine_spelling(path)).collect()
+}
+
+/// `path` as the engine's starts cross it to `std::path` (its sources and a rename's parent).
+fn engine_spelling(path: &AppPath) -> PathBuf {
+    path.as_std_legacy().into_owned()
 }
 
 /// A group's live ops beside what preflight made of them: each source's spelling (one per op, in
