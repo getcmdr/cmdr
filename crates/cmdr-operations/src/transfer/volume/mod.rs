@@ -235,6 +235,9 @@ mod copy_hold_tests;
 /// A selected local link copied to another volume lands as what it points at.
 #[cfg(test)]
 mod copy_selected_link_tests;
+/// A folder tree of any depth copies and moves on a copy worker's stack (#1541).
+#[cfg(test)]
+mod deep_tree_tests;
 /// The same rule on a backend whose listings never mark a link (Samba, #613).
 #[cfg(test)]
 mod hidden_link_backend_tests;
@@ -242,17 +245,20 @@ mod hidden_link_backend_tests;
 /// lands outside the destination.
 #[cfg(test)]
 mod hostile_names_tests;
-/// The same rule on a backend whose `is_directory` follows a link (ADB, SFTP).
 mod link_cycle;
 /// A followed link never leads the copy back into a folder it's already in (ERR-BGEKC).
 #[cfg(test)]
 mod link_cycle_tests;
+/// The same rule on a backend whose `is_directory` follows a link (ADB, SFTP).
 #[cfg(test)]
 mod link_following_backend_tests;
 /// What each walker does with a listing row's own path: a `..` row is refused, a name
 /// holding `\` is one name.
 #[cfg(test)]
 mod listed_row_tests;
+/// What the merge walk does across levels, call by call (#1541).
+#[cfg(test)]
+mod merge_walk_tests;
 /// A same-volume move's top-level hints read each source in its own folder.
 #[cfg(test)]
 mod preflight_hints_tests;
