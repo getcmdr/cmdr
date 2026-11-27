@@ -188,7 +188,11 @@ impl SmbVolume {
     pub(super) async fn get_metadata_impl(&self, path: &AppPath) -> Result<FileEntry, VolumeError> {
         let smb_path = self.to_smb_path(path)?;
 
-        debug!(
+        // Trace, not debug: every stat passes here (each watcher event, each
+        // copy probe), and at debug one NAS copy wrote 19,665 of these (10 MB) in
+        // six minutes (ERR-BGEKC). This line only echoes the call's input; what
+        // the call answered logs on its own terms.
+        trace!(
             "SmbVolume::get_metadata: share={:?}, input={:?}, smb_path={:?}",
             LogPrivate::volume(&self.inner.share_name),
             LogPrivate::path(path.as_str()),

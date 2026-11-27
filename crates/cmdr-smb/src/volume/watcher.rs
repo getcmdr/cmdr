@@ -143,6 +143,32 @@ async fn maybe_refresh_archive_listings(host: &VolumeHost, volume_id: &str, arch
     }
 }
 
+/// The changes in one batch whose follow-up stat found nothing, for the one log
+/// line the batch owes them.
+///
+/// Mostly a copy's own staging temps: a copy onto the share writes each file to
+/// a `.cmdr-tmp-*` name and renames it in, so by the time the watcher stats the
+/// temp's `Added` or `Modified` event it's gone. Logged one line per file, a NAS
+/// copy wrote 10,895 of them (3.5 MB) in six minutes and rotated the copy's own
+/// lines out of an error report (ERR-BGEKC).
+// DEFAULT-OK: nothing missed yet is what a batch that hasn't statted anything missed.
+#[derive(Debug, Default)]
+pub(super) struct StatMisses {
+    /// How many stats found nothing.
+    pub(super) count: usize,
+    /// The first one, as an example worth a look.
+    pub(super) first: Option<PathBuf>,
+}
+
+impl StatMisses {
+    fn note(&mut self, path: &Path) {
+        self.count += 1;
+        if self.first.is_none() {
+            self.first = Some(path.to_path_buf());
+        }
+    }
+}
+
 /// Processes a batch of collected events per directory into `DirectoryChange` notifications.
 async fn process_event_batch(
     host: &VolumeHost,
@@ -151,21 +177,30 @@ async fn process_event_batch(
     share: &SelfHandle<SmbVolumeInner>,
     anchor: &MountAnchor,
 ) {
-    process_event_batch_with(host, events_by_dir, volume_id, anchor, |path| async move {
+    let misses = process_event_batch_with(host, events_by_dir, volume_id, anchor, |path| async move {
         stat_via_share(share, &path).await
     })
     .await;
+    if let Some(first) = &misses.first {
+        debug!(
+            "smb_watcher: skipped {} change(s) gone before their stat (a copy's staging temps, mostly), first path={:?}",
+            misses.count,
+            LogPrivate::path(first)
+        );
+    }
 }
 
 /// [`process_event_batch`] with the follow-up `stat` injected, so a test can
-/// stand in for a server that holds one.
+/// stand in for a server that holds one. Hands back what the stats missed, for
+/// the caller's one log line.
 async fn process_event_batch_with<Stat, StatFuture>(
     host: &VolumeHost,
     events_by_dir: HashMap<PathBuf, Vec<(FileNotifyAction, String)>>,
     volume_id: &str,
     anchor: &MountAnchor,
     stat: Stat,
-) where
+) -> StatMisses
+where
     Stat: Fn(PathBuf) -> StatFuture,
     StatFuture: Future<Output = Option<FileEntry>>,
 {
@@ -193,6 +228,7 @@ async fn process_event_batch_with<Stat, StatFuture>(
     // One seam call per event, never per directory ENTRY: a batch past
     // `WATCHER_BATCH_THRESHOLD` collapses to a single `FullRefresh`.
     let listings = host.listings();
+    let mut misses = StatMisses::default();
     for (parent_path, events) in &events_by_dir {
         if events.len() > WATCHER_BATCH_THRESHOLD {
             debug!(
@@ -221,12 +257,7 @@ async fn process_event_batch_with<Stat, StatFuture>(
                         Some(entry) => {
                             listings.directory_changed(volume_id, parent_path, DirectoryChange::Added(entry));
                         }
-                        None => {
-                            debug!(
-                                "smb_watcher: couldn't stat added file path={:?}, skipping",
-                                LogPrivate::path(&entry_path)
-                            );
-                        }
+                        None => misses.note(&entry_path),
                     }
                 }
                 FileNotifyAction::Removed => {
@@ -240,12 +271,7 @@ async fn process_event_batch_with<Stat, StatFuture>(
                         Some(entry) => {
                             listings.directory_changed(volume_id, parent_path, DirectoryChange::Modified(entry));
                         }
-                        None => {
-                            debug!(
-                                "smb_watcher: couldn't stat modified file path={:?}, skipping",
-                                LogPrivate::path(&entry_path)
-                            );
-                        }
+                        None => misses.note(&entry_path),
                     }
                     // An in-place rewrite of the backing `.zip` also refreshes any
                     // open archive-inner listing (independent of the stat above,
@@ -305,6 +331,7 @@ async fn process_event_batch_with<Stat, StatFuture>(
             listings.row_xattrs_may_have_changed(volume_id, parent_path, retagged);
         }
     }
+    misses
 }
 
 /// Runs the SMB change watcher on a dedicated smb2 session.
@@ -686,6 +713,9 @@ mod archive_refresh_test;
 
 #[cfg(test)]
 mod stat_concurrency_test;
+
+#[cfg(test)]
+mod stat_misses_test;
 
 #[cfg(test)]
 mod readdress_test {

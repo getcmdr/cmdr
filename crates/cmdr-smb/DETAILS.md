@@ -1588,6 +1588,13 @@ exactly as before (a removal keeps its place between two slow additions). ❗ Th
 same order, one `stat_for` per `needs_stat` event whose path is under the anchor); change one and change the other.
 Pinned by `watcher/stat_concurrency_test.rs`.
 
+**Decision**: A batch's stats that find nothing log ONE line per batch (`StatMisses`: the count and the first path), ❌
+never one per file, and `get_metadata`'s input echo is `trace`. **Why**: a copy onto the share stages each file on a
+`.cmdr-tmp-*` name and renames it in, so most `Added`/`Modified` events name a temp that's gone by its stat. Per file,
+one NAS copy wrote 10,895 "couldn't stat" lines plus 19,665 `get_metadata` echoes (about 14 MB of a 17 MB log) in six
+minutes, and rotated the copy's own lines out of ERR-BGEKC's bundle. Batches debounce at 200 ms, so a copy now costs a
+few lines a second at most. Pinned by `watcher/stat_misses_test.rs`.
+
 **Decision**: Watcher task is not stored on `SmbVolume`, only the cancel sender is **Why**: The spawned task owns its
 own `Watcher` and `SmbClient`. Storing them on the struct alongside the cancel sender would just duplicate ownership
 without buying anything — `watcher.next_events()` is `&mut self`, so the task is the only thing that can drive it
