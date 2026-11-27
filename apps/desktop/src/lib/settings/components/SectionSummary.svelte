@@ -35,7 +35,7 @@
         'Ask Cmdr': 'settings.summary.askCmdr',
         'MCP server': 'settings.summary.mcpServer',
         'SMB/Network shares': 'settings.summary.smbNetworkShares',
-        'Servers (SFTP, WebDAV)': 'settings.summary.servers',
+        'Servers (SFTP, WebDAV, NFS, S3)': 'settings.summary.servers',
         'MTP (Android/Kindle/cameras)': 'settings.summary.mtp',
         'Android (ADB)': 'settings.summary.adb',
         Git: 'settings.summary.git',

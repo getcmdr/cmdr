@@ -1,6 +1,6 @@
 <script lang="ts">
     /**
-     * `File systems > Servers (SFTP, WebDAV)`: the Behavior card (`..` in a server's top
+     * `File systems > Servers (SFTP, WebDAV, NFS, S3)`: the Behavior card (`..` in a server's top
      * folder), then three cards: the SSH host keys and the server certificates this Mac
      * has trusted, and the other servers a person let SMB links sign in to, each with a
      * Forget button.

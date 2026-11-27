@@ -796,7 +796,7 @@ function fileSystemsSubsections(): string[] {
   return (fileSystems?.subsections ?? []).map((section) => section.name)
 }
 
-describe('File systems > Servers (SFTP, WebDAV)', () => {
+describe('File systems > Servers (SFTP, WebDAV, NFS, S3)', () => {
   /**
    * The page's one control is `..` in a server's top folder; the rest is the
    * trusted-host-key, certificate, and link lists, which are rows, not settings.
@@ -804,12 +804,12 @@ describe('File systems > Servers (SFTP, WebDAV)', () => {
   it('reaches the sidebar through its one setting, right after SMB', () => {
     expect(
       settingsRegistry
-        .filter((setting) => setting.section[1] === 'Servers (SFTP, WebDAV)')
+        .filter((setting) => setting.section[1] === 'Servers (SFTP, WebDAV, NFS, S3)')
         .map((setting) => setting.id),
     ).toEqual(['network.showServerParentRow'])
 
     const subsections = fileSystemsSubsections()
-    expect(subsections.indexOf('Servers (SFTP, WebDAV)')).toBe(subsections.indexOf('SMB/Network shares') + 1)
+    expect(subsections.indexOf('Servers (SFTP, WebDAV, NFS, S3)')).toBe(subsections.indexOf('SMB/Network shares') + 1)
   })
 
   it('is a search hit, so looking for a host key opens the page', () => {
@@ -875,7 +875,7 @@ describe('File systems > Android (ADB)', () => {
   it('puts the network pages together and the phone pages together', () => {
     expect(fileSystemsSubsections()).toEqual([
       'SMB/Network shares',
-      'Servers (SFTP, WebDAV)',
+      'Servers (SFTP, WebDAV, NFS, S3)',
       'MTP (Android/Kindle/cameras)',
       'Android (ADB)',
       'Git',

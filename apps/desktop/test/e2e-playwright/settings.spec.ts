@@ -74,7 +74,7 @@ test.describe('Settings page', () => {
       'MCP server',
       'File systems',
       'SMB/Network shares',
-      'Servers (SFTP, WebDAV)',
+      'Servers (SFTP, WebDAV, NFS, S3)',
       'MTP (Android/Kindle/cameras)',
       'Android (ADB)',
       'Git',

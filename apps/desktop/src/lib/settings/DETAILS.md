@@ -642,9 +642,9 @@ renders one puts its id in the card's `anyVisible(...)` guard exactly like a set
 **Decision / why: a page with no control is anchored by one of its ROWS.** A page that renders only lists (a Forget
 button per row) and no setting at all has nothing in the registry to put it in the sidebar. The row that describes such
 a list says `anchorsSection` instead, and `buildSectionTree` creates the node for it. No page needs it today:
-`File systems > Servers (SFTP, WebDAV)`, the one that did, carries `network.showServerParentRow`. See § "Searchable
-rows" below for the field. ❌ Don't reach for it when the page HAS a control: that control's `section` already carries
-the page, and a second source of the node is how two disagree.
+`File systems > Servers (SFTP, WebDAV, NFS, S3)`, the one that did, carries `network.showServerParentRow`. See §
+"Searchable rows" below for the field. ❌ Don't reach for it when the page HAS a control: that control's `section`
+already carries the page, and a second source of the node is how two disagree.
 
 **Decision / why: "subsection" stays the level-2 nav term.** The card axis is named `cardKey` (not `subsection`),
 because `subsection` already means the level-2 nav entry (`SettingsSection.subsections`, the page you click). The
