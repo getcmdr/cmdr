@@ -87,6 +87,7 @@ import {
   setupMouseNavListener,
   setupWindowFocusListener,
 } from './listener-setup'
+import { startGestureCopyGuard } from './gesture-copy-guard'
 import { startMenuOperationGate } from './menu-operation-gate.svelte'
 import { startMenuDialogGate } from './menu-dialog-gate.svelte'
 import { setupMcpListeners } from './mcp-listeners'
@@ -281,6 +282,17 @@ export async function startWindowServices(scope: MountScope, ctx: WindowServices
       await startLockedSourcesHost()
     },
     () => setupWindowFocusListener(listenerCtx),
+    // Notes double-clicks and window drags, so a selection utility's synthetic ⌘C right after
+    // one doesn't copy files (`gesture-copy-guard.ts`).
+    async (s) => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      s.add(
+        await startGestureCopyGuard({
+          target: window,
+          onWindowMoved: (onMoved) => getCurrentWindow().onMoved(onMoved),
+        }),
+      )
+    },
     // Native Quick Look (macOS) event wiring: `quick-look-closed` flips `isOpen` on the state
     // singleton; `quick-look-key` routes panel keystrokes back into the focused pane, and the
     // Quick Look key down the keyboard road (a panel keypress is a keypress).
