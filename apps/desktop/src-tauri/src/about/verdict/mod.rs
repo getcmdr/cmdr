@@ -322,6 +322,7 @@ fn problem_of(error: &AgentLlmError) -> VerdictProblem {
         AgentLlmError::NotConfigured
         | AgentLlmError::RequestTooLarge(_)
         | AgentLlmError::BudgetExhausted
+        | AgentLlmError::NotAnAiApi(_)
         | AgentLlmError::Provider(_) => VerdictProblem::Other,
     }
 }

@@ -185,6 +185,10 @@ pub enum AgentErrorKind {
     RepeatedToolCall,
     /// The reply stream ended before completing (a provider drop or a crash mid-stream).
     UnfinishedReply,
+    /// Something at the endpoint answered, but not an AI API (a web page, plain text): the base
+    /// URL points at a website or a sign-in page, so every send gets the same answer until the
+    /// endpoint changes.
+    NotAnAiApi,
     /// Any other provider-side problem; detail is logged, never carried in the type.
     Provider,
     /// The organization's managed policy refused a request mid-turn (the LLM client's backstop).
@@ -210,6 +214,7 @@ impl AgentErrorKind {
             AgentErrorKind::BudgetExhausted => "budget_exhausted",
             AgentErrorKind::RepeatedToolCall => "repeated_tool_call",
             AgentErrorKind::UnfinishedReply => "unfinished_reply",
+            AgentErrorKind::NotAnAiApi => "not_an_ai_api",
             AgentErrorKind::Provider => "provider",
             AgentErrorKind::ManagedByOrganization(_) => "managed_by_organization",
         }
@@ -239,6 +244,7 @@ impl From<crate::agent::llm::types::AgentLlmError> for AgentErrorKind {
             AgentLlmError::RequestTooLarge(_) => AgentErrorKind::RequestTooLarge,
             AgentLlmError::Overloaded { .. } => AgentErrorKind::ProviderBusy,
             AgentLlmError::BudgetExhausted => AgentErrorKind::BudgetExhausted,
+            AgentLlmError::NotAnAiApi(_) => AgentErrorKind::NotAnAiApi,
             AgentLlmError::Provider(_) => AgentErrorKind::Provider,
             AgentLlmError::Managed(refusal) => AgentErrorKind::ManagedByOrganization(refusal),
         }

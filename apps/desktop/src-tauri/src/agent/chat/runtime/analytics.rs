@@ -392,6 +392,7 @@ mod tests {
             AgentErrorKind::BudgetExhausted,
             AgentErrorKind::RepeatedToolCall,
             AgentErrorKind::UnfinishedReply,
+            AgentErrorKind::NotAnAiApi,
             AgentErrorKind::Provider,
         ] {
             let view: AgentErrorKindView = kind.into();
@@ -431,6 +432,7 @@ mod tests {
             AgentErrorKind::ProviderBusy,
             AgentErrorKind::BudgetExhausted,
             AgentErrorKind::UnfinishedReply,
+            AgentErrorKind::NotAnAiApi,
             AgentErrorKind::Provider,
         ];
         let tokens: std::collections::BTreeSet<&str> = kinds.iter().map(|k| k.as_token()).collect();

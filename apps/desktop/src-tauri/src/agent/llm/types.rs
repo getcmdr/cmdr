@@ -551,6 +551,10 @@ pub enum AgentLlmError {
     },
     /// A per-message budget (tool turns / wall time / tokens) was exhausted.
     BudgetExhausted,
+    /// Something at the endpoint answered, but not an AI API (a web page, plain text): the base
+    /// URL points at a website or a sign-in page. The string is the technical line
+    /// (`HTTP 200, text/html`), for display only.
+    NotAnAiApi(String),
     /// Any other provider-side failure; the string is for display only.
     Provider(String),
     /// The organization's managed policy refused the request: the LLM client's per-request
@@ -569,6 +573,7 @@ impl AgentLlmError {
             | Self::ModelNotInPlan(detail)
             | Self::RequestTooLarge(detail)
             | Self::Overloaded { detail, .. }
+            | Self::NotAnAiApi(detail)
             | Self::Provider(detail) => Some(detail),
             _ => None,
         }
@@ -588,6 +593,7 @@ impl std::fmt::Display for AgentLlmError {
             Self::RequestTooLarge(detail) => write!(f, "the AI provider won't take a request this big: {detail}"),
             Self::Overloaded { detail, .. } => write!(f, "the AI provider is overloaded right now: {detail}"),
             Self::BudgetExhausted => write!(f, "the message budget was exhausted"),
+            Self::NotAnAiApi(detail) => write!(f, "the AI endpoint doesn't answer like an AI API: {detail}"),
             Self::Provider(detail) => write!(f, "the AI provider returned a problem: {detail}"),
             Self::Managed(refusal) => write!(f, "the organization's policy refuses this AI request ({refusal:?})"),
         }

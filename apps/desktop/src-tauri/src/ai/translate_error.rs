@@ -103,6 +103,8 @@ impl From<AiError> for AiTranslateError {
             // (and toast copy, in every catalog) only if we decide a wrong model id deserves a
             // headline of its own.
             AiError::NotFound(_) => K::ServerError,
+            // A website at the endpoint: the detail line says what answered.
+            AiError::NotAnAiApi(_) => K::ServerError,
             // Same reasoning: a translation prompt is small, so a 413 there is rare, and the
             // detail line names the provider's limit.
             AiError::RequestTooLarge(_) => K::ServerError,

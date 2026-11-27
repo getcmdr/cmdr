@@ -1431,6 +1431,15 @@
     "screenshot": "ask-cmdr-chat.png",
     "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {The endpoint address set for your AI service doesn’t answer like an AI service, so no reply came back. Check the endpoint URL in settings, under AI.} linuxGnome {The endpoint address set for your AI service doesn’t answer like an AI service, so no reply came back. Check the endpoint URL in preferences, under AI.} linuxKde {The endpoint address set for your AI service doesn’t answer like an AI service, so no reply came back. Check the endpoint URL in Configure Cmdr, under AI.} other {The endpoint address set for your AI service doesn’t answer like an AI service, so no reply came back. Check the endpoint URL in settings, under AI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "description": "Shown under a chat message when the custom AI endpoint address the user set answered with something that isn’t an AI service (usually a website or a sign-in page), so the assistant couldn’t reply. A smaller technical line like \"HTTP 200, text/html\" shows underneath. Friendly and actionable; avoids the words error and failed. Keep \"URL\" and \"AI\" verbatim. The apostrophe is U+2019. The `linuxGnome` and `linuxKde` branches name Cmdr’s settings window the way that desktop titles it (settings.window.title): “Preferences” on GNOME, “Configure Cmdr” on KDE. The `windows` branch repeats the English on purpose: give it the word Windows uses for an app’s settings in your language, the same word settings.window.title’s `windows` branch uses.",
+    "identicalBranches": {
+      "windows": "Microsoft’s word for an app’s settings can differ from Apple’s in a translation (French Paramètres, Réglages), so Windows needs its own branch to translate."
+    },
+    "screenshot": "ask-cmdr-chat.png",
+    "screenshotNote": "A line in the Ask Cmdr thread, under a message like the one pictured here, saying why the assistant couldn’t answer. This screenshot doesn’t show that line."
+  },
   "askCmdr.error.provider": "Something went wrong on the provider’s side. Try again?",
   "@askCmdr.error.provider": {
     "description": "Shown for any other provider-side problem. Friendly; avoids the words error and failed. The apostrophe is U+2019.",

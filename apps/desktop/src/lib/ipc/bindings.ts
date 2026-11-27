@@ -7217,6 +7217,11 @@ export type AgentErrorKindView =
    */
   | 'repeatedToolCall'
   | 'unfinishedReply'
+  /**
+   *  The endpoint answered with something that isn't an AI API (a web page). The rail points
+   *  at the endpoint in Settings, since every send gets the same answer until it changes.
+   */
+  | 'notAnAiApi'
   | 'provider'
 
 /**

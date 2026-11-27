@@ -297,12 +297,14 @@ fn completion_for_failure(kind: AgentErrorKind, ordinary: WakeCompletion) -> Wak
     match kind {
         // A rejected key, no key at all, a spent quota, a plan without the model, and a plan too
         // small for one prompt are all settled facts about the rest of the day rather than
-        // something worth retrying at the ordinary pace.
+        // something worth retrying at the ordinary pace. So is an endpoint that isn't an AI API
+        // at all (a website at the base URL, `ERR-V6AR3`): every wake gets the same page.
         AgentErrorKind::NoKey
         | AgentErrorKind::AuthFailed
         | AgentErrorKind::RateLimited
         | AgentErrorKind::ModelNotInPlan
-        | AgentErrorKind::RequestTooLarge => WakeCompletion::ProviderRefused,
+        | AgentErrorKind::RequestTooLarge
+        | AgentErrorKind::NotAnAiApi => WakeCompletion::ProviderRefused,
         // Overloaded through every retry the turn made: transient, but asking again at the
         // ordinary pace walks straight back into it.
         AgentErrorKind::ProviderBusy => WakeCompletion::ProviderBusy,
@@ -379,6 +381,16 @@ mod tests {
     fn a_follow_up_that_hits_a_dead_key_reports_it_too() {
         assert_eq!(
             completion_for_failure(AgentErrorKind::AuthFailed, WakeCompletion::FollowUp),
+            WakeCompletion::ProviderRefused
+        );
+    }
+
+    /// A website at the endpoint answers every wake the same way (`ERR-V6AR3`: three proactive
+    /// turns in one morning, each ending with no reply), so it waits like a dead key.
+    #[test]
+    fn an_endpoint_that_isnt_an_ai_api_earns_the_long_backoff() {
+        assert_eq!(
+            completion_for_failure(AgentErrorKind::NotAnAiApi, WakeCompletion::FollowUp),
             WakeCompletion::ProviderRefused
         );
     }

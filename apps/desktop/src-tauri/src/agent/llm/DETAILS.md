@@ -270,6 +270,11 @@ Provider transport errors are classified by HTTP status once, upstream, in `crat
 `AgentLlmError::Managed(refusal)` (the runtime's `ManagedByOrganization`), never a `Provider` string
 (`../../ai/DETAILS.md` § Managed policy). `AgentLlmError::NoKey` /
 `NotConfigured` / `BudgetExhausted` are pre-flight/runtime states the runtime raises, not transport errors.
+`AgentLlmError::NotAnAiApi` (the runtime's `NotAnAiApi`, the rail's "doesn't answer like an AI service" line) is an
+endpoint that answered with a web page or plain text. A stream that ends having said nothing at all (keep-alives aside)
+ends with that check's answer (`map_stream`'s `silent_check`, raced against Stop by the same `take_until`); the
+mechanism and its limits are canonical in `../../ai/DETAILS.md` (the `client.rs` entry), the gateway shapes pinned in
+`genai_impl/tests/gateway_shapes.rs`.
 
 ## `ToolId` and the gate
 
