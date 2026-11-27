@@ -77,8 +77,15 @@ impl MtpConnectionManager {
     /// ❌ Never call this holding the device lock: the heal re-lists through it,
     /// and the tokio `Mutex` isn't reentrant.
     ///
+    /// The heal finds every folder the cache doesn't know on the way up by cache
+    /// reads alone, then lists their parents top-down from one loop, so each
+    /// listing resolves its folder from the cache. ❌ Never let a listing heal
+    /// its own folder by nesting another heal: that nested one listing future
+    /// per missing level, and a path a few hundred levels below anything listed
+    /// overflowed the op's stack (#1541).
+    ///
     /// A named boxed future rather than an `async fn`: listing a folder resolves
-    /// that folder through here, and without the `dyn` the recursion makes an
+    /// that folder through here, and without the `dyn` that cycle makes an
     /// infinitely sized future whose `Send` the compiler can't prove.
     pub(super) fn resolve_path_to_handle<'a>(
         &'a self,
@@ -96,25 +103,44 @@ impl MtpConnectionManager {
                 return Ok(handle);
             }
 
-            let parent = folder_or_root(&path).as_str().to_string();
-            debug!(
-                "MTP resolve: {} isn't cached on {device_id}:{storage_id}, listing {} to find it",
-                LogPrivate::path(path.as_str()),
-                LogPrivate::dir_path(&parent)
-            );
             let not_found = || MtpConnectionError::ObjectNotFound {
                 device_id: device_id.to_string(),
                 path: path.as_str().to_string(),
             };
-            match self.list_directory(device_id, storage_id, &parent).await {
-                Ok(_) => {}
-                Err(MtpConnectionError::ObjectNotFound { .. }) => return Err(not_found()),
-                Err(e) => return Err(e),
+            // What the cache doesn't know, nearest first: `path`, then each
+            // folder above it up to the first the cache knows (or the root).
+            let mut unknown: Vec<&AppPath> = vec![&path];
+            loop {
+                let folder = folder_or_root(unknown[unknown.len() - 1]);
+                if folder.is_root() || self.cached_handle(device_id, storage_id, folder).await?.is_some() {
+                    break;
+                }
+                unknown.push(folder);
             }
-
-            self.cached_handle(device_id, storage_id, &path)
-                .await?
-                .ok_or_else(not_found)
+            // Down again, farthest first: listing a folder's parent caches the
+            // folder, so the next listing finds its own from the cache. The last
+            // one listed is `path`'s own folder, so its lookup is the answer.
+            let mut found = None;
+            for &at in unknown.iter().rev() {
+                let parent = folder_or_root(at).as_str();
+                debug!(
+                    "MTP resolve: {} isn't cached on {device_id}:{storage_id}, listing {} to find it",
+                    LogPrivate::path(at.as_str()),
+                    LogPrivate::dir_path(parent)
+                );
+                match self.list_directory(device_id, storage_id, parent).await {
+                    Ok(_) => {}
+                    // A missing folder above `path` is not-found for `path`: the
+                    // user acted on it, not on its folder.
+                    Err(MtpConnectionError::ObjectNotFound { .. }) => return Err(not_found()),
+                    Err(e) => return Err(e),
+                }
+                found = self.cached_handle(device_id, storage_id, at).await?;
+                if found.is_none() {
+                    return Err(not_found());
+                }
+            }
+            found.ok_or_else(not_found)
         })
     }
 
