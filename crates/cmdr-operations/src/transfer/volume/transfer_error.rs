@@ -673,7 +673,7 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
         VolumeError::SourceChanged(_) => WriteOperationError::SourceChanged {
             path: context_path.to_string(),
         },
-        // A merge walk skips such a child and carries on (`merge.rs::copy_leaf`),
+        // A merge walk skips such a child and carries on (`merge_leaves.rs::copy_leaf`),
         // so this reaches the dialog only for a link or special file selected on
         // its own.
         // A folder that lists empty but keeps keys no path can address (S3's

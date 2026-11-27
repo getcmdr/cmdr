@@ -33,6 +33,7 @@ mod listed_name;
 mod local_mounts;
 mod merge;
 mod merge_ctx;
+mod merge_leaves;
 /// `move` is a Rust keyword, so the module is `r#move`. Nothing outside this
 /// facade names it: the move entry points are re-exported below.
 mod r#move;
