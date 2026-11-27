@@ -137,7 +137,7 @@ pub(super) async fn resolve_volume_conflict(
     // dir/dir short-circuit below, because both of those are wrong for this
     // shape — "merging" an item into itself walks its own tree shuffling leaves
     // aside, and every policy answer either destroys the original or refuses
-    // what was asked. Nothing propagates the new name: `merge_level` joins each
+    // what was asked. Nothing propagates the new name: the merge walk joins each
     // child onto the destination it was handed, so a renamed root carries its
     // whole subtree. `../DETAILS.md` § "Self-collision (duplicating in place)".
     if is_the_same_item(source_volume, source_app, dest_volume, dest_app) {

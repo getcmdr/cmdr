@@ -4,7 +4,7 @@
 //! A link to its own folder or one above it makes the tree endless: each pass
 //! through it copies the same folder one level deeper, so the copy wrote the
 //! selection three times over before the person cancelled, and its counts ran to
-//! three times the scan's total. `merge.rs::descends_into_a_cycle` decides;
+//! three times the scan's total. `link_cycle.rs::leads_back_up` decides;
 //! `DETAILS.md` § "A followed link never leads back up its own path".
 #![cfg(unix)] // POSIX links on a `LocalPosixVolume`.
 
@@ -180,54 +180,39 @@ async fn a_move_skips_the_loop_and_leaves_the_link_in_the_source() {
 /// A source that can name no node (an SFTP server: protocol v3 carries no inode)
 /// can't tell a loop from a link elsewhere, so the backstop counts the links
 /// followed down one path and stops the copy with the link-loop error, typed,
-/// before the walk outgrows its stack.
-///
-/// Run on a big stack: a debug build's frames are many times a release build's,
-/// and this asserts what the WALK does, not what the stack holds.
-#[test]
-fn a_source_with_no_node_ids_stops_a_link_loop_with_the_loop_error() {
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .thread_stack_size(256 * 1024 * 1024)
-        .enable_all()
-        .build()
-        .unwrap();
+/// after a few passes rather than once the disk is full.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_source_with_no_node_ids_stops_a_link_loop_with_the_loop_error() {
     let (source, dir) = super::link_following_backend_tests::following_volume();
     std::fs::create_dir_all(dir.path().join("tree/sub")).unwrap();
     std::fs::write(dir.path().join("tree/sub/a.txt"), b"aaa").unwrap();
     symlink("..", dir.path().join("tree/sub/up")).unwrap();
-    // Spawned, so it polls on a big-stack worker rather than this test's thread.
-    let copy = runtime.spawn(async move {
-        let engine = TestOperations::new();
-        let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
-        let sources = crate::testing::app_paths_of(&[PathBuf::from("/tree")]);
-        let dest_root = crate::testing::app_path_of(Path::new("/"));
-        let config = VolumeCopyConfig::default();
-        let run = copy_volumes_with_progress(
-            Arc::new(CollectorEventSink::new()),
-            "op-link-cycle-blind",
-            &state,
-            source,
-            &sources,
-            no_links(),
-            &dest_root,
-            &config,
-        );
-        tokio::time::timeout(Duration::from_secs(60), run).await
-    });
-    runtime.block_on(async {
-        let result = copy
-            .await
-            .unwrap()
-            .expect("the copy ends: a link loop never walks forever");
+    let engine = TestOperations::new();
+    let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
+    let sources = crate::testing::app_paths_of(&[PathBuf::from("/tree")]);
+    let dest_root = crate::testing::app_path_of(Path::new("/"));
+    let config = VolumeCopyConfig::default();
+    let run = copy_volumes_with_progress(
+        Arc::new(CollectorEventSink::new()),
+        "op-link-cycle-blind",
+        &state,
+        source,
+        &sources,
+        no_links(),
+        &dest_root,
+        &config,
+    );
 
-        let failure = result.expect_err("a loop nobody can name stops the copy");
-        assert!(
-            matches!(failure.error, WriteOperationError::SymlinkLoop { .. }),
-            "{:?}",
-            failure.error
-        );
-    });
+    let result = tokio::time::timeout(Duration::from_secs(30), run)
+        .await
+        .expect("the copy ends: a link loop never walks forever");
+
+    let failure = result.expect_err("a loop nobody can name stops the copy");
+    assert!(
+        matches!(failure.error, WriteOperationError::SymlinkLoop { .. }),
+        "{:?}",
+        failure.error
+    );
 }
 
 /// A link to a folder outside the selection that holds no way back is still

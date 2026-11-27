@@ -80,7 +80,7 @@ impl FileWindow {
     }
 }
 
-/// Context threaded into the recursive merge walk so each pre-existing level can
+/// Context threaded into the merge walk so each pre-existing level can
 /// resolve its clashing children through the same conflict machinery the
 /// top-level copy uses (Stop-wait, the apply-to-all latch, conditional reduce,
 /// type mismatches), without widening `copy_directory_streaming`'s already-long

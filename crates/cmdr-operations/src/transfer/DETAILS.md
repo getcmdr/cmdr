@@ -872,12 +872,13 @@ blanket Overwrite, land beside it on Rename, replace the LINK on an answered Ove
 incoming files in the link's target, outside the destination the person picked, and an Overwrite then replaces that
 folder's same-named files. Each engine had its own way of following the link:
 
-- **The volume merge walk** (`volume/merge.rs::merge_level`) decides "folder meets folder, recurse" from the destination
-  LISTING, which reports a link to a folder as `is_directory` on the `lstat` backends too (`LocalPosixVolume` included,
-  so an MTP, SMB, or archive copy onto a local disk had it). It asks `rename_merge.rs::merges_as_a_directory` of the
-  hit, which costs a real folder no probe, and routes a link through `resolve_volume_conflict`, whose
-  `resolve_dest_is_directory` types it with `entry_kind`. With no `MergeCtx` (the scratch pull) there is no policy to
-  ask, so a folder meeting any leaf is refused `AlreadyExists` rather than recursed into.
+- **The volume merge walk** (`volume/merge.rs::Walk::advance`) decides "folder meets folder, descend" from the
+  destination LISTING, which reports a link to a folder as `is_directory` on the `lstat` backends too
+  (`LocalPosixVolume` included, so an MTP, SMB, or archive copy onto a local disk had it). It asks
+  `rename_merge.rs::merges_as_a_directory` of the hit, which costs a real folder no probe, and routes a link through
+  `resolve_volume_conflict`, whose `resolve_dest_is_directory` types it with `entry_kind`. With no `MergeCtx` (the
+  scratch pull) there is no policy to ask, so a folder meeting any leaf is refused `AlreadyExists` rather than recursed
+  into.
 - **The local copy** (`copy/single_item.rs::copy_single_item`) never sees a directory: it walks FILES and creates their
   parents, so "is the parent a directory?" is its merge test, and `Path::is_dir()` follows links.
   `copy/dest_chain.rs::leaf_in_the_way` is `is_real_directory` for the whole chain from the destination root down to the
@@ -2007,11 +2008,11 @@ user's only copy of the data is worse than a noisy one. The move also sets `Task
 directly once the copy phase ends, because its source sweep runs after the task-local's scope closes and a dump taken
 during it must not still claim it is streaming.
 
-**`TaskPhase::Walking`** (label `"walking"`) covers the same gap for a DIRECTORY source: `merge_level` sets it at every
-level while it lists the source and resolves what is already at the destination, before any of that level's files reach
-the window. Without it a folder copy's row read `spawned` for the whole walk, so a dump of a healthy transfer looked
-like a task that had never started. It is a WORKING phase, so `wait_reason()` is `None` (the level waits on source and
-destination in turn, and naming either would be a guess) and `is_abortable_on_stall()` is false.
+**`TaskPhase::Walking`** (label `"walking"`) covers the same gap for a DIRECTORY source: `Walk::open_level` sets it at
+every level while it lists the source and resolves what is already at the destination, before any of that level's files
+reach the window. Without it a folder copy's row read `spawned` for the whole walk, so a dump of a healthy transfer
+looked like a task that had never started. It is a WORKING phase, so `wait_reason()` is `None` (the level waits on
+source and destination in turn, and naming either would be a guess) and `is_abortable_on_stall()` is false.
 
 **`TaskPhase::CopyingOnServer`** (label `"copying-on-server"`) covers a server-side copy, from its stage to its cleanup
 (`volume/server_side_copy.rs`). It used to report `Streaming` with `0/0` bytes, so a dump couldn't tell a task stuck

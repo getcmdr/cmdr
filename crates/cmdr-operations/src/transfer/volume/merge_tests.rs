@@ -1,7 +1,7 @@
 //! Folder-merge engine tests: per-file conflict resolution INSIDE a directory
 //! merge (scan-as-you-merge). Every file policy over a merging tree, what a deep
 //! skip credits to the progress bars and to the rate, the byte total the
-//! recursion reports, and the destination size a deep clash carries.
+//! walk reports, and the destination size a deep clash carries.
 //!
 //! These drive the real `copy_volumes_with_progress` pipeline against
 //! `InMemoryVolume` pairs + `CollectorEventSink`, so the whole stack (preflight,

@@ -1,17 +1,25 @@
 //! A folder tree of any depth copies and moves across volumes on the stack a
 //! copy really runs on (#1541).
 //!
-//! The merge walk's depth costs heap, ❌ never stack: a walk that nested one
-//! future per folder level overflowed a 2 MiB tokio worker (Tauri's default,
-//! which runs copies) between 48 and 63 levels in a release build, and a debug
-//! build's frames are several times bigger. These cells run the whole pipeline on
-//! exactly such a worker, so a walk that starts nesting per level again aborts the
-//! test binary here rather than the app. `DETAILS.md` § "The walk keeps its depth
-//! on the heap".
+//! The merge walk and a move's source sweep keep their depth on the heap, ❌
+//! never in nested futures: each once nested one future per folder level, and a
+//! 2 MiB tokio worker (Tauri's default, which runs copies) overflowed in the walk
+//! between 48 and 63 levels in a release build, and in the sweep between 300 and
+//! 350 levels in a debug one. These cells run the whole pipeline on exactly such
+//! a worker, so anything that starts nesting per level again aborts the test
+//! binary here rather than the app. `DETAILS.md` § "The walk keeps its depth on
+//! the heap".
+//!
+//! The source is a local folder: its listing reads one directory, where
+//! `InMemoryVolume`'s scans its whole store per call, which made a deep tree
+//! cubic and spent the test's budget on the double rather than the walk.
+#![cfg(unix)] // A 400-level path outgrows a Windows path without the long-path prefix.
 
 use cmdr_fs::app_path::{AppPath, AppPathBuf};
 use cmdr_fs::ignore_poison::IgnorePoison;
+use cmdr_fs::testing::TestDir;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
+use cmdr_local::LocalPosixVolume;
 use std::future::Future;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,46 +31,47 @@ use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
 use crate::types::VolumeCopyConfig;
 
-/// Far past the old ceiling, and still inside every `PATH_MAX` (each level adds
-/// two bytes: `d/`).
-const DEPTH: usize = 200;
+/// Past both old ceilings on this stack (the sweep's was the higher, 300–350 in a
+/// debug build), and inside macOS's 1,024-byte `PATH_MAX` with the temp folder in
+/// front: each level adds two bytes (`d/`), about 920 in all.
+const DEPTH: usize = 400;
 
 /// The stack a Tauri copy runs on: tokio's default worker.
 const WORKER_STACK: usize = 2 * 1024 * 1024;
 
-/// `/deep`, then `DEPTH` nested `d` folders, each holding one file (`f`, its
-/// depth as its bytes), with one more file at the bottom.
-async fn deep_source() -> Arc<InMemoryVolume> {
-    let source = Arc::new(InMemoryVolume::new("Source").with_space_info(100_000_000, 100_000_000));
-    let mut level = String::from("/deep");
-    source.create_directory(&app(&level)).await.unwrap();
-    for depth in 0..DEPTH {
-        level.push_str("/d");
-        source.create_directory(&app(&level)).await.unwrap();
-        source
-            .create_file(&app(&format!("{level}/f")), depth.to_string().as_bytes())
-            .await
-            .unwrap();
-    }
-    source
-        .create_file(&app(&format!("{level}/bottom.txt")), b"bottom")
-        .await
-        .unwrap();
-    source
+/// The tree, relative to the source folder: `deep`, then `DEPTH` nested `d`
+/// folders, with one file at the bottom.
+fn bottom_folder() -> String {
+    format!("deep{}", "/d".repeat(DEPTH))
 }
 
-/// The path of the folder at `depth` (0 is `/deep/d`).
-fn level_at(depth: usize) -> String {
-    format!("/deep{}", "/d".repeat(depth + 1))
+/// `deep` and its levels under a fresh folder, as a local volume rooted there.
+fn deep_source(label: &str) -> (TestDir, Arc<dyn Volume>) {
+    let dir = TestDir::new(label);
+    let bottom = dir.join(bottom_folder());
+    std::fs::create_dir_all(&bottom).unwrap();
+    std::fs::write(bottom.join("bottom.txt"), b"bottom").unwrap();
+    let volume = Arc::new(LocalPosixVolume::local_folder(
+        "Local",
+        dir.to_path_buf(),
+        crate::host::testing::pane_order_host(),
+    ));
+    (dir, volume)
 }
 
 fn app(path: &str) -> AppPathBuf {
     AppPath::from_normalized(path).expect("a canonical path").to_owned()
 }
 
+/// A remote with no links (an SMB share, to the engine), so the copy streams
+/// through the merge walk.
+fn no_links_dest() -> Arc<InMemoryVolume> {
+    Arc::new(InMemoryVolume::new("Dest").with_space_info(100_000_000, 100_000_000))
+}
+
 /// Runs `body` on a multi-thread runtime whose workers have [`WORKER_STACK`],
 /// spawned so it polls on a worker rather than this test's own thread.
-fn on_a_copy_worker<F>(body: impl FnOnce() -> F + Send + 'static) -> F::Output
+fn on_a_copy_worker<F>(body: impl FnOnce() -> F) -> F::Output
 where
     F: Future + Send + 'static,
     F::Output: Send + 'static,
@@ -79,83 +88,79 @@ where
         .expect("the transfer's task ends without a panic")
 }
 
-/// A remote with no links (an SMB share, to the engine), so nothing short-cuts
-/// the streaming walk.
-fn no_links_dest() -> Arc<InMemoryVolume> {
-    Arc::new(InMemoryVolume::new("Dest").with_space_info(100_000_000, 100_000_000))
-}
-
-/// Every level and its file arrived, bottom included.
-async fn holds_the_whole_tree(dest: &InMemoryVolume) {
-    for depth in 0..DEPTH {
-        let file = format!("{}/f", level_at(depth));
-        assert!(dest.exists(&app(&file)).await, "{file} landed");
-    }
-    let bottom = format!("{}/bottom.txt", level_at(DEPTH - 1));
-    assert!(dest.exists(&app(&bottom)).await, "the bottom file landed");
-}
-
-#[test]
-#[ignore = "the recursive walk overflows a copy worker's stack (#1541)"]
-fn a_two_hundred_level_tree_copies_on_a_copy_workers_stack() {
-    let (result, dest, events) = on_a_copy_worker(|| async {
-        let source = deep_source().await;
-        let dest = no_links_dest();
-        let engine = TestOperations::new();
-        let events = Arc::new(CollectorEventSink::new());
-        let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
-        let sources = crate::testing::app_paths_of(&[PathBuf::from("/deep")]);
-        let result = copy_volumes_with_progress(
-            events.clone(),
-            "op-deep-copy",
-            &state,
-            source,
-            &sources,
-            Arc::clone(&dest) as Arc<dyn Volume>,
-            &app("/"),
-            &VolumeCopyConfig::default(),
-        )
-        .await;
-        (result, dest, events)
-    });
-
-    assert!(result.is_ok(), "{result:?}");
-    let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
-    runtime.block_on(holds_the_whole_tree(&dest));
-    let complete = events.complete.lock_ignore_poison();
-    assert_eq!(complete[0].files_processed, DEPTH + 1);
-}
-
-#[test]
-#[ignore = "the recursive walk overflows a copy worker's stack (#1541)"]
-fn a_two_hundred_level_tree_moves_on_a_copy_workers_stack() {
-    let (result, source, dest) = on_a_copy_worker(|| async {
-        let source = deep_source().await;
-        let dest = no_links_dest();
-        let engine = TestOperations::new();
-        let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
-        let sources = crate::testing::app_paths_of(&[PathBuf::from("/deep")]);
-        let result = move_volumes_with_progress(
-            Arc::new(CollectorEventSink::new()),
-            "op-deep-move",
-            &state,
-            Arc::clone(&source) as Arc<dyn Volume>,
-            &sources,
-            Arc::clone(&dest) as Arc<dyn Volume>,
-            &app("/"),
-            &VolumeCopyConfig::default(),
-        )
-        .await;
-        (result, source, dest)
-    });
-
-    assert!(result.is_ok(), "{result:?}");
+/// Every level arrived, and the file at the bottom of them.
+fn holds_the_whole_tree(dest: &InMemoryVolume) {
     let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
     runtime.block_on(async {
-        holds_the_whole_tree(&dest).await;
+        let bottom = format!("/{}", bottom_folder());
+        assert!(dest.exists(&app(&bottom)).await, "every level landed");
         assert!(
-            !source.exists(&app("/deep")).await,
-            "the sweep took the moved tree out of the source"
+            dest.exists(&app(&format!("{bottom}/bottom.txt"))).await,
+            "the bottom file landed"
         );
     });
+}
+
+#[test]
+fn a_four_hundred_level_tree_copies_on_a_copy_workers_stack() {
+    let (_dir, source) = deep_source("deep-tree-copy");
+    let dest = no_links_dest();
+    let events = Arc::new(CollectorEventSink::new());
+    let run = {
+        let (dest, events) = (Arc::clone(&dest), Arc::clone(&events));
+        || async move {
+            let state = Arc::new(TestOperations::new().new_operation_state(Duration::from_millis(50)));
+            copy_volumes_with_progress(
+                events,
+                "op-deep-copy",
+                &state,
+                source,
+                &crate::testing::app_paths_of(&[PathBuf::from("/deep")]),
+                dest as Arc<dyn Volume>,
+                &app("/"),
+                &VolumeCopyConfig::default(),
+            )
+            .await
+        }
+    };
+
+    let result = on_a_copy_worker(run);
+
+    assert!(result.is_ok(), "{result:?}");
+    holds_the_whole_tree(&dest);
+    assert_eq!(events.complete.lock_ignore_poison()[0].files_processed, 1);
+}
+
+/// The move walks the same tree, then its sweep takes every level out of the
+/// source, deepest first.
+#[test]
+fn a_four_hundred_level_tree_moves_on_a_copy_workers_stack() {
+    let (dir, source) = deep_source("deep-tree-move");
+    let dest = no_links_dest();
+    let run = {
+        let dest = Arc::clone(&dest);
+        || async move {
+            let state = Arc::new(TestOperations::new().new_operation_state(Duration::from_millis(50)));
+            move_volumes_with_progress(
+                Arc::new(CollectorEventSink::new()),
+                "op-deep-move",
+                &state,
+                source,
+                &crate::testing::app_paths_of(&[PathBuf::from("/deep")]),
+                dest as Arc<dyn Volume>,
+                &app("/"),
+                &VolumeCopyConfig::default(),
+            )
+            .await
+        }
+    };
+
+    let result = on_a_copy_worker(run);
+
+    assert!(result.is_ok(), "{result:?}");
+    holds_the_whole_tree(&dest);
+    assert!(
+        !dir.join("deep").exists(),
+        "the sweep took the moved tree out of the source"
+    );
 }

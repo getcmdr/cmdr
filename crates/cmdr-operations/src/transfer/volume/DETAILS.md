@@ -41,10 +41,11 @@ Where a symbol lives and who calls it: `codegraph_search` / `codegraph_explore`.
   `sequential_extract.rs`, so the server-side copy never imports `stream_pipe.rs` back (it would close a module cycle).
   The vocabulary both halves and both drivers speak (`FileWindow`, `MergeCtx`, `MergeProbe`, `CreatedPaths`) sits beside
   them in `merge_ctx.rs`. `merge.rs` walks a tree (`copy_directory_streaming`, `resolve_merge_child`): a directory child
-  recurses there, a file child goes to `stream_pipe.rs`. `sequential_extract.rs` reuses the same walk in plan mode,
-  which is why the merge/conflict/rollback code is not reimplemented for one-pass archives. `folder_metadata.rs` holds
-  what the walk notes about the folders it created, stamped once the subtree landed, and `landed_flags.rs` the flags a
-  FILE waits to wear until its landing (both § "Copies keep the source's metadata").
+  is a level the walk descends into (§ "The walk keeps its depth on the heap"), a file child goes to `stream_pipe.rs`.
+  `sequential_extract.rs` reuses the same walk in plan mode, which is why the merge/conflict/rollback code is not
+  reimplemented for one-pass archives. `folder_metadata.rs` holds what the walk notes about the folders it created,
+  stamped once the subtree landed, and `landed_flags.rs` the flags a FILE waits to wear until its landing (both §
+  "Copies keep the source's metadata").
 - **The move is three files, and the dependency runs ONE way.** `r#move` is the DISPATCHER and nothing else: it picks
   same-volume (`move_same`), both-local (`local_move_start`, one level up), or cross-volume (`move_cross`), then owns
   the managed-op lifecycle around whichever it picked. Both engines are leaves under it. ❗ Nothing in an engine may
@@ -88,7 +89,10 @@ Where a symbol lives and who calls it: `codegraph_search` / `codegraph_explore`.
   resolution INSIDE a directory merge, and the fixtures `make_rich_merge` / `make_deep_clash_with_bigger_dest` it owns),
   `merge_dir_vs_dir_tests.rs` (the "always merge, never prompt" contract and its boundary, the type mismatches and fresh
   levels that are NOT dir-vs-dir merges), and `merge_dispatch_mutex_tests.rs` (the conflict-dispatch mutex across
-  concurrent and nested merges). A new merge test adds itself to the matching contract rather than growing one file.
+  concurrent and nested merges). A new merge test adds itself to the matching contract rather than growing one file. Two
+  more, declared from `mod.rs`, pin the walk's SHAPE rather than a per-level contract: `merge_walk_tests.rs` (every call
+  each volume sees over one nested fixture, in order, through `FaultyVolume::journal`) and `deep_tree_tests.rs` (a
+  400-level copy and move on a copy worker's 2 MiB stack), both § "The walk keeps its depth on the heap".
 - **The copy suite is split by contract, all declared from `copy.rs`, and `copy_tests/` is the general suite rather than
   the default one.** It is a directory of five children named after what each holds: `scan.rs` (config defaults, the
   skipped-count suffix, the scan/preview happy path over both volume types, and the batch-scan progress callback),
@@ -483,9 +487,9 @@ specific to volumes:
   and by `self_collision_tests.rs::moving_into_a_case_differing_folder_on_one_volume_really_moves`.
 - **A directory's ` (N)` name is never reserved.** `find_unique_volume_name` takes its `exists()`-probe branch for a
   directory on EVERY backend, local-FS destination included. Its reservation is an `O_CREAT|O_EXCL` FILE, and one
-  sitting where the copy is about to create a directory makes `merge_level`'s `create_directory` report `AlreadyExists`,
-  so the walk would list and merge into it; the walker creating the directory itself is also what records it in
-  `CreatedPaths`, and therefore what lets rollback remove it.
+  sitting where the copy is about to create a directory makes the walk's `create_directory` (`Walk::open_level`) report
+  `AlreadyExists`, so the walk would list and merge into it; the walker creating the directory itself is also what
+  records it in `CreatedPaths`, and therefore what lets rollback remove it.
 - **The names one operation hands out are remembered** (`state.claimed_names`, `unique_name::ClaimedNames`; the rule and
   the local twin are in `../DETAILS.md` § "Self-collision (duplicating in place)"). `find_unique_volume_name` claims its
   pick and walks past anything already claimed, on both branches. Out here that's load-bearing twice over: a directory
@@ -496,12 +500,12 @@ specific to volumes:
   the folder the sources already live in lists every one of them as conflicting; under `Skip all`
   `copy_volumes_with_progress`'s bulk-skip prelude would drop them all and the duplicate would silently do nothing. The
   prelude excludes them (`is_the_same_item`, the resolver's own question), the same exclusion the local engine makes.
-- **No `dir_remap` equivalent is needed, and that asymmetry with the local engine is the point.** `merge_level` threads
-  `dest_path` down through its OWN recursion (`child_dest` is the level's typed join of the entry's name; it's
-  `merge_level` that recurses, not its caller `copy_directory_streaming`, which only sets up the leaf pool), so renaming
-  the top-level destination carries the whole subtree with it for free. The local engine can't: `FileInfo::dest_path()`
-  recomputes `destination.join(relative)` from the original relative path on every call, which is why it needs
-  `dir_remap`'s longest-mapped-ancestor rewrite.
+- **No `dir_remap` equivalent is needed, and that asymmetry with the local engine is the point.** The walk threads
+  `dest_path` down level by level (each child folder's frame lands at `child_dest`, the level's typed join of the
+  entry's name; it's `Walk::advance` that descends, not `copy_directory_streaming`, which only sets up the leaf pool),
+  so renaming the top-level destination carries the whole subtree with it for free. The local engine can't:
+  `FileInfo::dest_path()` recomputes `destination.join(relative)` from the original relative path on every call, which
+  is why it needs `dir_remap`'s longest-mapped-ancestor rewrite.
 
 **The move drops the item rather than renaming it**, in `move_same.rs` before the driver runs, so no engine below can
 represent the case. Only the same-volume path can reach one at all: `move_between_volumes` routes `Arc::ptr_eq` there
@@ -535,7 +539,7 @@ merge engine is shared by all three pipelines: volume copy (serial `copy.rs` AND
 cross-volume move (`move_cross.rs::move_volumes_with_progress`). `MergeCtx` is `None` only for the cross-volume move's
 _staging_ writes and tests that never merge.
 
-**The two legs of a level run concurrently, unless a backend is single-transport.** `merge_level` drives the source
+**The two legs of a level run concurrently, unless a backend is single-transport.** `Walk::open_level` drives the source
 `list_directory` and the whole destination chain (`create_directory`, then the conditional dest `list_directory`) under
 one `tokio::join!`, so a level costs `max(source, dest)` rather than their sum. On a cross-share merge each leg is a
 full network round trip, and they're independent: the dest chain's shape depends only on what `create_directory`
@@ -793,12 +797,12 @@ and `dest_name_index_tests.rs` (the matching rule alone).
 
 #### The deep merge asks the same question
 
-`merge_level` answers each child's "is this name taken?" from the level listing through the SAME `DestNameIndex`, via
-the same `landing.rs::where_it_lands`, so `Report.docx` arriving where the user keeps `report.docx` — or an NFD name
-against a stored NFC one — reaches the resolver at depth 5 exactly as it does at the top. `Present` and `LookAlike`
-carry the listed entry into `resolve_merge_child` (and into the dir-vs-dir decision), at the entry's OWN path; `Absent`
-is a fresh write under the destination's spelling; `Unknown` costs one `get_metadata` of the child's destination path,
-which the backend resolves the way it will resolve the write.
+The walk (`Walk::advance`) answers each child's "is this name taken?" from the level listing through the SAME
+`DestNameIndex`, via the same `landing.rs::where_it_lands`, so `Report.docx` arriving where the user keeps `report.docx`
+— or an NFD name against a stored NFC one — reaches the resolver at depth 5 exactly as it does at the top. `Present` and
+`LookAlike` carry the listed entry into `resolve_merge_child` (and into the dir-vs-dir decision), at the entry's OWN
+path; `Absent` is a fresh write under the destination's spelling; `Unknown` costs one `get_metadata` of the child's
+destination path, which the backend resolves the way it will resolve the write.
 
 - **The probe is rare by construction, not by luck.** A byte-exact hit and a name no stored entry can fold onto are both
   settled in memory, so an ordinary ASCII tree pays zero probes per level; it fires for a fold-only collision, a `~`
@@ -837,12 +841,12 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   copy, when the two spellings are one). Evidence: `docs/specs/app-path-plan.md` § 10a, third pass.
 - **A walk reads a listed child's own path through `listed_name.rs::listed_path`** (`AppPath::from_listed_row`), ❌
   never `Path::new(&entry.path)` and the bridge back, which re-escapes a live escape as literal text once escapes are
-  live: the merge walk's source side (`merge_level` holds its source level typed too), the rename-merge, the move's
-  source sweep and `stamp_source`, `cleanup.rs::remove_tree`, and, outside this module, the volume delete's scan, the
-  scan oracle, and `hidden_links`. A row holding a `..` name (a hostile `../x`; `\` separates only in a Windows host's
-  native rows) is refused as that child; ❗ an absolute row OUTSIDE the listed folder passes, as it always did (#1444)
-  (an archive's relative inner row walks as the bridge passed it), ❌ never walked: the sweep and `remove_tree` keep it
-  (and its folder), the delete scan and the scan stop.
+  live: the merge walk's source side (each level holds its source folder typed too, `LevelAt`), the rename-merge, the
+  move's source sweep and `stamp_source`, `cleanup.rs::remove_tree`, and, outside this module, the volume delete's scan,
+  the scan oracle, and `hidden_links`. A row holding a `..` name (a hostile `../x`; `\` separates only in a Windows
+  host's native rows) is refused as that child; ❗ an absolute row OUTSIDE the listed folder passes, as it always did
+  (#1444) (an archive's relative inner row walks as the bridge passed it), ❌ never walked: the sweep and `remove_tree`
+  keep it (and its folder), the delete scan and the scan stop.
 - **`listed_name.rs` is a leaf** (no engine module): the stale-temp reaps in `cleanup.rs` and the remote zip edit join
   through it, and importing it from `landing.rs` closed a module cycle (`landing` → `transfer_driver` → `staged_write` →
   `cleanup`).
@@ -858,8 +862,8 @@ refusal is the typed `VolumeError::InvalidName`, which fails that item the way a
   (`name_rules::DestinationNames`). Pinned by `refused_class_tests.rs`' `run_remote_names_case` (both ways, every
   driver) and `listed_row_tests.rs`' `a_backslash_name_copies_and_moves_as_one_name`, on every host (`InMemoryVolume`
   keys its store by app path, so Windows holds `a\b.txt` beside `a/b.txt`). A drive or UNC folder takes no name holding
-  `\` (the typed join refuses it), so `merge_level` refuses such a child per item BEFORE `where_it_lands`, ❌ never as
-  the level's failure, which would blame and, on a Skip, drop the whole folder.
+  `\` (the typed join refuses it), so the walk refuses such a child per item BEFORE `where_it_lands`, ❌ never as the
+  level's failure, which would blame and, on a Skip, drop the whole folder.
 - **A TOP-LEVEL source's name is the app path's own last name** (#1457): the drivers take their sources and destination
   as app paths, and `listed_name.rs::top_level` (its chosen name, else `own_name`, joined by `ListedFolder`) is where
   every volume driver's top-level destination comes from: the serial driver's loop (`transfer_driver/async_driver.rs`,
@@ -891,10 +895,11 @@ A phone or camera can hold two items with one name in a folder (MTP lists each u
 walk counts every name in a level it created as free by proof (`LandingName::FreeInFreshFolder`), which a repeated name
 breaks: the second item goes for the name the first just took.
 
-- **A repeat is an ordinary clash.** `merge_level` remembers each name it handed out in the level. A name it meets again
-  drains the leaves in flight (so the first item has landed), probes the destination afresh (`DestFolder::Unlisted`,
-  never the level's index or "created by us"), and lands as `ExpectedFree` at most. The probe finds the first item, so
-  the conflict policy (or a prompt) settles the second, like a clash with anything the user had.
+- **A repeat is an ordinary clash.** The walk marks each entry whose name an earlier entry of the level listing had
+  (`Level::repeats`). Such a repeat drains the leaves in flight (so the first item has landed), probes the destination
+  afresh (`DestFolder::Unlisted`, never the level's index or "created by us"), and lands as `ExpectedFree` at most. The
+  probe finds the first item, so the conflict policy (or a prompt) settles the second, like a clash with anything the
+  user had.
 - **Two same-named rows SELECTED** need nothing extra: the top-level driver probes each source's name itself.
 - Pinned by `repeated_name_tests.rs` (Rename lands both, Skip lands one) and app-side by
   `operations_host/backend_suites/mtp_twins_test.rs` on a virtual MTP device.
@@ -1146,11 +1151,11 @@ the temp; on a failure INSIDE it the original goes back to its name, and only wh
   `copy_crashsafe_tests.rs::{cross_volume_overwrite_preserves_dest_on_midstream_failure, cross_volume_overwrite_success_replaces_and_cleans_temp, cross_volume_overwrite_concurrent_replaces_and_cleans_temp}`.
 
 **Cross-volume move source-delete removes a LEDGER, never the tree** (`source_sweep.rs`, the twin of the local
-`move_op/source_sweep.rs`). The copy walk (`merge.rs::merge_level`) records into `CreatedPaths::recording_sources()`
-every source folder it lists and every source file it carries, stamped from the listing that found it (`SourceStamp`:
-size, `modified_at`, and `inode` where the backend has one). The walk lists a level before any of its leaves stream, so
-a save during the copy counts too. After the copy lands, `sweep_moved_folder` lists each walked folder ONCE more (one
-round trip per folder, beside the per-delete ones it already pays) and deletes only a ledgered file whose listing still
+`move_op/source_sweep.rs`). The copy walk (`merge.rs::Walk`) records into `CreatedPaths::recording_sources()` every
+source folder it lists and every source file it carries, stamped from the listing that found it (`SourceStamp`: size,
+`modified_at`, and `inode` where the backend has one). The walk lists a level before any of its leaves stream, so a save
+during the copy counts too. After the copy lands, `sweep_moved_folder` lists each walked folder ONCE more (one round
+trip per folder, beside the per-delete ones it already pays) and deletes only a ledgered file whose listing still
 matches its stamp; a folder goes only once nothing stays in it, through the empty-only `Volume::delete_directory`. What
 stays is the user's only copy of something, and the completion event counts it through `AppearedDuringMove`
 (`../left_in_source.rs`, shared with the local engine): an entry the walk never saw APPEARED (a whole unknown folder
@@ -1220,6 +1225,37 @@ own order: decoding is one pass, so the stream decides. Each row still claims on
 extract".
 
 Pinned by `copy_tree_order_tests.rs` (a reversed-listing source: the merge, both drivers, and a cross-volume move).
+
+## The walk keeps its depth on the heap
+
+**Decision**: the merge walk (`merge.rs::Walk::run`) and a move's source sweep (`source_sweep.rs::sweep_moved_folder`)
+each keep one frame per folder level on a `Vec`, walk it depth first in tree order, and run every level from one loop.
+❌ Never a future per level (an `async fn` that awaits itself through `Box::pin`): the heap holds the frames, but
+polling the outermost one polls every level below it, one stack frame per level.
+
+- **Why**: that nesting overflowed the 2 MiB tokio worker Tauri runs copies on, and the overflow aborts the app. The
+  walk went between 48 and 63 levels deep in a release build (verified on macOS 27, release `copy_volumes_with_progress`
+  of a nested folder onto `InMemoryVolume`, 2026-11-27), and the sweep between 300 and 350 in a debug one (verified on
+  macOS 27, debug `deep_tree_tests.rs` with the worker stack and depth varied, 2026-11-27). A real tree reaches either:
+  deep `node_modules`, build output, backups of backups (#1541). Now a copy and a move of 450 levels both pass on a 1
+  MiB worker in debug, where a copy's stack needs about the same 1 MiB at two levels (same method, same day).
+- **What a frame holds**: where the level sits (`LevelAt`), its sorted listing and how far the walker is through it
+  (`Level`), and what its parent does once it ends (`OnEnd`), which is the code that followed each recursive call. A
+  created child folder gets its dates noted; a failure of a folder descended into as itself goes to the refused-name
+  question (`skip_if_folder_refused`), and a Skip there lets the parent go on; any other failure ends the parent too, so
+  it climbs. A sweep level's outcome folds into its parent's through `note_outcome`, which never climbs.
+- **Order and timing are the recursion's**: a level prepares before its first child, a child folder's whole subtree ends
+  (its leaves submitted, its dates or refusal settled) before its next sibling starts, and a child's frame drops (a
+  sweep level's lock guard with it) before its parent moves on. `merge_walk_tests.rs` photographs every call each volume
+  sees over a nested fixture on a serial window, under Overwrite, Skip all, a deep failure, a deep cancel and rollback,
+  and a move's sweep, and pins it.
+- **Memory is the recursion's too**: one listing per level on the current path, ❌ never the whole tree. A wide level
+  costs its listing, as it always did; a deep tree costs one small frame per level.
+- **Not yet**: `cleanup.rs::remove_tree` (an aside folder an Overwrite across types discards) and
+  `rename_merge.rs::rename_merge_directory` (a same-volume move into folders both sides hold) still nest a future per
+  level.
+
+Pinned by `deep_tree_tests.rs`: a 400-level copy and move on a 2 MiB worker, past both old ceilings.
 
 ## What the drivers report while they run
 
@@ -1319,7 +1355,7 @@ reason.
 operation's own `stop_or_park_async`, and S3 asks it before each part, so a paused multipart copy parks between parts
 while the parts already in flight finish. SMB asks it before each 16 MiB copychunk slice. A backend that copies in one
 call (SFTP's `copy-data`) has no checkpoint, so its pause lands at the next file, bounded by the walk above:
-`merge_level` parks per entry (§ "Pause in the volume walks"), at most the operation's `FileWindow` width of leaves
+`Walk::advance` parks per entry (§ "Pause in the volume walks"), at most the operation's `FileWindow` width of leaves
 still finishing.
 
 Cells: `strategy_server_side_copy_tests.rs` (who's asked, a pair that's never asked staging nothing, the probe phase,
@@ -1639,15 +1675,15 @@ The mechanics:
 **Folders keep their source's dates too, set AFTER their contents land.** Writing a child bumps its folder's date on
 every real store, so a folder dated when it's created lists "now" by the end of the copy.
 
-- **Cross-volume** (`folder_metadata.rs`): `merge_level` answers whether IT created a level (`DirectoryCreation`), and
-  its parent notes each created child folder with the dates the parent's listing carried (`SourceFolderDates`:
-  modification AND creation), as the walk leaves it (post-order). `copy_directory_streaming` stamps the list through
-  `Volume::apply_metadata` only once the subtree's leaves have drained with no error, then the top-level folder last.
-  Its dates are the ones no walk listing carries, so they ride in from the preflight scan's stat of the top-level path
-  (`CopyScanResult::top_level_{modified,created}_at` → `SourceHint` → `SourceFileFacts::folder_dates`) at no round trip
-  of their own. A source whose scan carried none (an S3 prefix, MTP's single-path scan, a top-level dispatch with no
-  hint) leaves them the destination's. The one-pass sequential extract hands the list to its `ExtractPlan` and stamps
-  after the data pass.
+- **Cross-volume** (`folder_metadata.rs`): `Level::finish` answers whether IT created a level (`DirectoryCreation`), and
+  its parent level (`Walk::settle`) notes each created child folder with the dates the parent's listing carried
+  (`SourceFolderDates`: modification AND creation), as the walk leaves it (post-order). `copy_directory_streaming`
+  stamps the list through `Volume::apply_metadata` only once the subtree's leaves have drained with no error, then the
+  top-level folder last. Its dates are the ones no walk listing carries, so they ride in from the preflight scan's stat
+  of the top-level path (`CopyScanResult::top_level_{modified,created}_at` → `SourceHint` →
+  `SourceFileFacts::folder_dates`) at no round trip of their own. A source whose scan carried none (an S3 prefix, MTP's
+  single-path scan, a top-level dispatch with no hint) leaves them the destination's. The one-pass sequential extract
+  hands the list to its `ExtractPlan` and stamps after the data pass.
 - **A share that drops under a folder's stamp is waited for, and the folder stamped again**
   (`folder_metadata.rs::stamp_through_outages`). Neither call has an error to classify: a backend reports a drop under
   `apply_metadata` as a refused class and under `folder_metadata` as nothing carried. So a stamp that came up short, or
@@ -1885,7 +1921,7 @@ Three loops in this directory are a WALK rather than a byte pump, and each parks
 `state.stop_or_park_async()` exactly where it already observed cancel (`../../../DETAILS.md` § "Pause / resume" owns the
 primitive and the ordering):
 
-- **`merge.rs`'s `merge_level`**, per entry. None of what a walk does — a listing per level, destination creation, a
+- **`merge.rs`'s `Walk::advance`**, per entry. None of what a walk does — a listing per level, destination creation, a
   conflict decision per child — passes through the between-chunks checkpoint the byte path parks at, and file children
   go to the `FileWindow` rather than blocking the walk. So a merge whose children mostly clash, mostly skip, or land
   through `copy_within` moves down the whole tree with the byte path barely involved, which is what a paused merge used
@@ -1991,8 +2027,8 @@ that can be skipped gets skipped, and both directions have cost a user a wrong d
 delete's `EPERM` read as the destination's. cmdr-reports#62 (`ERR-UK5NH`) was the reverse: a local folder moved onto an
 SMB share whose `create_directory` refused a NESTED folder (`STATUS_ACCESS_DENIED`), labelled with the source item the
 walker was on, so the dialog told the user to unlock their intact local folder in Finder. Destination calls are the dest
-root's `create_directory_all`, the space query and `is_directory` probes, `merge_level`'s nested `create_directory` and
-level listing, every name probe (`landing.rs`), a deep clash's resolution, the file write, the staged landing (a
+root's `create_directory_all`, the space query and `is_directory` probes, the walk's nested `create_directory` and level
+listing, every name probe (`landing.rs`), a deep clash's resolution, the file write, the staged landing (a
 safe-replace's swap included), and `remove_tree` of a set-aside dest (`TreeRemoval::side`). Source calls are opening,
 listing, and reading the source, and the move's source sweep. Pinned by `failure_side_tests.rs` (a refused nested mkdir,
 file write, and landing on the serial copy, concurrent copy, and cross-volume move, plus source open and read failures)
@@ -2052,7 +2088,7 @@ the module defining the type, so `impl FinalizeFailure` written in `transfer_err
 honest edge, `transfer_error → recovered_name`. The call syntax is the wordier
 `PathedVolumeError::from_landing(f, path)`; that's the whole cost.
 
-**A walk's outage retry keeps the side**: `merge_level` runs its two listings (and the nested mkdir) through
+**A walk's outage retry keeps the side**: `Walk::open_level` runs its two listings (and the nested mkdir) through
 `volume_outage.rs::through_outages`, which is generic over `OutageFailure`, so each leg's failure leaves the wait still
 labelled with its own volume.
 
@@ -2185,13 +2221,11 @@ counted skip, credited as the scan counted it, and a move's sweep leaves it in t
 - **The backstop for a loop nobody can name**: the same ancestor walk counts the links on the way (`entry_kind`, which
   every backend answers), and past `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) the copy stops with the link-loop error: an
   `IoError` carrying `OsErrorClass::LinkLoop`'s code, which `transfer_error.rs::map_volume_error` reports as
-  `SymlinkLoop` (a kernel `ELOOP` lands there too). **Why 8, ❌ not a path limit**: the walk's stack is the binding
-  limit. Every folder level costs stack, and a release build overflowed a 2 MiB tokio worker (Tauri's default, which
-  runs copies) between 48 and 63 levels (the const's comment has the evidence), far short of any `PATH_MAX`. A link to
-  its own parent adds two levels a pass, so 8 keeps the shortest loop near 16 levels.
-- **Known gap, not this module's**: that same stack ceiling means a REAL folder tree about 60 levels deep, no links at
-  all, overflows a cross-volume copy's walk and aborts the app. The fix is a bigger worker stack or a walk whose depth
-  doesn't nest polls, not a cap here.
+  `SymlinkLoop` (a kernel `ELOOP` lands there too). **Why 8, ❌ not a path limit**: each pass through a loop copies the
+  same folder once more, so the count bounds what such a loop writes before it stops, and no real tree follows eight
+  links down one path. Depth itself costs the walk nothing (§ "The walk keeps its depth on the heap"), so a path limit
+  (macOS's 1,024-byte `PATH_MAX` allows ~512 levels) would let a loop copy hundreds of passes first. A link to its own
+  parent adds two levels a pass, so 8 stops the shortest loop near 16 levels.
 - **The cost**: a `stat` and an `lstat` per ancestor, paid only at a link the walk would follow into a folder.
 
 Pinned by `link_cycle_tests.rs` (a link to `..` and to `.`, a pair, a move, a link elsewhere still followed, and the

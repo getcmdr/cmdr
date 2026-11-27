@@ -146,167 +146,292 @@ async fn sweep_moved_folder(
     skipped: &HashSet<AppPathBuf>,
     locked: &LockedPlan,
 ) -> Result<FolderLeftovers, PathedVolumeError> {
-    let mut left = FolderLeftovers::default();
-    sweep_level(volume, folder, ledger, skipped, locked, &mut left).await?;
-    Ok(left)
-}
-
-/// One folder of the sweep. `Ok(true)` means something stays under it, so the
-/// caller keeps it.
-async fn sweep_level(
-    volume: &Arc<dyn Volume>,
-    dir: &Path,
-    ledger: &SourceLedger,
-    skipped: &HashSet<AppPathBuf>,
-    locked: &LockedPlan,
-    left: &mut FolderLeftovers,
-) -> Result<bool, PathedVolumeError> {
-    // Back on (by `Drop`) unless the folder empties and goes.
-    let opened = locked.unlock(dir);
-    // As the copy walk listed it: a sidecar it left behind travels with its
-    // owner, which the kernel removes with the owner.
-    // The folder in the volume's spelling, made once for its listing and its delete.
-    let dir_app = AppPath::legacy_unchecked(dir);
-    let entries = match volume.list_directory_as_source(&dir_app).await {
-        Ok(entries) => entries,
-        // Gone already: whoever removed it, nothing of it is left to protect.
-        Err(VolumeError::NotFound(_)) => {
-            left.read_gone = true;
-            return Ok(false);
-        }
-        Err(e) => return Err(e).at_source(dir),
+    let sweep = Sweep {
+        volume,
+        ledger,
+        skipped,
+        locked,
     };
-
-    let mut remains = false;
-    let mut first_failure: Option<PathedVolumeError> = None;
-    // The files this level clears, deleted together once the level is read:
-    // one request per thousand on an object store (`Volume::delete_files`).
-    // Each beside its volume spelling (`doomed_app`, `husk_app`), which the batch
-    // delete takes as one slice.
-    let (mut doomed, mut doomed_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
-    // OS junk files the move left out: removed only once everything else here
-    // went, so a folder that stays keeps the metadata describing it.
-    let (mut husk, mut husk_app): (Vec<PathBuf>, Vec<AppPathBuf>) = (Vec::new(), Vec::new());
-    for entry in &entries {
-        // The entry as its listing row names it, typed, made once for its stat,
-        // its delete, and the batch delete (a borrow until a batch keeps it). A
-        // row holding a `..` name (a hostile `../x`) is never
-        // deleted: it stays, like anything the sweep can't vouch for.
-        let path_app = match listed_path(entry) {
-            Ok(path_app) => path_app,
-            Err(e) => {
-                log::warn!(
-                    "move sweep: kept a listed entry whose path climbs, under {}: {}",
-                    LogPrivate::path(dir),
-                    LogError(&e)
-                );
-                remains = true;
-                continue;
+    let mut left = FolderLeftovers::default();
+    // The folders the sweep is inside, outermost first: a tree's depth lives
+    // here, on the heap, ❌ never in nested futures, which overflowed a copy
+    // worker's stack on a deep enough tree (#1541).
+    let mut inside: Vec<SweepLevel> = Vec::new();
+    // The folder in the volume's spelling, made once; every folder below it is
+    // its listing row's own path, typed.
+    let mut opening = Some(SweptFolder {
+        dir: folder.to_path_buf(),
+        dir_app: AppPath::legacy_unchecked(folder).into_owned(),
+    });
+    loop {
+        // `Ok(true)`: something stays under the folder that just ended, so the
+        // folder above keeps it.
+        let ended = match opening.take() {
+            Some(folder) => match sweep.open(folder, &mut left).await {
+                Ok(Some(level)) => {
+                    inside.push(level);
+                    continue;
+                }
+                // Gone already: nothing of it is left to protect.
+                Ok(None) => Ok(false),
+                Err(e) => Err(e),
+            },
+            None => {
+                let level = inside
+                    .last_mut()
+                    .expect("the sweep returns once its root folder ends, so it is always inside one");
+                if let Some(child) = sweep.advance(level, &mut left).await {
+                    opening = Some(child);
+                    continue;
+                }
+                let level = inside.pop().expect("the folder that ended is on top");
+                sweep.finish(level, &mut left).await
             }
         };
-        // The same entry for the ledgers, which key on `std::path`.
-        let path = std_of(&path_app).into_owned();
-        let outcome = if skipped.contains(&*path_app) {
-            Ok(true)
-        } else {
-            match kind_of(volume, entry, &path_app).await {
-                Err(e) => Err(e),
-                Ok(EntryKind::Directory) if ledger.walked_dirs.contains(&*path_app) => {
-                    Box::pin(sweep_level(volume, &path, ledger, skipped, locked, left)).await
+        match inside.last_mut() {
+            Some(parent) => note_outcome(ended, &mut parent.remains, &mut parent.first_failure),
+            None => return ended.map(|_| left),
+        }
+    }
+}
+
+/// What every folder of one sweep reads.
+struct Sweep<'s> {
+    volume: &'s Arc<dyn Volume>,
+    ledger: &'s SourceLedger,
+    skipped: &'s HashSet<AppPathBuf>,
+    locked: &'s LockedPlan,
+}
+
+/// A folder the sweep is about to open, in both spellings: `std::path` for the
+/// Locked plan and the reports, the volume's for its listing and its delete.
+struct SweptFolder {
+    dir: PathBuf,
+    dir_app: AppPathBuf,
+}
+
+/// One folder the sweep is inside: its listing, how far through it the sweep
+/// is, and what it has decided about the entries so far.
+struct SweepLevel {
+    dir: PathBuf,
+    dir_app: AppPathBuf,
+    /// Back on (by `Drop`) unless the folder empties and goes.
+    opened: Unlocked,
+    entries: Vec<FileEntry>,
+    next: usize,
+    /// Something under the folder stays, so the folder does too.
+    remains: bool,
+    first_failure: Option<PathedVolumeError>,
+    /// The files this level clears, deleted together once the level is read:
+    /// one request per thousand on an object store (`Volume::delete_files`).
+    /// Each beside its volume spelling (`doomed_app`, `husk_app`), which the
+    /// batch delete takes as one slice.
+    doomed: Vec<PathBuf>,
+    doomed_app: Vec<AppPathBuf>,
+    /// OS junk files the move left out: removed only once everything else here
+    /// went, so a folder that stays keeps the metadata describing it.
+    husk: Vec<PathBuf>,
+    husk_app: Vec<AppPathBuf>,
+}
+
+impl Sweep<'_> {
+    /// Unlocks and lists `dir`. `None`: it's gone already (whoever removed it).
+    async fn open(
+        &self,
+        folder: SweptFolder,
+        left: &mut FolderLeftovers,
+    ) -> Result<Option<SweepLevel>, PathedVolumeError> {
+        let SweptFolder { dir, dir_app } = folder;
+        let opened = self.locked.unlock(&dir);
+        // As the copy walk listed it: a sidecar it left behind travels with its
+        // owner, which the kernel removes with the owner.
+        let entries = match self.volume.list_directory_as_source(&dir_app).await {
+            Ok(entries) => entries,
+            Err(VolumeError::NotFound(_)) => {
+                left.read_gone = true;
+                return Ok(None);
+            }
+            Err(e) => return Err(e).at_source(&*dir),
+        };
+        Ok(Some(SweepLevel {
+            dir,
+            dir_app,
+            opened,
+            entries,
+            next: 0,
+            remains: false,
+            first_failure: None,
+            doomed: Vec::new(),
+            doomed_app: Vec::new(),
+            husk: Vec::new(),
+            husk_app: Vec::new(),
+        }))
+    }
+
+    /// Decides `level`'s entries from where it left off, and answers the first
+    /// folder the walk listed, which the sweep takes next; `None` once every
+    /// entry is decided.
+    async fn advance(&self, level: &mut SweepLevel, left: &mut FolderLeftovers) -> Option<SweptFolder> {
+        let SweepLevel {
+            dir,
+            entries,
+            next,
+            remains,
+            first_failure,
+            doomed,
+            doomed_app,
+            husk,
+            husk_app,
+            ..
+        } = level;
+        while let Some(entry) = entries.get(*next) {
+            *next += 1;
+            // The entry as its listing row names it, typed, made once for its stat,
+            // its delete, and the batch delete (a borrow until a batch keeps it). A
+            // row holding a `..` name (a hostile `../x`) is never
+            // deleted: it stays, like anything the sweep can't vouch for.
+            let path_app = match listed_path(entry) {
+                Ok(path_app) => path_app,
+                Err(e) => {
+                    log::warn!(
+                        "move sweep: kept a listed entry whose path climbs, under {}: {}",
+                        LogPrivate::path(&**dir),
+                        LogError(&e)
+                    );
+                    *remains = true;
+                    continue;
                 }
-                // A link the move carried goes as the link, ❌ never through it:
-                // on a backend whose listing follows links the walk copied what
-                // it points at, and that target is not the user's selection.
-                Ok(EntryKind::Symlink) if ledger.carried(&path_app) => {
-                    volume.delete(&path_app).await.at_source(&*path_app).map(|()| false)
-                }
-                Ok(EntryKind::Directory | EntryKind::Symlink) => {
-                    left.appeared += 1;
-                    Ok(true)
-                }
-                Ok(EntryKind::File) => match ledger.files.get(&*path_app) {
-                    // An OS junk file the move left out (#314, #1305): this folder's
-                    // own metadata, so it goes if the folder does.
-                    None if ledger.os_junk.leaves_out_str(&entry.name, false) => {
-                        husk_app.push(path_app.into_owned());
-                        husk.push(path);
-                        Ok(false)
+            };
+            // The same entry for the ledgers, which key on `std::path`.
+            let path = std_of(&path_app).into_owned();
+            let outcome = if self.skipped.contains(&*path_app) {
+                Ok(true)
+            } else {
+                match kind_of(self.volume, entry, &path_app).await {
+                    Err(e) => Err(e),
+                    Ok(EntryKind::Directory) if self.ledger.walked_dirs.contains(&*path_app) => {
+                        return Some(SweptFolder {
+                            dir: path,
+                            dir_app: path_app.into_owned(),
+                        });
                     }
-                    None => {
+                    // A link the move carried goes as the link, ❌ never through it:
+                    // on a backend whose listing follows links the walk copied what
+                    // it points at, and that target is not the user's selection.
+                    Ok(EntryKind::Symlink) if self.ledger.carried(&path_app) => self
+                        .volume
+                        .delete(&path_app)
+                        .await
+                        .at_source(&*path_app)
+                        .map(|()| false),
+                    Ok(EntryKind::Directory | EntryKind::Symlink) => {
                         left.appeared += 1;
                         Ok(true)
                     }
-                    Some(stamp) if *stamp != SourceStamp::of(entry) => {
-                        left.changed += 1;
-                        Ok(true)
-                    }
-                    Some(_) => {
-                        doomed_app.push(path_app.into_owned());
-                        doomed.push(path);
-                        Ok(false)
-                    }
-                },
-            }
-        };
-        note_outcome(outcome, &mut remains, &mut first_failure);
-    }
-    let unlocked: Vec<Unlocked> = doomed.iter().map(|path| locked.unlock(path)).collect();
-    let results = volume.delete_files(&doomed_app).await;
-    for ((path, result), unlocked) in doomed.iter().zip(results).zip(unlocked) {
-        if result.is_ok() {
-            unlocked.gone();
+                    Ok(EntryKind::File) => match self.ledger.files.get(&*path_app) {
+                        // An OS junk file the move left out (#314, #1305): this folder's
+                        // own metadata, so it goes if the folder does.
+                        None if self.ledger.os_junk.leaves_out_str(&entry.name, false) => {
+                            husk_app.push(path_app.into_owned());
+                            husk.push(path);
+                            Ok(false)
+                        }
+                        None => {
+                            left.appeared += 1;
+                            Ok(true)
+                        }
+                        Some(stamp) if *stamp != SourceStamp::of(entry) => {
+                            left.changed += 1;
+                            Ok(true)
+                        }
+                        Some(_) => {
+                            doomed_app.push(path_app.into_owned());
+                            doomed.push(path);
+                            Ok(false)
+                        }
+                    },
+                }
+            };
+            note_outcome(outcome, remains, first_failure);
         }
-        note_outcome(result.at_source(path).map(|()| false), &mut remains, &mut first_failure);
+        None
     }
 
-    if remains {
-        return match first_failure {
-            Some(failure) => Err(failure),
-            None => Ok(true),
-        };
-    }
-    // Everything the move carried is gone, so the folder goes too, and the
-    // OS junk files it held with it: ❌ never a husk folder in the source.
-    // A junk file the source won't let go of (`junk_volume_delete_refused`:
-    // Explorer holding `Thumbs.db`, an open `.nfs*`, a share's sharing
-    // violation) stays, and so does its folder, with no error (#1305).
-    if !husk.is_empty() {
-        let mut held = false;
-        for (path, result) in husk.iter().zip(volume.delete_files(&husk_app).await) {
-            match result {
-                Ok(()) => {}
-                Err(VolumeError::NotFound(_)) => left.read_gone = true,
-                Err(e) if junk_volume_delete_refused(&e) => {
-                    log::info!(
-                        "move sweep: the source kept a skipped junk file, so its folder stays ({error})",
-                        error = LogError(&e)
-                    );
-                    held = true;
+    /// Every entry of `level` is decided: deletes what it cleared, then the
+    /// folder itself if nothing stays. `Ok(true)` means something stays under
+    /// it, so the folder above keeps it.
+    async fn finish(&self, level: SweepLevel, left: &mut FolderLeftovers) -> Result<bool, PathedVolumeError> {
+        let SweepLevel {
+            dir,
+            dir_app,
+            opened,
+            mut remains,
+            mut first_failure,
+            doomed,
+            doomed_app,
+            husk,
+            husk_app,
+            ..
+        } = level;
+        let volume = self.volume;
+        let unlocked: Vec<Unlocked> = doomed.iter().map(|path| self.locked.unlock(path)).collect();
+        let results = volume.delete_files(&doomed_app).await;
+        for ((path, result), unlocked) in doomed.iter().zip(results).zip(unlocked) {
+            if result.is_ok() {
+                unlocked.gone();
+            }
+            note_outcome(result.at_source(path).map(|()| false), &mut remains, &mut first_failure);
+        }
+
+        if remains {
+            return match first_failure {
+                Some(failure) => Err(failure),
+                None => Ok(true),
+            };
+        }
+        // Everything the move carried is gone, so the folder goes too, and the
+        // OS junk files it held with it: ❌ never a husk folder in the source.
+        // A junk file the source won't let go of (`junk_volume_delete_refused`:
+        // Explorer holding `Thumbs.db`, an open `.nfs*`, a share's sharing
+        // violation) stays, and so does its folder, with no error (#1305).
+        if !husk.is_empty() {
+            let mut held = false;
+            for (path, result) in husk.iter().zip(volume.delete_files(&husk_app).await) {
+                match result {
+                    Ok(()) => {}
+                    Err(VolumeError::NotFound(_)) => left.read_gone = true,
+                    Err(e) if junk_volume_delete_refused(&e) => {
+                        log::info!(
+                            "move sweep: the source kept a skipped junk file, so its folder stays ({error})",
+                            error = LogError(&e)
+                        );
+                        held = true;
+                    }
+                    Err(e) => return Err(e).at_source(path),
                 }
-                Err(e) => return Err(e).at_source(path),
+            }
+            if held {
+                return Ok(true);
             }
         }
-        if held {
-            return Ok(true);
+        // ❗ As a folder, never `delete`: once such a folder's last file goes, a
+        // plain delete finds only a file of its name, which the move never copied.
+        match volume.delete_directory(&dir_app, None).await {
+            // A folder that only existed through what was in it (an object
+            // store's prefix with no marker) went with its last file.
+            Ok(()) => {
+                opened.gone();
+                Ok(false)
+            }
+            // A prefix-only folder legitimately reads so; a local one that left
+            // does too, and only the mount table tells them apart.
+            Err(VolumeError::NotFound(_)) => {
+                left.read_gone = true;
+                opened.gone();
+                Ok(false)
+            }
+            Err(e) => Err(e).at_source(&*dir),
         }
-    }
-    // ❗ As a folder, never `delete`: once such a folder's last file goes, a
-    // plain delete finds only a file of its name, which the move never copied.
-    match volume.delete_directory(&dir_app, None).await {
-        // A folder that only existed through what was in it (an object
-        // store's prefix with no marker) went with its last file.
-        Ok(()) => {
-            opened.gone();
-            Ok(false)
-        }
-        // A prefix-only folder legitimately reads so; a local one that left
-        // does too, and only the mount table tells them apart.
-        Err(VolumeError::NotFound(_)) => {
-            left.read_gone = true;
-            opened.gone();
-            Ok(false)
-        }
-        Err(e) => Err(e).at_source(dir),
     }
 }
 

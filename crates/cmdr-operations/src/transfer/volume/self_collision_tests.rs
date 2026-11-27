@@ -4,8 +4,8 @@
 //! The rule is the one `../DETAILS.md` § "Self-collision (duplicating in place)"
 //! states; what's volume-specific is how identity is answered (no `dev+ino` out
 //! here, so it's one volume, one parent directory, and a folded leaf) and that a renamed
-//! directory needs no remap, because `merge_level` threads the destination down
-//! through its own recursion.
+//! directory needs no remap, because the merge walk threads the destination down
+//! level by level.
 //!
 //! The copy tests drive the operation through a [`ConflictResponderSink`]
 //! scripted to `Rename`: a self-collision must raise NO prompt at all, and the
@@ -228,7 +228,7 @@ async fn duplicating_a_whole_series_at_once_gives_every_source_its_own_name() {
 }
 
 /// The propagation claim: the volume engine threads the destination down through
-/// `merge_level`, so renaming the top-level folder carries the whole subtree with
+/// the merge walk, so renaming the top-level folder carries the whole subtree with
 /// it. Nothing inside the original may be touched, and no ` (N)` may appear there.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn duplicating_a_folder_in_place_lands_the_whole_subtree_under_the_renamed_root() {
@@ -281,7 +281,7 @@ async fn duplicating_a_folder_in_place_lands_the_whole_subtree_under_the_renamed
     assert!(events.inner.conflicts.lock_ignore_poison().is_empty());
 }
 
-/// An empty folder duplicates too: `merge_level` creates the renamed destination
+/// An empty folder duplicates too: the merge walk creates the renamed destination
 /// before it lists anything, so there's no leaf to hang the redirect on and none
 /// is needed.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
