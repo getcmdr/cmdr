@@ -8,7 +8,9 @@ Depth and rationale. `CLAUDE.md` holds the must-knows; the depth lives here.
   disconnect. A suppressed event schedules a TRAILING re-emit so a burst's last change isn't lost, and it must
   `claim_trailing` first so the burst gets one trailing emit rather than one per event. See § "Trailing emits must be
   claimed".
-- **Async recursion** (`bulk_ops.rs`, recursive `delete()`): `Box::pin(async move { ... })` breaks the infinite future.
+- **Async recursion** (`delete_object_with_cancel` under `MtpDeleteScope::Tree`, which nothing in the app calls):
+  `Box::pin(async move { ... })` breaks the infinite future. Every walk the app runs keeps its depth on the heap
+  (`bulk_ops.rs::scan_entries`, the heal, `PathHandleCache::remove_path`; #1541).
 - **Event-loop shutdown**: biased `tokio::select!` so the shutdown signal always wins over the event poll.
 
 ## Foreground-priority device scheduler
@@ -262,8 +264,14 @@ cleanup never masks the original upload error. Pinned by `upload_failure_deletes
 
 The path cache holds only what a listing put there, and a path reaches an op by routes that never listed its parent: a
 pane restored after a reconnect or a session reset, a search result, a go-to-path, or a pane still showing a file an
-earlier op removed. So every op resolves through `resolve_path_to_handle`, which on a miss lists the parent (resolving
-the parent the same way, recursively up to the constant root) and looks again.
+earlier op removed. So every op resolves through `resolve_path_to_handle`, which on a miss lists the parent and looks
+again.
+
+- **One loop, any depth.** A miss climbs by cache reads alone to the nearest folder the cache knows (or the constant
+  root), then lists each unknown folder's parent top-down, so every listing finds its own folder in the cache. ❌ Never
+  let a listing heal its folder by nesting another heal: that held one listing future per missing level and overflowed a
+  2 MiB worker near 90 levels in a debug build (verified on macOS 27, `resolve_test.rs`'s deep cell at 400 levels,
+  2026-11-27; #1541). Pinned by `a_folder_150_levels_below_anything_listed_heals_on_a_workers_stack`.
 
 - **Still missing means gone.** It answers `MtpConnectionError::ObjectNotFound { path }` naming the path ASKED about,
   also when a folder above it is what's missing, since the user acted on the file. `mapping.rs` turns that into

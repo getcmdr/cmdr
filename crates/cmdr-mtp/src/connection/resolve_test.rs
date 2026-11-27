@@ -120,3 +120,45 @@ async fn a_path_under_a_missing_folder_is_not_found_for_the_path_asked_about() {
 
     device.teardown(test_connection_manager()).await;
 }
+
+/// A folder 150 levels below anything listed resolves on the stack an MTP op
+/// really runs on, a 2 MiB tokio worker (#1541): the heal lists each missing
+/// ancestor from one loop. A heal that resolved each parent by nesting the next
+/// listing overflowed it near 90 levels in a debug build (macOS 27, this cell
+/// at 400 levels, 2026-11-27). Deeper costs this cell more than it proves: the
+/// virtual phone's listing slows with depth, so 400 levels took 17 s.
+#[cfg(unix)] // Windows' debug frames are larger; the walk is the same code there.
+#[test]
+fn a_folder_150_levels_below_anything_listed_heals_on_a_workers_stack() {
+    const DEPTH: usize = 150;
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .thread_stack_size(2 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .unwrap();
+    let listed = runtime
+        .block_on(runtime.spawn(async {
+            let _guard = device_lock().await;
+            let fixture = crate::virtual_device::setup_virtual_mtp_device();
+            let spine = format!("Deep{}", "/d".repeat(DEPTH));
+            let bottom = fixture.root().join("internal").join(&spine);
+            std::fs::create_dir_all(&bottom).unwrap();
+            std::fs::write(bottom.join("bottom.bin"), vec![0; 11]).unwrap();
+            let manager = test_connection_manager();
+            let device = crate::testing::connect_fixture(manager, fixture).await;
+            let listed = manager
+                .list_directory(&device.id, device.storage_id, &format!("/{spine}"))
+                .await;
+            device.teardown(manager).await;
+            listed
+        }))
+        .expect("the heal ends without overflowing its stack");
+
+    let names: Vec<String> = listed
+        .expect("the heal finds the folder")
+        .into_iter()
+        .map(|e| e.name)
+        .collect();
+    assert_eq!(names, ["bottom.bin"]);
+}

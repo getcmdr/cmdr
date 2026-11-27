@@ -117,7 +117,28 @@ impl PathHandleCache {
     /// that's gone or renamed no longer holds what was cached under its old path,
     /// and a new folder taking the name would otherwise resolve its children to
     /// the old handles.
+    ///
+    /// The subtree waits on a `Vec`, ❌ never a call per level: this runs inside
+    /// an MTP op, on its worker's stack, and a phone's tree runs ~2,048 levels
+    /// deep (#1541). Each path's removal touches only what's keyed by it, so the
+    /// order doesn't matter.
     pub(super) fn remove_path(&mut self, path: &AppPath) {
+        if let Some(parent) = twins::folder_of(path)
+            && let Some(siblings) = self.children.get_mut(parent)
+        {
+            siblings.remove(path);
+        }
+        self.forget_path(path);
+        let mut doomed: Vec<AppPathBuf> = self.children.remove(path).unwrap_or_default().into_iter().collect();
+        while let Some(path) = doomed.pop() {
+            // Its folder's `children` entry went with the folder already.
+            self.forget_path(&path);
+            doomed.extend(self.children.remove(&path).unwrap_or_default());
+        }
+    }
+
+    /// Drops `path`'s own forward entry and its handles' reverse entries.
+    fn forget_path(&mut self, path: &AppPath) {
         if let Some(handle) = self.path_to_handle.remove(path) {
             // Only if the reverse entry still points AT this path: a rename
             // re-inserts the handle under its new path, and that newer mapping
@@ -130,14 +151,6 @@ impl PathHandleCache {
             if self.handle_to_path.get(&twin).is_some_and(|p| p == path) {
                 self.handle_to_path.remove(&twin);
             }
-        }
-        if let Some(parent) = twins::folder_of(path)
-            && let Some(siblings) = self.children.get_mut(parent)
-        {
-            siblings.remove(path);
-        }
-        for child in self.children.remove(path).unwrap_or_default() {
-            self.remove_path(&child);
         }
     }
 

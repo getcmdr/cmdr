@@ -14,6 +14,9 @@
 
 mod bulk_ops;
 mod cache;
+/// The path cache's bookkeeping, with no device.
+#[cfg(test)]
+mod cache_test;
 mod connect_gate;
 mod dates;
 mod directory_ops;
