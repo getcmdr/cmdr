@@ -48,10 +48,11 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
             .trashItemAtURL_resultingItemURL_error(&url, Some(&mut resulting))
             .map_err(|e| MutationError::TrashRefused {
                 reason: refine_permission_refusal(path, classify_trash_refusal(&e)),
-                // The codes ride along with the words: the words are the user's, but the
-                // codes (the underlying one most of all) are what a report needs to tell
-                // two refusals with the same sentence apart (cmdr-reports#104).
-                detail: format!("{e} [{}]", error_codes(&e)),
+                detail: e.to_string(),
+                // The words are the user's, but the codes (the underlying one most of
+                // all) are what a report needs to tell two refusals with the same
+                // sentence apart (cmdr-reports#104).
+                codes: Some(error_codes(&e)),
             })?;
         let in_trash = resulting.and_then(|u| u.path()).map(|p| PathBuf::from(p.to_string()));
         #[cfg(any(test, feature = "testing"))]
@@ -160,6 +161,36 @@ fn refine_permission_refusal(path: &Path, reason: TrashRefusalKind) -> TrashRefu
 /// Whether `folder` is sticky and keeps `item` from us: a sticky folder lets only
 /// the item's owner, the folder's owner, or root move an item out, however
 /// writable the folder is.
+pub(in super::super) fn trash_folder_facts(trash: &Path) -> String {
+    use std::os::macos::fs::MetadataExt as _;
+    use std::os::unix::fs::MetadataExt;
+
+    let meta = match fs::symlink_metadata(trash) {
+        Ok(meta) => meta,
+        Err(error) => {
+            return match error.raw_os_error() {
+                Some(errno) => format!("unreadable (errno {errno})"),
+                None => "unreadable".to_string(),
+            };
+        }
+    };
+    // The boot volume's is `~/.Trash`; any other volume's is `.Trashes/<uid>`.
+    let kind = if trash.file_name().is_some_and(|name| name == ".Trash") {
+        "home"
+    } else {
+        "volume"
+    };
+    // SAFETY: `geteuid` takes no arguments, touches no memory of ours, and can't fail.
+    let euid = unsafe { libc::geteuid() };
+    format!(
+        "kind={kind} owner_uid={} euid={euid} mode={:o} symlink={} flags={:#x}",
+        meta.uid(),
+        meta.mode() & 0o7777,
+        meta.file_type().is_symlink(),
+        meta.st_flags(),
+    )
+}
+
 fn sticky_folder_keeps_it(item: &Path, folder: &Path) -> bool {
     use std::os::unix::fs::MetadataExt;
 

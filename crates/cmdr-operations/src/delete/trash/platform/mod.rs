@@ -15,6 +15,13 @@ mod imp;
 const _: fn(&Path) -> Result<Option<PathBuf>, MutationError> = move_to_trash_sync;
 const _: fn(&Path) -> Option<PathBuf> = trash_dir_for_path;
 const _: fn(&Path) = forget_restored;
+const _: fn(&Path) -> String = trash_folder_facts;
+
+/// What a trash folder [`trash_dir_for_path`] answered says about itself, as log text: home or
+/// volume trash, owner uid against our euid, mode, symlink, and `st_flags`, all numbers, never a
+/// name. Only macOS has such a folder to read; the other arms' `None` from `trash_dir_for_path`
+/// never reaches theirs.
+pub(super) use imp::trash_folder_facts;
 
 /// Tidies what the OS keeps beside an item it trashed, once a restore has renamed
 /// the item at `in_trash` back out. Only Windows keeps anything (the `$I` record

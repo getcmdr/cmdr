@@ -561,6 +561,13 @@ pub enum WriteOperationError {
         item_count: usize,
         /// Why, classified at the OS boundary.
         reason: TrashRefusalKind,
+        /// The OS's error codes behind the refusals, each distinct chain once
+        /// (`NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000`); `None` where the
+        /// platform gives none. ❗ Its own field, AHEAD of `message`: a report caps a
+        /// `detail=` value at 200 chars, and riding at the end of `message` behind a
+        /// path and the OS's sentence, the codes never made the cut (cmdr-reports#121).
+        #[serde(default)]
+        codes: Option<String>,
         /// The OS's own words, for the technical-details disclosure ONLY.
         message: cmdr_fs::error_detail::ErrorDetail,
         /// At least one refused item is online-only (`SF_DATALESS`): its contents

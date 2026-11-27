@@ -1501,6 +1501,14 @@ export const commands = {
           itemCount: number
           // Why, classified at the OS boundary.
           reason: TrashRefusalKind
+          /**
+           *  The OS's error codes behind the refusals, each distinct chain once
+           *  (`NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000`); `None` where the
+           *  platform gives none. ❗ Its own field, AHEAD of `message`: a report caps a
+           *  `detail=` value at 200 chars, and riding at the end of `message` behind a
+           *  path and the OS's sentence, the codes never made the cut (cmdr-reports#121).
+           */
+          codes?: string | null
           // The OS's own words, for the technical-details disclosure ONLY.
           message: string
           /**
@@ -16211,6 +16219,14 @@ export type MutationError =
        *  technical-details disclosure.
        */
       detail: string
+      /**
+       *  The OS's error codes, the underlying ones too (`NSCocoaErrorDomain 513 <
+       *  NSOSStatusErrorDomain -5000`): what tells two refusals with the same
+       *  sentence apart (cmdr-reports#104). Typed, so a batch refusal can carry
+       *  them ahead of its words (`WriteOperationError::TrashRefused::codes`).
+       *  `None` where the platform gives none.
+       */
+      codes?: string | null
     }
   // The volume refused, and said why in its own vocabulary.
   | {
@@ -27337,6 +27353,14 @@ export type WriteOperationError =
       itemCount: number
       // Why, classified at the OS boundary.
       reason: TrashRefusalKind
+      /**
+       *  The OS's error codes behind the refusals, each distinct chain once
+       *  (`NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000`); `None` where the
+       *  platform gives none. ❗ Its own field, AHEAD of `message`: a report caps a
+       *  `detail=` value at 200 chars, and riding at the end of `message` behind a
+       *  path and the OS's sentence, the codes never made the cut (cmdr-reports#121).
+       */
+      codes?: string | null
       // The OS's own words, for the technical-details disclosure ONLY.
       message: string
       /**

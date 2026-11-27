@@ -49,6 +49,7 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
         return Err(MutationError::TrashRefused {
             reason: TrashRefusalKind::Other,
             detail: "the Shell can't name this path (too long, or a name Windows can't store plainly)".into(),
+            codes: None,
         });
     };
     // Asked before the Shell: a file too big for the bin is one the sink never sees
@@ -61,6 +62,7 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
         return Err(MutationError::TrashRefused {
             reason: TrashRefusalKind::NoTrashForVolume,
             detail: "no Recycle Bin here can take it (not a fixed disk, the bin turned off, or the item past its size limit)".into(),
+            codes: None,
         });
     }
     let landed = match shell::recycle(&plain) {
@@ -80,6 +82,7 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
             return Err(MutationError::TrashRefused {
                 reason: refusal.kind(),
                 detail: refusal.to_string(),
+                codes: None,
             });
         }
     };
@@ -89,9 +92,15 @@ pub fn move_to_trash_sync(path: &Path) -> Result<Option<PathBuf>, MutationError>
         return Err(MutationError::TrashRefused {
             reason: TrashRefusalKind::Other,
             detail: "the Shell reported the item recycled, but it's still in place".into(),
+            codes: None,
         });
     }
     Ok(landed)
+}
+
+/// Never reached: [`trash_dir_for_path`] names no folder here.
+pub(in super::super) fn trash_folder_facts(_trash: &Path) -> String {
+    "no trash folder to read".to_string()
 }
 
 /// `None`: the Recycle Bin is a Shell folder with no path a pane can list (its

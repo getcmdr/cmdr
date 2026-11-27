@@ -255,14 +255,22 @@ describe('getTechnicalDetails: variants with their own lines', () => {
     )
   })
 
-  it('falls back to the type alone for a variant with no path', () => {
+  // The OS's codes and words are the refusal's only technical facts: the dialog's prose
+  // words the reason, never the sentence macOS wrote (cmdr-reports#121).
+  it('shows a refused trash its OS codes and words', () => {
     const error: WriteOperationError = {
       type: 'trash_refused',
       itemCount: 3,
-      reason: 'notPermitted',
-      message: 'macOS said no',
+      reason: 'trashNotWritable',
+      codes: 'NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000',
+      message: '/Users/test_user_1/a.txt: macOS said no',
     }
 
-    expect(getTechnicalDetails(error)).toBe('Error type: trash_refused')
+    expect(getTechnicalDetails(error)).toBe(
+      'Codes: NSCocoaErrorDomain 513 < NSOSStatusErrorDomain -5000\nDetails: /Users/test_user_1/a.txt: macOS said no\nError type: trash_refused',
+    )
+    expect(getTechnicalDetails({ ...error, codes: null })).toBe(
+      'Details: /Users/test_user_1/a.txt: macOS said no\nError type: trash_refused',
+    )
   })
 })

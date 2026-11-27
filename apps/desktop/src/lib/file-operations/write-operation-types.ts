@@ -347,7 +347,16 @@ export type WriteOperationError =
   // (`notPermitted`) as readily as 3328, so the reason can't tell the two apart,
   // and the Full Disk Access offer must not attach to one. See
   // `crates/cmdr-operations/src/delete/cloud_trash.rs`.
-  | { type: 'trash_refused'; itemCount: number; reason: TrashRefusalKind; message: string; onlineOnly?: boolean }
+  // `codes` is the OS's error-code chains (`NSCocoaErrorDomain 513 < …`), for logs and the
+  // technical details; `null` where the platform gives none.
+  | {
+      type: 'trash_refused'
+      itemCount: number
+      reason: TrashRefusalKind
+      codes?: string | null
+      message: string
+      onlineOnly?: boolean
+    }
   | { type: 'io_error'; path: string; message: string }
   // Reading a source inside a locked archive or restic repo; `container` says
   // which one asked. `wrongAttempt` is true when the stored password was
