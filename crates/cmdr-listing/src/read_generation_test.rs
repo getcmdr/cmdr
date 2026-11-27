@@ -214,10 +214,32 @@ impl Volume for GatedListVolume {
 
 /// An engine with a fresh volume id and directory, the volume registered under it.
 pub(super) fn register(tag: &str, script: Vec<Read>) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
+    register_with(tag, script, TestEngine::builder())
+}
+
+/// [`register`], with the engine spawning onto the calling test's runtime. A `start_paused` test
+/// needs it: on the shared fallback runtime, a spawned stat races the paused clock's auto-advance,
+/// so a budget can run out before the stat's task was ever polled.
+pub(super) fn register_on_this_runtime(
+    tag: &str,
+    script: Vec<Read>,
+) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
+    register_with(
+        tag,
+        script,
+        TestEngine::builder().runtime(tokio::runtime::Handle::current()),
+    )
+}
+
+fn register_with(
+    tag: &str,
+    script: Vec<Read>,
+    builder: super::testing::TestEngineBuilder,
+) -> (TestEngine, String, AppPathBuf, Arc<GatedListVolume>) {
     let volume_id = unique_test_id(&format!("{tag}-vol"));
     let dir = super::testing::app_text(&format!("/test/{}", unique_test_id(&format!("{tag}-dir"))));
     let volume = Arc::new(GatedListVolume::new(script));
-    let engine = TestEngine::builder()
+    let engine = builder
         .volume(&volume_id, Arc::clone(&volume) as Arc<dyn Volume>)
         .build();
     (engine, volume_id, dir, volume)

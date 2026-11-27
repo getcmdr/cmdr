@@ -22,7 +22,9 @@ use tokio::sync::Notify;
 use super::Listings;
 use super::RefreshOutcome;
 use super::patch_log::MAX_TRACKED_PATCHES;
-use super::read_generation_test::{GatedListVolume, Read, entry, names, register, spawn_full_refresh};
+use super::read_generation_test::{
+    GatedListVolume, Read, entry, names, register, register_on_this_runtime, spawn_full_refresh,
+};
 use super::testing::{TestEngine, TestListing, TestListingGuard};
 
 /// Scripts `answer` as `volume`'s next read, held open until the returned gate
@@ -635,7 +637,8 @@ async fn a_patch_to_a_name_that_is_not_utf8_reads_the_folder_again() {
 async fn a_check_whose_stats_never_answer_keeps_the_patch_and_frees_the_turn() {
     // A mount dies while the check stats: each pass waits out its budget, then the
     // patch's own observation stands, and the folder's turn was free all along.
-    let (engine, volume_id, dir, volume) = register("race-dead-mount", Vec::new());
+    // On this test's paused clock, so a stat's task runs before the budget it races can expire.
+    let (engine, volume_id, dir, volume) = register_on_this_runtime("race-dead-mount", Vec::new());
     volume.put(entry(&dir, "alpha"));
     let listing = listing(&engine, &volume_id, &dir, vec![entry(&dir, "alpha")], "race-dead-mount");
     let gate = hold_next_read(&volume, vec![entry(&dir, "alpha")]);
