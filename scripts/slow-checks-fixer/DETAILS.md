@@ -13,11 +13,14 @@ the agent makes that call, fixes or reruns, and David hears about it only when a
 1. A system LaunchDaemon, `com.vdavid.agents.slow-checks-fixer` (hourly at minute 17, `UserName` `agents`), runs
    `run.sh` through a login `zsh`, so it has the `agents` user's environment (`gh`, `gh-app-token`, `secret`, mise,
    `claude`).
-2. `run.sh` exits at once unless an open `slow-checks` issue by `github-actions[bot]` names a red run that isn't in
-   `~/.local/state/slow-checks-fixer/handled-runs`. The run id is the body's first `actions/runs/<id>` link, or the
-   newest `github-actions[bot]` comment that says "went red". This lookup is anonymous REST through curl (the repo is
-   public; `gh` won't call the API signed out), so an idle hour mints no token. Only then does it mint an App token (§
-   Credentials).
+2. `run.sh` exits at once unless an open red-run issue by `github-actions[bot]` names a red run that isn't in
+   `~/.local/state/slow-checks-fixer/handled-runs`. It looks at two labels in order, each filed by
+   `.github/actions/red-run-issue`: `slow-checks` (the nightly) and `codeql` (CodeQL on `main`, which comments only when
+   its alert list changes, so an unchanged red push names no new run). The first issue with an unhandled run is the
+   hour's work. The run id is the body's first `actions/runs/<id>` link, or the newest `github-actions[bot]` comment
+   that says "went red"; the prompt names the workflow (`{{WORKFLOW}}`). This lookup is anonymous REST through curl (the
+   repo is public; `gh` won't call the API signed out), so an idle hour mints no token. Only then does it mint an App
+   token (§ Credentials).
 3. It asks `claim.sh free` whether someone else is on the issue (§ The claim). If so, it marks the run handled and
    exits; if the lookup fails, it exits and retries next hour.
 4. It appends the run id to `handled-runs`, claims the issue (`claim.sh take`), then readies the run under
@@ -130,7 +133,7 @@ no path restriction; `scripts/land/DETAILS.md` § The rulesets), so CI holds it:
   issue body, which only the workflow and maintainers can write.
 - **Body notes, comments only for the claim and for David.** A body edit sends no notification; a comment emails every
   watcher. The claim comment is the one exception David asked for, so other agents see the issue is taken. The
-  workflow's own close step follows the same rule (`.github/workflows/slow-checks.yml` § Red-run issue).
+  workflows' own close step follows the same rule (`.github/actions/red-run-issue`).
 - **Full permissions.** Fixing means editing code, running checks, and landing, which the report triager's sandbox rules
   out by design. The trade is acceptable because the run holds no sensitive access (§ Credentials).
 - **Claim before running.** The alternative, marking a run handled only on success, retries a crashing run every hour

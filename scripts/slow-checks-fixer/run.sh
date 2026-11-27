@@ -98,27 +98,42 @@ public_api() {
     "https://api.github.com/repos/$repo/$1"
 }
 
-# Only an issue the workflow itself opened. Anyone with triage rights can add a label, so the label alone proves nothing.
-issue=$(public_api "issues?labels=slow-checks&state=open&per_page=100" |
-  jq -r '[.[] | select(.pull_request == null and .user.login == "github-actions[bot]")] | first | .number // empty')
-[[ -n "$issue" ]] || exit 0
+# The red-run issues it answers, one per workflow (`.github/actions/red-run-issue` files them): label, then the
+# workflow's name for the prompt. The first issue naming a red run nobody has handled is this hour's work; any other
+# waits for the next hour.
+watched=("slow-checks:Slow checks" "codeql:CodeQL")
 
-# The newest red run the workflow reported: its body's FIRST link names the first red run (the fixer's notes, appended
-# below, may link more), and each later red night adds a "went red" comment. Comments from anyone but the workflow are
-# ignored, for the same reason as the author check above. Only this script reads comments; the agent never does.
-body=$(public_api "issues/$issue")
-comments="[]"
-for page in 1 2 3 4 5; do
-  chunk=$(public_api "issues/$issue/comments?per_page=100&page=$page")
-  comments=$(jq -s '.[0] + .[1]' <(printf '%s' "$comments") <(printf '%s' "$chunk"))
-  [[ "$(jq 'length' <<<"$chunk")" -lt 100 ]] && break
+issue=""
+for entry in "${watched[@]}"; do
+  label="${entry%%:*}"
+  workflow="${entry#*:}"
+  # Only an issue the workflow itself opened. Anyone with triage rights can add a label, so the label alone proves
+  # nothing.
+  candidate=$(public_api "issues?labels=$label&state=open&per_page=100" |
+    jq -r '[.[] | select(.pull_request == null and .user.login == "github-actions[bot]")] | first | .number // empty')
+  [[ -n "$candidate" ]] || continue
+
+  # The newest red run the workflow reported: its body's FIRST link names the first red run (the fixer's notes,
+  # appended below, may link more), and each later red run adds a "went red" comment. Comments from anyone but the
+  # workflow are ignored, for the same reason as the author check above. Only this script reads comments; the agent
+  # never does.
+  body=$(public_api "issues/$candidate")
+  comments="[]"
+  for page in 1 2 3 4 5; do
+    chunk=$(public_api "issues/$candidate/comments?per_page=100&page=$page")
+    comments=$(jq -s '.[0] + .[1]' <(printf '%s' "$comments") <(printf '%s' "$chunk"))
+    [[ "$(jq 'length' <<<"$chunk")" -lt 100 ]] && break
+  done
+  run_id=$(jq -rn --argjson issue "$body" --argjson comments "$comments" '
+    [$issue.body // "", ($comments[] | select(.user.login == "github-actions[bot]" and ((.body // "") | test("went red")))
+      | .body)]
+    | map([scan("actions/runs/([0-9]+)") | .[0]] | first) | map(select(. != null)) | last // empty')
+  [[ -n "$run_id" ]] || { log "#$candidate names no run; nothing to do there"; continue; }
+  grep -qx "$run_id" "$handled" && continue
+  issue="$candidate"
+  break
 done
-run_id=$(jq -rn --argjson issue "$body" --argjson comments "$comments" '
-  [$issue.body // "", ($comments[] | select(.user.login == "github-actions[bot]" and ((.body // "") | test("went red")))
-    | .body)]
-  | map([scan("actions/runs/([0-9]+)") | .[0]] | first) | map(select(. != null)) | last // empty')
-[[ -n "$run_id" ]] || { log "#$issue names no run; nothing to do"; exit 0; }
-grep -qx "$run_id" "$handled" && exit 0
+[[ -n "$issue" ]] || exit 0
 # When the workflow reported this run: the issue's creation for the body's run, else its "went red" comment. A
 # maintainer's comment after this means someone's already on it (claim.sh).
 reported_at=$(jq -rn --argjson issue "$body" --argjson comments "$comments" --arg run "$run_id" '
@@ -198,7 +213,7 @@ build_status=0
   pnpm check clippy >"$run_dir/warmup-build.log" 2>&1 || build_status=$?
 log "warm-up build (pnpm check clippy) took $((SECONDS - started)) s, exit $build_status"
 
-prompt="$(sed -e "s/{{ISSUE}}/$issue/g" -e "s/{{RUN_ID}}/$run_id/g" -e "s|{{FAILED_LOG}}|$failed_log|g" \
+prompt="$(sed -e "s/{{ISSUE}}/$issue/g" -e "s/{{RUN_ID}}/$run_id/g" -e "s/{{WORKFLOW}}/$workflow/g" -e "s|{{FAILED_LOG}}|$failed_log|g" \
   -e "s|{{BRANCH}}|fixer/run-$run_id|g" -e "s|{{CLAIM_CHECK}}|$here/claim.sh held $issue $claimed_at|g" \
   -e "s|{{STAND_DOWN}}|$run_dir/stand-down|g" -e "s|{{OUTCOME}}|$run_dir/outcome|g" "$here/prompt.md")"
 # The sensitive-path list is the one CI's gate reads (`ci.yml`'s `ci-ok`), from this run's `origin/main` checkout, so

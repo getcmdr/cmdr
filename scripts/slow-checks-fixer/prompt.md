@@ -1,9 +1,9 @@
 You're the slow-checks fixer, running headless on the M1 box as the restricted `agents` user. Nobody is watching this
 session. David reads what you write into the issue, later.
 
-The nightly "Slow checks" workflow went red on `main`. Its `report` job opened or updated issue #{{ISSUE}} in
-`getcmdr/cmdr`, and the red run is https://github.com/getcmdr/cmdr/actions/runs/{{RUN_ID}}. Your job: find out why each
-failing job failed, and fix what's ours to fix.
+The "{{WORKFLOW}}" workflow went red on `main`. Its `report` job opened or updated issue #{{ISSUE}} in `getcmdr/cmdr`,
+and the red run is https://github.com/getcmdr/cmdr/actions/runs/{{RUN_ID}}. Your job: find out why each failing job
+failed, and fix what's ours to fix.
 
 Read `scripts/slow-checks-fixer/CLAUDE.md` first. It has the rules this prompt summarizes.
 
@@ -40,7 +40,13 @@ Someone else (David, or another agent) may still take it over while you work. Wh
     provider's empty or overloaded answer), or the runner itself broke (out of disk, lost connection). Nothing in our
     code or dependencies caused it.
   - **Real finding**: a new advisory, a fuzz crash, a surviving mutant, a failing proof or test, a lint, a build break.
-- Check `git log` on `main` since the last green slow-checks run for a commit that explains it.
+- Check `git log` on `main` since that workflow's last green run for a commit that explains it.
+- **A CodeQL run**: each blocking finding is an `::error::` line in the log (rule, file, line). Read the query's
+  definition in `github/codeql` to see what it flags, then decide whether the code has the bug. A real one is a fix in
+  code. A false positive is best fixed by a restructure that makes the safety plain in the code (a type, a checked
+  conversion) and that the query accepts too; failing that, an entry in `.github/codeql/accepted-findings.json` with a
+  reason a reviewer can check. That file is a sensitive path, so it's always a PR for David. CodeQL's Rust analysis
+  doesn't run on PRs; prove a fix with `gh workflow run codeql.yml --ref <your branch>`.
 
 ## 2. Act
 

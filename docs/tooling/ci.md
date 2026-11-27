@@ -535,7 +535,10 @@ crash, then a Kani proof that a new `OpKind` arm made stale). Two things keep it
   run on `main`, comments on it while it stays open, and closes it on the next fully green run, with the green run's
   link added to the body rather than as a comment (one email per incident, not three). The board's "Auto-add to project"
   workflow puts it on the backlog board; set its fields when you pick it up. A cancelled run and a branch dispatch leave
-  it alone.
+  it alone. `codeql.yml`'s `report` job does the same with a `codeql` issue (the shared
+  `.github/actions/red-run-issue`), with two differences: it runs on every push, so a repeat comments only when the open
+  high or critical alerts change, and it closes only when a green run finds none open on `main` (a push that skipped
+  Rust is green either way).
 - **An agent picks the issue up.** The slow-checks fixer on the M1 (the restricted `agents` user, landing as a GitHub
   App) reruns an outside blip, lands a clear fix, opens a PR for David when the fix touches a sensitive path, or writes
   up what needs David, all in the issue body: `scripts/slow-checks-fixer/CLAUDE.md`.
