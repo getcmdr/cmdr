@@ -413,6 +413,10 @@ async fn a_source_that_vanished_before_preflight_is_left_out_of_the_binding() {
 #[tokio::test]
 async fn a_source_that_refuses_its_stat_reads_as_unreadable_not_gone() {
     use std::os::unix::fs::PermissionsExt;
+    // Root stats through a `0o000` folder, so nothing refuses (the Linux Docker lane runs as root).
+    if cmdr_fs::testing::is_root() {
+        return;
+    }
     let dir = TestDir::new("bridge_live_binding_unreadable");
     let locked = dir.join("locked");
     std::fs::create_dir_all(&locked).expect("folder");
