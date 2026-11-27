@@ -27,7 +27,7 @@ use tempfile::TempDir;
 /// `tempfile::TempDir::new` creates a hidden `.tmpXXX` dir on macOS, which
 /// trips our hidden-component eligibility check on every contained path.
 /// Use a non-dot prefix so positive-path assertions work.
-fn unhidden_tempdir() -> TempDir {
+pub(super) fn unhidden_tempdir() -> TempDir {
     tempfile::Builder::new()
         .prefix("cmdr-downloads-test-")
         .tempdir()
@@ -35,12 +35,12 @@ fn unhidden_tempdir() -> TempDir {
 }
 
 /// Test sink that captures every emitted event.
-struct ChannelSink {
+pub(super) struct ChannelSink {
     tx: Mutex<mpsc::Sender<DownloadDetectedEvent>>,
 }
 
 impl ChannelSink {
-    fn new() -> (Arc<Self>, mpsc::Receiver<DownloadDetectedEvent>) {
+    pub(super) fn new() -> (Arc<Self>, mpsc::Receiver<DownloadDetectedEvent>) {
         let (tx, rx) = mpsc::channel();
         (Arc::new(Self { tx: Mutex::new(tx) }), rx)
     }
@@ -52,7 +52,7 @@ impl EventSink for ChannelSink {
     }
 }
 
-fn touch(dir: &Path, name: &str) -> PathBuf {
+pub(super) fn touch(dir: &Path, name: &str) -> PathBuf {
     let p = dir.join(name);
     fs::write(&p, b"hi").unwrap();
     p
@@ -63,7 +63,7 @@ fn touch(dir: &Path, name: &str) -> PathBuf {
 /// `scan_latest` ranks by mtime, so its tests need one file to be provably newer than another.
 /// Stamping beats writing them a few milliseconds apart: the ordering holds no matter how
 /// coarse the filesystem's timestamp granularity is, and the test costs nothing to run.
-fn touch_stamped(dir: &Path, name: &str, unix_secs: i64) -> PathBuf {
+pub(super) fn touch_stamped(dir: &Path, name: &str, unix_secs: i64) -> PathBuf {
     let p = touch(dir, name);
     fs::set_times(
         &p,
@@ -73,7 +73,7 @@ fn touch_stamped(dir: &Path, name: &str, unix_secs: i64) -> PathBuf {
     p
 }
 
-fn make_event(kind: EventKind, paths: Vec<PathBuf>) -> DebouncedEvent {
+pub(super) fn make_event(kind: EventKind, paths: Vec<PathBuf>) -> DebouncedEvent {
     let raw = Event {
         kind,
         paths,
@@ -582,7 +582,7 @@ fn rename_half(path: &Path) -> DebouncedEvent {
 
 /// A scripted watcher on a fresh tempdir, plus the dir's canonical spelling:
 /// the one FSEvents reports every path in.
-fn scripted() -> (
+pub(super) fn scripted() -> (
     TempDir,
     PathBuf,
     DownloadsWatcher,
@@ -597,7 +597,7 @@ fn scripted() -> (
 
 /// Filenames of everything the sink got so far. `deliver` is synchronous, so
 /// this is the whole answer, no waiting.
-fn emitted(rx: &mpsc::Receiver<DownloadDetectedEvent>) -> Vec<String> {
+pub(super) fn emitted(rx: &mpsc::Receiver<DownloadDetectedEvent>) -> Vec<String> {
     rx.try_iter().map(|e| e.file_name).collect()
 }
 

@@ -1,58 +1,39 @@
 # Downloads watcher
 
 Recursive `notify` watch on `~/Downloads` that emits a `download-detected` Tauri event when an eligible final-form file
-appears (browser-style: a direct create of a final-name file, or a rename from a partial-suffix file to a final-name
-file). FDA-gated.
+appears (a direct create of a final name, or a rename from a partial suffix to one). FDA-gated.
 
 ## Module map
 
-- **`filter.rs`**: `is_eligible(path)`: not hidden, not a partial-download suffix, regular file or symlink-to-file
-- **`ignore_set.rs`**: `IgnoreSet`, a `HashMap<PathBuf, Instant>` + FIFO `VecDeque`, 5 s TTL, 1000-entry cap; suppresses
-  events for paths Cmdr just wrote
-- **`latest_ring.rs`**: `LatestRing`, a capacity-10 ring; re-pushing moves to the back; reads skip gone files
-- **`watcher.rs`**: `DownloadsWatcher`, the debouncer handle + ignore set + ring; pure `classify_event()` /
-  `translate_debounced()`; `AppHandleSink` (prod) vs `ChannelSink` (tests). Its tests live in the sibling
-  `watcher_test.rs`, wired as `#[cfg(test)] mod watcher_test;` from `mod.rs`
-- **`runtime.rs`**: `Mutex<Option<DownloadsWatcher>>`; `refresh_runtime(&app)` aligns the handle with the FDA gate;
-  owns the `note_pending_write_for_cmdr` hook API
-- **`commands.rs`**: IPC (`go_to_latest_download`, `downloads_watcher_status`, `recheck_downloads_watcher_gate`,
-  `set_global_go_to_latest_shortcut`)
-- **`global_shortcut.rs`**: typed wrapper over `tauri-plugin-global-shortcut`; `GlobalShortcutManager<R: Registrar>`
-  state machine
+- **`filter.rs`**: `is_eligible(path)`: not hidden, no partial-download suffix, a file or a symlink to one
+- **`ignore_set.rs`**: `IgnoreSet` (5 s TTL, 1000-entry cap) suppresses events for paths Cmdr just wrote
+- **`latest_ring.rs`**: `LatestRing`, capacity 10; reads skip gone files
+- **`watcher.rs`**: `DownloadsWatcher` (debouncer + ignore set + ring); pure `classify_event()` /
+  `translate_debounced()`. Tests: `watcher_test.rs` and `links_test.rs` (a Downloads with links out of itself)
+- **`runtime.rs`**: the process-wide watcher slot; `refresh_runtime(&app)` aligns it with the FDA gate; owns
+  `note_pending_write_for_cmdr`
+- **`commands.rs`**: IPC. **`global_shortcut.rs`**: `GlobalShortcutManager<R: Registrar>` over the plugin
 
-Full lifecycle, scope rationale, and v1 limits: `DETAILS.md`.
+Lifecycle, scope rationale, and limits: `DETAILS.md`.
 
 ## Must-knows
 
-- **FDA gating contract: the watcher is alive iff `fda_gate::is_fda_pending_runtime() == false`.** `lib.rs` calls
-  `runtime::refresh_runtime(&app)` at startup (after `set_fda_pending`), on every main-window `Focused(true)` (the
-  "toggled FDA in System Settings, came back" path), and the Settings pane mount calls `recheck_downloads_watcher_gate`
-  (recovers from a stale focus-event read). The closed-gate side is a pure no-op.
-- **Cmdr-own-write hook (the write engine's `OwnWrites` answer): `note_pending_write_for_cmdr(&dest_path)` immediately
-  before each write syscall**, unconditionally: `IgnoreSet::note_pending` no-ops outside the watched root, and a
-  call-site filter gets forgotten. Register the **final** path. ❌ Don't reduce the root check to one `starts_with`: it
-  matches the declared AND symlink-resolved spellings, since events name canonical paths. ❌ Never `canonicalize` a
-  registered path: share targets register too, and a network `realpath` stalls the write. § "Cmdr-own-write hook
-  contract".
-- **A macOS rename usually arrives as TWO direction-less halves, not `RenameMode::Both`.** So `RenameAny` is a normal
-  path, not an edge case: dropping it means a real download produces no toast. Eligibility (it stats the path) tells the
-  halves apart; ❌ don't add an `exists()` probe. § "Reading a rename on macOS".
-- **Don't `tokio::spawn` from the notify callback.** The `notify-debouncer-full` callback runs on notify-rs's internal
-  thread with no Tokio runtime; `tokio::spawn` panics ("no reactor running"). All the work is synchronous and cheap, so
-  it stays inline. If async is ever needed, use `tauri::async_runtime::spawn`.
-- **The hotkey's default is one chord, spelled per OS** (`DEFAULT_BINDINGS`). `⌘` / `Super` map to `Super`, NOT
-  `Meta` (`binding_to_accelerator`, FE mirror `global-shortcut-binding.ts`). The `global-hotkey` crate accepts
-  `COMMAND`/`CMD`/`SUPER` but rejects `META` (errors `UnsupportedKey`). Keep both adapters on `Super`. The plugin uses
-  Carbon's `RegisterEventHotKey`, so no Accessibility / Input Monitoring TCC grant is needed.
-- **The hotkey handler raises the main window** (`unminimize` + `show` + `set_focus`) before emitting
-  `global-shortcut-fired`. The user fires it from another app, so without the raise the result stays hidden behind the
-  active app. Don't drop the raise. `lib.rs` calls `refresh_global_go_to_latest_shortcut(app)` at the same three points
-  as the watcher, plus the `set_global_go_to_latest_shortcut` IPC.
-- **`GlobalShortcutManager` register/unregister is idempotent**: re-registering the same binding is a no-op, and a swap
-  unregisters the previous first. A refused swap puts the previous binding back, so the user keeps a hotkey. Refusals
-  are typed by the plugin's error ARM (`Unavailable`), never its message.
-- **No `println!` / `eprintln!` / `dbg!`** (clippy denies crate-wide). Use `log::debug!(target: "downloads::watcher", …)`
-  so `RUST_LOG=cmdr_lib::downloads=debug` filters this subsystem. See `logging/CLAUDE.md`.
+- **The watcher is alive iff `fda_gate::is_fda_pending_runtime() == false`.** `refresh_runtime` runs at startup, on
+  every main-window `Focused(true)`, and from the Settings pane (`recheck_downloads_watcher_gate`).
+- **Own writes: `note_pending_write_for_cmdr(&final_path)` right before each write syscall**, unconditionally (the root
+  filter lives in `IgnoreSet`). ❌ Don't reduce its root check to one `starts_with` (declared AND resolved spellings).
+  ❌ Never `canonicalize` a registered path: a network `realpath` stalls the write. § "Cmdr-own-write hook contract".
+- **The debouncer runs `NoCache` and never follows links** (`arm_debouncer`). ❌ Don't go back to `new_debouncer` /
+  `RecommendedCache`: its `FileIdMap` walks the tree through links, and a Wine bundle's `z: -> /` made that the whole
+  disk and hung launch (#1538). § "Decision: no file-ID cache".
+- **A macOS rename arrives as TWO direction-less halves** (`RenameAny`), a normal path: dropping it loses every browser
+  download's toast. Eligibility tells the halves apart; ❌ no `exists()` probe. § "Reading a rename on macOS".
+- **Don't `tokio::spawn` from the notify callback**: it runs on notify's thread with no Tokio runtime and panics. Use
+  `tauri::async_runtime::spawn` if async is ever needed.
+- **Hotkey: `⌘` maps to `Super`, NOT `Meta`** (`binding_to_accelerator` and FE mirror `global-shortcut-binding.ts`);
+  `global-hotkey` rejects `META`. The handler raises the main window before emitting `global-shortcut-fired`; don't drop
+  the raise. Register/unregister is idempotent, a refused swap restores the previous binding, and refusals are typed by
+  the plugin's error arm, never its message.
+- **No `println!` / `dbg!`**: `log::debug!(target: "downloads::watcher", …)`.
 - **Tests use `DownloadsWatcher::scripted_at` + `deliver()`**: same handler, no OS watch. ❌ Only
-  `dropping_a_file_emits_one_event` arms real FSEvents; a second real cell times out under load. `unhidden_tempdir()`
-  keeps `is_eligible`'s hidden check off positive assertions. § "Testing".
+  `dropping_a_file_emits_one_event` arms real FSEvents; a second real cell times out under load. § "Testing".

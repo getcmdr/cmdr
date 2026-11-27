@@ -27,10 +27,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use notify::{
-    EventKind, RecommendedWatcher, RecursiveMode,
+    EventKind, RecommendedWatcher, RecursiveMode, Watcher,
     event::{ModifyKind, RenameMode},
 };
-use notify_debouncer_full::{DebounceEventResult, DebouncedEvent, Debouncer, RecommendedCache, new_debouncer};
+use notify_debouncer_full::{DebounceEventResult, DebouncedEvent, Debouncer, NoCache, new_debouncer_opt};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 use tauri_specta::Event as _;
@@ -266,14 +266,14 @@ pub(crate) fn translate_debounced(event: &DebouncedEvent) -> Vec<EventSummary> {
 
 /// What the debouncer calls with each batch, and what a scripted test watcher
 /// calls by hand: one closure, so both reach exactly the same handling.
-type BatchHandler = Arc<dyn Fn(DebounceEventResult) + Send + Sync>;
+pub(crate) type BatchHandler = Arc<dyn Fn(DebounceEventResult) + Send + Sync>;
 
 /// Handle to the running watcher. Drop to stop watching.
 pub struct DownloadsWatcher {
     // Held to keep the OS watch alive; never read directly. `None` only for a
     // scripted test watcher, which arms nothing with the OS.
     #[allow(dead_code, reason = "Debouncer must outlive the watcher to keep notify alive")]
-    debouncer: Option<Debouncer<RecommendedWatcher, RecommendedCache>>,
+    debouncer: Option<Debouncer<RecommendedWatcher, DownloadsCache>>,
     ignore_set: Arc<IgnoreSet>,
     latest_ring: Arc<LatestRing>,
     downloads_root: PathBuf,
@@ -307,17 +307,7 @@ impl DownloadsWatcher {
     /// user-facing path against a canonical one and silently miss.
     pub fn start_at(downloads_root: PathBuf, sink: Arc<dyn EventSink>) -> Result<Self, WatcherError> {
         let (mut watcher, handler) = Self::unarmed(downloads_root, sink);
-
-        let mut debouncer = new_debouncer(
-            Duration::from_millis(DEBOUNCE_MS),
-            None,
-            move |result: DebounceEventResult| handler(result),
-        )
-        .map_err(WatcherError::Debouncer)?;
-
-        debouncer
-            .watch(&watcher.downloads_root, RecursiveMode::Recursive)
-            .map_err(WatcherError::Watch)?;
+        let debouncer = arm_debouncer::<RecommendedWatcher>(&watcher.downloads_root, handler)?;
 
         log::info!(
             target: "downloads::watcher",
@@ -435,6 +425,44 @@ impl DownloadsWatcher {
     pub fn scan_latest_fallback(&self) -> Option<PathBuf> {
         scan_latest(&self.downloads_root)
     }
+}
+
+/// The debouncer's file-ID cache: none (#1538).
+///
+/// The default `FileIdMap` exists only to pair a rename's two halves by file
+/// ID, and to fill it the debouncer walks the tree, following links, on
+/// `watch()`, on every `Create` (a whole tree for a new folder), every
+/// rename-to, and every rescan. A Downloads folder holding a Wine bundle's
+/// `dosdevices/z: -> /` made that a walk of the whole disk. The pairing buys
+/// us nothing: on macOS it missed on every observed run anyway, and
+/// [`classify_event`] reads an unpaired half the same as a pair (§ "Reading a
+/// rename on macOS" in `DETAILS.md`).
+type DownloadsCache = NoCache;
+
+/// Build the debouncer and arm a recursive watch on `root`, routing batches to
+/// `handler`. With [`DownloadsCache`] this does no filesystem walk; it's still
+/// an `fseventsd` round trip, so call it off the main thread. Generic over the
+/// OS watcher so a test can arm it with `notify::NullWatcher` and time the
+/// debouncer's own work without FSEvents.
+pub(crate) fn arm_debouncer<W: Watcher>(
+    root: &Path,
+    handler: BatchHandler,
+) -> Result<Debouncer<W, DownloadsCache>, WatcherError> {
+    let mut debouncer = new_debouncer_opt::<_, W, DownloadsCache>(
+        Duration::from_millis(DEBOUNCE_MS),
+        None,
+        move |result: DebounceEventResult| handler(result),
+        DownloadsCache::default(),
+        // inotify arms a recursive watch per directory, walking the tree to
+        // do it (and again under each new folder); this keeps that walk out
+        // of a linked `/`. FSEvents and `ReadDirectoryChangesW` don't walk.
+        notify::Config::default().with_follow_symlinks(false),
+    )
+    .map_err(WatcherError::Debouncer)?;
+    debouncer
+        .watch(root, RecursiveMode::Recursive)
+        .map_err(WatcherError::Watch)?;
+    Ok(debouncer)
 }
 
 /// Process a batch of debounced events. Pulled out so the callback closure

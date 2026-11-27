@@ -68,6 +68,8 @@ pub mod global_shortcut;
 mod ignore_set;
 mod latest_ring;
 #[cfg(test)]
+mod links_test;
+#[cfg(test)]
 pub(crate) mod own_write_recorder;
 pub mod runtime;
 pub mod watcher;
