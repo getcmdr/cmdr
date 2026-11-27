@@ -30,7 +30,10 @@ fn hostile_downloads(tmp: &Path) -> PathBuf {
     let root = tmp.join("Downloads");
     let dosdevices = root.join("Heroes.app/Contents/wine/dosdevices");
     fs::create_dir_all(&dosdevices).unwrap();
-    cmdr_fs::testing::symlink("/", dosdevices.join("z:")).unwrap();
+    // Wine's own name, `z:`, can't be a Windows file name (the colon opens an
+    // alternate data stream), so that build links it as `z`.
+    let drive_link = if cfg!(windows) { "z" } else { "z:" };
+    cmdr_fs::testing::symlink("/", dosdevices.join(drive_link)).unwrap();
     cmdr_fs::testing::symlink(tmp, root.join("loop-to-ancestor")).unwrap();
 
     let outside = tmp.join("outside");
