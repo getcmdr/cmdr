@@ -326,6 +326,14 @@ fn volume_error_variants_map_correctly() {
             |r| matches!(r, ListingErrorReason::NotAFolder { .. }),
         ),
         (
+            // A `.tar.gz` inside a `.zip`: Cmdr can't browse it yet, and asking
+            // again can only answer the same, so no retry hint.
+            VolumeError::NestedArchive("x".into()),
+            ErrorCategory::NeedsAction,
+            false,
+            |r| matches!(r, ListingErrorReason::NestedArchive { .. }),
+        ),
+        (
             // The destination can't hold this name, so retrying it can only fail
             // again: NeedsAction with ❌ no retry hint. Renaming is the only fix.
             VolumeError::InvalidName("x".into()),

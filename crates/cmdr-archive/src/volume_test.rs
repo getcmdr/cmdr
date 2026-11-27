@@ -104,6 +104,35 @@ fn zip_with_symlink() -> Vec<u8> {
 
 // ---- Tier 1: browse -------------------------------------------------------
 
+/// Pressing Enter on a `.tar.gz` inside a zip lists it, since its row reads as an
+/// archive. That must say why it can't open, ❌ never `NotFound`, which named a
+/// file the person was looking at as missing (a Habr reader's report, 2026-11-27).
+#[tokio::test]
+async fn listing_an_archive_inside_the_archive_says_it_is_nested() {
+    let archive = TestArchive::from_entries(&[
+        stored("logs/inner.tar.gz", "not browsed"),
+        stored("logs/plain.txt", "text"),
+    ]);
+    let volume = archive.volume();
+
+    for inner in ["logs/inner.tar.gz", "logs/inner.tar.gz/deeper"] {
+        match volume.list_directory(&at(volume.root(), inner), None).await {
+            Err(VolumeError::NestedArchive(path)) => assert_eq!(path, archive.row("logs/inner.tar.gz")),
+            other => panic!("{inner}: expected NestedArchive, got {other:?}"),
+        }
+    }
+    // A plain file, or a path that isn't there at all, stays what it was.
+    for inner in ["logs/plain.txt", "logs/missing.tar.gz"] {
+        assert!(
+            matches!(
+                volume.list_directory(&at(volume.root(), inner), None).await,
+                Err(VolumeError::NotFound(_))
+            ),
+            "{inner}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn lists_root_nested_and_synthetic_directories() {
     // No explicit `dir/` entry: `dir/` and `dir/sub/` must be synthesized.

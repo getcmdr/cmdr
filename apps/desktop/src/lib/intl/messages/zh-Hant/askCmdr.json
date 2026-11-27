@@ -480,6 +480,10 @@
   "@askCmdr.tool.outcome.miss.notFound": {
     "sourceHash": "56ee722"
   },
+  "askCmdr.tool.outcome.miss.notAFolder": "that’s a file",
+  "@askCmdr.tool.outcome.miss.notAFolder": {
+    "sourceHash": "d2f52a3"
+  },
   "askCmdr.tool.outcome.miss.excluded": "略過的系統資料夾",
   "@askCmdr.tool.outcome.miss.excluded": {
     "sourceHash": "8198768"

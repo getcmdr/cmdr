@@ -292,10 +292,12 @@ An `ArchiveVolume` is never constructed here directly in production — it's min
 
 - **Two tiers.** `archive_boundary_candidate` (in `cmdr_fs::archive_format`, so the listing engine asks it without
   depending on this crate) is a pure string split (extension-only, leftmost `.zip` component wins so a nested
-  `a.zip/b.zip` treats the inner as a plain file — nested archives are out of scope). `confirm_archive_boundary` adds
-  the I/O: the component must be a real FILE (a directory named `foo.zip` loses to normal navigation) whose first bytes
-  are a zip signature (a mislabeled file isn't routed). Extension-only feeds `FileEntry.is_archive` at listing time (no
-  per-entry byte read — that's a round-trip-per-file on a remote backend); confirm runs once at navigation time.
+  `a.zip/b.zip` treats the inner as a plain file; nested archives are out of scope, getcmdr/cmdr#1549). Listing one
+  (Enter on its row, which reads as an archive) answers the typed `VolumeError::NestedArchive`, never `NotFound`
+  (`ArchiveVolume::unlistable`), so the pane says why it can’t open. `confirm_archive_boundary` adds the I/O: the
+  component must be a real FILE (a directory named `foo.zip` loses to normal navigation) whose first bytes are a zip
+  signature (a mislabeled file isn't routed). Extension-only feeds `FileEntry.is_archive` at listing time (no per-entry
+  byte read — that's a round-trip-per-file on a remote backend); confirm runs once at navigation time.
 - **Confirm is parent-aware, so `resolve` is `async`, and this crate owns both halves.** `confirm_archive_boundary` is
   `std::fs`-only, so it can confirm only a LOCAL parent. For a REMOTE parent (direct SMB / MTP, a restic snapshot), the
   `.zip` isn't reachable through the local filesystem, so `confirm_remote_archive_boundary`

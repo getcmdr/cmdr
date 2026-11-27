@@ -78,6 +78,7 @@ impl VolumeError {
             | Self::StorageFull { .. }
             | Self::IsADirectory(_)
             | Self::NotADirectory(_) // a file is in the way until someone moves it
+            | Self::NestedArchive(_) // a limit of what Cmdr browses, not of the connection
             | Self::InvalidName(_) // the destination can't hold this name
             | Self::DeletePending(_)
             | Self::FileInUse(_) // another handle keeps it out until someone closes it

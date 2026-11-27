@@ -813,6 +813,12 @@
     "screenshot": "ask-cmdr-tools.png",
     "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
   },
+  "askCmdr.tool.outcome.miss.notAFolder": "that’s a file",
+  "@askCmdr.tool.outcome.miss.notAFolder": {
+    "description": "What came back, after a tool line’s label: the assistant asked to list a folder, but the path is a file (or an archive packed inside another archive), so there was nothing to list. Lowercase where your language allows.",
+    "screenshot": "ask-cmdr-tools.png",
+    "screenshotNote": "An Ask Cmdr tool line, one of the rows pictured here: what the assistant is doing or did, the note after it saying how that went, or the preview it opens. This shows other tools, so yours has its own words in the same place."
+  },
   "askCmdr.tool.outcome.miss.excluded": "a skipped system folder",
   "@askCmdr.tool.outcome.miss.excluded": {
     "description": "What came back, after a tool line’s label: the folder is a system, build, or cache folder that the assistant’s searches leave out. Lowercase where your language allows.",

@@ -133,6 +133,8 @@ export type ListingErrorReason =
   | { reason: 'isADirectory'; path: string }
   // ── archive (browsing a `.zip` that can't be read) ──
   | { reason: 'archiveUnreadable' }
+  // ── an archive inside another archive, which isn't browsable yet (getcmdr/cmdr#1549) ──
+  | { reason: 'nestedArchive'; path: string }
   // ── a locked container (a header-encrypted archive, a restic repo) needs its password even to list it ──
   | { reason: 'archiveNeedsPassword'; container: LockedContainer; wrongAttempt: boolean }
   // ── empty-root hint ──

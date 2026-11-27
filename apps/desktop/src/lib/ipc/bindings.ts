@@ -13884,6 +13884,15 @@ export type ListingErrorReason =
       // The path the failure was about.
       path: string
     }
+  /**
+   *  `VolumeError::NestedArchive`: the folder is an archive inside another
+   *  archive, which Cmdr can't open yet.
+   */
+  | {
+      reason: 'nestedArchive'
+      // The path the failure was about.
+      path: string
+    }
   // The path is a directory where a file was needed.
   | {
       reason: 'isAFolderErrno'
@@ -15450,6 +15459,11 @@ export type MissToken =
   | 'unreachable'
   // Nothing is at this path on the volume, or it leads off the volume.
   | 'notFound'
+  /**
+   *  Something is at the path, but it's a file (or an archive inside an
+   *  archive), so there's no folder to list.
+   */
+  | 'notAFolder'
   // The place is a system, build, or cache folder a default search leaves out.
   | 'excluded'
   // The folder's own permissions refuse the read (not macOS privacy).
@@ -25826,6 +25840,17 @@ export type VolumeError =
    *  is a folder here: see `mkdir_all` § "A link to a folder is a folder".
    */
   | { type: 'notADirectory'; data: string }
+  /**
+   *  The path goes into an archive that sits inside another archive, which
+   *  Cmdr can't browse yet (getcmdr/cmdr#1549). Carries the inner archive's
+   *  path.
+   *
+   *  ❌ Never [`NotFound`](Self::NotFound): the archive is right there, and the
+   *  frontend reads `NotFound` as "this folder was deleted". An archive volume
+   *  raises it for a listing that reaches into one of its own archive-named
+   *  files.
+   */
+  | { type: 'nestedArchive'; data: string }
   /**
    *  The destination can't hold this name, whatever it's asked to do with it.
    *

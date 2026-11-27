@@ -1140,6 +1140,24 @@
     "screenshot": "error-message-example.png",
     "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
   },
+  "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
+  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
+  "@errors.listing.nestedArchive.title": {
+    "description": "Title of the listing error panel when someone opens an archive (like a .zip or .tar.gz) that sits inside another archive, which Cmdr can’t browse yet. Plain text. \"Cmdr\" is the app name; do NOT translate.",
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+  },
+  "@errors.listing.nestedArchive.explanation": {
+    "description": "Body of the listing error panel for an archive inside another archive. Markdown. The literal `{path}` is a do-not-translate placeholder replaced at runtime with the inner archive’s path. \"Cmdr\" is the app name; do NOT translate.",
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+  },
+  "@errors.listing.nestedArchive.suggestion": {
+    "description": "Recovery suggestion for an archive inside another archive: copy it out first. Markdown.",
+    "screenshot": "error-message-example.png",
+    "screenshotNote": "Cmdr renders every friendly error with one shared layout: a bold title, an explanation paragraph, and a suggestion below it (plus an optional action button and a collapsed \"Technical details\"). This screenshot shows a DIFFERENT error, but your string appears as the title, explanation, or suggestion text in this same panel, in the same position. errors.provider.* names (Dropbox, Google Drive, OneDrive, and so on) are brand names, so keep them as-is."
+  },
   "errors.listing.archiveNeedsPassword.title": "This archive needs a password",
   "errors.listing.archiveNeedsPassword.explanation": "This archive is protected, so its contents stay locked until you unlock it.",
   "errors.listing.archiveNeedsPassword.suggestion": "Enter the password to browse it.",
@@ -3564,6 +3582,15 @@
     "description": "Shown when an operation that needs a file was pointed at a folder. Inline one-line message under the name field in Cmdr's Rename / New folder / New file flow, or in a brief toast. Plain text, one sentence, no markdown. Cmdr never uses the words \"error\" or \"failed\" in messages people read.",
     "placeholders": {
       "path": "the full path that turned out to be a folder (uncontrolled user text; keep it verbatim in quotes)"
+    },
+    "screenshot": "mkdir-confirmation-too-long.png",
+    "screenshotNote": "This one is NOT the error panel. Your string is the single red line under the name field in the Rename / New folder / New file box, exactly where the validation message sits in this screenshot (which shows a DIFFERENT message). One sentence, plain text, no markdown, and it has to fit a narrow dialog."
+  },
+  "errors.volume.nestedArchive": "“{path}” is an archive inside another archive, and Cmdr can’t open those yet.",
+  "@errors.volume.nestedArchive": {
+    "description": "Shown when something tries to open an archive (like a .zip or .tar.gz) that sits inside another archive, which Cmdr can’t browse yet. Inline one-line message under the name field in Cmdr's Rename / New folder / New file flow, or in a brief toast. Plain text, one sentence, no markdown. Cmdr never uses the words \"error\" or \"failed\" in messages people read.",
+    "placeholders": {
+      "path": "the full path of the inner archive (uncontrolled user text; keep it verbatim in quotes)"
     },
     "screenshot": "mkdir-confirmation-too-long.png",
     "screenshotNote": "This one is NOT the error panel. Your string is the single red line under the name field in the Rename / New folder / New file box, exactly where the validation message sits in this screenshot (which shows a DIFFERENT message). One sentence, plain text, no markdown, and it has to fit a narrow dialog."

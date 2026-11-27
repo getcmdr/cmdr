@@ -1325,6 +1325,8 @@ Its misses ride the same shape as the resolver's (`LocationMissResult::on`, `loc
 `needsDiskAccess` (the FDA question is open, or macOS privacy refused the read; the `detail` says which),
 `unreachable` (past the deadline, another read on the volume still stuck, or the volume dropping mid-read), `notFound`
 (nothing there, a link loop, or a link off the volume, whose `detail` names the volume and path to ask instead),
+`notAFolder` (a file, or an archive inside an archive: before it, a file read as `ENOTDIR` fell to `unreachable` and
+told the model the boot disk had disconnected),
 `excluded` (names the folder the index skips), `permissionDenied`
 (the folder's own permissions: Full Disk Access won't help), and `cancelled`.
 

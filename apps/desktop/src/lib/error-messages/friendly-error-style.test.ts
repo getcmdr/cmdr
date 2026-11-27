@@ -137,6 +137,7 @@ const LISTING_REASONS: ListingErrorReason[] = [
   { reason: 'ioSerious', path: PATH, osMessage: 'something went wrong' },
   { reason: 'isADirectory', path: PATH },
   { reason: 'archiveUnreadable' },
+  { reason: 'nestedArchive', path: PATH },
   { reason: 'archiveNeedsPassword', container: 'archive', wrongAttempt: false },
   { reason: 'emptyRootICloud' },
 ]

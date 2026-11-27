@@ -517,6 +517,12 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
             )
             .into(),
         },
+        // Only a listing raises it, and nothing can navigate into a nested archive
+        // to start a transfer from one, so this is the defensive generic refusal.
+        VolumeError::NestedArchive(path) => WriteOperationError::IoError {
+            path,
+            message: "An archive inside an archive can't be opened yet".into(),
+        },
         // A backend session that dropped (MTP, SMB), which has no mount table
         // and no captured sides behind it, so the copy stays the
         // volume-agnostic one. A LOCAL drive that leaves is named at the

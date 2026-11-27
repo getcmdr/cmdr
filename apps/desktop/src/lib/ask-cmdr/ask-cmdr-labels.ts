@@ -290,6 +290,7 @@ const MISS_KEYS: Record<MissToken, MessageKey> = {
   needsDiskAccess: 'askCmdr.tool.outcome.miss.needsDiskAccess',
   unreachable: 'askCmdr.tool.outcome.miss.unreachable',
   notFound: 'askCmdr.tool.outcome.miss.notFound',
+  notAFolder: 'askCmdr.tool.outcome.miss.notAFolder',
   excluded: 'askCmdr.tool.outcome.miss.excluded',
   permissionDenied: 'askCmdr.tool.outcome.miss.permissionDenied',
   cancelled: 'askCmdr.tool.outcome.miss.cancelled',

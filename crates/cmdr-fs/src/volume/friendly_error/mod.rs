@@ -176,6 +176,12 @@ pub enum ListingErrorReason {
         /// The path the failure was about.
         path: String,
     },
+    /// `VolumeError::NestedArchive`: the folder is an archive inside another
+    /// archive, which Cmdr can't open yet.
+    NestedArchive {
+        /// The path the failure was about.
+        path: String,
+    },
     /// The path is a directory where a file was needed.
     IsAFolderErrno {
         /// The path the failure was about.

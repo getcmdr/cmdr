@@ -23,6 +23,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
 
 use cmdr_fs::entry::FileEntry;
+use cmdr_fs::os_error::OsErrorClass;
 use cmdr_fs::volume::app_paths::{path_is_under, path_under, rebase};
 use cmdr_fs::volume::{Volume, VolumeError};
 use tokio::time::{Instant, sleep_until};
@@ -103,6 +104,9 @@ pub(crate) enum LiveMiss {
     NeedsDiskAccess(PrivacyGate),
     Unreachable(Stall),
     NotFound,
+    /// The target is there but holds no folder to list: a file, or an archive
+    /// inside an archive (`VolumeError::NestedArchive`).
+    NotAFolder,
     /// The target is a link that leads off this volume: refused, never followed.
     LeadsOffVolume {
         to: Option<OtherVolume>,
@@ -160,6 +164,12 @@ impl LiveMiss {
             LiveMiss::NotFound => (
                 MissToken::NotFound,
                 format!("Nothing is at this path on {volume_name}. List its parent folder to check the spelling."),
+            ),
+            // A file read as a dropped volume sent the model off to tell the user their
+            // boot disk had disconnected.
+            LiveMiss::NotAFolder => (
+                MissToken::NotAFolder,
+                "This path is a file, or an archive inside another archive, so there's no folder to list. Call `inspect_file` to read about it, or list its parent folder.".to_string(),
             ),
             LiveMiss::LeadsOffVolume { to: Some(to), path } => (
                 MissToken::NotFound,
@@ -390,7 +400,10 @@ fn io_miss(error: &std::io::Error, place: &Path, policy: &GatePolicy) -> LiveMis
 /// URL): only a local folder's denial can be the OS's privacy gate.
 fn volume_miss(error: &VolumeError, path: Option<&Path>, policy: &GatePolicy, local_fs: bool) -> LiveMiss {
     match error {
-        VolumeError::NotFound(_) | VolumeError::NotADirectory(_) => LiveMiss::NotFound,
+        VolumeError::NotFound(_) => LiveMiss::NotFound,
+        VolumeError::NotADirectory(_) | VolumeError::NestedArchive(_) => LiveMiss::NotAFolder,
+        // A local folder read as a file answers `ENOTDIR`, typed by its class.
+        VolumeError::IoError { .. } if error.os_class() == Some(OsErrorClass::NotADirectory) => LiveMiss::NotAFolder,
         VolumeError::PermissionDenied { .. }
             if local_fs && path.is_some_and(|path| (policy.denial_is_privacy)(path)) =>
         {

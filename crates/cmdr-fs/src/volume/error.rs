@@ -154,6 +154,15 @@ pub enum VolumeError {
     /// Cmdr to CREATE as the thing that's missing. A link that leads to a folder
     /// is a folder here: see `mkdir_all` § "A link to a folder is a folder".
     NotADirectory(String),
+    /// The path goes into an archive that sits inside another archive, which
+    /// Cmdr can't browse yet (getcmdr/cmdr#1549). Carries the inner archive's
+    /// path.
+    ///
+    /// ❌ Never [`NotFound`](Self::NotFound): the archive is right there, and the
+    /// frontend reads `NotFound` as "this folder was deleted". An archive volume
+    /// raises it for a listing that reaches into one of its own archive-named
+    /// files.
+    NestedArchive(String),
     /// The destination can't hold this name, whatever it's asked to do with it.
     ///
     /// Distinct from [`NotFound`](Self::NotFound): the backend never got as far as
@@ -355,6 +364,7 @@ impl ErrorLogText for VolumeError {
             Self::ReadOnly(path) => ("Read-only: ", LogPrivate::path(path)),
             Self::IsADirectory(path) => ("Is a directory: ", LogPrivate::dir_path(path)),
             Self::NotADirectory(path) => ("Not a directory: ", LogPrivate::path(path)),
+            Self::NestedArchive(path) => ("An archive inside an archive: ", LogPrivate::file_path(path)),
             Self::DeletePending(path) => ("Delete pending: ", LogPrivate::path(path)),
             Self::FileInUse(path) => ("Open somewhere else: ", LogPrivate::path(path)),
             Self::AmbiguousName(path) => ("More than one stored name matches: ", LogPrivate::path(path)),

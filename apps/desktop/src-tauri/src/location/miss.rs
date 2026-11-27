@@ -26,6 +26,9 @@ pub enum MissToken {
     Unreachable,
     /// Nothing is at this path on the volume, or it leads off the volume.
     NotFound,
+    /// Something is at the path, but it's a file (or an archive inside an
+    /// archive), so there's no folder to list.
+    NotAFolder,
     /// The place is a system, build, or cache folder a default search leaves out.
     Excluded,
     /// The folder's own permissions refuse the read (not macOS privacy).

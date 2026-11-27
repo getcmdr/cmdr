@@ -755,6 +755,18 @@
   "@errors.listing.archiveUnreadable.suggestion": {
     "sourceHash": "67b7e70"
   },
+  "errors.listing.nestedArchive.title": "Cmdr can’t open archives inside archives yet",
+  "@errors.listing.nestedArchive.title": {
+    "sourceHash": "7ede157"
+  },
+  "errors.listing.nestedArchive.explanation": "`{path}` is packed inside another archive. Cmdr opens archives that sit on a drive or a server, and opening ones inside other archives is still on the list.",
+  "@errors.listing.nestedArchive.explanation": {
+    "sourceHash": "81360ce"
+  },
+  "errors.listing.nestedArchive.suggestion": "Copy it out of this archive to a folder, then open the copy.",
+  "@errors.listing.nestedArchive.suggestion": {
+    "sourceHash": "11d55a6"
+  },
   "errors.listing.archiveNeedsPassword.title": "這個壓縮檔需要密碼",
   "@errors.listing.archiveNeedsPassword.title": {
     "sourceHash": "d6d0ad4"
@@ -2324,6 +2336,10 @@
   "errors.volume.isADirectory": "「{path}」是資料夾，不是檔案。",
   "@errors.volume.isADirectory": {
     "sourceHash": "224ae5e"
+  },
+  "errors.volume.nestedArchive": "“{path}” is an archive inside another archive, and Cmdr can’t open those yet.",
+  "@errors.volume.nestedArchive": {
+    "sourceHash": "d648960"
   },
   "errors.volume.notADirectory": "「{path}」是個檔案，但那裡需要一個資料夾。",
   "@errors.volume.notADirectory": {

@@ -242,6 +242,44 @@ async fn a_missing_folder_read_live_is_a_typed_miss_not_an_empty_listing() {
     assert!(answer.get("children").is_none());
 }
 
+/// A file listed as a folder answered `unreachable`, "stopped answering … may have
+/// disconnected", about the boot disk itself (seen 2026-11-27 on a plain `.zip`).
+#[tokio::test]
+async fn a_file_read_live_is_not_a_folder_and_not_an_unreachable_volume() {
+    let dir = TestDir::new("live-real-file");
+    std::fs::write(dir.join("notes.zip"), b"PK").expect("write file");
+    let root = native_app_path(&dir).as_str().to_string();
+    let facts = facts_for(&root);
+    let path = format!("{root}/notes.zip");
+    let resolved = resolve(
+        &facts,
+        &LocationInput {
+            volume_id: Some("lan".to_string()),
+            path: path.clone(),
+        },
+    )
+    .expect("resolves");
+    let volume: Arc<dyn Volume> = Arc::new(cmdr_local::LocalVolume::local_folder(
+        "testshare",
+        &*dir,
+        crate::volume_host::host(),
+    ));
+    let answer = answer_live(LiveAsk {
+        resolved: &resolved,
+        facts: &facts,
+        opts: &ListOptions::default(),
+        view: &unindexed(),
+        volume: Some(volume),
+        cancel: &CancellationToken::new(),
+        cfg: LIVE_READ,
+        policy: open_policy(),
+    })
+    .await
+    .expect("answers");
+    assert_eq!(answer["miss"], "notAFolder");
+    assert_eq!(answer["location"], json!({ "volumeId": "lan", "path": path }));
+}
+
 async fn dropped_read_detail(connection_state: Option<cmdr_fs::volume::ConnectionState>) -> String {
     let mut facts = facts_for("/Volumes/testshare-1");
     facts.volumes[0].connection_state = connection_state;

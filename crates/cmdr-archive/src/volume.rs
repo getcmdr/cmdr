@@ -46,6 +46,7 @@ use super::{
     ArchiveByteSource, ArchiveError, ArchiveFormat, ArchiveIndex, ArchiveIndexCache, ArchiveNode,
     DEFAULT_TAIL_CACHE_LEN, LocalFileSource, TailCachedSource,
 };
+use cmdr_fs::archive_format::has_supported_archive_extension;
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::log_error::LogError;
@@ -286,6 +287,27 @@ impl ArchiveVolume {
         VolumeError::NotFound(entry_path(&self.archive_path, inner).row_text())
     }
 
+    /// Why `inner` didn't list: `NestedArchive` when it is, or goes through, an
+    /// archive-named FILE in this archive (its row reads as an archive, so Enter
+    /// lists it, and nested archives aren't browsable yet: getcmdr/cmdr#1549),
+    /// else `NotFound`. Named by the same predicate that marks a row `is_archive`.
+    fn unlistable(&self, index: &ArchiveIndex, inner: &str) -> VolumeError {
+        let mut prefix_end = 0;
+        for part in inner.split('/') {
+            prefix_end += part.len();
+            let prefix = &inner[..prefix_end];
+            prefix_end += 1;
+            match index.get(prefix) {
+                Some(node) if node.is_dir => {}
+                Some(node) if has_supported_archive_extension(&node.name) => {
+                    return VolumeError::NestedArchive(entry_path(&self.archive_path, prefix).row_text());
+                }
+                _ => break,
+            }
+        }
+        self.not_found(inner)
+    }
+
     /// Whether the parent stores the `.zip` on the local filesystem — a plain
     /// local drive OR an OS-mounted share (both served by `LocalPosixVolume`,
     /// which reports `supports_local_fs_access() = true`). Then the fast local
@@ -518,7 +540,7 @@ impl Volume for ArchiveVolume {
         let volume_name = self.name.clone();
         Box::pin(async move {
             let index = self.index().await?;
-            let nodes = index.list(&inner).ok_or_else(|| self.not_found(&inner))?;
+            let nodes = index.list(&inner).ok_or_else(|| self.unlistable(&index, &inner))?;
             let entries: Vec<FileEntry> = nodes
                 .iter()
                 .map(|node| node_to_entry(&self.archive_path, &volume_name, node))

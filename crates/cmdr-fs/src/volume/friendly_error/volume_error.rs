@@ -233,6 +233,15 @@ fn classify(err: &VolumeError, path_display: String, native: &dyn Fn() -> Option
             retry_hint: false,
             raw_detail: raw,
         },
+        // A limit of what Cmdr browses: no retry or setting changes it.
+        VolumeError::NestedArchive(_) => ListingError {
+            category: ErrorCategory::NeedsAction,
+            reason: ListingErrorReason::NestedArchive { path: path_display },
+            provider: None,
+            action_kind: None,
+            retry_hint: false,
+            raw_detail: raw,
+        },
         VolumeError::IoError {
             raw_os_error: Some(errno),
             ..
