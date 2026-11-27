@@ -840,6 +840,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {你为 AI 服务设置的端点地址响应得不像 AI 服务，所以没有收到回复。请到“设置 > AI”中检查端点 URL。} linuxGnome {你为 AI 服务设置的端点地址响应得不像 AI 服务，所以没有收到回复。请到“首选项 > AI”中检查端点 URL。} linuxKde {你为 AI 服务设置的端点地址响应得不像 AI 服务，所以没有收到回复。请到“配置 Cmdr > AI”中检查端点 URL。} other {你为 AI 服务设置的端点地址响应得不像 AI 服务，所以没有收到回复。请到“设置 > AI”中检查端点 URL。}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "提供方那边出了点问题，要再试一次吗？",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

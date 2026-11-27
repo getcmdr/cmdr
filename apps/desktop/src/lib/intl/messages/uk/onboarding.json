@@ -635,6 +635,14 @@
   "@onboarding.cloudSetup.status.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "За цією адресою відповідає вебсторінка, а не сервіс ШІ. Перевірте URL-адресу кінцевої точки: сумісна з OpenAI зазвичай закінчується на /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "Відповідь із цієї адреси не схожа на відповідь сервісу ШІ. Перевірте URL-адресу кінцевої точки: сумісна з OpenAI зазвичай закінчується на /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "onboarding.cloudSetup.status.connected": "Підʼєднано!",
   "@onboarding.cloudSetup.status.connected": {
     "sourceHash": "78ae377"

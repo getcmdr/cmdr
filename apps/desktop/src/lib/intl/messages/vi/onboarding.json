@@ -635,6 +635,14 @@
   "@onboarding.cloudSetup.status.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "Địa chỉ này phản hồi bằng một trang web, không phải một dịch vụ AI. Hãy kiểm tra URL điểm cuối: URL tương thích với OpenAI thường kết thúc bằng /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "Địa chỉ này không phản hồi như một dịch vụ AI. Hãy kiểm tra URL điểm cuối: URL tương thích với OpenAI thường kết thúc bằng /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "onboarding.cloudSetup.status.connected": "Đã kết nối!",
   "@onboarding.cloudSetup.status.connected": {
     "sourceHash": "78ae377"

@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "这个地址返回的是网页，不是 AI 服务。请检查端点 URL：兼容 OpenAI 的端点通常以 /v1 结尾。",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "这个地址的响应不像 AI 服务。请检查端点 URL：兼容 OpenAI 的端点通常以 /v1 结尾。",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "测试连接",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

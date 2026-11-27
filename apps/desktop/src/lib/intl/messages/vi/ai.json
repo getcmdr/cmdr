@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "Địa chỉ này phản hồi bằng một trang web, không phải một dịch vụ AI. Hãy kiểm tra URL điểm cuối: URL tương thích với OpenAI thường kết thúc bằng /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Địa chỉ này không phản hồi như một dịch vụ AI. Hãy kiểm tra URL điểm cuối: URL tương thích với OpenAI thường kết thúc bằng /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Kiểm tra kết nối",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

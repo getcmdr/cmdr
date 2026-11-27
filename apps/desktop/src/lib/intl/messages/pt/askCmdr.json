@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {O endereço do ponto de extremidade definido para o seu serviço de IA não responde como um serviço de IA, então nenhuma resposta voltou. Verifique a URL do ponto de extremidade nas configurações, na seção IA.} linuxGnome {O endereço do ponto de extremidade definido para o seu serviço de IA não responde como um serviço de IA, então nenhuma resposta voltou. Verifique a URL do ponto de extremidade nas preferências, na seção IA.} linuxKde {O endereço do ponto de extremidade definido para o seu serviço de IA não responde como um serviço de IA, então nenhuma resposta voltou. Verifique a URL do ponto de extremidade em Configurar Cmdr, na seção IA.} other {O endereço do ponto de extremidade definido para o seu serviço de IA não responde como um serviço de IA, então nenhuma resposta voltou. Verifique a URL do ponto de extremidade nos ajustes, na seção IA.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Algo deu errado do lado do provedor. Tentar de novo?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

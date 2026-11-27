@@ -636,6 +636,14 @@
   "@onboarding.cloudSetup.status.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "這個網址回應的是網頁，不是 AI 服務。請檢查端點網址：相容 OpenAI 的端點通常以 /v1 結尾。",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "這個網址的回應不像 AI 服務。請檢查端點網址：相容 OpenAI 的端點通常以 /v1 結尾。",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "onboarding.cloudSetup.status.connected": "已連線",
   "@onboarding.cloudSetup.status.connected": {
     "sourceHash": "78ae377"

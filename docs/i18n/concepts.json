@@ -3223,6 +3223,10 @@
       {
         "key": "errors.volume.holdsUnlistedItems",
         "why": "deleting the unlisted objects from the bucket, the delete sense"
+      },
+      {
+        "key": "fileOperations.transferProgress.titleRollingBackCopy",
+        "why": "a copy's rollback deletes the files it wrote, the delete sense"
       }
     ],
     "sense": "Taking something out of a list or setting (a favorite, a host, a folder from indexing) without deleting files."

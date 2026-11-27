@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Adresa koncového bodu nastavená pro vaši službu AI nereaguje jako služba AI, takže nepřišla žádná odpověď. Zkontrolujte adresu URL koncového bodu v Nastavení, v části AI.} linuxGnome {Adresa koncového bodu nastavená pro vaši službu AI nereaguje jako služba AI, takže nepřišla žádná odpověď. Zkontrolujte adresu URL koncového bodu v Předvolbách, v části AI.} linuxKde {Adresa koncového bodu nastavená pro vaši službu AI nereaguje jako služba AI, takže nepřišla žádná odpověď. Zkontrolujte adresu URL koncového bodu v okně Nastavit Cmdr, v části AI.} other {Adresa koncového bodu nastavená pro vaši službu AI nereaguje jako služba AI, takže nepřišla žádná odpověď. Zkontrolujte adresu URL koncového bodu v Nastavení, v části AI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Na straně poskytovatele se něco nečekaně pokazilo. Zkusíte to znovu?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

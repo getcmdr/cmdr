@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "Cette adresse répond avec une page web, pas avec un service d’IA. Vérifiez l’URL du point de terminaison : une URL compatible OpenAI se termine généralement par /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Cette adresse ne répond pas comme un service d’IA. Vérifiez l’URL du point de terminaison : une URL compatible OpenAI se termine généralement par /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Tester la connexion",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

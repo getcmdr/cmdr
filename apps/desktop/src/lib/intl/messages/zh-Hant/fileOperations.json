@@ -527,6 +527,14 @@
   "@fileOperations.transferProgress.rollbackUnavailableOtherTooltip": {
     "sourceHash": "e9f64aa"
   },
+  "fileOperations.transferProgress.titleRollingBackCopy": "正在刪除已複製的內容⋯",
+  "@fileOperations.transferProgress.titleRollingBackCopy": {
+    "sourceHash": "ac027fd"
+  },
+  "fileOperations.transferProgress.titleRollingBackMove": "正在把檔案移回原處⋯",
+  "@fileOperations.transferProgress.titleRollingBackMove": {
+    "sourceHash": "8ccf626"
+  },
   "fileOperations.transferProgress.titleRollingBack": "正在復原⋯",
   "@fileOperations.transferProgress.titleRollingBack": {
     "sourceHash": "f89ef2e"
@@ -578,6 +586,10 @@
   "fileOperations.transferProgress.waitingForVolume": "正在等 {volume} 恢復連線⋯",
   "@fileOperations.transferProgress.waitingForVolume": {
     "sourceHash": "41d20d0"
+  },
+  "fileOperations.transferProgress.outgrewCount": "找到的比最初計算的多",
+  "@fileOperations.transferProgress.outgrewCount": {
+    "sourceHash": "e731adb"
   },
   "fileOperations.transferProgress.stallNotice": "已經 {duration} 沒有進度",
   "@fileOperations.transferProgress.stallNotice": {

@@ -529,6 +529,14 @@
   "@fileOperations.transferProgress.rollbackUnavailableOtherTooltip": {
     "sourceHash": "e9f64aa"
   },
+  "fileOperations.transferProgress.titleRollingBackCopy": "Kopiertes wird entfernt …",
+  "@fileOperations.transferProgress.titleRollingBackCopy": {
+    "sourceHash": "ac027fd"
+  },
+  "fileOperations.transferProgress.titleRollingBackMove": "Dateien werden zurückbewegt …",
+  "@fileOperations.transferProgress.titleRollingBackMove": {
+    "sourceHash": "8ccf626"
+  },
   "fileOperations.transferProgress.titleRollingBack": "Rollback läuft …",
   "@fileOperations.transferProgress.titleRollingBack": {
     "sourceHash": "f89ef2e"
@@ -580,6 +588,10 @@
   "fileOperations.transferProgress.waitingForVolume": "Cmdr wartet, bis {volume} wieder erreichbar ist …",
   "@fileOperations.transferProgress.waitingForVolume": {
     "sourceHash": "41d20d0"
+  },
+  "fileOperations.transferProgress.outgrewCount": "Mehr gefunden als zuerst gezählt",
+  "@fileOperations.transferProgress.outgrewCount": {
+    "sourceHash": "e731adb"
   },
   "fileOperations.transferProgress.stallNotice": "Kein Fortschritt seit {duration}",
   "@fileOperations.transferProgress.stallNotice": {

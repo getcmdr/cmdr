@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "По этому адресу отвечает веб-страница, а не сервис ИИ. Проверьте URL сервиса: совместимый с OpenAI обычно заканчивается на /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Ответ с этого адреса не похож на ответ сервиса ИИ. Проверьте URL сервиса: совместимый с OpenAI обычно заканчивается на /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Проверить подключение",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

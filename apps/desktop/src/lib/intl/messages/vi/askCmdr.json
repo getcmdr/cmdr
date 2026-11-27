@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Địa chỉ điểm cuối đặt cho dịch vụ AI của bạn không phản hồi như một dịch vụ AI, nên không có câu trả lời nào. Hãy kiểm tra URL điểm cuối trong cài đặt, ở mục AI.} linuxGnome {Địa chỉ điểm cuối đặt cho dịch vụ AI của bạn không phản hồi như một dịch vụ AI, nên không có câu trả lời nào. Hãy kiểm tra URL điểm cuối trong Tùy thích, ở mục AI.} linuxKde {Địa chỉ điểm cuối đặt cho dịch vụ AI của bạn không phản hồi như một dịch vụ AI, nên không có câu trả lời nào. Hãy kiểm tra URL điểm cuối trong Cấu hình Cmdr, ở mục AI.} other {Địa chỉ điểm cuối đặt cho dịch vụ AI của bạn không phản hồi như một dịch vụ AI, nên không có câu trả lời nào. Hãy kiểm tra URL điểm cuối trong cài đặt, ở mục AI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Có gì đó không ổn phía nhà cung cấp. Thử lại?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

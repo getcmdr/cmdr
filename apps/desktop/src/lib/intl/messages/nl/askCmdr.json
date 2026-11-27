@@ -843,6 +843,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Het eindpuntadres dat je voor je AI-service hebt ingesteld, reageert niet als een AI-service, dus er kwam geen antwoord. Controleer de eindpunt-URL in instellingen, onder AI.} linuxGnome {Het eindpuntadres dat je voor je AI-service hebt ingesteld, reageert niet als een AI-service, dus er kwam geen antwoord. Controleer de eindpunt-URL in voorkeuren, onder AI.} linuxKde {Het eindpuntadres dat je voor je AI-service hebt ingesteld, reageert niet als een AI-service, dus er kwam geen antwoord. Controleer de eindpunt-URL in ‘Cmdr configureren’, onder AI.} other {Het eindpuntadres dat je voor je AI-service hebt ingesteld, reageert niet als een AI-service, dus er kwam geen antwoord. Controleer de eindpunt-URL in instellingen, onder AI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Er ging iets mis bij de aanbieder. Opnieuw proberen?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

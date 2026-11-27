@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的 Mac 之後。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。} windows {如果資源回收筒的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。} other {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的 Mac 之後。要修正這個問題，請把你的使用者帳號重新設為垃圾桶資料夾的擁有者，並給它讀寫權限。在你 Mac 的主要磁碟上，它就是你個人專屬資料夾裡的隱藏 .Trash 資料夾。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。} windows {如果資源回收筒的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。} other {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的電腦之後。要修正這個問題，請把你的使用者帳號重新設為垃圾桶資料夾的擁有者，並給它讀寫權限。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的 Mac 之後。你還是可以用「永久刪除」指令把這些項目刪除。} windows {如果資源回收筒的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用「永久刪除」指令把這些項目刪除。} other {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用「永久刪除」指令把這些項目刪除。}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的 Mac 之後。要修正這個問題，請把你的使用者帳號重新設為垃圾桶資料夾的擁有者，並給它讀寫權限。在你 Mac 的主要磁碟上，它就是你個人專屬資料夾裡的隱藏 .Trash 資料夾。你還是可以用「永久刪除」指令把這些項目刪除。} windows {如果資源回收筒的權限變了，就可能出現這種情況，比如換到新的電腦之後。你還是可以用「永久刪除」指令把這些項目刪除。} other {如果垃圾桶資料夾的權限變了，就可能出現這種情況，比如換到新的電腦之後。要修正這個問題，請把你的使用者帳號重新設為垃圾桶資料夾的擁有者，並給它讀寫權限。你還是可以用「永久刪除」指令把這些項目刪除。}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {有些位置沒有自己的資源回收筒，像是雲端資料夾和大多數網路磁碟機。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。} other {有些位置沒有自己的垃圾桶，像是雲端資料夾和大多數網路磁碟機。你還是可以用 {deletePermanentlyKey} 把這些項目永久刪除。}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "你沒有權限在這裡刪除檔案。",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr 停下來時，已經刪除了 {total} 個檔案中的 {done} 個。",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {你沒有權限在這裡把檔案移到資源回收筒。} other {你沒有權限在這裡把檔案移至垃圾桶。}}",
   "@errors.write.permissionDenied.message.trash": {

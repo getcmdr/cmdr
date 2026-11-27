@@ -530,6 +530,14 @@
   "@fileOperations.transferProgress.rollbackUnavailableOtherTooltip": {
     "sourceHash": "e9f64aa"
   },
+  "fileOperations.transferProgress.titleRollingBackCopy": "Suppression de ce qui a été copié…",
+  "@fileOperations.transferProgress.titleRollingBackCopy": {
+    "sourceHash": "ac027fd"
+  },
+  "fileOperations.transferProgress.titleRollingBackMove": "Déplacement des fichiers vers leur emplacement d’origine…",
+  "@fileOperations.transferProgress.titleRollingBackMove": {
+    "sourceHash": "8ccf626"
+  },
   "fileOperations.transferProgress.titleRollingBack": "Retour en arrière…",
   "@fileOperations.transferProgress.titleRollingBack": {
     "sourceHash": "f89ef2e"
@@ -581,6 +589,10 @@
   "fileOperations.transferProgress.waitingForVolume": "En attente du retour de {volume}…",
   "@fileOperations.transferProgress.waitingForVolume": {
     "sourceHash": "41d20d0"
+  },
+  "fileOperations.transferProgress.outgrewCount": "Plus que le premier décompte",
+  "@fileOperations.transferProgress.outgrewCount": {
+    "sourceHash": "e731adb"
   },
   "fileOperations.transferProgress.stallNotice": "Aucune progression depuis {duration}",
   "@fileOperations.transferProgress.stallNotice": {

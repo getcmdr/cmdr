@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Mac. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.} windows {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbs ändern, zum Beispiel nach dem Umstieg auf einen neuen PC. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.} other {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Computer. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Mac. So behebst du es: Mach dein Benutzerkonto wieder zum Eigentümer des Papierkorbordners, mit Lese- und Schreibzugriff. Auf dem Hauptlaufwerk deines Macs ist das der verborgene Ordner .Trash in deinem persönlichen Ordner. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.} windows {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbs ändern, zum Beispiel nach dem Umstieg auf einen neuen PC. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.} other {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Computer. So behebst du es: Mach dein Benutzerkonto wieder zum Besitzer des Papierkorbordners, mit Lese- und Schreibzugriff. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Mac. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.} windows {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbs ändern, zum Beispiel nach dem Umstieg auf einen neuen PC. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.} other {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Computer. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Mac. So behebst du es: Mach dein Benutzerkonto wieder zum Eigentümer des Papierkorbordners, mit Lese- und Schreibzugriff. Auf dem Hauptlaufwerk deines Macs ist das der verborgene Ordner .Trash in deinem persönlichen Ordner. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.} windows {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbs ändern, zum Beispiel nach dem Umstieg auf einen neuen PC. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.} other {Das kann passieren, wenn sich die Zugriffsrechte des Papierkorbordners ändern, zum Beispiel nach dem Umstieg auf einen neuen Computer. So behebst du es: Mach dein Benutzerkonto wieder zum Besitzer des Papierkorbordners, mit Lese- und Schreibzugriff. Löschen kannst du die Objekte trotzdem mit dem Befehl „Endgültig löschen“.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Manche Orte haben keinen eigenen Papierkorb, darunter Cloud-Ordner und die meisten Netzlaufwerke. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.} other {Manche Orte haben keinen eigenen Papierkorb, darunter Cloud-Ordner und die meisten Netzlaufwerke. Endgültig löschen kannst du die Objekte trotzdem mit {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Du hast keine Berechtigung, hier Dateien zu löschen.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Bis Cmdr stoppte, waren bereits {done} von {total} Dateien gelöscht.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Du hast keine Berechtigung, hier Dateien in den Papierkorb zu bewegen.} other {Du hast keine Berechtigung, hier Dateien in den Papierkorb zu bewegen.}}",
   "@errors.write.permissionDenied.message.trash": {

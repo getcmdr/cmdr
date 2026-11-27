@@ -635,6 +635,14 @@
   "@onboarding.cloudSetup.status.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "Esta dirección responde con una página web, no con un servicio de IA. Revisa la URL del punto de conexión: una compatible con OpenAI suele terminar en /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "Esta dirección no responde como un servicio de IA. Revisa la URL del punto de conexión: una compatible con OpenAI suele terminar en /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "onboarding.cloudSetup.status.connected": "¡Conectado!",
   "@onboarding.cloudSetup.status.connected": {
     "sourceHash": "78ae377"

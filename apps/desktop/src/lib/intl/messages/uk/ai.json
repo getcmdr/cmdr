@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "За цією адресою відповідає вебсторінка, а не сервіс ШІ. Перевірте URL-адресу кінцевої точки: сумісна з OpenAI зазвичай закінчується на /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Відповідь із цієї адреси не схожа на відповідь сервісу ШІ. Перевірте URL-адресу кінцевої точки: сумісна з OpenAI зазвичай закінчується на /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Перевірити підʼєднання",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

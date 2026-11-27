@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy Mac mới. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.} windows {Điều này có thể xảy ra khi quyền của Thùng rác thay đổi, ví dụ sau khi chuyển sang một PC mới. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.} other {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy tính mới. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy Mac mới. Để khắc phục, hãy đặt lại tài khoản người dùng của bạn làm chủ sở hữu thư mục thùng rác, với quyền đọc và ghi. Trên ổ đĩa chính của máy Mac, đó là thư mục ẩn .Trash trong thư mục chính của bạn. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.} windows {Điều này có thể xảy ra khi quyền của Thùng rác thay đổi, ví dụ sau khi chuyển sang một PC mới. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.} other {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy tính mới. Để khắc phục, hãy đặt lại tài khoản người dùng của bạn làm chủ sở hữu thư mục thùng rác, với quyền đọc và ghi. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy Mac mới. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.} windows {Điều này có thể xảy ra khi quyền của Thùng rác thay đổi, ví dụ sau khi chuyển sang một PC mới. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.} other {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy tính mới. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy Mac mới. Để khắc phục, hãy đặt lại tài khoản người dùng của bạn làm chủ sở hữu thư mục thùng rác, với quyền đọc và ghi. Trên ổ đĩa chính của máy Mac, đó là thư mục ẩn .Trash trong thư mục chính của bạn. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.} windows {Điều này có thể xảy ra khi quyền của Thùng rác thay đổi, ví dụ sau khi chuyển sang một PC mới. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.} other {Điều này có thể xảy ra khi quyền của thư mục thùng rác thay đổi, ví dụ sau khi chuyển sang một máy tính mới. Để khắc phục, hãy đặt lại tài khoản người dùng của bạn làm chủ sở hữu thư mục thùng rác, với quyền đọc và ghi. Bạn vẫn có thể xóa các mục này bằng lệnh Xóa vĩnh viễn.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Một số nơi không có Thùng rác riêng, trong đó có các thư mục đám mây và hầu hết ổ đĩa mạng. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.} other {Một số nơi không có thùng rác riêng, trong đó có các thư mục đám mây và hầu hết ổ đĩa mạng. Bạn vẫn có thể xóa vĩnh viễn các mục này bằng {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Bạn không có quyền xóa tệp ở đây.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr đã xóa {done} trên {total} tệp trước khi dừng lại.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Bạn không có quyền chuyển tệp vào Thùng rác ở đây.} other {Bạn không có quyền chuyển tệp vào thùng rác ở đây.}}",
   "@errors.write.permissionDenied.message.trash": {

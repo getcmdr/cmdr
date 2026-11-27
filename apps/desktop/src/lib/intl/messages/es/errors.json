@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un Mac nuevo. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.} windows {Esto puede pasar cuando cambian los permisos de la Papelera de reciclaje, por ejemplo, después de pasarte a un PC nuevo. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.} other {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un ordenador nuevo. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un Mac nuevo. Para arreglarlo, vuelve a hacer que tu cuenta de usuario sea la propietaria de la carpeta de la papelera, con acceso de lectura y escritura. En el disco principal de tu Mac, es la carpeta oculta .Trash de tu carpeta de inicio. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.} windows {Esto puede pasar cuando cambian los permisos de la Papelera de reciclaje, por ejemplo, después de pasarte a un PC nuevo. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.} other {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un ordenador nuevo. Para arreglarlo, vuelve a hacer que tu cuenta de usuario sea la propietaria de la carpeta de la papelera, con acceso de lectura y escritura. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un Mac nuevo. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.} windows {Esto puede pasar cuando cambian los permisos de la Papelera de reciclaje, por ejemplo, después de pasarte a un PC nuevo. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.} other {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un ordenador nuevo. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un Mac nuevo. Para arreglarlo, vuelve a hacer que tu cuenta de usuario sea la propietaria de la carpeta de la papelera, con acceso de lectura y escritura. En el disco principal de tu Mac, es la carpeta oculta .Trash de tu carpeta de inicio. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.} windows {Esto puede pasar cuando cambian los permisos de la Papelera de reciclaje, por ejemplo, después de pasarte a un PC nuevo. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.} other {Esto puede pasar cuando cambian los permisos de la carpeta de la papelera, por ejemplo, después de pasarte a un ordenador nuevo. Para arreglarlo, vuelve a hacer que tu cuenta de usuario sea la propietaria de la carpeta de la papelera, con acceso de lectura y escritura. Aun así puedes eliminar los elementos con el comando Eliminar permanentemente.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Algunos sitios no tienen Papelera de reciclaje propia, como las carpetas en la nube y la mayoría de las unidades de red. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.} other {Algunos sitios no tienen papelera propia, como las carpetas en la nube y la mayoría de las unidades de red. Aun así puedes eliminar los elementos permanentemente con {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "No tienes permiso para eliminar archivos aquí.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr ya había eliminado {done} de {total} archivos cuando se detuvo.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {No tienes permiso para mover archivos a la Papelera de reciclaje aquí.} other {No tienes permiso para mover archivos a la papelera aquí.}}",
   "@errors.write.permissionDenied.message.trash": {

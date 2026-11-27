@@ -121,7 +121,8 @@ const FORKED_TERMS: readonly { term: string; pattern: RegExp; locales: readonly 
   { term: 'prioritize', pattern: /\bprioritiz(e|es|ed|ing|ation)\b/i, locales: ['en-GB', 'en-AU'] },
   { term: 'canceled', pattern: /\bcancel(ed|ing|ation|ations)\b/i, locales: ['en-GB', 'en-AU'] },
   { term: 'license (noun)', pattern: /\blicens(e|es|ed)\b/i, locales: ['en-GB', 'en-AU'] },
-  { term: 'trash', pattern: /\btrash(es|ed|ing)?\b/i, locales: ['en-GB', 'en-AU'] },
+  // `(?<!\.)` spares `.Trash`, the macOS folder's real name, which copy quotes verbatim.
+  { term: 'trash', pattern: /(?<!\.)\btrash(es|ed|ing)?\b/i, locales: ['en-GB', 'en-AU'] },
   { term: 'gray', pattern: /\bgray(s|ed|ing|scale|ish)?\b/i, locales: ['en-GB', 'en-AU'] },
   { term: 'percent', pattern: /\bpercent(age|ages)?\b/i, locales: ['en-GB', 'en-AU'] },
   { term: 'toward', pattern: /\btoward\b/i, locales: ['en-GB', 'en-AU'] },
@@ -447,13 +448,14 @@ describe('the rulings the catalogs are supposed to encode', () => {
       ['en-GB', gb],
       ['en-AU', au],
     ] as const) {
-      const leftovers = copyOf(cat.messages).filter(([, v]) => /trash/i.test(v))
+      // `.Trash` is the macOS folder's real name, quoted verbatim, never the American word.
+      const leftovers = copyOf(cat.messages).filter(([, v]) => /(?<!\.)trash/i.test(v))
       expect(leftovers.map(([k]) => k).sort(), tag).toEqual([...icuSelectorOnly].sort())
       for (const [key, value] of leftovers) {
         // The only occurrence is the selector itself, never prose: once per platform branch.
         for (const platform of ['macos', 'windows', 'linux'] as const) {
           const branch = pickPlatformBranch(value, platform)
-          expect(branch.match(/trash/gi)?.length, `${tag}: ${key} (${platform})`).toBe(1)
+          expect(branch.match(/(?<!\.)trash/gi)?.length, `${tag}: ${key} (${platform})`).toBe(1)
           expect(branch, `${tag}: ${key} (${platform})`).toContain(' trash {')
         }
         expect(en.messages[key], `${tag}: ${key}`).toContain(' trash {')

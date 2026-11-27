@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "Den här adressen svarar med en webbsida, inte med en AI-tjänst. Kontrollera slutpunkts-URL:en: en OpenAI-kompatibel URL slutar oftast på /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Den här adressen svarar inte som en AI-tjänst. Kontrollera slutpunkts-URL:en: en OpenAI-kompatibel URL slutar oftast på /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Testa anslutning",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

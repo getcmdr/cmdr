@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Isso pode acontecer quando as permissões da pasta do Lixo mudam, por exemplo, depois de passar para um Mac novo. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.} windows {Isso pode acontecer quando as permissões da Lixeira mudam, por exemplo, depois de passar para um PC novo. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.} other {Isso pode acontecer quando as permissões da pasta da Lixeira mudam, por exemplo, depois de passar para um computador novo. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Isso pode acontecer quando as permissões da pasta do Lixo mudam, por exemplo, depois de passar para um Mac novo. Para corrigir, defina sua conta de usuário de novo como dono da pasta do Lixo, com acesso de leitura e gravação. No disco principal do seu Mac, é a pasta oculta .Trash na sua pasta pessoal. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.} windows {Isso pode acontecer quando as permissões da Lixeira mudam, por exemplo, depois de passar para um PC novo. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.} other {Isso pode acontecer quando as permissões da pasta da Lixeira mudam, por exemplo, depois de passar para um computador novo. Para corrigir, defina sua conta de usuário de novo como dono da pasta da Lixeira, com acesso de leitura e gravação. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Isso pode acontecer quando as permissões da pasta do Lixo mudam, por exemplo, depois de passar para um Mac novo. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.} windows {Isso pode acontecer quando as permissões da Lixeira mudam, por exemplo, depois de passar para um PC novo. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.} other {Isso pode acontecer quando as permissões da pasta da Lixeira mudam, por exemplo, depois de passar para um computador novo. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Isso pode acontecer quando as permissões da pasta do Lixo mudam, por exemplo, depois de passar para um Mac novo. Para corrigir, defina sua conta de usuário de novo como dono da pasta do Lixo, com acesso de leitura e gravação. No disco principal do seu Mac, é a pasta oculta .Trash na sua pasta pessoal. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.} windows {Isso pode acontecer quando as permissões da Lixeira mudam, por exemplo, depois de passar para um PC novo. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.} other {Isso pode acontecer quando as permissões da pasta da Lixeira mudam, por exemplo, depois de passar para um computador novo. Para corrigir, defina sua conta de usuário de novo como dono da pasta da Lixeira, com acesso de leitura e gravação. Você ainda pode apagar os itens com o comando “Apagar permanentemente”.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Alguns lugares não têm uma Lixeira própria, entre eles as pastas na nuvem e a maioria das unidades de rede. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.} other {Alguns lugares não têm um Lixo próprio, entre eles as pastas na nuvem e a maioria dos discos de rede. Você ainda pode apagar os itens permanentemente com {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Você não tem permissão para apagar arquivos aqui.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "O Cmdr já tinha apagado {done} de {total} arquivos quando parou.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Você não tem permissão para mover arquivos para a Lixeira aqui.} other {Você não tem permissão para mover arquivos para o Lixo aqui.}}",
   "@errors.write.permissionDenied.message.trash": {

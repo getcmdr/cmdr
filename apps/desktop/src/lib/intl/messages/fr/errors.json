@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouveau Mac. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.} windows {Cela peut arriver quand les autorisations de la Corbeille changent, par exemple après le passage à un nouveau PC. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.} other {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouvel ordinateur. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouveau Mac. Pour régler le problème, redonnez à votre compte utilisateur la propriété du dossier de la corbeille, avec un accès en lecture et en écriture. Sur le disque principal de votre Mac, c’est le dossier caché .Trash de votre dossier personnel. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.} windows {Cela peut arriver quand les autorisations de la Corbeille changent, par exemple après le passage à un nouveau PC. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.} other {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouvel ordinateur. Pour régler le problème, redonnez à votre compte utilisateur la propriété du dossier de la corbeille, avec un accès en lecture et en écriture. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouveau Mac. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».} windows {Cela peut arriver quand les autorisations de la Corbeille changent, par exemple après le passage à un nouveau PC. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».} other {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouvel ordinateur. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouveau Mac. Pour régler le problème, redonnez à votre compte utilisateur la propriété du dossier de la corbeille, avec un accès en lecture et en écriture. Sur le disque principal de votre Mac, c’est le dossier caché .Trash de votre dossier personnel. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».} windows {Cela peut arriver quand les autorisations de la Corbeille changent, par exemple après le passage à un nouveau PC. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».} other {Cela peut arriver quand les autorisations du dossier de la corbeille changent, par exemple après le passage à un nouvel ordinateur. Pour régler le problème, redonnez à votre compte utilisateur la propriété du dossier de la corbeille, avec un accès en lecture et en écriture. Vous pouvez quand même supprimer les éléments avec la commande « Supprimer définitivement ».}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Certains emplacements n’ont pas de Corbeille propre, notamment les dossiers cloud et la plupart des lecteurs réseau. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.} other {Certains emplacements n’ont pas de corbeille propre, notamment les dossiers cloud et la plupart des disques réseau. Vous pouvez quand même supprimer définitivement les éléments avec {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Vous n’avez pas l’autorisation de supprimer des fichiers ici.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr avait déjà supprimé {done} des {total} fichiers au moment de s’arrêter.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Vous n’avez pas l’autorisation de déplacer des fichiers vers la Corbeille ici.} other {Vous n’avez pas l’autorisation de placer des fichiers dans la corbeille ici.}}",
   "@errors.write.permissionDenied.message.trash": {

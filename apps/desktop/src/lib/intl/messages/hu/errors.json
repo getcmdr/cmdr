@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új Macre való átállás után. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.} windows {Ez akkor fordulhat elő, ha megváltoznak a Lomtár engedélyei, például egy új gépre való átállás után. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.} other {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új számítógépre való átállás után. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új Macre való átállás után. A javításhoz tedd újra a saját felhasználói fiókodat a Kuka mappájának tulajdonosává, olvasási és írási hozzáféréssel. A Mac fő meghajtóján ez a saját mappádban lévő rejtett .Trash mappa. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.} windows {Ez akkor fordulhat elő, ha megváltoznak a Lomtár engedélyei, például egy új gépre való átállás után. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.} other {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új számítógépre való átállás után. A javításhoz tedd újra a saját felhasználói fiókodat a Kuka mappájának tulajdonosává, olvasási és írási hozzáféréssel. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új Macre való átállás után. Az elemeket viszont törölheted a Végleges törlés paranccsal.} windows {Ez akkor fordulhat elő, ha megváltoznak a Lomtár engedélyei, például egy új gépre való átállás után. Az elemeket viszont törölheted a Végleges törlés paranccsal.} other {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új számítógépre való átállás után. Az elemeket viszont törölheted a Végleges törlés paranccsal.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új Macre való átállás után. A javításhoz tedd újra a saját felhasználói fiókodat a Kuka mappájának tulajdonosává, olvasási és írási hozzáféréssel. A Mac fő meghajtóján ez a saját mappádban lévő rejtett .Trash mappa. Az elemeket viszont törölheted a Végleges törlés paranccsal.} windows {Ez akkor fordulhat elő, ha megváltoznak a Lomtár engedélyei, például egy új gépre való átállás után. Az elemeket viszont törölheted a Végleges törlés paranccsal.} other {Ez akkor fordulhat elő, ha megváltoznak a Kuka mappájának engedélyei, például egy új számítógépre való átállás után. A javításhoz tedd újra a saját felhasználói fiókodat a Kuka mappájának tulajdonosává, olvasási és írási hozzáféréssel. Az elemeket viszont törölheted a Végleges törlés paranccsal.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Néhány helyen nincs saját Lomtár, például a felhős mappákban és a legtöbb hálózati meghajtón. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.} other {Néhány helyen nincs saját Kuka, például a felhős mappákban és a legtöbb hálózati meghajtón. Az elemeket viszont véglegesen törölheted ezzel: {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Nincs engedélyed itt fájlokat törölni.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "A Cmdr a leállásáig {total} fájlból már {done} fájlt törölt.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Nincs engedélyed itt fájlokat a Lomtárba helyezni.} other {Nincs engedélyed itt fájlokat a Kukába helyezni.}}",
   "@errors.write.permissionDenied.message.trash": {

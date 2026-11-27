@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Die Endpunktadresse, die du für deinen KI-Dienst eingestellt hast, antwortet nicht wie ein KI-Dienst, deshalb kam keine Antwort zurück. Prüfe die Endpunkt-URL in den Einstellungen unter KI.} linuxGnome {Die Endpunktadresse, die du für deinen KI-Dienst eingestellt hast, antwortet nicht wie ein KI-Dienst, deshalb kam keine Antwort zurück. Prüfe die Endpunkt-URL in den Einstellungen unter KI.} linuxKde {Die Endpunktadresse, die du für deinen KI-Dienst eingestellt hast, antwortet nicht wie ein KI-Dienst, deshalb kam keine Antwort zurück. Prüfe die Endpunkt-URL unter „Cmdr einrichten“ > KI.} other {Die Endpunktadresse, die du für deinen KI-Dienst eingestellt hast, antwortet nicht wie ein KI-Dienst, deshalb kam keine Antwort zurück. Prüfe die Endpunkt-URL in den Einstellungen unter KI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Beim Anbieter ist etwas schiefgelaufen. Erneut versuchen?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

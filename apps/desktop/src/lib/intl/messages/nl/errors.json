@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Dit kan gebeuren als de bevoegdheden van de prullenmandmap veranderen, bijvoorbeeld na de overstap naar een nieuwe Mac. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.} windows {Dit kan gebeuren als de bevoegdheden van de prullenbak veranderen, bijvoorbeeld na de overstap naar een nieuwe pc. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.} other {Dit kan gebeuren als de bevoegdheden van de prullenbakmap veranderen, bijvoorbeeld na de overstap naar een nieuwe computer. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Dit kan gebeuren als de bevoegdheden van de prullenmandmap veranderen, bijvoorbeeld na de overstap naar een nieuwe Mac. Om dit op te lossen, maak je je gebruikersaccount weer eigenaar van de prullenmandmap, met lees- en schrijftoegang. Op de hoofdschijf van je Mac is dat de verborgen map .Trash in je thuismap. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.} windows {Dit kan gebeuren als de bevoegdheden van de prullenbak veranderen, bijvoorbeeld na de overstap naar een nieuwe pc. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.} other {Dit kan gebeuren als de bevoegdheden van de prullenbakmap veranderen, bijvoorbeeld na de overstap naar een nieuwe computer. Om dit op te lossen, maak je je gebruikersaccount weer eigenaar van de prullenbakmap, met lees- en schrijftoegang. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Dit kan gebeuren als de bevoegdheden van de prullenmandmap veranderen, bijvoorbeeld na de overstap naar een nieuwe Mac. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.} windows {Dit kan gebeuren als de bevoegdheden van de prullenbak veranderen, bijvoorbeeld na de overstap naar een nieuwe pc. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.} other {Dit kan gebeuren als de bevoegdheden van de prullenbakmap veranderen, bijvoorbeeld na de overstap naar een nieuwe computer. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Dit kan gebeuren als de bevoegdheden van de prullenmandmap veranderen, bijvoorbeeld na de overstap naar een nieuwe Mac. Om dit op te lossen, maak je je gebruikersaccount weer eigenaar van de prullenmandmap, met lees- en schrijftoegang. Op de hoofdschijf van je Mac is dat de verborgen map .Trash in je thuismap. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.} windows {Dit kan gebeuren als de bevoegdheden van de prullenbak veranderen, bijvoorbeeld na de overstap naar een nieuwe pc. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.} other {Dit kan gebeuren als de bevoegdheden van de prullenbakmap veranderen, bijvoorbeeld na de overstap naar een nieuwe computer. Om dit op te lossen, maak je je gebruikersaccount weer eigenaar van de prullenbakmap, met lees- en schrijftoegang. Je kunt de onderdelen wel verwijderen met de opdracht ‘Verwijder definitief’.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Sommige plekken hebben geen eigen prullenbak, waaronder cloudmappen en de meeste netwerkschijven. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.} other {Sommige plekken hebben geen eigen prullenmand, waaronder cloudmappen en de meeste netwerkschijven. Je kunt de onderdelen wel definitief verwijderen met {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Je hebt geen bevoegdheid om hier bestanden te verwijderen.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Toen Cmdr stopte, waren er al {done} van {total} bestanden verwijderd.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Je hebt geen bevoegdheid om hier bestanden naar de prullenbak te verplaatsen.} other {Je hebt geen bevoegdheid om hier bestanden naar de prullenmand te verplaatsen.}}",
   "@errors.write.permissionDenied.message.trash": {

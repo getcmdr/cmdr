@@ -1693,13 +1693,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny Mac. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.} windows {Det här kan hända när behörigheterna för Papperskorgen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.} other {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny Mac. Åtgärda det genom att göra ditt användarkonto till ägare av papperskorgsmappen igen, med läs- och skrivåtkomst. På din Macs huvudenhet är det den dolda mappen .Trash i din hemmapp. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.} windows {Det här kan hända när behörigheterna för Papperskorgen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.} other {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny dator. Åtgärda det genom att göra ditt användarkonto till ägare av papperskorgsmappen igen, med läs- och skrivåtkomst. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny Mac. Du kan ändå radera objekten med kommandot Radera permanent.} windows {Det här kan hända när behörigheterna för Papperskorgen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten med kommandot Radera permanent.} other {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten med kommandot Radera permanent.}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny Mac. Åtgärda det genom att göra ditt användarkonto till ägare av papperskorgsmappen igen, med läs- och skrivåtkomst. På din Macs huvudenhet är det den dolda mappen .Trash i din hemmapp. Du kan ändå radera objekten med kommandot Radera permanent.} windows {Det här kan hända när behörigheterna för Papperskorgen ändras, till exempel efter ett byte till en ny dator. Du kan ändå radera objekten med kommandot Radera permanent.} other {Det här kan hända när behörigheterna för papperskorgsmappen ändras, till exempel efter ett byte till en ny dator. Åtgärda det genom att göra ditt användarkonto till ägare av papperskorgsmappen igen, med läs- och skrivåtkomst. Du kan ändå radera objekten med kommandot Radera permanent.}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {Vissa ställen kan inte använda Papperskorgen, till exempel molnmappar och de flesta nätverksenheter. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.} other {Vissa ställen har ingen egen papperskorg, till exempel molnmappar och de flesta nätverksenheter. Du kan ändå radera objekten permanent med {deletePermanentlyKey}.}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1772,6 +1772,10 @@
   "errors.write.permissionDenied.message.delete": "Du har inte behörighet att radera filer här.",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr hade redan raderat {done} av {total} filer när raderingen stoppades.",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {Du har inte behörighet att flytta filer till Papperskorgen här.} other {Du har inte behörighet att flytta filer till papperskorgen här.}}",
   "@errors.write.permissionDenied.message.trash": {

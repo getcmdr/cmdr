@@ -1692,13 +1692,13 @@
   "@errors.write.trashRefused.suggestion.ownedByAnotherUser": {
     "sourceHash": "b2708c6"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {如果废纸篓文件夹的权限变了，就可能出现这种情况，比如换到新的 Mac 之后。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。} windows {如果回收站的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。} other {如果回收站文件夹的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithKey": "{platform, select, macos {如果废纸篓文件夹的权限变了，就可能出现这种情况，比如换到新的 Mac 之后。要解决这个问题，请把你的用户账户重新设为废纸篓文件夹的所有者，并给它读写权限。在你 Mac 的主驱动器上，它就是你个人文件夹里隐藏的 .Trash 文件夹。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。} windows {如果回收站的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。} other {如果回收站文件夹的权限变了，就可能出现这种情况，比如换到新的电脑之后。要解决这个问题，请把你的用户账户重新设为回收站文件夹的所有者，并给它读写权限。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithKey": {
-    "sourceHash": "0025847"
+    "sourceHash": "d7766ac"
   },
-  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {如果废纸篓文件夹的权限变了，就可能出现这种情况，比如换到新的 Mac 之后。你还是可以用“彻底删除”命令把这些项目删掉。} windows {如果回收站的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用“彻底删除”命令把这些项目删掉。} other {如果回收站文件夹的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用“彻底删除”命令把这些项目删掉。}}",
+  "errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": "{platform, select, macos {如果废纸篓文件夹的权限变了，就可能出现这种情况，比如换到新的 Mac 之后。要解决这个问题，请把你的用户账户重新设为废纸篓文件夹的所有者，并给它读写权限。在你 Mac 的主驱动器上，它就是你个人文件夹里隐藏的 .Trash 文件夹。你还是可以用“彻底删除”命令把这些项目删掉。} windows {如果回收站的权限变了，就可能出现这种情况，比如换到新的电脑之后。你还是可以用“彻底删除”命令把这些项目删掉。} other {如果回收站文件夹的权限变了，就可能出现这种情况，比如换到新的电脑之后。要解决这个问题，请把你的用户账户重新设为回收站文件夹的所有者，并给它读写权限。你还是可以用“彻底删除”命令把这些项目删掉。}}",
   "@errors.write.trashRefused.suggestion.trashNotWritableWithoutKey": {
-    "sourceHash": "e92ef8a"
+    "sourceHash": "5425b4b"
   },
   "errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": "{platform, select, windows {有些位置没有自己的回收站，比如云端文件夹和大多数网络驱动器。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。} other {有些位置没有自己的废纸篓，比如云端文件夹和大多数网络驱动器。你还是可以用 {deletePermanentlyKey} 把这些项目彻底删除。}}",
   "@errors.write.trashRefused.suggestion.noTrashForVolumeWithKey": {
@@ -1771,6 +1771,10 @@
   "errors.write.permissionDenied.message.delete": "你没有权限在这里删除文件。",
   "@errors.write.permissionDenied.message.delete": {
     "sourceHash": "0c03fc4"
+  },
+  "errors.write.permissionDenied.deletedSoFar": "Cmdr 停下来时已经删除了 {done} 个文件（共 {total} 个）。",
+  "@errors.write.permissionDenied.deletedSoFar": {
+    "sourceHash": "4bee284"
   },
   "errors.write.permissionDenied.message.trash": "{platform, select, windows {你没有权限在这里把文件移到回收站。} other {你没有权限在这里把文件移到废纸篓。}}",
   "@errors.write.permissionDenied.message.trash": {

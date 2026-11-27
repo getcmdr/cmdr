@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "Esta dirección responde con una página web, no con un servicio de IA. Revisa la URL del punto de conexión: una compatible con OpenAI suele terminar en /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Esta dirección no responde como un servicio de IA. Revisa la URL del punto de conexión: una compatible con OpenAI suele terminar en /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Probar conexión",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

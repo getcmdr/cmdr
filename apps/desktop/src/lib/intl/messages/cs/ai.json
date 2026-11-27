@@ -435,6 +435,14 @@
   "@ai.cloud.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "ai.cloud.notAnAiApi.webPage": "Na této adrese odpovídá webová stránka, ne služba AI. Zkontrolujte adresu URL koncového bodu: adresa kompatibilní s OpenAI obvykle končí na /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "ai.cloud.notAnAiApi.other": "Tato adresa nereaguje jako služba AI. Zkontrolujte adresu URL koncového bodu: adresa kompatibilní s OpenAI obvykle končí na /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "ai.cloud.testConnection": "Otestovat připojení",
   "@ai.cloud.testConnection": {
     "sourceHash": "5bcf311"

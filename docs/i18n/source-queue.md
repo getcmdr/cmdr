@@ -269,6 +269,20 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   sheet title) over a shorter drift; a character budget or a screenshot of the Servers-list F-key bar would settle
   whether that fits. (hu; pt kept `Adicionar servidor`, 18 chars, matching `servers.sheet.addTitle`, while the bar's
   longest shipped pt label is `Permanentemente`, 15)
+- `askCmdr.error.notAnAiApi`: the note says keep "AI" verbatim, but every catalog localizes the Settings section it
+  points at (`KI`, `IA`, `ИИ`, `ШІ`) and "AI service"; translators quoted the section label. Drop "AI" from the list.
+  (all)
+- `ai.cloud.notAnAiApi.*`, `onboarding.cloudSetup.status.notAnAiApi.*`: "keep URL verbatim" clashes with catalogs whose
+  endpoint field doesn't say URL (zh-Hant `端點網址`, ru `URL сервиса` keeps it); say "unless your endpoint label
+  differs". (zh-Hant)
+- `errors.write.permissionDenied.deletedSoFar`: another raw `errors.*` count with a counted noun and no plural (see the
+  raw-family entry above); cs, ru, and uk used colon forms, fr `{done} des {total}`. (cs, ru, uk)
+- `fileOperations.transferProgress.titleRollingBackCopy` deletes files, so it now sits in `remove`'s `notMatch`; a
+  rollback's "removing" family could take a pattern there instead of one key at a time. (all)
+- Trash suggestions' "your Mac's main drive" has no concept, so each locale coined one (`Hauptlaufwerk`, `hlavní disk`,
+  `huvudenhet`, `主驱动器`, `主要磁碟`); Apple says "startup disk". Propose a concept, or say "startup disk". (all)
+- `fileOperations.transferProgress.outgrewCount`: "keep it short" gives no width budget, and no screenshot shows the
+  slot under the progress bars; several locales run 30–40 chars. (all)
 
 ## Process feedback
 
@@ -554,3 +568,11 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `pt/style.md` already settled `Último uso`; added the ruling. `check-locale` failed on the `decisions.md` byte budget
   after a two-line Servers bullet; dropped the bullet (style.md and `terms.json` already hold it) and tightened one
   existing line. No script written. (pt, Servers-list columns + footer batch)
+- The worktree guard refused a `grep` loop over the catalogs and a heredoc + `apply-terms` chain (the repo path holds
+  `projects-git`, which seems to trip it); split into `grep -r` and Write plus a plain call. Still no `--lang all` for
+  `apply` / `check-locale`: 14 applies and 14 checks, and a chained check spilled into the background. (all, notAnAiApi
+  batch)
+- One-off `node -e` read `concepts.json` to see how a key-scoped `notMatch` is shaped (`i18n:term --key` prints only the
+  patterns, not the key entries); `sed -i` fixed termbase drift in my own `values.json` files, never a catalog. (all)
+- `i18n:apply --lang es-419 --values …` lists the eight keys an overlay never forks as "Not covered", which reads like a
+  miss; an overlay run could skip that list. (es-419)

@@ -635,6 +635,14 @@
   "@onboarding.cloudSetup.status.providerRefused": {
     "sourceHash": "e3496e5"
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "Ez a cím egy weboldallal válaszol, nem egy AI-szolgáltatással. Ellenőrizd a végpont URL-címét: az OpenAI-kompatibilis cím általában /v1-re végződik.",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "sourceHash": "7b3a1ae"
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "Ez a cím nem úgy válaszol, mint egy AI-szolgáltatás. Ellenőrizd a végpont URL-címét: az OpenAI-kompatibilis cím általában /v1-re végződik.",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "sourceHash": "4d9f40b"
+  },
   "onboarding.cloudSetup.status.connected": "Kapcsolódva!",
   "@onboarding.cloudSetup.status.connected": {
     "sourceHash": "78ae377"

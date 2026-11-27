@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Az AI-szolgáltatásodhoz beállított végpontcím nem úgy válaszol, mint egy AI-szolgáltatás, ezért nem érkezett válasz. Ellenőrizd a végpont URL-címét a beállításokban, az AI résznél.} linuxGnome {Az AI-szolgáltatásodhoz beállított végpontcím nem úgy válaszol, mint egy AI-szolgáltatás, ezért nem érkezett válasz. Ellenőrizd a végpont URL-címét a beállításokban, az AI résznél.} linuxKde {Az AI-szolgáltatásodhoz beállított végpontcím nem úgy válaszol, mint egy AI-szolgáltatás, ezért nem érkezett válasz. Ellenőrizd a végpont URL-címét a Cmdr beállításaiban, az AI résznél.} other {Az AI-szolgáltatásodhoz beállított végpontcím nem úgy válaszol, mint egy AI-szolgáltatás, ezért nem érkezett válasz. Ellenőrizd a végpont URL-címét a beállításokban, az AI résznél.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Valami nem sikerült a szolgáltató oldalán. Próbáld újra?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

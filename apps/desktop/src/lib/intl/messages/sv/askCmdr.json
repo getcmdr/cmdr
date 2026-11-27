@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {Slutpunktsadressen du har angett för din AI-tjänst svarar inte som en AI-tjänst, så inget svar kom tillbaka. Kontrollera slutpunkts-URL:en i inställningarna, under AI.} linuxGnome {Slutpunktsadressen du har angett för din AI-tjänst svarar inte som en AI-tjänst, så inget svar kom tillbaka. Kontrollera slutpunkts-URL:en i inställningarna, under AI.} linuxKde {Slutpunktsadressen du har angett för din AI-tjänst svarar inte som en AI-tjänst, så inget svar kom tillbaka. Kontrollera slutpunkts-URL:en i ”Anpassa Cmdr”, under AI.} other {Slutpunktsadressen du har angett för din AI-tjänst svarar inte som en AI-tjänst, så inget svar kom tillbaka. Kontrollera slutpunkts-URL:en i inställningarna, under AI.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Något gick fel hos leverantören. Försök igen?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

@@ -841,6 +841,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {La dirección del punto de conexión que has configurado para tu servicio de IA no responde como un servicio de IA, así que no ha llegado ninguna respuesta. Revisa la URL del punto de conexión en Configuración, en la sección IA.} linuxGnome {La dirección del punto de conexión que has configurado para tu servicio de IA no responde como un servicio de IA, así que no ha llegado ninguna respuesta. Revisa la URL del punto de conexión en Preferencias, en la sección IA.} linuxKde {La dirección del punto de conexión que has configurado para tu servicio de IA no responde como un servicio de IA, así que no ha llegado ninguna respuesta. Revisa la URL del punto de conexión en Configurar Cmdr, en la sección IA.} other {La dirección del punto de conexión que has configurado para tu servicio de IA no responde como un servicio de IA, así que no ha llegado ninguna respuesta. Revisa la URL del punto de conexión en Ajustes, en la sección IA.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Algo ha ido mal por parte del proveedor. ¿Lo intentas de nuevo?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"

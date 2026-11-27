@@ -843,6 +843,10 @@
   "@askCmdr.error.unfinishedReply": {
     "sourceHash": "7cc85f5"
   },
+  "askCmdr.error.notAnAiApi": "{platform, select, windows {L’adresse du point de terminaison définie pour votre service d’IA ne répond pas comme un service d’IA, donc aucune réponse n’est arrivée. Vérifiez l’URL du point de terminaison dans les paramètres, section IA.} linuxGnome {L’adresse du point de terminaison définie pour votre service d’IA ne répond pas comme un service d’IA, donc aucune réponse n’est arrivée. Vérifiez l’URL du point de terminaison dans les préférences, section IA.} linuxKde {L’adresse du point de terminaison définie pour votre service d’IA ne répond pas comme un service d’IA, donc aucune réponse n’est arrivée. Vérifiez l’URL du point de terminaison dans « Configurer Cmdr », section IA.} other {L’adresse du point de terminaison définie pour votre service d’IA ne répond pas comme un service d’IA, donc aucune réponse n’est arrivée. Vérifiez l’URL du point de terminaison dans les réglages, section IA.}}",
+  "@askCmdr.error.notAnAiApi": {
+    "sourceHash": "a38b8c8"
+  },
   "askCmdr.error.provider": "Un problème est survenu du côté du fournisseur. Réessayer ?",
   "@askCmdr.error.provider": {
     "sourceHash": "d536cce"
