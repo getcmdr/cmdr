@@ -5,7 +5,7 @@
 //!
 //! While escapes aren't live (`ESCAPES_LIVE`), an escape-range code point in the text is
 //! LITERAL (no producer made it), so it parses through `from_literal_store`, and the native
-//! path out is byte for byte the text in. [`parse`] is `AppPathBuf::from_text`, whose pair
+//! path out is byte for byte the text in. [`parse`](crate::app_text::parse) is `AppPathBuf::from_text`, whose pair
 //! `AppPath::to_text` is the text a value is written back as (❌ never `as_str`, which
 //! spells such a name as escapes that read back as a different file).
 
