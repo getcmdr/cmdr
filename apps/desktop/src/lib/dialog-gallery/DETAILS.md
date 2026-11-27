@@ -106,29 +106,28 @@ culprit. Add the exit in the same change as the dialog, before its row ever runs
 
 ## What actually reaches a production bundle
 
-Measured, not assumed (`pnpm build`, re-measured 2026-08-06 after the capture-build gate went in, grep for marker
-literals in `apps/desktop/build/`):
+Measured, not assumed (`pnpm check desktop-bundle-size`'s production build, sourcemap attribution plus grep for marker
+literals, 2026-11-27):
 
-- **Absent**: `DialogGallery.svelte`, every `fixtures/` module, `disk-fixture.ts`, `store-seeding.ts`, and the two
-  preview modules — so are the dialog imports the harness would otherwise have added to the main-window graph. The
-  `{#if import.meta.env.DEV || __CMDR_E2E_BUILD__}` in `+layout.svelte` is what does it (Vite inlines both flags, and a
-  production build has neither). Markers checked: `Cmdr paused indexing because the drive is running on battery.`
-  (`fixtures/alert.ts`) and `Dialog gallery has no fixture for` (the harness's own debug line). Neither appears anywhere
-  under `build/`.
-- **Present**: `gallery-registry.ts`'s row copy and `DebugDialogsPanel.svelte`, inside the Debug route's own lazily
-  loaded node chunk (`build/_app/immutable/nodes/<n>.*.js`) — where `DebugErrorPreviewPanel`, the closed-tabs panel, and
-  the rest of that window already were. `routes/debug/` is a real SvelteKit route with no production exclusion, so it
-  builds like any other; only its opener is DEV-gated. The gallery adds ~11 kB of row copy to that chunk and nothing to
-  what the main window loads.
-- **Deliberately present**: `gallery-state.svelte.ts`, which `+page.svelte` imports unconditionally (above).
+- **Absent**: the harness, every `fixtures/` module, `disk-fixture.ts`, `store-seeding.ts`, the preview modules,
+  `gallery-registry.ts`, and `DebugDialogsPanel.svelte`. Two gates do it, each a dynamic import in a `.ts` loader whose
+  branch Vite folds to `null`: `load-dialog-gallery.ts` (`DEV || __CMDR_E2E_BUILD__`, mounted from `+layout.svelte`) and
+  `apps/desktop/src/routes/debug/load-debug-window.ts` (`DEV`, the Debug window's only gate, matching its ⌘⇧D opener).
+  Markers checked: `Tessera-2.4.1-arm64.dmg` (`fixtures/about-this.ts`),
+  `Cmdr paused indexing because the drive is running on battery.` (`fixtures/alert.ts`), and
+  `Dialog gallery has no fixture for` (the harness's debug line). None appears in the output.
+- **Deliberately present**: `gallery-state.svelte.ts` and the preview openers' call sites in `listener-setup.ts`, a few
+  bytes each behind the same constant gate.
+
+Gotcha/Why the loader and ❌ never a static import under `{#if import.meta.env.DEV}`: the `{#if}` drops the COMPONENT,
+but every module it imports still joins the graph, and a module whose top level calls a helper (`derived(...)` in
+`fixtures/about-this.ts`, `.map` over a record) survives tree-shaking as a possible side effect. That's how about 45 kB
+of fixtures rode the main layout's chunk into every release until 2026-11 (#1509), while this section said they were
+absent.
 
 The Rust side is absolute: `create_dialog_gallery_fixtures` and the `dev_fixtures` module are `#[cfg(debug_assertions)]`
 at the function, the `ipc.rs` registration, and the collector, and `strings` on the release binary finds neither the
 command name nor `dialog-gallery-fixtures` (while shipping command names like `notify_dialog_opened` are there).
-
-❌ So don't write "the whole gallery tree-shakes out". The claim that holds is the one that matters: nothing the harness
-renders, and no dialog it pulls in, reaches the main window's bundle. Excluding the Debug route from production builds
-would be a separate change, and it would take the rest of the Debug window with it.
 
 ## The ways a dialog gets opened
 

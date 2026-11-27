@@ -20,9 +20,13 @@ was enough to make knip call `lib/debug/debug-window.ts` an unused file while th
 it (knip 6.36.0, `dist/compilers/compilers.js` § `importMatcher`, verified 2026-09-21). A `.ts` file is parsed by
 TypeScript and may write `import.meta.env.DEV` directly.
 
-`{#if}` MARKUP is the exception and keeps the literal (`routes/(main)/+layout.svelte`): Vite replaces
-`import.meta.env.DEV` at build time, so the whole dev-only subtree leaves the prod bundle. A function call survives
-minification, so gating markup on `isDevBuild()` would ship the dialog gallery and the dev pages to users.
+`{#if}` MARKUP may keep the literal: Vite replaces `import.meta.env.DEV` at build time, so the gated component leaves
+the prod bundle. Its imports don't, though: every statically imported module stays in the graph, and one whose top level
+calls a helper survives tree-shaking as a possible side effect (the dialog gallery's fixtures shipped this way, about 45
+kB). So a dev-only SUBTREE loads through a dynamic import in a `.ts` loader whose branch folds to `null`, rendered with
+`{#await}`: `lib/dialog-gallery/load-dialog-gallery.ts` and `routes/debug/load-debug-window.ts` (the whole Debug window)
+are the two. A function call survives minification, so gating on `isDevBuild()` would ship the subtree to users either
+way.
 
 ## Static assets
 
