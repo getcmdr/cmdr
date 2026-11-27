@@ -3337,7 +3337,8 @@
   "settings.section.servers": "Servers (SFTP, WebDAV, NFS, S3)",
   "@settings.section.servers": {
     "description": "Settings subsection title under File systems: the page for SFTP, WebDAV, NFS, and S3 servers (whether their top folder shows a “..” row, plus the SSH host keys and HTTPS certificates this computer trusts). \"SFTP\", \"WebDAV\", \"NFS\", and \"S3\" are protocol names; keep all four as-is, parentheses and order included. Sidebar and page heading.",
-    "screenshot": "settings-summary-file-systems.png"
+    "screenshot": "settings-appearance.png",
+    "screenshotNote": "Your string isn’t visible in this screenshot. It shows up in another state of this screen, like an open menu or tooltip, a running step, or further down a list. Use the description for the meaning and this image for the context."
   },
   "settings.section.adb": "Android (ADB)",
   "@settings.section.adb": {

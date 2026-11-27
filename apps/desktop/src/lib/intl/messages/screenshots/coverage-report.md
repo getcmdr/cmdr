@@ -19,25 +19,25 @@ Per catalog area, each renderable key is one of these:
 
 Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 
-**Total: 4247 / 6194 keys have a screenshot (69%):** 2107 direct (34%), 1924 representative (31%), and 216 not shown
-(3%). 1750 remain uncoupled, and 197 are native surfaces a webview capture cannot reach.
+**Total: 4261 / 6217 keys have a screenshot (69%):** 2106 direct (34%), 1938 representative (31%), and 217 not shown
+(3%). 1759 remain uncoupled, and 197 are native surfaces a webview capture cannot reach.
 
 | Area            | Direct | Representative | Not shown | Uncoupled | Native | Total | Any % |
 | --------------- | -----: | -------------: | --------: | --------: | -----: | ----: | ----: |
 | aboutThis       |    167 |              0 |        10 |       144 |      0 |   321 |   55% |
 | adb             |      3 |              0 |         0 |        19 |      0 |    22 |   14% |
-| ai              |      1 |            159 |         0 |         0 |      0 |   160 |  100% |
-| askCmdr         |    176 |            319 |         3 |        47 |      0 |   545 |   91% |
+| ai              |      1 |            161 |         0 |         0 |      0 |   162 |  100% |
+| askCmdr         |    176 |            321 |         3 |        47 |      0 |   547 |   91% |
 | commandPalette  |      3 |              2 |         0 |         2 |      0 |     7 |   71% |
 | commands        |    244 |              5 |         1 |        90 |      0 |   340 |   74% |
 | common          |      8 |              1 |         1 |         9 |      0 |    19 |   53% |
 | crashReporter   |     12 |             11 |         0 |         0 |      0 |    23 |  100% |
 | downloads       |      9 |              6 |         0 |        21 |      0 |    36 |   42% |
 | errorReporter   |     12 |              0 |         4 |        43 |      0 |    59 |   27% |
-| errors          |    189 |            504 |         0 |         0 |      0 |   693 |  100% |
+| errors          |    189 |            509 |         0 |         0 |      0 |   698 |  100% |
 | feedback        |      8 |              6 |         0 |         2 |      0 |    16 |   88% |
-| fileExplorer    |    146 |             69 |        11 |       381 |      0 |   607 |   37% |
-| fileOperations  |    129 |            101 |         7 |       128 |      0 |   365 |   65% |
+| fileExplorer    |    146 |             69 |        11 |       383 |      0 |   609 |   37% |
+| fileOperations  |    129 |            104 |         7 |       128 |      0 |   368 |   65% |
 | goToPath        |      5 |              7 |         0 |         2 |      0 |    14 |   86% |
 | indexing        |     34 |             18 |         0 |        18 |      0 |    70 |   74% |
 | licensing       |     53 |             36 |         1 |        26 |      0 |   116 |   78% |
@@ -47,7 +47,7 @@ Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 | mtp             |     18 |              3 |         0 |         0 |      0 |    21 |  100% |
 | multiRename     |     78 |              0 |        12 |       146 |      0 |   236 |   38% |
 | notifications   |      0 |              0 |         0 |         1 |      0 |     1 |    0% |
-| onboarding      |     81 |             46 |        12 |        25 |      0 |   164 |   85% |
+| onboarding      |     81 |             48 |        12 |        25 |      0 |   166 |   85% |
 | operationLog    |     30 |             83 |         0 |         0 |      0 |   113 |  100% |
 | queryUi         |     36 |            130 |         0 |         0 |      0 |   166 |  100% |
 | queue           |     22 |             21 |         1 |         5 |      0 |    49 |   90% |
@@ -55,10 +55,10 @@ Coverage is PARTIAL by design. Uncoupled keys are expected, not bugs.
 | securityNotices |      0 |              0 |         0 |        16 |      0 |    16 |    0% |
 | selection       |     12 |              0 |         2 |         1 |      0 |    15 |   93% |
 | servers         |     64 |             90 |        13 |        55 |      0 |   222 |   75% |
-| settings        |    364 |             51 |       117 |       410 |      0 |   942 |   56% |
+| settings        |    363 |             51 |       118 |       413 |      0 |   945 |   56% |
 | shortcuts       |     37 |             45 |         0 |         0 |      0 |    82 |  100% |
 | stateRecovery   |      0 |              0 |         0 |        33 |      0 |    33 |    0% |
-| suggestedOps    |     69 |              0 |        17 |        27 |      0 |   113 |   76% |
+| suggestedOps    |     69 |              0 |        17 |        31 |      0 |   117 |   74% |
 | transfer        |      2 |             22 |         0 |         0 |      0 |    24 |  100% |
 | ui              |     38 |              0 |         2 |        35 |      0 |    75 |   53% |
 | updates         |      6 |             29 |         0 |         0 |      0 |    35 |  100% |
