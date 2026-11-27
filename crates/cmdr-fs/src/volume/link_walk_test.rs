@@ -3,7 +3,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::app_path::{AppPath, AppPathBuf};
+use crate::app_path::AppPath;
 use crate::entry::FileEntry;
 use crate::file_identity::FileId;
 use crate::volume::descent::MAX_WALK_DEPTH;
@@ -58,14 +58,14 @@ impl Volume for RepeatingNodeShare {
 #[tokio::test]
 async fn a_repeated_node_the_server_calls_a_folder_stops_at_the_depth_backstop() {
     let share = RepeatingNodeShare;
-    let root = AppPathBuf::from_text("/top").expect("a canonical path");
+    let root = AppPath::from_normalized("/top").expect("a canonical path").to_owned();
     let mut here = walk_root(&share, &root).await;
     let mut root_links = RootLinks::default();
     let mut text = root.as_str().to_owned();
     let mut levels = 0;
     let stopped = loop {
         text.push_str("/d");
-        let child = AppPathBuf::from_text(&text).expect("a canonical path");
+        let child = AppPath::from_normalized(&text).expect("a canonical path").to_owned();
         match descend_into(&share, &child, false, &here, &root, &mut root_links).await {
             Ok(Descending::Into(next)) => {
                 here = next;
