@@ -1,6 +1,6 @@
 //! The shared local-FS directory walk every scan is built on.
 //!
-//! One recursion, parameterized by a `WalkContext` of callbacks, so the copy
+//! One walk, parameterized by a `WalkContext` of callbacks, so the copy
 //! scan, the delete scan, and the dry run all descend the same way: same
 //! symlink stance, same cancel checkpoints, same authoritative-listing fast
 //! path. It knows nothing about copy, move, delete, or conflicts.
@@ -126,7 +126,7 @@ pub(super) struct WalkContext<'a, E> {
 /// shared counters.
 #[allow(
     clippy::too_many_arguments,
-    reason = "Mirrors walk_dir_recursive's parameter list, which threads the shared tallies through the recursion"
+    reason = "Mirrors walk_dir_recursive's parameter list: the shared tallies every source adds to"
 )]
 pub(super) fn walk_sources_with_per_path<E>(
     sources: &[PathBuf],
@@ -199,7 +199,7 @@ pub(super) fn walk_sources_with_per_path<E>(
     Ok(per_path)
 }
 
-/// Recursively walks a directory tree, collecting files and directories.
+/// Walks a directory tree, collecting files and directories.
 ///
 /// Shared walker used by both scan preview and write operation scanning.
 /// Behavior is customized via `WalkContext` callbacks for error handling and progress reporting.
@@ -221,9 +221,16 @@ pub(super) fn walk_sources_with_per_path<E>(
 /// hardlink-heavy trees like cargo's `target/`). Dedup is Unix-only (non-Unix
 /// has no `nlink()`), where `dedup_bytes == total_bytes`. Copy consumes
 /// `total_bytes`; delete consumes `dedup_bytes`; the Copy dialog shows both.
+///
+/// **Depth lives on the heap** (#1541): the folders the walk is inside sit on a
+/// `Vec`, outermost first, and one loop runs them, depth first in listing
+/// order, with every tick where a recursion put it (a folder's after its
+/// children). ❌ Never a call per level: a debug build's frame overflowed the
+/// 2 MiB thread a scan runs on short of the ~511 levels a macOS path allows
+/// (`transfer/volume/DETAILS.md` § "The walk keeps its depth on the heap").
 #[allow(
     clippy::too_many_arguments,
-    reason = "Recursive fn requires passing state through multiple levels"
+    reason = "The walk's shared tallies, each threaded in by the caller that reads them"
 )]
 pub(super) fn walk_dir_recursive<E>(
     path: &Path,
@@ -238,237 +245,276 @@ pub(super) fn walk_dir_recursive<E>(
     volume_id: Option<&str>,
     ctx: &WalkContext<'_, E>,
 ) -> Result<(), E> {
-    if (ctx.is_cancelled)() {
-        return Err((ctx.on_cancelled)());
+    let mut walk = Walk {
+        source_root,
+        files,
+        dirs,
+        total_bytes,
+        dedup_bytes,
+        last_progress_time,
+        visited,
+        seen_inodes,
+        volume_id,
+        ctx,
+    };
+    let mut inside: Vec<WalkedDir> = Vec::new();
+    if let Some(dir) = walk.visit(path)? {
+        inside.push(dir);
     }
-    // After the cancel check, never before it: cancel outranks pause, so a
-    // cancelled walk must never park on its way out.
-    (ctx.park_while_paused)();
-
-    let metadata = fs::symlink_metadata(path).map_err(|e| (ctx.on_io_error)(path, e))?;
-    let device = device_of(&metadata);
-
-    if metadata.is_symlink() {
-        // Symlinks contribute their own (tiny) target-string length, never
-        // the target's bytes. No hardlink dedup: symlinks have distinct inodes.
-        *total_bytes += metadata.len();
-        *dedup_bytes += metadata.len();
-        files.push(FileInfo::new(path.to_path_buf(), source_root.to_path_buf(), &metadata));
-    } else if metadata.is_file() {
-        // `total_bytes` is the write footprint (every file at full size, the
-        // bytes a copy actually writes and the disk-space check must reserve).
-        // `dedup_bytes` is the `du`-equivalent source footprint (each inode
-        // once) — what delete frees and what the scan-phase progress bar
-        // compares against the inode-dedup'd index estimate. `progress_bytes`
-        // mirrors `dedup_bytes` per file so the delete active phase can sum a
-        // running dedup'd total. See `CopyScanResult` for the consumer split.
-        let counts = first_sighting(&metadata, seen_inodes);
-        let size = metadata.len();
-        *total_bytes += size;
-        if counts {
-            *dedup_bytes += size;
-        }
-        let info = FileInfo::new(path.to_path_buf(), source_root.to_path_buf(), &metadata)
-            .with_progress_bytes(if counts { size } else { 0 });
-        files.push(info);
-        if let Some(on_file) = ctx.on_file {
-            on_file(path, size);
-        }
-        // The flags ride on the `lstat` above, so an armed walk pays nothing
-        // extra here. Files only: a symlink's own flags say nothing about the
-        // cloud file it points at, and trashing one moves the link anyway.
-        if let Some(watch) = ctx.online_only {
-            watch.note(path, Some(&metadata));
-        }
-    } else if metadata.is_dir() {
-        if is_symlink_loop(path, visited) {
-            return Err((ctx.on_symlink_loop)(path));
-        }
-        if let Some(on_mount_boundary) = ctx.on_mount_boundary
-            && super::mount_boundary::is_mount_boundary(path, device)
-        {
-            return Err(on_mount_boundary(path));
-        }
-
-        if let Ok(canonical) = path.canonicalize() {
-            visited.insert(canonical);
-        }
-
-        dirs.push(path.to_path_buf());
-
-        // Oracle short-circuit: if a watcher-backed listing exists for this dir,
-        // walk it from cache instead of hitting the disk. The recurse-into-files
-        // step below still goes through `walk_dir_recursive`, which re-applies
-        // the oracle at each level.
-        if let Some(vid) = volume_id
-            && let Some(cached_entries) = ctx.listings.authoritative_listing(vid, path)
-        {
-            walk_cached_entries(
-                path,
-                device,
-                source_root,
-                cached_entries,
-                files,
-                dirs,
-                total_bytes,
-                dedup_bytes,
-                last_progress_time,
-                visited,
-                seen_inodes,
-                volume_id,
-                ctx,
-            )?;
-        } else {
-            let entries = fs::read_dir(path).map_err(|e| (ctx.on_io_error)(path, e))?;
-            for entry in entries.flatten() {
-                let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
-                if is_left_out(ctx, path, device, &entry.file_name(), is_directory) {
-                    continue;
+    while let Some(dir) = inside.last_mut() {
+        match walk.next_child(dir)? {
+            Some(child) => {
+                if let Some(child_dir) = walk.visit(&child)? {
+                    inside.push(child_dir);
                 }
-                walk_dir_recursive(
-                    &entry.path(),
-                    source_root,
-                    files,
-                    dirs,
-                    total_bytes,
-                    dedup_bytes,
-                    last_progress_time,
-                    visited,
-                    seen_inodes,
-                    volume_id,
-                    ctx,
-                )?;
+            }
+            None => {
+                let dir = inside.pop().expect("the folder that ended is on top");
+                walk.finish(dir);
             }
         }
-    } else {
-        log::debug!("scan: skipping special file: {}", LogPrivate::path(path));
     }
-
-    if crate::rt::since(*last_progress_time) >= ctx.progress_interval {
-        let current_file = path.file_name().map(|n| n.to_string_lossy().to_string());
-        let current_dir = path.parent().map(|p| p.display().to_string());
-        // Report the dedup'd running total: the scan-phase bar compares this
-        // against the index's inode-dedup'd estimate, so reporting the raw
-        // write footprint would overshoot 100% on hardlink-heavy trees.
-        (ctx.on_progress)(files.len(), dirs.len(), *dedup_bytes, current_file, current_dir);
-        *last_progress_time = crate::rt::now();
-    }
-
     Ok(())
 }
 
-/// Walks a directory level using cached `FileEntry` entries instead of `fs::read_dir`.
-///
-/// Used when the oracle reports a watcher-backed listing exists for the current
-/// directory. For each cached entry: files are recorded with size from the
-/// cache; directories recurse via `walk_dir_recursive`, which re-applies the
-/// oracle (so subfolders open in another pane also short-circuit). Cached
-/// symlinks (`is_symlink == true`) are recorded as files without recursing,
-/// matching `walk_dir_recursive`'s symlink policy.
-#[allow(
-    clippy::too_many_arguments,
-    reason = "Mirrors `walk_dir_recursive`'s parameter list to keep state threading consistent."
-)]
-fn walk_cached_entries<E>(
-    parent_path: &Path,
-    parent_device: Option<DeviceId>,
-    source_root: &Path,
-    cached: Vec<FileEntry>,
-    files: &mut Vec<FileInfo>,
-    dirs: &mut Vec<PathBuf>,
-    total_bytes: &mut u64,
-    dedup_bytes: &mut u64,
-    last_progress_time: &mut Instant,
-    visited: &mut HashSet<PathBuf>,
-    seen_inodes: &mut HashSet<u64>,
-    volume_id: Option<&str>,
-    ctx: &WalkContext<'_, E>,
-) -> Result<(), E> {
-    for entry in cached {
+/// Everything one walk tallies into, and what steers it.
+struct Walk<'w, 'c, E> {
+    source_root: &'w Path,
+    files: &'w mut Vec<FileInfo>,
+    dirs: &'w mut Vec<PathBuf>,
+    total_bytes: &'w mut u64,
+    dedup_bytes: &'w mut u64,
+    last_progress_time: &'w mut Instant,
+    visited: &'w mut HashSet<PathBuf>,
+    seen_inodes: &'w mut HashSet<u64>,
+    volume_id: Option<&'w str>,
+    ctx: &'w WalkContext<'c, E>,
+}
+
+/// A folder the walk is inside, and what is left of its entries.
+struct WalkedDir {
+    path: PathBuf,
+    device: Option<DeviceId>,
+    children: Children,
+}
+
+enum Children {
+    /// Read off the disk. Boxed: Windows' `ReadDir` carries a ~600-byte find record.
+    Disk(Box<fs::ReadDir>),
+    /// From a watcher-backed listing an open pane keeps fresh: files are
+    /// recorded straight from it, no I/O. Cached symlinks (`is_symlink`) are
+    /// recorded as files and never descended, the disk walk's symlink policy.
+    Cached(std::vec::IntoIter<FileEntry>),
+}
+
+impl<E> Walk<'_, '_, E> {
+    /// What each path costs before anything below it: the cancel check, the
+    /// `lstat`, and the record of a file or link. A folder passes its guards,
+    /// is recorded, and comes back to be walked; its tick waits for its end.
+    fn visit(&mut self, path: &Path) -> Result<Option<WalkedDir>, E> {
+        let ctx = self.ctx;
         if (ctx.is_cancelled)() {
             return Err((ctx.on_cancelled)());
         }
+        // After the cancel check, never before it: cancel outranks pause, so a
+        // cancelled walk must never park on its way out.
         (ctx.park_while_paused)();
-        if is_left_out(
-            ctx,
-            parent_path,
-            parent_device,
-            OsStr::new(&entry.name),
-            entry.is_directory && !entry.is_symlink,
-        ) {
-            continue;
-        }
-        let child_path = PathBuf::from(&entry.path);
-        if entry.is_directory && !entry.is_symlink {
-            // Recurse: the oracle re-applies inside `walk_dir_recursive`, so a
-            // grandchild dir open in another pane is also short-circuited.
-            walk_dir_recursive(
-                &child_path,
-                source_root,
-                files,
-                dirs,
-                total_bytes,
-                dedup_bytes,
-                last_progress_time,
-                visited,
-                seen_inodes,
-                volume_id,
-                ctx,
-            )?;
-        } else {
-            // File or symlink: record from the cache, no I/O. We can't build a
-            // full `FileInfo` (no `std::fs::Metadata`), but we have everything
-            // the scan-preview caller actually consumes: path, size, the
-            // symlink flag, and inode for hardlink dedup.
-            let size = entry.size.unwrap_or(0);
-            // `total_bytes` (write footprint) counts every entry at full size.
-            // `dedup_bytes` (source footprint) counts each inode once: when the
-            // backend supplied an inode (`LocalPosixVolume` populates it for
-            // files with `nlink > 1`), only the first occurrence contributes.
-            // Backends without inode info leave `inode = None` so every entry
-            // is unique. `progress_bytes` mirrors `dedup_bytes` per file.
-            let counts = match entry.inode {
-                Some(ino) => seen_inodes.insert(ino),
-                None => true,
-            };
-            let progress_bytes = if counts { size } else { 0 };
-            *total_bytes += size;
+
+        let metadata = fs::symlink_metadata(path).map_err(|e| (ctx.on_io_error)(path, e))?;
+        let device = device_of(&metadata);
+
+        if metadata.is_symlink() {
+            // Symlinks contribute their own (tiny) target-string length, never
+            // the target's bytes. No hardlink dedup: symlinks have distinct inodes.
+            *self.total_bytes += metadata.len();
+            *self.dedup_bytes += metadata.len();
+            self.files.push(FileInfo::new(
+                path.to_path_buf(),
+                self.source_root.to_path_buf(),
+                &metadata,
+            ));
+        } else if metadata.is_file() {
+            // `total_bytes` is the write footprint (every file at full size, the
+            // bytes a copy actually writes and the disk-space check must reserve).
+            // `dedup_bytes` is the `du`-equivalent source footprint (each inode
+            // once) — what delete frees and what the scan-phase progress bar
+            // compares against the inode-dedup'd index estimate. `progress_bytes`
+            // mirrors `dedup_bytes` per file so the delete active phase can sum a
+            // running dedup'd total. See `CopyScanResult` for the consumer split.
+            let counts = first_sighting(&metadata, self.seen_inodes);
+            let size = metadata.len();
+            *self.total_bytes += size;
             if counts {
-                *dedup_bytes += size;
+                *self.dedup_bytes += size;
             }
-            if let Some(on_file) = ctx.on_file
-                && !entry.is_symlink
+            let info = FileInfo::new(path.to_path_buf(), self.source_root.to_path_buf(), &metadata)
+                .with_progress_bytes(if counts { size } else { 0 });
+            self.files.push(info);
+            if let Some(on_file) = ctx.on_file {
+                on_file(path, size);
+            }
+            // The flags ride on the `lstat` above, so an armed walk pays nothing
+            // extra here. Files only: a symlink's own flags say nothing about the
+            // cloud file it points at, and trashing one moves the link anyway.
+            if let Some(watch) = ctx.online_only {
+                watch.note(path, Some(&metadata));
+            }
+        } else if metadata.is_dir() {
+            if is_symlink_loop(path, self.visited) {
+                return Err((ctx.on_symlink_loop)(path));
+            }
+            if let Some(on_mount_boundary) = ctx.on_mount_boundary
+                && super::mount_boundary::is_mount_boundary(path, device)
             {
-                on_file(&child_path, size);
+                return Err(on_mount_boundary(path));
             }
-            // A cached entry carries no `st_flags` (the listing doesn't read
-            // them), so the probe has to stat this one itself. That's the price
-            // of asking the question at all in an oracle-served directory, and
-            // only a cloud-drive scan ever pays it.
-            if let Some(watch) = ctx.online_only
-                && !entry.is_symlink
+
+            if let Ok(canonical) = path.canonicalize() {
+                self.visited.insert(canonical);
+            }
+
+            self.dirs.push(path.to_path_buf());
+
+            // Oracle short-circuit: if a watcher-backed listing exists for this
+            // dir, walk it from cache instead of hitting the disk. Each child
+            // folder is visited like any other, which re-applies the oracle.
+            let children = match self
+                .volume_id
+                .and_then(|vid| ctx.listings.authoritative_listing(vid, path))
             {
-                watch.note(&child_path, None);
+                Some(cached) => Children::Cached(cached.into_iter()),
+                None => Children::Disk(Box::new(fs::read_dir(path).map_err(|e| (ctx.on_io_error)(path, e))?)),
+            };
+            return Ok(Some(WalkedDir {
+                path: path.to_path_buf(),
+                device,
+                children,
+            }));
+        } else {
+            log::debug!("scan: skipping special file: {}", LogPrivate::path(path));
+        }
+        self.tick_after(path);
+        Ok(None)
+    }
+
+    /// The next entry of `dir` to visit; a cached file is recorded on the way.
+    /// `None` once every entry is done.
+    fn next_child(&mut self, dir: &mut WalkedDir) -> Result<Option<PathBuf>, E> {
+        let ctx = self.ctx;
+        match &mut dir.children {
+            Children::Disk(entries) => {
+                for entry in entries.flatten() {
+                    let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
+                    if !is_left_out(ctx, &dir.path, dir.device, &entry.file_name(), is_directory) {
+                        return Ok(Some(entry.path()));
+                    }
+                }
+                Ok(None)
             }
-            files.push(FileInfo {
-                path: child_path,
-                source_root: source_root.to_path_buf(),
-                size,
-                progress_bytes,
-                is_symlink: entry.is_symlink,
-                tree_node: None,
-            });
+            Children::Cached(cached) => {
+                for entry in cached.by_ref() {
+                    if (ctx.is_cancelled)() {
+                        return Err((ctx.on_cancelled)());
+                    }
+                    (ctx.park_while_paused)();
+                    if is_left_out(
+                        ctx,
+                        &dir.path,
+                        dir.device,
+                        OsStr::new(&entry.name),
+                        entry.is_directory && !entry.is_symlink,
+                    ) {
+                        continue;
+                    }
+                    let child_path = PathBuf::from(&entry.path);
+                    if entry.is_directory && !entry.is_symlink {
+                        return Ok(Some(child_path));
+                    }
+                    self.record_cached_file(&entry, child_path);
+                }
+                Ok(None)
+            }
         }
     }
 
-    if crate::rt::since(*last_progress_time) >= ctx.progress_interval {
-        let current_dir = Some(parent_path.display().to_string());
-        // Dedup'd running total — see the matching note in `walk_dir_recursive`.
-        (ctx.on_progress)(files.len(), dirs.len(), *dedup_bytes, None, current_dir);
-        *last_progress_time = crate::rt::now();
+    /// Records a file or symlink from the cache, no I/O. We can't build a full
+    /// `FileInfo` (no `std::fs::Metadata`), but we have everything the
+    /// scan-preview caller actually consumes: path, size, the symlink flag, and
+    /// inode for hardlink dedup.
+    fn record_cached_file(&mut self, entry: &FileEntry, child_path: PathBuf) {
+        let ctx = self.ctx;
+        let size = entry.size.unwrap_or(0);
+        // `total_bytes` (write footprint) counts every entry at full size.
+        // `dedup_bytes` (source footprint) counts each inode once: when the
+        // backend supplied an inode (`LocalPosixVolume` populates it for
+        // files with `nlink > 1`), only the first occurrence contributes.
+        // Backends without inode info leave `inode = None` so every entry
+        // is unique. `progress_bytes` mirrors `dedup_bytes` per file.
+        let counts = match entry.inode {
+            Some(ino) => self.seen_inodes.insert(ino),
+            None => true,
+        };
+        let progress_bytes = if counts { size } else { 0 };
+        *self.total_bytes += size;
+        if counts {
+            *self.dedup_bytes += size;
+        }
+        if let Some(on_file) = ctx.on_file
+            && !entry.is_symlink
+        {
+            on_file(&child_path, size);
+        }
+        // A cached entry carries no `st_flags` (the listing doesn't read
+        // them), so the probe has to stat this one itself. That's the price
+        // of asking the question at all in an oracle-served directory, and
+        // only a cloud-drive scan ever pays it.
+        if let Some(watch) = ctx.online_only
+            && !entry.is_symlink
+        {
+            watch.note(&child_path, None);
+        }
+        self.files.push(FileInfo {
+            path: child_path,
+            source_root: self.source_root.to_path_buf(),
+            size,
+            progress_bytes,
+            is_symlink: entry.is_symlink,
+            tree_node: None,
+        });
     }
 
-    Ok(())
+    /// Every entry of `dir` is done: a cached level ticks for itself, then the
+    /// folder ticks as any path does once it's walked.
+    fn finish(&mut self, dir: WalkedDir) {
+        if matches!(dir.children, Children::Cached(_))
+            && crate::rt::since(*self.last_progress_time) >= self.ctx.progress_interval
+        {
+            let current_dir = Some(dir.path.display().to_string());
+            // Dedup'd running total — see the matching note in `tick_after`.
+            (self.ctx.on_progress)(self.files.len(), self.dirs.len(), *self.dedup_bytes, None, current_dir);
+            *self.last_progress_time = crate::rt::now();
+        }
+        self.tick_after(&dir.path);
+    }
+
+    /// The progress tick once `path` (and everything below it) is walked.
+    fn tick_after(&mut self, path: &Path) {
+        if crate::rt::since(*self.last_progress_time) >= self.ctx.progress_interval {
+            let current_file = path.file_name().map(|n| n.to_string_lossy().to_string());
+            let current_dir = path.parent().map(|p| p.display().to_string());
+            // Report the dedup'd running total: the scan-phase bar compares this
+            // against the index's inode-dedup'd estimate, so reporting the raw
+            // write footprint would overshoot 100% on hardlink-heavy trees.
+            (self.ctx.on_progress)(
+                self.files.len(),
+                self.dirs.len(),
+                *self.dedup_bytes,
+                current_file,
+                current_dir,
+            );
+            *self.last_progress_time = crate::rt::now();
+        }
+    }
 }
 
 /// Whether the walk leaves out `name`, listed in `dir`: an OS junk file the

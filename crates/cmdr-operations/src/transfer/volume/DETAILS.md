@@ -1263,10 +1263,20 @@ polling the outermost one polls every level below it, one stack frame per level.
   `connection/resolve.rs::resolve_path_to_handle`, `cache.rs::remove_path`, `connection/DETAILS.md`), and drag-out's
   folder fulfillment (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs::populate_directory`, which shares this
   walk's link policy, `cmdr_fs::volume::link_walk`) keep their depth on the heap too.
-- **Not yet** (each still nests a frame per level, audited 2026-11-27): the local engines' synchronous walks
-  (`scan_walker.rs::walk_dir_recursive` and `walk_cached_entries`, `scan_dry_run.rs`,
-  `move_op/mod.rs::merge_move_directory`, `move_op/source_sweep.rs::count_unscanned_entries`). A local tree is bounded
-  by `PATH_MAX` (~512 levels on macOS), which a sync frame holds in release.
+- **The local engines' synchronous walks too**, though `PATH_MAX` bounds a local tree (a full-path walk meets
+  `ENAMETOOLONG` near 511 one-letter levels on macOS): the scan (`scan_walker.rs::walk_dir_recursive`, its
+  cached-listing levels included), the dry run (`scan_dry_run.rs::dry_run_scan_recursive`; both names kept, many docs
+  cite them), the move's merge (`move_op/mod.rs::merge_move_directory`, whose levels re-lock innermost first on a
+  failure, as an unwinding recursion did), and the count of what appeared
+  (`move_op/source_sweep.rs::count_unscanned_entries`). **Why**: that bound didn't fit their threads. At 460 levels on a
+  2 MiB thread (the scan and dry run's `run_cancellable_scoped` thread, the merge's blocking-pool thread) the recursive
+  scan, dry run, and merge each overflowed in a debug build; only the count held (verified on macOS 27, debug
+  `local_deep_tree_tests.rs` and its two `move_op` siblings, 2026-11-27; release not measured). The count went to the
+  heap anyway, so no walk here recurses.
+
+Every walk the 2026-11-27 audit listed now keeps its depth on the heap; the one recursion left that it found is
+`cmdr-mtp`'s whole-subtree delete (`MtpDeleteScope::Tree`), which nothing in the app calls. ❌ A new walk that recurses
+per level, sync or async, needs a measured bound and its pin.
 
 The pre-copy scan the walk waits on follows the same rule: the shared `cmdr_fs::volume::scan_walk` (ADB, NFS, restic,
 S3, SFTP, WebDAV, `skip_if_folder_refused`'s count) keeps its depth on the heap too (`cmdr-fs/DETAILS.md`).
@@ -1275,7 +1285,8 @@ Pinned by `deep_tree_tests.rs`: a 400-level copy and move on a 2 MiB worker, pas
 and off a source the shared scan walks, and a 400-level same-volume merge; a 3,000-level aside sweep, and
 `scan_oracle_tests.rs`'s 3,000-level oracle scan, over `deep_chain_test_support.rs::ChainVolume` (a chain no local path
 limit caps, as a remote's isn't; a frame-per-level `remove_tree` held 400 levels in a debug build, so only a deeper
-chain proves it).
+chain proves it). The local walks: `local_deep_tree_tests.rs`, `../move_op/move_deep_tree_tests.rs`, and
+`../move_op/source_sweep_deep_tree_tests.rs`, 460 levels on 2 MiB.
 
 ## What the drivers report while they run
 

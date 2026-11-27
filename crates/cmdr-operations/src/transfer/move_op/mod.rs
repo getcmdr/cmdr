@@ -22,7 +22,7 @@ use super::super::error_classification::IoResultExt;
 use super::super::event_sinks::OperationEventSink;
 use super::super::host::Announced;
 use super::super::ledger::{WrittenFile, WrittenIdentity};
-use super::super::locked_sources::LockedPlan;
+use super::super::locked_sources::{LockedPlan, Unlocked};
 use super::super::overwrite::{rename_no_replace, safe_overwrite_dir};
 use super::super::reversal::{Recheck, ReversalTally, recheck_local};
 use super::super::scan_dry_run::handle_dry_run;
@@ -509,117 +509,199 @@ fn merge_move_directory(
     skipped_paths: &mut Option<&mut HashSet<PathBuf>>,
     locked: &LockedPlan,
 ) -> Result<(), WriteOperationError> {
-    // Back on (by `Drop`) unless the folder empties and goes.
-    let unlocked_dir = locked.unlock(source_dir);
-    let entries = fs::read_dir(source_dir).with_path(source_dir)?;
-
-    for entry in entries {
-        let entry = entry.with_path(source_dir)?;
-        let source_child = entry.path();
-        let file_name = match source_child.file_name() {
-            Some(n) => n.to_owned(),
-            None => continue,
-        };
-        let dest_child = dest_dir.join(&file_name);
-
-        // The cooperative boundary, like every other loop in the engine. A
-        // folder-into-folder move does ALL its renaming down here, so without
-        // this a paused merge would keep going while the UI says it stopped.
-        if state.stop_or_park_sync() {
-            return Err(WriteOperationError::Cancelled {
-                message: "Operation cancelled by user".into(),
-            });
-        }
-
-        // Locked and staying: like a conflict Skip, it keeps its folder too.
-        if locked.skips(&source_child) {
-            if let Some(set) = skipped_paths.as_deref_mut() {
-                set.insert(source_child.clone());
+    let mut merge = LocalMerge {
+        config,
+        events,
+        operation_id,
+        state,
+        apply_to_all_resolution,
+        move_tx,
+        files_skipped,
+        skipped_paths,
+        locked,
+    };
+    // The levels the merge is inside, outermost first: ❌ never a call per level,
+    // which overflowed the 2 MiB blocking-pool thread a move runs on in a debug
+    // build, short of the ~511 levels a macOS path allows (#1541,
+    // `transfer/volume/DETAILS.md` § "The walk keeps its depth on the heap").
+    let mut inside: Vec<MergingDir> = vec![merge.open(source_dir, dest_dir)?];
+    let merged = loop {
+        let Some(dir) = inside.last_mut() else { break Ok(()) };
+        match merge.advance(dir) {
+            Ok(Some((source_child, dest_child))) => match merge.open(&source_child, &dest_child) {
+                Ok(child) => inside.push(child),
+                Err(e) => break Err(e),
+            },
+            Ok(None) => {
+                let dir = inside.pop().expect("the level that ended is on top");
+                merge.finish(dir);
             }
-            *files_skipped += 1;
-            continue;
+            Err(e) => break Err(e),
         }
+    };
+    // A failure leaves its levels to `Drop`, which locks again what each one
+    // unlocked: innermost first, as a recursion unwinding did, ❌ never in the
+    // `Vec`'s own front-to-back drop order.
+    while inside.pop().is_some() {}
+    merged
+}
 
-        // Snapshot the child before the rename carries it across. The rename
-        // preserves the node id, so this describes what lands at `dest_child` —
-        // and it's the ONLY identity a cancelled merge has to reverse from, since
-        // the journal marks a directory merge unreversible.
-        let child_stat = fs::symlink_metadata(&source_child).ok();
+/// What every level of one local merge reads and records into.
+struct LocalMerge<'m, 's> {
+    config: &'m WriteOperationConfig,
+    events: &'m dyn OperationEventSink,
+    operation_id: &'m str,
+    state: &'m Arc<WriteOperationState>,
+    apply_to_all_resolution: &'m mut ApplyToAll,
+    move_tx: &'m mut MoveTransaction,
+    files_skipped: &'m mut usize,
+    skipped_paths: &'m mut Option<&'s mut HashSet<PathBuf>>,
+    locked: &'m LockedPlan,
+}
 
-        if is_real_directory(&source_child) && is_real_directory(&dest_child) {
-            // Both are real directories, recurse. A symlink on either side is a
-            // leaf, so it falls through to the conflict branch below as a type
-            // mismatch — walking through one would rename entries out of (or
-            // into) a folder that isn't part of this move.
-            merge_move_directory(
-                &source_child,
-                &dest_child,
-                config,
-                events,
-                operation_id,
-                state,
-                apply_to_all_resolution,
-                move_tx,
-                files_skipped,
-                skipped_paths,
-                locked,
-            )?;
-        } else if path_exists_or_is_symlink(&dest_child) {
-            // File conflict (or type mismatch)
-            match resolve_conflict(
-                &source_child,
-                &dest_child,
-                IncomingItem::of_local_source(&source_child),
-                config,
-                events,
-                operation_id,
-                state,
-                apply_to_all_resolution,
-            )? {
-                Some(resolved) => {
-                    // Hook the downloads watcher's ignore set for both
-                    // halves of the rename; no-ops outside ~/Downloads.
-                    state.scope().host().announce(&source_child);
-                    let landing = state.scope().host().announce(&resolved.path);
-                    let unlocked = locked.unlock(&source_child);
-                    move_resolved_into_place(state, &source_child, &dest_child, landing, child_stat.as_ref(), move_tx)?;
-                    unlocked.landed_at(&resolved.path);
+/// One source folder the merge is inside, and what is left of its listing.
+struct MergingDir {
+    source_dir: PathBuf,
+    dest_dir: PathBuf,
+    /// Back on (by `Drop`) unless the folder empties and goes.
+    unlocked_dir: Unlocked,
+    entries: fs::ReadDir,
+}
+
+impl LocalMerge<'_, '_> {
+    fn open(&self, source_dir: &Path, dest_dir: &Path) -> Result<MergingDir, WriteOperationError> {
+        let unlocked_dir = self.locked.unlock(source_dir);
+        let entries = fs::read_dir(source_dir).with_path(source_dir)?;
+        Ok(MergingDir {
+            source_dir: source_dir.to_path_buf(),
+            dest_dir: dest_dir.to_path_buf(),
+            unlocked_dir,
+            entries,
+        })
+    }
+
+    /// Moves `dir`'s children from where it left off, and answers the first
+    /// pair of real folders, which the merge opens next; `None` once every
+    /// child is handled.
+    fn advance(&mut self, dir: &mut MergingDir) -> Result<Option<(PathBuf, PathBuf)>, WriteOperationError> {
+        let state = self.state;
+        let locked = self.locked;
+        for entry in dir.entries.by_ref() {
+            let entry = entry.with_path(&dir.source_dir)?;
+            let source_child = entry.path();
+            let file_name = match source_child.file_name() {
+                Some(n) => n.to_owned(),
+                None => continue,
+            };
+            let dest_child = dir.dest_dir.join(&file_name);
+
+            // The cooperative boundary, like every other loop in the engine. A
+            // folder-into-folder move does ALL its renaming down here, so without
+            // this a paused merge would keep going while the UI says it stopped.
+            if state.stop_or_park_sync() {
+                return Err(WriteOperationError::Cancelled {
+                    message: "Operation cancelled by user".into(),
+                });
+            }
+
+            // Locked and staying: like a conflict Skip, it keeps its folder too.
+            if locked.skips(&source_child) {
+                if let Some(set) = self.skipped_paths.as_deref_mut() {
+                    set.insert(source_child.clone());
                 }
-                None => {
-                    // Skip: source file stays in place. Record it so a cross-FS
-                    // Phase 4 won't delete the original that never landed.
-                    if let Some(set) = skipped_paths.as_deref_mut() {
-                        set.insert(source_child.clone());
+                *self.files_skipped += 1;
+                continue;
+            }
+
+            // Snapshot the child before the rename carries it across. The rename
+            // preserves the node id, so this describes what lands at `dest_child` —
+            // and it's the ONLY identity a cancelled merge has to reverse from, since
+            // the journal marks a directory merge unreversible.
+            let child_stat = fs::symlink_metadata(&source_child).ok();
+
+            if is_real_directory(&source_child) && is_real_directory(&dest_child) {
+                // Both are real directories: merge into it next. A symlink on
+                // either side is a leaf, so it falls through to the conflict
+                // branch below as a type mismatch — walking through one would
+                // rename entries out of (or into) a folder that isn't part of
+                // this move.
+                return Ok(Some((source_child, dest_child)));
+            } else if path_exists_or_is_symlink(&dest_child) {
+                // File conflict (or type mismatch)
+                match resolve_conflict(
+                    &source_child,
+                    &dest_child,
+                    IncomingItem::of_local_source(&source_child),
+                    self.config,
+                    self.events,
+                    self.operation_id,
+                    state,
+                    self.apply_to_all_resolution,
+                )? {
+                    Some(resolved) => {
+                        // Hook the downloads watcher's ignore set for both
+                        // halves of the rename; no-ops outside ~/Downloads.
+                        state.scope().host().announce(&source_child);
+                        let landing = state.scope().host().announce(&resolved.path);
+                        let unlocked = locked.unlock(&source_child);
+                        move_resolved_into_place(
+                            state,
+                            &source_child,
+                            &dest_child,
+                            landing,
+                            child_stat.as_ref(),
+                            self.move_tx,
+                        )?;
+                        unlocked.landed_at(&resolved.path);
                     }
-                    *files_skipped += 1;
-                    continue;
+                    None => {
+                        // Skip: source file stays in place. Record it so a cross-FS
+                        // Phase 4 won't delete the original that never landed.
+                        if let Some(set) = self.skipped_paths.as_deref_mut() {
+                            set.insert(source_child.clone());
+                        }
+                        *self.files_skipped += 1;
+                        continue;
+                    }
                 }
+            } else {
+                // No conflict, just rename
+                state.scope().host().announce(&source_child);
+                let landing = state.scope().host().announce(&dest_child);
+                let unlocked = locked.unlock(&source_child);
+                rename_onto_free_name(&source_child, landing).with_path(&source_child)?;
+                unlocked.landed_at(&dest_child);
+                self.move_tx
+                    .record(source_child, WrittenFile::local_stat(dest_child, child_stat.as_ref()));
             }
-        } else {
-            // No conflict, just rename
-            state.scope().host().announce(&source_child);
-            let landing = state.scope().host().announce(&dest_child);
-            let unlocked = locked.unlock(&source_child);
-            rename_onto_free_name(&source_child, landing).with_path(&source_child)?;
-            unlocked.landed_at(&dest_child);
-            move_tx.record(source_child, WrittenFile::local_stat(dest_child, child_stat.as_ref()));
+        }
+        Ok(None)
+    }
+
+    /// Every child of `dir` is handled: removes the source directory if it's now
+    /// empty, and tells the ledger: a reversal has to put this back before it
+    /// renames the children above back into it. Recorded AFTER them and after
+    /// any nested level's own removal, so the stack pops outermost-first and
+    /// every parent is there in time.
+    fn finish(&mut self, dir: MergingDir) {
+        let MergingDir {
+            source_dir,
+            unlocked_dir,
+            entries,
+            ..
+        } = dir;
+        // The listing closes before the emptiness check, as it did once a
+        // recursive call's loop ended.
+        drop(entries);
+        if fs::read_dir(&source_dir)
+            .map(|mut d| d.next().is_none())
+            .unwrap_or(false)
+            && fs::remove_dir(&source_dir).is_ok()
+        {
+            self.move_tx.record_removed_source_dir(source_dir);
+            unlocked_dir.gone();
         }
     }
-
-    // Remove the source directory if it's now empty, and tell the ledger: a
-    // reversal has to put this back before it renames the children above back
-    // into it. Recorded AFTER them and after any nested level's own removal, so
-    // the stack pops outermost-first and every parent is there in time.
-    if fs::read_dir(source_dir)
-        .map(|mut d| d.next().is_none())
-        .unwrap_or(false)
-        && fs::remove_dir(source_dir).is_ok()
-    {
-        move_tx.record_removed_source_dir(source_dir.to_path_buf());
-        unlocked_dir.gone();
-    }
-
-    Ok(())
 }
 
 /// The rig both local-move suites share (engine call-throughs, operation state).
@@ -701,3 +783,8 @@ mod journal_tests;
 
 #[cfg(test)]
 mod named_move_tests;
+
+/// The merge on the deepest tree macOS can name, on its thread's real stack.
+#[cfg(test)]
+#[path = "move_deep_tree_tests.rs"]
+mod move_deep_tree_tests;
