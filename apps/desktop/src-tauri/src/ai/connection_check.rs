@@ -11,6 +11,7 @@
 
 use regex::Regex;
 
+use super::endpoint_answer::{self, NonApiAnswer};
 use crate::managed_policy::{ManagedAiRefusal, ManagedPolicy};
 use std::borrow::Cow;
 use std::sync::OnceLock;
@@ -67,6 +68,10 @@ pub enum AiConnectionProblem {
     KeyRejected,
     /// Any other refusal. `detail` is the provider's `error.message` (or raw body), key scrubbed.
     ProviderRefused { status: u16, detail: String },
+    /// Something answered, but not an AI API: a web page, plain text, a 404, or JSON that isn't
+    /// a model list. `detail` is the technical line (`HTTP 200, text/html`), the same in every
+    /// language (`endpoint_answer::summary`).
+    NotAnAiApi { answer: NonApiAnswer, detail: String },
 }
 
 /// Long enough for a slow provider, short enough that a dead one doesn't hold the row.
@@ -241,7 +246,7 @@ pub(super) async fn list_models(
     let base = base_url.trim_end_matches('/');
     let get = |url: String| protocol.authorize(client.get(url), api_key);
 
-    let body = match protocol {
+    let answer = match protocol {
         ModelListProtocol::OpenAiCompatible => fetch(get(format!("{base}/models")), protocol, api_key).await?,
         ModelListProtocol::Anthropic => {
             fetch(
@@ -271,6 +276,19 @@ pub(super) async fn list_models(
             });
         }
     };
+    // JSON that isn't a model list is some other service's API. Gemini's native list has its
+    // own shape (`models`), and an empty one is fine, so only the OpenAI-shaped lists are held
+    // to it.
+    if protocol != ModelListProtocol::Gemini && !endpoint_answer::is_openai_model_list(&answer.body) {
+        return Err(not_an_ai_api(
+            NonApiAnswer::NotAModelList,
+            200,
+            &answer.content_type,
+            &answer.body,
+            api_key,
+        ));
+    }
+    let body = answer.body;
     let ids = match protocol {
         // Anthropic lists newest first, which is the useful order; keep it.
         ModelListProtocol::Anthropic => openai_model_ids(&body),
@@ -283,12 +301,19 @@ pub(super) async fn list_models(
     })
 }
 
-/// Sends one probe request: the body on 200, else the typed problem.
+/// A 200 answer that parsed as JSON: its body, plus the content type for the problem line.
+struct JsonAnswer {
+    body: String,
+    content_type: String,
+}
+
+/// Sends one probe request: the JSON body on 200, else the typed problem. A 200 that isn't
+/// JSON, and any 404 or 405, is no AI API at this address ([`NonApiAnswer`]).
 async fn fetch(
     request: reqwest::RequestBuilder,
     protocol: ModelListProtocol,
     api_key: &str,
-) -> Result<String, AiConnectionProblem> {
+) -> Result<JsonAnswer, AiConnectionProblem> {
     let response = request.send().await.map_err(|e| {
         if e.is_timeout() {
             AiConnectionProblem::TimedOut
@@ -298,10 +323,27 @@ async fn fetch(
         }
     })?;
     let status = response.status();
+    let content_type = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
     let body = response.text().await.unwrap_or_default();
+    let non_json = endpoint_answer::non_json_answer(&content_type, &body);
     match status {
-        reqwest::StatusCode::OK => Ok(body),
+        reqwest::StatusCode::OK => match non_json {
+            None => Ok(JsonAnswer { body, content_type }),
+            Some(answer) => Err(not_an_ai_api(answer, status.as_u16(), &content_type, &body, api_key)),
+        },
         reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN => Err(AiConnectionProblem::KeyRejected),
+        reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::METHOD_NOT_ALLOWED => Err(not_an_ai_api(
+            non_json.unwrap_or(NonApiAnswer::NothingHere),
+            status.as_u16(),
+            &content_type,
+            &body,
+            api_key,
+        )),
         _ if protocol == ModelListProtocol::Gemini && is_gemini_key_rejection(&body) => {
             Err(AiConnectionProblem::KeyRejected)
         }
@@ -310,6 +352,23 @@ async fn fetch(
             detail: super::client::provider_error_message(&scrub_secrets(&body, api_key)),
         }),
     }
+}
+
+/// The [`AiConnectionProblem::NotAnAiApi`] for this answer, logged with the start of what came
+/// back: the one place a support reply can see WHAT answered (a sign-in page, a proxy's notice).
+fn not_an_ai_api(
+    answer: NonApiAnswer,
+    status: u16,
+    content_type: &str,
+    body: &str,
+    api_key: &str,
+) -> AiConnectionProblem {
+    let detail = endpoint_answer::summary(status, content_type);
+    log::warn!(
+        "AI key check: the endpoint doesn't answer like an AI API ({answer:?}, {detail}), detail={:?}",
+        cmdr_fs::log_detail::LogDetail(&scrub_secrets(body, api_key))
+    );
+    AiConnectionProblem::NotAnAiApi { answer, detail }
 }
 
 /// Google answers a bad key with 400 `INVALID_ARGUMENT`, and says which in a typed field:

@@ -49,11 +49,16 @@ one file. What the two actually share is the state machine and the numbered list
   copy, one key per kind, through a `problemMessage()` switch with literal keys. The controller adds one kind of its
   own, `checkUnavailable`, for an IPC call that threw (no backend answer, so nothing more specific to say).
   `ConnectionProblem` is that union.
-- **`providerRefused` is the one kind with text**: the provider's own `detail` sentence (untranslated, key scrubbed by
-  the backend). Both surfaces show a translated lead line with the status code, then the detail as a smaller secondary
-  line, so the user sees the provider's reason without it posing as Cmdr's copy.
+- **`providerRefused` and `notAnAiApi` are the kinds with text**: `providerRefused`'s `detail` is the provider's own
+  sentence (untranslated, key scrubbed by the backend), `notAnAiApi`'s the technical `HTTP 200, text/html` line. Both
+  surfaces show a translated lead line, then the detail as a smaller secondary line, so the user sees the reason without
+  it posing as Cmdr's copy.
+- **`notAnAiApi` means something answered, but not an AI API** (a web page, plain text, a 404, JSON that isn't a model
+  list; `apps/desktop/src-tauri/src/ai/endpoint_answer.rs`). Its `answer` picks one of two lead lines: `webPage` says a
+  website answered, the rest share one. Regression anchor `ERR-V6AR3`: a custom endpoint set to a website's root read as
+  "Connected (model list not available)", and every chat after it ended with no reply.
 - **`status` still carries the coarse bucket** (`keyRejected` → `auth-error`; `invalidEndpoint`, `insecureEndpoint`,
-  `unreachable`, `timedOut` → `connection-error`; `providerRefused`, `checkUnavailable` → `error`), set by
+  `unreachable`, `timedOut`, `notAnAiApi` → `connection-error`; `providerRefused`, `checkUnavailable` → `error`), set by
   `statusForProblem`, and `problem` is set exactly while `status` is one of those three.
 - **A check that lands with a problem clears the model list.** The list stays put DURING a refetch (a suggestion list
   that blanks mid-check is a regression we forbid), but once the provider says no, the old models belong to a config

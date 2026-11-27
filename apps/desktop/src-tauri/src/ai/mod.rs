@@ -44,6 +44,7 @@ pub mod connection_check;
 // (`download_file`) — the one piece of the AI install path that's genuinely generic
 // (media_index Decision 9).
 pub(crate) mod download;
+pub mod endpoint_answer;
 pub mod extract;
 pub mod install;
 pub mod llm_log;

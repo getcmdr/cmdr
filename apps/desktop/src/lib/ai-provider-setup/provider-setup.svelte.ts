@@ -54,6 +54,7 @@ function statusForProblem(problem: ConnectionProblem): ConnectionStatus {
     case 'insecureEndpoint':
     case 'unreachable':
     case 'timedOut':
+    case 'notAnAiApi':
       return 'connection-error'
     case 'providerRefused':
     case 'checkUnavailable':

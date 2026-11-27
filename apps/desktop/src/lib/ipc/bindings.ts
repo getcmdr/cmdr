@@ -7321,6 +7321,12 @@ export type AiConnectionProblem =
   | { kind: 'keyRejected' }
   // Any other refusal. `detail` is the provider's `error.message` (or raw body), key scrubbed.
   | { kind: 'providerRefused'; status: number; detail: string }
+  /**
+   *  Something answered, but not an AI API: a web page, plain text, a 404, or JSON that isn't
+   *  a model list. `detail` is the technical line (`HTTP 200, text/html`), the same in every
+   *  language (`endpoint_answer::summary`).
+   */
+  | { kind: 'notAnAiApi'; answer: NonApiAnswer; detail: string }
 
 // One effort level the picker offers, cheapest first.
 export type AiEffortLevel = 'low' | 'medium' | 'high' | 'max'
@@ -16579,6 +16585,20 @@ export type NfsIdentitySourceWire =
    *  export couldn't be read to say.
    */
   | 'this_mac'
+
+// What answered instead of an AI API. The UI words each in its own translated copy.
+export type NonApiAnswer =
+  // An HTML page, by its content type or its first character.
+  | 'webPage'
+  // Neither JSON nor markup: plain text, or an empty body.
+  | 'notJson'
+  /**
+   *  JSON, but a 404 or 405: an API lives here, just not this one, or the path is off (a base
+   *  URL missing its `/v1`).
+   */
+  | 'nothingHere'
+  // JSON at 200, but not a model list: some other service's API.
+  | 'notAModelList'
 
 /**
  *  Why a question has no answer for this item.
