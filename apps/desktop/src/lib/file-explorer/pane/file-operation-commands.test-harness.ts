@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 import type { PaneAccess } from './pane-access'
 import type { FilePaneAPI } from './types'
+import type { RowsUnsettledBy } from './pane-row-state'
 import type { SearchSnapshot } from '#lib/search/snapshot-store.svelte.js'
 import type { FileEntry, VolumeInfo } from '../types'
 import type { ToastContent, ToastOptions } from '#lib/ui/toast/toast-store.svelte.js'
@@ -32,6 +33,7 @@ export const spies = {
   buildTransferPropsFromSelection: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   buildTransferPropsFromCursor: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
   logWarn: vi.fn(),
+  logInfo: vi.fn(),
   logDebug: vi.fn(),
 }
 
@@ -67,6 +69,8 @@ export function buildPaneRef(
     isRenaming: () => boolean
     isRowStateReady: () => boolean
     whenRowStateReady: (timeoutMs: number) => Promise<boolean>
+    /** What the pane's row state names as holding its rows (`PaneRowState.unsettledBy`). */
+    unsettledBy: () => RowsUnsettledBy[]
     getViewGeneration: () => number
     /** What the pane's checked cursor read (`refreshCursorEntry`) answers. */
     cursorEntry: FileEntry | null
@@ -79,6 +83,7 @@ export function buildPaneRef(
     getViewGeneration: overrides.getViewGeneration ?? (() => 0),
     isRowStateReady: overrides.isRowStateReady ?? (() => true),
     whenRowStateReady: overrides.whenRowStateReady ?? (() => Promise.resolve(true)),
+    getRowState: () => ({ unsettledBy: overrides.unsettledBy ?? (() => []) }),
     getVolumeId: () => overrides.volumeId ?? 'root',
     hasParentEntry: () => overrides.hasParent ?? false,
     getSelectedIndices: () => overrides.selectedIndices ?? [],

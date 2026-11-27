@@ -2271,8 +2271,10 @@ is worded per mode and promises no more than that.
   of it fits one `ROW_SETTLE_BUDGET_MS` (3 s). A budget run out, a selection that vanished, or a different listing ends
   in `announceRowsStillSettling` (`operation-start-gate.ts`): an info toast, plus a failed round-trip for MCP. A press
   on a selection never falls through to the cursor row. The silent return this replaced was the top Linux E2E flake (12
-  of 17 retry-rescued flakes in 109 CI runs, #557). Duplicate, Multi-rename, and the selected-paths read still return
-  quietly on unsettled rows.
+  of 17 retry-rescued flakes in 109 CI runs, #557). The refusal's log line names what held the rows
+  (`PaneRowState.unsettledBy`: `loading`, `viewChange`, `asyncWork`, `operation`, `diffGap`, …), because ERR-VC6Q7's
+  five refused F6 presses came with an idle backend and nothing said which condition never cleared. Duplicate,
+  Multi-rename, and the selected-paths read still return quietly on unsettled rows.
 - **Async continuations are not row installations.** Operation name and pending rename lookups hold async-work leases,
   capture listing/generation/revision/work tokens, and validate the backend revision before writing. Compare selections,
   clearing an operation snapshot, reconfiguration, and disposal invalidate old work. Pending rename still allows the

@@ -145,7 +145,7 @@ export function createTransferDialogOpener(
     const settled =
       stillTheSamePress &&
       (!hasSelection || ref.isRowStateReady() || (await ref.whenRowStateReady(press.deadline - Date.now())))
-    if (!settled) announceRowsStillSettling(press.mcpRequestId)
+    if (!settled) announceRowsStillSettling(press.mcpRequestId, ref.getRowState().unsettledBy())
     return settled
   }
 
