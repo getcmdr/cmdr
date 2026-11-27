@@ -2279,6 +2279,11 @@ is worded per mode and promises no more than that.
   capture listing/generation/revision/work tokens, and validate the backend revision before writing. Compare selections,
   clearing an operation snapshot, reconfiguration, and disposal invalidate old work. Pending rename still allows the
   synchronous selection remap; reconfiguration clears its cursor intention.
+- **The in-flight counters belong to one listing.** `asyncWork`, `pendingViews`, and the view queue start over on
+  `reset` (every listing change), and a lease or view change taken before it releases only its own lifetime's count. A
+  lookup or re-sort still out for the folder the pane left used to hold the NEW folder unready, and queue its re-sorts
+  behind the old answer (ERR-VC6Q7's suspect for five refused F6 presses on an idle folder). Pinned by
+  `pane-row-state.test.ts` § "work for a listing the pane has left".
 - **F5 resolves selected paths and counts under one lock.** `transfer-operations.ts` reads the selection (or the cursor
   row) through `readPressedRows` within the press's `ROW_SETTLE_BUDGET_MS` (`TransferContext.deadline`), and a refusal
   fails an MCP F5/F6 round-trip (`TransferContext.mcpRequestId`). The caller also rejects replaced/navigated panes.

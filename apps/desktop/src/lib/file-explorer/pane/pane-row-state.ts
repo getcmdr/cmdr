@@ -40,6 +40,10 @@ export function createPaneRowState(deps: {
   let workGeneration = 0
   let initialized = false
   let disposed = false
+  // `pendingViews`, `asyncWork`, and `queue` belong to the CURRENT `lifetime` (one listing):
+  // `reset` starts them over, and work taken in an earlier lifetime releases only its own.
+  // ❌ Never let them carry across a reset: a lookup or re-sort still out for the folder the
+  // pane left would hold the new folder's rows, refusing F5/F6 there with nothing happening.
   let pendingViews = 0
   let asyncWork = 0
   let appliedHidden: boolean | undefined
@@ -149,11 +153,12 @@ export function createPaneRowState(deps: {
     },
     beginAsyncWork() {
       asyncWork++
+      const myLifetime = lifetime
       let ended = false
       return () => {
         if (!ended) {
           ended = true
-          asyncWork--
+          if (lifetime === myLifetime) asyncWork--
           notifyReadiness()
         }
       }
@@ -167,6 +172,9 @@ export function createPaneRowState(deps: {
       appliedHidden = deps.getIncludeHidden?.()
       initialized = false
       buffered.clear()
+      pendingViews = 0
+      asyncWork = 0
+      queue = Promise.resolve()
     },
     setSequence(value: number) {
       sequence = value
@@ -226,6 +234,8 @@ export function createPaneRowState(deps: {
           return false
         })
         .finally(() => {
+          // A view change from an earlier listing has nothing to release here: `reset` already did.
+          if (lifetime !== myLifetime) return
           pendingViews--
           if (pendingViews === 0) drain()
           notifyReadiness()

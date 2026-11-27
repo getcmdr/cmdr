@@ -70,6 +70,74 @@ describe('whenReady', () => {
   })
 })
 
+// The counters `isReady` reads belong to the listing they were taken for. Work still in
+// flight for a listing the pane has left (a lookup, a re-sort waiting on its IPC answer)
+// must not hold the NEXT listing's rows, which would refuse F5/F6 on a folder nothing is
+// happening in (ERR-VC6Q7's suspect).
+describe('work for a listing the pane has left', () => {
+  let listingId = 'listing-1'
+  function navigableRowState() {
+    listingId = 'listing-1'
+    const rowState = createPaneRowState({
+      getListingId: () => listingId,
+      getLoading: () => false,
+      getOperationActive: () => false,
+    })
+    rowState.initialize()
+    return rowState
+  }
+  function navigate(rowState: ReturnType<typeof createPaneRowState>) {
+    listingId = 'listing-2'
+    rowState.reset()
+    rowState.initialize()
+  }
+
+  it("doesn't hold the next listing while an old lookup is still out", () => {
+    const rowState = navigableRowState()
+    const endOldWork = rowState.beginAsyncWork()
+
+    navigate(rowState)
+    expect(rowState.unsettledBy()).toEqual([])
+
+    // The old lookup lands late: it ends its own lease, not some new one.
+    const endNewWork = rowState.beginAsyncWork()
+    endOldWork()
+    expect(rowState.unsettledBy()).toEqual(['asyncWork'])
+    endNewWork()
+    expect(rowState.isReady()).toBe(true)
+  })
+
+  it("doesn't hold the next listing while an old view change waits on its answer", async () => {
+    const rowState = navigableRowState()
+    let answerOld: (result: { sequence: number }) => void = () => {}
+    const oldChange = rowState.changeView({
+      request: () => new Promise<{ sequence: number }>((resolve) => (answerOld = resolve)),
+      install: () => undefined,
+    })
+    await Promise.resolve()
+
+    navigate(rowState)
+    expect(rowState.unsettledBy()).toEqual([])
+
+    // A view change on the new listing runs now, never queued behind the old answer.
+    const newChange = rowState.changeView({ request: () => Promise.resolve({ sequence: 0 }), install: () => undefined })
+    await expect(newChange).resolves.toBe(true)
+
+    answerOld({ sequence: 9 })
+    await expect(oldChange).resolves.toBe(false)
+    expect(rowState.getSequence()).toBe(0)
+    expect(rowState.isReady()).toBe(true)
+  })
+
+  it('releases a view change whose request fails', async () => {
+    const rowState = navigableRowState()
+    const failing = rowState.changeView({ request: () => Promise.reject(new Error('gone')), install: () => undefined })
+
+    await expect(failing).rejects.toThrow('gone')
+    expect(rowState.isReady()).toBe(true)
+  })
+})
+
 // ERR-VC6Q7: five F6 presses ran out the settle budget with nothing changing on the
 // backend, and the log couldn't say what held the rows. `unsettledBy` names it.
 describe('unsettledBy', () => {
