@@ -302,6 +302,31 @@ function defineOnePlaceServerFlows(protocol: ServerProtocol): void {
         .toBe(placeVolumeId)
     })
 
+    // David's QA (2026-11-26): a server's top folder had no `..`, so its Servers list was a switcher trip away.
+    test('`..` in its place’s top folder lands back on its row on the Servers list', async ({ tauriPage }) => {
+      const { name, placeVolumeId } = await ensureSaved(tauriPage)
+      await openServersList('left')
+      await awaitServerListed('left', name)
+      await mcpCall('move_cursor', { pane: 'left', filename: name })
+      await mcpCall('open_under_cursor', {})
+      await expect
+        .poll(
+          async () => {
+            const view = await paneView('left')
+            return view.volumeId === placeVolumeId && [...view.rows.values()].some((row) => row.startsWith('..'))
+          },
+          { timeout: waitBudget(30000) },
+        )
+        .toBeTruthy()
+
+      // `..` sits at index 0; `move_cursor` by name reads the backend listing, which has no `..`.
+      await focusPane(tauriPage, 0)
+      await mcpCall('move_cursor', { pane: 'left', index: 0 })
+      await mcpCall('open_under_cursor', {})
+
+      await expect.poll(async () => serverUnderCursor('left'), { timeout: waitBudget(15000) }).toBe(name)
+    })
+
     test('F2 on its row opens the edit sheet on that server', async ({ tauriPage }) => {
       const { name } = await ensureSaved(tauriPage)
       await openServersList('left')
