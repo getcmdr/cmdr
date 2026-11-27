@@ -18,7 +18,7 @@ use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_private::LogPrivate;
 use cmdr_fs::volume::{EntryKind, ListingProgress, Presence, SpaceInfo, VolumeError};
 use log::{debug, trace};
-use smb2::DirectoryReader;
+use smb2::{DirectoryReader, ListOptions};
 use std::time::Duration;
 use tokio::runtime::Handle;
 use tokio_util::sync::CancellationToken;
@@ -43,6 +43,22 @@ pub(super) enum ListingStop {
     Cancelled,
 }
 
+/// A folder's rows, each with the node id (index number) the server gave it, and
+/// the folder's own id from its `.` row. The ids are `None` unless the listing
+/// asked for them (`ListOptions::index_numbers`) and the server sent them; a
+/// walk's loop guard reads them (`cmdr_fs::volume::descent`).
+#[derive(Default)]
+pub(super) struct NodeListing {
+    pub(super) own_node: Option<u64>,
+    pub(super) rows: Vec<(FileEntry, Option<u64>)>,
+}
+
+impl NodeListing {
+    pub(super) fn into_entries(self) -> Vec<FileEntry> {
+        self.rows.into_iter().map(|(entry, _)| entry).collect()
+    }
+}
+
 /// Reads an open listing one server batch at a time (smb2's `DirectoryReader`),
 /// so a big folder reports `on_progress` as each batch lands and a `cancel`
 /// stops it between batches. Entries are mapped as they arrive, so the raw smb2
@@ -59,8 +75,8 @@ pub(super) async fn read_listing(
     on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
     cancel: Option<&CancellationToken>,
     runtime: &Handle,
-) -> Result<Vec<FileEntry>, ListingStop> {
-    let mut entries = Vec::new();
+) -> Result<NodeListing, ListingStop> {
+    let mut listing = NodeListing::default();
     let mut tally = ListingProgress::default();
     loop {
         let batch = match cancel {
@@ -79,9 +95,16 @@ pub(super) async fn read_listing(
             None => reader.next_batch().await,
         };
         let Some(batch) = batch.map_err(ListingStop::Smb)? else {
-            return Ok(entries);
+            return Ok(listing);
         };
-        for raw in batch.iter().filter(|e| e.name != "." && e.name != "..") {
+        for raw in batch.iter() {
+            if raw.name == "." {
+                listing.own_node = raw.index_number;
+                continue;
+            }
+            if raw.name == ".." {
+                continue;
+            }
             sidecars.note_name(&raw.name);
             let entry = directory_entry_to_file_entry(raw, display_path);
             if entry.is_directory {
@@ -90,7 +113,7 @@ pub(super) async fn read_listing(
                 tally.files += 1;
                 tally.bytes += entry.size.unwrap_or(0);
             }
-            entries.push(entry);
+            listing.rows.push((entry, raw.index_number));
         }
         if let Some(on_progress) = on_progress {
             on_progress(tally);
@@ -126,6 +149,26 @@ impl SmbVolume {
         on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
         cancel: Option<&CancellationToken>,
     ) -> Result<Vec<FileEntry>, VolumeError> {
+        self.list_smb_listing(smb_path, on_progress, cancel, ListOptions::new())
+            .await
+            .map(NodeListing::into_entries)
+    }
+
+    /// [`Self::list_smb_directory`] keeping the node id the server gives each row
+    /// and the folder itself, for a walk's loop guard. Same round trips, 10 bytes
+    /// more per row.
+    pub(super) async fn list_smb_directory_with_nodes(&self, smb_path: &str) -> Result<NodeListing, VolumeError> {
+        self.list_smb_listing(smb_path, None, None, ListOptions::new().index_numbers(true))
+            .await
+    }
+
+    async fn list_smb_listing(
+        &self,
+        smb_path: &str,
+        on_progress: Option<&(dyn Fn(ListingProgress) + Sync)>,
+        cancel: Option<&CancellationToken>,
+        options: ListOptions,
+    ) -> Result<NodeListing, VolumeError> {
         let display_path = self.to_display_path(smb_path);
 
         // TRACE, not DEBUG: this fires per listing for both the live pane and the index
@@ -145,8 +188,8 @@ impl SmbVolume {
             .or_through_link(
                 generation,
                 smb_path,
-                tree.open_directory_reader(conn, smb_path),
-                |client, tree, path| Box::pin(client.open_directory_reader(tree, path)),
+                tree.open_directory_reader_with(conn, smb_path, options),
+                move |client, tree, path| Box::pin(client.open_directory_reader_with(tree, path, options)),
             )
             .await;
         let listed = match opened {
@@ -165,8 +208,8 @@ impl SmbVolume {
             Err(e) => Err(ListingStop::Smb(e)),
         };
         slow_calls::note(&self.inner.share_name, "list_directory", start.elapsed());
-        let entries = match listed {
-            Ok(entries) => entries,
+        let listing = match listed {
+            Ok(listing) => listing,
             Err(ListingStop::Cancelled) => {
                 return Err(VolumeError::Cancelled("Listing cancelled".into()));
             }
@@ -176,10 +219,10 @@ impl SmbVolume {
         trace!(
             "SmbVolume::list_directory: completed in {:?}, {} entries",
             start.elapsed(),
-            entries.len()
+            listing.rows.len()
         );
 
-        Ok(entries)
+        Ok(listing)
     }
 
     /// One `stat` round trip, mapped to a `FileEntry`. The share root is

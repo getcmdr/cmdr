@@ -41,8 +41,9 @@ the next section.
   `scan_stop.rs` + `scan_recorder.rs` (the one seam a copy scan touches per entry: counts, Cancel, Pause, and the
   transfer tree's recorder); `scan_listing_clock.rs` (an index walk's per-listing wedge timer, which a backend pauses
   while it parks the listing by its own choice); `scan_walk.rs`, `mkdir_all.rs`, `patching.rs`, and `secret_store.rs`
-  (the bodies a stat-and-listing backend gets for free); `listing_progress.rs` (`report_while`: a long listing's running
-  count sampled on a timer from the async side that owns `on_progress`, which can't ride into the blocking reader);
+  (the bodies a stat-and-listing backend gets for free); `descent.rs` (whether a walk goes into a folder it listed, § "A
+  walk never loops through a link it can't see"); `listing_progress.rs` (`report_while`: a long listing's running count
+  sampled on a timer from the async side that owns `on_progress`, which can't ride into the blocking reader);
   `http_session.rs` (the HTTP backends' shared connection lifecycle, § "The HTTP backends' connection lifecycle");
   `liveness.rs` (their silence watch, which tells a server gone silent from one that's only slow:
   `crates/cmdr-webdav/DETAILS.md` § "Silent or slow") and `tls.rs` (their connect probes' TLS-refusal test, by the typed
@@ -475,6 +476,27 @@ because it's the OS's own diagnostic, shown in the technical details and kept ac
 macOS's BSD extras, the Win32 and Winsock codes, and none in the browser build. `InUseByAnotherApp` (a Windows sharing
 or lock violation) has no Unix code, so no Unix errno produces it (`src/os_error/tests.rs` sweeps every errno to 4096;
 `EBUSY` is `Busy`).
+
+## A walk never loops through a link it can't see
+
+`volume::descent` answers, for every recursive walk, whether to go into a folder it just listed. A listing doesn't
+always mark links: Samba lists a Unix symlink as the folder it points to, no reparse bit (`cmdr-smb`
+`links_integration_test`), so `loop -> ..` on a share reads as an ordinary folder, and a walk descending it meets the
+same folder one level deeper, forever. Measured on the Samba fixture (2026-11-27, `smb2` 0.43.1): "calculate size" on a
+folder holding one such link overflowed the stack and aborted the app within 0.13 s (Samba resolves each component on
+its own, so the kernel's 40-link limit never applies).
+
+- **By node, first.** `Descent` is a walk's path down as node ids; `child(node)` refuses a folder already on it
+  (`Refusal::LinkLoop`), so a loop stops on its first lap, and a link to a sibling (not a loop) still counts. A folder
+  learns its own id from its listing (`named`, the SMB `.` row), so a link straight back to the walk's root is caught
+  too. Free where the listing carries ids: SMB asks for index numbers (`ListOptions::index_numbers`, same round trips).
+- **By depth, as the backstop.** `MAX_WALK_DEPTH` (128) levels below the root, for a walk with no ids. `too_deep(depth)`
+  is the same line for a walk that holds only a path (the network index's `walk_descends`).
+- **A walk using it is iterative**, ❌ never recursive: a recursive async walk overflows its stack long before 128
+  levels (a 2 MiB tokio worker between 48 and 63 levels for the transfer walk).
+
+Users: `cmdr-smb`'s `scan_recursive` (ids and depth) and the network index's `walk_descends` (depth only, since its
+`FileEntry` rows carry no node id; `FileEntry::inode` means hardlink dedup to its consumers, so it isn't borrowed).
 
 ## File identity
 

@@ -421,7 +421,26 @@ fn walked_links_as_directories(
 ///
 /// All three walks ask this; the cover walk marks a "no" as ground it won't read.
 pub(crate) fn walk_descends(volume: &dyn Volume, dir: &AppPath, name: &str, is_symlink: bool) -> bool {
-    !is_recursion_excluded_dir(name) && volume.index_walk(dir, is_symlink) == cmdr_fs::volume::IndexWalk::Descend
+    !is_recursion_excluded_dir(name)
+        && !past_the_depth_backstop(volume, dir)
+        && volume.index_walk(dir, is_symlink) == cmdr_fs::volume::IndexWalk::Descend
+}
+
+/// Whether `dir` sits past `cmdr_fs::volume::descent::MAX_WALK_DEPTH` below the
+/// volume's root. Samba lists a folder link as a plain folder, so a `loop -> ..`
+/// on a share is queued again one level deeper each lap, and these listings
+/// carry no node id to catch it by: depth ends it, at the folder past the line.
+fn past_the_depth_backstop(volume: &dyn Volume, dir: &AppPath) -> bool {
+    let depth = dir.names().count().saturating_sub(volume.root().names().count());
+    let past = cmdr_fs::volume::descent::too_deep(depth);
+    if past {
+        log::warn!(
+            "network_scanner: not walking {}, more than {} levels down (a link loop the listing can't mark?)",
+            LogPrivate::dir_path(dir.as_str()),
+            cmdr_fs::volume::descent::MAX_WALK_DEPTH
+        );
+    }
+    past
 }
 
 /// The app path a walk lists or stats a listed row by, next: the row's own text, which every
