@@ -466,6 +466,8 @@ mod deep_chain_test_support;
 #[cfg(test)]
 mod free_space_tests;
 #[cfg(test)]
+mod local_deep_tree_tests;
+#[cfg(test)]
 mod stop_or_park_tests;
 #[cfg(any(test, feature = "testing"))]
 pub(crate) mod test_support;

@@ -583,28 +583,36 @@ pub(super) fn remove_husk_with(
 /// asked for is not a surprise — so it isn't counted. Nor is the AppleDouble
 /// sidecar of an item that stayed: the scan left it out on purpose, and it's
 /// that item's xattrs (`cmdr_fs::apple_double`).
+///
+/// The scanned folders still to look in wait on a `Vec`, ❌ never a call per
+/// level (#1541, `transfer/volume/DETAILS.md` § "The walk keeps its depth on
+/// the heap"); a count adds up the same in any order. A folder that can't be
+/// read counts nothing.
 fn count_unscanned_entries(
     dir: &Path,
     scanned_paths: &HashSet<PathBuf>,
     sidecars: &SidecarRule,
     os_junk: OsJunkFiles,
 ) -> u32 {
-    let (Ok(dir_meta), Ok(entries)) = (fs::symlink_metadata(dir), fs::read_dir(dir)) else {
-        return 0;
-    };
-    let device = device_of(&dir_meta);
     let mut count = 0;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if !scanned_paths.contains(&path) {
-            let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
-            if !sidecars.is_sidecar(dir, device, &entry.file_name())
-                && !os_junk.leaves_out(&entry.file_name(), is_directory)
-            {
-                count += 1;
+    let mut pending = vec![dir.to_path_buf()];
+    while let Some(dir) = pending.pop() {
+        let (Ok(dir_meta), Ok(entries)) = (fs::symlink_metadata(&dir), fs::read_dir(&dir)) else {
+            continue;
+        };
+        let device = device_of(&dir_meta);
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !scanned_paths.contains(&path) {
+                let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
+                if !sidecars.is_sidecar(&dir, device, &entry.file_name())
+                    && !os_junk.leaves_out(&entry.file_name(), is_directory)
+                {
+                    count += 1;
+                }
+            } else if fs::symlink_metadata(&path).is_ok_and(|m| m.is_dir()) {
+                pending.push(path);
             }
-        } else if fs::symlink_metadata(&path).is_ok_and(|m| m.is_dir()) {
-            count += count_unscanned_entries(&path, scanned_paths, sidecars, os_junk);
         }
     }
     count
@@ -643,3 +651,7 @@ fn emit_source_sweep_progress(
         0,
     );
 }
+
+#[cfg(test)]
+#[path = "source_sweep_deep_tree_tests.rs"]
+mod deep_tree_tests;
