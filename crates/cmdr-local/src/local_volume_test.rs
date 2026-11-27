@@ -293,12 +293,15 @@ async fn reached_node_follows_a_link_to_the_folder_it_reaches() {
     let test_dir = AppTestDir::new("reached_node_test");
     let volume = volume_at(&test_dir);
     volume.create_directory(&at(&volume, "real")).await.unwrap();
-    cmdr_fs::testing::symlink("real", test_dir.native().join("link")).unwrap();
 
     let folder = volume.reached_node(&at(&volume, "real")).await;
     assert!(folder.is_some(), "a local disk names its nodes");
-    assert_eq!(volume.reached_node(&at(&volume, "link")).await, folder);
     assert_eq!(volume.reached_node(&at(&volume, "missing")).await, None);
+    // A Windows account without Developer Mode can't make the link.
+    if cmdr_fs::testing::can_create_symlinks() {
+        cmdr_fs::testing::symlink("real", test_dir.native().join("link")).unwrap();
+        assert_eq!(volume.reached_node(&at(&volume, "link")).await, folder);
+    }
 }
 
 // ── Copy: the scan and the streams ────────────────────────────────────
