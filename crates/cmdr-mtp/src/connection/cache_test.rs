@@ -19,20 +19,22 @@ fn chain(depth: usize) -> (PathHandleCache, Vec<AppPathBuf>) {
     (cache, paths)
 }
 
-/// Removing the top folder of a chain as deep as a phone's storage holds
-/// (Android's 4,096-byte path limit is ~2,048 one-letter levels) forgets every
-/// level on a small stack. The removal runs inside an MTP op, on top of its
-/// futures on a 2 MiB tokio worker; one that recursed spent 256 B–1 KiB per
-/// level in a debug build (this cell overflowed 512 KiB at 2,048 levels, a
-/// fresh 2 MiB thread held it, macOS 27, 2026-11-27), so depth decided whether
-/// the op's stack held.
+/// Removing the top folder of a deep chain forgets every level on a small
+/// stack. The removal runs inside an MTP op, on top of its futures on a 2 MiB
+/// tokio worker, and a phone's tree runs ~2,048 one-letter levels deep
+/// (Android's 4,096-byte path limit). One that recursed spent 256 B–1 KiB per
+/// level in a debug build (it overflowed 512 KiB at 2,048 levels and 128 KiB at
+/// 1,024, a fresh 2 MiB thread held 2,048; macOS 27, 2026-11-27), so depth
+/// decided whether the op's stack held. 1,024 levels on 128 KiB keeps the cell
+/// cheap: building the chain's long paths is most of its time, and 2,048 levels
+/// outran the Windows lane's 8 s cap.
 #[test]
 fn removing_a_folder_forgets_a_subtree_as_deep_as_a_phone_holds_on_a_small_stack() {
-    const DEPTH: usize = 2_048;
+    const DEPTH: usize = 1_024;
     let (mut cache, paths) = chain(DEPTH);
 
     let cache = std::thread::Builder::new()
-        .stack_size(512 * 1024)
+        .stack_size(128 * 1024)
         .spawn(move || {
             cache.remove_path(&paths[0]);
             cache
