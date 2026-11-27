@@ -95,6 +95,8 @@ here:
   webview-keydown double fire. The source is the dispatch's own road (`ctx.source`). Same-source repeats (a user
   pressing a key twice) and the other roads (palette, MCP, mouse, explorer) always pass. Unit-tested with injectable
   time.
+- **`gesture-copy-guard.ts` ignores a FILE copy right after a double-click or a window drag** (§ Copy right after a
+  mouse gesture). Started by `window-services.ts`, read by the `edit.copy` handler.
 - **`+page.svelte` mounts Ask Cmdr's bulk-rename review beside the rail, but doesn't own it**: the rail owns its user
   decisions and the proposal's lifetime.
 - **`MainMenuBar.svelte` is the window's in-page menu bar off macOS** (`pageDrawsMenuBar()`), between the title bar and
@@ -202,6 +204,28 @@ Arg-carrying ids take a typed payload.
 **The text-region intercept.** `handleTextRegionShortcut` short-circuits `edit.copy` and `selection.selectAll` when
 focus sits inside `.error-pane` or a `[data-text-region]`, so copying an error message copies its text rather than the
 files selected behind it.
+
+### Copy right after a mouse gesture
+
+Selection utilities (PopClip-style) post a synthetic ⌘C right after a double-click or a drag, to grab the selected text.
+With no text selected, that reached the file copy: the cursor file replaced whatever was on the clipboard and "1 file
+copied" showed on every double-click on `..` and every window drag (ERR-YTH9K / ERR-7KEBV, the copy 1–115 ms after each
+gesture with no key press, 2026-11-26 bundles). So the `edit.copy` handler skips the FILE copy within
+`GESTURE_COPY_GUARD_MS` (500 ms) of one, and logs it at debug under `FE:user-action`.
+
+- **Only the file copy.** The check sits past the handler's two text branches (a focused field, then any text
+  selection), so a real text copy right after a double-click still copies. ❌ Don't move it into the core ahead of them.
+- **Only the keystroke roads** (`keyboard`, `menu`); the palette, MCP, and the other roads are deliberate picks.
+- **The gestures.** A left-button `mouseup` with `detail >= 2` on the window (capture phase), and the window's
+  `onMoved`: the title bar is a `data-tauri-drag-region`, so AppKit runs the drag and the webview never sees its
+  `mouseup`.
+- **Decision: a timing guard, ❌ not a synthesized-event check.** The ⌘C arrives as the native Edit > Copy accelerator,
+  same as a real one. Telling them apart needs the triggering CGEvent's source, and by the time the menu event reaches
+  `handle_menu_event`, `NSApp.currentEvent` can already be a later event (the same staleness `native_drag/mod.rs` works
+  around), so a source check there isn't reliable. Even a fresh one would miss a utility that posts at the HID level.
+  David accepted the trade (a real ⌘C within half a second of a double-click is ignored, cmdr-reports#126).
+- **In-page drags aren't guarded** (rubber-band select, then ⌘C, is a real fast flow), though a utility fires on them
+  too.
 
 ## The dialog gate
 

@@ -7,11 +7,12 @@
  */
 import { readClipboardText } from '#lib/tauri-commands/index.js'
 import { isTextInputFocused } from '#lib/utils/text-input-focus.js'
+import { shouldIgnoreFileCopy } from '../gesture-copy-guard'
 import { detached } from './detached'
 import type { CommandHandlerRecord } from './types'
 
 export const clipboardHandlers = {
-  'edit.copy': ({ explorerRef }) => {
+  'edit.copy': ({ explorerRef, ctx }) => {
     if (isTextInputFocused()) {
       // eslint-disable-next-line @typescript-eslint/no-deprecated -- No modern alternative for triggering native copy in text inputs
       document.execCommand('copy')
@@ -27,6 +28,10 @@ export const clipboardHandlers = {
       detached(navigator.clipboard.writeText(selection.toString()))
       return
     }
+    // A selection utility's synthetic ⌘C right after a double-click or a window drag
+    // (`gesture-copy-guard.ts`, ERR-YTH9K). Here, past both text branches, so only the file
+    // copy is ever ignored.
+    if (shouldIgnoreFileCopy(ctx.source)) return
     detached(explorerRef?.copyToClipboard())
   },
 

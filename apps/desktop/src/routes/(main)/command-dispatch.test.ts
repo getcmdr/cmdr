@@ -45,6 +45,7 @@ vi.mock('#lib/settings/settings-window.js', () => ({
 
 import { handleCommandExecute, type CommandDispatchContext } from './command-dispatch'
 import { _resetDedupForTests } from './dispatch-dedup'
+import { noteMouseGesture, _resetGestureCopyGuardForTests } from './gesture-copy-guard'
 import { claimMenuCommand } from '#lib/commands/menu-claims.js'
 import type { DialogsOnScreen, DispatchSource } from './command-dispatch-context'
 import { searchResultsNotAFolderToast } from '#lib/search/capabilities.js'
@@ -325,5 +326,92 @@ describe('handleCommandExecute — blockedByCapabilities (search-results / netwo
     expect(g.pasteFromClipboard).toHaveBeenCalledOnce()
     // `file.rename` there is "Edit server…" (`servers-row-edit.test.ts`), and F7 "Add server"
     // (`file-handlers.servers-list.test.ts`), ❌ not the explorer's rename or New folder.
+  })
+})
+
+/**
+ * A selection utility (PopClip-style) posts a synthetic ⌘C right after a double-click or a
+ * window drag, which put the cursor file on the clipboard and toasted "1 file copied"
+ * (ERR-YTH9K). A FILE-scope copy is ignored for a moment after such a gesture; a text copy and
+ * a copy from any road a keystroke can't take still run.
+ */
+describe('handleCommandExecute — edit.copy right after a mouse gesture', () => {
+  beforeEach(() => {
+    _resetDedupForTests()
+    _resetGestureCopyGuardForTests()
+    getVolumeId.mockReturnValue('local')
+  })
+
+  it.each(['menu', 'keyboard'] as const)(
+    'leaves the clipboard alone when the %s road copies files right after a double-click',
+    async (source) => {
+      const copyToClipboard = vi.fn(() => Promise.resolve())
+      noteMouseGesture('doubleClick')
+      await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source }))
+      expect(copyToClipboard).not.toHaveBeenCalled()
+    },
+  )
+
+  it('leaves the clipboard alone right after a window drag', async () => {
+    const copyToClipboard = vi.fn(() => Promise.resolve())
+    noteMouseGesture('windowDrag')
+    await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source: 'menu' }))
+    expect(copyToClipboard).not.toHaveBeenCalled()
+  })
+
+  it('copies files as usual with no recent gesture', async () => {
+    const copyToClipboard = vi.fn(() => Promise.resolve())
+    await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source: 'menu' }))
+    expect(copyToClipboard).toHaveBeenCalledOnce()
+  })
+
+  it('copies files from the palette right after a double-click', async () => {
+    const copyToClipboard = vi.fn(() => Promise.resolve())
+    noteMouseGesture('doubleClick')
+    await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source: 'palette' }))
+    expect(copyToClipboard).toHaveBeenCalledOnce()
+  })
+
+  it('still copies selected text right after a double-click (the text-scope copy is untouched)', async () => {
+    const copyToClipboard = vi.fn(() => Promise.resolve())
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
+    onTestFinished(() => {
+      writeText.mockRestore()
+    })
+    const p = document.createElement('p')
+    p.textContent = 'some selected words'
+    document.body.appendChild(p)
+    const range = document.createRange()
+    range.selectNodeContents(p)
+    window.getSelection()?.removeAllRanges()
+    window.getSelection()?.addRange(range)
+    onTestFinished(() => {
+      window.getSelection()?.removeAllRanges()
+      p.remove()
+    })
+
+    noteMouseGesture('doubleClick')
+    await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source: 'menu' }))
+
+    expect(writeText).toHaveBeenCalledExactlyOnceWith('some selected words')
+    expect(copyToClipboard).not.toHaveBeenCalled()
+  })
+
+  it('still copies from a focused text field right after a double-click', async () => {
+    const copyToClipboard = vi.fn(() => Promise.resolve())
+    const execCommand = vi.fn()
+    ;(document as unknown as { execCommand: unknown }).execCommand = execCommand
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+    onTestFinished(() => {
+      input.remove()
+    })
+
+    noteMouseGesture('doubleClick')
+    await handleCommandExecute('edit.copy', makeCtx({ copyToClipboard }, { source: 'menu' }))
+
+    expect(execCommand).toHaveBeenCalledExactlyOnceWith('copy')
+    expect(copyToClipboard).not.toHaveBeenCalled()
   })
 })

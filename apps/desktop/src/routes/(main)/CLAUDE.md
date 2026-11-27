@@ -11,8 +11,8 @@ via a typed API. Up: `apps/desktop/CLAUDE.md`, sibling: `../viewer/CLAUDE.md`.
   holds the menu / MCP-dialog / window-focus listeners; `window-services.ts` starts and stops every subscription the
   window holds for its lifetime.
 - Supporting modules: `startup-gates.ts`, `init-steps.ts` (startup steps, each failure isolated), `mcp-listeners.ts` and
-  its `mcp-*.ts` helpers, `explorer-api.ts`, `dispatch-dedup.ts`, `dialog-command-gate.ts`, `global-keydown.ts`,
-  `main-window-visibility.ts`.
+  its `mcp-*.ts` helpers, `explorer-api.ts`, `dispatch-dedup.ts`, `gesture-copy-guard.ts`, `dialog-command-gate.ts`,
+  `global-keydown.ts`, `main-window-visibility.ts`.
 
 ## Must-knows
 
@@ -22,8 +22,8 @@ via a typed API. Up: `apps/desktop/CLAUDE.md`, sibling: `../viewer/CLAUDE.md`.
   `command-handlers/` handler (missing = COMPILE error; handlerless ids go in `DISPATCH_EXEMPT_IDS`). Branch on the
   `CommandId`, ❌ never the label.
 - **❌ Never add a handler for a per-keystroke `nav.*` id** (the arrow six): a registry lookup + log + breadcrumb IPC
-  per keypress is a P2 perf regression. Exempt by design. The paged four keep handlers for the palette; the pane
-  `claimKey`s those keys, so a keypress never reaches this road.
+  per keypress is a P2 perf regression. The paged four keep handlers for the palette; the pane `claimKey`s those keys,
+  so a keypress never reaches this road.
 - **`$state` lives in `+page.svelte`; logic leaves through a context of setters and GETTERS.** Dialogs flip via
   write-only `ctx.dialogs.showXxx(...)`, listeners go in `listener-setup.ts`, startup decisions in `startup-gates.ts`.
   ❌ Never capture a `$state` value; `isOnboardingVisible()` reads live.
