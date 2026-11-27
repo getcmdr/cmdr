@@ -66,6 +66,7 @@ impl WriteProgressEvent {
             expected_bytes_total: None,
             activity: None,
             step: None,
+            outgrew_totals: false,
         }
     }
 

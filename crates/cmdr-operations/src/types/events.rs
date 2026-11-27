@@ -95,6 +95,12 @@ pub struct WriteProgressEvent {
     /// transferring. `None` for single-step work, including a direct compress.
     #[serde(default)]
     pub step: Option<ProgressStep>,
+    /// The work outgrew the scan's count, so a total was raised to what's done
+    /// (it never sits below it). The UI says it's still counting, and the ETA is
+    /// absent. Never set on a rollback's frames, whose raised total is only where
+    /// its draining bar starts.
+    #[serde(default)]
+    pub outgrew_totals: bool,
 }
 
 /// Step `number` of `total` in a multi-step operation. Rides on

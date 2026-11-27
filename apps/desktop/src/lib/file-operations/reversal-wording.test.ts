@@ -108,6 +108,21 @@ describe('inFlightRollbackVariant', () => {
   })
 })
 
+// ERR-BGEKC: a rollback after Cancel can take a while (25 s for 3,268 paths on a
+// NAS), so its title says what it's doing to the files, which a bare "Rolling
+// back…" didn't, and the dialog read as stuck.
+describe('the title of a rollback still running', () => {
+  it('says a copy is removing what it copied', () => {
+    expect(tString(reversalTitleKey(inFlightRollbackVariant('copy')))).toBe('Removing what was copied…')
+  })
+
+  it('says a move is carrying the files back, and never that it deletes', () => {
+    const title = tString(reversalTitleKey(inFlightRollbackVariant('move')))
+    expect(title).toBe('Moving the files back…')
+    expect(title.toLowerCase()).not.toMatch(/delet|remov/)
+  })
+})
+
 describe('the reversal wording, one kind at a time', () => {
   // Undoing a MOVE and undoing a TRASH both carry files home.
   it.each(['move', 'trash'] as const)('words undoing a %s as putting files back', (kind) => {

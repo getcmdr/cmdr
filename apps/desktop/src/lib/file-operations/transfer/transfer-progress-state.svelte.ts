@@ -985,6 +985,11 @@ export function createTransferProgressState(config: TransferProgressStateConfig)
     get bytesTotal(): number {
       return session()?.progress?.bytesTotal ?? 0
     },
+    /** The work outgrew the scan's count, so the backend raised the totals to
+     *  what's done and gives no countdown (ERR-BGEKC). */
+    get outgrewTotals(): boolean {
+      return session()?.progress?.outgrewTotals ?? false
+    },
     get isCancelling(): boolean {
       return session()?.cancelling ?? false
     },

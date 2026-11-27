@@ -252,18 +252,18 @@ The full top-level inventory is here:
   the destination takes"), `mutation_reply.rs` (its reply within the deadline, and the late settle, § "A slow instant
   mutation says it is still running"), `validation.rs`, `leaf_validation.rs` (the one check of a transfer's
   `TransferLeaves`, `src/transfer/DETAILS.md` § "Named destinations"), `free_space.rs` (the copy's free-space
-  pre-flight, § "The free-space pre-flight"), `eta.rs` (+ `eta_cost_model.rs`). Journaling: `journal.rs` (every row's
-  ends stored as app text through `journal_split.rs`: `journal_split` for a `std::path` end, `journal_split_app` for an
-  end the volume engine joined typed, where a `\` is a name character even on Windows; why in
-  `crates/cmdr-operation-log/DETAILS.md`'s escape-mark notes; a test's `root` that undoes is
-  `host::testing::scratch_disk_root`, the drive on Windows, ❌ never a bare `/`; a both-local transfer between two
-  volumes journals each row under a volume that reaches it, `OpScope::local_ids_for`, since Windows' `root` is the
-  system drive alone, #1351; a local delete or trash outside `root`'s own root journals under the registered volume
-  holding it, `local_start::one_local_side`, #1433; a finished local op's `items_done` is the larger of the status
-  cache's and its terminal event's count, `local_start::CompletionTally`, since delete and trash move the cache only on
-  a throttled frame), `journal_search.rs`, `journal_landed.rs` (which node each landed item is, and a volume transfer's
-  landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item must still be the node that
-  landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote edit itself is
+  pre-flight, § "The free-space pre-flight"), `eta.rs` (+ `eta_cost_model.rs`), `raised_totals.rs` (§ "A total never
+  sits below what's done"). Journaling: `journal.rs` (every row's ends stored as app text through `journal_split.rs`:
+  `journal_split` for a `std::path` end, `journal_split_app` for an end the volume engine joined typed, where a `\` is a
+  name character even on Windows; why in `crates/cmdr-operation-log/DETAILS.md`'s escape-mark notes; a test's `root`
+  that undoes is `host::testing::scratch_disk_root`, the drive on Windows, ❌ never a bare `/`; a both-local transfer
+  between two volumes journals each row under a volume that reaches it, `OpScope::local_ids_for`, since Windows' `root`
+  is the system drive alone, #1351; a local delete or trash outside `root`'s own root journals under the registered
+  volume holding it, `local_start::one_local_side`, #1433; a finished local op's `items_done` is the larger of the
+  status cache's and its terminal event's count, `local_start::CompletionTally`, since delete and trash move the cache
+  only on a throttled frame), `journal_search.rs`, `journal_landed.rs` (which node each landed item is, and a volume
+  transfer's landed dates, read for its rows; `crates/cmdr-operation-log/DETAILS.md` § "A landed item must still be the
+  node that landed"). The scratch dir archive edits stage local bytes in: `scratch_dir.rs` (the remote edit itself is
   `archive_edit/remote.rs`). Entry points: `create/` + `create.rs`, `rename/` + `rename.rs`, `create_numbered.rs`
   (paste-as-file's numbered create), `routing.rs` (the one routing every cross-volume transfer takes:
   `start_volume_{copy,move,compress}`, plus `start_rename_by_move`; `routing/retry.rs` is the Retry recipe a copy or
@@ -614,6 +614,25 @@ before the event reaches the FE.
 that operation has in that window (a 25% gap-closure per tick, re-warmed on a phase change) and decides when there is an
 honest number to print. Contract and rationale: `apps/desktop/src/lib/file-operations/operation-session/DETAILS.md` §
 "Read surface".
+
+### A total never sits below what's done
+
+**Decision**: `enrich_progress` passes every event through `raised_totals.rs::RaisedTotals::apply` before the estimator
+reads it. On the phases whose totals are a scan's count (copying, compressing, transferring, deleting, trashing, rolling
+back), each axis with a real total (nonzero) is raised to at least what's done, and to at least the highest it was
+raised to earlier in that phase. Outside a rollback, a raised total sets `outgrew_totals`, and the ETA goes `None`.
+
+- **Why**: work can outgrow its count (a copy following a link the scan counted as one entry, a file growing after it
+  was counted), and the dialog showed `23 GB / 6.8 GB (337%)`, `3,122 / 1,016 files`, and "0s left" while the copy ran
+  on (ERR-BGEKC). With the totals raised, the remaining work reads as zero, so a countdown would say "0s"; none is
+  honest. The frontend says "Found more than first counted" in the countdown's place
+  (`apps/desktop/src/lib/file-operations/TransferProgressReadout.svelte`).
+- **Why the high-water per phase**: a rollback's bar drains from what was done at Cancel, against the scan's total.
+  Raising each frame to its own count would pin it at 100% until it dipped below the scan's total (about two thirds of
+  the reporter's 25 seconds); the high-water drains it from its first frame. A new phase starts over, since a move's
+  sweep counts something else.
+- **Zero stays zero**: a zero total means "not counted yet" (a scan, an unsized stream), and raising it would invent a
+  bar at 100%.
 
 ## Parking on a person
 

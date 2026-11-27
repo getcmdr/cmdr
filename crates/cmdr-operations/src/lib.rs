@@ -141,6 +141,7 @@ mod golden_trace_tests;
 mod locked_sources;
 mod locked_sources_slot;
 mod queued_sources;
+mod raised_totals;
 mod refused_name;
 mod refused_names_latch;
 mod rename;

@@ -211,11 +211,12 @@ describe('TransferProgressDialog, adopting a REVERSAL', () => {
   it('leaves an in-flight rollback with its own title, which is the honest one there', async () => {
     // A CANCELLED copy cleaning up after itself carries no `reverses`. Its bar
     // drains backwards on a dialog that was already full, and it really is
-    // deleting the partials.
+    // deleting the partials, which the title says (ERR-BGEKC: a bare "Rolling
+    // back…" over a long cleanup read as stuck).
     const { component, target } = await mountAdopted({ operationType: 'copy', reverses: null })
     await emitReversalTick('copy', 1240)
 
-    expect(title(target)).toBe('Rolling back…')
+    expect(title(target)).toBe('Removing what was copied…')
 
     void unmount(component)
   })

@@ -57,6 +57,33 @@ fn enrich_progress_keeps_an_activity_the_caller_already_decided() {
     assert_eq!(event.activity, Some(wedged), "the caller's classification survives");
 }
 
+/// ERR-BGEKC: past the scan's count, the event raises its totals to what's done
+/// and gives no countdown, where it read `3,122 / 1,016 files` and "0s left".
+#[test]
+fn enrich_progress_never_shows_more_done_than_total_nor_a_countdown_past_it() {
+    let engine = TestOperations::new();
+    let op = install_state(&engine, "outgrew-totals", OperationIntent::Running);
+    for done in [1_000_usize, 2_000, 3_122] {
+        let mut event = WriteProgressEvent::new(
+            op.id().as_str().to_owned(),
+            WriteOperationType::Copy,
+            WriteOperationPhase::Copying,
+            None,
+            done,
+            1_016,
+            done as u64 * 7_000_000,
+            6_800_000_000,
+        );
+        op.state().enrich_progress(&mut event);
+        assert!(event.files_done <= event.files_total);
+        assert!(event.bytes_done <= event.bytes_total);
+        if done > 1_016 {
+            assert!(event.outgrew_totals);
+            assert_eq!(event.eta_seconds, None, "no countdown once the count is outgrown");
+        }
+    }
+}
+
 #[test]
 fn enrich_progress_classifies_a_wait_the_caller_left_open() {
     let engine = TestOperations::new();

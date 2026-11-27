@@ -27494,6 +27494,13 @@ export type WriteProgressEvent = {
    *  transferring. `None` for single-step work, including a direct compress.
    */
   step?: ProgressStep | null
+  /**
+   *  The work outgrew the scan's count, so a total was raised to what's done
+   *  (it never sits below it). The UI says it's still counting, and the ETA is
+   *  absent. Never set on a rollback's frames, whose raised total is only where
+   *  its draining bar starts.
+   */
+  outgrewTotals?: boolean
 }
 
 /**
