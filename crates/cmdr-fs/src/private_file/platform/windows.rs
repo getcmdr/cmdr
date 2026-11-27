@@ -23,8 +23,8 @@ use windows_sys::Win32::Security::Authorization::{
     SDDL_REVISION_1, SE_FILE_OBJECT,
 };
 use windows_sys::Win32::Security::{
-    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, DACL_SECURITY_INFORMATION, GetAce, GetSecurityDescriptorControl,
-    GetTokenInformation, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID, SE_DACL_PROTECTED,
+    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, DACL_SECURITY_INFORMATION, GetAce, GetLengthSid, GetSecurityDescriptorControl,
+    GetTokenInformation, IsValidSid, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID, SE_DACL_PROTECTED,
     SECURITY_ATTRIBUTES, TOKEN_QUERY, TOKEN_USER, TokenUser,
 };
 use windows_sys::Win32::Storage::FileSystem::{
@@ -136,79 +136,148 @@ pub(crate) struct AccessEntry {
 
 /// Reads the owner and DACL of the file at `path`.
 pub(crate) fn file_security(path: &Path) -> io::Result<FileSecurity> {
-    let path = wide(path.as_os_str())?;
-    let mut owner: PSID = ptr::null_mut();
-    let mut dacl: *mut ACL = ptr::null_mut();
-    let mut descriptor: PSECURITY_DESCRIPTOR = ptr::null_mut();
-    // SAFETY: `path` is NUL-terminated; the out pointers are valid, and the group and SACL ones may
-    // be null since their parts aren't asked for. `owner` and `dacl` point into `descriptor`.
-    let status = unsafe {
-        GetNamedSecurityInfoW(
-            path.as_ptr(),
-            SE_FILE_OBJECT,
-            OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-            &mut owner,
-            ptr::null_mut(),
-            &mut dacl,
-            ptr::null_mut(),
-            &mut descriptor,
-        )
+    let descriptor = SecurityDescriptor::of_file(path)?;
+    let entries = match descriptor.dacl() {
+        Some(dacl) => Some(dacl.entries()?),
+        None => None,
     };
-    if status != ERROR_SUCCESS {
-        return Err(io::Error::from_raw_os_error(status as i32));
-    }
-    let descriptor = LocalMemory(descriptor);
-
-    let mut control = 0u16;
-    let mut revision = 0u32;
-    // SAFETY: `descriptor` is the valid descriptor just returned; both out pointers are valid.
-    if unsafe { GetSecurityDescriptorControl(descriptor.0, &mut control, &mut revision) } == 0 {
-        return Err(io::Error::last_os_error());
-    }
-
-    let entries = if dacl.is_null() {
-        None
-    } else {
-        // SAFETY: a non-null `dacl` points at the ACL inside `descriptor`, alive in this scope.
-        let count = unsafe { (*dacl).AceCount };
-        let mut entries = Vec::with_capacity(usize::from(count));
-        for index in 0..u32::from(count) {
-            let mut ace: *mut c_void = ptr::null_mut();
-            // SAFETY: `index` is below the ACL's own count, and `ace` is a valid out pointer.
-            if unsafe { GetAce(dacl, index, &mut ace) } == 0 {
-                return Err(io::Error::last_os_error());
-            }
-            // SAFETY: every ACE starts with an `ACE_HEADER`.
-            let header = unsafe { *ace.cast::<ACE_HEADER>() };
-            let entry = if matches!(header.AceType, ACCESS_ALLOWED_ACE_TYPE | ACCESS_DENIED_ACE_TYPE) {
-                let ace = ace.cast::<ACCESS_ALLOWED_ACE>();
-                // SAFETY: allow and deny entries share `ACCESS_ALLOWED_ACE`'s layout, whose SID
-                // starts at `SidStart`.
-                let (mask, sid) = unsafe { ((*ace).Mask, ptr::addr_of_mut!((*ace).SidStart).cast::<c_void>()) };
-                AccessEntry {
-                    kind: header.AceType,
-                    flags: header.AceFlags,
-                    mask,
-                    sid: Some(sid_string(sid)?),
-                }
-            } else {
-                AccessEntry {
-                    kind: header.AceType,
-                    flags: header.AceFlags,
-                    mask: 0,
-                    sid: None,
-                }
-            };
-            entries.push(entry);
-        }
-        Some(entries)
-    };
-
     Ok(FileSecurity {
-        owner: sid_string(owner)?,
-        dacl_protected: control & SE_DACL_PROTECTED != 0,
+        owner: sid_string(descriptor.owner)?,
+        dacl_protected: descriptor.control()? & SE_DACL_PROTECTED != 0,
         entries,
     })
+}
+
+/// A file's security descriptor, as `GetNamedSecurityInfoW` allocated it. The owner SID and the
+/// DACL point INTO that one block, so the DACL and its entries are handed out only as borrows of
+/// this, and can't outlive the free in `memory`'s drop.
+struct SecurityDescriptor {
+    memory: LocalMemory,
+    /// The owner SID, inside `memory`.
+    owner: PSID,
+    /// The DACL inside `memory`, or null for a NULL DACL.
+    dacl: *const ACL,
+}
+
+impl SecurityDescriptor {
+    /// The owner and DACL parts of the descriptor of the file at `path`.
+    fn of_file(path: &Path) -> io::Result<Self> {
+        let path = wide(path.as_os_str())?;
+        let mut owner: PSID = ptr::null_mut();
+        let mut dacl: *mut ACL = ptr::null_mut();
+        let mut descriptor: PSECURITY_DESCRIPTOR = ptr::null_mut();
+        // SAFETY: `path` is NUL-terminated; the out pointers are valid, and the group and SACL ones
+        // may be null since their parts aren't asked for. On success `owner` and `dacl` point into
+        // `descriptor` (`dacl` is null for a NULL DACL), which `memory` then owns.
+        let status = unsafe {
+            GetNamedSecurityInfoW(
+                path.as_ptr(),
+                SE_FILE_OBJECT,
+                OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
+                &mut owner,
+                ptr::null_mut(),
+                &mut dacl,
+                ptr::null_mut(),
+                &mut descriptor,
+            )
+        };
+        if status != ERROR_SUCCESS {
+            return Err(io::Error::from_raw_os_error(status as i32));
+        }
+        Ok(Self {
+            memory: LocalMemory(descriptor),
+            owner,
+            dacl: dacl.cast_const(),
+        })
+    }
+
+    /// The descriptor's control bits (`SE_DACL_PROTECTED`, among them).
+    fn control(&self) -> io::Result<u16> {
+        let mut control = 0u16;
+        let mut revision = 0u32;
+        // SAFETY: `memory` holds the valid descriptor `of_file` got; both out pointers are valid.
+        if unsafe { GetSecurityDescriptorControl(self.memory.0, &mut control, &mut revision) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(control)
+    }
+
+    /// The DACL, or `None` for a NULL DACL, which lets everyone in.
+    fn dacl(&self) -> Option<Dacl<'_>> {
+        // SAFETY: a non-null `dacl` points at a valid ACL inside `memory`, which lives as long as
+        // the borrow of `self` the result carries.
+        unsafe { self.dacl.as_ref() }.map(|acl| Dacl { acl })
+    }
+}
+
+/// A DACL borrowed from the `SecurityDescriptor` it lives in.
+struct Dacl<'a> {
+    acl: &'a ACL,
+}
+
+/// Where an allow or deny entry's SID starts: right after its header and mask.
+const SID_OFFSET: usize = std::mem::offset_of!(ACCESS_ALLOWED_ACE, SidStart);
+/// The smallest SID: revision, sub-authority count, and the six-byte authority, with no
+/// sub-authorities.
+const MIN_SID_LEN: usize = 8;
+
+impl Dacl<'_> {
+    /// The entries in order.
+    fn entries(&self) -> io::Result<Vec<AccessEntry>> {
+        (0..u32::from(self.acl.AceCount))
+            .map(|index| self.entry(index))
+            .collect()
+    }
+
+    /// Entry `index`, which must be below the ACL's count.
+    fn entry(&self, index: u32) -> io::Result<AccessEntry> {
+        let mut ace: *mut c_void = ptr::null_mut();
+        // SAFETY: `acl` is a valid ACL, and `ace` is a valid out pointer. `GetAce` checks `index`
+        // against the ACL's count itself.
+        if unsafe { GetAce(self.acl, index, &mut ace) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        // SAFETY: on success, `ace` points at entry `index` inside the ACL `self` borrows, and every
+        // ACE starts with an `ACE_HEADER`.
+        let header = unsafe { ace.cast::<ACE_HEADER>().as_ref() }.ok_or_else(unreadable_entry)?;
+        if !matches!(header.AceType, ACCESS_ALLOWED_ACE_TYPE | ACCESS_DENIED_ACE_TYPE) {
+            return Ok(AccessEntry {
+                kind: header.AceType,
+                flags: header.AceFlags,
+                mask: 0,
+                sid: None,
+            });
+        }
+        // An entry is only as long as its header says: read no mask or SID past `AceSize`.
+        let size = usize::from(header.AceSize);
+        if size < SID_OFFSET + MIN_SID_LEN {
+            return Err(unreadable_entry());
+        }
+        // SAFETY: allow and deny entries share `ACCESS_ALLOWED_ACE`'s layout, and `size` covers it.
+        let mask = unsafe { ace.cast::<ACCESS_ALLOWED_ACE>().as_ref() }
+            .ok_or_else(unreadable_entry)?
+            .Mask;
+        // Offset from the raw `ace`, so the pointer may reach the whole SID, past `SidStart`'s four
+        // bytes.
+        let sid: PSID = ace.cast::<u8>().wrapping_add(SID_OFFSET).cast();
+        // SAFETY: `size` covers the SID's fixed eight bytes, all `IsValidSid` reads before it knows
+        // the SID's length, and `GetLengthSid` runs only on a valid SID.
+        if unsafe { IsValidSid(sid) } == 0 || unsafe { GetLengthSid(sid) } as usize > size - SID_OFFSET {
+            return Err(unreadable_entry());
+        }
+        Ok(AccessEntry {
+            kind: header.AceType,
+            flags: header.AceFlags,
+            mask,
+            sid: Some(sid_string(sid)?),
+        })
+    }
+}
+
+/// A DACL entry that can't be read without reading past it: an allow or deny entry too short for
+/// its SID, or a null entry from a `GetAce` that succeeded. No Windows file system stores either.
+fn unreadable_entry() -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, "a DACL entry that can't be read safely")
 }
 
 /// The user SID of this process's token, `S-1-…`.

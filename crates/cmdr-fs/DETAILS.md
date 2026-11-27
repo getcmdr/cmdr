@@ -902,6 +902,13 @@ landing errors must keep a refused name typed (`NameTooLong` / `InvalidName`), n
   as that folder: that's what the explicit DACL closes. The Windows test grants `Everyone` on the folder and asserts the
   file still carries exactly one entry. (Default profile ACL from Windows 10/11 as commonly documented; to re-verify on
   the builder with `icacls`.)
+- **Reading a descriptor back** (`is_private_to_current_user`, the Windows tests). The owner SID, the DACL, and its
+  entries all point into the one block `GetNamedSecurityInfoW` allocates, so `SecurityDescriptor` owns that block and
+  hands the DACL out only as a borrow (`Dacl<'_>`): no pointer into it outlives the free. Null pointers become `Option`
+  through `as_ref()`, and an allow or deny entry is read only after its `AceSize` covers its SID (`IsValidSid` +
+  `GetLengthSid`), so a short entry is refused rather than read past. That shape is also what CodeQL's
+  `rust/access-invalid-pointer` accepts: it follows a `ptr::null_mut()` out-param into a raw `*` because it can't see
+  the call write it (verified with CodeQL's Rust pack on the `codeql-action` v4.38.3, 2026-11-27).
 - **Crashed writes.** A crash between the temp's create and its rename leaves `<name>.cmdr-tmp-<uuid>` holding the
   secret, private but never cleaned by anything else, so `write_atomically` first removes the regular files named like
   that file's temps (`staging::temp_sibling_prefix`). Every caller rewrites its file on the next start or save. The
