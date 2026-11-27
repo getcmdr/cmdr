@@ -46,6 +46,13 @@ describe('listWordsFor', () => {
     expect(listWordsFor('local')).toBeUndefined()
     expect(listWordsFor('smb')).toBeUndefined()
   })
+
+  it('names the `..` row after where a top folder’s `..` leads, on any kind', () => {
+    expect(listWordsFor('share-list', 'Back to Servers')?.parentRowName).toBe('Back to Servers')
+    expect(listWordsFor('share-list')?.parentRowName).toBeUndefined()
+    expect(listWordsFor('smb', 'Back to Testnas')).toEqual({ parentRowName: 'Back to Testnas' })
+    expect(listWordsFor('sftp', null)).toBeUndefined()
+  })
 })
 
 describe('functionKeyWordsFor', () => {

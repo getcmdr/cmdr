@@ -78,7 +78,7 @@ export interface FileRowNameInput {
     date?: { column: DateColumn; text: string; label?: string }
     gitStatus?: string
   }
-  /** What `..` says in place of "Parent folder" (a share list's "Back to Servers"). */
+  /** What `..` says in place of "Parent folder" (a server's top folder's "Back to Servers", "Back to Testnas"). */
   parentRowName?: string
 }
 

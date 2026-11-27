@@ -2099,6 +2099,11 @@ root → the Servers list on its row, and an S3 bucket opened as its own place �
 - **The `..` row leading out is no folder**: no drop target, no file menu, and the MCP mirror names where it leads
   (`has-parent.ts::parentRowPath`). ❗ `parentOf('smb://x')` is `smb://x/`, its own root (`#lib/path` floors a scheme
   URL at its authority): never ask the grammar where a server's `..` goes.
+- **The row names where it leads** (`rowName`, to a screen reader; the row still shows `..` in Full and Brief): "Back to
+  Servers" (`fileExplorer.network.share.parentRowName`) for the Servers list, else "Back to {placeName}"
+  (`fileExplorer.list.parentRowNameBackTo`), a share list named by its server's label (`share-list-label.ts`), any other
+  list (a bucket's account) by its volume's name. Read off Rust's answer alone, ❌ never the kind: FilePane hands it to
+  `list-kind-words.ts::listWordsFor` as `parentRowName`, which both views pass to `file-row-a11y.ts`.
 - **The error screen's way up**: its "Go to parent folder" button follows the same `navigateToParent`, so a refused top
   folder (a bucket the key may not list, a share list that refused) still leads up. Regression anchor: David's QA,
   2026-11-26, a refused bucket's screen had only Back and Home.
@@ -2163,10 +2168,10 @@ pane renders the standard list.
   that left for the Servers list made it unreachable. The screen's action row is pane chrome (`data-pane-chrome`), so
   the explorer's focus guard and the sheet's focus restore both leave a focused button there.
 - **The kind's words** (`list-kind-words.ts` → `../views/list-words.ts`, plain props): the Ext column headed Description
-  with each share's description in it (`extCellText`), `..` named "Back to Servers", the empty list pointing at the path
-  bar's account, and the footer counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then
-  its account (`ShareListAccountChip.svelte`), which also hosts a share row's menu: a right-click or `⌃⏎` on a share
-  list opens `row-menu.ts::shareRowMenu` there, ❌ never the native file menu.
+  with each share's description in it (`extCellText`), the empty list pointing at the path bar's account, and the footer
+  counting shares. The path bar names the server by its label (`breadcrumb-bar.ts`), then its account
+  (`ShareListAccountChip.svelte`), which also hosts a share row's menu: a right-click or `⌃⏎` on a share list opens
+  `row-menu.ts::shareRowMenu` there, ❌ never the native file menu.
 
 Decisions (David, 2026-11-25), each with its why:
 

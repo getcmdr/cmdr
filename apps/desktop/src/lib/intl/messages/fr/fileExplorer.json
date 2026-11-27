@@ -1196,6 +1196,10 @@
   "@fileExplorer.list.parentRowName": {
     "sourceHash": "158f5a0"
   },
+  "fileExplorer.list.parentRowNameBackTo": "Back to {placeName}",
+  "@fileExplorer.list.parentRowNameBackTo": {
+    "sourceHash": "dfaa8c1"
+  },
   "fileExplorer.list.parentRowSize": "ce dossier {size}",
   "@fileExplorer.list.parentRowSize": {
     "sourceHash": "a7a54c8"

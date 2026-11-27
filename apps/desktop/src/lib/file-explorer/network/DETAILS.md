@@ -299,8 +299,8 @@ and listed under the IP's path) lands on the row that stands for the host it res
 (`src-tauri/src/network/DETAILS.md` § "The Servers list's rows"). A restored share-list tab comes back as the Servers
 list on that row the same way (`../pane/restored-landing.svelte.ts`), with nothing listed at launch. History Back
 restores the cursor like any folder's. Escape doesn't: on a file list it never means "parent". It names the Servers list
-in the MCP mirror (`smb://`) and says "Back to Servers" to a screen reader (`fileExplorer.network.share.parentRowName`,
-through `ListWords.parentRowName`).
+in the MCP mirror (`smb://`) and says "Back to Servers" to a screen reader, like every top folder's `..` naming where it
+leads (`../pane/DETAILS.md` § "`..` out of a server's top folder").
 
 ## `..` out of a share's top folder
 

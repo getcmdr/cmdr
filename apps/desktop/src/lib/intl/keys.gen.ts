@@ -2478,6 +2478,7 @@ export type MessageKey =
   | 'fileExplorer.list.hiddenItemsHowToMenu'
   | 'fileExplorer.list.hiddenItemsHowToShortcut'
   | 'fileExplorer.list.parentRowName'
+  | 'fileExplorer.list.parentRowNameBackTo'
   | 'fileExplorer.list.parentRowSize'
   | 'fileExplorer.list.rowAdded'
   | 'fileExplorer.list.rowCreated'

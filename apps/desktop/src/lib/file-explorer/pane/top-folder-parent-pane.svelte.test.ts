@@ -43,6 +43,9 @@ const toServersList: TopFolderParent = {
 }
 const toShareList: TopFolderParent = { volumeId: 'network', path: 'smb://testnas', selectPath: null, switch: 'share' }
 
+/** What the live volume list calls each volume a `..` can lead to. */
+const volumeNames: Record<string, string> = { 's3-account-root': 'Test storage' }
+
 let dispose: (() => void) | undefined
 afterEach(() => {
   dispose?.()
@@ -62,7 +65,13 @@ async function create(volume: VolumeInfo, path: string) {
   const current = { path }
   let pane!: TopFolderParentPane
   dispose = $effect.root(() => {
-    pane = createTopFolderParentPane({ getVolume: () => volume, getCurrentPath: () => current.path, openServer, goTo })
+    pane = createTopFolderParentPane({
+      getVolume: () => volume,
+      getCurrentPath: () => current.path,
+      getVolumeName: (volumeId) => volumeNames[volumeId] ?? null,
+      openServer,
+      goTo,
+    })
   })
   flushSync()
   await Promise.resolve()
@@ -147,6 +156,54 @@ describe('createTopFolderParentPane', () => {
       land: { volumeId: share.id, hostId: 'testnas', shareName: 'media', serverLabel: 'Testnas' },
     })
     expect(goTo).not.toHaveBeenCalled()
+  })
+
+  describe('rowName: the `..` row names where it leads, the way a share list’s says “Back to Servers”', () => {
+    it('says “Back to Servers” on a place’s top folder and on a share list', async () => {
+      const { pane } = await create(sftp, sftp.path)
+      pane.note({ path: sftp.path, atVolumeTop: true, parent: toServersList })
+      flushSync()
+      expect(pane.rowName).toBe('Back to Servers')
+
+      pane.note({ path: sftp.path, atVolumeTop: true, parent: { ...toServersList, switch: 'always' } })
+      flushSync()
+      expect(pane.rowName).toBe('Back to Servers')
+    })
+
+    it('names the server whose share list a share’s top folder leads to', async () => {
+      const { pane } = await create(share, share.path)
+      await vi.waitFor(() => {
+        expect(getSmbShareParent).toHaveBeenCalledWith(share.id)
+      })
+      await Promise.resolve()
+      pane.note({ path: share.path, atVolumeTop: true, parent: toShareList })
+      flushSync()
+
+      expect(pane.rowName).toBe('Back to Testnas')
+    })
+
+    it('names the account whose bucket list a bucket’s top leads to, as the volume list calls it', async () => {
+      const toBucketList: TopFolderParent = {
+        volumeId: 's3-account-root',
+        path: 's3://test_key_1@s3.testnas.local:9000/',
+        selectPath: 's3://test_key_1@s3.testnas.local:9000/photos',
+        switch: 'server',
+      }
+      const { pane } = await create(sftp, sftp.path)
+      pane.note({ path: sftp.path, atVolumeTop: true, parent: toBucketList })
+      flushSync()
+
+      expect(pane.rowName).toBe('Back to Test storage')
+    })
+
+    it('says nothing (the plain “Parent folder”) where `..` is the folder above, or its switch hides it', async () => {
+      settings.server = false
+      const { pane } = await create(sftp, sftp.path)
+      expect(pane.rowName).toBeNull()
+      pane.note({ path: sftp.path, atVolumeTop: true, parent: toServersList })
+      flushSync()
+      expect(pane.rowName).toBeNull()
+    })
   })
 
   it('follows the share’s own switch, ❌ not the servers’ one', async () => {

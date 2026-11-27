@@ -3,8 +3,9 @@
  * off the kind so the views, the footer, and the bar never ask which kind they show.
  *
  * - A server's share list: its Ext column holds the share's description (measured as prose),
- *   its rows carry no dates and no sizes, its `..` goes back to Servers, and its footer
- *   counts shares.
+ *   its rows carry no dates and no sizes, and its footer counts shares. Its `..` says "Back
+ *   to Servers" like every top folder's `..` names where it leads: that name comes from
+ *   where it leads, ❌ not from the kind (`listWordsFor`'s `parentRowName`).
  * - The Servers list (`network` at `smb://`): its Ext column is each server's Details
  *   (prose), its date is "Last used", it has no Size, its footer counts servers with the
  *   nearby search's state (`network-store.svelte.ts`, read live), an empty list names F7, and
@@ -20,15 +21,24 @@ import type { ListWords } from '../views/list-words'
 import type { TrailingRow } from '../views/trailing-row'
 import type { VolumeKind } from './volume-capabilities'
 
-/** The list's words on a pane of `kind`, or `undefined` for a folder's own. */
-export function listWordsFor(kind: VolumeKind): ListWords | undefined {
+/**
+ * The list's words on a pane of `kind`, or `undefined` for a folder's own. `parentRowName`:
+ * what `..` says where it leads out of a server's top folder, on any kind
+ * (`top-folder-parent-pane.svelte.ts`'s `rowName`: "Back to Servers", "Back to Testnas").
+ */
+export function listWordsFor(kind: VolumeKind, parentRowName?: string | null): ListWords | undefined {
+  const words = kindWordsFor(kind)
+  if (!parentRowName) return words
+  return { ...words, parentRowName }
+}
+
+function kindWordsFor(kind: VolumeKind): ListWords | undefined {
   if (kind === 'share-list') {
     return {
       extHeader: tString('fileExplorer.columns.description'),
       extIsProse: true,
       rowsHaveNoDates: true,
       rowsHaveNoSizes: true,
-      parentRowName: tString('fileExplorer.network.share.parentRowName'),
       emptyText: tString('fileExplorer.network.share.emptyList'),
       countRows: (count) =>
         tString('fileExplorer.network.share.shareCount', { count, countText: formatInteger(count) }),

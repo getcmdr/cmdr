@@ -19,6 +19,9 @@
 import type { NetworkHost, VolumeInfo } from '../types'
 import type { ParentRowSwitch, TopFolderParent } from '#lib/tauri-commands/index.js'
 import { getShowServerParentRow } from '#lib/settings/reactive-settings.svelte.js'
+import { tString } from '#lib/intl/messages.svelte.js'
+import { isShareListLocation } from '#lib/servers/share-list-path.js'
+import { shareListServerLabel } from '../network/share-list-label'
 import {
   isSmbShareVolume,
   loadShareParent,
@@ -42,6 +45,8 @@ export interface TopFolderParentPaneDeps {
   getVolume: () => VolumeInfo | null
   /** The pane's current folder. */
   getCurrentPath: () => string
+  /** What the live volume list calls `volumeId`, or `null` for one it doesn't hold. */
+  getVolumeName: (volumeId: string) => string | null
   /**
    * Takes the pane to `host`'s share list, the cursor landing on the share and the hint
    * explaining where `..` went once it does (`share-list-pane.svelte.ts`).
@@ -64,6 +69,12 @@ export interface TopFolderParentPane {
   readonly leadsOutHere: boolean
   /** Where the `..` row leads while `leadsOutHere`, for the MCP mirror; else `null`. */
   readonly leadsTo: string | null
+  /**
+   * What the `..` row says to a screen reader while `leadsOutHere`: where it leads, the list
+   * it opens named as that list is ("Back to Servers", "Back to Testnas"); else `null`, for
+   * the plain "Parent folder". Both views read it through `ListWords.parentRowName`.
+   */
+  readonly rowName: string | null
   /** Leaves the current folder through its `..` when that leads out. Answers whether it did. */
   leave: () => boolean
 }
@@ -132,6 +143,28 @@ export function createTopFolderParentPane(deps: TopFolderParentPaneDeps): TopFol
     get leadsTo() {
       return parent?.path ?? null
     },
+    get rowName() {
+      return parent ? rowNameOf(parent, deps.getVolumeName) : null
+    },
     leave,
   }
 }
+
+/**
+ * What a `..` that leads to `parent` says, from where it leads alone (❌ no per-scheme branch):
+ * the Servers list by its name, a server's share list by the server's, any other list (an S3
+ * account's bucket list) by its volume's. `null` when that volume isn't known, for "Parent folder".
+ */
+function rowNameOf(parent: TopFolderParent, getVolumeName: (volumeId: string) => string | null): string | null {
+  if (parent.volumeId === NETWORK_VOLUME_ID && parent.path === SERVERS_LIST_PATH) {
+    return tString('fileExplorer.network.share.parentRowName')
+  }
+  const placeName = isShareListLocation(parent.volumeId, parent.path)
+    ? shareListServerLabel(parent.path)
+    : getVolumeName(parent.volumeId)
+  return placeName === null ? null : tString('fileExplorer.list.parentRowNameBackTo', { placeName })
+}
+
+/** The Servers list: `smb://` on the `network` volume (`src-tauri/src/network/top_folder_parent.rs`). */
+const NETWORK_VOLUME_ID = 'network'
+const SERVERS_LIST_PATH = 'smb://'
