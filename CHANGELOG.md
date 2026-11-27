@@ -5,6 +5,110 @@ This file holds all notable changes to Cmdr over time.
 The format is based on [keep a changelog](https://keepachangelog.com/en/1.1.0/), and we use
 [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.62.0] - 2026-11-28
+
+I think this has been the biggest gap between two releases ever :) Anyway, my highlights:
+
+1. **Tell me about this** (alpha): press ⌘⇧I on any file to see what it is, its history and perceived importance. With
+   AI _off_, it uses the file's metadata and oplog history. With AI _on_, it also adds a short textual summary.
+2. **"Servers" list reworked**: the list now looks like a regular file list, `..` at the top of any server leads back to
+   it (can be turned off), and the whole area is just less confusing and more natural-feeling.
+
+Also reworked the Settings UI to make it nicer and simpler, plus did ~50 fixes.
+
+And hey, still a bit of a secret, but a pair of Windows and Linux (alpha) ports are in the making!
+
+### Added
+
+- Add "Tell me about this" (alpha, ⌘⇧I, also in the File and right-click menus): what an item is, where it came from,
+  which Cmdr operation put it there, what's inside a folder, what an app leaves behind, and what removing it means, with
+  an optional AI take (c319fa842, a6706599b, a45504d19, 98464fd7b, 18fa7f7a9, ef671d54f, 092631a98, e5bd56e6b,
+  d9e69579f, 2b1a2cfa1, 5aecf2317, bc8462ba7, c093fe21d, 7be2835c8, 806d938b4, 37ba00d3e, 2ade0368f)
+- Let Ask Cmdr look up what a file or folder is, using the same facts as the card (66e248a59)
+- List every known server under `smb://` as a regular folder, with "Add server…" as its last row (ca74296e2, 4634733cf,
+  20441544e, 2a140cf27, 995480ef3, 239cf3414)
+- Open a server's other shares with `..` at the top of an SMB share, and go back to Servers with `..` from any SFTP,
+  WebDAV, NFS, or S3 server (1fc90200b, 779fa65bb, ecff98dbd, 589278fc7)
+- Sign in to a share list with the password macOS already saved (22709fe32)
+- Show long operations as a progress bar on the Dock icon (afa8452bd)
+- Pick the Ask Cmdr model from a list of your provider's models (8ee6e51f9)
+- Explain on the License page what the free personal license covers and when work needs a commercial one (300c3d846)
+
+### Changed
+
+- Calm down Settings: most help text moves behind an ⓘ beside its label, and every control lines up on one right edge
+  (a103a0273, 2b5356756, af548e720, 47015054f, 834993e2b, 0a30c33b8, 40a31824f)
+- Set the SMB network timeout directly in seconds (53f158b7e)
+- Check a new name against the destination drive's own rules, so a share refuses `CON` and an exFAT stick refuses
+  `12:30` up front, and warn about names Windows can't read (c5345dce4, 87c42ca0b, 62bcbfb84)
+- Show a slow folder's or server's loading view only after 800 ms, so quick loads never flash a spinner (37c9123e0,
+  d933af4d6)
+- Skip Windows' `Thumbs.db` too with "Skip system clutter files" (2e4d73dd1, ad132a52a)
+- Keep chat apps, Contacts, Calendar, and Reminders out of Ask Cmdr's reach (d95fee100, 2919ae16e)
+- Say plainly that Cmdr can't open an archive inside an archive yet (7d6d2d988, 4c7661820)
+- Draw S3 buckets as buckets, and shares as shared folders (c8398ace9, c966f6413)
+- Keep a restored tab or an undo on its own disk when the disk comes back under a new name, like `/Volumes/Backup 1`
+  (34328e170, 276ed2191)
+- Stop checking whether the shown folder still exists while Cmdr is hidden (92ee23a44)
+- Trim 181 kB of dev-only screens from the app (42e15bd55)
+- Speak each Linux desktop's own words (Files or Dolphin, KWallet, Preferences or Configure Cmdr), and give Linux an
+  in-window menu bar that can hide (796438607, 6953aaecf, 3108e700e, 9cbe3fcc0, f4b6b4aa3)
+
+### Fixed
+
+- Fix a copy or move of a folder tree hundreds of levels deep crashing Cmdr (2cc576d31, d2c474710, 74e35b620, 9b9cd24d4,
+  46036ddcd, 4a2a86fa8, 5821a320f, 2d4aa6ab0)
+- Fix a copy onto a NAS, or "Calculate size" on a share, looping forever or crashing on a folder link that points back
+  up its own path (e0be374a9, 4ea22ad94, 47cd5f755, 2bc49cc47)
+- Fix a link to `/` inside Downloads hanging Cmdr at launch (5d641d99d, f161b68f9, 9b7e70678)
+- Fix Cmdr running out of file handles when started from the Dock (8d33c27af)
+- Fix a big, well-filled startup disk never finishing its index (870ea2330)
+- Fix a drive index rebuild replaying months of history, and a quit during a rescan throwing the whole index away
+  (0fea3ef87, 09a2c2d82, 59017aa8d, 353689a4c, af7ca6393, 64a08c0b0)
+- Fix a busy license server telling a paying person their code doesn't exist (cac0cede0, 60efe5ce7)
+- Fix Return on a dialog's Cancel button starting a copy, move, or trash (ef7c9b522)
+- Fix a selection utility's ⌘C after a double-click copying the file under the cursor (6a20cfcf6)
+- Fix F5 and F6 being refused after leaving a folder with work still going (d8199d042)
+- Fix a pane coming up short of files after a burst of changes (c08cdb784, 1239e53a4)
+- Fix Cmdr freezing for good when a settings file loaded and closed at the same time (501947ad1)
+- Fix a crashed Search dialog staying broken until a restart (a1398ffa6)
+- Fix Eject on a share macOS mounted saying "This drive isn't removable" (df2a37dca)
+- Fix an SMB folder with an accented name bouncing you to its parent (34c9c7bc1)
+- Fix DFS shares (like QNAP's portal folders) not showing free space (04570b314)
+- Fix a move on an SMB share stopping at a brief connection drop (5f2eb4955)
+- Fix undoing a move from the startup disk to another drive (f428d630b)
+- Fix one malformed security notice stopping every install from finding updates (0c13d626d, 4c97f3bdb)
+- Fix the update check saying you're up to date when a newer Cmdr exists but not for your system yet (0f0170b60,
+  21d60b827)
+- Fix the transfer dialog showing more done than its total, or "0s left" while still working (241a22e38)
+- Fix a permanent delete the OS stopped partway not saying how many files were already gone (0d39a6db4)
+- Fix error reports including the name of a file the trash refused or of an ejected volume (46655a1d5)
+- Fix the AI connection check saying "Connected" to something that isn't an AI service (6b9bf1abf, 28a17312c)
+- Fix turning Ask Cmdr off in one window not stopping it right away (c037ca2f4)
+- Fix the log storage limit needing a restart (61f8f3f52)
+- Fix the status bar showing a selection bigger than its folder (cd6b9de1c)
+- Fix shortened names cutting an emoji or accented letter in half (f484929ea)
+- Fix "Filter by keys" dropping a ⌘⇧ combo once you let go (bafed8f2c)
+- Fix "Switch pane" from the command palette leaving focus behind (c5baf1303)
+- Fix Linux files with non-UTF-8 names listing without size or dates (fdfa5b58c)
+
+### Security
+
+- Close a cross-site scripting hole in the Markdown viewer: `ammonia` RUSTSEC-2026-0533 / GHSA-934p-vp7m-gx3c (unrated),
+  Cmdr 0.55.0–0.61.0 (053edb2b9)
+- Stop a nested `blob:` URL from overflowing the stack: `url` RUSTSEC-2026-0592 / GHSA-hrj5-67jp-wqp9 (unrated), Cmdr
+  0.6.0–0.61.0 (bd6aac614)
+- Stop private cookie nonces from repeating in processes that fork: `cookie` RUSTSEC-2026-0594 / GHSA-8wcq-xq25-7fhm
+  (unrated), Cmdr 0.6.0–0.61.0 (a2a822b11)
+
+### Non-app
+
+- Lay the groundwork for Windows: most of the app now builds and runs there, not released yet (d09235532, 56ce685e4,
+  a0d599447, 0ddb188f5, aad8b71e3, 9cbe3fcc0)
+- Give the codebase one typed app path, the base for Windows paths and for names that aren't valid Unicode (05d10f0b9,
+  b40ebabed)
+- Match translator screenshots to their strings by OCR (d024e0c34)
+
 ## [0.61.0] - 2026-11-13
 
 More fixes than new things this time. The most interesting new things:

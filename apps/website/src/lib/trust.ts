@@ -18,7 +18,7 @@
  */
 
 /** The release and date the page's claims were checked against. */
-export const verifiedAgainst = { version: '0.61.0', date: '2026-11-13' }
+export const verifiedAgainst = { version: '0.62.0', date: '2026-11-28' }
 
 export interface NetworkConnection {
   id: string
@@ -55,7 +55,7 @@ export const networkConnections: NetworkConnection[] = [
       '<code>api.getcmdr.com/heartbeat</code>. They stay in our own database there; no third party gets them.',
     when: 'At most once every three hours while the app is open. Feature events wait on the Mac and go with the next send.',
     sends:
-      "A random install id created on the Mac (not linked to a name, email, or license), app version, macOS version, CPU architecture, how long the app ran, whether Cmdr was installed with Homebrew or another way, the features used (with when, and coarse details like the kind of drive or how an action ended), every on/off and number setting plus a fixed list of choice settings (like light or dark mode), whether Full Disk Access is granted, and whether an organization manages the Mac. The server adds the country Cloudflare works out from the connection, and doesn't keep the IP address. No filenames, paths, file contents, search terms, or AI prompts. Settings are picked by type in code, so a text setting is left out unless it's on the fixed list. Feature details are kept free of names by code review, not by an automatic filter.",
+      "A random install id created on the Mac (not linked to a name, email, or license), app version, operating system and its version, CPU architecture, how long the app ran, whether Cmdr was installed with Homebrew or another way, the features used (with when, and coarse details like the kind of drive or how an action ended), every on/off and number setting plus a fixed list of choice settings (like light or dark mode), whether Full Disk Access is granted, and whether an organization manages the Mac. The server adds the country Cloudflare works out from the connection, and doesn't keep the IP address. No filenames, paths, file contents, search terms, or AI prompts. Settings are picked by type in code, so a text setting is left out unless it's on the fixed list. Feature details are kept free of names by code review, not by an automatic filter.",
     control:
       '<strong>On by default</strong> during the open beta, from the first launch. The first-launch setup explains it, and the user can\'t skip that step. Turn off with Settings &gt; Updates &amp; privacy &gt; "Send usage stats". When it\'s off, nothing is sent. IT can turn it off for everyone with <code>DisableUsageStats</code>.',
   },
@@ -65,7 +65,7 @@ export const networkConnections: NetworkConnection[] = [
     destination: '<code>api.getcmdr.com/crash-report</code>',
     when: 'On the next launch after a crash.',
     sends:
-      "App and macOS version, where in Cmdr's code the crash happened, the crash message after it's cleaned of personal data on the Mac (at most 2,000 characters), memory addresses of the crashing code, how long the app ran, the Mac's model, CPU, memory, language, and free disk space, four settings (indexing, AI provider, MCP server, verbose logging), a random report id, and a random diagnostics id that groups reports from the same Mac. That id never goes with usage stats. From macOS's own crash report, only the one-line reason and the function names of the crashing thread. An email address only if the user ticks a box.",
+      "App version, operating system and its version, where in Cmdr's code the crash happened, the crash message after it's cleaned of personal data on the Mac (at most 2,000 characters), memory addresses of the crashing code, how long the app ran, the Mac's model, CPU, memory, language, and free disk space, four settings (indexing, AI provider, MCP server, verbose logging), a random report id, and a random diagnostics id that groups reports from the same Mac. That id never goes with usage stats. From macOS's own crash report, only the one-line reason and the function names of the crashing thread. An email address only if the user ticks a box.",
     control:
       '<strong>On by default.</strong> Turn off with Settings &gt; Updates &amp; privacy &gt; "Send crash reports". IT can turn it off for everyone with <code>DisableCrashAndErrorReports</code>.',
   },
@@ -75,7 +75,7 @@ export const networkConnections: NetworkConnection[] = [
     destination: '<code>api.getcmdr.com/error-report</code>',
     when: 'When the user picks Help &gt; Send error report, which shows a preview first. Automatic sending exists but is off by default.',
     sends:
-      "A zip with the recent part of the app's log, the app and macOS version, the Mac's model, CPU, memory, and free disk space, the same diagnostics id as crash reports, about 20 settings that change what Cmdr does (like how it handles name conflicts, whether SMB encryption is required, the language, and light or dark mode), as on/off values, numbers, and fixed choices only, so none can hold a path or a name, and the user's note. Before it leaves the Mac, Cmdr replaces file and folder names in every path with placeholders, keeping only the extension and common folder names like Documents. A name repeated on the same log line as its path is replaced too, and so are server names, share names, and user names. Each placeholder is the same throughout one report, so the logs still show which lines are about the same file, but it can't be matched across reports. Error codes (errno, SMB, and SFTP status codes) stay as they are; an error message from another system is cleaned the same way and cut at 200 characters. Cmdr's own state (open panes, running operations, connected volumes) goes as structured fields, not free text. <strong>Known gap</strong>: a filename that macOS, a server, or a third-party library writes on its own, with no path on the same line, can get through. Names in Cmdr's own log lines are always replaced.",
+      "A zip with the recent part of the app's log, the app version, the operating system and its version, the Mac's model, CPU, memory, and free disk space, the same diagnostics id as crash reports, about 20 settings that change what Cmdr does (like how it handles name conflicts, whether SMB encryption is required, the language, and light or dark mode), as on/off values, numbers, and fixed choices only, so none can hold a path or a name, and the user's note. Before it leaves the Mac, Cmdr replaces file and folder names in every path with placeholders, keeping only the extension and common folder names like Documents. A name repeated on the same log line as its path is replaced too, and so are server names, share names, and user names. Each placeholder is the same throughout one report, so the logs still show which lines are about the same file, but it can't be matched across reports. Error codes (errno, SMB, and SFTP status codes) stay as they are; an error message from another system is cleaned the same way and cut at 200 characters. Cmdr's own state (open panes, running operations, connected volumes) goes as structured fields, not free text. <strong>Known gap</strong>: a filename that macOS, a server, or a third-party library writes on its own, with no path on the same line, can get through. Names in Cmdr's own log lines are always replaced.",
     control:
       'Sent by hand only, by default. Automatic sending is Settings &gt; Updates &amp; privacy &gt; "Send error reports automatically", off by default. IT can turn off both kinds for everyone with <code>DisableCrashAndErrorReports</code>.',
     devTodo:
@@ -97,7 +97,7 @@ export const networkConnections: NetworkConnection[] = [
     destination: '<code>api.getcmdr.com/feedback</code> and <code>api.getcmdr.com/beta-signup</code>',
     when: 'Only when the user sends feedback or types an email address to stay in touch.',
     sends:
-      'The message, app and macOS version, and an email address if the user adds one, with no install id. If the user ticks "Include the past five hours of logs", an error report goes with it (see above).',
+      'The message, app version, operating system and its version, and an email address if the user adds one, with no install id. If the user ticks "Include the past five hours of logs", an error report goes with it (see above).',
     control: 'Nothing is sent unless the user sends it.',
   },
   {

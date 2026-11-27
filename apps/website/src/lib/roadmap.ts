@@ -792,6 +792,18 @@ export const roadmapSections: RoadmapSection[] = [
             description: 'Sensible defaults for PC keyboards.',
             done: true,
           },
+          {
+            date: '(Nov 14)',
+            title: '"Tell me about this"',
+            description: 'Right-click any file to learn about it. Works with and without AI. (alpha)',
+            done: true,
+          },
+          {
+            date: '(Nov 26)',
+            title: 'Servers list rework',
+            description: 'The "Servers" list now feels more native Cmdr, and works more naturally.',
+            done: true,
+          },
         ],
       },
     ],
@@ -802,12 +814,6 @@ export const roadmapSections: RoadmapSection[] = [
     groups: [
       {
         milestones: [
-          {
-            date: '(this fall?)',
-            title: 'AI-powered "Tell me about this"',
-            description: 'Right-click any file for a quick AI explanation.',
-            done: false,
-          },
           {
             date: '(this fall?)',
             title: 'Support more file systems',

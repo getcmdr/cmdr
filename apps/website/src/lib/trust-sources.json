@@ -229,7 +229,8 @@
         "apps/api-server/src/website/**",
         "apps/api-server/migrations/*.sql",
         "apps/api-server/scripts/setup-cf-infra.sh",
-        "apps/website/src/pages/privacy-policy.astro"
+        "apps/website/src/pages/privacy-policy.astro",
+        "apps/desktop/src-tauri/src/agent/chat/session.rs"
       ]
     },
     {
@@ -298,7 +299,11 @@
         "apps/desktop/src-tauri/src/agent/chat/context/**",
         "apps/desktop/src-tauri/src/agent/suggested_ops/**",
         "crates/cmdr-index/src/media_index/**",
-        "apps/desktop/src/lib/ai/**"
+        "apps/desktop/src/lib/ai/**",
+        "apps/desktop/src-tauri/src/about/model.rs",
+        "apps/desktop/src-tauri/src/about/verdict/**",
+        "crates/cmdr-about/src/model.rs",
+        "apps/desktop/src-tauri/src/agent/prompts/about_verdict*.md"
       ]
     },
     {
@@ -418,7 +423,8 @@
         ".github/rulesets/**",
         "scripts/land/**",
         ".github/workflows/ci.yml",
-        "AGENTS.md"
+        "AGENTS.md",
+        ".github/actions/red-run-issue/**"
       ]
     },
     {
@@ -437,7 +443,9 @@
         "scripts/check/checks/registry.go",
         "fuzz/fuzz_targets/**",
         "apps/desktop/test/**",
-        "scripts/soak-smb.sh"
+        "scripts/soak-smb.sh",
+        ".github/workflows/windows-lane.yml",
+        "scripts/windows-test-baseline/**"
       ]
     },
     {
@@ -471,7 +479,9 @@
         "scripts/release-ci-gate.sh",
         "scripts/release-codeql-gate.sh",
         "scripts/release-mirror/**",
-        "docs/guides/releasing.md"
+        "docs/guides/releasing.md",
+        "crates/cmdr-update-manifest/**",
+        "scripts/release-assets/**"
       ]
     },
     {
@@ -502,7 +512,9 @@
         "docs/guides/releasing.md",
         "docs/notes/system-requirements-and-es2025.md",
         "scripts/check/checks/desktop-rust-macos-availability.go",
-        "SECURITY.md"
+        "SECURITY.md",
+        ".github/workflows/windows-lane.yml",
+        "scripts/windows-test-baseline/**"
       ]
     },
     {
@@ -570,7 +582,12 @@
     {
       "page": "/trust/accessibility-guide",
       "anchor": "screen-readers",
-      "paths": ["apps/desktop/src/lib/file-explorer/**", "apps/desktop/src/lib/ui/**"]
+      "paths": [
+        "apps/desktop/src/lib/file-explorer/**",
+        "apps/desktop/src/lib/ui/**",
+        "apps/desktop/src/lib/settings/components/SettingRow.svelte",
+        "apps/desktop/src/lib/tooltip/**"
+      ]
     },
     {
       "page": "/trust/accessibility-guide",

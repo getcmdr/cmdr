@@ -587,7 +587,8 @@ const toc = [
         </li>
         <li>
             If the user turns on AI request logging in Settings › Advanced (off by default), a copy of every AI request
-            and answer, in <code>llm-logs/</code>.
+            and answer, in <code>llm-logs/</code>. The one exception is the AI take in "Tell me about this", which is
+            never logged.
         </li>
         <li>Server addresses and usernames for saved network connections, and settings.</li>
         <li>
@@ -822,7 +823,8 @@ const toc = [
             <strong>Ask Cmdr</strong> (the assistant, off by default): file and folder names, paths, sizes, and dates,
             the names of drives, network shares, and favorites, and the assistant's own notes. When the user's question
             needs it, also parts of text files, text from PDF pages, archive listings, photo metadata (which can include
-            GPS location), and text read from images. It can also read Cmdr's own state, its settings with anything
+            GPS location), and text read from images. It can look up what a file or folder is, which sends the same
+            facts as "Tell me about this" (below), without the look inside the file. It can also read Cmdr's own state, its settings with anything
             that looks like a secret masked, and its recent logs with identifying details replaced. When Ask Cmdr is
             on, it also looks at folders that changed recently on its own and suggests what to do, sending the same
             kinds of data; turn that off in Settings › AI. In a chat the user started, the assistant can work the app,
@@ -831,8 +833,21 @@ const toc = [
             approval. A password the user types into the chat to unlock an archive or a backup goes to the provider
             with the message. Some contents never reach the provider, whatever anyone asks: SSH keys, cloud and tool
             credentials, keychains, password manager data (Bitwarden and 1Password), browser data, Mail, Thunderbird,
-            Outlook, Messages, Notes, Cmdr's own data, and any file holding a
-            private key. Their names still can.
+            Outlook, Messages, chat apps (Signal, WhatsApp, Telegram, Slack, Discord, Element, and Microsoft Teams),
+            Contacts, Calendar, Reminders, Notes, Cmdr's own data, and any file holding a private key. Their names still
+            can.
+        </li>
+        <li>
+            <strong>Tell me about this</strong> (the ⌘⇧I card, alpha): each time the user opens the card on a file or
+            folder, an AI take of two or three sentences, on by default once AI is on. Turn it off with "AI take in 'Tell me
+            about this'" in Settings › AI. It sends what the card shows, as the "Allow cloud AI" list names it: the
+            item's name, path, size, and dates, its kind, the website it was recorded as downloaded from (the main
+            address only, and only that it came from Mail or AirDrop, never who sent it), its app and signer, where
+            Cmdr copied it from, its git status, the app it belongs to, for a picture the labels and text Cmdr's image
+            index found in it, and, for a folder, the names and sizes of its biggest items. For a file on a local disk, it adds a short look inside: up to 40 lines or 2,000 characters of text, a PDF's
+            title and first page, 20 names from an archive, or a photo's camera details without its location. An item
+            whose contents stay home (the list above) sends only its name, path, size, dates, and the app it belongs
+            to. The take's text isn't saved to disk.
         </li>
         <li>
             <strong>Folder name suggestions, select-by-description, and natural-language search</strong>: up to 240 file
@@ -1059,8 +1074,8 @@ const toc = [
                     that server. Cmdr remembers the answer and warns if it changes.
                 </li>
                 <li>
-                    <strong>Turning on cloud AI</strong>: filenames and, when asked, parts of files go to the AI
-                    provider. Text inside a file can try to steer the assistant. It still can't copy, move, delete, or
+                    <strong>Turning on cloud AI</strong>: filenames and parts of the files the user asks about (or
+                    opens "Tell me about this" on) go to the AI provider. Text inside a file can try to steer the assistant. It still can't copy, move, delete, or
                     rename anything without the user's confirmation; on its own it can only create an empty folder or
                     file and change Finder tags, and a tag change can be undone.
                 </li>

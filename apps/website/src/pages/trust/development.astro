@@ -175,7 +175,8 @@ const toc = [
         <li>
             <strong>Static analysis (CodeQL)</strong> scans the GitHub workflows, the TypeScript, and the Rust code:
             the first two on every pull request, Rust on each change to it, and all three every week. A high or
-            critical finding fails the scan and holds the next release.
+            critical finding fails the scan and holds the next release. On the main branch, it also opens an issue
+            for the fixer agent described under <a href="#review">Review</a>.
         </li>
     </ul>
 
@@ -194,7 +195,8 @@ const toc = [
         </li>
         <li>
             One unattended AI agent may land a fix by itself: when the nightly check run fails, it reruns a network blip
-            or fixes the cause. It runs as a restricted user on a separate Mac with no access to the maintainer's
+            or fixes the cause, and when CodeQL finds a high or critical issue on the main branch, it fixes the code.
+            Marking a CodeQL finding as a false positive always needs the maintainer's approval. It runs as a restricted user on a separate Mac with no access to the maintainer's
             accounts or keys, its commits are signed, and it needs the same green checks as any change. It can't push a
             release tag. A change of its that touches the build and release pipeline, the checks themselves,
             dependencies, update signing, or the website and server waits for the maintainer's approval, and GitHub
@@ -255,7 +257,9 @@ const toc = [
             checks, unit and integration tests, and the end-to-end suite in Docker on Linux. When Rust code changed,
             also the Rust lints and tests on macOS, the Kani proofs, and the Shuttle interleaving tests, plus a build
             of the Finder extension for both chip types, against
-            the oldest macOS version Cmdr supports, when it changed. Nobody can skip this, the maintainer included.
+            the oldest macOS version Cmdr supports, when it changed. Rust changes also have to build, pass the Rust
+            lints, and pass the Rust tests on Windows, against a list of known Windows failures that can only shrink.
+            Nobody can skip this, the maintainer included.
             The macOS checks of the maintainer's own changes run on his Mac, registered as a GitHub Actions runner,
             when it's free. Changes from outside contributors and bots, and the full run before a release, use GitHub's
             own macOS machines.
@@ -270,7 +274,7 @@ const toc = [
             passed alone but break together get caught within a day. Also <code>govulncheck</code> for the Go build scripts, an
             unused-dependency scan, and live tests against five AI providers' real APIs. Also fuzzing: random-input
             testing, 20 minutes each, of the parsers that read data from outside (Android phones, WebDAV, S3, and NFS
-            server responses, archives, PDFs, and image headers), where each target checks real properties such as
+            server responses, archives, PDFs, image headers, and macOS's record of where a downloaded file came from), where each target checks real properties such as
             round trips. Plus the mutant check and Miri, which runs
             the tests of the pure-Rust <code>unsafe</code> code and reports undefined behavior. The macOS lints of the release build and a bundle
             size limit run on this schedule too, and before every release tag.
@@ -387,7 +391,10 @@ const toc = [
             <strong>Where downloads come from</strong>: the release workflow copies each release's files to
             <code>download.getcmdr.com</code> (stored in the EU), checks every file against GitHub's SHA-256 and the
             published checksums, and reads each one back to compare. Only then does the release become the latest one,
-            with an update feed that points there. GitHub Releases keeps a public mirror of every file.
+            with an update feed that points there. The feed is checked before upload and again after: it must match
+            the release, carry only signatures by a key the app trusts, and be readable by every Cmdr version that
+            ever shipped, so one bad feed can't stop installs from finding updates. GitHub Releases keeps a public
+            mirror of every file.
         </li>
         <li>
             <strong>Signing keys</strong>: Apple's signing and notarization credentials sit in a protected GitHub
@@ -475,8 +482,8 @@ const toc = [
             follow-up release.
         </li>
         <li>
-            <strong>No Linux or Windows release.</strong> Much of the code also builds on Linux, which is where GitHub
-            runs its tests, but that isn't a supported product.
+            <strong>No Linux or Windows release.</strong> Much of the code also builds and runs on Linux and Windows,
+            and GitHub runs its tests on both, but neither is a supported product yet.
         </li>
     </ul>
 
