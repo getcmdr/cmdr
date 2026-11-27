@@ -14,6 +14,7 @@ use super::super::state::WriteOperationState;
 use super::super::types::{WriteOperationError, WriteOperationPhase, WriteOperationType, WriteProgressEvent};
 use super::outage::{Listed, read_through_outages};
 use crate::transfer::volume::{PathRole, listed_path, map_volume_error};
+use cmdr_fs::entry::FileEntry;
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
@@ -69,9 +70,14 @@ impl VolumeScanTracker {
     }
 }
 
-/// Recursively enumerates a directory tree via `volume.list_directory()`, collecting
-/// files and directories. Directories are appended after their children, so the
+/// Enumerates a directory tree via `volume.list_directory()`, collecting files
+/// and directories. Directories are appended after their children, so the
 /// resulting list is already in deepest-first order for safe deletion.
+///
+/// The folders the walk is inside live on a `Vec`, ❌ never in a future per
+/// level: that nests a poll per level, and a deep enough tree overflowed the
+/// 2 MiB tokio worker the delete runs on (#1541). Only the listings on the
+/// current path are held.
 ///
 /// **A symlink is a leaf: the link goes, ❌ never its target's contents.** Only
 /// an [`EntryKind::Directory`] is listed and descended. A listing sets
@@ -85,11 +91,11 @@ impl VolumeScanTracker {
 /// 1. **Per-entry** via `list_directory`'s `on_progress` callback, so the FE sees the tally climb
 ///    mid-listing — important for MTP, where one `list_directory` call on `/DCIM/Camera` with 1k+
 ///    photos can take ~17 s of USB roundtrips.
-/// 2. **After each subtree** (this function's tail), as a final snapshot for that branch. Throttled
+/// 2. **After each subtree** (as each folder ends), as a final snapshot for that branch. Throttled
 ///    by the shared `VolumeScanTracker` so it doesn't race with the per-entry callback.
 ///
 /// **Cancel contract**: this function does NOT emit `write-cancelled` before returning
-/// `Err(Cancelled)`. The cancel check fires at every recursion level, so emitting here would
+/// `Err(Cancelled)`. The cancel check fires before every folder, so emitting here would
 /// multi-fire. Top-level callers must call `emit_cancelled_if_aborted` (or otherwise emit
 /// `write-cancelled`) on the returned result before propagating it, so the FE sees the proper
 /// terminal event for the cancel flow.
@@ -112,17 +118,20 @@ pub(super) async fn scan_volume_recursive(
 ) -> Result<(), WriteOperationError> {
     use std::sync::atomic::Ordering;
 
-    if state.intent().is_cancelled() {
-        return Err(WriteOperationError::Cancelled {
-            message: "Operation cancelled by user".into(),
-        });
-    }
+    let scan = DeleteScan {
+        volume,
+        volume_id,
+        state,
+        events,
+        operation_id,
+        tracker,
+    };
+    scan.check_cancel()?;
 
     // Resolve what `path` is. Prefer the caller's hint (a pane's listing of the
-    // parent at the top level, the parent's `FileEntry` in recursion). Without
-    // one, probe (`top_level_entry`, a read, so safe to re-run after an
-    // outage), which on MTP lists the parent dir, so we avoid it whenever the
-    // oracle can answer.
+    // parent at the top level). Without one, probe (`top_level_entry`, a read,
+    // so safe to re-run after an outage), which on MTP lists the parent dir, so
+    // we avoid it whenever the oracle can answer.
     // The one crossing for `path`: the walk carries `std::path` values until it's typed.
     let path_app = AppPath::legacy_unchecked(path);
     let probed = match hint {
@@ -131,17 +140,160 @@ pub(super) async fn scan_volume_recursive(
             .await
             .map_err(|stop| stop.into_error(path))?,
     };
-    let kind = probed.kind;
 
-    if kind == EntryKind::Directory {
+    if probed.kind != EntryKind::Directory {
+        // Top-level file or link without listing context: size unknown, use 0.
+        // Progress still tracks file count accurately.
+        tracker.files_so_far.fetch_add(1, Ordering::Relaxed);
+        entries.push(VolumeDeleteEntry {
+            path: path.to_path_buf(),
+            progress_bytes: 0,
+            is_dir: false,
+            listed: listed_top_level(volume.as_ref(), &path_app, probed).await,
+        });
+        scan.snapshot(path);
+        return Ok(());
+    }
+
+    // Each folder the walk is inside, with the listed entries of it still to go.
+    let mut inside: Vec<(PathBuf, std::vec::IntoIter<FileEntry>)> = Vec::new();
+    let children = scan.open_folder(path, &path_app).await?;
+    inside.push((path.to_path_buf(), children.into_iter()));
+    let listings_mark_links = volume.backend_kind().listings_mark_links();
+    while let Some((dir, children)) = inside.last_mut() {
+        // Children first. list_directory returns FileEntry with size, so we use
+        // child.size directly instead of calling get_metadata (which returns
+        // NotSupported on MTP). A child folder's kind comes from its own row, so
+        // descending it doesn't re-probe (avoids another parent listing on MTP).
+        // `EntryKind::of`, ❌ never `child.is_directory`: that's true for a link to
+        // a folder, and descending it deletes the folder it points at. Where a
+        // listing can list a link as a folder (Samba, #613), each folder is asked
+        // `entry_kind` before the walk descends it.
+        let mut descend = None;
+        for child in children.by_ref() {
+            // The child as its listing row names it, typed. A row holding a `..` name
+            // (a hostile `../x`) stops the delete before anything
+            // goes, ❌ never walked: it would delete outside the selection.
+            let child_path_app =
+                listed_path(&child).map_err(|e| map_volume_error(&dir.display().to_string(), PathRole::Source, e))?;
+            // The same child for the delete's entries, which key on `std::path`
+            // (the bridge's way out, until they're typed).
+            let child_path = child_path_app.as_std_legacy().into_owned();
+            let mut child_kind = EntryKind::of(&child);
+            if child_kind == EntryKind::Directory && !listings_mark_links {
+                child_kind = read_through_outages(volume, state, || volume.entry_kind(&child_path_app))
+                    .await
+                    .map_err(|stop| stop.into_error(&child_path))?;
+            }
+            if child_kind == EntryKind::Directory {
+                descend = Some((child_path, child_path_app.into_owned()));
+                break;
+            }
+            // A link frees only itself, whatever size the listing reports
+            // for what it points at.
+            let size = if child_kind == EntryKind::Symlink {
+                0
+            } else {
+                child.size.unwrap_or(0)
+            };
+            // Hardlink dedup: when the backend reports an inode, only
+            // count the first occurrence toward `total_bytes` and the
+            // tracker's running byte total. Subsequent hardlinks
+            // contribute `progress_bytes = 0` so the delete loop's
+            // numerator stays aligned with the denominator. Backends
+            // without inode info (MTP, SMB) leave `inode = None` and
+            // every entry is treated as unique — they never produce
+            // hardlinks anyway. Mirrors `FileInfo::progress_bytes` on
+            // the local-FS walker.
+            let counts = match child.inode {
+                Some(ino) => seen_inodes.insert(ino),
+                None => true,
+            };
+            let progress_bytes = if counts { size } else { 0 };
+            if counts {
+                *total_bytes += size;
+                tracker.bytes_so_far.fetch_add(size, Ordering::Relaxed);
+            }
+            tracker.files_so_far.fetch_add(1, Ordering::Relaxed);
+            entries.push(VolumeDeleteEntry {
+                path: child_path,
+                progress_bytes,
+                is_dir: false,
+                listed: Listed {
+                    kind: child_kind,
+                    size: child.size,
+                },
+            });
+        }
+        match descend {
+            Some((child_path, child_path_app)) => {
+                scan.check_cancel()?;
+                let children = scan.open_folder(&child_path, &child_path_app).await?;
+                inside.push((child_path, children.into_iter()));
+            }
+            None => {
+                let (dir, _) = inside.pop().expect("the folder that ended is on top");
+                // Add directory after its children (already deepest-first order)
+                tracker.dirs_so_far.fetch_add(1, Ordering::Relaxed);
+                entries.push(VolumeDeleteEntry {
+                    path: dir.clone(),
+                    progress_bytes: 0,
+                    is_dir: true,
+                    listed: Listed {
+                        kind: EntryKind::Directory,
+                        size: None,
+                    },
+                });
+                scan.snapshot(&dir);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// What every folder of one delete scan reads and reports to.
+struct DeleteScan<'s> {
+    volume: &'s Arc<dyn Volume>,
+    volume_id: &'s str,
+    state: &'s Arc<WriteOperationState>,
+    events: &'s dyn OperationEventSink,
+    operation_id: &'s str,
+    tracker: &'s Arc<VolumeScanTracker>,
+}
+
+impl DeleteScan<'_> {
+    /// Before each folder: a cancelled delete stops scanning.
+    fn check_cancel(&self) -> Result<(), WriteOperationError> {
+        if self.state.intent().is_cancelled() {
+            return Err(WriteOperationError::Cancelled {
+                message: "Operation cancelled by user".into(),
+            });
+        }
+        Ok(())
+    }
+
+    /// Refuses a volume's mount point, then lists the folder at `path`
+    /// (`path_app` in the volume's spelling: the root's, or a child's own listing
+    /// row), with progress climbing while the listing streams.
+    async fn open_folder(&self, path: &Path, path_app: &AppPath) -> Result<Vec<FileEntry>, WriteOperationError> {
+        use std::sync::atomic::Ordering;
+        let DeleteScan {
+            volume,
+            volume_id,
+            state,
+            events,
+            operation_id,
+            tracker,
+        } = *self;
         super::super::mount_boundary::refuse_a_volume_mount_point(&**volume, path, state).await?;
 
         // Snapshot the cumulative tallies BEFORE the (potentially slow) listing
         // call. The per-entry callback shows `files_before + loaded_count` so the
         // FE sees a climbing number even when one `list_directory` takes seconds.
         // We don't know mid-stream whether each entry is a file or dir, so
-        // optimistically attribute them to `files`; the post-listing loop below
-        // corrects the split via the `dirs_so_far` counter.
+        // optimistically attribute them to `files`; the walk corrects the split
+        // via the `dirs_so_far` counter.
         let files_before = tracker.files_so_far.load(Ordering::Relaxed);
         let dirs_before = tracker.dirs_so_far.load(Ordering::Relaxed);
         let bytes_before = tracker.bytes_so_far.load(Ordering::Relaxed);
@@ -188,145 +340,50 @@ pub(super) async fn scan_volume_recursive(
         // reuse the cached entries and skip the volume round-trip entirely.
         // Falls through to `volume.list_directory` on miss, preserving the
         // per-entry progress callback for slow MTP listings.
-        let children = match state.scope().host().listings().authoritative_listing(volume_id, path) {
-            Some(cached) => {
-                // The cached listing is already complete, so synthesize a
-                // single end-of-listing progress tick (with the tally we'd
-                // have built incrementally) to keep the FE counter climbing
-                // during the cache-fed pass too.
-                let mut tally = cmdr_fs::volume::ListingProgress::default();
-                for e in &cached {
-                    if e.is_directory {
-                        tally.dirs += 1;
-                    } else {
-                        tally.files += 1;
-                        tally.bytes += e.size.unwrap_or(0);
+        Ok(
+            match state.scope().host().listings().authoritative_listing(volume_id, path) {
+                Some(cached) => {
+                    // The cached listing is already complete, so synthesize a
+                    // single end-of-listing progress tick (with the tally we'd
+                    // have built incrementally) to keep the FE counter climbing
+                    // during the cache-fed pass too.
+                    let mut tally = cmdr_fs::volume::ListingProgress::default();
+                    for e in &cached {
+                        if e.is_directory {
+                            tally.dirs += 1;
+                        } else {
+                            tally.files += 1;
+                            tally.bytes += e.size.unwrap_or(0);
+                        }
                     }
+                    on_progress(tally);
+                    cached
                 }
-                on_progress(tally);
-                cached
-            }
-            None => read_through_outages(volume, state, || {
-                volume.list_directory_with_cancel(&path_app, Some(&on_progress), Some(&state.backend_cancel))
-            })
-            .await
-            .map_err(|stop| stop.into_error(path))?,
-        };
-
-        // Recurse into children first. list_directory returns FileEntry with size,
-        // so we use child.size directly instead of calling get_metadata (which
-        // returns NotSupported on MTP). Pass the child's own kind as the hint so
-        // the recursive call doesn't re-probe (avoids another parent listing on
-        // MTP). `EntryKind::of`, ❌ never `child.is_directory`: that's true for a
-        // link to a folder, and descending it deletes the folder it points at.
-        // Where a listing can list a link as a folder (Samba, #613), each folder
-        // is asked `entry_kind` before the walk descends it.
-        let listings_mark_links = volume.backend_kind().listings_mark_links();
-        for child in &children {
-            // The child as its listing row names it, typed. A row holding a `..` name
-            // (a hostile `../x`) stops the delete before anything
-            // goes, ❌ never walked: it would delete outside the selection.
-            let child_path_app =
-                listed_path(child).map_err(|e| map_volume_error(&path.display().to_string(), PathRole::Source, e))?;
-            // The same child for the delete's entries, which key on `std::path`
-            // (the bridge's way out, until they're typed).
-            let child_path = child_path_app.as_std_legacy().into_owned();
-            let mut child_kind = EntryKind::of(child);
-            if child_kind == EntryKind::Directory && !listings_mark_links {
-                child_kind = read_through_outages(volume, state, || volume.entry_kind(&child_path_app))
-                    .await
-                    .map_err(|stop| stop.into_error(&child_path))?;
-            }
-            if child_kind == EntryKind::Directory {
-                Box::pin(scan_volume_recursive(
-                    volume,
-                    volume_id,
-                    &child_path,
-                    Some(Listed {
-                        kind: EntryKind::Directory,
-                        size: None,
-                    }),
-                    entries,
-                    total_bytes,
-                    seen_inodes,
-                    state,
-                    events,
-                    operation_id,
-                    tracker,
-                ))
-                .await?;
-            } else {
-                // A link frees only itself, whatever size the listing reports
-                // for what it points at.
-                let size = if child_kind == EntryKind::Symlink {
-                    0
-                } else {
-                    child.size.unwrap_or(0)
-                };
-                // Hardlink dedup: when the backend reports an inode, only
-                // count the first occurrence toward `total_bytes` and the
-                // tracker's running byte total. Subsequent hardlinks
-                // contribute `progress_bytes = 0` so the delete loop's
-                // numerator stays aligned with the denominator. Backends
-                // without inode info (MTP, SMB) leave `inode = None` and
-                // every entry is treated as unique — they never produce
-                // hardlinks anyway. Mirrors `FileInfo::progress_bytes` on
-                // the local-FS walker.
-                let counts = match child.inode {
-                    Some(ino) => seen_inodes.insert(ino),
-                    None => true,
-                };
-                let progress_bytes = if counts { size } else { 0 };
-                if counts {
-                    *total_bytes += size;
-                    tracker.bytes_so_far.fetch_add(size, Ordering::Relaxed);
-                }
-                tracker.files_so_far.fetch_add(1, Ordering::Relaxed);
-                entries.push(VolumeDeleteEntry {
-                    path: child_path,
-                    progress_bytes,
-                    is_dir: false,
-                    listed: Listed {
-                        kind: child_kind,
-                        size: child.size,
-                    },
-                });
-            }
-        }
-
-        // Add directory after its children (already deepest-first order)
-        tracker.dirs_so_far.fetch_add(1, Ordering::Relaxed);
-        entries.push(VolumeDeleteEntry {
-            path: path.to_path_buf(),
-            progress_bytes: 0,
-            is_dir: true,
-            listed: Listed {
-                kind: EntryKind::Directory,
-                size: None,
+                None => read_through_outages(volume, state, || {
+                    volume.list_directory_with_cancel(path_app, Some(&on_progress), Some(&state.backend_cancel))
+                })
+                .await
+                .map_err(|stop| stop.into_error(path))?,
             },
-        });
-    } else {
-        // Top-level file or link without listing context: size unknown, use 0.
-        // Progress still tracks file count accurately.
-        tracker.files_so_far.fetch_add(1, Ordering::Relaxed);
-        entries.push(VolumeDeleteEntry {
-            path: path.to_path_buf(),
-            progress_bytes: 0,
-            is_dir: false,
-            listed: listed_top_level(volume.as_ref(), &path_app, probed).await,
-        });
+        )
     }
 
-    // Final snapshot for this subtree (throttled so it doesn't race the per-entry callback).
-    if tracker.should_emit() {
+    /// The final snapshot for the subtree at `path`, which just ended
+    /// (throttled so it doesn't race the per-entry callback).
+    fn snapshot(&self, path: &Path) {
+        use std::sync::atomic::Ordering;
+        let tracker = self.tracker;
+        if !tracker.should_emit() {
+            return;
+        }
         let files_done = tracker.files_so_far.load(Ordering::Relaxed);
         let dirs_done = tracker.dirs_so_far.load(Ordering::Relaxed);
         let bytes_done = tracker.bytes_so_far.load(Ordering::Relaxed);
         let current_dir_str = path.display().to_string();
-        state.emit_progress_via_sink(
-            events,
+        self.state.emit_progress_via_sink(
+            self.events,
             WriteProgressEvent::new(
-                operation_id.to_string(),
+                self.operation_id.to_string(),
                 WriteOperationType::Delete,
                 WriteOperationPhase::Scanning,
                 None,
@@ -337,8 +394,8 @@ pub(super) async fn scan_volume_recursive(
             )
             .with_scan_meta(Some(current_dir_str), dirs_done, None),
         );
-        state.scope().status().update(
-            operation_id,
+        self.state.scope().status().update(
+            self.operation_id,
             WriteOperationPhase::Scanning,
             None,
             files_done,
@@ -347,8 +404,6 @@ pub(super) async fn scan_volume_recursive(
             0,
         );
     }
-
-    Ok(())
 }
 
 /// What `source` is per a pane's listing of its parent (`entry_in_parent_listing`):

@@ -18,6 +18,11 @@ source's parent is watcher-fresh in the listing cache, and otherwise the walker 
 `with_scan_meta(current_dir, dirs_done, None)` so the scanning UI shows the dir count and the directory the walker is
 currently in. The per-entry callback is throttled so the FE tally climbs mid-listing on slow MTP roundtrips.
 
+**The walk keeps its depth on the heap** (`volume_scan.rs::scan_volume_recursive`): the folders it's inside live on a
+`Vec`, each folder's own entry is pushed once its children are, so the list stays deepest first, ❌ never a future per
+level. A recursive one overflowed the 2 MiB tokio worker on a 400-level tree (#1541). Pinned by
+`volume_deep_tree_tests.rs`, red on the recursive walk.
+
 **Files go in the backend's batches where it has them.** A backend that answers `Volume::delete_batch_size` (S3:
 `DeleteObjects`, 1,000 keys a request) gets the scanned files in chunks of that size through `delete_files`, with the
 pause and Cancel point between chunks; everyone else gets one `delete_with_cancel` per file, as before. Decision/Why:

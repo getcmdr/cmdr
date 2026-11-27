@@ -83,6 +83,9 @@ mod real_image;
 mod trash_pause_tests;
 #[cfg(test)]
 mod volume_cancel_tests;
+/// A volume delete of a tree of any depth runs on a worker's stack (#1541).
+#[cfg(test)]
+mod volume_deep_tree_tests;
 #[cfg(test)]
 mod volume_hardlink_progress_tests;
 /// A volume delete reports each top-level source as it finishes.

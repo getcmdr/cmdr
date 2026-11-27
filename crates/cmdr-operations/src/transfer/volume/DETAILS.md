@@ -1251,9 +1251,17 @@ polling the outermost one polls every level below it, one stack frame per level.
   and a move's sweep, and pins it.
 - **Memory is the recursion's too**: one listing per level on the current path, ❌ never the whole tree. A wide level
   costs its listing, as it always did; a deep tree costs one small frame per level.
-- **Not yet**: `cleanup.rs::remove_tree` (an aside folder an Overwrite across types discards) and
-  `rename_merge.rs::rename_merge_directory` (a same-volume move into folders both sides hold) still nest a future per
-  level.
+- **The same rule beyond this module**: the shared pre-copy scan (`cmdr_fs::volume::scan_walk`), SMB's and MTP's own
+  copy scans (`cmdr-smb` `scan_recursive`, `cmdr-mtp` `bulk_ops.rs::scan_entries`), and the volume delete's scan
+  (`delete/volume_scan.rs::scan_volume_recursive`, `delete/DETAILS.md`) keep their depth on the heap too.
+- **Not yet** (each still nests a frame per level, audited 2026-11-27): here, `cleanup.rs::remove_tree` (an aside folder
+  an Overwrite across types discards) and `rename_merge.rs::rename_merge_directory` (a same-volume move into folders
+  both sides hold); elsewhere, the local engines' synchronous walks (`scan_walker.rs::walk_dir_recursive` and
+  `walk_cached_entries`, `scan_dry_run.rs`, `move_op/mod.rs::merge_move_directory`,
+  `move_op/source_sweep.rs::count_unscanned_entries`), `scan_oracle.rs::scan_subtree_with_oracle`, MTP's path resolution
+  on a cache miss (`connection/resolve.rs::resolve_path_to_handle`) and cache cleanup (`cache.rs::remove_path`), and the
+  desktop's `native_drag/fulfillment.rs::populate_directory`. A local tree is bounded by `PATH_MAX` (~512 levels on
+  macOS), which a sync frame holds in release.
 
 The pre-copy scan the walk waits on follows the same rule: the shared `cmdr_fs::volume::scan_walk` (ADB, NFS, restic,
 S3, SFTP, WebDAV, `skip_if_folder_refused`'s count) keeps its depth on the heap too (`cmdr-fs/DETAILS.md`).

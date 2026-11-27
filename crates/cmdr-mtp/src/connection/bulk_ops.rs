@@ -5,7 +5,7 @@ use log::debug;
 use super::errors::MtpConnectionError;
 use super::storage_path::{storage_path, storage_root};
 use super::{MtpConnectionManager, std_path_for_host, twins};
-use cmdr_fs::app_path::{AppName, AppPath, ListedFolder};
+use cmdr_fs::app_path::{AppName, AppPath, AppPathBuf, ListedFolder};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::log_error::LogError;
 use cmdr_fs::log_private::LogPrivate;
@@ -100,7 +100,7 @@ impl MtpConnectionManager {
                     .await
                     .map_err(|_| scan_cancelled(device_id))?;
                 let mut result = self
-                    .scan_entries_recursive(device_id, storage_id, entries, caller_path, boundary)
+                    .scan_entries(device_id, storage_id, entries, caller_path, boundary)
                     .await?;
                 result.dir_count += 1;
                 result.top_level_is_directory = true;
@@ -155,16 +155,19 @@ impl MtpConnectionManager {
         }
     }
 
-    /// Recursively accumulates scan stats from a list of directory entries.
+    /// Accumulates scan stats from a list of directory entries and every folder
+    /// under them, depth first in listing order.
     ///
     /// Unlike `scan_for_copy`, this function takes entries that are already known
     /// from a parent listing. For file entries, it counts them directly without
     /// any USB calls. For directory entries, it lists their contents (one USB call
-    /// per directory) and recurses.
+    /// per directory) and walks them.
     ///
     /// This ensures exactly one `list_directory` call per directory in the tree,
-    /// with zero calls for files.
-    async fn scan_entries_recursive(
+    /// with zero calls for files. The folders the walk is inside live on a `Vec`,
+    /// ❌ never in a future per level: that nests a poll per level, and a deep
+    /// enough tree overflowed the 2 MiB tokio worker a copy's scan runs on (#1541).
+    async fn scan_entries(
         &self,
         device_id: &str,
         storage_id: u32,
@@ -172,58 +175,68 @@ impl MtpConnectionManager {
         caller_dir: &AppPath,
         boundary: &ScanBoundary<'_>,
     ) -> Result<CopyScanResult, MtpConnectionError> {
-        // Joined as the caller's folder joins (`ListedFolder`): typed under a canonical
-        // one, so a name holding `\` stays one name on Windows.
-        let caller_folder = ListedFolder::new(caller_dir);
         let mut file_count = 0usize;
         let mut dir_count = 0usize;
         let mut total_bytes = 0u64;
+        // Each folder the walk is inside, in the caller's spelling, with the
+        // entries of it still to walk.
+        let mut inside: Vec<(AppPathBuf, std::vec::IntoIter<FileEntry>)> =
+            vec![(caller_dir.to_owned(), entries.into_iter())];
 
-        for entry in &entries {
-            // Per entry, and so BEFORE the subdirectory listing below: that
-            // listing is the round trip, and asking after it is a Cancel the
-            // person waits out.
-            // An OS junk file the transfer leaves out is no part of it (#314, #1305).
-            if boundary.leaves_out(&entry.name, entry.is_directory) {
-                continue;
-            }
-            // A listed row's name is one plain name (`directory_ops::entry_for_object`),
-            // spelled as the app spells its row (the listed-name door, #1310).
-            let Some(caller_child) = AppName::from_listed_text(&entry.name)
-                .ok()
-                .and_then(|name| caller_folder.join(&name).ok())
-            else {
-                continue;
-            };
-            if entry.is_directory {
-                boundary
-                    .dir(&std_path_for_host(&caller_child))
-                    .await
-                    .map_err(|_| scan_cancelled(device_id))?;
-                dir_count += 1;
-                // One list_directory call per subdirectory
-                let children = self.list_directory(device_id, storage_id, &entry.path).await?;
-                boundary.check().await.map_err(|_| scan_cancelled(device_id))?;
-                if !children.is_empty() {
-                    let child_result =
-                        Box::pin(self.scan_entries_recursive(device_id, storage_id, children, &caller_child, boundary))
-                            .await?;
-                    file_count += child_result.file_count;
-                    dir_count += child_result.dir_count;
-                    total_bytes += child_result.total_bytes;
+        while let Some((dir, entries)) = inside.last_mut() {
+            // Joined as the caller's folder joins (`ListedFolder`): typed under a canonical
+            // one, so a name holding `\` stays one name on Windows. Decided once per
+            // stretch of entries (a level resumes once after each child folder).
+            let caller_folder = ListedFolder::new(dir);
+            let mut descend = None;
+            for entry in entries.by_ref() {
+                // Per entry, and so BEFORE the subdirectory listing below: that
+                // listing is the round trip, and asking after it is a Cancel the
+                // person waits out.
+                // An OS junk file the transfer leaves out is no part of it (#314, #1305).
+                if boundary.leaves_out(&entry.name, entry.is_directory) {
+                    continue;
                 }
-            } else {
-                boundary
-                    .file(&std_path_for_host(&caller_child), entry.size.unwrap_or(0))
-                    .await
-                    .map_err(|_| scan_cancelled(device_id))?;
-                file_count += 1;
-                total_bytes += entry.size.unwrap_or(0);
+                // A listed row's name is one plain name (`directory_ops::entry_for_object`),
+                // spelled as the app spells its row (the listed-name door, #1310).
+                let Some(caller_child) = AppName::from_listed_text(&entry.name)
+                    .ok()
+                    .and_then(|name| caller_folder.join(&name).ok())
+                else {
+                    continue;
+                };
+                if entry.is_directory {
+                    boundary
+                        .dir(&std_path_for_host(&caller_child))
+                        .await
+                        .map_err(|_| scan_cancelled(device_id))?;
+                    dir_count += 1;
+                    // One list_directory call per subdirectory
+                    let children = self.list_directory(device_id, storage_id, &entry.path).await?;
+                    boundary.check().await.map_err(|_| scan_cancelled(device_id))?;
+                    if !children.is_empty() {
+                        descend = Some((caller_child, children));
+                        break;
+                    }
+                } else {
+                    boundary
+                        .file(&std_path_for_host(&caller_child), entry.size.unwrap_or(0))
+                        .await
+                        .map_err(|_| scan_cancelled(device_id))?;
+                    file_count += 1;
+                    total_bytes += entry.size.unwrap_or(0);
+                }
+            }
+            match descend {
+                Some((child, children)) => inside.push((child, children.into_iter())),
+                None => {
+                    inside.pop();
+                }
             }
         }
 
         debug!(
-            "MTP scan_entries_recursive: {} files, {} dirs, {} bytes",
+            "MTP scan_entries: {} files, {} dirs, {} bytes",
             file_count, dir_count, total_bytes
         );
 
@@ -233,7 +246,7 @@ impl MtpConnectionManager {
             total_bytes,
             // MTP has no hardlinks: source footprint == write footprint.
             dedup_bytes: total_bytes,
-            // `scan_entries_recursive` is only called on known-directory input
+            // `scan_entries` is only called on known-directory input
             // (caller already listed the path). Setting `true` keeps downstream
             // callers from re-issuing a type probe.
             top_level_is_directory: true,
