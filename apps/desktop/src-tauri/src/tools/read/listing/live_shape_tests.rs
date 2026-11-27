@@ -244,6 +244,8 @@ async fn a_missing_folder_read_live_is_a_typed_miss_not_an_empty_listing() {
 
 /// A file listed as a folder answered `unreachable`, "stopped answering … may have
 /// disconnected", about the boot disk itself (seen 2026-11-27 on a plain `.zip`).
+/// Unix only for the same reason as the real-folder read above (#1411).
+#[cfg(unix)]
 #[tokio::test]
 async fn a_file_read_live_is_not_a_folder_and_not_an_unreachable_volume() {
     let dir = TestDir::new("live-real-file");
