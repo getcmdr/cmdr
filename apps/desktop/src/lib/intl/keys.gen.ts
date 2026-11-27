@@ -2122,6 +2122,7 @@ export type MessageKey =
   | 'errors.write.originalsKeptAside.suggestion.many'
   | 'errors.write.originalsKeptAside.suggestion.one'
   | 'errors.write.originalsKeptAside.title'
+  | 'errors.write.permissionDenied.deletedSoFar'
   | 'errors.write.permissionDenied.message.copy'
   | 'errors.write.permissionDenied.message.delete'
   | 'errors.write.permissionDenied.message.move'

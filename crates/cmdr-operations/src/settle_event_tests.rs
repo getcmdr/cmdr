@@ -450,6 +450,35 @@ async fn a_failed_op_finalizes_then_emits_the_safety_net_error_then_frees_then_s
     );
 }
 
+/// A handler that emits its own `write-error` and returns it gets no second one from the safety
+/// net. Each one is a WARN in the app's log, a retained failure, and a frontend event: every
+/// refused trash in ERR-J3GAK / ERR-RB2XQ logged its `write_operations` line twice.
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_handler_that_emits_its_own_error_gets_no_second_one() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let engine = TestOperations::new();
+    let dir = create_temp_dir("own_error_once");
+    fs::create_dir(dir.join("dst")).expect("dst");
+    let source = dir.join("unreadable.txt");
+    fs::write(&source, b"secret").expect("source");
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o000)).expect("close the source");
+    let collector = Arc::new(CollectorEventSink::new());
+    let sink: Arc<dyn OperationEventSink> = collector.clone();
+
+    // The copy handler meets the unreadable file and emits its own `write-error`.
+    start_copy(&engine, sink, source.clone(), &dir.join("dst"), "own-error-once").await;
+    wait_settled(&collector).await;
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o600)).expect("reopen the source");
+
+    assert_eq!(
+        collector.errors.lock_ignore_poison().len(),
+        1,
+        "exactly one write-error"
+    );
+}
+
 /// The next op on a lane is admitted only by `on_settled`, which runs after the
 /// journal finalized the op ahead of it: an op queued behind a copy reads that
 /// copy's row already finalized, eligibility computed, when its turn comes.

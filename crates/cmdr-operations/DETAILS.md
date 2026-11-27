@@ -1004,8 +1004,10 @@ progress dialog and offer cancel, even if a network mount is stalled.
 
 **`start_write_operation` emits `write-error` for handler errors.** The spawn wrapper matches on the handler's `Result`:
 `Ok(Ok(()))` and `Ok(Err(Cancelled))` are no-ops (handlers already emitted the right events), `Ok(Err(e))` emits
-`write-error` as a safety net, and `Err(join_error)` handles panics. Double-emit is harmless because the frontend's
-`handleError` removes all listeners on first receipt.
+`write-error` as a safety net ONLY when the handler emitted none itself (`CompletionTally` notes one), and
+`Err(join_error)` handles panics. A second emit wasn't harmless: each `write-error` is a WARN line in the app's log, a
+retained failure, and a frontend event, and every refused trash in ERR-J3GAK logged its reason twice. Pinned by
+`a_handler_that_emits_its_own_error_gets_no_second_one`.
 
 **A volume-aware op never turns its own `Cancelled` into a `write-error`.** The inner handler already emitted
 `write-cancelled` on that path, so the outer arm passes `WriteOperationError::Cancelled` through silently
@@ -1740,8 +1742,8 @@ at `FAILURE_CAPACITY = 20`, oldest evicted first — and `snapshot()` appends th
 - **Not every `write-error` is a failure.** `WriteOperationError::Cancelled` (some volume paths emit it) and
   `ArchiveNeedsPassword` (a recoverable prompt the frontend answers and retries) are excluded by TYPED variant match,
   never by message text.
-- **First error per id wins.** `write-error` can fire twice for one op — an inner handler emits and returns `Err`, then
-  `local_start.rs`'s safety net emits again — and the first one is what actually stopped it.
+- **First error per id wins.** A local op's safety net stays quiet once its handler emitted (`local_start.rs`), but a
+  volume path may still send two, and the first one is what actually stopped it.
 - **A retained row reports `rollback_support: Settled`** and reuses the live record's source/destination summary, so it
   reads like the running row it replaces. If the record is already gone, it falls back to the event's own
   `operation_type` and no summary.
