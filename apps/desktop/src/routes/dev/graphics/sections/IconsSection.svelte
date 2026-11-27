@@ -12,6 +12,7 @@
         'arrow-left': 'Back button in the onboarding wizard.',
         'arrow-right': 'Rename metaphor between the current and new name in the Ask Cmdr bulk-rename review dialog.',
         bot: 'The status-corner wake indicator while Ask Cmdr is running a conversation it started on its own.',
+        bucket: 'Row icon for an S3 bucket in its account’s bucket list: a bucket (`andrsrxn:bucket`, MIT).',
         'chart-no-axes-column': 'The usage-stats row of the onboarding open-beta checklist.',
         check: 'Selected-state check in onboarding cloud-provider rows, the settings checkbox, the select and combobox dropdowns, the breadcrumb volume menu, and the transfer scan-complete marker.',
         'chevron-down': 'Closed-state indicator on the combobox trigger, and the expand toggle in the download toast.',

@@ -79,13 +79,14 @@ import IconUnplug from '~icons/lucide/unplug'
 import IconUser from '~icons/lucide/user'
 import IconX from '~icons/lucide/x'
 import IconZap from '~icons/lucide/zap'
+import BucketIcon from './BucketIcon.svelte'
 import EjectIcon from './EjectIcon.svelte'
 import MonitorFilledIcon from './MonitorFilledIcon.svelte'
 
 /**
  * The single registry of every inline glyph the app renders through `<Icon>`. Keys are the glyph
  * names (`<Icon name="triangle-alert" />`); values are Svelte components. Most are Lucide glyphs
- * (via `unplugin-icons`); a few are custom (`eject`, `monitor-filled`) where Lucide has no equivalent, authored as
+ * (via `unplugin-icons`); a few are custom (`bucket`, `eject`, `monitor-filled`) where Lucide has no equivalent, authored as
  * local `.svelte` components with the same `<svg {...rest}>` shape so they're interchangeable.
  *
  * Adding a glyph: import it here and add one entry. Everything else (the `IconName` union, the
@@ -100,6 +101,7 @@ export const ICON_COMPONENTS = {
   'arrow-left': IconArrowLeft,
   'arrow-right': IconArrowRight,
   bot: IconBot,
+  bucket: BucketIcon,
   'chart-no-axes-column': IconChartNoAxesColumn,
   check: IconCheck,
   'chevron-down': IconChevronDown,

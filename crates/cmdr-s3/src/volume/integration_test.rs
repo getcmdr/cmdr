@@ -65,6 +65,12 @@ async fn the_account_root_lists_the_buckets(service: FixtureService) {
     );
     let bucket = volume.get_metadata(&at(&volume, FIXTURE_BUCKET)).await.expect(FIXTURE);
     assert!(bucket.is_directory, "{}: a bucket is a folder", service.key);
+    let rows = volume.list_directory(volume.root(), None).await.expect(FIXTURE);
+    assert!(
+        rows.iter().all(|row| row.icon_id == super::query::BUCKET_ICON_ID),
+        "{}: every bucket row is drawn as a bucket",
+        service.key
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]

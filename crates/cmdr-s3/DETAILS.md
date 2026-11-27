@@ -91,7 +91,11 @@ keys and the rights. `integration_test.rs` pins both servers' answers.
 ## Listing and stat
 
 - **The account root**: `ListBuckets`, every page (AWS paginates past 10,000), buckets as folders carrying their
-  creation date as `created_at`.
+  creation date as `created_at` and the reserved icon id `network:bucket` (`query.rs::BUCKET_ICON_ID`), which the
+  frontend draws as its own bucket glyph (`apps/desktop/src/lib/glyph-icons.ts`), ❌ never an OS folder icon.
+- **`..` out of a place's top folder** (the account root to the Servers list, a bucket place to its account's bucket
+  list) is the app's answer, not this crate's: `apps/desktop/src-tauri/src/network/DETAILS.md` § "`..` out of every
+  server's top folder".
 - **A folder**: `ListObjectsV2` with `prefix=<key>/` and `delimiter=/`, every page, `on_progress` after each page with
   the running tally (never per entry), cancel checked between pages. `listing.rs` turns a page into children:
   `CommonPrefixes` are folders; the folder's own marker (the key `<key>/` itself) is left out; a key with a `/` past the

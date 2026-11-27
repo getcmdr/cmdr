@@ -29,6 +29,15 @@
       "files": ["apps/desktop/src/lib/ui/icons/MonitorFilledIcon.svelte"]
     },
     {
+      "name": "andrsrxn/icons",
+      "author": "Andrés Raxón",
+      "license": "MIT",
+      "license_url": "https://github.com/andrsrxn/icons/blob/main/LICENSE",
+      "url": "https://github.com/andrsrxn/icons",
+      "changes": "The `andrsrxn:bucket` icon as published, as a Svelte component with its `<g fill=\"none\">` wrapper's fill moved onto the `<svg>`, and given an attribution comment.",
+      "files": ["apps/desktop/src/lib/ui/icons/BucketIcon.svelte"]
+    },
+    {
       "name": "selfh.st icons",
       "author": "selfh.st",
       "license": "CC-BY-4.0",

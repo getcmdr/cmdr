@@ -6,9 +6,25 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use cmdr_fs::volume::LandedModified;
 
-use super::{cold_from_head, landed_modified, modified_from_head, stored_mtime};
+use super::{BUCKET_ICON_ID, bucket_row, cold_from_head, landed_modified, modified_from_head, stored_mtime};
 use crate::metadata::format_mtime;
 use crate::xml::parse_list_objects;
+use cmdr_fs::entry::FileEntry;
+
+/// A bucket's row in its account's bucket list is drawn as a bucket (David's QA, 2026-11-26),
+/// and is still a folder: Enter opens it.
+#[test]
+fn a_bucket_row_is_drawn_as_a_bucket_and_stays_a_folder() {
+    let row = bucket_row(FileEntry::new(
+        "bucket_1".to_string(),
+        "s3://test_key_1@s3.example.com:443/bucket_1".to_string(),
+        true,
+        false,
+    ));
+    assert_eq!(row.icon_id, BUCKET_ICON_ID);
+    assert_eq!(BUCKET_ICON_ID, "network:bucket");
+    assert!(row.is_directory);
+}
 
 /// One `ListObjectsV2` page with an object in every storage class that
 /// matters: two that need a restore, and two that read at once.

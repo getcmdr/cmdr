@@ -9,7 +9,7 @@
     import GlyphGrid from '../GlyphGrid.svelte'
 
     interface RowIcon {
-        id: 'folder' | 'share' | 'smb-server'
+        id: 'folder' | 'share' | 'smb-server' | 'bucket'
         caption: string
         usage: string
     }
@@ -29,6 +29,11 @@
             id: 'smb-server',
             caption: 'monitor-filled',
             usage: 'An SMB server row in the Servers list, in `--color-server-icon`.',
+        },
+        {
+            id: 'bucket',
+            caption: 'network:bucket',
+            usage: 'An S3 bucket row in its account’s bucket list: the bucket glyph, drawn through the real `FileIcon`.',
         },
     ]
 
@@ -64,7 +69,7 @@
                     <span class="server-glyph"><Icon name="monitor-filled" size={16} /></span>
                     <span class="server-glyph"><Icon name="monitor-filled" size={48} /></span>
                 {:else}
-                    {@const entry = rowEntry(item.id === 'share' ? 'network:share' : 'dir')}
+                    {@const entry = rowEntry(item.caption)}
                     <FileIcon file={entry} />
                     <span class="zoomed"><FileIcon file={entry} /></span>
                 {/if}

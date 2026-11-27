@@ -91,7 +91,7 @@ impl S3Volume {
                         }
                         let child = child_of(&remote, &bucket.name);
                         if let Some(entry) = self.folder_entry(&bucket.name, &child, bucket.created) {
-                            gathered.add(entry);
+                            gathered.add(bucket_row(entry));
                         }
                     }
                     gathered.report(on_progress);
@@ -258,6 +258,7 @@ impl S3Volume {
     /// A folder (a bucket, a prefix, the account root) at its app path.
     /// `created` is a bucket's creation date. `None` when a misbehaving server
     /// named something off this place's root.
+    /// A folder row: a prefix, or (through [`bucket_row`]) a bucket.
     pub(super) fn folder_entry(&self, name: &str, remote: &str, created: Option<SystemTime>) -> Option<FileEntry> {
         let mut entry = FileEntry::new(name.to_string(), self.row_path(remote)?, true, false);
         entry.created_at = created.and_then(unix_secs);
@@ -384,6 +385,20 @@ impl Gathered {
         if let Some(on_progress) = on_progress {
             on_progress(self.tally);
         }
+    }
+}
+
+/// The icon id a bucket's row carries in its account's bucket list: a bucket, ❌ never a
+/// folder, which it isn't (it holds its own region, versioning, and access rules). The
+/// frontend draws it as its own glyph (`apps/desktop/src/lib/glyph-icons.ts`), ❌ never an
+/// OS icon fetch, the way a share row carries `network:share`.
+pub(crate) const BUCKET_ICON_ID: &str = "network:bucket";
+
+/// `entry`, a bucket's folder row, drawn as a bucket.
+fn bucket_row(entry: FileEntry) -> FileEntry {
+    FileEntry {
+        icon_id: BUCKET_ICON_ID.to_string(),
+        ..entry
     }
 }
 
