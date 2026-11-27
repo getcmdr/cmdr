@@ -910,6 +910,18 @@
     "screenshot": "onboarding-ai.png",
     "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render."
   },
+  "onboarding.cloudSetup.status.notAnAiApi.webPage": "This address answers with a web page, not an AI service. Check the endpoint URL: an OpenAI-compatible one usually ends in /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.webPage": {
+    "description": "Status when the key check reached the endpoint address the user typed for a custom AI service, but a website answered (a sign-in page or a home page), so it isn't the service's programming interface. A smaller technical line like \"HTTP 200, text/html\" shows underneath. Keep \"URL\", \"OpenAI\", and \"/v1\" verbatim. Avoid the words \"error\" or \"failed\".",
+    "screenshot": "onboarding-ai.png",
+    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render."
+  },
+  "onboarding.cloudSetup.status.notAnAiApi.other": "This address doesn’t answer like an AI service. Check the endpoint URL: an OpenAI-compatible one usually ends in /v1.",
+  "@onboarding.cloudSetup.status.notAnAiApi.other": {
+    "description": "Status when the key check reached the endpoint address the user typed for a custom AI service, but what answered isn't an AI service's programming interface (nothing at that path, plain text, or some other service). A smaller technical line like \"HTTP 404, application/json\" shows underneath. Keep \"URL\", \"OpenAI\", and \"/v1\" verbatim. Avoid the words \"error\" or \"failed\".",
+    "screenshot": "onboarding-ai.png",
+    "screenshotNote": "Cloud-AI setup copy in the onboarding wizard. This shows the onboarding AI step where these strings render."
+  },
   "onboarding.cloudSetup.status.connected": "Connected!",
   "@onboarding.cloudSetup.status.connected": {
     "description": "Status shown when the API key works and the app connected to the provider. Upbeat, with the exclamation mark.",

@@ -342,6 +342,102 @@ async fn a_rejected_key_is_a_key_problem() {
     assert_eq!(result.problem, Some(AiConnectionProblem::KeyRejected));
 }
 
+/// What an address that isn't an AI API answers the probe with, and what the check calls it.
+async fn probe_answering(response: ResponseTemplate) -> Option<AiConnectionProblem> {
+    let server = server_with(vec![("/models", response)]).await;
+    probe_ai_endpoint(server.uri(), "sk-test".into(), ModelListProtocol::OpenAiCompatible)
+        .await
+        .problem
+}
+
+fn not_an_ai_api(answer: NonApiAnswer, detail: &str) -> Option<AiConnectionProblem> {
+    Some(AiConnectionProblem::NotAnAiApi {
+        answer,
+        detail: detail.into(),
+    })
+}
+
+/// Regression anchor (`ERR-V6AR3`): a custom endpoint set to a website's root (a GitHub
+/// Enterprise host) answered `/models` with its sign-in page, a 200, and the check said
+/// "Connected (model list not available)", so every chat after it ended with no reply.
+#[tokio::test]
+async fn a_web_page_at_200_is_not_an_ai_api() {
+    let page = ResponseTemplate::new(200).set_body_raw(
+        "<!DOCTYPE html><html><head><title>Sign in</title></head></html>",
+        "text/html; charset=utf-8",
+    );
+    assert_eq!(
+        probe_answering(page).await,
+        not_an_ai_api(NonApiAnswer::WebPage, "HTTP 200, text/html")
+    );
+}
+
+/// A page without its content type still reads as one, by its first character.
+#[tokio::test]
+async fn markup_without_a_content_type_is_a_web_page() {
+    let page = ResponseTemplate::new(200).set_body_string("  <html><body>Hello</body></html>");
+    assert_eq!(
+        probe_answering(page).await.map(|p| matches!(
+            p,
+            AiConnectionProblem::NotAnAiApi {
+                answer: NonApiAnswer::WebPage,
+                ..
+            }
+        )),
+        Some(true)
+    );
+}
+
+#[tokio::test]
+async fn a_web_server_404_page_is_not_an_ai_api() {
+    let page = ResponseTemplate::new(404).set_body_raw("<html><body>Not Found</body></html>", "text/html");
+    assert_eq!(
+        probe_answering(page).await,
+        not_an_ai_api(NonApiAnswer::WebPage, "HTTP 404, text/html")
+    );
+}
+
+/// An API that serves something else at this path (a base URL missing its `/v1`) answers JSON,
+/// but there's no model list here either.
+#[tokio::test]
+async fn a_json_404_means_no_ai_api_at_this_address() {
+    let missing = ResponseTemplate::new(404).set_body_raw(r#"{"message":"Not Found"}"#, "application/json");
+    assert_eq!(
+        probe_answering(missing).await,
+        not_an_ai_api(NonApiAnswer::NothingHere, "HTTP 404, application/json")
+    );
+}
+
+#[tokio::test]
+async fn plain_text_at_200_is_not_an_ai_api() {
+    let text = ResponseTemplate::new(200).set_body_raw("OK", "text/plain");
+    assert_eq!(
+        probe_answering(text).await,
+        not_an_ai_api(NonApiAnswer::NotJson, "HTTP 200, text/plain")
+    );
+}
+
+/// JSON, but not a model list: some other service's API root.
+#[tokio::test]
+async fn json_that_isnt_a_model_list_is_not_an_ai_api() {
+    let other = ResponseTemplate::new(200).set_body_raw(
+        r#"{"current_user_url":"https://api.example.com/user"}"#,
+        "application/json",
+    );
+    assert_eq!(
+        probe_answering(other).await,
+        not_an_ai_api(NonApiAnswer::NotAModelList, "HTTP 200, application/json")
+    );
+}
+
+/// A real model list that happens to be empty still connects: the API is there, it just names
+/// nothing to offer.
+#[tokio::test]
+async fn an_empty_model_list_still_connects() {
+    let empty = ResponseTemplate::new(200).set_body_raw(r#"{"object":"list","data":[]}"#, "application/json");
+    assert_eq!(probe_answering(empty).await, None);
+}
+
 #[tokio::test]
 async fn an_insecure_endpoint_is_refused_before_any_request() {
     let result = probe_ai_endpoint(

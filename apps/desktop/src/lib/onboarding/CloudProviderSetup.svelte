@@ -64,6 +64,10 @@
                 return tString('onboarding.cloudSetup.status.insecureEndpoint')
             case 'providerRefused':
                 return tString('onboarding.cloudSetup.status.providerRefused', { status: String(problem.status) })
+            case 'notAnAiApi':
+                return problem.answer === 'webPage'
+                    ? tString('onboarding.cloudSetup.status.notAnAiApi.webPage')
+                    : tString('onboarding.cloudSetup.status.notAnAiApi.other')
             case 'checkUnavailable':
                 return tString('onboarding.cloudSetup.status.genericError')
         }
@@ -96,8 +100,8 @@
         {:else if controller.problem}
             <div class="status status-error">
                 <p class="status-line">{problemMessage(controller.problem)}</p>
-                {#if controller.problem.kind === 'providerRefused' && controller.problem.detail}
-                    <!-- The provider's own sentence, untranslated: worth seeing, but secondary. -->
+                {#if (controller.problem.kind === 'providerRefused' || controller.problem.kind === 'notAnAiApi') && controller.problem.detail}
+                    <!-- The provider's own sentence, or the technical "HTTP 200, text/html" line, untranslated: worth seeing, but secondary. -->
                     <p class="status-detail">{controller.problem.detail}</p>
                 {/if}
             </div>

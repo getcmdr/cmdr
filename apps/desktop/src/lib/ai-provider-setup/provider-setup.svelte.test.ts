@@ -250,6 +250,8 @@ describe('ProviderSetupController', () => {
     [{ kind: 'unreachable' }, 'connection-error'],
     [{ kind: 'timedOut' }, 'connection-error'],
     [{ kind: 'providerRefused', status: 400, detail: 'Bad model' }, 'error'],
+    // ERR-V6AR3: a website at the endpoint read as "Connected (model list not available)".
+    [{ kind: 'notAnAiApi', answer: 'webPage', detail: 'HTTP 200, text/html' }, 'connection-error'],
   ] as const)('carries a %o problem through, under the %s status', async (problem, status) => {
     checkAiConnection.mockResolvedValue(withProblem(problem))
     getAiApiKeyStatus.mockResolvedValue({ isSet: true, fingerprint: 'fp' })

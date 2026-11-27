@@ -248,6 +248,10 @@
                 return tString('ai.cloud.insecureEndpoint')
             case 'providerRefused':
                 return tString('ai.cloud.providerRefused', { status: String(problem.status) })
+            case 'notAnAiApi':
+                return problem.answer === 'webPage'
+                    ? tString('ai.cloud.notAnAiApi.webPage')
+                    : tString('ai.cloud.notAnAiApi.other')
             case 'checkUnavailable':
                 return tString('ai.cloud.genericError')
         }
@@ -380,8 +384,8 @@
             <span class="connection-status-icon connection-status-error">&#x2717;</span>
             <span class="problem-text">
                 <span class="connection-status-error-text">{problemMessage(controller.problem)}</span>
-                {#if controller.problem.kind === 'providerRefused' && controller.problem.detail}
-                    <!-- The provider's own sentence, untranslated: worth seeing, but secondary. -->
+                {#if (controller.problem.kind === 'providerRefused' || controller.problem.kind === 'notAnAiApi') && controller.problem.detail}
+                    <!-- The provider's own sentence, or the technical "HTTP 200, text/html" line, untranslated: worth seeing, but secondary. -->
                     <span class="problem-detail">{controller.problem.detail}</span>
                 {/if}
             </span>

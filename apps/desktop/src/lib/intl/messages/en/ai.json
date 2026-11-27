@@ -707,6 +707,18 @@
     "screenshot": "settings-ai-provider.png",
     "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
   },
+  "ai.cloud.notAnAiApi.webPage": "This address answers with a web page, not an AI service. Check the endpoint URL: an OpenAI-compatible one usually ends in /v1.",
+  "@ai.cloud.notAnAiApi.webPage": {
+    "description": "Status line shown when the connection test reached the endpoint address the user typed for a custom AI service, but a website answered (a sign-in page or a home page), so it isn't the service's programming interface. A smaller technical line like \"HTTP 200, text/html\" shows underneath. Keep \"URL\", \"OpenAI\", and \"/v1\" verbatim. Sits next to a Recheck button. Avoid the words \"error\" or \"failed\".",
+    "screenshot": "settings-ai-provider.png",
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+  },
+  "ai.cloud.notAnAiApi.other": "This address doesn’t answer like an AI service. Check the endpoint URL: an OpenAI-compatible one usually ends in /v1.",
+  "@ai.cloud.notAnAiApi.other": {
+    "description": "Status line shown when the connection test reached the endpoint address the user typed for a custom AI service, but what answered isn't an AI service's programming interface (nothing at that path, plain text, or some other service). A smaller technical line like \"HTTP 404, application/json\" shows underneath. Keep \"URL\", \"OpenAI\", and \"/v1\" verbatim. Sits next to a Recheck button. Avoid the words \"error\" or \"failed\".",
+    "screenshot": "settings-ai-provider.png",
+    "screenshotNote": "AI feature copy. Cloud-connection states, suggestions, and translate-errors surface around the Settings > AI > Provider subsection pictured here (and inline near AI actions). This shows the AI provider settings for context."
+  },
   "ai.cloud.testConnection": "Test connection",
   "@ai.cloud.testConnection": {
     "description": "Button that runs the cloud AI connection test for the first time (idle state). Tight mini button.",
