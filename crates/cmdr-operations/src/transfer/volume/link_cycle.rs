@@ -42,14 +42,13 @@ pub(super) fn skip_link_back_up(
 /// The most links one path may have followed before following `link` too: past
 /// it, the walk is a loop the source can't name (ERR-BGEKC follow-up).
 ///
-/// The bound is the walk's STACK, ❌ not a path limit. Each folder level the
-/// cross-volume walk descends costs stack, and a release build overflowed a 2 MiB
-/// tokio worker (Tauri's default, which runs copies) between 48 and 63 levels deep
-/// (verified on macOS 27, release `copy_volumes_with_progress` of a nested folder
-/// onto `InMemoryVolume`, 2026-11-27), long before any path limit (macOS's 1,024-byte
-/// `PATH_MAX` allows ~512 levels). A link to its own parent adds two levels a pass,
-/// so eight keeps the shortest loop near 16 levels, with room for one a few levels
-/// long. No real tree follows eight links down a single path.
+/// The bound is what a loop gets to write, ❌ not a path limit: each pass through
+/// one copies the same folder once more. Depth costs the walk no stack
+/// (`DETAILS.md` § "The walk keeps its depth on the heap"), so a path limit
+/// (macOS's 1,024-byte `PATH_MAX` allows ~512 levels) would let a loop copy
+/// hundreds of passes before it stopped. A link to its own parent adds two levels
+/// a pass, so eight stops the shortest loop near 16 levels, with room for one a
+/// few levels long. No real tree follows eight links down a single path.
 const MAX_LINKS_FOLLOWED_DOWN_ONE_PATH: usize = 8;
 
 /// Whether to follow `link` into the folder it reaches, skip it as a link back up

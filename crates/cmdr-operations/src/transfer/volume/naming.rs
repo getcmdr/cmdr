@@ -64,7 +64,7 @@ impl ClaimedName {
 ///
 /// A **directory** takes that probe branch on every backend, local-FS dest
 /// included. The placeholder is a FILE, and one sitting where the copy is about
-/// to create a directory makes `merge.rs::merge_level`'s `create_directory`
+/// to create a directory makes the merge walk's `create_directory`
 /// report `AlreadyExists`, so the walk would try to merge into it and list it.
 /// Letting the merge walker create the directory itself is also what records it
 /// in `CreatedPaths`, which a pre-created one would miss and rollback would then

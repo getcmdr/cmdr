@@ -30,7 +30,7 @@ pub(crate) use build::{TreeRecorder, from_archive_plan, from_local_scan, from_pe
 pub use model::TreeRowState;
 pub(crate) use model::{NodeId, TreeLanding, TreeModel};
 pub(crate) use order::TreeOrder;
-pub(crate) use report::{TreeLeaf, TreeReporter};
+pub(crate) use report::{TreeLeaf, TreeLevel, TreeReporter};
 #[cfg(any(test, feature = "testing"))]
 pub use view::TransferTreeAncestor;
 pub use view::{TransferTreeRow, TransferTreeView, TransferTreeViewRequest, TreeRowKind};

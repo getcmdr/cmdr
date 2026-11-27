@@ -3,7 +3,7 @@
 //! `Report.docx` arriving where the user keeps `report.docx`, or an NFD name
 //! arriving where the destination stores NFC: two byte strings, one file, on
 //! every case-insensitive share and every macOS volume. The level listing can't
-//! settle that, so `merge_level` asks `DestNameIndex` and pays one
+//! settle that, so the walk asks `DestNameIndex` and pays one
 //! `get_metadata` for what it can't answer. These cells pin the three answers —
 //! a conflict on a case-insensitive destination, two files on a case-sensitive
 //! one, and a failed item when the probe itself can't answer.
