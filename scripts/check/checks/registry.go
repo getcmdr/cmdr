@@ -2063,6 +2063,7 @@ var AllChecks = []CheckDefinition{
 			runnerDataInputs("third-party-vendored.json"),
 			[]string{
 				"apps/desktop/src-tauri/src/menu/provider_logos/**",
+				"apps/desktop/src/lib/ui/icons/BucketIcon.svelte",
 				"apps/desktop/src/lib/ui/icons/MonitorFilledIcon.svelte",
 			},
 		),

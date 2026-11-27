@@ -415,6 +415,7 @@ jobs:
               - 'THIRD-PARTY-NOTICES.md'
               - 'apps/desktop/src/lib/licensing/third-party-packages.gen.json'
               # A vendored file credited in `third-party-vendored.json` (outside `src-tauri/**`).
+              - 'apps/desktop/src/lib/ui/icons/BucketIcon.svelte'
               - 'apps/desktop/src/lib/ui/icons/MonitorFilledIcon.svelte'
               - 'fuzz/Cargo.lock'
               - 'fuzz/Cargo.toml'
