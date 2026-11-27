@@ -26,6 +26,7 @@ mod fresh_scan;
 mod listing_timeout;
 mod nas_system_dirs;
 mod reconcile;
+mod walk_depth;
 
 pub(super) fn progress() -> Arc<ScanProgress> {
     // `ScanProgress::new` is private; build the public-fielded struct directly.

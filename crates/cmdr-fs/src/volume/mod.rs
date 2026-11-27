@@ -2619,6 +2619,7 @@ mod child_name;
 mod connection;
 mod connection_cell;
 mod connection_reporter;
+pub mod descent;
 pub mod dot_dot;
 mod entry_kind;
 mod error;
