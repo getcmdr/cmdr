@@ -356,6 +356,11 @@ pub struct FaultyVolume<V: Volume> {
     inner: Arc<V>,
     faults: HashMap<FaultyOp, ArmedFault>,
     calls: StdMutex<HashMap<FaultyOp, usize>>,
+    /// Every counted call, in the order it arrived, for a cell that pins the
+    /// ORDER of what an engine asked of this volume ([`journal`](Self::journal)).
+    journal: StdMutex<Vec<(FaultyOp, AppPathBuf)>>,
+    /// `Some(n)`: the width this volume reports, in place of the inner one's.
+    concurrency: Option<usize>,
     /// `Some(n)`: every `rename` onto, and `create_directory` of, a name longer
     /// than `n` UTF-8 bytes is refused with `InvalidName`, the way an
     /// eCryptfs-backed share answers one (cmdr-reports#83).
@@ -372,6 +377,8 @@ impl<V: Volume + 'static> FaultyVolume<V> {
             inner,
             faults: HashMap::new(),
             calls: StdMutex::new(HashMap::new()),
+            journal: StdMutex::new(Vec::new()),
+            concurrency: None,
             name_cap: None,
             names_refused: std::sync::atomic::AtomicUsize::new(0),
         }
@@ -384,6 +391,20 @@ impl<V: Volume + 'static> FaultyVolume<V> {
     pub fn refusing_names_longer_than(mut self, max_bytes: usize) -> Self {
         self.name_cap = Some(max_bytes);
         self
+    }
+
+    /// Reports `ops` as this volume's `max_concurrent_ops`: `1` gives a transfer
+    /// a serial window, so every call it makes arrives in one fixed order.
+    pub fn with_max_concurrent_ops(mut self, ops: usize) -> Self {
+        self.concurrency = Some(ops);
+        self
+    }
+
+    /// Every call to a counted operation, in the order it arrived, each with
+    /// the path it was counted at (a `rename` appears twice: [`FaultyOp::RenameFrom`]
+    /// at its source, then [`FaultyOp::Rename`] at its destination).
+    pub fn journal(&self) -> Vec<(FaultyOp, AppPathBuf)> {
+        self.journal.lock_ignore_poison().clone()
     }
 
     /// How many names [`refusing_names_longer_than`](Self::refusing_names_longer_than)
@@ -477,6 +498,7 @@ impl<V: Volume + 'static> FaultyVolume<V> {
     /// Counts this call to `op` at `path` and returns the error if it's the
     /// armed one. A fault armed at another path neither counts nor fires here.
     fn fault_for(&self, op: FaultyOp, path: &AppPath) -> Option<VolumeError> {
+        self.journal.lock_ignore_poison().push((op, path.to_owned()));
         let Some(armed) = self.faults.get(&op) else {
             *self.calls.lock_ignore_poison().entry(op).or_insert(0) += 1;
             return None;
@@ -508,7 +530,6 @@ impl<V: Volume + 'static> Volume for FaultyVolume<V> {
         supports_export,
         supports_local_fs_access,
         operations_are_local,
-        max_concurrent_ops,
         create_directory_errors_on_existing_dir,
         scan_for_copy,
         scan_for_copy_batch,
@@ -529,6 +550,10 @@ impl<V: Volume + 'static> Volume for FaultyVolume<V> {
 
     fn can_hold_links(&self) -> bool {
         self.inner.can_hold_links()
+    }
+
+    fn max_concurrent_ops(&self) -> usize {
+        self.concurrency.unwrap_or_else(|| self.inner.max_concurrent_ops())
     }
 
     fn create_symlink<'a>(
