@@ -737,7 +737,7 @@ struct Walk<'a, 'm> {
     merge: Option<&'m MergeCtx<'m>>,
     plan: Option<&'m super::sequential_extract::ExtractPlan>,
     /// The source folder the walk started at, for the links at it and above it
-    /// (`link_cycle.rs::RootLinks`).
+    /// (`cmdr_fs::volume::link_walk::RootLinks`).
     root: &'m AppPath,
 }
 

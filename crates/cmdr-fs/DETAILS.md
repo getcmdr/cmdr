@@ -41,11 +41,11 @@ the next section.
   `scan_stop.rs` + `scan_recorder.rs` (the one seam a copy scan touches per entry: counts, Cancel, Pause, and the
   transfer tree's recorder); `scan_listing_clock.rs` (an index walk's per-listing wedge timer, which a backend pauses
   while it parks the listing by its own choice); `scan_walk.rs`, `mkdir_all.rs`, `patching.rs`, and `secret_store.rs`
-  (the bodies a stat-and-listing backend gets for free); `descent.rs` (whether a walk goes into a folder it listed, § "A
-  walk never loops through a link it can't see"); `listing_progress.rs` (`report_while`: a long listing's running count
-  sampled on a timer from the async side that owns `on_progress`, which can't ride into the blocking reader);
-  `http_session.rs` (the HTTP backends' shared connection lifecycle, § "The HTTP backends' connection lifecycle");
-  `liveness.rs` (their silence watch, which tells a server gone silent from one that's only slow:
+  (the bodies a stat-and-listing backend gets for free); `descent.rs` and `link_walk.rs` (whether a walk goes into a
+  folder it listed, § "A walk never loops through a link it can't see"); `listing_progress.rs` (`report_while`: a long
+  listing's running count sampled on a timer from the async side that owns `on_progress`, which can't ride into the
+  blocking reader); `http_session.rs` (the HTTP backends' shared connection lifecycle, § "The HTTP backends' connection
+  lifecycle"); `liveness.rs` (their silence watch, which tells a server gone silent from one that's only slow:
   `crates/cmdr-webdav/DETAILS.md` § "Silent or slow") and `tls.rs` (their connect probes' TLS-refusal test, by the typed
   `io::ErrorKind`); `app_paths.rs` (whether an app path sits under a volume root, segment-wise, and rebasing it onto a
   moved root); `remote_paths.rs` (a server tree's `<scheme>://user@host:port` app spelling, and the ONE translation);
@@ -500,11 +500,17 @@ its own, so the kernel's 40-link limit never applies).
   folder above the walk's root is a loop too.
 - **A walk using it is iterative**, ❌ never recursive: a recursive async walk overflows its stack long before 128
   levels (a 2 MiB tokio worker between 48 and 63 levels for the transfer walk).
+- **A walk that FOLLOWS links into folders asks `link_walk.rs`**, ❌ never `Descent` alone: `descend_into` adds what
+  such a walk needs on top, the node check on every folder it descends (`Volume::reached_node`, one call), the depth
+  backstop only where listings hide links (`BackendKind::listings_mark_links`), a confirming `entry_kind` before an
+  unmarked folder is left out as a loop, and `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) for a source that names no nodes.
+  Each walk decides what a `LoopsBack` costs it (the copy counts a skip; drag-out leaves the folder out).
 
 Users: `cmdr-smb`'s `scan_recursive` (ids, depth where none), the network index's `walk_descends` (depth only, since its
 `FileEntry` rows carry no node id; `FileEntry::inode` means hardlink dedup to its consumers, so it isn't borrowed), and
-the cross-volume copy walk (`cmdr-operations` `transfer/volume/link_cycle.rs`, every folder it descends,
-`transfer/volume/DETAILS.md` § "A followed link never leads back up its own path").
+through `link_walk.rs` the cross-volume copy walk (`cmdr-operations` `transfer/volume/link_cycle.rs`, every folder it
+descends, `transfer/volume/DETAILS.md` § "A followed link never leads back up its own path") and drag-out's folder
+fulfillment (`apps/desktop/src-tauri/src/native_drag/fulfillment.rs`).
 
 ## File identity
 
