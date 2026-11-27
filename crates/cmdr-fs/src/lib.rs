@@ -74,6 +74,9 @@ pub mod metadata;
 #[cfg(cmdr_host)]
 pub mod mount_layout;
 pub mod name_fold;
+// Host-only: the browser has no process limits.
+#[cfg(cmdr_host)]
+pub mod open_file_limit;
 pub mod os_error;
 pub mod path_hash;
 pub mod path_locations;

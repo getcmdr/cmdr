@@ -140,8 +140,11 @@ the next section.
   log lines and model-facing answers read), `thread_qos/` (macOS's `QOS_CLASS_UTILITY`, Windows' below-normal priority
   under EcoQoS, nothing on Linux; why each, and the rule that no thread a UI-facing thread waits on is lowered (Windows
   has no priority inheritance for user-mode locks), in its module docs), `thread_cpu/`, `process_cpu/`,
-  `process_memory`, `utility_pool.rs` (`UtilityPool`, a keep-alive pool of `Utility`-QoS threads, so background work
-  that comes in streams, like index walks, reuses threads instead of creating one per job).
+  `process_memory`, `open_file_limit/` (the app's first startup step raises the soft `RLIMIT_NOFILE` to the lowest of
+  the hard limit, macOS's `kern.maxfilesperproc`, and 10,240, ❌ never lowering it; a Dock-launched macOS app starts at
+  256; the why of the target and the macOS clamp in its module docs), `utility_pool.rs` (`UtilityPool`, a keep-alive
+  pool of `Utility`-QoS threads, so background work that comes in streams, like index walks, reuses threads instead of
+  creating one per job).
 - `attr_buf.rs` (macOS): the packed record decoder every `getattrlist` / `getattrlistbulk` caller shares. § "`attr_buf`:
   the packed attribute layout".
 - `mapped_file_faults/`: the SIGBUS recovery that turns a read of a mapped file whose disk went away into zeros, and the
