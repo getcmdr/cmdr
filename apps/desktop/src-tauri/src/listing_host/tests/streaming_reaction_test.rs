@@ -413,7 +413,7 @@ async fn a_failed_listing_of_a_servers_top_folder_carries_its_way_up() {
         "reaction-refused-top",
         VolumeError::PermissionDenied {
             path: "/".to_string(),
-            raw_os_error: Some(libc::EACCES),
+            raw_os_error: Some(13), // EACCES; `libc` isn't a Windows dependency
         },
     );
     let app = App::with_effects(
@@ -700,7 +700,7 @@ async fn a_permission_denied_listing_records_the_denial() {
         "reaction-denied",
         VolumeError::PermissionDenied {
             path: "/denied".to_string(),
-            raw_os_error: Some(libc::EACCES),
+            raw_os_error: Some(13), // EACCES; `libc` isn't a Windows dependency
         },
     );
 
