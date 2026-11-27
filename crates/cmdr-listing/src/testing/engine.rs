@@ -224,6 +224,8 @@ pub struct TestEngineBuilder {
     mounts: Option<Arc<dyn MountTable>>,
     overlays: Vec<Arc<dyn ListingOverlay>>,
     observers: Vec<Arc<dyn ListingObserver>>,
+    #[cfg(not(target_family = "wasm"))]
+    runtime: Option<tokio::runtime::Handle>,
 }
 
 impl Default for TestEngineBuilder {
@@ -235,6 +237,8 @@ impl Default for TestEngineBuilder {
             mounts: None,
             overlays: Vec::new(),
             observers: Vec::new(),
+            #[cfg(not(target_family = "wasm"))]
+            runtime: None,
         }
     }
 }
@@ -276,6 +280,15 @@ impl TestEngineBuilder {
         self
     }
 
+    /// Spawns the engine's background work onto `handle` (the shared fallback runtime by
+    /// default). A `start_paused` test passes its own, so what the engine spawns runs on the
+    /// clock the test pauses: on another runtime it races that clock's auto-advance.
+    #[cfg(not(target_family = "wasm"))]
+    pub fn runtime(mut self, handle: tokio::runtime::Handle) -> Self {
+        self.runtime = Some(handle);
+        self
+    }
+
     /// Starts the engine.
     pub fn build(self) -> TestEngine {
         let recorder = Arc::new(RecordingEvents::new());
@@ -294,6 +307,10 @@ impl TestEngineBuilder {
         }
         for observer in self.observers {
             builder = builder.observer(observer);
+        }
+        #[cfg(not(target_family = "wasm"))]
+        if let Some(handle) = self.runtime {
+            builder = builder.runtime(handle);
         }
         TestEngine {
             listings: builder.build(),
