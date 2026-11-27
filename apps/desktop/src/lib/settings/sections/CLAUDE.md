@@ -23,8 +23,7 @@ decide where and how it renders. Parents: `../CLAUDE.md` (registry, store, appli
   `../DETAILS.md` § OS-backed rows.
 - **A row that isn't a setting declares a `SearchableRow` in the sibling `<Component>.rows.ts`.** Gate it on
   `shouldShow('row:…')` AND list it in its card's `anyVisible(...)`, or a hit filters every card away. It's search
-  metadata; ❌ it never decides what renders. A page with NO control reaches the sidebar via a row's `anchorsSection`.
-  DETAILS § Searchable rows.
+  metadata; ❌ it never decides what renders, nor adds a page. DETAILS § Searchable rows.
 - **New section = a route in `../components/SettingsContent.svelte` (registry-driven, via
   `getSettingDefinition(id).section`, never a string match), an entry in `TOP_LEVEL_ORDER`
   (`../components/SettingsSidebar.svelte`), and a mirror in `test/e2e-playwright/settings.spec.ts`.**

@@ -44,10 +44,9 @@ Add an entry to `settings-registry.ts`. Name the id after the UI vocabulary (`wh
 guide. ❌ Never model one as a `hidden: true` setting to make it findable — that's a `SettingsValues` key nothing ever
 reads or writes, and it's the pattern this replaced.
 
-**A whole PAGE that isn't settings.** A page whose entire content is action rows (the trusted host keys, each with a
-Forget button) has no control whose `section` would put it in the sidebar. ❌ Don't invent an entry here for it: one of
-the page's own `SearchableRow`s carries `anchorsSection: { after: '<the sibling it follows>' }`, and the section tree
-creates the node from that. A page that does have a control needs none of this.
+**Every page needs at least one setting.** Only a setting's `section` puts a page in the sidebar; a `SearchableRow`
+never adds one. A page of action rows alone (a list with a Forget button per row) would need a row to create its node,
+which `settings/DETAILS.md` § "Searchable rows" covers.
 
 Also add the key and its value type to the `SettingsValues` interface in `types.ts`. This isn't optional bookkeeping:
 `SettingDefinition.id` is typed as `SettingId` (= `keyof SettingsValues`), so a registry entry whose id is missing from
@@ -131,8 +130,6 @@ the three and the easiest to reach for wrongly, so before building one read `lib
 2. Gate the markup on `shouldShow('row:…')`, and add the id to the card's `anyVisible(...)` guard. Skip the guard and a
    hit on the row opens the page with every card filtered away.
 3. Nothing else: no `SettingsValues` key, no `SCHEMA_VERSION` bump, no applier case.
-4. Only if the row's page has NO setting at all: add `anchorsSection: { after: '<the sibling subsection it follows>' }`
-   to one of its rows, which is what puts the page in the sidebar.
 
 Skip the row entirely when it only renders under some runtime state (a model being installed, a master toggle being on):
 a search hit that scrolls to a row that isn't there is worse than no hit.

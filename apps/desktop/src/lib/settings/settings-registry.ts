@@ -26,7 +26,6 @@ import { fileSystemsSettings } from './definitions/file-systems'
 import { viewerSettings } from './definitions/viewer'
 import { updatesPrivacySettings } from './definitions/updates-privacy'
 import { advancedSettings } from './definitions/advanced'
-import { searchableRows } from './sections/searchable-rows'
 
 // ============================================================================
 // Settings Definitions
@@ -243,12 +242,8 @@ export function settingRendersHere(setting: SettingDefinition): boolean {
  * Build the nav tree: every (sub)section that has something to show, in
  * first-appearance order.
  *
- * Two sources, and the asymmetry is the point. A SETTING creates its section's
- * node and lands in `section.settings`. A SEARCHABLE ROW creates the node only,
- * and only when it says `anchorsSection` — that's for a page whose whole content
- * is action rows (`Servers (SFTP, WebDAV, NFS, S3)`), which no setting would otherwise
- * put in the sidebar. So `section.settings` stays controls only, and a row still
- * never decides what renders.
+ * Only a SETTING creates its section's node and lands in `section.settings`; a
+ * searchable row never adds a page, so every page needs at least one setting.
  *
  * A setting that can't render on this run ([`settingRendersHere`]) neither lands in a
  * node nor creates one, so a page whose every visible setting is out (Image indexing
@@ -260,10 +255,9 @@ export function buildSectionTree(): SettingsSection[] {
 
   /**
    * Walks `path`, creating any missing node, and answers the deepest one. A node
-   * created here lands last among its siblings, which for a setting IS registry
-   * order; `after` is how an anchoring row states a place it doesn't have.
+   * created here lands last among its siblings, which is registry order.
    */
-  function ensureSection(path: string[], after?: string): SettingsSection {
+  function ensureSection(path: string[]): SettingsSection {
     let currentLevel = root
     let currentPath: string[] = []
     let section!: SettingsSection
@@ -281,12 +275,7 @@ export function buildSectionTree(): SettingsSection[] {
           settings: [],
         }
         sectionMap.set(pathKey, existing)
-
-        const isLeaf = currentPath.length === path.length
-        const afterIndex =
-          isLeaf && after !== undefined ? currentLevel.findIndex((sibling) => sibling.name === after) : -1
-        if (afterIndex === -1) currentLevel.push(existing)
-        else currentLevel.splice(afterIndex + 1, 0, existing)
+        currentLevel.push(existing)
       }
 
       section = existing
@@ -302,11 +291,6 @@ export function buildSectionTree(): SettingsSection[] {
     if (setting.hidden) continue
     if (!settingRendersHere(setting)) continue
     ensureSection(setting.section).settings.push(setting)
-  }
-
-  // Anchoring rows run last so every sibling a page names already exists.
-  for (const row of searchableRows) {
-    if (row.anchorsSection !== undefined) ensureSection(row.section, row.anchorsSection.after)
   }
 
   return root
