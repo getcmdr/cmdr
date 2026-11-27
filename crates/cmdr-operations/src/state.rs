@@ -293,6 +293,9 @@ pub struct WriteOperationState {
     /// Cloning one event per emit is cheap next to the IPC hop it is already
     /// making.
     last_progress: std::sync::Mutex<Option<WriteProgressEvent>>,
+    /// How far each total had to be raised to stay at or above what's done:
+    /// [`super::raised_totals`].
+    raised_totals: super::raised_totals::RaisedTotals,
     /// The names it handed out but hasn't written yet: [`super::unique_name::ClaimedNames`].
     pub(crate) claimed_names: super::unique_name::ClaimedNames,
     /// What this operation couldn't carry of its sources' metadata, per class,
@@ -371,6 +374,7 @@ impl WriteOperationState {
             rescued_landings: std::sync::Mutex::new(Vec::new()),
             in_flight_ledger: None,
             last_progress: std::sync::Mutex::new(None),
+            raised_totals: super::raised_totals::RaisedTotals::default(),
             liveness: std::sync::Mutex::new(Some(Arc::new(()))),
             claimed_names: super::unique_name::ClaimedNames::default(),
             metadata_losses: super::metadata_losses::MetadataLosses::default(),
@@ -666,6 +670,8 @@ impl WriteOperationState {
         if event.activity.is_none() {
             event.activity = self.activity(&event.operation_id, Some(event));
         }
+        // Before anything reads the totals: done never shows past them.
+        self.raised_totals.apply(event);
 
         let now = crate::rt::now();
         // Net of everything skipped: the event keeps the gross counters the two
@@ -693,7 +699,9 @@ impl WriteOperationState {
         });
         event.bytes_per_second = Some(stats.bytes_per_second);
         event.files_per_second = Some(stats.files_per_second);
-        event.eta_seconds = stats.eta_seconds;
+        // Work past its count has no end to count down to: raised totals put
+        // the remaining work at zero, which read as "0s left" while the copy ran on.
+        event.eta_seconds = if event.outgrew_totals { None } else { stats.eta_seconds };
         event.bottleneck = Some(stats.bottleneck);
 
         // Stash the finished event: see [`last_progress`](Self::last_progress).

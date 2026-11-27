@@ -634,7 +634,8 @@
                 countText: formatInteger(filesTotal),
             })}
         {:else if isRollingBack}
-            {tString('fileOperations.transferProgress.titleRollingBack')}
+            <!-- What the cleanup does to the files: removes a copy's, carries a move's back. -->
+            {tString(reversalTitleKey(rollback.variant))}
         {:else if isCancelling || cancelEventReceived}
             {#if settleSlow}
                 {tString('fileOperations.transferProgress.titleCancellingSlow')}
@@ -783,6 +784,7 @@
                     etaSeconds={etaSecondsDisplay}
                     {stall}
                     {waitLine}
+                    outgrewTotals={progress.outgrewTotals}
                     countKind={progressCountKind(opKind, phase)}
                 />
             </div>

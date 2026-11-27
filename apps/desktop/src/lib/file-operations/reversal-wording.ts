@@ -253,8 +253,12 @@ export function reversalTitleKey(variant: RollbackConfirmVariant): MessageKey {
       return 'fileOperations.transferProgress.titleReversalRenamingBack'
     case 'undoByRestoringTags':
       return 'fileOperations.transferProgress.titleReversalRestoringTags'
+    // A cancelled transfer cleaning up after itself: count-free, since its bar
+    // carries the count, and named by what it does, since a bare "Rolling back…"
+    // over a 25-second cleanup read as stuck (ERR-BGEKC).
     case 'stopAndDelete':
+      return 'fileOperations.transferProgress.titleRollingBackCopy'
     case 'stopAndMoveBack':
-      return 'fileOperations.transferProgress.titleRollingBack'
+      return 'fileOperations.transferProgress.titleRollingBackMove'
   }
 }

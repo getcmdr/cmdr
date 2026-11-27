@@ -52,6 +52,10 @@
          *  landed, or while a volume that went away comes back (`waitLineFor`):
          *  it displaces the countdown too, and a stall outranks it. */
         waitLine?: TransferWaitLine | null
+        /** The backend's `outgrewTotals`: the work outgrew the scan's count, so
+         *  the totals were raised to what's done and there's no countdown. The
+         *  line says so in the countdown's place; a stall and a wait outrank it. */
+        outgrewTotals?: boolean
         /** The count row's noun: trash moves items, everything else files. */
         countKind?: 'files' | 'items'
         /** `compact` is a Transfers-window row, `comfortable` the dialog. */
@@ -68,6 +72,7 @@
         etaSeconds = null,
         stall = null,
         waitLine = null,
+        outgrewTotals = false,
         countKind = 'files',
         density = 'comfortable',
     }: Props = $props()
@@ -159,6 +164,8 @@
                 duration: formatDuration(seconds(waitLine.forSeconds)),
             })
         }
+        // Full bars over work that carries on (ERR-BGEKC): say why, where "0s left" was.
+        if (outgrewTotals) return tString('fileOperations.transferProgress.outgrewCount')
         if (etaSeconds === null) return null
         return tString('fileOperations.transferProgress.etaRemaining', { duration: formatDuration(etaSeconds) })
     })

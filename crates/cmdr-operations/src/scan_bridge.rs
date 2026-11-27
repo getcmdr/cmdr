@@ -462,6 +462,7 @@ pub(super) fn emit_scan_progress(manager: &OperationManager, operation_id: &Oper
         expected_bytes_total: counts.expected_bytes_total,
         activity: None,
         step: None,
+        outgrew_totals: false,
     };
     #[cfg(test)]
     record_tick_for_test(&event, manager.emit_count());

@@ -810,6 +810,18 @@
     "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars.",
     "visibility": "tooltip"
   },
+  "fileOperations.transferProgress.titleRollingBackCopy": "Removing what was copied…",
+  "@fileOperations.transferProgress.titleRollingBackCopy": {
+    "description": "Progress-dialog title while Cmdr cleans up after a COPY the user rolled back mid-flight: it is deleting the files that copy had already written to the destination. The user's original files are untouched. This can take a while on a network drive, so the title says what is happening. Keep the trailing ellipsis.",
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+  },
+  "fileOperations.transferProgress.titleRollingBackMove": "Moving the files back…",
+  "@fileOperations.transferProgress.titleRollingBackMove": {
+    "description": "Progress-dialog title while Cmdr cleans up after a MOVE the user rolled back mid-flight: it is carrying the files it had already moved back to where they came from. Nothing is deleted, so never word it as deleting or removing. Keep the trailing ellipsis.",
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+  },
   "fileOperations.transferProgress.titleRollingBack": "Rolling back…",
   "@fileOperations.transferProgress.titleRollingBack": {
     "description": "Progress-dialog title while Cmdr cleans up after a copy or move the user CANCELED mid-flight, deleting the partial files that copy or move had written. This is the in-flight case only. Undoing a FINISHED operation from the history log is a different thing, with its own titles (fileOperations.transferProgress.titleReversal*), because undoing a finished move deletes nothing: it carries the files back. Keep the trailing ellipsis.",
@@ -913,6 +925,12 @@
     "placeholders": {
       "volume": "the name of the network drive or server, as the volume list shows it (for example Testnas)"
     },
+    "screenshot": "transfer-dialog.png",
+    "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
+  },
+  "fileOperations.transferProgress.outgrewCount": "Found more than first counted",
+  "@fileOperations.transferProgress.outgrewCount": {
+    "description": "Replaces the time-left text while a copy, move, or delete is still working but has already done more than the count Cmdr made before it started (for example, a folder turned out to hold more files than first seen). Both progress bars then sit full, so this tells the person the work is still going and why there's no time left to show. Appears on both surfaces that show a running transfer: the copy/move/delete progress dialog and the rows of the operation queue window. It sits right-aligned under the progress bars, so keep it short.",
     "screenshot": "transfer-dialog.png",
     "screenshotNote": "The copy/move progress dialog, pictured here. Your string belongs to one of its phases (scanning, paused, queued, or finishing up) or to one of its two progress bars."
   },

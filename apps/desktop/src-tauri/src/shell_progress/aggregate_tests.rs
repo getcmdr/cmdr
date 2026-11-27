@@ -45,6 +45,7 @@ fn tick(id: &str, phase: WriteOperationPhase, bytes: (u64, u64), files: (usize, 
         expected_bytes_total: None,
         activity: None,
         step: None,
+        outgrew_totals: false,
     }
 }
 

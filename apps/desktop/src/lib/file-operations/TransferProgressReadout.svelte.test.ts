@@ -181,6 +181,23 @@ describe('TransferProgressReadout', () => {
     expect(target.querySelector('.time')?.classList.contains('stalled')).toBe(true)
   })
 
+  // ERR-BGEKC: the work outgrew the scan's count. The backend raised the totals to
+  // what's done, so the bars sit full; the line says why, where "0s left" was.
+  it('says it found more than first counted once the work outgrows the count', () => {
+    render({ bytesDone: 200, bytesTotal: 200, filesDone: 4, filesTotal: 4, outgrewTotals: true })
+    expect(texts('.time')).toEqual(['Found more than first counted'])
+    expect(texts('.left')).toEqual([''])
+  })
+
+  it('a stall still outranks outgrowing the count', () => {
+    render({
+      ...halfway,
+      outgrewTotals: true,
+      stall: { stillForSeconds: 45, reason: 'destination', inFlight: 2 },
+    })
+    expect(texts('.time')).toEqual(['No progress for 45s'])
+  })
+
   it('a stall still outranks a wait line', () => {
     render({
       ...halfway,

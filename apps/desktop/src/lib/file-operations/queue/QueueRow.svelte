@@ -706,6 +706,7 @@
                 {etaSeconds}
                 {stall}
                 {waitLine}
+                outgrewTotals={progress.outgrewTotals ?? false}
                 countKind={progressCountKind(opKindForWireType(snapshot.operationType), progress.phase)}
             />
             {#if stall}
