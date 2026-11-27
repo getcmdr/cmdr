@@ -462,6 +462,8 @@ mod scan_watchdog_tests;
 mod settle_event_tests;
 // The one cooperative-stop boundary every serial loop here asks at.
 #[cfg(test)]
+mod deep_chain_test_support;
+#[cfg(test)]
 mod free_space_tests;
 #[cfg(test)]
 mod stop_or_park_tests;

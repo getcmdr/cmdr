@@ -1,4 +1,4 @@
-//! Recursive rename-merge for same-volume moves.
+//! Level-by-level rename-merge for same-volume moves.
 //!
 //! A same-volume move is a server-side `rename` — instant, transfers no bytes.
 //! When a top-level source folder lands on an existing same-named dest folder,
@@ -19,12 +19,12 @@
 //!
 //! ## Source-dir cleanup, inside-out
 //!
-//! After a level's children are processed, we attempt `volume.delete(source_dir)`.
-//! `Volume::delete`'s contract is "file or EMPTY directory only", so a non-empty
-//! source (a skipped child, an errored child, content left behind by a clash)
-//! fails benignly and the directory — and all its ancestors — survive. An
-//! all-moved level empties and is deleted; the natural recursion unwind then
-//! deletes the spine deepest-first. We NEVER delete a source directory while any
+//! After a level's children are processed, we attempt
+//! `volume.delete_directory(source_dir)`, which is "EMPTY directory only", so a
+//! non-empty source (a skipped child, an errored child, content left behind by a
+//! clash) fails benignly and the directory — and all its ancestors — survive. An
+//! all-moved level empties and is deleted; each level ends before its parent
+//! does, so the spine goes deepest-first. We NEVER delete a source directory while any
 //! content remains.
 //!
 //! **The refusal IS the guarantee, and it's the only one on this path.** A child
@@ -73,7 +73,7 @@ use super::transfer_error::{PathRole, map_volume_error};
 use cmdr_fs::entry::FileEntry;
 use cmdr_fs::volume::{EntryKind, Volume, VolumeError};
 
-/// Context threaded through the recursive rename-merge so each level can resolve
+/// Context every level of the rename-merge reads, so each one can resolve
 /// its clashing children through the same file-policy machinery the top-level
 /// move uses (Stop-wait, the op-wide apply-to-all latch, conditional reduce,
 /// type mismatches).
@@ -93,7 +93,7 @@ pub(super) struct RenameMergeCtx<'a> {
     /// overwrite, or a dir subtree over a dest file). The operation-log capture
     /// reads it so a same-volume move whose merge overwrote anything finalizes
     /// `not_rollbackable` (moving the subtree back can't restore the overwritten
-    /// entry). Shared across recursion levels (the same `ctx` threads through).
+    /// entry). Shared across levels (every level reads the same `ctx`).
     pub overwrote: &'a std::sync::atomic::AtomicBool,
 }
 
@@ -136,141 +136,223 @@ enum MergeChildResolution {
 /// `note_both_halves` is invoked with `(source, dest)` for every child rename so
 /// the downloads watcher's ignore set suppresses both halves (a same-volume move
 /// into `~/Downloads` must not toast "Downloaded …" per deep child).
+///
+/// The levels the merge is inside live on a `Vec`, outermost first, and one
+/// loop runs them all: ❌ never a future per level, which overflowed a copy
+/// worker's stack on a deep enough tree (#1541, `DETAILS.md` § "The walk keeps
+/// its depth on the heap"). Every way a child merges as a folder (dir vs dir, a
+/// case-folded late collision, a Proceed onto a folder) was the last thing its
+/// parent did for that child, so each answers a [`MergeInto`] and the loop
+/// opens it; a failure anywhere ends the whole merge, as `?` did.
 pub(super) async fn rename_merge_directory(
     ctx: &RenameMergeCtx<'_>,
     source_dir: &Path,
     dest_dir: &Path,
     note_both_halves: &(dyn Fn(&Path, &Path) + Sync),
 ) -> Result<(), WriteOperationError> {
-    if ctx.state.work_stopped() {
-        return Err(WriteOperationError::Cancelled {
-            message: "Operation cancelled by user".into(),
-        });
+    let mut inside: Vec<MergeLevel> = Vec::new();
+    let mut opening = Some(MergeInto {
+        source: source_dir.to_path_buf(),
+        dest: dest_dir.to_path_buf(),
+    });
+    loop {
+        if let Some(next) = opening.take() {
+            inside.push(MergeLevel::open(ctx, next).await?);
+        }
+        let level = inside
+            .last_mut()
+            .expect("the merge returns once its root level ends, so it is always inside one");
+        if let Some(child) = level.advance(ctx, note_both_halves).await? {
+            opening = Some(child);
+            continue;
+        }
+        let level = inside.pop().expect("the level that ended is on top");
+        level.finish(ctx).await;
+        if inside.is_empty() {
+            return Ok(());
+        }
     }
+}
 
-    // List both levels once. The dest level pre-exists (we're merging into it),
-    // so index it for collision detection: an exact name, or one spelled in
-    // another Unicode form, which a byte-exact share would otherwise rename a
-    // twin in beside (`look_alike.rs`). A case-only match stays the backend's
-    // call, caught late below if it refuses.
-    let dest_index = DestNameIndex::build(volume_list(ctx.volume, dest_dir).await?);
-    let source_entries = volume_list(ctx.volume, source_dir).await?;
-    // The level in the volume's spelling, its canonical twin looked up once for
-    // every child's join (a bridge value would be re-read per child). The same place.
-    let dest_dir_bridged = on_volume(dest_dir);
-    let dest_dir_app = dest_dir_bridged
-        .to_canonical()
-        .unwrap_or(std::borrow::Cow::Borrowed(&*dest_dir_bridged));
+/// A source folder to merge into a destination folder that exists already.
+struct MergeInto {
+    source: PathBuf,
+    dest: PathBuf,
+}
 
-    // Per-level decisions for children whose name hit the dest map. A
-    // late-detected `AlreadyExists` (case-fold / TOCTOU) for one of these
-    // finalizes the stored decision rather than re-prompting. Orthogonal to the
-    // op-wide apply-to-all latch: the latch answers "how to handle future
-    // clashes," this map answers "which children of THIS level we already
-    // handled."
-    let mut resolved_children: HashMap<String, MergeChildResolution> = HashMap::new();
+/// One level the merge is inside: both listings, how far through the source's
+/// it is, and what it decided for its children.
+struct MergeLevel {
+    source_dir: PathBuf,
+    /// The dest level in the volume's spelling, its canonical twin looked up
+    /// once for every child's join (a bridge value would be re-read per child).
+    dest_dir_app: AppPathBuf,
+    dest_index: DestNameIndex,
+    source_entries: Vec<FileEntry>,
+    next: usize,
+    /// Per-level decisions for children whose name hit the dest map. A
+    /// late-detected `AlreadyExists` (case-fold / TOCTOU) for one of these
+    /// finalizes the stored decision rather than re-prompting. Orthogonal to
+    /// the op-wide apply-to-all latch: the latch answers "how to handle future
+    /// clashes," this map answers "which children of THIS level we already
+    /// handled."
+    resolved_children: HashMap<String, MergeChildResolution>,
+}
 
-    for entry in &source_entries {
-        // The cooperative boundary, per child. A child with no destination
-        // counterpart rides one server-side rename that carries its WHOLE
-        // subtree, so this is the only place a paused merge can stop, and a
-        // single iteration is unbounded.
-        if ctx.state.stop_or_park_async().await {
+impl MergeLevel {
+    async fn open(ctx: &RenameMergeCtx<'_>, into: MergeInto) -> Result<Self, WriteOperationError> {
+        if ctx.state.work_stopped() {
             return Err(WriteOperationError::Cancelled {
                 message: "Operation cancelled by user".into(),
             });
         }
-
-        // The child as its listing row names it, typed (`listed_name.rs::listed_path`);
-        // the bodies past the walk take `std::path`, so they get the read's own buffer.
-        let child_source = listed_path(entry)
-            .map(|listed| into_std(listed.into_owned()))
-            .map_err(|e| map_rename_error(source_dir, e))?;
-        // ❗ Listed names are the server's word: ❌ never join one raw, or `../x`
-        // renames the entry out of the folder being merged.
-        let under = |name: &str| {
-            ListedName::new(name)
-                .map_err(VolumeError::from)
-                .and_then(|name| name.under(&dest_dir_app))
-                .map_err(|e| map_rename_error(&child_source, e))
+        let MergeInto { source, dest } = into;
+        // List both levels once. The dest level pre-exists (we're merging into it),
+        // so index it for collision detection: an exact name, or one spelled in
+        // another Unicode form, which a byte-exact share would otherwise rename a
+        // twin in beside (`look_alike.rs`). A case-only match stays the backend's
+        // call, caught late below if it refuses.
+        let dest_index = DestNameIndex::build(volume_list(ctx.volume, &dest).await?);
+        let source_entries = volume_list(ctx.volume, &source).await?;
+        let dest_dir_bridged = on_volume(&dest);
+        let dest_dir_app = match dest_dir_bridged.to_canonical() {
+            Ok(canonical) => canonical.into_owned(),
+            Err(_) => dest_dir_bridged.into_owned(),
         };
-        let asked = under(&entry.name)?;
-        // A look-alike is a hit on the entry that's there, addressed by ITS
-        // name from here on. A move keeps the name it moves, so a free name is
-        // never respelled.
-        let (child_dest, dest_hit) = match dest_index.lookup(Some(&entry.name)) {
-            DestLookup::Present(hit) => (asked, Some(*hit)),
-            DestLookup::LookAlike(hit) => (under(&hit.name)?, Some(*hit)),
-            DestLookup::Ambiguous => {
-                return Err(WriteOperationError::DestinationExists {
-                    path: std_of(&asked).display().to_string(),
+        Ok(Self {
+            source_dir: source,
+            dest_dir_app,
+            dest_index,
+            source_entries,
+            next: 0,
+            resolved_children: HashMap::new(),
+        })
+    }
+
+    /// Moves this level's children from where it left off, and answers the
+    /// first that merges as a folder, which the merge opens next; `None` once
+    /// every child is handled.
+    async fn advance(
+        &mut self,
+        ctx: &RenameMergeCtx<'_>,
+        note_both_halves: &(dyn Fn(&Path, &Path) + Sync),
+    ) -> Result<Option<MergeInto>, WriteOperationError> {
+        let Self {
+            ref source_dir,
+            ref dest_dir_app,
+            ref dest_index,
+            ref source_entries,
+            ref mut next,
+            ref mut resolved_children,
+        } = *self;
+        while let Some(entry) = source_entries.get(*next) {
+            *next += 1;
+            // The cooperative boundary, per child. A child with no destination
+            // counterpart rides one server-side rename that carries its WHOLE
+            // subtree, so this is the only place a paused merge can stop, and a
+            // single iteration is unbounded.
+            if ctx.state.stop_or_park_async().await {
+                return Err(WriteOperationError::Cancelled {
+                    message: "Operation cancelled by user".into(),
                 });
             }
-            DestLookup::Absent | DestLookup::Unknown => (asked, None),
-        };
-        let dest_hit = dest_hit.as_ref();
-        // The same child for the bodies that still take `std::path`: a borrow for UTF-8.
-        let child_dest_app = child_dest;
-        let child_dest_std = std_of(&child_dest_app);
-        let child_dest: &Path = &child_dest_std;
 
-        if merges_as_a_directory(entry) && dest_hit.is_some_and(merges_as_a_directory) {
-            // Real dir vs real dir: always merge, never prompt. Recurse. A
-            // symlink on either side is a leaf and falls to the resolver below.
-            Box::pin(rename_merge_directory(ctx, &child_source, child_dest, note_both_halves)).await?;
-            continue;
-        }
+            // The child as its listing row names it, typed (`listed_name.rs::listed_path`);
+            // the bodies past the walk take `std::path`, so they get the read's own buffer.
+            let child_source = listed_path(entry)
+                .map(|listed| into_std(listed.into_owned()))
+                .map_err(|e| map_rename_error(source_dir, e))?;
+            // ❗ Listed names are the server's word: ❌ never join one raw, or `../x`
+            // renames the entry out of the folder being merged.
+            let under = |name: &str| {
+                ListedName::new(name)
+                    .map_err(VolumeError::from)
+                    .and_then(|name| name.under(dest_dir_app))
+                    .map_err(|e| map_rename_error(&child_source, e))
+            };
+            let asked = under(&entry.name)?;
+            // A look-alike is a hit on the entry that's there, addressed by ITS
+            // name from here on. A move keeps the name it moves, so a free name is
+            // never respelled.
+            let (child_dest, dest_hit) = match dest_index.lookup(Some(&entry.name)) {
+                DestLookup::Present(hit) => (asked, Some(*hit)),
+                DestLookup::LookAlike(hit) => (under(&hit.name)?, Some(*hit)),
+                DestLookup::Ambiguous => {
+                    return Err(WriteOperationError::DestinationExists {
+                        path: std_of(&asked).display().to_string(),
+                    });
+                }
+                DestLookup::Absent | DestLookup::Unknown => (asked, None),
+            };
+            let dest_hit = dest_hit.as_ref();
+            // The same child for the bodies that still take `std::path`: a borrow for UTF-8.
+            let child_dest_app = child_dest;
+            let child_dest_std = std_of(&child_dest_app);
+            let child_dest: &Path = &child_dest_std;
 
-        if let Some(_hit) = dest_hit {
-            // File or cross-type clash: consult the file policy.
-            let (decision, aside) = resolve_child(ctx, &child_source, entry, child_dest).await?;
-            resolved_children.insert(entry.name.clone(), decision.clone());
-            apply_child_decision(ctx, entry, &child_source, decision, aside, note_both_halves).await?;
-            continue;
-        }
-
-        // No exact-match hit: try a plain rename. A whole subtree (or symlink, or
-        // file) rides along on this one server-side call — never descended.
-        note_both_halves(&child_source, child_dest);
-        match ctx
-            .volume
-            .rename(&on_volume(&child_source), &child_dest_app, false)
-            .await
-        {
-            Ok(()) => {}
-            Err(VolumeError::AlreadyExists(_)) => {
-                // The exact-match map missed it, but the backend rejects the
-                // name — a case-folded (SMB/APFS) or TOCTOU collision. Treat it
-                // as a late-detected conflict; the backend is the authority.
-                late_detected_collision(
-                    ctx,
-                    &child_source,
-                    entry,
-                    child_dest,
-                    &mut resolved_children,
-                    note_both_halves,
-                )
-                .await?;
+            if merges_as_a_directory(entry) && dest_hit.is_some_and(merges_as_a_directory) {
+                // Real dir vs real dir: always merge, never prompt. A symlink on
+                // either side is a leaf and falls to the resolver below.
+                return Ok(Some(MergeInto {
+                    source: child_source,
+                    dest: child_dest.to_path_buf(),
+                }));
             }
-            Err(e) => return Err(map_rename_error(&child_source, e)),
+
+            let merges_into = if let Some(_hit) = dest_hit {
+                // File or cross-type clash: consult the file policy.
+                let (decision, aside) = resolve_child(ctx, &child_source, entry, child_dest).await?;
+                resolved_children.insert(entry.name.clone(), decision.clone());
+                apply_child_decision(ctx, entry, &child_source, decision, aside, note_both_halves).await?
+            } else {
+                // No exact-match hit: try a plain rename. A whole subtree (or symlink, or
+                // file) rides along on this one server-side call — never descended.
+                note_both_halves(&child_source, child_dest);
+                match ctx
+                    .volume
+                    .rename(&on_volume(&child_source), &child_dest_app, false)
+                    .await
+                {
+                    Ok(()) => None,
+                    // The exact-match map missed it, but the backend rejects the
+                    // name — a case-folded (SMB/APFS) or TOCTOU collision. Treat it
+                    // as a late-detected conflict; the backend is the authority.
+                    Err(VolumeError::AlreadyExists(_)) => {
+                        late_detected_collision(
+                            ctx,
+                            &child_source,
+                            entry,
+                            child_dest,
+                            resolved_children,
+                            note_both_halves,
+                        )
+                        .await?
+                    }
+                    Err(e) => return Err(map_rename_error(&child_source, e)),
+                }
+            };
+            if merges_into.is_some() {
+                return Ok(merges_into);
+            }
         }
+        Ok(None)
     }
 
-    // Source-dir cleanup, inside-out: empty-only delete. A level still holding a
-    // skipped / errored / unmoved child fails benignly and survives, and so do
-    // its ancestors. Never deletes a source dir while content remains, and
-    // never a file of its name (`Volume::delete_directory`).
-    match ctx.volume.delete_directory(&on_volume(source_dir), None).await {
-        Ok(()) | Err(VolumeError::NotFound(_)) => {}
-        Err(_non_empty_or_other) => {
-            // Non-empty (children left behind) or a transient backend error:
-            // leave the directory in place. This is the intended outcome for any
-            // skip/error path — the source folder survives with its unmoved
-            // content.
+    /// Source-dir cleanup, inside-out: empty-only delete. A level still holding a
+    /// skipped / errored / unmoved child fails benignly and survives, and so do
+    /// its ancestors. Never deletes a source dir while content remains, and
+    /// never a file of its name (`Volume::delete_directory`).
+    async fn finish(self, ctx: &RenameMergeCtx<'_>) {
+        match ctx.volume.delete_directory(&on_volume(&self.source_dir), None).await {
+            Ok(()) | Err(VolumeError::NotFound(_)) => {}
+            Err(_non_empty_or_other) => {
+                // Non-empty (children left behind) or a transient backend error:
+                // leave the directory in place. This is the intended outcome for any
+                // skip/error path — the source folder survives with its unmoved
+                // content.
+            }
         }
     }
-
-    Ok(())
 }
 
 /// Handles an `AlreadyExists` that the exact-match dest map didn't predict
@@ -279,8 +361,11 @@ pub(super) async fn rename_merge_directory(
 /// - already resolved (Overwrite/Proceed) → finalize the stored decision.
 /// - already resolved Skip → nothing to do.
 /// - not yet resolved → a fresh case-folded collision: re-list the dest level to
-///   find the case-folded match, recurse for dir-vs-dir, else resolve as a file
-///   / cross-type clash.
+///   find the case-folded match, merge into it for dir-vs-dir, else resolve as a
+///   file / cross-type clash.
+///
+/// `Some`: the child merges as a folder into that destination, which the walk
+/// opens next.
 async fn late_detected_collision(
     ctx: &RenameMergeCtx<'_>,
     child_source: &Path,
@@ -288,7 +373,7 @@ async fn late_detected_collision(
     child_dest: &Path,
     resolved_children: &mut HashMap<String, MergeChildResolution>,
     note_both_halves: &(dyn Fn(&Path, &Path) + Sync),
-) -> Result<(), WriteOperationError> {
+) -> Result<Option<MergeInto>, WriteOperationError> {
     if let Some(stored) = resolved_children.get(&entry.name).cloned() {
         // We already prompted/decided for this child; its rename collided on the
         // case-folded name. Finalize the stored decision — NEVER re-prompt. Its
@@ -306,20 +391,17 @@ async fn late_detected_collision(
         .find(|e| e.name.to_lowercase() == target_name);
 
     if merges_as_a_directory(entry) && dest_entry.as_ref().is_some_and(merges_as_a_directory) {
-        // Case-folded dir-vs-dir: enter the merge recursion like any other
-        // dir-dir, targeting the dest's actual (case-folded) path so renames land
-        // in the directory the backend already has.
+        // Case-folded dir-vs-dir: merge like any other dir-dir, targeting the
+        // dest's actual (case-folded) path so renames land in the directory the
+        // backend already has.
         let actual_dest = dest_entry
             .as_ref()
             .and_then(|d| sibling_named(dest_parent, &d.name))
             .unwrap_or_else(|| child_dest.to_path_buf());
-        return Box::pin(rename_merge_directory(
-            ctx,
-            child_source,
-            &actual_dest,
-            note_both_halves,
-        ))
-        .await;
+        return Ok(Some(MergeInto {
+            source: child_source.to_path_buf(),
+            dest: actual_dest,
+        }));
     }
 
     // File or cross-type case-folded clash: resolve against the dest's actual
@@ -335,8 +417,7 @@ async fn late_detected_collision(
 
 /// Runs the shared conflict resolver for one clashing child and maps its outcome
 /// onto a `MergeChildResolution`, plus the entry a cross-type Overwrite set aside
-/// to free the name. Dir-vs-dir never reaches here — the caller recurses for
-/// that.
+/// to free the name. Dir-vs-dir never reaches here — the caller merges that.
 async fn resolve_child(
     ctx: &RenameMergeCtx<'_>,
     child_source: &Path,
@@ -395,6 +476,9 @@ async fn resolve_child(
 /// onto the freed slot — `rename(force=false)` can't replace an existing dest,
 /// and MTP's `rename(force=true)` wouldn't delete it either — mirroring the
 /// top-level same-volume overwrite shape.
+///
+/// `Some`: the child merges as a folder into that destination, which the walk
+/// opens next.
 async fn apply_child_decision(
     ctx: &RenameMergeCtx<'_>,
     entry: &FileEntry,
@@ -404,12 +488,12 @@ async fn apply_child_decision(
     // below answers for like any other displaced entry.
     aside: Option<DisplacedDestination>,
     note_both_halves: &(dyn Fn(&Path, &Path) + Sync),
-) -> Result<(), WriteOperationError> {
+) -> Result<Option<MergeInto>, WriteOperationError> {
     // The resolved name in the volume's spelling, for whichever of its stat or its
     // placeholder's delete this child takes, and in the `std::path` one the renames
     // below still take.
     let (write_app, write_path, replace) = match decision {
-        MergeChildResolution::Skip => return Ok(()),
+        MergeChildResolution::Skip => return Ok(None),
         MergeChildResolution::Proceed { write_path, replace } => {
             let write_std = std_of(&write_path).into_owned();
             let replace = replace.replaced_file(&write_std);
@@ -444,7 +528,10 @@ async fn apply_child_decision(
             Err(e) => return Err(map_rename_error(&write_path, e)),
         };
         if write_path_is_dir {
-            return Box::pin(rename_merge_directory(ctx, child_source, &write_path, note_both_halves)).await;
+            return Ok(Some(MergeInto {
+                source: child_source.to_path_buf(),
+                dest: write_path,
+            }));
         }
         // Replacing a dest FILE with this dir subtree destroys it: an overwrite.
         // ❗ It goes ASIDE, never straight to a delete — the rename that replaces
@@ -461,7 +548,9 @@ async fn apply_child_decision(
             ctx.overwrote.store(true, std::sync::atomic::Ordering::Relaxed);
         }
         note_both_halves(child_source, &write_path);
-        return rename_replacing(ctx, child_source, &write_path, displaced).await;
+        return rename_replacing(ctx, child_source, &write_path, displaced)
+            .await
+            .map(|()| None);
     }
 
     // File child. For a file→file safe-replace (Overwrite), set the original
@@ -514,7 +603,9 @@ async fn apply_child_decision(
         }
     };
     note_both_halves(child_source, &target);
-    rename_replacing(ctx, child_source, &target, displaced).await
+    rename_replacing(ctx, child_source, &target, displaced)
+        .await
+        .map(|()| None)
 }
 
 /// Renames `child_source` onto `target`, answering for the entry the rename is

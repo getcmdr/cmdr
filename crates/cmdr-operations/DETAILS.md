@@ -2796,7 +2796,7 @@ USB just to look up size by name — ~17 s of "Verifying before copy…" while t
 behind the dialog. `run_volume_scan_preview` now groups input sources by parent dir (the app path's parent and name, so
 on Windows a POSIX volume's `/dcim/sub\a.jpg` is read from `/dcim`'s listing, never `/dcim/sub`'s) and consults
 `try_get_authoritative_listing(volume_id, parent)` first. On hit, sizes and `is_directory` flags come from the cached
-`FileEntry` for top-level files; top-level directories recurse via `scan_subtree_with_oracle`, which re-applies the
+`FileEntry` for top-level files; top-level directories are walked by `scan_subtree_with_oracle`, which re-applies the
 oracle at every level (so a subfolder open in another pane also short-circuits). On miss, the call falls through to
 `volume.scan_for_copy_batch_with_boundary(paths_in_group, ...)` — same code path as before — so MTP's parent-grouping
 and SMB's pipelined-stat optimizations still run for cold-cache parents. The local-FS walker (`walk_dir_recursive` in
@@ -2895,13 +2895,13 @@ asks `statvfs` first and NSURL only when `statvfs` says the copy won't fit. Pinn
 **Why**: `Volume::scan_for_copy_batch_with_boundary` and `scan_subtree_with_oracle` both invoke `on_progress(count)`
 with a count local to the current `list_directory` call / subtree (starts at 1 each time). Forwarding that unchanged
 through `run_volume_scan_preview`'s closure made the FE's running tally drop visibly between parent groups, between
-sibling top-level dirs in a cache-hit branch, and between recursion frames inside `scan_subtree_with_oracle`.
+sibling top-level dirs in a cache-hit branch, and between the levels `scan_subtree_with_oracle` walks.
 `run_oracle_aware_batch_scan` now wraps `on_progress` with a `baseline = aggregate.file_count` shift before each scan
-call (cold-cache batch + cache-hit subtree), and `scan_subtree_with_oracle` does the same at its own recursion site
-(`baseline = totals.file_count`). The visible FE count stays cumulative across the entire scan. Direct
-`on_progress(aggregate.file_count)` emit sites in `run_oracle_aware_batch_scan` (cache-hit per-file paths, fallthrough
-`scan_for_copy` after a name miss) stay unwrapped — they're already cumulative. Future scan call sites that delegate to
-a volume backend or to `scan_subtree_with_oracle` need the same baseline wrap.
+call (cold-cache batch + cache-hit subtree), and `scan_subtree_with_oracle` does the same per level (each frame's
+`baseline` is every ancestor's tally at descent, summed). The visible FE count stays cumulative across the entire scan.
+Direct `on_progress(aggregate.file_count)` emit sites in `run_oracle_aware_batch_scan` (cache-hit per-file paths,
+fallthrough `scan_for_copy` after a name miss) stay unwrapped — they're already cumulative. Future scan call sites that
+delegate to a volume backend or to `scan_subtree_with_oracle` need the same baseline wrap.
 
 **Gotcha**: Copy's bar/space-check use the write footprint (`total_bytes`), not the dedup'd source size — by design.
 **Why**: A copy of a hardlink-heavy tree writes every link in full, so the bar fills against the write footprint and the

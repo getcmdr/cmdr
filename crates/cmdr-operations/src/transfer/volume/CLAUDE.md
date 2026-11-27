@@ -36,7 +36,8 @@ Copy and move across every volume backend. File map: `DETAILS.md` § Files. Shar
   nothing stages before a yes. Anything but a cancel or a taken name streams instead.
 - **A same-volume move whose `rename_work` says copy takes the copy-then-delete engine**, ❌ never `rename`.
 - **A stop's cleanup ❌ never waits on the share** (`../leftover_cleanup.rs`); leftovers are REPORTED.
-- **Only `cleanup.rs::remove_tree` recurses** (`TreeRemoval` names who authorized it); cleanup and rollback list first.
+- **Only `cleanup.rs::remove_tree` deletes a tree** (`TreeRemoval` names its authorization); cleanup and rollback list
+  first.
 - **An unknown "is this a directory?" is ❌ never guessed**: a missing `source_hints` entry is UNKNOWN;
   `strategy.rs::resolve_source_is_directory` answers. ❌ No `.unwrap_or(false)`, no probing where a hint EXISTS.
 - **A same-volume move that renames is a rename-merge with top-level hints only**, ❌ never a subtree walk.

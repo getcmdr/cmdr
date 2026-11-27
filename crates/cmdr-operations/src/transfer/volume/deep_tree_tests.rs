@@ -172,6 +172,68 @@ fn moves_whole(source: Arc<dyn Volume>, dir: &TestDir) {
     );
 }
 
+/// A cross-type Overwrite discards the folder it set aside with `remove_tree`,
+/// however deep that folder runs. The aside sits on the destination, which a
+/// remote's is, with no local path limit, so the chain runs far past 400 levels:
+/// a frame-per-level `remove_tree` held 400 on this stack in a debug build.
+#[test]
+fn a_folder_set_aside_thousands_of_levels_deep_is_removed_on_a_copy_workers_stack() {
+    const CHAIN: usize = 3_000;
+    let volume = Arc::new(crate::deep_chain_test_support::ChainVolume::new(CHAIN));
+
+    let result = on_a_copy_worker({
+        let volume = Arc::clone(&volume);
+        || async move {
+            super::cleanup::remove_tree(
+                &(volume as Arc<dyn Volume>),
+                &app(crate::deep_chain_test_support::TOP),
+                super::cleanup::TreeRemoval::UserChoseOverwriteAcrossTypes,
+            )
+            .await
+        }
+    });
+
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(
+        volume.deletes(),
+        CHAIN + 2,
+        "every folder, the top one included, and the file"
+    );
+}
+
+/// A same-volume move into a folder both sides hold merges level by level
+/// (`rename_merge_directory`): here every level clashes, down to the bottom.
+#[test]
+fn a_four_hundred_level_same_volume_merge_runs_on_a_copy_workers_stack() {
+    let dir = TestDir::new("deep-tree-rename-merge");
+    let spine = bottom_folder();
+    std::fs::create_dir_all(dir.join("src").join(&spine)).unwrap();
+    std::fs::write(dir.join("src").join(&spine).join("moved.txt"), b"moved").unwrap();
+    std::fs::create_dir_all(dir.join("dst").join(&spine)).unwrap();
+    std::fs::write(dir.join("dst").join(&spine).join("kept.txt"), b"kept").unwrap();
+    let volume = local(&dir);
+
+    let result = on_a_copy_worker(|| async move {
+        let state = Arc::new(TestOperations::new().new_operation_state(Duration::from_millis(0)));
+        super::move_same::move_within_same_volume_with_progress(
+            Arc::new(CollectorEventSink::new()),
+            "op-deep-rename-merge",
+            &state,
+            volume,
+            &[PathBuf::from("src/deep")],
+            std::path::Path::new("dst"),
+            &VolumeCopyConfig::default(),
+        )
+        .await
+    });
+
+    assert!(result.is_ok(), "{result:?}");
+    let bottom = dir.join("dst").join(&spine);
+    assert_eq!(std::fs::read(bottom.join("moved.txt")).unwrap(), b"moved");
+    assert_eq!(std::fs::read(bottom.join("kept.txt")).unwrap(), b"kept");
+    assert!(!dir.join("src/deep").exists(), "every emptied source level went");
+}
+
 #[test]
 fn a_four_hundred_level_tree_copies_on_a_copy_workers_stack() {
     let dir = deep_folder("deep-tree-copy");
