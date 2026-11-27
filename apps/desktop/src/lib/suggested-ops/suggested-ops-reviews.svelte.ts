@@ -12,6 +12,7 @@ import type {
   LiveFileState,
   SuggestedOpLiveFactsAnswer,
   SuggestedOpPage,
+  SuggestedGroupView,
   SuggestedOpView,
   SuggestedSweepView,
 } from '#lib/tauri-commands/index.js'
@@ -33,6 +34,9 @@ export interface OpWindow {
 /** What Cmdr found on disk for one op just now, or that it couldn't tell. */
 export type LiveFact = LiveFileState
 
+/** The op counts a group header carries, which the approvable count starts from. */
+export type GroupCounts = Pick<SuggestedGroupView, 'liveOpCount' | 'totalOpCount' | 'retiredOpCount'>
+
 /** Everything the dialog holds about one group while the user reads it. */
 export interface GroupReview {
   window: OpWindow | null
@@ -47,6 +51,11 @@ export interface GroupReview {
   /** The group `revision` whose rows are on screen. Approve sends it, so the store refuses to
    *  run a version the user hasn't read. Set when the review first reads, and on a reload. */
   seenRevision: number | null
+  /** The group's counts at `seenRevision`, set with it. While the group changed under the review
+   *  the rows on screen still carry that revision's statuses, so the count reads from these: the
+   *  fresh ones already leave out ops another suggestion took over, which the re-check then
+   *  calls gone, and counting them out twice read 0 of what's still offered (#1524). */
+  seenCounts: GroupCounts | null
   /** Set when the agent amended this group, or a re-read found its op count moved. */
   changedUnderReview: boolean
   /** What the disk says now, per op id, for the rows that have been on screen. */
@@ -123,6 +132,7 @@ export function newGroupReview(): GroupReview {
     shown: INITIAL_ROWS,
     selection: storedSelection(),
     seenRevision: null,
+    seenCounts: null,
     changedUnderReview: false,
     liveFacts: new SvelteMap<number, LiveFact>(),
     missing: new SvelteMap<number, SuggestedOpView>(),

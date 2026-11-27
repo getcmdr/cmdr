@@ -41,6 +41,8 @@ import { endFactsRound, ensureLiveFacts, recheckLiveFacts } from './suggested-op
 import { decisionNoticeFor, isRefusalToStart, isServerRefusal } from './suggested-ops-refusal'
 import {
   INITIAL_ROWS,
+  type GroupCounts,
+  type GroupReview,
   type OpWindow,
   type SuggestedOpRowAsk,
   newGroupReview,
@@ -77,6 +79,11 @@ function readPage(ask: SuggestedOpRowAsk): Promise<SuggestedOpPage> {
 /** Every group still waiting, flattened out of its sweep. */
 export function pendingGroups(): SuggestedGroupView[] {
   return suggestedOpsState.sweeps.flatMap((sweep) => sweep.groups)
+}
+
+/** A header's counts, copied: the review keeps them past the next re-read. */
+function countsOf(group: SuggestedGroupView): GroupCounts {
+  return { liveOpCount: group.liveOpCount, totalOpCount: group.totalOpCount, retiredOpCount: group.retiredOpCount }
 }
 
 function groupById(groupId: number): SuggestedGroupView | undefined {
@@ -119,18 +126,25 @@ export function approvableCount(groupId: number): number {
   const selection = review?.selection
   if (!group) return 0
   if (!review || !selection) return group.liveOpCount
+  const counts = countsOnScreen(group, review)
   // A file the disk says is gone can't run, so it counts for nothing even where the flips tick it.
   let gone = 0
   for (const op of review.missing.values()) if (flippedOn(selection, op)) gone++
   switch (selection.mode) {
     case 'fromStored':
-      return Math.max(0, group.liveOpCount - selection.exclude.size + selection.include.size - gone)
+      return Math.max(0, counts.liveOpCount - selection.exclude.size + selection.include.size - gone)
     case 'only':
       return Math.max(0, selection.ids.size - gone)
     case 'allExcept':
       // A row another suggestion took over never runs, so "all" starts from the rest.
-      return Math.max(0, group.totalOpCount - group.retiredOpCount - selection.ids.size - gone)
+      return Math.max(0, counts.totalOpCount - counts.retiredOpCount - selection.ids.size - gone)
   }
+}
+
+/** The counts that describe the rows on screen: the fresh ones, except while the group changed
+ *  under the review, whose rows still carry the statuses of the revision the user read. */
+function countsOnScreen(group: SuggestedGroupView, review: GroupReview | undefined): GroupCounts {
+  return review?.changedUnderReview && review.seenCounts ? review.seenCounts : group
 }
 
 /** Whether Approve may run: not while the group changed under the review, since the version
@@ -166,9 +180,11 @@ export function selectionState(groupId: number): 'all' | 'none' | 'some' {
   const count = approvableCount(groupId)
   if (count === 0) return 'none'
   // "All" is every op still there and still offered; a taken-over row that's also gone counts once.
+  const review = reviewOf(groupId)
   let gone = 0
-  for (const op of reviewOf(groupId)?.missing.values() ?? []) if (!isRetiredOp(op)) gone++
-  if (group && count >= group.totalOpCount - group.retiredOpCount - gone) return 'all'
+  for (const op of review?.missing.values() ?? []) if (!isRetiredOp(op)) gone++
+  const counts = group ? countsOnScreen(group, review) : undefined
+  if (counts && count >= counts.totalOpCount - counts.retiredOpCount - gone) return 'all'
   return 'some'
 }
 
@@ -290,6 +306,7 @@ export async function refreshSuggestions(): Promise<void> {
       if (!review) {
         const created = newGroupReview()
         created.seenRevision = group.revision
+        created.seenCounts = countsOf(group)
         suggestedOpsState.reviews.set(group.groupId, created)
         fresh.push(group.groupId)
       } else {
@@ -345,7 +362,9 @@ export async function reloadGroup(groupId: number): Promise<void> {
   endFactsRound(groupId)
   await refreshSuggestions()
   // The rows about to load are the new version: that's the one the user now reads.
-  review.seenRevision = groupById(groupId)?.revision ?? review.seenRevision
+  const reread = groupById(groupId)
+  review.seenRevision = reread?.revision ?? review.seenRevision
+  if (reread) review.seenCounts = countsOf(reread)
   review.changedUnderReview = false
   await ensureOpWindow(groupId, 0)
 }

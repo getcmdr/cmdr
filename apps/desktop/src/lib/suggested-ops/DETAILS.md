@@ -115,8 +115,11 @@ every mode, so the count, the header box, and the wire all leave it out. An `all
 `totalOpCount - retiredOpCount`, and a taken-over row the disk also calls gone counts once. The store never moves such a
 row whatever the wire says, so this is about honest counts, not safety. The live-facts re-check never touches a row's
 status (it only fills `liveFacts` / `missing` / `takenNames`; the status comes with the page, so it changes on a
-reload), so a taken-over row whose file comes back stays unticked (test "stays unticked and counted once through every
-re-check").
+reload), so a taken-over row whose file comes back stays unticked (test "leaves a taken-over row unticked and counted
+once through every re-check"). That same lag is why the count reads from `review.seenCounts` (the header's counts at
+`seenRevision`) while the group changed under the review: a takeover elsewhere moves the fresh counts at once, but the
+rows on screen still read pending until the reload, and the re-check calls them gone, so counting from the fresh ones
+took them out twice (test "counts files another approval took over once while the change waits for its reload").
 
 **A refused approval whose files are all gone** answers `sourcesGone`, worded apart from `nothingToRun` ("couldn't
 read"): the backend tells the two apart from the stats themselves

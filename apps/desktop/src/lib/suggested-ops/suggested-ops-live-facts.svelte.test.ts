@@ -267,6 +267,36 @@ describe('a file that’s gone', () => {
     expect(isNewNameTaken(BIG, free)).toBe(false)
   })
 
+  // #1524: another approval took two of this open group's files over and moved them. The fresh
+  // counts already leave them out, but the rows on screen still read pending until the reload,
+  // and the re-check calls them gone: counting them out again read 0 of the 2 still offered.
+  it('counts files another approval took over once while the change waits for its reload', async () => {
+    listMock.mockResolvedValue([sweep([group(BIG, 4)])])
+    pageMock.mockResolvedValue({ ops: ops(0, 4), offset: 0, total: 4 } as unknown as SuggestedOpPage)
+    await openSuggestedOps()
+    expect(approvableCount(BIG)).toBe(4)
+
+    listMock.mockResolvedValue([sweep([group(BIG, 2, { totalOpCount: 4, retiredOpCount: 2, revision: 2 })])])
+    factsMock.mockImplementation(({ offset, limit }) =>
+      Promise.resolve({
+        kind: 'facts',
+        facts: Array.from({ length: limit }, (_, i) => ({
+          opId: offset + i,
+          state: offset + i < 2 ? { kind: 'missing' } : { kind: 'present', size: 1, modified: 1 },
+        })),
+      }),
+    )
+    await refreshSuggestions()
+
+    expect(reviewOf(BIG)?.changedUnderReview).toBe(true)
+    expect(reviewOf(BIG)?.missing.size).toBe(2)
+    expect(approvableCount(BIG)).toBe(2)
+    expect(selectionState(BIG)).toBe('all')
+    toggleAllOps(BIG)
+    toggleAllOps(BIG)
+    expect(approvableCount(BIG)).toBe(2)
+  })
+
   // #1524: the re-check and the taken-over statuses (`superseded`, `handledElsewhere`) must not
   // fight. A gone taken-over row isn't counted out twice, and its file coming back never ticks it.
   it('leaves a taken-over row unticked and counted once through every re-check, gone or back', async () => {
