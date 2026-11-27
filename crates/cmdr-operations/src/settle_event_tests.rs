@@ -457,6 +457,10 @@ async fn a_failed_op_finalizes_then_emits_the_safety_net_error_then_frees_then_s
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_handler_that_emits_its_own_error_gets_no_second_one() {
     use std::os::unix::fs::PermissionsExt;
+    // Root reads a `0o000` file, so the copy succeeds (the Linux Docker lane runs as root).
+    if cmdr_fs::testing::is_root() {
+        return;
+    }
 
     let engine = TestOperations::new();
     let dir = create_temp_dir("own_error_once");

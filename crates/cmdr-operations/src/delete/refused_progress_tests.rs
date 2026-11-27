@@ -22,6 +22,10 @@ use super::super::types::{WriteOperationConfig, WriteOperationError};
 /// reported nothing done, however many files were already gone for good.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_refused_delete_reports_every_file_it_already_removed() {
+    // Root deletes inside a `0o555` folder, so nothing refuses (the Linux Docker lane runs as root).
+    if cmdr_fs::testing::is_root() {
+        return;
+    }
     let dir = TestDir::new("refused_delete_progress");
     let root = dir.join("Test App.app");
     let open = root.join("a-open");
