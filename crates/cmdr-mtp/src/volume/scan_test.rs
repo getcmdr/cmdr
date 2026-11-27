@@ -101,6 +101,43 @@ async fn selected_subtrees_report_cumulative_recursive_progress() {
     device.teardown(manager).await;
 }
 
+/// A tree 150 levels deep scans on a small stack: the scan keeps the
+/// folders it's inside on the heap, so depth costs it no stack (#1541). A scan
+/// that nests a future per level aborts this test binary instead.
+#[test]
+fn a_tree_150_levels_deep_scans_on_a_small_stack() {
+    const DEPTH: usize = 150;
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .thread_stack_size(512 * 1024)
+        .enable_all()
+        .build()
+        .unwrap();
+    let scanned = runtime.block_on(async {
+        tokio::spawn(async {
+            let _guard = device_lock().await;
+            let fixture = setup_virtual_mtp_device();
+            let bottom = fixture.root().join("internal/Deep").join("d/".repeat(DEPTH));
+            std::fs::create_dir_all(&bottom).unwrap();
+            std::fs::write(bottom.join("bottom.bin"), vec![0; 11]).unwrap();
+            let manager = test_connection_manager();
+            let device = connect_fixture(manager, fixture).await;
+            let volume = volume_for(manager, &device, None).await;
+            let scanned = volume
+                .scan_for_copy_batch_with_boundary(&[row("/Deep")], &ScanBoundary::silent())
+                .await
+                .unwrap();
+            device.teardown(manager).await;
+            scanned
+        })
+        .await
+        .expect("the scan ends without overflowing its stack")
+    });
+
+    assert_eq!((scanned.aggregate.file_count, scanned.aggregate.total_bytes), (1, 11));
+    assert!(scanned.aggregate.dir_count >= DEPTH, "{}", scanned.aggregate.dir_count);
+}
+
 /// A batch scan hands its recorder every selected entry under the paths the
 /// caller passed, never the device's own path form, and none of the siblings
 /// the parent listing turned up.

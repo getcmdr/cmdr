@@ -1436,8 +1436,8 @@ nobody listens.
 
 - **Paths are in the CALLER's form**: the path the batch was handed for a source, joined with each child's name. A
   backend walking in its own path space carries the caller's path down beside its own (SMB's share-relative
-  `scan_recursive`, MTP's device-path `scan_entries_recursive`). A path the caller can't place under a source is
-  dropped, so a backend that reports its own form shows up as a tree with holes, ❌ never a wrong tree.
+  `scan_recursive`, MTP's device-path `scan_entries`). A path the caller can't place under a source is dropped, so a
+  backend that reports its own form shows up as a tree with holes, ❌ never a wrong tree.
 - **`subtree(path, &scan)`** counts AND records a subtree whose children nobody walked (the trait's per-path default):
   the caller gets an opaque folder with known totals, and the transfer discovers its children live.
 - **`counted(&scan)` + `recorder()`** are for a walk that can't await the boundary per entry: the local backend's
