@@ -193,6 +193,21 @@ impl NfsVolume {
         Ok(found.attributes.as_ref().map_or(EntryKind::Directory, entry_kind))
     }
 
+    /// The node a walk reaches at `path`, through every link on the way: the
+    /// export's `fsid` and `fileid`, off a fresh LOOKUP that follows. `None` where
+    /// the walk can't follow, or the answer carries no attributes (the export
+    /// root comes from the mount, not a LOOKUP).
+    pub(super) async fn reached_node_impl(&self, path: &AppPath) -> Option<cmdr_fs::file_identity::FileId> {
+        let remote = self.to_remote_path(path).ok()?;
+        let client = self.client().await.ok()?;
+        let found = self.resolve(&client, &remote, Follow::Always, true).await.ok()?;
+        let attrs = found.attributes.as_ref()?;
+        Some(cmdr_fs::file_identity::FileId::from_stored(
+            attrs.fsid,
+            u128::from(attrs.fileid),
+        ))
+    }
+
     /// Whether anything is at `path`, a dangling link included. A path off
     /// this export is `Absent`; no client, or a refusal, is `Unknown`.
     pub(super) async fn presence_impl(&self, path: &AppPath) -> Presence {

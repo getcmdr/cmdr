@@ -97,6 +97,15 @@ impl Volume for NfsVolume {
         Box::pin(async move { self.noting(self.entry_kind_impl(path)).await })
     }
 
+    /// `fsid` + `fileid` of what a following LOOKUP reaches, for the copy's
+    /// link-loop check. A failed lookup is "can't say", never a lost connection.
+    fn reached_node<'a>(
+        &'a self,
+        path: &'a AppPath,
+    ) -> Pin<Box<dyn Future<Output = Option<cmdr_fs::file_identity::FileId>> + Send + 'a>> {
+        Box::pin(self.reached_node_impl(path))
+    }
+
     // ── The byte path ────────────────────────────────────────────────
 
     fn supports_streaming(&self) -> bool {

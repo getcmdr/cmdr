@@ -163,7 +163,9 @@ impl Volume for LinkFollowingVolume {
     }
 }
 
-fn following_volume() -> (Arc<dyn Volume>, TempDir) {
+/// A real local folder behind the trait's defaults, so it can name no node either
+/// (`Volume::reached_node`): the rig `link_cycle_tests.rs` plays an SFTP source on.
+pub(super) fn following_volume() -> (Arc<dyn Volume>, TempDir) {
     let dir = TempDir::new().unwrap();
     let volume: Arc<dyn Volume> = Arc::new(LinkFollowingVolume {
         inner: LocalVolume::local_folder("V", dir.path().to_path_buf(), crate::host::testing::pane_order_host()),

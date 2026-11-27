@@ -18,7 +18,7 @@ use super::copy::copy_volumes_with_progress;
 use super::transfer_error::WriteFailure;
 use crate::event_sinks::CollectorEventSink;
 use crate::testing::TestOperations;
-use crate::types::{VolumeCopyConfig, WriteOperationPhase};
+use crate::types::{VolumeCopyConfig, WriteOperationError, WriteOperationPhase};
 use cmdr_fs::ignore_poison::IgnorePoison;
 use cmdr_fs::volume::{InMemoryVolume, Volume};
 use cmdr_local::LocalPosixVolume;
@@ -175,6 +175,59 @@ async fn a_move_skips_the_loop_and_leaves_the_link_in_the_source() {
         std::fs::symlink_metadata(dir.join("tree/sub/up")).is_ok(),
         "the skipped link stays"
     );
+}
+
+/// A source that can name no node (an SFTP server: protocol v3 carries no inode)
+/// can't tell a loop from a link elsewhere, so the backstop counts the links
+/// followed down one path and stops the copy with the link-loop error, typed,
+/// before the walk outgrows its stack.
+///
+/// Run on a big stack: a debug build's frames are many times a release build's,
+/// and this asserts what the WALK does, not what the stack holds.
+#[test]
+fn a_source_with_no_node_ids_stops_a_link_loop_with_the_loop_error() {
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .thread_stack_size(256 * 1024 * 1024)
+        .enable_all()
+        .build()
+        .unwrap();
+    let (source, dir) = super::link_following_backend_tests::following_volume();
+    std::fs::create_dir_all(dir.path().join("tree/sub")).unwrap();
+    std::fs::write(dir.path().join("tree/sub/a.txt"), b"aaa").unwrap();
+    symlink("..", dir.path().join("tree/sub/up")).unwrap();
+    // Spawned, so it polls on a big-stack worker rather than this test's thread.
+    let copy = runtime.spawn(async move {
+        let engine = TestOperations::new();
+        let state = Arc::new(engine.new_operation_state(Duration::from_millis(50)));
+        let sources = crate::testing::app_paths_of(&[PathBuf::from("/tree")]);
+        let dest_root = crate::testing::app_path_of(Path::new("/"));
+        let config = VolumeCopyConfig::default();
+        let run = copy_volumes_with_progress(
+            Arc::new(CollectorEventSink::new()),
+            "op-link-cycle-blind",
+            &state,
+            source,
+            &sources,
+            no_links(),
+            &dest_root,
+            &config,
+        );
+        tokio::time::timeout(Duration::from_secs(60), run).await
+    });
+    runtime.block_on(async {
+        let result = copy
+            .await
+            .unwrap()
+            .expect("the copy ends: a link loop never walks forever");
+
+        let failure = result.expect_err("a loop nobody can name stops the copy");
+        assert!(
+            matches!(failure.error, WriteOperationError::SymlinkLoop { .. }),
+            "{:?}",
+            failure.error
+        );
+    });
 }
 
 /// A link to a folder outside the selection that holds no way back is still

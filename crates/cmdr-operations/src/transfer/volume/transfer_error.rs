@@ -575,6 +575,17 @@ pub(crate) fn map_volume_error(context_path: &str, role: PathRole, e: VolumeErro
         VolumeError::Cancelled(_) => WriteOperationError::Cancelled {
             message: "Operation cancelled by user".into(),
         },
+        // Links that loop, whether the kernel said so (`ELOOP` resolving a path)
+        // or the walk's own backstop did (`link_cycle.rs`): the typed loop error,
+        // which tells the person what to remove. By errno class, ❌ never the message.
+        VolumeError::IoError {
+            raw_os_error: Some(code),
+            ..
+        } if cmdr_fs::os_error::OsErrorClass::of_code(code) == cmdr_fs::os_error::OsErrorClass::LinkLoop => {
+            WriteOperationError::SymlinkLoop {
+                path: context_path.to_string(),
+            }
+        }
         VolumeError::IoError { message, .. } => WriteOperationError::IoError {
             path: context_path.to_string(),
             message,
