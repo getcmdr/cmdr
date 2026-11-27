@@ -5,11 +5,13 @@
 //!
 //! While escapes aren't live (`ESCAPES_LIVE`), an escape-range code point in the text is
 //! LITERAL (no producer made it), so it parses through `from_literal_store`, and the native
-//! path out is byte for byte the text in.
+//! path out is byte for byte the text in. [`parse`] is `AppPathBuf::from_text`, whose pair
+//! `AppPath::to_text` is the text a value is written back as (❌ never `as_str`, which
+//! spells such a name as escapes that read back as a different file).
 
 use std::path::{Path, PathBuf};
 
-use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavor};
+use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, NotAnAppPath, PathFlavor};
 /// `text` as an app path, with this host's flavor, normalized (a trailing `/` and `.` names
 /// dropped).
 ///
@@ -17,11 +19,7 @@ use cmdr_fs::app_path::{AppPathBuf, ESCAPES_LIVE, Namer, NotAnAppPath, PathFlavo
 ///
 /// [`NotAnAppPath`]: relative or empty text, a `..` name, the other OS's shape.
 pub(crate) fn parse(text: &str) -> Result<AppPathBuf, NotAnAppPath> {
-    if ESCAPES_LIVE {
-        AppPathBuf::from_wire(text)
-    } else {
-        AppPathBuf::from_literal_store(text, Namer::HOST)
-    }
+    AppPathBuf::from_text(text)
 }
 
 /// [`parse`] for the POSIX flavor, whatever the host: a volume-relative `/x` on Windows (a

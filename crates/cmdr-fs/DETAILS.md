@@ -62,9 +62,9 @@ the next section.
   promises); and `host/` (what a backend needs from the app, as named traits; read `src/volume/host/CLAUDE.md` before
   writing a backend).
 - `app_path/`: the typed app path. `mod.rs` (the types and their arithmetic), `parse.rs` (normalizing and validating
-  text), `escape.rs` (the lossless escape), `native.rs` (the pure native conversions), `bridge.rs` (the transition
-  bridge), `shape.rs` (root shapes and the compared components), `platform/` (the `OsStr` and `PathBuf` crossing per
-  OS). § "App paths".
+  text), `escape.rs` (the lossless escape), `native.rs` (the pure native conversions), `text.rs` (the text a path is
+  stored and sent as, and its door back), `bridge.rs` (the transition bridge), `shape.rs` (root shapes and the compared
+  components), `platform/` (the `OsStr` and `PathBuf` crossing per OS). § "App paths".
 - `entry.rs` + `icons/`: `FileEntry` and the classifiers behind `get_icon_id`.
 - `sqlite_util.rs`: the ONE process-wide page-cache slab, the connection factories every store opens through, the one
   way a database file is deleted, and freelist reclamation (`run_incremental_vacuum` drains to a cap;
@@ -208,6 +208,17 @@ boundaries. The design was argued in `docs/specs/app-path-plan.md` (issue #1225)
   `bridge_test.rs::a_listed_path_spells_as_the_bridge_and_the_wire_and_reads_back_as_listed`, `remote_paths_test`'s
   `a_listed_escape_range_name_reaches_the_server_as_listed_through_every_door`, and a cell per backend. 10f replaces
   both doors with each backend's own alphabet.
+- **A path written out as TEXT is `to_text`, read back with `from_text`** (#1524, Gotcha/Why): `as_str` is the value's
+  own spelling, and while escapes aren't live every door reading stored or wire text (`from_text`, which is
+  `from_literal_store` until then; the desktop's `app_text::parse`) reads an escape-range code point as LITERAL. So a
+  name holding one (`caf\u{10FEFF}`, which `from_native` and every literal door spell as four byte escapes) written out
+  by `as_str` / `into_string` read back as sixteen escapes, a path naming no file: the AI-suggestions preflight called
+  such a file gone. `to_text` answers the name's literal text, the door's exact inverse, and refuses `NotUnicode` for a
+  name that isn't Unicode text (no literal text names it). One text can't serve both readings: `caf\u{10FEFF}`'s escaped
+  spelling is also the literal text of a name made of those four code points, so the pair, ❌ not a smarter door, is the
+  fix. Once escapes are live both are the value's spelling and every name round-trips. Pinned by
+  `src/app_path/text_test.rs` in both modes (`text_in` / `from_text_in` take the mode), any bytes included. `Serialize`
+  still writes `as_str`.
 - **Canonical form**: no empty, `.`, or `..` name, no trailing `/` except the root's own; every root ends in `/` (`/`,
   `C:/`, `//server/share/`, `scheme://authority/`). The drive letter is uppercased; nothing else is folded, and the
   Unicode form is never touched (NFC and NFD `café` are two values). `parse` normalizes into it, `from_normalized` takes

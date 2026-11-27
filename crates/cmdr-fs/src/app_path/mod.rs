@@ -38,6 +38,7 @@ mod parse;
 mod platform;
 mod serde_impls;
 mod shape;
+mod text;
 mod traits;
 
 use std::borrow::Cow;

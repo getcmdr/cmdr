@@ -32,7 +32,8 @@ paths (`crate::file_system::volume::VolumeError`); other crates use `cmdr_fs::�
 - **`supports_atomic_replace_rename` means force-rename is ONE replacement step**; delete-then-rename backends keep the
   default.
 - **An app path is an `AppPath`, ❌ never `std::path` arithmetic on one**, and ❌ no `From`/`AsRef`/`Deref` between
-  them: cross at `to_native` / `from_native`. DETAILS § App paths.
+  them: cross at `to_native` / `from_native`, and as text at `to_text` / `from_text`, ❌ never `as_str`. DETAILS § App
+  paths.
 - **❌ Never build a volume ID by hand, or by stripping characters.** `volume::ids` is the one funnel: a lossy ID hands
   two disks one identity and sends deletes to the wrong one.
 - **❌ Never open SQLite outside `sqlite_util`'s factories.** They install the process-wide page-cache slab, installable
