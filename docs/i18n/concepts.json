@@ -751,6 +751,10 @@
       {
         "key": "errors.write.permissionDenied.suggestion.delete",
         "why": "the Windows branch clears a checkbox (the Read-only attribute), it doesn't empty a field or list"
+      },
+      {
+        "key": "suggestedOps.refusal.sourcesGone.suggestion",
+        "why": "clearing a suggestion from the list removes one item from it (reject it), it doesn't empty the list or a field"
       }
     ],
     "sense": "Emptying a field, a search, an index, or a list of recent items without deleting files."

@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Этот файл есть в более новом предложении",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Другое предложение уже изменило этот файл",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "На момент предложения ИИ",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Проверьте, что файлы на месте, а затем одобрите предложение снова или отклоните его.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Этих файлов больше нет там, где их ожидало это предложение, поэтому ничего не выполнилось. Возможно, их переименовало или переместило другое предложение или приложение.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Отклоните предложение, чтобы убрать его из списка.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Ни одного из выбранных вами файлов больше нет в этом предложении, поэтому ничего не выполнилось.",
   "@suggestedOps.refusal.nothingSelected.message": {

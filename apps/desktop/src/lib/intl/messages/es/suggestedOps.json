@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Una sugerencia más reciente incluye este archivo",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Otra sugerencia ya ha cambiado este archivo",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "De cuando la IA sugirió esto",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Comprueba que siguen ahí y vuelve a aprobarlo, o recházalo.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Estos archivos ya no están donde esta sugerencia esperaba encontrarlos, así que no se ha ejecutado nada. Puede que otra sugerencia u otra app los haya renombrado o movido.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Recházala para quitarla de la lista.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Ninguno de los archivos que has marcado sigue en esta sugerencia, así que no se ha ejecutado nada.",
   "@suggestedOps.refusal.nothingSelected.message": {

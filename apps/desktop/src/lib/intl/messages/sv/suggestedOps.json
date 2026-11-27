@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Ett nyare förslag tar hand om den här filen",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Ett annat förslag har redan ändrat den här filen",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Från när AI:n föreslog det här",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Kontrollera att filerna finns kvar och godkänn det sedan igen, eller avböj det.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Filerna finns inte längre där förslaget väntade sig dem, så inget kördes. Ett annat förslag eller en annan app kan ha bytt namn på dem eller flyttat dem.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Avböj det för att ta bort det från listan.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Ingen av filerna du bockade för finns kvar i förslaget, så inget kördes.",
   "@suggestedOps.refusal.nothingSelected.message": {

@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Một đề xuất mới hơn đã bao gồm tệp này",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Một đề xuất khác đã thay đổi tệp này",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Ghi nhận lúc AI đề xuất",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Hãy kiểm tra xem các tệp đó có còn ở đó không, rồi phê duyệt lại hoặc từ chối.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Các tệp này không còn ở chỗ mà đề xuất này dự kiến, nên chưa có gì chạy. Có thể một đề xuất hoặc ứng dụng khác đã đổi tên hoặc di chuyển chúng.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Hãy từ chối để bỏ đề xuất này khỏi danh sách.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Không tệp nào bạn đã đánh dấu còn nằm trong đề xuất này, nên chưa có gì chạy.",
   "@suggestedOps.refusal.nothingSelected.message": {

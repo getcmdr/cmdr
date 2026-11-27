@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Een nieuwere suggestie neemt dit bestand over",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Een andere suggestie heeft dit bestand al gewijzigd",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Van toen de AI dit voorstelde",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Controleer of ze er nog zijn en keur het daarna opnieuw goed, of weiger het.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Deze bestanden staan niet meer waar deze suggestie ze verwachtte, dus er is niets uitgevoerd. Misschien heeft een andere suggestie of app de naam gewijzigd of ze verplaatst.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Weiger het om het uit de lijst te halen.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Geen van de bestanden die je hebt aangevinkt, hoort nog bij deze suggestie, dus er is niets uitgevoerd.",
   "@suggestedOps.refusal.nothingSelected.message": {

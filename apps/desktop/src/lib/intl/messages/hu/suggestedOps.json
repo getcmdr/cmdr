@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Ezt a fájlt egy újabb javaslat kezeli",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Egy másik javaslat már módosította ezt a fájlt",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Az AI javaslatának idejéből",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Nézd meg, hogy megvannak-e még, aztán hagyd jóvá újra, vagy utasítsd el.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Ezek a fájlok már nincsenek ott, ahol ez a javaslat várta őket, így semmi nem indult el. Lehet, hogy egy másik javaslat vagy app átnevezte vagy áthelyezte őket.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Utasítsd el, hogy lekerüljön a listáról.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "A kipipált fájlok közül egyik sincs már ebben a javaslatban, így semmi nem indult el.",
   "@suggestedOps.refusal.nothingSelected.message": {

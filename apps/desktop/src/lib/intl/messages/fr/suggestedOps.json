@@ -293,6 +293,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Une suggestion plus récente prend en charge ce fichier",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Une autre suggestion a déjà modifié ce fichier",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Relevé au moment de la suggestion de l’IA",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -352,6 +360,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Vérifiez qu’ils sont toujours là, puis approuvez à nouveau cette suggestion ou refusez-la.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Ces fichiers ne sont plus là où cette suggestion les attendait, Cmdr n’a donc rien lancé. Une autre suggestion ou une autre app les a peut-être renommés ou déplacés.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Refusez-la pour la retirer de la liste.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Aucun des fichiers que vous avez cochés ne fait encore partie de cette suggestion, Cmdr n’a donc rien lancé.",
   "@suggestedOps.refusal.nothingSelected.message": {

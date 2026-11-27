@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Tento soubor řeší novější návrh",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Jiný návrh už tento soubor změnil",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Z doby návrhu AI",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Zkontrolujte, že tyto soubory pořád existují, a pak návrh schvalte znovu, nebo ho odmítněte.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Tyto soubory už nejsou tam, kde je tento návrh čekal, takže se nic nespustilo. Možná byly přejmenovány nebo přesunuty jiným návrhem či aplikací.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Odmítnutím ho odeberete ze seznamu.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Žádný ze zaškrtnutých souborů už v tomto návrhu není, takže se nic nespustilo.",
   "@suggestedOps.refusal.nothingSelected.message": {

@@ -293,6 +293,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Ein neuerer Vorschlag übernimmt diese Datei",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Ein anderer Vorschlag hat diese Datei schon geändert",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Stand von dem Moment, als die KI das vorgeschlagen hat",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -352,6 +360,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Prüfe, ob die Dateien noch da sind, und stimme dem Vorschlag dann noch einmal zu oder lehne ihn ab.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Diese Dateien sind nicht mehr dort, wo dieser Vorschlag sie erwartet hat, deshalb lief nichts. Vielleicht hat ein anderer Vorschlag oder eine App sie umbenannt oder bewegt.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Lehne den Vorschlag ab, um ihn aus der Liste zu entfernen.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Keine der Dateien, die du angehakt hast, gehört noch zu diesem Vorschlag, deshalb lief nichts.",
   "@suggestedOps.refusal.nothingSelected.message": {

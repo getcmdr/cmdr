@@ -292,6 +292,11 @@ the entries (`docs/guides/multi-agent-refactors.md` § Fan-out sweeps).
   `values.json`, and a multi-locale `check-locale`, would cut this to two calls. The `es` check also only flags a needed
   `es-419` fork after the fact; the brief could pre-list which `es` forms would need one. (all, `trashRefused.*.inUse`
   batch)
+- The brief's "No concept yet" list named plain prose words (`newer`, `covers`, `changed`, `expected`, `ran`), making
+  pile mining mandatory for 13 locales; one `de` lookup showed only everyday forms the translation memory already
+  carried, so the rest went unmined. A stopword-style filter (or "mine only if the word is a UI term") would keep the
+  rule meaningful. The worktree guard also refused a heredoc writing an `i18n:apply-terms` patch, so it went through
+  Write. (all, `suggestedOps.opSuperseded` batch)
 - The worktree guard refused a plain shell `for` loop over `node scripts/i18n-values.ts --lang $l` (no git in it), so
   per-locale reads need `--lang all` or one call per locale. (all locales, per-OS settings-window batch)
 - The same guard refused a `for` loop over `i18n:pile` and a `W=…` variable before `i18n:check-locale`; a `--lang all`

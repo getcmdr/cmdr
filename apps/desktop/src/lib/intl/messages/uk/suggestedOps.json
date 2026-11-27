@@ -292,6 +292,14 @@
   "@suggestedOps.fileMissing": {
     "sourceHash": "2073c5b"
   },
+  "suggestedOps.opSuperseded": "Цей файл є в новішій пропозиції",
+  "@suggestedOps.opSuperseded": {
+    "sourceHash": "ab20392"
+  },
+  "suggestedOps.opHandledElsewhere": "Інша пропозиція вже змінила цей файл",
+  "@suggestedOps.opHandledElsewhere": {
+    "sourceHash": "a03802d"
+  },
   "suggestedOps.snapshotOnly": "Дані на момент пропозиції ШІ",
   "@suggestedOps.snapshotOnly": {
     "sourceHash": "f6b2d27"
@@ -351,6 +359,14 @@
   "suggestedOps.refusal.nothingToRun.suggestion": "Перевірте, чи файли досі на місці, а тоді схваліть пропозицію знову або відхиліть її.",
   "@suggestedOps.refusal.nothingToRun.suggestion": {
     "sourceHash": "f4cfc9e"
+  },
+  "suggestedOps.refusal.sourcesGone.message": "Цих файлів більше немає там, де їх очікувала ця пропозиція, тож нічого не виконано. Можливо, їх перейменувала або перемістила інша пропозиція чи програма.",
+  "@suggestedOps.refusal.sourcesGone.message": {
+    "sourceHash": "f4a4145"
+  },
+  "suggestedOps.refusal.sourcesGone.suggestion": "Відхиліть пропозицію, щоб прибрати її зі списку.",
+  "@suggestedOps.refusal.sourcesGone.suggestion": {
+    "sourceHash": "a7bde26"
   },
   "suggestedOps.refusal.nothingSelected.message": "Жодного з позначених вами файлів більше немає в цій пропозиції, тож нічого не виконано.",
   "@suggestedOps.refusal.nothingSelected.message": {
