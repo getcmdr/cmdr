@@ -281,6 +281,12 @@ pub(crate) fn gate_local(target: &LiveTarget, policy: &GatePolicy) -> Result<Str
             path: physical,
         });
     }
+    // A file is no folder to list. Asked here, of the resolved leaf the gate has
+    // already cleared, because each OS's listing words it differently: macOS
+    // answers `ENOTDIR`, Windows' a path that isn't there.
+    if std::fs::metadata(as_sent_std_path(&physical)).is_ok_and(|meta| !meta.is_dir()) {
+        return Err(LiveMiss::NotAFolder);
+    }
     // Judged in the volume's own spelling, the path space its scanner walks.
     let listed = rebase(&physical, &root, &target.root).unwrap_or(physical);
     skipped_by_the_index(target, &listed)?;
