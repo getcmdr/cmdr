@@ -629,7 +629,7 @@
     },
     {
       "name": "cookie",
-      "version": "0.18.1",
+      "version": "0.18.3",
       "license": "MIT OR Apache-2.0",
       "url": "https://github.com/SergioBenitez/cookie-rs"
     },
