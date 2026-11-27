@@ -2179,10 +2179,22 @@ counted skip, credited as the scan counted it, and a move's sweep leaves it in t
   right, the walk wasn't).
 - **Each ancestor is read through its own path**, so links on the way are followed too: two links leading to each
   other's folders are caught at the second, after the first was followed once (a NAS copy should hold the files).
-- **Unknown means "follow"**: a backend with no node ids (the trait default) follows as before. Only the local backends
-  answer today; an SFTP source onto SMB still follows blind. Ancestors stop at the volume's root, so a link to a folder
-  above the volume that holds it isn't caught.
-- **The cost**: one `stat` per ancestor, paid only at a link the walk would follow into a folder.
+- **Who names nodes**: the local backends (a following `stat`) and NFS (`fsid` + `fileid` off a following LOOKUP). SFTP
+  can't (protocol v3 has no inode), nor can the trait default. Ancestors stop at the volume's root, so a link to a
+  folder above the volume that holds it isn't caught by node.
+- **The backstop for a loop nobody can name**: the same ancestor walk counts the links on the way (`entry_kind`, which
+  every backend answers), and past `MAX_LINKS_FOLLOWED_DOWN_ONE_PATH` (8) the copy stops with the link-loop error: an
+  `IoError` carrying `OsErrorClass::LinkLoop`'s code, which `transfer_error.rs::map_volume_error` reports as
+  `SymlinkLoop` (a kernel `ELOOP` lands there too). **Why 8, ❌ not a path limit**: the walk's stack is the binding
+  limit. Every folder level costs stack, and a release build overflowed a 2 MiB tokio worker (Tauri's default, which
+  runs copies) between 48 and 63 levels (the const's comment has the evidence), far short of any `PATH_MAX`. A link to
+  its own parent adds two levels a pass, so 8 keeps the shortest loop near 16 levels.
+- **Known gap, not this module's**: that same stack ceiling means a REAL folder tree about 60 levels deep, no links at
+  all, overflows a cross-volume copy's walk and aborts the app. The fix is a bigger worker stack or a walk whose depth
+  doesn't nest polls, not a cap here.
+- **The cost**: a `stat` and an `lstat` per ancestor, paid only at a link the walk would follow into a folder.
 
-Pinned by `link_cycle_tests.rs` (a link to `..` and to `.`, a pair, a move, and a link elsewhere still followed) and
-`crates/cmdr-local/src/local_volume_test.rs::reached_node_follows_a_link_to_the_folder_it_reaches`.
+Pinned by `link_cycle_tests.rs` (a link to `..` and to `.`, a pair, a move, a link elsewhere still followed, and the
+backstop on a source with no node ids),
+`crates/cmdr-local/src/local_volume_test.rs::reached_node_follows_a_link_to_the_folder_it_reaches`, and
+`crates/cmdr-nfs/src/volume/fake_volume_test.rs::reached_node_follows_a_link_to_the_folder_it_reaches`.

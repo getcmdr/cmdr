@@ -1031,7 +1031,13 @@ async fn merge_level<'a>(
         let descends = entry.is_directory && link_target.is_none();
 
         // A link this walk would follow back into a folder it's already inside makes the tree endless (ERR-BGEKC).
-        if descends && entry.is_symlink && pool.drive(leads_back_up(source_volume.as_ref(), &child_source)).await {
+        if descends
+            && entry.is_symlink
+            && pool
+                .drive(leads_back_up(source_volume.as_ref(), &child_source))
+                .await
+                .at_source(&*child_source)?
+        {
             skip_link_back_up(entry, child_source, created, progress, child_row);
             continue;
         }

@@ -305,6 +305,23 @@ async fn a_link_inside_the_export_is_followed_and_one_outside_it_is_only_a_link(
     );
 }
 
+/// `reached_node` names the folder a walk reaches through a link (`fsid` + `fileid`),
+/// so a copy can tell a link back up its own path from one elsewhere (ERR-BGEKC).
+#[tokio::test]
+async fn reached_node_follows_a_link_to_the_folder_it_reaches() {
+    let fake = seeded();
+    fake.add_link("/photos/2024/up", "..");
+    let fake = FakeNfs::start_with(fake).await;
+    let volume = over_tcp(&fake).await;
+
+    let photos = volume.reached_node(&at(&volume, "/photos")).await;
+    assert!(photos.is_some(), "NFS names its nodes");
+    assert_eq!(volume.reached_node(&at(&volume, "/photo-dir")).await, photos);
+    assert_eq!(volume.reached_node(&at(&volume, "/photos/2024/up")).await, photos);
+    assert_ne!(volume.reached_node(&at(&volume, "/photos/2024")).await, photos);
+    assert_eq!(volume.reached_node(&at(&volume, "/missing")).await, None);
+}
+
 #[tokio::test]
 async fn a_missing_path_is_not_found_and_carries_the_path() {
     let fake = FakeNfs::start_with(seeded()).await;
