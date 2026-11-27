@@ -40,7 +40,7 @@ const PICKER_DROPDOWN = '[data-menu]'
 const ANY_VOLUME_ITEM = '[data-menu-row]'
 /** The Servers list: the standard listbox, ending in its "Add server…" action row. */
 const SERVERS_LIST = '.file-pane [role="listbox"] [data-trailing-row]'
-/** The pane footers, whose count says whether the nearby search is on. */
+/** The pane footers, whose count says whether networking is on. */
 const FOOTER = '.file-pane .selection-info'
 
 async function footerText(tauriPage: Parameters<typeof pollUntil>[0]): Promise<string> {
@@ -161,9 +161,7 @@ test.describe('Local network discovery off', () => {
     await setSettingViaBridge('network.enabled', false)
     await openServersList(tauriPage)
 
-    await expect
-      .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
-      .toContain('nearby search is off')
+    await expect.poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) }).toContain('networking is off')
     // The rest of the list is untouched: the "Add server…" row is still the last one.
     expect(await tauriPage.isVisible(SERVERS_LIST)).toBe(true)
   })
@@ -171,13 +169,11 @@ test.describe('Local network discovery off', () => {
   test('turning discovery back on takes the words away', async ({ tauriPage }) => {
     await setSettingViaBridge('network.enabled', false)
     await openServersList(tauriPage)
-    await expect
-      .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
-      .toContain('nearby search is off')
+    await expect.poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) }).toContain('networking is off')
 
     await setSettingViaBridge('network.enabled', true)
     await expect
       .poll(async () => footerText(tauriPage), { timeout: waitBudget(5000) })
-      .not.toContain('nearby search is off')
+      .not.toContain('networking is off')
   })
 })

@@ -74,8 +74,8 @@ Use this checklist before each release to verify features that cannot be automat
 - [ ] Enter on an SMB server opens its share list; `..`, Backspace, and ⌘↑ go back to the Servers list, with the cursor
       on that server's row
 - [ ] Right-click an SFTP or WebDAV row: Disconnect, Forget saved password, Forget server
-- [ ] Turning off Settings > File systems > SMB/Network shares > network discovery leaves the Servers list open with
-      only the servers you added, and its footer says the nearby search is off
+- [ ] Turning off Settings > File systems > SMB/Network shares > Enable networking leaves the Servers list open with
+      only the servers you added, and its footer says networking is off
 - [ ] Palette: "Show servers", "Pin / unpin server", "Disconnect server", "Forget saved password" act on the Servers row
       under the cursor, or on the focused pane's own server
 - [ ] Connect with hostname, IP, IP:port, smb:// URL

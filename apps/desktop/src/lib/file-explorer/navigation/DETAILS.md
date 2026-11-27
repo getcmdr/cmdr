@@ -1007,8 +1007,8 @@ switch. To change a section heading or the Servers row's name, edit the catalog,
    shares and every SFTP or WebDAV place the listing carried. ❗ The row is there whatever `network.enabled` says, and
    opening it always navigates. That switch gates mDNS discovery and SMB, which is what the macOS Local Network
    permission is about; SFTP and WebDAV need none of it, so refusing to open the Servers list would hide a person's
-   saved servers over a permission they don't need. Its footer says the nearby search is off instead
-   (`../network/DETAILS.md` § "The Servers list as a listing").
+   saved servers over a permission they don't need. Its footer says networking is off instead (`../network/DETAILS.md` §
+   "The Servers list as a listing").
 
 `getIconForVolume(volume)`: returns the appropriate icon path for a volume based on its category.
 

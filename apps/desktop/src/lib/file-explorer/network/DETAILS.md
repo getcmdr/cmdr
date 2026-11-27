@@ -266,8 +266,9 @@ decisions (David, 2026-11-26):
   asking for it). Saved buckets stay reachable through their switcher pins. Rejected: a row per bucket, and an account
   row that opens a second kind of "server's places" list.
 - **No prefetch** (§ "`network-store.svelte.ts`" has the numbers that decided it).
-- **The count line says the discovery state** ("5 servers, looking for more nearby…" / "…, nearby search is off"), and
-  the Settings switch is where discovery goes back on. Rejected: a clickable line, a non-row element in the views.
+- **The count line says the discovery state** ("5 servers, looking for more nearby…" / "…, networking is off", naming
+  the "Enable networking" switch), and the Settings switch is where discovery goes back on. Rejected: a clickable line,
+  a non-row element in the views.
 - **Order is the pane's sort** (Name by default; Last used for recency). The old fixed order (connected, then asking,
   then by use, nearby last) went.
 - **⌘R on a share list that lists shows nothing extra** when nothing changed, like a folder; ⌘R on its refused or

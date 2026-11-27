@@ -61,7 +61,7 @@ export function trailingRowFor(kind: VolumeKind): TrailingRow | undefined {
 /** The Add server row's name in `cmdr://state`, English whatever the locale. */
 const ADD_SERVER_MCP_NAME = '+ Add server…'
 
-/** "5 servers", plus where the nearby search stands: still looking, or turned off. */
+/** "5 servers", plus where the nearby search stands: still looking, or networking turned off. */
 function serverCountKey(): MessageKey {
   if (!getNetworkEnabled()) return 'fileExplorer.network.servers.serverCountDiscoveryOff'
   return getDiscoveryState() === 'searching'

@@ -264,15 +264,6 @@ Process feedback (a translator's homemade scripts and workarounds) goes under it
   column-header form to `details` (or a key-scoped note) so every locale picks the noun, not the "more…" link. (ru; sv
   took its `uppgifter` form, "facts about a thing", for the same reason; zh, zh-Hant, pt, and vi note their chosen form
   happens to fit both senses)
-- `fileExplorer.network.servers.serverCountDiscoveryOff`: "nearby search is off" names the feature "search", but the
-  setting that turns it off is labeled "Enable networking" and the docs call it discovery, so the footer quotes neither.
-  Its note could name the setting, or the English could say "finding nearby servers is off". es wrote
-  `búsqueda en la red local desactivada` to pair with the searching sibling. (es; zh wrote `附近搜索已关闭`; fr wrote
-  `recherche à proximité désactivée`, paired with `recherche d’autres à proximité…`; hu wrote
-  `keresés a közelben kikapcsolva`, paired with `továbbiak keresése a közelben…`; vi wrote `đã tắt tìm máy chủ ở gần`
-  and needed a `search` exception, since vi keeps network discovery on `tìm`: a key-scoped `notMatch` on the `search`
-  concept for "nearby search" would spare every locale whose discovery word differs; pt wrote
-  `busca por perto desativada`, paired with `procurando mais por perto…`)
 - `fileExplorer.network.servers.addServerKey`: the note says "Very short: it fits a small button", but gives no width
   budget, and the bar's other labels are one word. hu kept the full name `Szerver hozzáadása` (18 chars, matching the
   sheet title) over a shorter drift; a character budget or a screenshot of the Servers-list F-key bar would settle
