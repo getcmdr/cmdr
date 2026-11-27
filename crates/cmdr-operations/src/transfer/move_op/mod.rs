@@ -565,18 +565,26 @@ struct MergingDir {
     dest_dir: PathBuf,
     /// Back on (by `Drop`) unless the folder empties and goes.
     unlocked_dir: Unlocked,
-    entries: fs::ReadDir,
+    /// Drained when the level opens, each row kept as the listing gave it (a
+    /// failed row still fails the merge where it sits), so the handle closes
+    /// before the merge goes deeper: ❌ never a `ReadDir` (or a Unix `DirEntry`,
+    /// which holds one) per level, one file descriptor per level against a soft
+    /// limit often 256. It also lists the folder once before renaming out of it.
+    entries: std::vec::IntoIter<std::io::Result<PathBuf>>,
 }
 
 impl LocalMerge<'_, '_> {
     fn open(&self, source_dir: &Path, dest_dir: &Path) -> Result<MergingDir, WriteOperationError> {
         let unlocked_dir = self.locked.unlock(source_dir);
-        let entries = fs::read_dir(source_dir).with_path(source_dir)?;
+        let entries: Vec<std::io::Result<PathBuf>> = fs::read_dir(source_dir)
+            .with_path(source_dir)?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect();
         Ok(MergingDir {
             source_dir: source_dir.to_path_buf(),
             dest_dir: dest_dir.to_path_buf(),
             unlocked_dir,
-            entries,
+            entries: entries.into_iter(),
         })
     }
 
@@ -587,8 +595,7 @@ impl LocalMerge<'_, '_> {
         let state = self.state;
         let locked = self.locked;
         for entry in dir.entries.by_ref() {
-            let entry = entry.with_path(&dir.source_dir)?;
-            let source_child = entry.path();
+            let source_child = entry.with_path(&dir.source_dir)?;
             let file_name = match source_child.file_name() {
                 Some(n) => n.to_owned(),
                 None => continue,
@@ -687,12 +694,8 @@ impl LocalMerge<'_, '_> {
         let MergingDir {
             source_dir,
             unlocked_dir,
-            entries,
             ..
         } = dir;
-        // The listing closes before the emptiness check, as it did once a
-        // recursive call's loop ended.
-        drop(entries);
         if fs::read_dir(&source_dir)
             .map(|mut d| d.next().is_none())
             .unwrap_or(false)

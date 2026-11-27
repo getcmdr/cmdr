@@ -299,8 +299,13 @@ struct WalkedDir {
 }
 
 enum Children {
-    /// Read off the disk. Boxed: Windows' `ReadDir` carries a ~600-byte find record.
-    Disk(Box<fs::ReadDir>),
+    /// Read off the disk, the entries the walk keeps (sidecars and junk left
+    /// out). Drained when the folder opens, so its handle closes before the walk
+    /// goes deeper: ❌ never a `ReadDir` held per level, which held one file
+    /// descriptor per level, and a GUI-launched macOS app's soft limit is often
+    /// 256, well short of the ~511 levels a path allows. A Unix `DirEntry` keeps
+    /// its directory open too, so only paths are kept.
+    Disk(std::vec::IntoIter<PathBuf>),
     /// From a watcher-backed listing an open pane keeps fresh: files are
     /// recorded straight from it, no I/O. Cached symlinks (`is_symlink`) are
     /// recorded as files and never descended, the disk walk's symlink policy.
@@ -383,7 +388,18 @@ impl<E> Walk<'_, '_, E> {
                 .and_then(|vid| ctx.listings.authoritative_listing(vid, path))
             {
                 Some(cached) => Children::Cached(cached.into_iter()),
-                None => Children::Disk(Box::new(fs::read_dir(path).map_err(|e| (ctx.on_io_error)(path, e))?)),
+                None => {
+                    let entries = fs::read_dir(path).map_err(|e| (ctx.on_io_error)(path, e))?;
+                    let kept: Vec<PathBuf> = entries
+                        .flatten()
+                        .filter(|entry| {
+                            let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
+                            !is_left_out(ctx, path, device, &entry.file_name(), is_directory)
+                        })
+                        .map(|entry| entry.path())
+                        .collect();
+                    Children::Disk(kept.into_iter())
+                }
             };
             return Ok(Some(WalkedDir {
                 path: path.to_path_buf(),
@@ -402,15 +418,7 @@ impl<E> Walk<'_, '_, E> {
     fn next_child(&mut self, dir: &mut WalkedDir) -> Result<Option<PathBuf>, E> {
         let ctx = self.ctx;
         match &mut dir.children {
-            Children::Disk(entries) => {
-                for entry in entries.flatten() {
-                    let is_directory = entry.file_type().is_ok_and(|kind| kind.is_dir());
-                    if !is_left_out(ctx, &dir.path, dir.device, &entry.file_name(), is_directory) {
-                        return Ok(Some(entry.path()));
-                    }
-                }
-                Ok(None)
-            }
+            Children::Disk(entries) => Ok(entries.next()),
             Children::Cached(cached) => {
                 for entry in cached.by_ref() {
                     if (ctx.is_cancelled)() {

@@ -187,14 +187,14 @@ fn dry_run_scan_recursive(
         inside.push(dir);
     }
     while let Some(dir) = inside.last_mut() {
-        let next = dir
-            .entries
-            .by_ref()
-            .flatten()
-            .find(|entry| !sidecars.is_sidecar(&dir.path, dir.device, &entry.file_name()));
+        let next = dir.entries.by_ref().find(|entry| {
+            entry
+                .file_name()
+                .is_none_or(|name| !sidecars.is_sidecar(&dir.path, dir.device, name))
+        });
         match next {
             Some(entry) => {
-                if let Some(child) = scan.visit(&entry.path())? {
+                if let Some(child) = scan.visit(&entry)? {
                     inside.push(child);
                 }
             }
@@ -228,7 +228,10 @@ struct DryRun<'d> {
 struct ScannedDir {
     path: PathBuf,
     device: Option<cmdr_fs::file_identity::DeviceId>,
-    entries: fs::ReadDir,
+    /// Drained when the folder opens, so its handle closes before the scan goes
+    /// deeper: ❌ never a `ReadDir` (or a Unix `DirEntry`, which holds one) per
+    /// level, one file descriptor per level against a soft limit often 256.
+    entries: std::vec::IntoIter<PathBuf>,
 }
 
 impl DryRun<'_> {
@@ -285,11 +288,15 @@ impl DryRun<'_> {
             }
 
             // Scan contents
-            let entries = fs::read_dir(path).with_path(path)?;
+            let entries: Vec<PathBuf> = fs::read_dir(path)
+                .with_path(path)?
+                .flatten()
+                .map(|entry| entry.path())
+                .collect();
             return Ok(Some(ScannedDir {
                 path: path.to_path_buf(),
                 device: device_of(&metadata),
-                entries,
+                entries: entries.into_iter(),
             }));
         } else {
             // Skip special files (sockets, FIFOs, char/block devices)
