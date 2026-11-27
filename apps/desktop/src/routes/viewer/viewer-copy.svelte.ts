@@ -261,7 +261,7 @@ export function createViewerCopyOrchestrator(deps: CopyOrchestratorDeps) {
     log.warn('Copy read failed: band={band}, reason={reason}, error={error}', {
       band,
       reason: failure.reason,
-      error: failure.error ? JSON.stringify(failure.error) : 'none',
+      error: failure.error ?? 'none',
     })
     addToast(tString(failure.reason === 'timedOut' ? 'viewer.copy.readTooLong' : 'viewer.copy.copyFailed'), {
       level: 'warn',

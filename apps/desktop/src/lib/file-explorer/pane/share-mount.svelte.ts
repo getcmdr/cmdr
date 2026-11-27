@@ -262,8 +262,9 @@ export function createShareMount(deps: ShareMountDeps): ShareMount {
       log.warn('Mount of {share} on {host} did not go through: {error}', {
         share: share.name,
         host: deps.getServer()?.host.name ?? 'unknown host',
-        // Pre-stringified: the log bridge renders a property with `String()`.
-        error: JSON.stringify(mountError),
+        // Raw: `describeForLog` renders it as JSON with `server`, `share`, and `username`
+        // marked. Pre-stringified, it reached the bridge as one unmarked string.
+        error: mountError,
       })
       return mountError
     } finally {

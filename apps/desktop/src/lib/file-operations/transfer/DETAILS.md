@@ -352,6 +352,9 @@ destinations".
      `transfer-error-catalog.ts`). All words live on the FE.
    - Container colors and icon vary by category: error-bg + CircleAlert (`serious`), warning-bg + TriangleAlert
      (`transient`), neutral secondary-bg + Info (`needs_action`).
+   - The failure's ONE frontend line (`reportOutcome`, and a refused start in `transfer-dispatch.ts`) logs the typed
+     fields through `writeErrorForLog`, without `message`, plus `op=` to join the backend's `write_operations` line that
+     carries the OS's words marked. Why: `apps/desktop/src/lib/logging/DETAILS.md` § "Marking values for error reports".
    - The same category sets the failure's log level (`logLevelFor`, `transfer-error-log-level.ts`): `serious` at error,
      the rest at warn, a cause-carrying wrapper at its cause's. An error line feeds the auto-sent error report, so an
      expected refusal (permission, space, a name) must never log at error (ERR-4K2HT, a refused delete in a system

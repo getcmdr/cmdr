@@ -57,8 +57,10 @@ impl TerminalEffects for AppTerminalEffects<'_> {
     fn warn_failure(&self, event: &WriteErrorEvent) {
         // The one place a failing write operation writes its technical reason
         // down. Everything else about the failure travels as the typed variant:
-        // the frontend logs `error.type` alone, and the detail string reaches
-        // only the error dialog's collapsed "Technical details". Without this
+        // the frontend logs its typed fields WITHOUT `message`
+        // (`write-error-for-log.ts`), since only this side can mark the names in
+        // the OS's words (ERR-RB2XQ), and the detail string reaches only the
+        // error dialog's collapsed "Technical details". Without this
         // line an error-report bundle records `Trash error: io_error` and the
         // OS's actual words are gone (ERR-BPAPM, 2026-09-08).
         //
