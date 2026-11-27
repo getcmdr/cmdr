@@ -96,12 +96,12 @@ only. `register` warns once per refusal; the focus-driven refresh logs its copy 
 ## Reading a rename on macOS
 
 FSEvents cannot associate a rename's two halves (`fsevent.rs` in `notify` says so outright), so it reports each half as
-`Modify(Name(RenameMode::Any))` naming one path. `notify-debouncer-full` tries to pair them by tracker or cached file
-ID, and when it succeeds we get the tidy `RenameMode::Both`. When it misses we get the two halves separately, and the
-miss is common, not exotic: it happens for a move IN from outside the watched tree (there is no `from` half to pair
-with), and whenever the kernel coalesced the partial file's create into its rename, which leaves the old path's file ID
-never cached. Measured on macOS 15 (raw-event dump from the partial→final rename test, 2026-08-12): the pairing missed
-on every observed run.
+`Modify(Name(RenameMode::Any))` naming one path. Nothing pairs them: the debouncer runs with `NoCache` (next section),
+and FSEvents carries no tracker, so we always get the two halves separately. Windows reports explicit `From` and `To`
+halves, also unpaired; `From` drops in `translate_debounced` and `To` emits. Even with the default file-ID cache the
+pairing missed on every observed run (macOS 15, raw-event dump from the partial→final rename test, 2026-08-12): a move
+IN from outside has no `from` half, and a create the kernel coalesced into the rename leaves the old path's ID never
+cached.
 
 So `translate_debounced` maps `RenameMode::Any` to its own `EventSummary::RenameAny`, and `classify_event` treats it
 exactly like a `To` half. Nothing probes which half it is, because eligibility already does: `is_eligible` stats the
@@ -109,8 +109,20 @@ path, so the vanished `from` side of a move-out drops on its own while the survi
 by adding an `exists()` check** — it would duplicate the stat and give the two halves two different answers to the same
 question.
 
-Dropping `Any` (which is what the code did before) means a download whose rename the debouncer failed to pair produces
-no toast at all.
+Dropping `Any` means a browser download produces no toast at all.
+
+## Decision: no file-ID cache, no link following (#1538)
+
+`arm_debouncer` builds the debouncer with `NoCache` and `Config::with_follow_symlinks(false)`.
+
+**Why**: `notify-debouncer-full`'s default `FileIdMap` fills itself with a `walkdir` walk that follows links, run on
+`watch()`, on every `Create` (the whole subtree of a new folder), every rename-to, and every rescan. A reporter's 35 GB
+`~/Downloads` held a Wine `.app` bundle whose prefix links `dosdevices/z:` to `/`, so arming the watch walked the whole
+disk, on the main thread, and launch hung with memory climbing (#1538, spindump in the issue). All the cache buys is
+rename pairing, which the previous section shows we neither get nor need. The listing, git, and restic watchers already
+ran `NoCache` for the same reason. `follow_symlinks(false)` is the Linux half: inotify walks the tree itself to arm a
+watch per directory. Guarded by `links_test::arming_never_walks_the_tree` (a fixture with `z: -> /`, a link to an
+ancestor, and 2,000 files; `NullWatcher` stands in for the OS, so it times the debouncer alone).
 
 ## Browser-style rename scope
 
@@ -133,7 +145,9 @@ add visible toast latency. Revisit if real-world feedback says CLI downloads mat
 - **Fallback — a bounded recursive scan** (`scan_latest`, capped at `SCAN_MAX_DEPTH`, picking the max-mtime eligible
   file), used ONLY when no ring entry survives: a fresh launch where the hotkey fires before any download arrived this
   session, or every recent download gone since. Both tiers run inside one `spawn_blocking` (the ring check stats up to
-  10 paths, the scan walks the tree), so neither blocks the IPC thread. Both tiers empty → the empty-state error (the FE
+  10 paths, the scan walks the tree), so neither blocks the IPC thread. The scan never descends a link
+  (`follow_links(false)`), so a link to `/` or out of Downloads stays a leaf
+  (`links_test::scan_latest_never_follows_a_link_out_of_the_root`). Both tiers empty → the empty-state error (the FE
   offers to open Downloads anyway).
 
 Both tiers share the same `is_eligible` filter (hidden and partial-suffix files excluded; a regular file or a symlink to
