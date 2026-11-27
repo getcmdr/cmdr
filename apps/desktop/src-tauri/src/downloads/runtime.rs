@@ -3,16 +3,13 @@
 //! The watcher is FDA-gated: it's alive whenever
 //! `crate::fda_gate::is_fda_pending_runtime() == false`. `lib.rs` calls
 //! [`refresh_runtime`] at startup and on main-window focus transitions to
-//! keep the state aligned. The Settings pane also calls it on mount as a
-//! belt-and-braces re-check (the focus event may have fired on a stale gate
-//! read).
+//! keep the state aligned. The Settings pane also re-checks on mount
+//! ([`refresh_runtime_and_wait`]), in case the focus event fired on a stale
+//! gate read.
 //!
-//! Stored in a `Mutex<Option<...>>` rather than `OnceLock` because the
-//! handle's lifetime tracks the FDA gate: it can flip from `None` to `Some`
-//! and back over a single session (the deny path keeps the app running and
-//! re-enables features as the user grants individual TCC prompts; an allow
-//! requires a restart but a mid-session revoke in System Settings is also
-//! possible).
+//! The handle's lifetime tracks the FDA gate, so it can come and go over a
+//! session (a mid-session revoke in System Settings is possible). It lives in a
+//! [`WatcherSlot`], which also knows when a watcher is still arming.
 
 use std::path::Path;
 use std::sync::Mutex;
@@ -21,12 +18,13 @@ use std::time::Duration;
 use tauri::AppHandle;
 
 use super::global_shortcut::{GlobalShortcutManager, RegistrationError, RegistrationStatus, TauriRegistrar};
+use super::slot::{WatcherSlot, run_in_background};
 use super::watcher::DEFAULT_IGNORE_TTL;
 use super::{DownloadsWatcher, WatcherError, desired_running};
 use cmdr_menu::spec::PerPlatform;
 
-/// Process-global handle. `None` when the watcher isn't running.
-static RUNTIME: Mutex<Option<DownloadsWatcher>> = Mutex::new(None);
+/// Process-global watcher slot.
+static SLOT: WatcherSlot = WatcherSlot::new();
 
 /// Process-global global-shortcut manager. Lazily constructed on first
 /// `apply_global_go_to_latest_shortcut` call so tests don't need a real
@@ -66,32 +64,34 @@ fn global_shortcut_manager(
     guard
 }
 
-/// Start the watcher if the FDA gate is open and we aren't already running;
-/// stop it if the gate is closed and we are. Idempotent.
-///
-/// Returns `Err` only when the watcher couldn't start due to `notify`
-/// errors (missing Downloads dir, permission-denied watch attach). Callers
-/// log and move on; the next focus event will retry.
-pub fn refresh_runtime(app: &AppHandle) -> Result<(), WatcherError> {
-    let should_run = desired_running(crate::fda_gate::is_fda_pending_runtime());
-    let mut guard = RUNTIME.lock().expect("downloads runtime poisoned");
-    match (should_run, guard.is_some()) {
-        (true, false) => {
-            let watcher = DownloadsWatcher::start(app)?;
-            *guard = Some(watcher);
-            log::info!(target: "downloads::watcher", "Downloads watcher started (FDA gate open)");
-        }
-        (false, true) => {
-            if let Some(watcher) = guard.take() {
-                watcher.stop();
-                log::info!(target: "downloads::watcher", "Downloads watcher stopped (FDA gate closed)");
-            }
-        }
-        _ => {
-            // Already aligned with desired state; nothing to do.
-        }
+/// Start the watcher if the FDA gate is open and none is running or arming;
+/// stop it if the gate is closed. Idempotent, and returns at once: the arm or
+/// stop runs on its own thread, since both callers are on the main thread
+/// (launch and window focus) and arming a watch can take seconds (#1538). A
+/// failed arm logs there, and the next focus retries.
+pub fn refresh_runtime(app: &AppHandle) {
+    if let Some(job) = SLOT.align(desired_running(crate::fda_gate::is_fda_pending_runtime())) {
+        let app = app.clone();
+        run_in_background(job, move || DownloadsWatcher::start(&app));
     }
-    Ok(())
+}
+
+/// [`refresh_runtime`] for an async caller that wants the outcome: the arm or
+/// stop runs on the blocking pool and this waits for it. `Err` when this call
+/// armed and the arm failed; an arm already in flight from a focus refresh
+/// isn't waited for.
+pub async fn refresh_runtime_and_wait(app: &AppHandle) -> Result<(), WatcherError> {
+    let Some(job) = SLOT.align(desired_running(crate::fda_gate::is_fda_pending_runtime())) else {
+        return Ok(());
+    };
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || job.run(|| DownloadsWatcher::start(&app)))
+        .await
+        .unwrap_or_else(|err| {
+            // The panicking arm dropped its ticket, so the slot is `Stopped` again.
+            log::warn!(target: "downloads::watcher", "Downloads watcher arm panicked: {err}");
+            Ok(())
+        })
 }
 
 /// The binding a fresh install runs with, per OS, each in its own spelling: the same physical
@@ -257,17 +257,17 @@ pub fn refresh_global_go_to_latest_shortcut(app: &AppHandle) {
     }
 }
 
-/// Is the watcher currently running?
+/// Is the watcher running? `false` while it's still arming.
 pub fn is_running() -> bool {
-    RUNTIME.lock().expect("downloads runtime poisoned").is_some()
+    SLOT.is_running()
 }
 
 /// Apply a closure to the running watcher, returning its value if the
-/// watcher exists. `None` when the watcher is dormant (FDA gate closed or
-/// startup hasn't completed).
+/// watcher exists. `None` when the watcher is dormant (FDA gate closed, or
+/// still arming). Runs under the slot's lock, which the main thread's
+/// [`refresh_runtime`] takes too: ❌ no I/O in `f`; copy out what you need.
 pub fn with_watcher<R>(f: impl FnOnce(&DownloadsWatcher) -> R) -> Option<R> {
-    let guard = RUNTIME.lock().expect("downloads runtime poisoned");
-    guard.as_ref().map(f)
+    SLOT.with_watcher(f)
 }
 
 /// Register a Cmdr-own pending write so the watcher suppresses the matching
@@ -307,12 +307,7 @@ pub fn note_pending_write_for_cmdr_with_ttl(path: &Path, ttl: Duration) {
 /// scoping primitive — file that bridge if it's ever needed.
 #[cfg(test)]
 pub fn install_for_test(watcher: DownloadsWatcher) -> TestInstallGuard {
-    let mut guard = RUNTIME.lock().expect("downloads runtime poisoned");
-    assert!(
-        guard.is_none(),
-        "install_for_test: a watcher is already installed; tests must run serial or scope their installs"
-    );
-    *guard = Some(watcher);
+    SLOT.install(watcher);
     TestInstallGuard { _private: () }
 }
 
@@ -326,8 +321,7 @@ pub struct TestInstallGuard {
 #[cfg(test)]
 impl Drop for TestInstallGuard {
     fn drop(&mut self) {
-        let mut guard = RUNTIME.lock().expect("downloads runtime poisoned");
-        if let Some(watcher) = guard.take() {
+        if let Some(watcher) = SLOT.take() {
             watcher.stop();
         }
     }
@@ -335,7 +329,7 @@ impl Drop for TestInstallGuard {
 
 #[cfg(test)]
 mod tests {
-    //! Tests for the Cmdr-own-write hook helpers. The process-global `RUNTIME` is
+    //! Tests for the Cmdr-own-write hook helpers. The process-global `SLOT` is
     //! shared across all tests in this crate; serialize installs through
     //! `INSTALL_LOCK` so concurrent threads (nextest defaults to
     //! `test-threads = num-cpus`) don't race on the `assert!(guard.is_none())`
@@ -451,11 +445,8 @@ mod tests {
         // where write ops can fire before `refresh_runtime` lands.
         let _lock = install_lock().lock().unwrap_or_else(|p| p.into_inner());
         // Defensive: clear any leftover from a previously panicking test.
-        {
-            let mut g = RUNTIME.lock().expect("downloads runtime poisoned");
-            if let Some(w) = g.take() {
-                w.stop();
-            }
+        if let Some(w) = SLOT.take() {
+            w.stop();
         }
         assert!(!is_running(), "precondition: no watcher installed");
 
@@ -473,11 +464,8 @@ mod tests {
         // `download-detected` event.
         let _lock = install_lock().lock().unwrap_or_else(|p| p.into_inner());
         // Clean any leftover.
-        {
-            let mut g = RUNTIME.lock().expect("downloads runtime poisoned");
-            if let Some(w) = g.take() {
-                w.stop();
-            }
+        if let Some(w) = SLOT.take() {
+            w.stop();
         }
 
         let downloads_root = unhidden_tempdir();
@@ -507,12 +495,8 @@ mod tests {
             };
             notify_debouncer_full::DebouncedEvent::new(event, std::time::Instant::now())
         };
-        RUNTIME
-            .lock()
-            .expect("downloads runtime poisoned")
-            .as_ref()
-            .expect("the test watcher is installed")
-            .deliver(vec![created(&dest), created(&control)]);
+        SLOT.with_watcher(|w| w.deliver(vec![created(&dest), created(&control)]))
+            .expect("the test watcher is installed");
 
         // The unregistered sibling surfacing proves the batch was handled, so
         // the Cmdr-own write's silence is suppression, not a watch that saw nothing.
@@ -549,11 +533,8 @@ mod tests {
         // outside the watched root no-op without touching the map.
         // Indirectly verified via the public helper.
         let _lock = install_lock().lock().unwrap_or_else(|p| p.into_inner());
-        {
-            let mut g = RUNTIME.lock().expect("downloads runtime poisoned");
-            if let Some(w) = g.take() {
-                w.stop();
-            }
+        if let Some(w) = SLOT.take() {
+            w.stop();
         }
 
         let downloads_root = unhidden_tempdir();

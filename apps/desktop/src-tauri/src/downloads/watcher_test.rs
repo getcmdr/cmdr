@@ -283,7 +283,7 @@ fn translates_rename_from_alone_to_other() {
     assert_eq!(translate_debounced(&ev), vec![EventSummary::Other]);
 }
 
-// ── scan_latest_fallback unit tests ──────────────────────────────
+// ── scan_latest unit tests ──────────────────────────────
 
 #[test]
 fn scan_latest_returns_none_for_empty_dir() {
@@ -676,7 +676,7 @@ fn latest_download_returns_ring_value_after_event() {
     // reported. That it's canonical is the OS's half, pinned by the real
     // `dropping_a_file_emits_one_event`.
     assert_eq!(emitted(&rx), vec!["ring.txt"]);
-    assert_eq!(watcher.latest_download(), Some(root.join("ring.txt")));
+    assert_eq!(watcher.latest_lookup().latest_seen(), Some(root.join("ring.txt")));
 }
 
 /// Regression (ERR-CFHX6): a download renamed away after landing stayed the
@@ -690,20 +690,45 @@ fn latest_download_skips_a_download_renamed_away_since() {
     touch(td.path(), "transaction-history.csv");
     watcher.deliver(vec![created(&root.join("older.pdf"))]);
     watcher.deliver(vec![created(&root.join("transaction-history.csv"))]);
-    assert_eq!(watcher.latest_download(), Some(root.join("transaction-history.csv")));
+    assert_eq!(
+        watcher.latest_lookup().latest_seen(),
+        Some(root.join("transaction-history.csv"))
+    );
 
     fs::rename(
         root.join("transaction-history.csv"),
         root.join("transaction-history.csv.old"),
     )
     .unwrap();
-    assert_eq!(watcher.latest_download(), Some(root.join("older.pdf")));
+    assert_eq!(watcher.latest_lookup().latest_seen(), Some(root.join("older.pdf")));
 
     fs::remove_file(root.join("older.pdf")).unwrap();
     assert_eq!(
-        watcher.latest_download(),
+        watcher.latest_lookup().latest_seen(),
         None,
         "every ring entry is gone, so the scan decides"
+    );
+}
+
+/// "Go to latest" stats and walks the disk, so it runs on a lookup copied out
+/// of the watcher, never under the runtime's lock that the main thread's focus
+/// refresh waits on. Detached means it answers after the watcher is gone.
+#[test]
+fn latest_lookup_answers_without_the_watcher() {
+    let (td, root, watcher, _rx) = scripted();
+    touch(td.path(), "ring.txt");
+    watcher.deliver(vec![created(&root.join("ring.txt"))]);
+
+    let lookup = watcher.latest_lookup();
+    drop(watcher);
+
+    assert_eq!(lookup.find(), Some(root.join("ring.txt")));
+    fs::remove_file(root.join("ring.txt")).unwrap();
+    touch(td.path(), "scanned.txt");
+    assert_eq!(
+        lookup.find(),
+        Some(root.join("scanned.txt")),
+        "an empty ring falls back to the scan"
     );
 }
 
@@ -717,6 +742,6 @@ fn scan_latest_fallback_finds_file_with_no_events() {
 
     // Ring is empty; the fallback finds the file under the canonical root the
     // watcher resolved at start.
-    assert_eq!(watcher.latest_download(), None);
-    assert_eq!(watcher.scan_latest_fallback(), Some(canon_root.join("exists.txt")));
+    assert_eq!(watcher.latest_lookup().latest_seen(), None);
+    assert_eq!(watcher.latest_lookup().scanned(), Some(canon_root.join("exists.txt")));
 }

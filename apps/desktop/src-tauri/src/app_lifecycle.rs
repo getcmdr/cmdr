@@ -50,16 +50,12 @@ pub fn on_window_event(window: &Window, event: &tauri::WindowEvent) {
     // Main-window focus re-checks the FDA gate so the Downloads
     // watcher starts/stops on transitions. Covers the "user
     // toggled FDA in System Settings, came back to Cmdr" path
-    // without polling. Idempotent when nothing changed.
+    // without polling. Idempotent when nothing changed, and instant: the
+    // watcher arms on its own thread (#1538).
     if let tauri::WindowEvent::Focused(true) = event
         && window.label() == "main"
     {
-        if let Err(err) = downloads::refresh_runtime(window.app_handle()) {
-            log::warn!(
-                target: "downloads::watcher",
-                "Focus-driven gate re-check failed: {err}",
-            );
-        }
+        downloads::refresh_runtime(window.app_handle());
         // Re-evaluate the global-shortcut registration too: if FDA
         // flipped between blur and focus, register/unregister to
         // match. Idempotent when nothing changed.

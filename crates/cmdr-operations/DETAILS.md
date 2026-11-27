@@ -1355,9 +1355,8 @@ fresh compress announces its zip and temp (`StagedWrite::begin_generated` takes 
 **Don't add `if path.starts_with(downloads_dir)` guards at call sites**: centralizing the scope in the helper keeps it
 from drifting across call sites (the downloads watcher's ignore-set design lives in the `downloads` module docs).
 
-**No-op when the watcher is dormant.** If the FDA gate is closed (or `refresh_runtime` hasn't been called yet), the
-watcher isn't installed and the helper is a cheap no-op (single mutex `lock + is_none`). Production write ops fire
-freely; the cost is one atomic-bool read per write.
+**No-op when the watcher is dormant.** If the FDA gate is closed (or the watcher is still arming), no watcher is
+installed and the helper is a cheap no-op (one mutex lock and a state check). Production write ops fire freely.
 
 **Renames register both halves.** A rename moves a file out of one location into another. The Cmdr-own-write contract
 requires registering both the source path (so a rename-OUT-of-Downloads is also suppressed via the watcher's

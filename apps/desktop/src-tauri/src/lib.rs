@@ -510,13 +510,12 @@ pub fn run() {
                 os_fda_granted_for_gate,
             ));
 
-            // Start the Downloads watcher if the FDA gate is open. The
+            // Start the Downloads watcher if the FDA gate is open. It arms on
+            // its own thread, so launch never waits on it (#1538). The
             // window-focus listener (registered below in `on_window_event`)
-            // re-runs this on every transition, so a missed start here
+            // re-runs this on every transition, so a failed start here
             // recovers as soon as the user focuses the main window.
-            if let Err(err) = downloads::refresh_runtime(app.handle()) {
-                log::warn!(target: "downloads::watcher", "Initial start failed: {err}");
-            }
+            downloads::refresh_runtime(app.handle());
 
             // Register the global go-to-latest-download shortcut (default
             // ⌃⌥⌘J). FDA-gated: `apply_global_go_to_latest_shortcut` no-ops when
