@@ -287,6 +287,10 @@ watcher drops what's still queued. The window that opens is one the branch is be
 until the walk ends either way. ❌ Don't unify these by watching the volume root on Linux: it spends the machine's watch
 budget on ground we don't answer for, and fails outright on a big tree.
 
+That registration walk never follows a link (`Config::with_follow_symlinks(false)`; `notify` defaults to following).
+Following would let one link to `/` in a branch (a Wine prefix's `dosdevices/z:`) arm the whole disk and exhaust
+`max_user_watches`, and the scanner doesn't descend links, so the watch matches what the index holds (#1538).
+
 A branch inotify refuses (a path that's gone) is skipped with a warning, and `start_branches` fails only when it watched
 nothing at all. It used to fail on the first refusal, so one stale branch left every live one unwatched: a drive renamed
 while its first index finished came back with its old mount point in the set, and nothing at the new one was delivered

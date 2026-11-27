@@ -29,7 +29,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use notify_debouncer_full::{
-    DebounceEventResult, Debouncer, RecommendedCache, new_debouncer,
+    DebounceEventResult, Debouncer, NoCache, new_debouncer_opt,
     notify::{RecommendedWatcher, RecursiveMode},
 };
 
@@ -71,7 +71,7 @@ pub(crate) struct ArchiveContentWatch {
 enum WatchStream {
     Notify(
         #[allow(dead_code, reason = "held only to keep the debouncer (and its OS watch) alive")]
-        Debouncer<RecommendedWatcher, RecommendedCache>,
+        Debouncer<RecommendedWatcher, NoCache>,
     ),
     /// A test build's watch: the volume's bookkeeping (coverage, the live count, the
     /// drop on eviction) without an OS stream, so a test that asserts arming or
@@ -167,38 +167,46 @@ fn arm_notify_stream(
     parent_volume_id: String,
     cache: Arc<ArchiveIndexCache>,
     host: VolumeHost,
-) -> Option<Debouncer<RecommendedWatcher, RecommendedCache>> {
+) -> Option<Debouncer<RecommendedWatcher, NoCache>> {
     let watch_dir = archive_path.parent()?.to_path_buf();
 
-    let mut debouncer = new_debouncer(ARCHIVE_WATCH_DEBOUNCE, None, move |result: DebounceEventResult| {
-        // The watched directory reports events for ALL its children; act only
-        // when the batch touches our archive file. An `Err` typically means
-        // the watched directory itself went away — nothing to refresh.
-        let Ok(events) = result else { return };
-        let touched = events
-            .iter()
-            .flat_map(|event| event.paths.iter())
-            .any(|path| event_path_targets_archive(path, &archive_path));
-        if !touched {
-            return;
-        }
+    // `NoCache`: the default `FileIdMap` stats every sibling (through links) at arm
+    // time and on each create, to pair renames this filter never reads (#1538).
+    let mut debouncer = new_debouncer_opt::<_, RecommendedWatcher, NoCache>(
+        ARCHIVE_WATCH_DEBOUNCE,
+        None,
+        move |result: DebounceEventResult| {
+            // The watched directory reports events for ALL its children; act only
+            // when the batch touches our archive file. An `Err` typically means
+            // the watched directory itself went away — nothing to refresh.
+            let Ok(events) = result else { return };
+            let touched = events
+                .iter()
+                .flat_map(|event| event.paths.iter())
+                .any(|path| event_path_targets_archive(path, &archive_path));
+            if !touched {
+                return;
+            }
 
-        // Drop the stale parsed index so the re-read re-parses the new bytes
-        // (the `(path, size, mtime)` key would miss anyway, but clearing also
-        // releases the old `Arc` instead of leaking one index per edit).
-        cache.clear();
+            // Drop the stale parsed index so the re-read re-parses the new bytes
+            // (the `(path, size, mtime)` key would miss anyway, but clearing also
+            // releases the old `Arc` instead of leaking one index per edit).
+            cache.clear();
 
-        // The debouncer callback runs on notify-rs's own thread, which has no
-        // Tokio runtime — `tokio::spawn` would panic there. `host.runtime()`
-        // RESOLVES the app's runtime instead of inheriting an ambient one, so it
-        // works from any thread (same rule as `file_system::watcher`).
-        let volume_id = parent_volume_id.clone();
-        let shown_at = shown_at.clone();
-        let host = host.clone();
-        host.runtime().spawn(async move {
-            host.listings().refresh_archive_listings(&volume_id, &shown_at).await;
-        });
-    })
+            // The debouncer callback runs on notify-rs's own thread, which has no
+            // Tokio runtime — `tokio::spawn` would panic there. `host.runtime()`
+            // RESOLVES the app's runtime instead of inheriting an ambient one, so it
+            // works from any thread (same rule as `file_system::watcher`).
+            let volume_id = parent_volume_id.clone();
+            let shown_at = shown_at.clone();
+            let host = host.clone();
+            host.runtime().spawn(async move {
+                host.listings().refresh_archive_listings(&volume_id, &shown_at).await;
+            });
+        },
+        NoCache,
+        notify_debouncer_full::notify::Config::default(),
+    )
     .map_err(|e| log::warn!("archive watch: failed to create debouncer: {e}"))
     .ok()?;
 

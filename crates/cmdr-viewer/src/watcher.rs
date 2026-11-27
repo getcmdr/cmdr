@@ -33,7 +33,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
 
 use notify_debouncer_full::{
-    DebounceEventResult, Debouncer, RecommendedCache, new_debouncer,
+    DebounceEventResult, Debouncer, NoCache, new_debouncer_opt,
     notify::{RecommendedWatcher, RecursiveMode},
 };
 
@@ -120,8 +120,7 @@ pub struct ViewerWatcherManager {
 /// What keeps a path's watch delivering: the OS stream, which disarms when dropped.
 enum WatchStream {
     Notify(
-        #[allow(dead_code, reason = "Debouncer must be held to keep watching")]
-        Debouncer<RecommendedWatcher, RecommendedCache>,
+        #[allow(dead_code, reason = "Debouncer must be held to keep watching")] Debouncer<RecommendedWatcher, NoCache>,
     ),
     /// A test build's watch: the subscriber bookkeeping without an OS stream, so a test
     /// that drives the session through `test_only_emit` never waits on `fseventsd`.
@@ -280,7 +279,7 @@ pub fn has_os_stream(path: &Path) -> bool {
 fn arm_notify_stream(
     canonical: &Path,
     state: &Arc<Mutex<PathState>>,
-) -> std::io::Result<Debouncer<RecommendedWatcher, RecommendedCache>> {
+) -> std::io::Result<Debouncer<RecommendedWatcher, NoCache>> {
     // Watch the parent directory: notify-rs on macOS can't reliably
     // observe a single file when atomic-replace swaps the inode. The
     // parent-watch + path-filter pattern matches what existing
@@ -292,7 +291,10 @@ fn arm_notify_stream(
     let state_for_cb = Arc::downgrade(state);
     let target_path = canonical.to_path_buf();
 
-    let mut debouncer = new_debouncer(
+    // `NoCache`: the default `FileIdMap` stats every sibling in the parent (through
+    // links) at arm time and on each create, to pair renames this path filter
+    // never needs: an atomic replace still names the target in its `to` half (#1538).
+    let mut debouncer = new_debouncer_opt::<_, RecommendedWatcher, NoCache>(
         Duration::from_millis(DEBOUNCE_MS),
         None,
         move |result: DebounceEventResult| {
@@ -317,6 +319,8 @@ fn arm_notify_stream(
             // Errors are ignored: a transient FS-event error usually
             // resolves on the next debounce window.
         },
+        NoCache,
+        notify_debouncer_full::notify::Config::default(),
     )
     .map_err(|e| std::io::Error::other(format!("create viewer watcher: {}", e)))?;
 
