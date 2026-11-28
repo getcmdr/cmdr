@@ -87,7 +87,7 @@ func (n *notifier) send(p ping) {
 		req.Header.Set("Click", p.link)
 	}
 	resp, err := n.client.Do(req)
-	if err != nil {
+	if err != nil || resp == nil {
 		fmt.Printf("    (phone ping didn't go out: %v)\n", err)
 		return
 	}
