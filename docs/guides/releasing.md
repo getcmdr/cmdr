@@ -410,7 +410,10 @@ check.
    `Compile (...)` jobs. On GitHub-hosted runners both should be `in_progress` together; the three
    `Sign and notarize (...)` jobs then sit at `waiting` until David approves the `release` environment ("Review
    deployments" on the run's page; once per release, § Signing secrets). Tell David the run's link so he can approve.
-   Self-hosted: see § Keep the Mac awake during the build.
+   `release-finish.sh` also pings his phone then (ntfy topic `alerts-cmdr`, high priority, the run's link attached), and
+   again when the release is out or the run stops, so he can start a release and walk away. It reads the token
+   `NTFY_CMDR_RELEASE_TOKEN` from sops; without it, or with `CMDR_RELEASE_NTFY=off`, it runs silent. The account and
+   topic: the ntfy doc in the infra repo. Self-hosted: see § Keep the Mac awake during the build.
 10. **Monitor the build.** Tell the user their laptop is free (the build runs on GitHub's hardware). Poll `gh run view`
     every few minutes in the background and report progress (which jobs are done, which are still running). A job at
     `waiting` is paused for David's approval, not stuck: remind him once, with the run's link, rather than treating it

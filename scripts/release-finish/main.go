@@ -24,6 +24,10 @@
 //  8. dispatches `release.yml` on the tag, whose `publish` job publishes the draft, ships
 //     `latest.json`, deploys the website, and bumps the Homebrew tap, then waits for it.
 //
+// A real run pings David's phone through ntfy when `sign` waits for his approval, when the release
+// is out, and when it stops (`notify.go`; `CMDR_RELEASE_NTFY=off` silences it). A ping never
+// blocks or fails the release.
+//
 // Every run reads where the release stands on GitHub and picks up from there, so it's safe to
 // re-run after a crash, a closed laptop, or a red job: a published release skips straight to
 // step 8, and a red finishing run gets its failed jobs re-run once.
@@ -165,11 +169,18 @@ func dispatch(cfg config, verifyDir string, ciGateOnly, wait bool) error {
 	if _, err := signerRepo(cfg.signerWorkflow); err != nil {
 		return err
 	}
+	if !cfg.dryRun {
+		alerts = newNotifier(secretToken)
+		alerts.tag = cfg.tag
+	}
 	return run(cfg)
 }
 
 func fail(err error) {
 	fmt.Fprintf(os.Stderr, "\n✗ %v\n", err)
+	if alerts != nil {
+		alerts.send(stoppedPing(alerts.tag, err))
+	}
 	os.Exit(1)
 }
 
@@ -394,6 +405,7 @@ func finish(cfg config) error {
 		switch action {
 		case actionDone:
 			step("%s is out: the finishing run went green (%s).", cfg.tag, runURL(r.ID))
+			alerts.send(outPing(cfg.tag, runURL(r.ID)))
 			fmt.Printf("    Next: merge the release commit back into main (./scripts/release.sh %s), then check getcmdr.com/latest.json, the archive URLs, and the attestations (docs/guides/releasing.md § The release procedure).\n", cfg.version)
 			return nil
 		case actionWait:
@@ -460,6 +472,9 @@ func waitForBuildAndCI(cfg config, commit string) error {
 			}
 			for _, line := range jobChanges(seen, v.ciJobs()) {
 				fmt.Println("    Build: " + line)
+			}
+			if awaitingApproval(v.ciJobs()) {
+				alerts.send(approvalPing(cfg.tag, runURL(build.ID)))
 			}
 			if buildDone, err = buildSignable(cfg, build.ID, v); err != nil {
 				return err
